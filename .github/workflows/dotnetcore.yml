@@ -1,0 +1,32 @@
+name: Publish
+
+on: [push]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        runs-on: [windows-latest]
+
+    runs-on: ${{ matrix.runs-on }}
+    name: Running tests on ${{ matrix.runs-on }}. 
+    steps:
+    - uses: actions/checkout@master
+      with:
+        dotnet-version: 6.0.4
+    - name: Build & Run tests
+      run: dotnet test --configuration Release
+    - name: Publish
+      if: github.ref == 'refs/heads/master'
+      run: |
+        $scriptLocationDirectory=(Get-Location).ToString()
+        $scriptLocationFilePath=[System.IO.Path]::Combine($scriptLocationDirectory, "Publish.Nuget.ps1")
+        $nugetExecutable=[System.IO.Path]::Combine($scriptLocationDirectory, "nuget", "nuget.exe")
+        $projects = @('Musoq.DataSources.FlatFile', 'Musoq.DataSources.Json', 'Musoq.DataSources.Os', 'Musoq.DataSources.SeparatedValues', 'Musoq.DataSources.System', 'Musoq.DataSources.Time', 'Musoq.DataSources.Xml')
+        
+        foreach ($project in $projects) {
+          pushd
+          cd "./$project/bin/Release"
+          Invoke-Expression "$scriptLocationFilePath $nugetExecutable $project '${{ secrets.nuget_musoq_key }}'"
+          popd
+        }

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
+    <PackageReference Include="Musoq.Converter" Version="2.1.0" />
+    <PackageReference Include="Musoq.Evaluator" Version="3.1.0" />
+    <PackageReference Include="Musoq.Plugins" Version="3.1.0" />
+    <PackageReference Include="Musoq.Schema" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj" />
+    <ProjectReference Include="..\Musoq.DataSources.System\Musoq.DataSources.System.csproj" />
+  </ItemGroup>
+
+</Project>

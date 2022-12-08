@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Platforms>AnyCPU;x64</Platforms>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Version>1.0.0</Version>
+    <Authors>Jakub Puchała</Authors>
+    <Product>Musoq</Product>
+    <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageTags>sql, flatfile, dotnet-core</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Musoq.Plugins" Version="3.1.0" />
+    <PackageReference Include="Musoq.Schema" Version="2.1.0" />
+  </ItemGroup>
+
+</Project>
