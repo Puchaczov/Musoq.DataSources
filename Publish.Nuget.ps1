@@ -1,6 +1,6 @@
 ﻿param([String] $nuget, [String]$project, [String]$apiKey)
 
-$fileName=Get-ChildItem -Path $path -File | Select-Object -First 1 | Select -exp Name
+$fileName=Get-ChildItem -Path ./ -File | Select-Object -First 1 | Select -exp Name
 $text = Invoke-Expression "$nuget list Puchaczov" | Select-String -Pattern $project | Out-String
 $name,$version = $text.trim().split(" ")
 $publishedFileName = "$name.$version.nupkg"
