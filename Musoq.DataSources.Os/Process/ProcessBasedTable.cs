@@ -3,7 +3,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Process
 {
-    public class ProcessBasedTable : ISchemaTable
+    internal class ProcessBasedTable : ISchemaTable
     {
         public ProcessBasedTable()
         {

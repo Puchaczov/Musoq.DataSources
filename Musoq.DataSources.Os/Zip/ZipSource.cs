@@ -6,7 +6,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Zip
 {
-    public class ZipSource : RowSource
+    internal class ZipSource : RowSource
     {
         private readonly string _zipPath;
         private readonly RuntimeContext _communicator;

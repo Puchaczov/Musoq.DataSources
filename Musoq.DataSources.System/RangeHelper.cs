@@ -5,7 +5,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.System
 {
-    public static class RangeHelper
+    internal static class RangeHelper
     {
         public static readonly IDictionary<string, int> RangeToIndexMap;
         public static readonly IDictionary<int, Func<RangeItemEntity, object>> RangeToMethodAccessMap;

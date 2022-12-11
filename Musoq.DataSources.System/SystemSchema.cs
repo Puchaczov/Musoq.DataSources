@@ -8,16 +8,52 @@ using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.System
 {
-    public partial class SystemSchema : SchemaBase
+    /// <summary>
+    /// System schema helper methods
+    /// </summary>
+    public class SystemSchema : SchemaBase
     {
         private const string Dual = "dual";
         private const string Range = "range";
         private const string System = "system";
+        
+        /// <virtual-constructors>
+        /// <virtual-constructor>
+        /// <examples>
+        /// <example>
+        /// <from>#system.dual()</from>
+        /// <description>The dummy table</description>
+        /// <columns>
+        /// <column name="Dummy" type="string">Just empty string</column>
+        /// </columns>
+        /// </example>
+        /// </examples>
+        /// </virtual-constructor>
+        /// <virtual-constructor>
+        /// <virtual-param>Path of the given file</virtual-param>
+        /// <examples>
+        /// <example>
+        /// <from>#system.range(long min, long max)</from>
+        /// <description>Gives the ability to generate ranged values</description>
+        /// <columns>
+        /// <column name="Value" type="long">Enumerated value</column>
+        /// </columns>
+        /// </example>
+        /// </examples>
+        /// </virtual-constructor>
+        /// </virtual-constructors>
         public SystemSchema() 
             : base(System, CreateLibrary())
         {
         }
 
+        
+        /// <summary>
+        /// Gets the table name based on the given data source and parameters.
+        /// </summary>
+        /// <param name="name">Data Source name</param>
+        /// <param name="parameters">Parameters to pass to data source</param>
+        /// <returns>Requested table metadata</returns>
         public override ISchemaTable GetTableByName(string name, params object[] parameters)
         {
             switch (name.ToLowerInvariant())
@@ -31,6 +67,13 @@ namespace Musoq.DataSources.System
             throw new NotSupportedException(name);
         }
 
+        /// <summary>
+        /// Gets the data source based on the given data source and parameters.
+        /// </summary>
+        /// <param name="name">Data source name</param>
+        /// <param name="interCommunicator">Runtime context</param>
+        /// <param name="parameters">Parameters to pass data to data source</param>
+        /// <returns>Data source</returns>
         public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
         {
             switch (name.ToLowerInvariant())
@@ -53,6 +96,20 @@ namespace Musoq.DataSources.System
             throw new NotSupportedException(name);
         }
 
+        /// <summary>
+        /// Gets information's about all tables in the schema.
+        /// </summary>
+        /// <returns>Data sources constructors</returns>
+        public override SchemaMethodInfo[] GetConstructors()
+        {
+            var constructors = new List<SchemaMethodInfo>();
+
+            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<DualRowSource>(Dual));
+            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<RangeSource>(Range));
+
+            return constructors.ToArray();
+        }
+
         private static MethodsAggregator CreateLibrary()
         {
             var methodsManager = new MethodsManager();
@@ -64,16 +121,6 @@ namespace Musoq.DataSources.System
             propertiesManager.RegisterProperties(library);
 
             return new MethodsAggregator(methodsManager, propertiesManager);
-        }
-
-        public override SchemaMethodInfo[] GetConstructors()
-        {
-            var constructors = new List<SchemaMethodInfo>();
-
-            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<DualRowSource>(Dual));
-            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<RangeSource>(Range));
-
-            return constructors.ToArray();
         }
     }
 }

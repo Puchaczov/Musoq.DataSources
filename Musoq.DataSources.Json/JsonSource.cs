@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Musoq.DataSources.Json
 {
-    public class JsonSource : RowSource
+    internal class JsonSource : RowSource
     {
         private readonly string _filePath;
         private readonly RuntimeContext _communicator;
@@ -25,34 +25,30 @@ namespace Musoq.DataSources.Json
             get
             {
                 var endWorkToken = _communicator.EndWorkToken;
-                using (var file = File.OpenRead(_filePath))
-                {
-                    using (JsonReader reader = new JsonTextReader(new StreamReader(file)))
-                    {
-                        reader.SupportMultipleContent = true;
+                using var file = File.OpenRead(_filePath);
+                using JsonReader reader = new JsonTextReader(new StreamReader(file));
+                reader.SupportMultipleContent = true;
 
-                        var serializer = new JsonSerializer();
+                var serializer = new JsonSerializer();
 
-                        if (!reader.Read())
-                            throw new NotSupportedException("Cannot read file. Json is probably malformed.");
+                if (!reader.Read())
+                    throw new NotSupportedException("Cannot read file. Json is probably malformed.");
 
-                        reader.Read();
+                reader.Read();
 
-                        IEnumerable<IObjectResolver> rows = null;
-                        if (reader.TokenType == JsonToken.StartObject)
-                            rows = ParseObject(serializer, reader);
-                        else if (reader.TokenType == JsonToken.StartArray)
-                            rows = ParseArray(serializer, reader);
+                IEnumerable<IObjectResolver> rows = null;
+                if (reader.TokenType == JsonToken.StartObject)
+                    rows = ParseObject(serializer, reader);
+                else if (reader.TokenType == JsonToken.StartArray)
+                    rows = ParseArray(serializer, reader);
 
-                        if (rows == null)
-                            throw new NotSupportedException("This type of .json file is not supported.");
+                if (rows == null)
+                    throw new NotSupportedException("This type of .json file is not supported.");
 
-                        endWorkToken.ThrowIfCancellationRequested();
+                endWorkToken.ThrowIfCancellationRequested();
 
-                        foreach (var row in rows)
-                            yield return row;
-                    }
-                }
+                foreach (var row in rows)
+                    yield return row;
             }
         }
 

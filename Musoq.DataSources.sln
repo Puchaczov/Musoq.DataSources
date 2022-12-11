@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29123.88
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.FlatFile", "Musoq.DataSources.FlatFile\Musoq.DataSources.FlatFile.csproj", "{14EB1D8D-2C48-4555-B118-B1BC7CFE679F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.FlatFileTests", "Musoq.DataSources.FlatFileTests\Musoq.DataSources.FlatFileTests.csproj", "{7576C50D-42B0-46CE-9A09-E9F5139F01EF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.FlatFile.Tests", "Musoq.DataSources.FlatFile.Tests\Musoq.DataSources.FlatFile.Tests.csproj", "{7576C50D-42B0-46CE-9A09-E9F5139F01EF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Json", "Musoq.DataSources.Json\Musoq.DataSources.Json.csproj", "{66E4686E-ED4B-4F49-87C7-1D8631AAAA37}"
 EndProject

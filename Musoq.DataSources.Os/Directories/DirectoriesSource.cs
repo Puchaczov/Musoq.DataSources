@@ -8,7 +8,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Directories
 {
-    public class DirectoriesSource : RowSourceBase<DirectoryInfo>
+    internal class DirectoriesSource : RowSourceBase<DirectoryInfo>
     {
         private readonly RuntimeContext _communicator;
         private readonly DirectorySourceSearchOptions[] _sources;
@@ -44,7 +44,7 @@ namespace Musoq.DataSources.Os.Directories
                 {
                     MaxDegreeOfParallelism = Environment.ProcessorCount
                 },
-                (source) => 
+                source => 
                 {
                     try
                     {

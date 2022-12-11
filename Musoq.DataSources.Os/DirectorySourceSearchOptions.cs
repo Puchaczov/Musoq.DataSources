@@ -1,6 +1,6 @@
 ﻿namespace Musoq.DataSources.Os
 {
-    public class DirectorySourceSearchOptions
+    internal class DirectorySourceSearchOptions
     {
         public DirectorySourceSearchOptions(string path, bool useSubDirectories)
         {

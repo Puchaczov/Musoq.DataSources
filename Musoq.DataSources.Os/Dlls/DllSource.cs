@@ -7,7 +7,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Dlls
 {
-    public class DllSource : FilesSourceBase<DllInfo>
+    internal class DllSource : FilesSourceBase<DllInfo>
     {
         public DllSource(string path, bool useSubDirectories, RuntimeContext communicator) 
             : base(path, useSubDirectories, communicator)

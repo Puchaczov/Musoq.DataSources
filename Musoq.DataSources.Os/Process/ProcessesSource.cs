@@ -5,7 +5,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Process
 {
-    public class ProcessesSource : RowSourceBase<System.Diagnostics.Process>
+    internal class ProcessesSource : RowSourceBase<System.Diagnostics.Process>
     {
         private readonly RuntimeContext _communicator;
 

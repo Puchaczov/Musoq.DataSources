@@ -7,26 +7,68 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Json
 {
+    /// <summary>
+    /// Provides schema to work with json files
+    /// </summary>
     public class JsonSchema : SchemaBase
     {
         private const string FileTable = "file";
         private const string SchemaName = "json";
 
+        /// <virtual-constructors>
+        /// <virtual-constructor>
+        /// <virtual-param>Path to the json file</virtual-param>
+        /// <virtual-param>Path to the json schema file</virtual-param>
+        /// <examples>
+        /// <example>
+        /// <from>#json.file(string jsonFilePath, string jsonSchemaFilePath)</from>
+        /// <description>Gives the ability to process json files</description>
+        /// <columns isDynamic="true"></columns>
+        /// </example>
+        /// </examples>
+        /// </virtual-constructor>
+        /// </virtual-constructors>
         public JsonSchema()
             : base(SchemaName, CreateLibrary())
         {
         }
-
+        
+        /// <summary>
+        /// Gets the table name based on the given data source and parameters
+        /// </summary>
+        /// <param name="name">Data Source name</param>
+        /// <param name="parameters">Parameters to pass to data source</param>
+        /// <returns>Requested table metadata</returns>
         public override ISchemaTable GetTableByName(string name, params object[] parameters)
         {
-            return new JsonBasedTable((string)parameters[1], (string)parameters[2]);
+            return new JsonBasedTable((string)parameters[1]);
         }
 
-        public override RowSource GetRowSource(string name, RuntimeContext communicator, params object[] parameters)
+        /// <summary>
+        /// Gets the data source based on the given data source and parameters.
+        /// </summary>
+        /// <param name="name">Data source name</param>
+        /// <param name="interCommunicator">Runtime context</param>
+        /// <param name="parameters">Parameters to pass data to data source</param>
+        /// <returns>Data source</returns>
+        public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
         {
-            return new JsonSource((string)parameters[0], communicator);
+            return new JsonSource((string)parameters[0], interCommunicator);
         }
 
+        /// <summary>
+        /// Gets information's about all tables in the schema.
+        /// </summary>
+        /// <returns>Data sources constructors</returns>
+        public override SchemaMethodInfo[] GetConstructors()
+        {
+            var constructors = new List<SchemaMethodInfo>();
+
+            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<JsonSource>(FileTable));
+
+            return constructors.ToArray();
+        }
+        
         private static MethodsAggregator CreateLibrary()
         {
             var methodsManager = new MethodsManager();
@@ -38,15 +80,6 @@ namespace Musoq.DataSources.Json
             propertiesManager.RegisterProperties(library);
 
             return new MethodsAggregator(methodsManager, propertiesManager);
-        }
-
-        public override SchemaMethodInfo[] GetConstructors()
-        {
-            var constructors = new List<SchemaMethodInfo>();
-
-            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<JsonSource>(FileTable));
-
-            return constructors.ToArray();
         }
     }
 }

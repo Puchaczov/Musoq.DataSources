@@ -3,7 +3,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Directories
 {
-    public class DirectoriesBasedTable : ISchemaTable
+    internal class DirectoriesBasedTable : ISchemaTable
     {
         public ISchemaColumn[] Columns { get; } = SchemaDirectoriesHelper.DirectoriesColumns;
 

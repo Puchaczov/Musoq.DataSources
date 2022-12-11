@@ -3,7 +3,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Zip
 {
-    public class ZipBasedTable : ISchemaTable
+    internal class ZipBasedTable : ISchemaTable
     {
         public ZipBasedTable()
         {

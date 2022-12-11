@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Version>1.1</Version>
     <Authors>Jakub Puchała</Authors>
     <Product>Musoq</Product>
@@ -25,6 +25,11 @@
     <PackageReference Include="Musoq.Schema" Version="2.1.0" />
   </ItemGroup>
 
+  <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+    </ItemGroup>
+  </Target>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;NETSTANDARD2_0;DEBUG</DefineConstants>

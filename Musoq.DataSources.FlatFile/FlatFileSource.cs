@@ -6,7 +6,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.FlatFile
 {
-    public class FlatFileSource : RowSourceBase<FlatFileEntity>
+    internal class FlatFileSource : RowSourceBase<FlatFileEntity>
     {
         private readonly string _filePath;
         private readonly RuntimeContext _communicator;

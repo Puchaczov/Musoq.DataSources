@@ -7,7 +7,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Zip
 {
-    public static class SchemaZipHelper
+    internal static class SchemaZipHelper
     {
         public static readonly IDictionary<string, int> NameToIndexMap;
         public static readonly IDictionary<int, Func<ZipArchiveEntry, object>> IndexToMethodAccessMap;

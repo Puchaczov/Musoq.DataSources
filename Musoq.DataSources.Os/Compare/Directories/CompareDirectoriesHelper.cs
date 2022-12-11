@@ -7,7 +7,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Compare.Directories
 {
-    public static class CompareDirectoriesHelper
+    internal static class CompareDirectoriesHelper
     {
         public static readonly IDictionary<string, int> CompareDirectoriesNameToIndexMap;
         public static readonly IDictionary<int, Func<CompareDirectoriesResult, object>> CompareDirectoriesIndexToMethodAccessMap;

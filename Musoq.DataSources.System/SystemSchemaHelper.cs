@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Musoq.DataSources.System
 {
-    public static class SystemSchemaHelper
+    internal static class SystemSchemaHelper
     {
         public static readonly IDictionary<string, int> FlatNameToIndexMap;
         public static readonly IDictionary<int, Func<DualEntity, object>> FlatIndexToMethodAccessMap;

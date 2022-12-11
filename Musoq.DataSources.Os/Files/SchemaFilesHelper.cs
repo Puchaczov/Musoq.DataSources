@@ -5,7 +5,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Files
 {
-    public static class SchemaFilesHelper
+    internal static class SchemaFilesHelper
     {
         public static readonly IDictionary<string, int> FilesNameToIndexMap;
         public static readonly IDictionary<int, Func<ExtendedFileInfo, object>> FilesIndexToMethodAccessMap;

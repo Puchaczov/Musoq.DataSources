@@ -4,7 +4,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.System
 {
-    public class DualTable : ISchemaTable
+    internal class DualTable : ISchemaTable
     {
         public ISchemaColumn[] Columns => new ISchemaColumn[]
         {

@@ -6,7 +6,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Directories
 {
-    public static class SchemaDirectoriesHelper
+    internal static class SchemaDirectoriesHelper
     {
         public static readonly IDictionary<string, int> DirectoriesNameToIndexMap;
         public static readonly IDictionary<int, Func<DirectoryInfo, object>> DirectoriesIndexToMethodAccessMap;

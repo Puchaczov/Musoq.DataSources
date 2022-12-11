@@ -3,11 +3,9 @@ using System.Dynamic;
 
 namespace Musoq.Schema.Xml
 {
-    public class XmlFileTable : ISchemaTable
+    internal class XmlFileTable : ISchemaTable
     {
-        public ISchemaColumn[] Columns => new ISchemaColumn[] 
-        {
-        };
+        public ISchemaColumn[] Columns => System.Array.Empty<ISchemaColumn>();
 
         public ISchemaColumn GetColumnByName(string name)
         {

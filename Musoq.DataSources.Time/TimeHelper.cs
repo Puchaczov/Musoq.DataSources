@@ -5,7 +5,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Time
 {
-    public static class TimeHelper
+    internal static class TimeHelper
     {
         public static readonly IDictionary<string, int> TimeNameToIndexMap;
         public static readonly IDictionary<int, Func<DateTimeOffset, object>> TimeIndexToMethodAccessMap;

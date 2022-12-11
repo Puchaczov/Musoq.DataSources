@@ -5,14 +5,27 @@ using Newtonsoft.Json.Linq;
 
 namespace Musoq.DataSources.Json
 {
+    /// <summary>
+    /// Json helper methods
+    /// </summary>
     public class JsonLibrary : LibraryBase
     {
+        /// <summary>
+        /// Gets the length of the array
+        /// </summary>
+        /// <param name="array">Json array</param>
+        /// <returns>Length of json</returns>
         [BindableMethod]
         public int Length(JArray array)
         {
             return array.Count;
         }
 
+        /// <summary>
+        /// Flattening the array
+        /// </summary>
+        /// <param name="array">Json array</param>
+        /// <returns>Flattened array</returns>
         [BindableMethod]
         public string MakeFlat(JArray array)
         {
@@ -29,7 +42,8 @@ namespace Musoq.DataSources.Json
                 flattedArray.Append(", ");
             }
 
-            flattedArray.Append(array[array.Count - 1]);
+            var last = array.Count - 1;
+            flattedArray.Append(array[last]);
 
             return flattedArray.ToString();
         }

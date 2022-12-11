@@ -4,11 +4,11 @@ using Musoq.DataSources.Os.Files;
 
 namespace Musoq.DataSources.Os.Compare.Directories
 {
-    public class Files : IReadOnlyList<ExtendedFileInfo>
+    internal class SourceDestinationFilesPair : IReadOnlyList<ExtendedFileInfo>
     {
         private readonly IReadOnlyList<ExtendedFileInfo> _files;
 
-        public Files(IReadOnlyList<ExtendedFileInfo> files)
+        public SourceDestinationFilesPair(IReadOnlyList<ExtendedFileInfo> files)
         {
             _files = files;
         }

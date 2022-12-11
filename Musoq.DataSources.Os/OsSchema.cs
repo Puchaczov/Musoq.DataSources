@@ -27,10 +27,11 @@ namespace Musoq.DataSources.Os
 
         /// <virtual-constructors>
         /// <virtual-constructor>
-        /// <virtual-param>Path of the given file</virtual-param>
+        /// <virtual-param>First directory</virtual-param>
+        /// <virtual-param>Second directory</virtual-param>
         /// <examples>
         /// <example>
-        /// <from>from #os.dirscompare('dir1', 'dir2')</from>
+        /// <from>#os.dirscompare(string, string)</from>
         /// <description>Compares two directories</description>
         /// <columns>
         /// <column name="SourceFile" type="ExtendedFileInfo">Source file</column>
@@ -42,8 +43,14 @@ namespace Musoq.DataSources.Os
         /// <column name="DestinationFileRelative" type="string">Relative path to destination file</column>
         /// </columns>
         /// </example>
+        /// </examples>
+        /// </virtual-constructor>
+        /// <virtual-constructor>
+        /// <virtual-param>Directory path</virtual-param>
+        /// <virtual-param>Move through subfolders</virtual-param>
+        /// <examples>
         /// <example>
-        /// <from>from #os.directories('dir1', true)</from>
+        /// <from>#os.directories(string, boolean)</from>
         /// <description>Gets the directories</description>
         /// <columns>
         /// <column name="FullName" type="string">Full name of the directory</column>
@@ -60,18 +67,43 @@ namespace Musoq.DataSources.Os
         /// <column name="Root" type="DirectoryInfo">Gets the root directory</column>
         /// <column name="DirectoryInfo" type="DirectoryInfo">Gets raw DirectoryInfo</column>
         /// </columns>
-        /// </example>
+        /// </example>       
+        /// </examples>
+        /// </virtual-constructor>
+        /// <virtual-constructor>
+        /// <virtual-param>Path to dll</virtual-param>
+        /// <examples>
         /// <example>
-        /// <from>from #os.dlls('dir1')</from>
+        /// <from>#os.dlls(string path)</from>
         /// <description>Gets the dlls</description>
         /// <columns>
         /// <column name="FileInfo" type="FileInfo">Gets the metadata about the DLL file</column>
         /// <column name="Assembly" type="Assembly">Gets the Assembly object</column>
         /// <column name="Version" type="FileVersionInfo">Gets the assembly version</column>
         /// </columns>
-        /// </example>
+        /// </example>      
+        /// </examples>
+        /// </virtual-constructor>
+        /// <virtual-constructor>
+        /// <virtual-param>Path to dll</virtual-param>
+        /// <examples>
         /// <example>
-        /// <from>from #os.files('path', false)</from>
+        /// <from>#os.dlls(string path)</from>
+        /// <description>Gets the dlls</description>
+        /// <columns>
+        /// <column name="FileInfo" type="FileInfo">Gets the metadata about the DLL file</column>
+        /// <column name="Assembly" type="Assembly">Gets the Assembly object</column>
+        /// <column name="Version" type="FileVersionInfo">Gets the assembly version</column>
+        /// </columns>
+        /// </example>      
+        /// </examples>
+        /// </virtual-constructor>
+        /// <virtual-constructor>
+        /// <virtual-param>Path to directory</virtual-param>
+        /// <virtual-param>Move through subfolders</virtual-param>
+        /// <examples>
+        /// <example>
+        /// <from>#os.files(string, boolean)</from>
         /// <description>Gets the files</description>
         /// <columns>
         /// <column name="Name" type="string">Full name of the directory</column>
@@ -84,9 +116,13 @@ namespace Musoq.DataSources.Os
         /// <column name="IsReadOnly" type="bool">Determine whether the file is readonly</column>
         /// <column name="Length" type="long">Gets the length of file</column>
         /// </columns>
-        /// </example>
+        /// </example>    
+        /// </examples>
+        /// </virtual-constructor>
+        /// <virtual-constructor>
+        /// <examples>
         /// <example>
-        /// <from>from #os.processes()</from>
+        /// <from>#os.processes()</from>
         /// <description>Gets the processes</description>
         /// <columns>
         /// <column name="BasePriority" type="int">Gets the base priority of associated process</column>
@@ -110,8 +146,13 @@ namespace Musoq.DataSources.Os
         /// <column name="FileName" type="string">Gets the filename of the process</column>
         /// </columns>
         /// </example>
+        /// </examples>
+        /// </virtual-constructor>
+        /// <virtual-constructor>
+        /// <virtual-param>Path to zip file</virtual-param>
+        /// <examples>
         /// <example>
-        /// <from>from #os.zip('zipPath')</from>
+        /// <from>#os.zip(string path)</from>
         /// <description>Gets the zip files</description>
         /// <columns>
         /// <column name="Name" type="string">Gets the file name of the entry in the zip archive</column>
@@ -147,7 +188,13 @@ namespace Musoq.DataSources.Os
             AddSource<CompareDirectoriesSource>(DirsCompare);
             AddTable<DirsCompareBasedTable>(DirsCompare);
         }
-
+        
+        /// <summary>
+        /// Gets the table name based on the given data source and parameters.
+        /// </summary>
+        /// <param name="name">Data Source name</param>
+        /// <param name="parameters">Parameters to pass to data source</param>
+        /// <returns>Requested table metadata</returns>
         public override ISchemaTable GetTableByName(string name, params object[] parameters)
         {
             switch (name.ToLowerInvariant())
@@ -171,6 +218,13 @@ namespace Musoq.DataSources.Os
             throw new NotSupportedException($"Unsupported table {name}.");
         }
 
+        /// <summary>
+        /// Gets the data source based on the given data source and parameters.
+        /// </summary>
+        /// <param name="name">Data source name</param>
+        /// <param name="interCommunicator">Runtime context</param>
+        /// <param name="parameters">Parameters to pass data to data source</param>
+        /// <returns>Data source</returns>
         public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
         {
             switch (name.ToLowerInvariant())

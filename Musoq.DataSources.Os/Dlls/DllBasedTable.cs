@@ -3,7 +3,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Dlls
 {
-    public class DllBasedTable : ISchemaTable
+    internal class DllBasedTable : ISchemaTable
     {
         public DllBasedTable()
         {

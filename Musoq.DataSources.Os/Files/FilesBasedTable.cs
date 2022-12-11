@@ -3,7 +3,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Files
 {
-    public class FilesBasedTable : ISchemaTable
+    internal class FilesBasedTable : ISchemaTable
     {
         public FilesBasedTable()
         {

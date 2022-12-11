@@ -1,6 +1,6 @@
 ﻿namespace Musoq.DataSources.SeparatedValues
 {
-    public static class Performance
+    internal static class Performance
     {
         public static long FreeMemoryInMegabytes()
         {

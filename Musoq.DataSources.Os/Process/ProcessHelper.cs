@@ -6,7 +6,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Process
 {
-    public static class ProcessHelper
+    internal static class ProcessHelper
     {
         public static readonly IDictionary<string, int> ProcessNameToIndexMap;
         public static readonly IDictionary<int, Func<System.Diagnostics.Process, object>> ProcessIndexToMethodAccessMap;

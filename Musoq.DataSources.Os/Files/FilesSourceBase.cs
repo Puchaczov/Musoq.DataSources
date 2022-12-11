@@ -8,7 +8,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Files
 {
-    public abstract class FilesSourceBase<TEntity> : RowSourceBase<TEntity>
+    internal abstract class FilesSourceBase<TEntity> : RowSourceBase<TEntity>
     {
         private readonly RuntimeContext _communicator;
         private readonly DirectorySourceSearchOptions[] _source;

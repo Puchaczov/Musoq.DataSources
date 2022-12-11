@@ -9,7 +9,7 @@ using Musoq.Schema;
 namespace Musoq.DataSources.FlatFile
 {
     /// <summary>
-    /// This library allows for reading flat files.
+    /// Provides schema to work with flat files
     /// </summary>
     public class FlatFileSchema : SchemaBase
     {
@@ -20,7 +20,8 @@ namespace Musoq.DataSources.FlatFile
         /// <virtual-param>Path of the given file</virtual-param>
         /// <examples>
         /// <example>
-        /// <from>from #flat.file('C:\\Users\\user\\Desktop\\file.log')</from>
+        /// <from>#flat.file(string path)</from>
+        /// <description>Gives ability to process flat files</description>
         /// <columns>
         /// <column name="LineNumber" type="int">Line number of a given file</column>
         /// <column name="Line" type="string">Line of a given file</column>
@@ -34,6 +35,12 @@ namespace Musoq.DataSources.FlatFile
         {
         }
         
+        /// <summary>
+        /// Gets the table name based on the given data source and parameters.
+        /// </summary>
+        /// <param name="name">Data Source name</param>
+        /// <param name="parameters">Parameters to pass to data source</param>
+        /// <returns>Requested table metadata</returns>
         public override ISchemaTable GetTableByName(string name, params object[] parameters)
         {
             switch (name.ToLowerInvariant())
@@ -45,6 +52,13 @@ namespace Musoq.DataSources.FlatFile
             throw new TableNotFoundException(nameof(name));
         }
 
+        /// <summary>
+        /// Gets the data source based on the given data source and parameters.
+        /// </summary>
+        /// <param name="name">Data source name</param>
+        /// <param name="interCommunicator">Runtime context</param>
+        /// <param name="parameters">Parameters to pass data to data source</param>
+        /// <returns>Data source</returns>
         public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
         {
             switch (name.ToLowerInvariant())
@@ -54,6 +68,19 @@ namespace Musoq.DataSources.FlatFile
             }
 
             throw new SourceNotFoundException(nameof(name));
+        }
+
+        /// <summary>
+        /// Gets information's about all tables in the schema.
+        /// </summary>
+        /// <returns>Data sources constructors</returns>
+        public override SchemaMethodInfo[] GetConstructors()
+        {
+            var constructors = new List<SchemaMethodInfo>();
+
+            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<FlatFileSource>("file"));
+
+            return constructors.ToArray();
         }
 
         private static MethodsAggregator CreateLibrary()
@@ -67,15 +94,6 @@ namespace Musoq.DataSources.FlatFile
             propertiesManager.RegisterProperties(library);
 
             return new MethodsAggregator(methodsManager, propertiesManager);
-        }
-
-        public override SchemaMethodInfo[] GetConstructors()
-        {
-            var constructors = new List<SchemaMethodInfo>();
-
-            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<FlatFileSource>("file"));
-
-            return constructors.ToArray();
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Musoq.DataSources.Json.Tests
         public void SimpleSelectTest()
         {
             var query =
-                @"select Name, Age from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json', ' ')";
+                @"select Name, Age from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -44,7 +44,7 @@ namespace Musoq.DataSources.Json.Tests
         public void SelectArrayTest()
         {
             var query =
-                @"select Array from #json.file('./JsonTestFile_MakeFlatArray_Arr.json', './JsonTestFile_MakeFlatArray_Arr.schema.json', ' ')";
+                @"select Array from #json.file('./JsonTestFile_MakeFlatArray_Arr.json', './JsonTestFile_MakeFlatArray_Arr.schema.json')";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -62,7 +62,7 @@ namespace Musoq.DataSources.Json.Tests
         public void SelectWithArrayLengthTest()
         {
             var query =
-                @"select Name, Length(Books) from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json', ' ')";
+                @"select Name, Length(Books) from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -86,7 +86,7 @@ namespace Musoq.DataSources.Json.Tests
         public void MakeFlatArrayTest()
         {
             var query =
-                @"select MakeFlat(Array) from #json.file('./JsonTestFile_MakeFlatArray.json', './JsonTestFile_MakeFlatArray.schema.json', ' ')";
+                @"select MakeFlat(Array) from #json.file('./JsonTestFile_MakeFlatArray.json', './JsonTestFile_MakeFlatArray.schema.json')";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -104,15 +104,13 @@ namespace Musoq.DataSources.Json.Tests
         [ExpectedException(typeof(OperationCanceledException))]
         public void JsonSource_CancelledLoadTest()
         {
-            using (var tokenSource = new CancellationTokenSource())
-            {
-                tokenSource.Cancel();
-                var source = new JsonSource("./JsonTestFile_First.json", new RuntimeContext(tokenSource.Token, new ISchemaColumn[0]));
+            using var tokenSource = new CancellationTokenSource();
+            tokenSource.Cancel();
+            var source = new JsonSource("./JsonTestFile_First.json", new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>()));
 
-                var fired = source.Rows.Count();
+            var fired = source.Rows.Count();
 
-                Assert.AreEqual(0, fired);
-            }
+            Assert.AreEqual(0, fired);
         }
 
         [TestMethod]

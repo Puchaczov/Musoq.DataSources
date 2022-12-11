@@ -13,7 +13,7 @@ using Musoq.Schema.Helpers;
 
 namespace Musoq.DataSources.SeparatedValues
 {
-    public class SeparatedValuesSource : RowSourceBase<object[]>
+    internal class SeparatedValuesSource : RowSourceBase<object[]>
     {
         private class SeparatedValueFile
         {

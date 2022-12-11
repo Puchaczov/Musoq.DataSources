@@ -2,10 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
-    <RootNamespace>Musoq.Schema.FlatFileTests</RootNamespace>
+    <RootNamespace>Musoq.Schema.FlatFile.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

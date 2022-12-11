@@ -4,7 +4,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Files
 {
-    public class FilesSource : FilesSourceBase<ExtendedFileInfo>
+    internal class FilesSource : FilesSourceBase<ExtendedFileInfo>
     {
         public FilesSource(string path, bool useSubDirectories, RuntimeContext communicator) 
             : base(path, useSubDirectories, communicator)

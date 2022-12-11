@@ -6,23 +6,32 @@ using System.Linq;
 
 namespace Musoq.DataSources.SeparatedValues
 {
+    /// <summary>
+    /// Separated values schema helper methods
+    /// </summary>
     public class SeparatedValuesLibrary : LibraryBase
     {
         private readonly IDictionary<string, IDictionary<string, string>> _fileNameToClusteredWordsMapDictionary =
-       new Dictionary<string, IDictionary<string, string>>();
+            new Dictionary<string, IDictionary<string, string>>();
 
+        /// <summary>
+        /// Categorize values based on provided file
+        /// </summary>
+        /// <param name="dictionaryFilePath">Dictionary file path</param>
+        /// <param name="value">Value to be categorized</param>
+        /// <returns>Category</returns>
         [BindableMethod]
-        public string ClusteredByContainsKey(string dictionaryFilename, string value)
+        public string ClusteredByContainsKey(string dictionaryFilePath, string value)
         {
-            if (!_fileNameToClusteredWordsMapDictionary.ContainsKey(dictionaryFilename))
+            if (!_fileNameToClusteredWordsMapDictionary.ContainsKey(dictionaryFilePath))
             {
-                _fileNameToClusteredWordsMapDictionary.Add(dictionaryFilename, new Dictionary<string, string>());
+                _fileNameToClusteredWordsMapDictionary.Add(dictionaryFilePath, new Dictionary<string, string>());
 
-                using var stream = File.OpenRead(dictionaryFilename);
-                using var reader = new StreamReader(stream);
-                var map = _fileNameToClusteredWordsMapDictionary[dictionaryFilename];
+                using var stream = File.OpenRead(dictionaryFilePath);
+                var map = _fileNameToClusteredWordsMapDictionary[dictionaryFilePath];
                 var currentKey = string.Empty;
-
+                using var reader = new StreamReader(stream);
+                
                 while (!reader.EndOfStream)
                 {
                     var line = reader
@@ -30,7 +39,7 @@ namespace Musoq.DataSources.SeparatedValues
                         ?.ToLowerInvariant()
                         .Trim();
 
-                    if (line == System.Environment.NewLine || line == string.Empty)
+                    if (string.IsNullOrWhiteSpace(line))
                         continue;
 
                     if (line.EndsWith(":"))
@@ -42,7 +51,7 @@ namespace Musoq.DataSources.SeparatedValues
 
             value = value.ToLowerInvariant();
 
-            var dict = _fileNameToClusteredWordsMapDictionary[dictionaryFilename];
+            var dict = _fileNameToClusteredWordsMapDictionary[dictionaryFilePath];
             var newValue = dict.FirstOrDefault(f => value.Contains(f.Key)).Value;
 
             return newValue ?? "other";

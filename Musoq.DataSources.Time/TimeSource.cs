@@ -6,7 +6,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Time
 {
-    public class TimeSource : RowSourceBase<DateTimeOffset>
+    internal class TimeSource : RowSourceBase<DateTimeOffset>
     {
         private readonly string _resolution;
         private readonly RuntimeContext _communicator;

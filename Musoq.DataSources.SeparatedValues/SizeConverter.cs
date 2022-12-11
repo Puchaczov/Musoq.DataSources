@@ -1,6 +1,6 @@
 ﻿namespace Musoq.DataSources.SeparatedValues
 {
-    public static class SizeConverter
+    internal static class SizeConverter
     {
         public static long ToGigabytes(long size)
         {

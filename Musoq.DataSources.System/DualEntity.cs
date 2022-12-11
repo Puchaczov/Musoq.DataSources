@@ -1,6 +1,6 @@
 ﻿namespace Musoq.DataSources.System
 {
-    public class DualEntity
+    internal class DualEntity
     {
         public string Dummy => "single";
     }

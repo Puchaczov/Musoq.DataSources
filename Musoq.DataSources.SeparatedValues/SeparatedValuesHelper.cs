@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Musoq.DataSources.SeparatedValues
 {
-    public static class SeparatedValuesHelper
+    internal static class SeparatedValuesHelper
     {
         public const string AutoColumnName = "Column{0}";
 

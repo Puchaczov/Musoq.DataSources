@@ -9,15 +9,13 @@ using Newtonsoft.Json.Linq;
 
 namespace Musoq.DataSources.Json
 {
-    public class JsonBasedTable : ISchemaTable
+    internal class JsonBasedTable : ISchemaTable
     {
         private readonly string _path;
-        private readonly string _select;
 
-        public JsonBasedTable(string filePath, string select)
+        public JsonBasedTable(string filePath)
         {
             _path = filePath;
-            _select = select;
         }
 
         public ISchemaColumn[] Columns
@@ -69,8 +67,8 @@ namespace Musoq.DataSources.Json
                         break;
                     case JTokenType.Object:
                         columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(JObject)));
-                        foreach (var mprop in ((JObject) prop.Value).Properties().Reverse())
-                            props.Push(mprop);
+                        foreach (var mProp in ((JObject) prop.Value).Properties().Reverse())
+                            props.Push(mProp);
                         break;
                     case JTokenType.Array:
                         columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(JArray)));
@@ -115,9 +113,9 @@ namespace Musoq.DataSources.Json
             return columns.ToArray();
         }
 
-        public static Type GetType(JToken value)
+        private static Type GetType(JToken value)
         {
-            switch (value.Value<string>().ToLowerInvariant())
+            switch (value.Value<string>()?.ToLowerInvariant())
             {
                 case "float":
                     return typeof(decimal);

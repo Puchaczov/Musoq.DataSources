@@ -3,7 +3,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Time
 {
-    public class TimeTable : ISchemaTable
+    internal class TimeTable : ISchemaTable
     {
         public ISchemaColumn[] Columns { get; } = TimeHelper.TimeColumns;
 

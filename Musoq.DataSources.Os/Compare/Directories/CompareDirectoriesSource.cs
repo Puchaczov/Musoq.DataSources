@@ -8,7 +8,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Compare.Directories
 {
-    public class CompareDirectoriesSource : RowSourceBase<CompareDirectoriesResult>
+    internal class CompareDirectoriesSource : RowSourceBase<CompareDirectoriesResult>
     {
         private readonly DirectoryInfo _firstDirectory;
         private readonly DirectoryInfo _secondDirectory;
@@ -26,11 +26,11 @@ namespace Musoq.DataSources.Os.Compare.Directories
             var leftJoinedFiles = from firstDirFile in GetAllFiles(_firstDirectory)
                      join secondDirFile in GetAllFiles(_secondDirectory) on firstDirFile.FullName.Replace(_firstDirectory.FullName, string.Empty) equals secondDirFile.FullName.Replace(_secondDirectory.FullName, string.Empty) into files
                      from secondDirFile in files.DefaultIfEmpty()
-                     select new Files(new[] { firstDirFile, secondDirFile });
+                     select new SourceDestinationFilesPair(new[] { firstDirFile, secondDirFile });
 
             var rightJoinedFiles = from secondDirFile in GetAllFiles(_secondDirectory)
                                    where !File.Exists(Path.Combine(_firstDirectory.FullName, secondDirFile.FullName.Replace(_secondDirectory.FullName, string.Empty).Trim('\\')))
-                                   select new Files(new[] { null, secondDirFile });
+                                   select new SourceDestinationFilesPair(new[] { null, secondDirFile });
 
             var allFiles = leftJoinedFiles.Concat(rightJoinedFiles);
 
@@ -43,10 +43,7 @@ namespace Musoq.DataSources.Os.Compare.Directories
 
                 if (files.Source != null && files.Destination != null)
                 {
-                    if (lib.Sha256File(files.Source) != lib.Sha256File(files.Destination))
-                        result = State.Modified;
-                    else
-                        result = State.TheSame;
+                    result = lib.Sha256File(files.Source) != lib.Sha256File(files.Destination) ? State.Modified : State.TheSame;
                 }
                 else if (files.Source != null)
                     result = State.Removed;

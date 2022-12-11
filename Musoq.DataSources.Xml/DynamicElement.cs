@@ -4,7 +4,7 @@ using System.Dynamic;
 
 namespace Musoq.Schema.Xml
 {
-    public class DynamicElement : DynamicObject, IDictionary<string, object>
+    internal class DynamicElement : DynamicObject, IDictionary<string, object>
     {
         private readonly Dictionary<string, object> _values = new();
 

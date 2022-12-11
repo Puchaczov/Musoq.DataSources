@@ -8,7 +8,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Dlls
 {
-    public static class DllInfosHelper
+    internal static class DllInfosHelper
     {
         public static readonly IDictionary<string, int> DllInfosNameToIndexMap;
         public static readonly IDictionary<int, Func<DllInfo, object>> DllInfosIndexToMethodAccessMap;

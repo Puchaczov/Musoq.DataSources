@@ -5,7 +5,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.FlatFile
 {
-    public static class FlatFileHelper
+    internal static class FlatFileHelper
     {
         public static readonly IDictionary<string, int> FlatNameToIndexMap;
         public static readonly IDictionary<int, Func<FlatFileEntity, object>> FlatIndexToMethodAccessMap;

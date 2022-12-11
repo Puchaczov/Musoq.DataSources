@@ -4,7 +4,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.System
 {
-    public class DualRowSource : RowSourceBase<DualEntity>
+    internal class DualRowSource : RowSourceBase<DualEntity>
     {
         protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
         {

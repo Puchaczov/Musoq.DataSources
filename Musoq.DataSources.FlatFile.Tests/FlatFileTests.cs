@@ -3,12 +3,12 @@ using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
+using Musoq.DataSources.FlatFile;
 using Musoq.Evaluator;
 using Musoq.Plugins;
-using Musoq.DataSources.FlatFile;
 using Musoq.Tests.Common;
 
-namespace Musoq.Schema.FlatFileTests
+namespace Musoq.Schema.FlatFile.Tests
 {
     [TestClass]
     public class FlatFileTests

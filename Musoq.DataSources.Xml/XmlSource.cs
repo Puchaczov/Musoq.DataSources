@@ -6,7 +6,7 @@ using System.Xml;
 
 namespace Musoq.Schema.Xml
 {
-    public class XmlSource : RowSourceBase<DynamicElement>
+    internal class XmlSource : RowSourceBase<DynamicElement>
     {
         private readonly string _filePath;
         private readonly RuntimeContext _context;
@@ -19,68 +19,62 @@ namespace Musoq.Schema.Xml
 
         protected override void CollectChunks(System.Collections.Concurrent.BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
         {
-            using (var file = File.OpenRead(_filePath))
-            using (var stringReader = new StreamReader(file))
-            using (var xmlReader = XmlReader.Create(stringReader, new XmlReaderSettings()
+            using var file = File.OpenRead(_filePath);
+            using var stringReader = new StreamReader(file);
+            using var xmlReader = XmlReader.Create(stringReader, new XmlReaderSettings()
             {
                 IgnoreWhitespace = true,
                 IgnoreComments = true
-            }))
+            });
+            xmlReader.MoveToContent();
+
+            var chunk = new List<IObjectResolver>(1000);
+            var elements = new Stack<DynamicElement>();
+
+            do
             {
-                xmlReader.MoveToContent();
-
-                var chunk = new List<IObjectResolver>(1000);
-
-                var nameToIndexMap = new Dictionary<string, int>();
-                var indexToObjectAccessMap = new Dictionary<int, Func<dynamic, object>>();
-
-                var elements = new Stack<DynamicElement>();
-
-                do
+                switch (xmlReader.NodeType)
                 {
-                    switch (xmlReader.NodeType)
-                    {
-                        case XmlNodeType.Element:
-                            var element = new DynamicElement
+                    case XmlNodeType.Element:
+                        var element = new DynamicElement
+                        {
+                            { "element", xmlReader.LocalName },
+                            { "parent", elements.Count > 0 ? elements.Peek() : null },
+                            { "value", xmlReader.HasValue ? xmlReader.Value : null }
+                        };
+
+                        element.Add(xmlReader.Name, element);
+
+                        elements.Push(element);
+
+                        if (xmlReader.HasAttributes)
+                        {
+                            while (xmlReader.MoveToNextAttribute())
                             {
-                                { "element", xmlReader.LocalName },
-                                { "parent", elements.Count > 0 ? elements.Peek() : null },
-                                { "value", xmlReader.HasValue ? xmlReader.Value : null }
-                            };
-
-                            element.Add(xmlReader.Name, element);
-
-                            elements.Push(element);
-
-                            if (xmlReader.HasAttributes)
-                            {
-                                while (xmlReader.MoveToNextAttribute())
-                                {
-                                    element.Add(xmlReader.Name, xmlReader.Value);
-                                }
+                                element.Add(xmlReader.Name, xmlReader.Value);
                             }
+                        }
 
-                            xmlReader.MoveToElement();
-                            break;
-                        case XmlNodeType.Text:
-                            elements.Peek().Add("text", xmlReader.Value);
-                            break;
-                        case XmlNodeType.EndElement:
-                            chunk.Add(new DictionaryResolver(elements.Pop()));
-                            break;
-                    }
-
-                    if (chunk.Count >= 1000)
-                    {
-                        chunkedSource.Add(chunk);
-                        chunk = new List<IObjectResolver>(1000);
-                    }
+                        xmlReader.MoveToElement();
+                        break;
+                    case XmlNodeType.Text:
+                        elements.Peek().Add("text", xmlReader.Value);
+                        break;
+                    case XmlNodeType.EndElement:
+                        chunk.Add(new DictionaryResolver(elements.Pop()));
+                        break;
                 }
-                while (xmlReader.Read());
 
-                if (chunk.Count > 0)
+                if (chunk.Count >= 1000)
+                {
                     chunkedSource.Add(chunk);
+                    chunk = new List<IObjectResolver>(1000);
+                }
             }
+            while (xmlReader.Read());
+
+            if (chunk.Count > 0)
+                chunkedSource.Add(chunk);
         }
     }
 }
