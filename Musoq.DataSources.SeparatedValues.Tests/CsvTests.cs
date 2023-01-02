@@ -5,7 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Musoq.Converter;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
 using Musoq.Plugins;
@@ -710,65 +712,61 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         [TestMethod]
         public void CsvSource_CancelledLoadTest()
         {
-            using (var tokenSource = new CancellationTokenSource())
-            {
-                tokenSource.Cancel();
-                var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, new RuntimeContext(tokenSource.Token, new ISchemaColumn[0]));
+            using var tokenSource = new CancellationTokenSource();
+            tokenSource.Cancel();
+            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
-                var fired = source.Rows.Count();
+            var fired = source.Rows.Count();
 
-                Assert.AreEqual(0, fired);
-            }
+            Assert.AreEqual(0, fired);
         }
 
         [TestMethod]
         public void CsvSource_AllTypesSupportedTest()
         {
-            using (var tokenSource = new CancellationTokenSource())
+            using var tokenSource = new CancellationTokenSource();
+            var columns = new List<ISchemaColumn>
             {
-                var columns = new List<ISchemaColumn>
-                {
-                    new Column("boolColumn", typeof(bool?), 0),
-                    new Column("byteColumn", typeof(byte?), 1),
-                    new Column("charColumn", typeof(char?), 2),
-                    new Column("dateTimeColumn", typeof(DateTime?), 3),
-                    new Column("decimalColumn", typeof(decimal?), 4),
-                    new Column("doubleColumn", typeof(double?), 5),
-                    new Column("shortColumn", typeof(short?), 6),
-                    new Column("intColumn", typeof(int?), 7),
-                    new Column("longColumn", typeof(long?), 8),
-                    new Column("sbyteColumn", typeof(sbyte?), 9),
-                    new Column("singleColumn", typeof(float?), 10),
-                    new Column("stringColumn", typeof(string), 11),
-                    new Column("ushortColumn", typeof(ushort?), 12),
-                    new Column("uintColumn", typeof(uint?), 13),
-                    new Column("ulongColumn", typeof(ulong?), 14)
-                };
+                new Column("boolColumn", typeof(bool?), 0),
+                new Column("byteColumn", typeof(byte?), 1),
+                new Column("charColumn", typeof(char?), 2),
+                new Column("dateTimeColumn", typeof(DateTime?), 3),
+                new Column("decimalColumn", typeof(decimal?), 4),
+                new Column("doubleColumn", typeof(double?), 5),
+                new Column("shortColumn", typeof(short?), 6),
+                new Column("intColumn", typeof(int?), 7),
+                new Column("longColumn", typeof(long?), 8),
+                new Column("sbyteColumn", typeof(sbyte?), 9),
+                new Column("singleColumn", typeof(float?), 10),
+                new Column("stringColumn", typeof(string), 11),
+                new Column("ushortColumn", typeof(ushort?), 12),
+                new Column("uintColumn", typeof(uint?), 13),
+                new Column("ulongColumn", typeof(ulong?), 14)
+            };
 
-                var context = new RuntimeContext(tokenSource.Token, columns);
+            var context = new RuntimeContext(tokenSource.Token, columns, new Dictionary<string, string>());
 
-                var source = new SeparatedValuesSource("./Files/AllTypes.csv", ",", true, 0, context);
+            var source = new SeparatedValuesSource("./Files/AllTypes.csv", ",", true, 0, context);
 
-                var rows = source.Rows;
+            var rows = source.Rows;
 
-                var row = rows.ElementAt(0);
+            var row = rows.ElementAt(0);
 
-                Assert.AreEqual(true, row[0]);
-                Assert.AreEqual((byte)48, row[1]);
-                Assert.AreEqual('c', row[2]);
-                Assert.AreEqual(DateTime.Parse("12/12/2012"), row[3]);
-                Assert.AreEqual(10.23m, row[4]);
-                Assert.AreEqual(13.111d, row[5]);
-                Assert.AreEqual((short)-15, row[6]);
-                Assert.AreEqual(2147483647, row[7]);
-                Assert.AreEqual(9223372036854775807, row[8]);
-                Assert.AreEqual((sbyte)-3, row[9]);
-                Assert.AreEqual(1.11f, row[10]);
-                Assert.AreEqual("some text", row[11]);
-                Assert.AreEqual((ushort)256, row[12]);
-                Assert.AreEqual((uint)512, row[13]);
-                Assert.AreEqual((ulong)1024, row[14]);
-            }
+            Assert.AreEqual(true, row[0]);
+            Assert.AreEqual((byte)48, row[1]);
+            Assert.AreEqual('c', row[2]);
+            Assert.AreEqual(DateTime.Parse("12/12/2012"), row[3]);
+            Assert.AreEqual(10.23m, row[4]);
+            Assert.AreEqual(13.111d, row[5]);
+            Assert.AreEqual((short)-15, row[6]);
+            Assert.AreEqual(2147483647, row[7]);
+            Assert.AreEqual(9223372036854775807, row[8]);
+            Assert.AreEqual((sbyte)-3, row[9]);
+            Assert.AreEqual(1.11f, row[10]);
+            Assert.AreEqual("some text", row[11]);
+            Assert.AreEqual((ushort)256, row[12]);
+            Assert.AreEqual((uint)512, row[13]);
+            Assert.AreEqual((ulong)1024, row[14]);
         }
 
         [TestMethod]
@@ -798,7 +796,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         [TestMethod]
         public void CsvSource_FullLoadTest()
         {
-            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, RuntimeContext.Empty);
+            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var fired = source.Rows.Count();
 
@@ -807,7 +805,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CsvSchemaProvider());
+            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CsvSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static CsvTests()

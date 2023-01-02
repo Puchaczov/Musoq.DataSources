@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
 using Musoq.DataSources.FlatFile;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 using Musoq.Tests.Common;
@@ -53,7 +55,8 @@ namespace Musoq.Schema.FlatFile.Tests
         {
             var endWorkTokenSource = new CancellationTokenSource();
             endWorkTokenSource.Cancel();
-            var schema = new FlatFileSource("./TestMultilineFile.txt", new RuntimeContext(endWorkTokenSource.Token, Array.Empty<ISchemaColumn>()));
+            var schema = new FlatFileSource("./TestMultilineFile.txt", 
+                new RuntimeContext(endWorkTokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             int fires = 0;
             foreach (var item in schema.Rows)
@@ -65,7 +68,8 @@ namespace Musoq.Schema.FlatFile.Tests
         [TestMethod]
         public void FlatFileSource_FullLoadTest()
         {
-            var schema = new FlatFileSource("./TestMultilineFile.txt", RuntimeContext.Empty);
+            var schema = new FlatFileSource("./TestMultilineFile.txt", 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             int fires = 0;
             foreach (var item in schema.Rows)
@@ -76,7 +80,7 @@ namespace Musoq.Schema.FlatFile.Tests
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new FlatFileSchemaProvider());
+            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new FlatFileSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static FlatFileTests()

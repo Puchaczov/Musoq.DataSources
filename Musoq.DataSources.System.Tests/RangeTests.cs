@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 
@@ -72,7 +73,7 @@ namespace Musoq.DataSources.System.Tests
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new SystemSchemaProvider());
+            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new SystemSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static RangeTests()

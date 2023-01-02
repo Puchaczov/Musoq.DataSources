@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 using Musoq.Schema;
@@ -30,17 +32,16 @@ namespace Musoq.DataSources.Time.Tests
         [TestMethod]
         public void TimeSource_CancelledLoadTest()
         {
-            using (var tokenSource = new CancellationTokenSource())
-            {
-                tokenSource.Cancel();
-                var now = DateTimeOffset.Now;
-                var nextHour = now.AddHours(1);
-                var source = new TimeSource(now, nextHour, "minutes", new RuntimeContext(tokenSource.Token, new ISchemaColumn[0]));
+            using var tokenSource = new CancellationTokenSource();
+            tokenSource.Cancel();
+            var now = DateTimeOffset.Now;
+            var nextHour = now.AddHours(1);
+            var source = new TimeSource(now, nextHour, "minutes", 
+                new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
-                var fired = source.Rows.Count();
+            var fired = source.Rows.Count();
 
-                Assert.AreEqual(0, fired);
-            }
+            Assert.AreEqual(0, fired);
         }
 
         [TestMethod]
@@ -48,7 +49,8 @@ namespace Musoq.DataSources.Time.Tests
         {
             var now = DateTimeOffset.Parse("01/01/2000");
             var nextHour = now.AddHours(1);
-            var source = new TimeSource(now, nextHour, "minutes", RuntimeContext.Empty);
+            var source = new TimeSource(now, nextHour, "minutes", 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var fired = source.Rows.Count();
 
@@ -57,7 +59,7 @@ namespace Musoq.DataSources.Time.Tests
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new TimeSchemaProvider());
+            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new TimeSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static TimeTests()

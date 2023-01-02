@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -12,6 +13,7 @@ using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
 using Musoq.DataSources.Os.Files;
 using Musoq.DataSources.Os.Tests.Utils;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 using Musoq.Schema;
@@ -141,7 +143,8 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void FilesSourceIterateDirectoriesTest()
         {
-            var source = new TestFilesSource("./Directories", false, RuntimeContext.Empty);
+            var source = new TestFilesSource("./Directories", false, 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var folders = source.GetFiles();
 
@@ -153,7 +156,8 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void FilesSourceIterateWithNestedDirectoriesTest()
         {
-            var source = new TestFilesSource("./Directories", true, RuntimeContext.Empty);
+            var source = new TestFilesSource("./Directories", true, 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var folders = source.GetFiles();
 
@@ -168,7 +172,8 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesSourceIterateDirectoriesTest()
         {
-            var source = new TestDirectoriesSource("./Directories", false, RuntimeContext.Empty);
+            var source = new TestDirectoriesSource("./Directories", false, 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var directories = source.GetDirectories();
 
@@ -181,7 +186,8 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void TestDirectoriesSourceIterateWithNestedDirectories()
         {
-            var source = new TestDirectoriesSource("./Directories", true, RuntimeContext.Empty);
+            var source = new TestDirectoriesSource("./Directories", true, 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var directories = source.GetDirectories();
 
@@ -195,7 +201,8 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void NonExistingDirectoryTest()
         {
-            var source = new TestDirectoriesSource("./Some/Non/Existing/Path", true, RuntimeContext.Empty);
+            var source = new TestDirectoriesSource("./Some/Non/Existing/Path", true, 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var directories = source.GetDirectories();
 
@@ -203,9 +210,10 @@ namespace Musoq.DataSources.Os.Tests
         }
 
         [TestMethod]
-        public void NonExisitngFileTest()
+        public void NonExistingFileTest()
         {
-            var source = new TestFilesSource("./Some/Non/Existing/Path.pdf", true, RuntimeContext.Empty);
+            var source = new TestFilesSource("./Some/Non/Existing/Path.pdf", true, 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var directories = source.GetFiles();
 
@@ -215,21 +223,20 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesSource_CancelledLoadTest()
         {
-            using (var tokenSource = new CancellationTokenSource())
-            {
-                tokenSource.Cancel();
-                var source = new DirectoriesSource("./Directories", true, new RuntimeContext(tokenSource.Token, new ISchemaColumn[0]));
+            using var tokenSource = new CancellationTokenSource();
+            tokenSource.Cancel();
+            var source = new DirectoriesSource("./Directories", true, new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
-                var fired = source.Rows.Count();
+            var fired = source.Rows.Count();
 
-                Assert.AreEqual(0, fired);
-            }
+            Assert.AreEqual(0, fired);
         }
 
         [TestMethod]
         public void DirectoriesSource_FullLoadTest()
         {
-            var source = new DirectoriesSource("./Directories", true, RuntimeContext.Empty);
+            var source = new DirectoriesSource("./Directories", true, 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var fired = source.Rows.Count();
 
@@ -304,21 +311,20 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void FilesSource_CancelledLoadTest()
         {
-            using (var tokenSource = new CancellationTokenSource())
-            {
-                tokenSource.Cancel();
-                var source = new FilesSource("./Directories", true, new RuntimeContext(tokenSource.Token, new ISchemaColumn[0]));
+            using var tokenSource = new CancellationTokenSource();
+            tokenSource.Cancel();
+            var source = new FilesSource("./Directories", true, new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
-                var fired = source.Rows.Count();
+            var fired = source.Rows.Count();
 
-                Assert.AreEqual(0, fired);
-            }
+            Assert.AreEqual(0, fired);
         }
 
         [TestMethod]
         public void FilesSource_FullLoadTest()
         {
-            var source = new FilesSource("./Directories", true, RuntimeContext.Empty);
+            var source = new FilesSource("./Directories", true, 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var fired = source.Rows.Count();
 
@@ -328,7 +334,8 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesCompare_CompareTwoDirectories()
         {
-            var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory2", RuntimeContext.Empty);
+            var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory2", 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var rows = source.Rows.ToArray();
 
@@ -354,7 +361,8 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesCompare_CompareWithItself()
         {
-            var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory1", RuntimeContext.Empty);
+            var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory1", 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var rows = source.Rows.ToArray();
 
@@ -484,7 +492,7 @@ select RelativeName, 'added' as state from ThoseInRight";
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider());
+            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static QueryDiskTests()

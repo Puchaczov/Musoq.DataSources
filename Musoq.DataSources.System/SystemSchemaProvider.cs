@@ -7,7 +7,6 @@ namespace Musoq.DataSources.System
     /// </summary>
     public class SystemSchemaProvider : ISchemaProvider
     {
-        
         /// <summary>
         /// Get schema based on provided name
         /// </summary>

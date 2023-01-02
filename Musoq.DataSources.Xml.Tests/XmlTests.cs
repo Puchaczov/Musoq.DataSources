@@ -7,6 +7,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Schema;
 using Musoq.Schema.Xml;
 
@@ -200,7 +201,7 @@ namespace Musoq.DataSources.Xml.Tests
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new XmlProvider());
+            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new XmlProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static XmlTests()

@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
 using Musoq.DataSources.Os.Zip;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 using Musoq.Tests.Common;
@@ -107,18 +108,14 @@ namespace Musoq.DataSources.Os.Tests
         public void DecompressZipSlipVulnerabilityTest()
         {
             var tempDir = "./Temp";
-            using (var file = File.OpenRead("./Files.zip"))
-            {
-                using (var zip = new ZipArchive(file))
-                {
-                    Assert.ThrowsException<InvalidOperationException>(() => SchemaZipHelper.UnpackZipEntry(zip.Entries[0], "../test.abc", tempDir));
-                }
-            }
+            using var file = File.OpenRead("./Files.zip");
+            using var zip = new ZipArchive(file);
+            Assert.ThrowsException<InvalidOperationException>(() => SchemaZipHelper.UnpackZipEntry(zip.Entries[0], "../test.abc", tempDir));
         }
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider());
+            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static ZipTests()

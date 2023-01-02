@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 using Musoq.Schema;
@@ -106,7 +108,7 @@ namespace Musoq.DataSources.Json.Tests
         {
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
-            var source = new JsonSource("./JsonTestFile_First.json", new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>()));
+            var source = new JsonSource("./JsonTestFile_First.json", new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var fired = source.Rows.Count();
 
@@ -116,7 +118,8 @@ namespace Musoq.DataSources.Json.Tests
         [TestMethod]
         public void JsonSource_FullLoadTest()
         {
-            var source = new JsonSource("./JsonTestFile_First.json", RuntimeContext.Empty);
+            var source = new JsonSource("./JsonTestFile_First.json", 
+                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
 
             var fired = source.Rows.Count();
 
@@ -125,7 +128,7 @@ namespace Musoq.DataSources.Json.Tests
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new JsonSchemaProvider());
+            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new JsonSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static JsonTests()
