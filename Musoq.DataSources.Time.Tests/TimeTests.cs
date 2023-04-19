@@ -37,7 +37,11 @@ namespace Musoq.DataSources.Time.Tests
             var now = DateTimeOffset.Now;
             var nextHour = now.AddHours(1);
             var source = new TimeSource(now, nextHour, "minutes", 
-                new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
+                new RuntimeContext(
+                    tokenSource.Token, 
+                    Array.Empty<ISchemaColumn>(), 
+                    new Dictionary<string, string>(), 
+                    (null, null, null)));
 
             var fired = source.Rows.Count();
 
@@ -50,7 +54,11 @@ namespace Musoq.DataSources.Time.Tests
             var now = DateTimeOffset.Parse("01/01/2000");
             var nextHour = now.AddHours(1);
             var source = new TimeSource(now, nextHour, "minutes", 
-                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
+                new RuntimeContext(
+                    CancellationToken.None, 
+                    Array.Empty<ISchemaColumn>(), 
+                    new Dictionary<string, string>(),
+                    (null, null, null)));
 
             var fired = source.Rows.Count();
 

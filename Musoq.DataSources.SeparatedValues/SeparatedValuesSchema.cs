@@ -4,9 +4,13 @@ using Musoq.Schema.Managers;
 
 namespace Musoq.DataSources.SeparatedValues
 {
-    /// <summary>
+    /// <description>
     /// Provides schema to work with separated values like .csv, .tsv, semicolon.
-    /// </summary>
+    /// </description>
+    /// <short-description>
+    /// Provides schema to work with separated values like .csv, .tsv, semicolon.
+    /// </short-description>
+    /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
     public class SeparatedValuesSchema : SchemaBase
     {
         private const string SchemaName = "SeparatedValues";

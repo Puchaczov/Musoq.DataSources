@@ -56,7 +56,11 @@ namespace Musoq.Schema.FlatFile.Tests
             var endWorkTokenSource = new CancellationTokenSource();
             endWorkTokenSource.Cancel();
             var schema = new FlatFileSource("./TestMultilineFile.txt", 
-                new RuntimeContext(endWorkTokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
+                new RuntimeContext(
+                    endWorkTokenSource.Token, 
+                    Array.Empty<ISchemaColumn>(), 
+                    new Dictionary<string, string>(),
+                    (null, null, null)));
 
             int fires = 0;
             foreach (var item in schema.Rows)
@@ -69,7 +73,11 @@ namespace Musoq.Schema.FlatFile.Tests
         public void FlatFileSource_FullLoadTest()
         {
             var schema = new FlatFileSource("./TestMultilineFile.txt", 
-                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
+                new RuntimeContext(
+                    CancellationToken.None, 
+                    Array.Empty<ISchemaColumn>(), 
+                    new Dictionary<string, string>(),
+                    (null, null, null)));
 
             int fires = 0;
             foreach (var item in schema.Rows)

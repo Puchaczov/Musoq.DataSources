@@ -7,9 +7,13 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Json
 {
-    /// <summary>
+    /// <description>
     /// Provides schema to work with json files
-    /// </summary>
+    /// </description>
+    /// <short-description>
+    /// Provides schema to work with json files
+    /// </short-description>
+    /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
     public class JsonSchema : SchemaBase
     {
         private const string FileTable = "file";

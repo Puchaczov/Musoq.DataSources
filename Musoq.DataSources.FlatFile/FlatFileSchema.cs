@@ -8,9 +8,13 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.FlatFile
 {
-    /// <summary>
+    /// <description>
     /// Provides schema to work with flat files
-    /// </summary>
+    /// </description>
+    /// <short-description>
+    /// Provides schema to work with flat files
+    /// </short-description>
+    /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
     public class FlatFileSchema : SchemaBase
     {
         private const string SchemaName = "Flat";

@@ -8,9 +8,13 @@ using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.System
 {
-    /// <summary>
+    /// <description>
     /// System schema helper methods
-    /// </summary>
+    /// </description>
+    /// <short-description>
+    /// System schema helper methods
+    /// </short-description>
+    /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
     public class SystemSchema : SchemaBase
     {
         private const string Dual = "dual";
@@ -21,7 +25,13 @@ namespace Musoq.DataSources.System
         /// <virtual-constructor>
         /// <examples>
         /// <example>
-        /// <from>#system.dual()</from>
+        /// <from>
+        /// <environmentVariables>
+        /// <environmentVariable name="SOME_ENVIRONMENT_VARIABLE" isRequired="true">Some description</environmentVariable>
+        /// <environmentVariable name="SOME_OTHER_VARIABLE" isRequired="false">Some other description</environmentVariable>
+        /// </environmentVariables>
+        /// #system.dual()
+        /// </from>
         /// <description>The dummy table</description>
         /// <columns>
         /// <column name="Dummy" type="string">Just empty string</column>
@@ -30,10 +40,42 @@ namespace Musoq.DataSources.System
         /// </examples>
         /// </virtual-constructor>
         /// <virtual-constructor>
-        /// <virtual-param>Path of the given file</virtual-param>
+        /// <virtual-param>Minimal value</virtual-param>
+        /// <virtual-param>Maximal value</virtual-param>
         /// <examples>
         /// <example>
-        /// <from>#system.range(long min, long max)</from>
+        /// <from>
+        /// <environmentVariables>
+        /// <environmentVariable name="MIN_X" isRequired="true">Some min</environmentVariable>
+        /// <environmentVariable name="MAX_X" isRequired="false">Some max</environmentVariable>
+        /// </environmentVariables>
+        /// #system.range(long min, long max)
+        /// </from>
+        /// <description>Gives the ability to generate ranged values</description>
+        /// <columns>
+        /// <column name="Value" type="long">Enumerated value</column>
+        /// </columns>
+        /// </example>
+        /// <example>
+        /// <from>
+        /// <environmentVariables>
+        /// <environmentVariable name="MIN_X" isRequired="true">Some min</environmentVariable>
+        /// <environmentVariable name="MAX_X" isRequired="false">Some max</environmentVariable>
+        /// </environmentVariables>
+        /// #system.range(int min, int max)
+        /// </from>
+        /// <description>Gives the ability to generate ranged values</description>
+        /// <columns>
+        /// <column name="Value" type="long">Enumerated value</column>
+        /// </columns>
+        /// </example>
+        /// </examples>
+        /// </virtual-constructor>
+        /// <virtual-constructor>
+        /// <virtual-param>Maximal value</virtual-param>
+        /// <examples>
+        /// <example>
+        /// <from>#system.range(long max)</from>
         /// <description>Gives the ability to generate ranged values</description>
         /// <columns>
         /// <column name="Value" type="long">Enumerated value</column>

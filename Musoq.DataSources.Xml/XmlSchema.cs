@@ -8,9 +8,13 @@ using System.Collections.Generic;
 namespace Musoq.Schema.Xml
 {
 
-    /// <summary>
+    /// <description>
     /// Provides schema to work with xml files
-    /// </summary>
+    /// </description>
+    /// <short-description>
+    /// Provides schema to work with xml files
+    /// </short-description>
+    /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
     public class XmlSchema : SchemaBase
     {
 

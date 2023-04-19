@@ -11,9 +11,13 @@ using Musoq.Schema.Managers;
 
 namespace Musoq.DataSources.Os
 {
-    /// <summary>
+    /// <description>
     /// Provides schema to work with operating system abstractions
-    /// </summary>
+    /// </description>
+    /// <short-description>
+    /// Provides schema to work with operating system abstractions
+    /// </short-description>
+    /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
     public class OsSchema : SchemaBase
     {
         private const string SchemaName = "os";

@@ -19,7 +19,11 @@ namespace Musoq.DataSources.Xml.Tests
         [TestMethod]
         public void XmlSourceGetAllRowsTest()
         {
-            var source = new XmlSource("./TestFiles/Test1.xml", new RuntimeContext(CancellationToken.None, null, null));
+            var source = new XmlSource("./TestFiles/Test1.xml", new RuntimeContext(
+                CancellationToken.None, 
+                null, 
+                null,
+                (null, null, null)));
 
             var rows = source.Rows.ToArray();
 

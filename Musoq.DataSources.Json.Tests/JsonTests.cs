@@ -108,7 +108,11 @@ namespace Musoq.DataSources.Json.Tests
         {
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
-            var source = new JsonSource("./JsonTestFile_First.json", new RuntimeContext(tokenSource.Token, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
+            var source = new JsonSource("./JsonTestFile_First.json", new RuntimeContext(
+                tokenSource.Token, 
+                Array.Empty<ISchemaColumn>(), 
+                new Dictionary<string, string>(),
+                (null, null, null)));
 
             var fired = source.Rows.Count();
 
@@ -119,7 +123,11 @@ namespace Musoq.DataSources.Json.Tests
         public void JsonSource_FullLoadTest()
         {
             var source = new JsonSource("./JsonTestFile_First.json", 
-                new RuntimeContext(CancellationToken.None, Array.Empty<ISchemaColumn>(), new Dictionary<string, string>()));
+                new RuntimeContext(
+                    CancellationToken.None, 
+                    Array.Empty<ISchemaColumn>(), 
+                    new Dictionary<string, string>(),
+                    (null, null, null)));
 
             var fired = source.Rows.Count();
 

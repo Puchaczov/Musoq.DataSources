@@ -11,6 +11,10 @@ namespace Musoq.DataSources.Time
     /// <summary>
     /// Provides schema to work with time
     /// </summary>
+    /// <short-description>
+    /// Provides schema to work with time
+    /// </short-description>
+    /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
     public class TimeSchema : SchemaBase
     {
         /// <virtual-constructors>
