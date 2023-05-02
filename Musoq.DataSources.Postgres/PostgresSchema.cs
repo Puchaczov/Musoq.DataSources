@@ -1,0 +1,73 @@
+﻿using Musoq.Schema;
+using Musoq.Schema.DataSources;
+using Musoq.Schema.Managers;
+
+namespace Musoq.DataSources.Postgres;
+
+/// <summary>
+/// The PostgresSchema class extends SchemaBase and is responsible for managing PostgreSQL schema operations.
+/// It also creates and manages the PostgresTable, PostgresRowSource, and MethodsAggregator instances.
+/// </summary>
+public class PostgresSchema : SchemaBase
+{
+    private const string SchemaName = "postgres";
+    
+    /// <virtual-constructors>
+    /// <virtual-constructor>
+    /// <virtual-param>Schema the table belongs to</virtual-param>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables>
+    /// <environmentVariable name="NPGSQL_CONNECTION_STRING" isRequired="true">Postgres connections string</environmentVariable>
+    /// </environmentVariables>
+    /// #postgres.tableName('schemaName')
+    /// </from>
+    /// <description>Gives ability to process sqlite table</description>
+    /// <columns isDynamic="true"></columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// </virtual-constructors>
+    public PostgresSchema() 
+        : base(SchemaName, CreateLibrary())
+    {
+    }
+    
+    /// <summary>
+    /// Retrieves an ISchemaTable instance for the specified table name.
+    /// </summary>
+    /// <param name="name">The name of the table.</param>
+    /// <param name="runtimeContext">The runtime context to be used.</param>
+    /// <param name="parameters">Additional parameters to be passed.</param>
+    /// <returns>An ISchemaTable instance.</returns>
+    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    {
+        return new PostgresTable(runtimeContext, (string)parameters[0]);
+    }
+
+    /// <summary>
+    /// Retrieves a RowSource instance for the specified table name.
+    /// </summary>
+    /// <param name="name">The name of the table.</param>
+    /// <param name="runtimeContext">The runtime context to be used.</param>
+    /// <param name="parameters">Additional parameters to be passed.</param>
+    /// <returns>A RowSource instance.</returns>
+    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    {
+        return new PostgresRowSource(runtimeContext, (string)parameters[0]);
+    }
+    
+    private static MethodsAggregator CreateLibrary()
+    {
+        var methodsManager = new MethodsManager();
+        var propertiesManager = new PropertiesManager();
+
+        var library = new PostgresLibrary();
+
+        methodsManager.RegisterLibraries(library);
+        propertiesManager.RegisterProperties(library);
+
+        return new MethodsAggregator(methodsManager, propertiesManager);
+    }
+}

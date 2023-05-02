@@ -33,8 +33,8 @@ namespace Musoq.Schema.Xml
         {
             get
             {
-                if (_values.ContainsKey(key))
-                    return _values[key];
+                if (_values.TryGetValue(key, out var item))
+                    return item;
 
                 return null;
             }
