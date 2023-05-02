@@ -8,7 +8,7 @@ internal class OpenAiSingleRowSource : RowSource
     private readonly IOpenAiApi _openAiApi;
     private readonly OpenAiRequestInfo _openAiRequestInfo;
 
-    public OpenAiSingleRowSource(IOpenAiApi openAiApi, OpenAiRequestInfo openAiRequestInfo)
+    protected OpenAiSingleRowSource(IOpenAiApi openAiApi, OpenAiRequestInfo openAiRequestInfo)
     {
         _openAiApi = openAiApi;
         _openAiRequestInfo = openAiRequestInfo;

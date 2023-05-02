@@ -30,7 +30,11 @@ public class OpenAiLibrary : LibraryBase
     /// <summary>
     /// Determines whether the provided content is related to the given question.
     /// Returns true if the content is related, otherwise returns false.
-    /// </summary>    
+    /// </summary>
+    /// <param name="entity">Entity</param>
+    /// <param name="content">Content</param>
+    /// <param name="question">Question</param>
+    /// <returns>True is content is about given question, otherwise false</returns> 
     [BindableMethod]
     public bool IsContentAbout([InjectSource] OpenAiEntity entity, string content, string question)
     {
@@ -50,6 +54,10 @@ public class OpenAiLibrary : LibraryBase
     /// Performs sentiment analysis on the provided content and returns the sentiment
     /// as one of the following strings: "POSITIVE", "NEGATIVE", "NEUTRAL", or "UNKNOWN".
     /// </summary>
+    /// <param name="entity">Entity</param>
+    /// <param name="content">Content</param>
+    /// <param name="throwOnUnknown">Whether to throw an exception if the sentiment is unknown</param>
+    /// <returns>Sentiment</returns>
     [BindableMethod]
     public string Sentiment([InjectSource] OpenAiEntity entity, string content, bool throwOnUnknown = false)
     {
@@ -72,6 +80,9 @@ public class OpenAiLibrary : LibraryBase
     /// <summary>
     /// Summarizes the provided content using the OpenAI API and returns the summarized text.
     /// </summary>
+    /// <param name="entity">Entity</param>
+    /// <param name="content">Content</param>
+    /// <returns>Summarized content</returns>
     [BindableMethod]
     public string SummarizeContent([InjectSource] OpenAiEntity entity, string content)
     {
@@ -88,6 +99,11 @@ public class OpenAiLibrary : LibraryBase
     /// <summary>
     /// Translates the provided content from the source language to the destination language using the OpenAI API.
     /// </summary>
+    /// <param name="entity">Entity</param>
+    /// <param name="content">Content</param>
+    /// <param name="from">Source language</param>
+    /// <param name="to">Destination language</param>
+    /// <returns>Translated content</returns>
     [BindableMethod]
     public string TranslateContent([InjectSource] OpenAiEntity entity, string content, string from, string to)
     {
@@ -103,7 +119,11 @@ public class OpenAiLibrary : LibraryBase
     
     /// <summary>
     /// Extracts entities from the provided content using the OpenAI API and returns an array of entity strings.
-    /// </summary>    
+    /// </summary>
+    /// <param name="entity">Entity</param>
+    /// <param name="content">Content</param>
+    /// <param name="throwOnException">Whether to throw an exception if an exception occurs</param>
+    /// <returns>Array of entities</returns>
     [BindableMethod]
     public string[] Entities([InjectSource] OpenAiEntity entity, string content, bool throwOnException = false)
     {

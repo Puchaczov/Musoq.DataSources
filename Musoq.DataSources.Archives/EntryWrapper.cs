@@ -6,60 +6,127 @@ using SharpCompress.Readers;
 
 namespace Musoq.DataSources.Archives;
 
+/// <summary>
+/// A wrapper for the IEntry interface, providing additional functionality for reading and accessing entry data.
+/// </summary>
 public class EntryWrapper : IEntry
 {
     private readonly IEntry _entry;
 
+    /// <summary>
+    /// Initializes a new instance of the EntryWrapper class.
+    /// </summary>
+    /// <param name="entry">The IEntry object that this wrapper is encapsulating.</param>
+    /// <param name="reader">The IReader object responsible for reading entry data.</param>
     public EntryWrapper(IEntry entry, IReader reader)
     {
         _entry = entry;
         Reader = reader;
     }
 
+    /// <summary>
+    /// Gets the compression type of the entry.
+    /// </summary>
     public CompressionType CompressionType => _entry.CompressionType;
 
+    /// <summary>
+    /// Gets the archived time of the entry, if available.
+    /// </summary>
     public DateTime? ArchivedTime => _entry.ArchivedTime;
 
+    /// <summary>
+    /// Gets the compressed size of the entry.
+    /// </summary>
     public long CompressedSize => _entry.CompressedSize;
 
+    /// <summary>
+    /// Gets the CRC value of the entry.
+    /// </summary>
     public long Crc => _entry.Crc;
 
+    /// <summary>
+    /// Gets the created time of the entry, if available.
+    /// </summary>
     public DateTime? CreatedTime => _entry.CreatedTime;
 
+    /// <summary>
+    /// Gets the unique key of the entry.
+    /// </summary>
     public string Key => _entry.Key;
-    
+
+    /// <summary>
+    /// Gets the link target of the entry, if applicable.
+    /// </summary>
     public string LinkTarget => _entry.LinkTarget;
-    
+
+    /// <summary>
+    /// Gets a value indicating whether the entry is a directory.
+    /// </summary>
     public bool IsDirectory => _entry.IsDirectory;
-    
+
+    /// <summary>
+    /// Gets a value indicating whether the entry is encrypted.
+    /// </summary>
     public bool IsEncrypted => _entry.IsEncrypted;
-    
+
+    /// <summary>
+    /// Gets a value indicating whether the entry is split after a specified volume.
+    /// </summary>
     public bool IsSplitAfter => _entry.IsSplitAfter;
-    
+
+    /// <summary>
+    /// Gets a value indicating whether the entry is part of a solid archive.
+    /// </summary>
     public bool IsSolid => _entry.IsSolid;
-    
+
+    /// <summary>
+    /// Gets the first volume index for the entry.
+    /// </summary>
     public int VolumeIndexFirst => _entry.VolumeIndexFirst;
-    
+
+    /// <summary>
+    /// Gets the last volume index for the entry.
+    /// </summary>
     public int VolumeIndexLast => _entry.VolumeIndexLast;
-    
+
+    /// <summary>
+    /// Gets the last accessed time of the entry, if available.
+    /// </summary>
     public DateTime? LastAccessedTime => _entry.LastAccessedTime;
-    
+
+    /// <summary>
+    /// Gets the last modified time of the entry, if available.
+    /// </summary>
     public DateTime? LastModifiedTime => _entry.LastModifiedTime;
-    
+
+    /// <summary>
+    /// Gets the uncompressed size of the entry.
+    /// </summary>
     public long Size => _entry.Size;
-    
+
+    /// <summary>
+    /// Gets the file attributes of the entry, if available.
+    /// </summary>
     public int? Attrib => _entry.Attrib;
 
+    /// <summary>
+    /// Gets the text content of the entry, if
+    /// available. This property reads the entry data using the provided IReader.
+    /// </summary>
     public string TextContent
     {
         get
         {
+            // Read entry data using the provided IReader
             using var stream = Reader.OpenEntryStream();
             using var reader = new StreamReader(stream);
             return reader.ReadToEnd();
         }
     }
-    
+
+    /// <summary>
+    /// Gets the IReader object responsible for reading entry data.
+    /// </summary>
     internal IReader Reader { get; }
 
     internal static IDictionary<string, int> NameToIndexMap { get; } = new Dictionary<string, int>()

@@ -5,7 +5,7 @@ using SharpCompress.Readers;
 
 namespace Musoq.DataSources.Archives;
 
-public class ArchivesRowSource : RowSource
+internal class ArchivesRowSource : RowSource
 {
     private readonly Stream _stream;
 
