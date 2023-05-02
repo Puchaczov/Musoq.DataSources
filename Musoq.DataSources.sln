@@ -47,6 +47,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Postgres"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Postgres.Tests", "Musoq.DataSources.Postgres.Tests\Musoq.DataSources.Postgres.Tests.csproj", "{798D6A37-3FB8-40D5-92F6-8D4468FCDE23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Archives", "Musoq.DataSources.Archives\Musoq.DataSources.Archives.csproj", "{EE42D7B1-1563-4D42-BD4B-A1400030717F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Archives.Tests", "Musoq.DataSources.Archives.Tests\Musoq.DataSources.Archives.Tests.csproj", "{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -231,6 +235,22 @@ Global
 		{798D6A37-3FB8-40D5-92F6-8D4468FCDE23}.Release|Any CPU.Build.0 = Release|Any CPU
 		{798D6A37-3FB8-40D5-92F6-8D4468FCDE23}.Release|x64.ActiveCfg = Release|Any CPU
 		{798D6A37-3FB8-40D5-92F6-8D4468FCDE23}.Release|x64.Build.0 = Release|Any CPU
+		{EE42D7B1-1563-4D42-BD4B-A1400030717F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE42D7B1-1563-4D42-BD4B-A1400030717F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE42D7B1-1563-4D42-BD4B-A1400030717F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EE42D7B1-1563-4D42-BD4B-A1400030717F}.Debug|x64.Build.0 = Debug|Any CPU
+		{EE42D7B1-1563-4D42-BD4B-A1400030717F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE42D7B1-1563-4D42-BD4B-A1400030717F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE42D7B1-1563-4D42-BD4B-A1400030717F}.Release|x64.ActiveCfg = Release|Any CPU
+		{EE42D7B1-1563-4D42-BD4B-A1400030717F}.Release|x64.Build.0 = Release|Any CPU
+		{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}.Debug|x64.Build.0 = Debug|Any CPU
+		{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}.Release|x64.ActiveCfg = Release|Any CPU
+		{A0A2E97D-7E48-40EF-A36B-A9DEACD936AB}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

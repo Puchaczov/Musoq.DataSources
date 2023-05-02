@@ -9,19 +9,19 @@ namespace Musoq.DataSources.Os.Zip
     internal class ZipSource : RowSource
     {
         private readonly string _zipPath;
-        private readonly RuntimeContext _communicator;
+        private readonly RuntimeContext _runtimeContext;
 
-        public ZipSource(string zipPath, RuntimeContext communicator)
+        public ZipSource(string zipPath, RuntimeContext runtimeContext)
         {
             _zipPath = zipPath;
-            _communicator = communicator;
+            _runtimeContext = runtimeContext;
         }
 
         public override IEnumerable<IObjectResolver> Rows
         {
             get
             {
-                var endWorkToken = _communicator.EndWorkToken;
+                var endWorkToken = _runtimeContext.EndWorkToken;
                 using var file = File.OpenRead(_zipPath);
                 using var zip = new ZipArchive(file);
                 foreach (var entry in zip.Entries)
