@@ -94,14 +94,15 @@ namespace Musoq.DataSources.SeparatedValues
 
             return base.GetRowSource(name, interCommunicator, parameters);
         }
-        
+
         /// <summary>
         /// Gets the table name based on the given data source and parameters.
         /// </summary>
         /// <param name="name">Data Source name</param>
+        /// <param name="runtimeContext">Runtime context</param>
         /// <param name="parameters">Parameters to pass to data source</param>
         /// <returns>Requested table metadata</returns>
-        public override ISchemaTable GetTableByName(string name, params object[] parameters)
+        public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
         {
             switch (name.ToLowerInvariant())
             {
@@ -113,7 +114,7 @@ namespace Musoq.DataSources.SeparatedValues
                     return new SeparatedValuesTable((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2]);
             }
 
-            return base.GetTableByName(name, parameters);
+            return base.GetTableByName(name, runtimeContext, parameters);
         }
 
         private static MethodsAggregator CreateLibrary()

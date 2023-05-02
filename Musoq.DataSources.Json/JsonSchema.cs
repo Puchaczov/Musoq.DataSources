@@ -36,14 +36,15 @@ namespace Musoq.DataSources.Json
             : base(SchemaName, CreateLibrary())
         {
         }
-        
+
         /// <summary>
         /// Gets the table name based on the given data source and parameters
         /// </summary>
         /// <param name="name">Data Source name</param>
+        /// <param name="runtimeContext">Runtime context</param>
         /// <param name="parameters">Parameters to pass to data source</param>
         /// <returns>Requested table metadata</returns>
-        public override ISchemaTable GetTableByName(string name, params object[] parameters)
+        public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
         {
             return new JsonBasedTable((string)parameters[1]);
         }
