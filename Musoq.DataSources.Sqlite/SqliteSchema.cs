@@ -4,10 +4,13 @@ using Musoq.Schema.Managers;
 
 namespace Musoq.DataSources.Sqlite;
 
-/// <summary>
-/// The SqliteSchema class extends SchemaBase and is responsible for managing SQLite schema operations.
-/// It also creates and manages the SqliteTable, SqliteRowSource, and MethodsAggregator instances.
-/// </summary>
+/// <description>
+/// Provides ability to work with sqlite database
+/// </description>
+/// <short-description>
+/// Provides schema to work with sqlite database
+/// </short-description>
+/// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class SqliteSchema : SchemaBase
 {
     private const string SchemaName = "sqlite";

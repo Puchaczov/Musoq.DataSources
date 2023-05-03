@@ -26,10 +26,6 @@ namespace Musoq.DataSources.System
         /// <examples>
         /// <example>
         /// <from>
-        /// <environmentVariables>
-        /// <environmentVariable name="SOME_ENVIRONMENT_VARIABLE" isRequired="true">Some description</environmentVariable>
-        /// <environmentVariable name="SOME_OTHER_VARIABLE" isRequired="false">Some other description</environmentVariable>
-        /// </environmentVariables>
         /// #system.dual()
         /// </from>
         /// <description>The dummy table</description>
@@ -45,10 +41,6 @@ namespace Musoq.DataSources.System
         /// <examples>
         /// <example>
         /// <from>
-        /// <environmentVariables>
-        /// <environmentVariable name="MIN_X" isRequired="true">Some min</environmentVariable>
-        /// <environmentVariable name="MAX_X" isRequired="false">Some max</environmentVariable>
-        /// </environmentVariables>
         /// #system.range(long min, long max)
         /// </from>
         /// <description>Gives the ability to generate ranged values</description>
@@ -58,10 +50,6 @@ namespace Musoq.DataSources.System
         /// </example>
         /// <example>
         /// <from>
-        /// <environmentVariables>
-        /// <environmentVariable name="MIN_X" isRequired="true">Some min</environmentVariable>
-        /// <environmentVariable name="MAX_X" isRequired="false">Some max</environmentVariable>
-        /// </environmentVariables>
         /// #system.range(int min, int max)
         /// </from>
         /// <description>Gives the ability to generate ranged values</description>

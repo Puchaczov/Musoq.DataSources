@@ -4,10 +4,13 @@ using Musoq.Schema.Managers;
 
 namespace Musoq.DataSources.Postgres;
 
-/// <summary>
-/// The PostgresSchema class extends SchemaBase and is responsible for managing PostgreSQL schema operations.
-/// It also creates and manages the PostgresTable, PostgresRowSource, and MethodsAggregator instances.
-/// </summary>
+/// <description>
+/// Provides schema to work with postgres database
+/// </description>
+/// <short-description>
+/// Provides schema to work with postgres database
+/// </short-description>
+/// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class PostgresSchema : SchemaBase
 {
     private const string SchemaName = "postgres";

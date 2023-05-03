@@ -16,6 +16,7 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageId>Musoq.DataSources.Sqlite</PackageId>
     </PropertyGroup>
 
     <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
