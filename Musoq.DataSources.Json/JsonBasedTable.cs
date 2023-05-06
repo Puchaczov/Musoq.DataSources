@@ -15,15 +15,27 @@ namespace Musoq.DataSources.Json
     /// </summary>
     public class JsonBasedTable : ISchemaTable
     {
-        private readonly string _path;
+        private readonly Stream _stream;
+        private ISchemaColumn[] _columns;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonBasedTable"/> class.
         /// </summary>
-        /// <param name="filePath"></param>
+        /// <param name="filePath">The filepath</param>
         public JsonBasedTable(string filePath)
         {
-            _path = filePath;
+            _stream = File.OpenRead(filePath);
+            _columns = null;
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonBasedTable"/> class.
+        /// </summary>
+        /// <param name="stream">The stream</param>
+        public JsonBasedTable(Stream stream)
+        {
+            _stream = stream;
+            _columns = null;
         }
 
         /// <summary>
@@ -34,18 +46,27 @@ namespace Musoq.DataSources.Json
         {
             get
             {
-                var file = File.ReadAllText(_path);
-                var schema = JsonConvert.DeserializeObject(file);
+                if (_columns != null)
+                    return _columns;
+                
+                using var contentStream = _stream;
+                using var contentReader = new StreamReader(contentStream);
+                var jsonSchema = contentReader.ReadToEnd();
+                var schema = JsonConvert.DeserializeObject(jsonSchema);
 
                 switch (schema)
                 {
-                    case JObject jobj:
-                        return ParseObject(jobj);
-                    case JArray jarr:
-                        return ParseArray(jarr);
+                    case JObject jObj:
+                        _columns = ParseObject(jObj);
+                        break;
+                    case JArray jArr:
+                        _columns = ParseArray(jArr);
+                        break;
+                    default:
+                        throw new NotSupportedException($"Unsupported object in schema {schema.GetType().Name}");
                 }
-
-                throw new NotSupportedException($"Unsupported object in schema {schema.GetType().Name}");
+                
+                return _columns;
             }
         }
 
