@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using Musoq.Schema;
@@ -9,15 +10,26 @@ using Newtonsoft.Json.Linq;
 
 namespace Musoq.DataSources.Json
 {
-    internal class JsonBasedTable : ISchemaTable
+    /// <summary>
+    /// Represents a json based table.
+    /// </summary>
+    public class JsonBasedTable : ISchemaTable
     {
         private readonly string _path;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonBasedTable"/> class.
+        /// </summary>
+        /// <param name="filePath"></param>
         public JsonBasedTable(string filePath)
         {
             _path = filePath;
         }
 
+        /// <summary>
+        /// Gets columns from json file.
+        /// </summary>
+        /// <exception cref="NotSupportedException"></exception>
         public ISchemaColumn[] Columns
         {
             get
@@ -37,11 +49,21 @@ namespace Musoq.DataSources.Json
             }
         }
 
+        /// <summary>
+        /// Gets the column by name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public ISchemaColumn GetColumnByName(string name)
+        {
+            return Columns.SingleOrDefault(column => column.ColumnName == name);
+        }
+
         private ISchemaColumn[] ParseArray(JArray jarr)
         {
             return new ISchemaColumn[]
             {
-                new SchemaColumn("Array", 0, typeof(JArray))
+                new SchemaColumn("Array", 0, typeof(List<object>))
             };
         }
 
@@ -66,12 +88,12 @@ namespace Musoq.DataSources.Json
                     case JTokenType.None:
                         break;
                     case JTokenType.Object:
-                        columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(JObject)));
+                        columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(ExpandoObject)));
                         foreach (var mProp in ((JObject) prop.Value).Properties().Reverse())
                             props.Push(mProp);
                         break;
                     case JTokenType.Array:
-                        columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(JArray)));
+                        columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(List<object>)));
                         break;
                     case JTokenType.Constructor:
                         break;
@@ -92,20 +114,14 @@ namespace Musoq.DataSources.Json
                         columns.Add(new SchemaColumn(prop.Name, columnIndex++, GetType(prop.Value)));
                         break;
                     case JTokenType.Null:
-                        break;
                     case JTokenType.Undefined:
-                        break;
                     case JTokenType.Date:
-                        break;
                     case JTokenType.Raw:
-                        break;
                     case JTokenType.Bytes:
-                        break;
                     case JTokenType.Guid:
-                        break;
                     case JTokenType.Uri:
-                        break;
                     case JTokenType.TimeSpan:
+                        columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(string)));
                         break;
                 }
             }
@@ -120,7 +136,8 @@ namespace Musoq.DataSources.Json
                 case "float":
                     return typeof(decimal);
                 case "int":
-                    return typeof(int);
+                case "long":
+                    return typeof(long);
                 case "string":
                     return typeof(string);
                 case "bool":
@@ -129,28 +146,6 @@ namespace Musoq.DataSources.Json
             }
 
             throw new NotSupportedException($"Type {value.Value<string>()} is not supported.");
-        }
-
-        public static object GetValue(JToken token)
-        {
-            switch (token.Type)
-            {
-                case JTokenType.Float:
-                    return token.Value<decimal>();
-                case JTokenType.Integer:
-                    return token.Value<int>();
-                case JTokenType.String:
-                    return token.Value<string>();
-                case JTokenType.Boolean:
-                    return token.Value<bool>();
-            }
-
-            throw new NotSupportedException($"Type {token.Value<string>()} is not supported.");
-        }
-
-        public ISchemaColumn GetColumnByName(string name)
-        {
-            return Columns.SingleOrDefault(column => column.ColumnName == name);
         }
     }
 }

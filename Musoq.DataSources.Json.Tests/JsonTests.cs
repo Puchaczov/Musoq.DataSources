@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -7,7 +8,6 @@ using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
-using Musoq.Schema;
 using Musoq.Tests.Common;
 using Newtonsoft.Json.Linq;
 using Environment = Musoq.Plugins.Environment;
@@ -30,34 +30,15 @@ namespace Musoq.DataSources.Json.Tests
             Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
             Assert.AreEqual("Age", table.Columns.ElementAt(1).ColumnName);
-            Assert.AreEqual(typeof(int), table.Columns.ElementAt(1).ColumnType);
+            Assert.AreEqual(typeof(long), table.Columns.ElementAt(1).ColumnType);
 
-            Assert.AreEqual(3, table.Count);
+            Assert.AreEqual(3L, table.Count);
             Assert.AreEqual("Aleksander", table[0].Values[0]);
-            Assert.AreEqual(24, table[0].Values[1]);
+            Assert.AreEqual(24L, table[0].Values[1]);
             Assert.AreEqual("Mikolaj", table[1].Values[0]);
-            Assert.AreEqual(11, table[1].Values[1]);
+            Assert.AreEqual(11L, table[1].Values[1]);
             Assert.AreEqual("Marek", table[2].Values[0]);
-            Assert.AreEqual(45, table[2].Values[1]);
-        }
-
-        [Ignore]
-        [TestMethod]
-        public void SelectArrayTest()
-        {
-            var query =
-                @"select Array from #json.file('./JsonTestFile_MakeFlatArray_Arr.json', './JsonTestFile_MakeFlatArray_Arr.schema.json')";
-
-            var vm = CreateAndRunVirtualMachine(query);
-            var table = vm.Run();
-
-            Assert.AreEqual(1, table.Columns.Count());
-            Assert.AreEqual("Array", table.Columns.ElementAt(0).ColumnName);
-            Assert.AreEqual(typeof(JArray), table.Columns.ElementAt(0).ColumnType);
-
-            Assert.AreEqual(2, table.Count);
-            Assert.AreEqual(3, ((JArray) table[0].Values[0]).Count);
-            Assert.AreEqual(0, ((JArray) table[1].Values[0]).Count);
+            Assert.AreEqual(45L, table[2].Values[1]);
         }
 
         [TestMethod]
@@ -103,16 +84,11 @@ namespace Musoq.DataSources.Json.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(OperationCanceledException))]
-        public void JsonSource_CancelledLoadTest()
+        public void JsonSource_Cancelled_ShouldBeEmpty()
         {
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
-            var source = new JsonSource("./JsonTestFile_First.json", new RuntimeContext(
-                tokenSource.Token, 
-                Array.Empty<ISchemaColumn>(), 
-                new Dictionary<string, string>(),
-                (null, null, null)));
+            var source = new JsonSource("./JsonTestFile_First.json", tokenSource.Token);
 
             var fired = source.Rows.Count();
 
@@ -122,12 +98,7 @@ namespace Musoq.DataSources.Json.Tests
         [TestMethod]
         public void JsonSource_FullLoadTest()
         {
-            var source = new JsonSource("./JsonTestFile_First.json", 
-                new RuntimeContext(
-                    CancellationToken.None, 
-                    Array.Empty<ISchemaColumn>(), 
-                    new Dictionary<string, string>(),
-                    (null, null, null)));
+            var source = new JsonSource("./JsonTestFile_First.json", CancellationToken.None);
 
             var fired = source.Rows.Count();
 

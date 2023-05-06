@@ -1,7 +1,8 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Dynamic;
+using System.Text;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
-using Newtonsoft.Json.Linq;
 
 namespace Musoq.DataSources.Json
 {
@@ -16,7 +17,18 @@ namespace Musoq.DataSources.Json
         /// <param name="array">Json array</param>
         /// <returns>Length of json</returns>
         [BindableMethod]
-        public int Length(JArray array)
+        public int Length(List<ExpandoObject> array)
+        {
+            return array.Count;
+        }
+        
+        /// <summary>
+        /// Gets the length of the array
+        /// </summary>
+        /// <param name="array">Json array</param>
+        /// <returns>Length of json</returns>
+        [BindableMethod]
+        public int Length(List<object> array)
         {
             return array.Count;
         }
@@ -24,10 +36,26 @@ namespace Musoq.DataSources.Json
         /// <summary>
         /// Flattening the array
         /// </summary>
-        /// <param name="array">Json array</param>
+        /// <param name="array">The array</param>
         /// <returns>Flattened array</returns>
         [BindableMethod]
-        public string MakeFlat(JArray array)
+        public string MakeFlat(List<ExpandoObject> array)
+        {
+            return MakeFlatAny(array);
+        }
+
+        /// <summary>
+        /// Flattening the array
+        /// </summary>
+        /// <param name="array">The array</param>
+        /// <returns>Flattened array</returns>
+        [BindableMethod]
+        public string MakeFlat(List<object> array)
+        {
+            return MakeFlatAny(array);
+        }
+        
+        private static string MakeFlatAny<T>(List<T> array)
         {
             var cnt = array.Count;
 

@@ -1,136 +1,189 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
-using Musoq.Schema;
+using System.Threading;
 using Musoq.Schema.DataSources;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Musoq.DataSources.Json
 {
-    internal class JsonSource : RowSource
+    /// <summary>
+    /// Represents a json source.
+    /// </summary>
+    public class JsonSource : RowSourceBase<dynamic>
     {
-        private readonly string _filePath;
-        private readonly RuntimeContext _communicator;
-
-        public JsonSource(string filePath, RuntimeContext communicator)
+        private readonly Stream _stream;
+        private readonly CancellationToken _endWorkToken;
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonSource"/> class.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="endWorkToken"></param>
+        public JsonSource(Stream stream, CancellationToken endWorkToken)
         {
-            _filePath = filePath;
-            _communicator = communicator;
+            _stream = stream;
+            _endWorkToken = endWorkToken;
         }
 
-        public override IEnumerable<IObjectResolver> Rows
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonSource"/> class.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="endWorkToken"></param>
+        public JsonSource(string path, CancellationToken endWorkToken)
         {
-            get
+            _endWorkToken = endWorkToken;
+            _stream = File.OpenRead(path);
+        }
+
+        /// <summary>
+        /// Gets the data from json file.
+        /// </summary>
+        /// <param name="chunkedSource"></param>
+        /// <exception cref="NotSupportedException"></exception>
+        protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+        {
+            using var contentStream = _stream;
+            using var contentReader = new StreamReader(contentStream);
+            using var reader = new JsonTextReader(contentReader);
+            reader.SupportMultipleContent = true;
+
+            if (!reader.Read())
+                throw new NotSupportedException("Cannot read file. Json is probably malformed.");
+            
+            var serializer = new JsonSerializer();
+            var rows = reader.TokenType switch
             {
-                var endWorkToken = _communicator.EndWorkToken;
-                using var file = File.OpenRead(_filePath);
-                using JsonReader reader = new JsonTextReader(new StreamReader(file));
-                reader.SupportMultipleContent = true;
+                JsonToken.StartObject => new[] { ParseObject(serializer, reader) },
+                JsonToken.StartArray => ParseArray(serializer, reader),
+                _ => null
+            };
 
-                var serializer = new JsonSerializer();
+            if (rows == null)
+                throw new NotSupportedException("This type of .json file is not supported.");
 
-                if (!reader.Read())
-                    throw new NotSupportedException("Cannot read file. Json is probably malformed.");
+            using var enumerator = rows.GetEnumerator();
 
-                reader.Read();
+            if (!enumerator.MoveNext())
+                return;
 
-                IEnumerable<IObjectResolver> rows = null;
+            if (enumerator.Current is not IDictionary<string, object> firstRow)
+                return;
+
+            var index = 0;
+            var indexToNameMap = firstRow.Keys.ToDictionary(_ => index++);
+            
+            var list = new List<IObjectResolver>
+            {
+                new JsonObjectResolver(firstRow, indexToNameMap)
+            };
+            
+            while (enumerator.MoveNext())
+            {
+                _endWorkToken.ThrowIfCancellationRequested();
+                
+                if (enumerator.Current is not IDictionary<string, object> row)
+                    continue;
+
+                list.Add(new JsonObjectResolver(row, indexToNameMap));
+
+                if (list.Count < 1000)
+                    continue;
+
+                chunkedSource.Add(list, _endWorkToken);
+
+                list = new List<IObjectResolver>(1000);
+            }
+            
+            chunkedSource.Add(list, _endWorkToken);
+        }
+
+
+        private IEnumerable<ExpandoObject> ParseArray(JsonSerializer serializer, JsonTextReader reader)
+        {
+            _endWorkToken.ThrowIfCancellationRequested();
+            
+            var result = new List<ExpandoObject>();
+            while (reader.Read() && reader.TokenType != JsonToken.EndArray)
+            {
                 if (reader.TokenType == JsonToken.StartObject)
-                    rows = ParseObject(serializer, reader);
-                else if (reader.TokenType == JsonToken.StartArray)
-                    rows = ParseArray(serializer, reader);
-
-                if (rows == null)
-                    throw new NotSupportedException("This type of .json file is not supported.");
-
-                endWorkToken.ThrowIfCancellationRequested();
-
-                foreach (var row in rows)
-                    yield return row;
-            }
-        }
-
-        private IEnumerable<IObjectResolver> ParseArray(JsonSerializer serializer, JsonReader reader)
-        {
-            while (reader.TokenType == JsonToken.StartArray)
-            {
-                var dict = new Dictionary<string, object>();
-                var intArr = (JArray) serializer.Deserialize(reader);
-                dict.Add("Array", intArr);
-                reader.Read();
-                yield return new DictionaryResolver(dict);
-            }
-        }
-
-        private IEnumerable<IObjectResolver> ParseObject(JsonSerializer serializer, JsonReader reader)
-        {
-            while (reader.TokenType == JsonToken.StartObject)
-            {
-                var obj = (JObject) serializer.Deserialize(reader);
-                var props = new Stack<JProperty>();
-
-                foreach (var prop in obj.Properties().Reverse())
-                    props.Push(prop);
-
-                var row = new Dictionary<string, object>();
-
-                while (props.Count > 0)
                 {
-                    var prop = props.Pop();
-
-                    switch (prop.Value.Type)
-                    {
-                        case JTokenType.None:
-                            break;
-                        case JTokenType.Object:
-                            foreach (var mprop in ((JObject) prop.Value).Properties().Reverse())
-                                props.Push(mprop);
-                            break;
-                        case JTokenType.Array:
-                            row.Add(prop.Name, (JArray) prop.Value);
-                            break;
-                        case JTokenType.Constructor:
-                            break;
-                        case JTokenType.Property:
-                            break;
-                        case JTokenType.Comment:
-                            break;
-                        case JTokenType.Integer:
-                            row.Add(prop.Name, JsonBasedTable.GetValue(prop.Value));
-                            break;
-                        case JTokenType.Float:
-                            row.Add(prop.Name, JsonBasedTable.GetValue(prop.Value));
-                            break;
-                        case JTokenType.String:
-                            row.Add(prop.Name, JsonBasedTable.GetValue(prop.Value));
-                            break;
-                        case JTokenType.Boolean:
-                            row.Add(prop.Name, JsonBasedTable.GetValue(prop.Value));
-                            break;
-                        case JTokenType.Null:
-                            break;
-                        case JTokenType.Undefined:
-                            break;
-                        case JTokenType.Date:
-                            break;
-                        case JTokenType.Raw:
-                            break;
-                        case JTokenType.Bytes:
-                            break;
-                        case JTokenType.Guid:
-                            break;
-                        case JTokenType.Uri:
-                            break;
-                        case JTokenType.TimeSpan:
-                            break;
-                    }
+                    result.Add(ParseObject(serializer, reader));
                 }
-
-                reader.Read();
-                yield return new DictionaryResolver(row);
             }
+            return result;
+        }
+
+        private List<object> ParseInnerArray(JsonSerializer serializer, JsonTextReader reader)
+        {
+            _endWorkToken.ThrowIfCancellationRequested();
+            
+            var result = new List<object>();
+            while (reader.Read() && reader.TokenType != JsonToken.EndArray)
+            {
+                switch (reader.TokenType)
+                {
+                    case JsonToken.StartObject:
+                        result.Add(ParseObject(serializer, reader));
+                        break;
+                    case JsonToken.StartArray:
+                        result.Add(ParseInnerArray(serializer, reader));
+                        break;
+                    default:
+                        result.Add(reader.Value!);
+                        break;
+                }
+            }
+            return result;
+        }
+
+        private ExpandoObject ParseObject(JsonSerializer serializer, JsonTextReader reader)
+        {
+            _endWorkToken.ThrowIfCancellationRequested();
+            
+            var obj = new ExpandoObject();
+            while (reader.Read() && reader.TokenType != JsonToken.EndObject)
+            {
+                if (reader.TokenType != JsonToken.PropertyName) continue;
+                
+                var propertyName = reader.Value!.ToString();
+                reader.Read();
+                switch (reader.TokenType)
+                {
+                    case JsonToken.StartObject:
+                        obj.TryAdd(propertyName, ParseObject(serializer, reader));
+                        break;
+                    case JsonToken.StartArray:
+                        obj.TryAdd(propertyName, ParseInnerArray(serializer, reader));
+                        break;
+                    case JsonToken.Integer:
+                    case JsonToken.Float:
+                    case JsonToken.Boolean:
+                        obj.TryAdd(propertyName, reader.Value!);
+                        break;
+                    case JsonToken.None:
+                    case JsonToken.StartConstructor:
+                    case JsonToken.PropertyName:
+                    case JsonToken.Comment:
+                    case JsonToken.Raw:
+                    case JsonToken.Null:
+                    case JsonToken.String:
+                    case JsonToken.Undefined:
+                    case JsonToken.EndObject:
+                    case JsonToken.EndArray:
+                    case JsonToken.EndConstructor:
+                    case JsonToken.Date:
+                    case JsonToken.Bytes:
+                    default:
+                        obj.TryAdd(propertyName, reader.Value.ToString());
+                        break;
+                }
+            }
+            return obj;
         }
     }
 }

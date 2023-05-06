@@ -58,7 +58,7 @@ namespace Musoq.DataSources.Json
         /// <returns>Data source</returns>
         public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
         {
-            return new JsonSource((string)parameters[0], interCommunicator);
+            return new JsonSource((string)parameters[0], interCommunicator.EndWorkToken);
         }
 
         /// <summary>
