@@ -13,26 +13,26 @@ namespace Musoq.DataSources.Json
     /// <summary>
     /// Represents a json based table.
     /// </summary>
-    public class JsonBasedTable : ISchemaTable
+    public class JsonTable : ISchemaTable
     {
         private readonly Stream _stream;
         private ISchemaColumn[] _columns;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="JsonBasedTable"/> class.
+        /// Initializes a new instance of the <see cref="JsonTable"/> class.
         /// </summary>
         /// <param name="filePath">The filepath</param>
-        public JsonBasedTable(string filePath)
+        public JsonTable(string filePath)
         {
             _stream = File.OpenRead(filePath);
             _columns = null;
         }
         
         /// <summary>
-        /// Initializes a new instance of the <see cref="JsonBasedTable"/> class.
+        /// Initializes a new instance of the <see cref="JsonTable"/> class.
         /// </summary>
         /// <param name="stream">The stream</param>
-        public JsonBasedTable(Stream stream)
+        public JsonTable(Stream stream)
         {
             _stream = stream;
             _columns = null;
@@ -109,7 +109,7 @@ namespace Musoq.DataSources.Json
                     case JTokenType.None:
                         break;
                     case JTokenType.Object:
-                        columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(ExpandoObject)));
+                        columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(object)));
                         foreach (var mProp in ((JObject) prop.Value).Properties().Reverse())
                             props.Push(mProp);
                         break;

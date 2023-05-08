@@ -46,7 +46,7 @@ namespace Musoq.DataSources.Json
         /// <returns>Requested table metadata</returns>
         public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
         {
-            return new JsonBasedTable((string)parameters[1]);
+            return new JsonTable((string)parameters[1]);
         }
 
         /// <summary>
