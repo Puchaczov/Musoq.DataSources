@@ -29,8 +29,7 @@ public class OpenAiSchema : SchemaBase
     /// #openai.gpt()
     /// </from>
     /// <description>Gives the access to OpenAI api</description>
-    /// <columns>
-    /// </columns>
+    /// <columns isDynamic="true"></columns>
     /// </example>
     /// </examples>
     /// </virtual-constructor>
@@ -45,8 +44,7 @@ public class OpenAiSchema : SchemaBase
     /// #openai.gpt(string model)
     /// </from>
     /// <description>Gives the access to OpenAI api</description>
-    /// <columns>
-    /// </columns>
+    /// <columns isDynamic="true"></columns>
     /// </example>
     /// </examples>
     /// </virtual-constructor>
@@ -62,8 +60,7 @@ public class OpenAiSchema : SchemaBase
     /// #openai.gpt(string model, int maxTokens)
     /// </from>
     /// <description>Gives the access to OpenAI api</description>
-    /// <columns>
-    /// </columns>
+    /// <columns isDynamic="true"></columns>
     /// </example>
     /// </examples>
     /// </virtual-constructor>
@@ -80,8 +77,7 @@ public class OpenAiSchema : SchemaBase
     /// #openai.gpt(string model, int maxTokens, double temperature)
     /// </from>
     /// <description>Gives the access to OpenAI api</description>
-    /// <columns>
-    /// </columns>
+    /// <columns isDynamic="true"></columns>
     /// </example>
     /// </examples>
     /// </virtual-constructor>
@@ -99,8 +95,7 @@ public class OpenAiSchema : SchemaBase
     /// #openai.gpt(string model, int maxTokens, double temperature, double frequencyPenalty)
     /// </from>
     /// <description>Gives the access to OpenAI api</description>
-    /// <columns>
-    /// </columns>
+    /// <columns isDynamic="true"></columns>
     /// </example>
     /// </examples>
     /// </virtual-constructor>
@@ -119,8 +114,7 @@ public class OpenAiSchema : SchemaBase
     /// #openai.gpt(string model, int maxTokens, double temperature, double frequencyPenalty, double presencePenalty)
     /// </from>
     /// <description>Gives the access to OpenAI api</description>
-    /// <columns>
-    /// </columns>
+    /// <columns isDynamic="true"></columns>
     /// </example>
     /// </examples>
     /// </virtual-constructor>

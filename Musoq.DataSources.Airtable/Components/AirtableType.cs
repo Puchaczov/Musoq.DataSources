@@ -1,0 +1,38 @@
+﻿namespace Musoq.DataSources.Airtable.Components;
+
+internal enum AirtableType
+{
+    SingleLineText,
+    Email,
+    Url,
+    MultilineText,
+    Number,
+    Percent,
+    Currency,
+    SingleSelect,
+    MultipleSelects,
+    SingleCollaborator,
+    MultipleCollaborators,
+    MultipleRecordLinks,
+    Date,
+    DateTime,
+    PhoneNumber,
+    MultipleAttachments,
+    Checkbox,
+    Formula,
+    CreatedTime,
+    Rollup,
+    Count,
+    Lookup,
+    MultipleLookupValues,
+    AutoNumber,
+    Barcode,
+    Rating,
+    RichText,
+    Duration,
+    LastModifiedTime,
+    Button,
+    CreatedBy,
+    LastModifiedBy,
+    ExternalSyncSource
+}
