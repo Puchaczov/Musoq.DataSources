@@ -2,24 +2,23 @@
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.Os.Files
+namespace Musoq.DataSources.Os.Files;
+
+internal class FilesSource : FilesSourceBase<ExtendedFileInfo>
 {
-    internal class FilesSource : FilesSourceBase<ExtendedFileInfo>
+    public FilesSource(string path, bool useSubDirectories, RuntimeContext communicator) 
+        : base(path, useSubDirectories, communicator)
     {
-        public FilesSource(string path, bool useSubDirectories, RuntimeContext communicator) 
-            : base(path, useSubDirectories, communicator)
-        {
-        }
+    }
 
-        public FilesSource(IReadOnlyTable table, RuntimeContext runtimeContext)
-            : base(table, runtimeContext) 
-        {
-        }
+    public FilesSource(IReadOnlyTable table, RuntimeContext runtimeContext)
+        : base(table, runtimeContext) 
+    {
+    }
 
-        protected override EntityResolver<ExtendedFileInfo> CreateBasedOnFile(FileInfo file, string rootDirectory)
-        {
-            return new EntityResolver<ExtendedFileInfo>(new ExtendedFileInfo(file, rootDirectory), SchemaFilesHelper.FilesNameToIndexMap,
-                            SchemaFilesHelper.FilesIndexToMethodAccessMap);
-        }
+    protected override EntityResolver<ExtendedFileInfo> CreateBasedOnFile(FileInfo file, string rootDirectory)
+    {
+        return new EntityResolver<ExtendedFileInfo>(new ExtendedFileInfo(file, rootDirectory), SchemaFilesHelper.FilesNameToIndexMap,
+            SchemaFilesHelper.FilesIndexToMethodAccessMap);
     }
 }

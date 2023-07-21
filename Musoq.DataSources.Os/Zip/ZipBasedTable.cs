@@ -1,20 +1,19 @@
 ﻿using System.Linq;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.Os.Zip
+namespace Musoq.DataSources.Os.Zip;
+
+internal class ZipBasedTable : ISchemaTable
 {
-    internal class ZipBasedTable : ISchemaTable
+    public ZipBasedTable()
     {
-        public ZipBasedTable()
-        {
-            Columns = SchemaZipHelper.SchemaColumns;
-        }
+        Columns = SchemaZipHelper.SchemaColumns;
+    }
 
-        public ISchemaColumn[] Columns { get; }
+    public ISchemaColumn[] Columns { get; }
 
-        public ISchemaColumn GetColumnByName(string name)
-        {
-            return Columns.SingleOrDefault(column => column.ColumnName == name);
-        }
+    public ISchemaColumn GetColumnByName(string name)
+    {
+        return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
 }

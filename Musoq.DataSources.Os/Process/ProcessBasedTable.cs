@@ -1,20 +1,19 @@
 ﻿using System.Linq;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.Os.Process
+namespace Musoq.DataSources.Os.Process;
+
+internal class ProcessBasedTable : ISchemaTable
 {
-    internal class ProcessBasedTable : ISchemaTable
+    public ProcessBasedTable()
     {
-        public ProcessBasedTable()
-        {
-            Columns = ProcessHelper.ProcessColumns;
-        }
+        Columns = ProcessHelper.ProcessColumns;
+    }
 
-        public ISchemaColumn[] Columns { get; }
+    public ISchemaColumn[] Columns { get; }
 
-        public ISchemaColumn GetColumnByName(string name)
-        {
-            return Columns.SingleOrDefault(column => column.ColumnName == name);
-        }
+    public ISchemaColumn GetColumnByName(string name)
+    {
+        return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
 }

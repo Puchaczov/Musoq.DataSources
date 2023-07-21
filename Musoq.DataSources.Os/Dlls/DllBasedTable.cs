@@ -1,20 +1,19 @@
 ﻿using System.Linq;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.Os.Dlls
+namespace Musoq.DataSources.Os.Dlls;
+
+internal class DllBasedTable : ISchemaTable
 {
-    internal class DllBasedTable : ISchemaTable
+    public DllBasedTable()
     {
-        public DllBasedTable()
-        {
-            Columns = DllInfosHelper.DllInfosColumns;
-        }
+        Columns = DllInfosHelper.DllInfosColumns;
+    }
 
-        public ISchemaColumn[] Columns { get; }
+    public ISchemaColumn[] Columns { get; }
 
-        public ISchemaColumn GetColumnByName(string name)
-        {
-            return Columns.SingleOrDefault(column => column.ColumnName == name);
-        }
+    public ISchemaColumn GetColumnByName(string name)
+    {
+        return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
 }

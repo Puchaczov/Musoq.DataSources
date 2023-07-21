@@ -1,10 +1,9 @@
-﻿namespace Musoq.DataSources.Os.Compare.Directories
+﻿namespace Musoq.DataSources.Os.Compare.Directories;
+
+internal enum State
 {
-    internal enum State
-    {
-        TheSame,
-        Modified,
-        Added,
-        Removed
-    }
+    TheSame,
+    Modified,
+    Added,
+    Removed
 }

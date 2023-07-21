@@ -1,20 +1,19 @@
 ﻿using System.Linq;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.Os.Files
+namespace Musoq.DataSources.Os.Files;
+
+internal class FilesBasedTable : ISchemaTable
 {
-    internal class FilesBasedTable : ISchemaTable
+    public FilesBasedTable()
     {
-        public FilesBasedTable()
-        {
-            Columns = SchemaFilesHelper.FilesColumns;
-        }
+        Columns = SchemaFilesHelper.FilesColumns;
+    }
 
-        public ISchemaColumn[] Columns { get; }
+    public ISchemaColumn[] Columns { get; }
 
-        public ISchemaColumn GetColumnByName(string name)
-        {
-            return Columns.SingleOrDefault(column => column.ColumnName == name);
-        }
+    public ISchemaColumn GetColumnByName(string name)
+    {
+        return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
 }
