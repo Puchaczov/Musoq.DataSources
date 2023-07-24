@@ -178,7 +178,7 @@ public class AirtableTests
         Assert.AreEqual(typeof(string), table[0][7].GetType());
     }
 
-    private AirtableRecord CreateAirtableRecord(AirtableField[] fields, params string[] values)
+    private static AirtableRecord CreateAirtableRecord(AirtableField[] fields, params string[] values)
     {
         Assert.AreEqual(fields.Length, values.Length);
 
