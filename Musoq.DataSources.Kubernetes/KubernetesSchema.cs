@@ -11,6 +11,7 @@ using Musoq.DataSources.Kubernetes.PersistentVolumeClaims;
 using Musoq.DataSources.Kubernetes.PersistentVolumes;
 using Musoq.DataSources.Kubernetes.Pods;
 using Musoq.DataSources.Kubernetes.ReplicaSets;
+using Musoq.DataSources.Kubernetes.SecretData;
 using Musoq.DataSources.Kubernetes.Secrets;
 using Musoq.DataSources.Kubernetes.Services;
 using Musoq.DataSources.Kubernetes.StatefulSets;
@@ -35,6 +36,7 @@ public class KubernetesSchema : SchemaBase
     private const string ServicesTableName = "services";
     private const string DeploymentsTableName = "deployments";
     private const string ReplicaSetsTableName = "replicasets";
+    private const string SecretsDataTableName = "secretsdata";
     private const string NodesTableName = "nodes";
     private const string SecretsTableName = "secrets";
     private const string ConfigMapsTableName = "configmaps";
@@ -65,14 +67,11 @@ public class KubernetesSchema : SchemaBase
     ///                     <column name="CreationTimestamp" type="DateTime?">CreationTimestamp of the DeploymentEntity</column>
     ///                     <column name="Generation" type="long?">Generation of the DeploymentEntity</column>
     ///                     <column name="ResourceVersion" type="string">ResourceVersion string</column>
-    ///                     <column name="Image" type="string">Image string</column>
-    ///                     <column name="ImagePullPolicy" type="string">ImagePullPolicy string</column>
+    ///                     <column name="Images" type="string">Image used within deployment</column>
+    ///                     <column name="ImagePullPolicies" type="string">ImagePullPolicies used within deployment</column>
     ///                     <column name="RestartPolicy" type="string">RestartPolicy string</column>
-    ///                     <column name="Type" type="string">Type string</column>
-    ///                     <column name="Status" type="string">Status string</column>
-    ///                     <column name="ClusterIP" type="string">ClusterIP string</column>
-    ///                     <column name="ExternalIP" type="string">ExternalIP string</column>
-    ///                     <column name="Ports" type="string">Ports string</column>
+    ///                     <column name="ContainersNames" type="string">Names of containers used within deployment</column>
+    ///                     <column name="Statuses" type="string">Statuses of depl</column>
     ///                 </columns>
     ///             </example>
     ///         </examples>
@@ -303,6 +302,25 @@ public class KubernetesSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
     ///                     </environmentVariables>
+    ///                        #kubernetes.secretsData()
+    ///                 </from>
+    ///                 <description>Enumerate secrets data</description>
+    ///                 <columns>
+    ///                     <column name="Namespace" type="string">Namespace string</column>
+    ///                     <column name="Name" type="string">Name string</column>
+    ///                     <column name="Key" type="string">Key string</column>
+    ///                     <column name="Value" type="byte[]">Value byte array</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                     </environmentVariables>
     ///                        #kubernetes.secrets()
     ///                 </from>
     ///                 <description>Enumerate secrets</description>
@@ -391,6 +409,7 @@ public class KubernetesSchema : SchemaBase
             ServicesTableName => new ServicesTable(),
             DeploymentsTableName => new DeploymentsTable(),
             ReplicaSetsTableName => new ReplicaSetsTable(),
+            SecretsDataTableName => new SecretsDataTable(),
             NodesTableName => new NodesTable(),
             SecretsTableName => new SecretsTable(),
             ConfigMapsTableName => new ConfigmapsTable(),
@@ -422,6 +441,7 @@ public class KubernetesSchema : SchemaBase
             ServicesTableName => new ServicesSource(client),
             DeploymentsTableName => new DeploymentsSource(client),
             ReplicaSetsTableName => new ReplicaSetsSource(client),
+            SecretsDataTableName => new SecretsDataSource(client),
             NodesTableName => new NodesSource(client),
             SecretsTableName => new SecretsSource(client),
             ConfigMapsTableName => new ConfigmapsSource(client),

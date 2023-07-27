@@ -10,7 +10,7 @@ public class ServiceEntity
     
     public string ClusterIP { get; set; }
     
-    public string ExternalIP { get; set; }
+    public string ExternalIPs { get; set; }
     
     public string Ports { get; set; }
 }

@@ -17,7 +17,7 @@ internal static class ServicesSourceHelper
             {nameof(ServiceEntity.Name), 1},
             {nameof(ServiceEntity.Type), 2},
             {nameof(ServiceEntity.ClusterIP), 3},
-            {nameof(ServiceEntity.ExternalIP), 4},
+            {nameof(ServiceEntity.ExternalIPs), 4},
             {nameof(ServiceEntity.Ports), 5}
         };
         
@@ -27,7 +27,7 @@ internal static class ServicesSourceHelper
             {1, info => info.Name},
             {2, info => info.Type},
             {3, info => info.ClusterIP},
-            {4, info => info.ExternalIP},
+            {4, info => info.ExternalIPs},
             {5, info => info.Ports}
         };
         
@@ -37,7 +37,7 @@ internal static class ServicesSourceHelper
             new SchemaColumn(nameof(ServiceEntity.Name), 1, typeof(string)),
             new SchemaColumn(nameof(ServiceEntity.Type), 2, typeof(string)),
             new SchemaColumn(nameof(ServiceEntity.ClusterIP), 3, typeof(string)),
-            new SchemaColumn(nameof(ServiceEntity.ExternalIP), 4, typeof(string)),
+            new SchemaColumn(nameof(ServiceEntity.ExternalIPs), 4, typeof(string)),
             new SchemaColumn(nameof(ServiceEntity.Ports), 5, typeof(string))
         };
     }

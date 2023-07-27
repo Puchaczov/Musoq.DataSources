@@ -26,7 +26,7 @@ internal class PersistentVolumesSource : RowSourceBase<PersistentVolumeEntity>
         return new PersistentVolumeEntity
         {
             Name = v1PersistentVolume.Metadata.Name,
-            Capacity = v1PersistentVolume.Spec.Capacity,
+            Namespace = v1PersistentVolume.Metadata.NamespaceProperty,
             AccessModes = string.Join(",", v1PersistentVolume.Spec.AccessModes),
             ReclaimPolicy = v1PersistentVolume.Spec.PersistentVolumeReclaimPolicy,
             Status = v1PersistentVolume.Status.Phase,

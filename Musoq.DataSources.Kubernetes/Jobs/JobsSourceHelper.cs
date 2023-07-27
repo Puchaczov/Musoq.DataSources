@@ -12,7 +12,8 @@ internal static class JobsSourceHelper
         {nameof(JobEntity.Completions), 2},
         {nameof(JobEntity.Duration), 3},
         {nameof(JobEntity.Images), 4},
-        {nameof(JobEntity.Age), 5}
+        {nameof(JobEntity.Containers), 5},
+        {nameof(JobEntity.Age), 6}
     };
 
     internal static readonly IDictionary<int, Func<JobEntity, object?>> JobsIndexToMethodAccessMap = new Dictionary<int, Func<JobEntity, object?>>
@@ -22,7 +23,8 @@ internal static class JobsSourceHelper
         {2, c => c.Completions},
         {3, c => c.Duration},
         {4, c => c.Images},
-        {5, c => c.Age}
+        {5, c => c.Containers},
+        {6, c => c.Age}
     };
     
     internal static readonly ISchemaColumn[] JobsColumns = {
@@ -31,6 +33,7 @@ internal static class JobsSourceHelper
         new SchemaColumn(nameof(JobEntity.Completions), 2, typeof(int)),
         new SchemaColumn(nameof(JobEntity.Duration), 3, typeof(TimeSpan?)),
         new SchemaColumn(nameof(JobEntity.Images), 4, typeof(string)),
-        new SchemaColumn(nameof(JobEntity.Age), 5, typeof(DateTime?))
+        new SchemaColumn(nameof(JobEntity.Containers), 5, typeof(string)),
+        new SchemaColumn(nameof(JobEntity.Age), 6, typeof(DateTime?))
     };
 }

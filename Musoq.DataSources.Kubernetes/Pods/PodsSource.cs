@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using k8s.Models;
 using Musoq.Schema.DataSources;
+using Newtonsoft.Json;
 
 namespace Musoq.DataSources.Kubernetes.Pods;
 
@@ -25,23 +26,29 @@ internal class PodsSource : RowSourceBase<PodEntity>
 
     private static PodEntity MapV1PodToPodEntity(V1Pod v1Pod)
     {
+        if (v1Pod is null)
+            throw new NullReferenceException(nameof(v1Pod));
+        
         var hasAnyStatus = v1Pod.Status.ContainerStatuses?.Any() ?? false;
         var hasAnyContainer = v1Pod.Spec.Containers?.Any() ?? false;
-
-        Debug.WriteLine(v1Pod.Spec.Containers != null, "v1Pod.Spec.Containers != null");
-        Debug.WriteLine(v1Pod.Status.ContainerStatuses != null, "v1Pod.Status.ContainerStatuses != null");
         
+        if (v1Pod.Spec.Containers is null)
+            throw new NullReferenceException(nameof(v1Pod.Spec.Containers));
+        
+        if (v1Pod.Status.ContainerStatuses is null)
+            throw new NullReferenceException(nameof(v1Pod.Status.ContainerStatuses));
+
         return new PodEntity
         {
             Name = v1Pod.Metadata.Name,
             Namespace = v1Pod.Metadata.NamespaceProperty,
-            Type = hasAnyContainer ? v1Pod.Spec.Containers[0].Name : "--",
+            ContainersNames = hasAnyContainer ? string.Join(",", v1Pod.Spec.Containers.Select(f => f.Name)) : "--",
             PF = v1Pod.Status.Phase,
-            Ready = hasAnyStatus && v1Pod.Status.ContainerStatuses[0].Ready,
-            Restarts = hasAnyStatus ? v1Pod.Status.ContainerStatuses[0].RestartCount : 0,
-            Status = hasAnyStatus ? v1Pod.Status.ContainerStatuses[0].State.Running != null ? "Running" : "Not Running" : "Not Running",
-            Cpu = hasAnyStatus ? v1Pod.Status.ContainerStatuses[0].Resources.Limits["cpu"].Value : "--",
-            Memory = hasAnyStatus ? v1Pod.Status.ContainerStatuses[0].Resources.Limits["memory"].Value : "--",
+            Ready = hasAnyStatus && v1Pod.Status.ContainerStatuses.All(f => f.Ready),
+            Restarts = hasAnyStatus ? string.Join(",", v1Pod.Status.ContainerStatuses.Select(f => f.RestartCount)) : "--",
+            Statuses = hasAnyStatus
+                ? string.Join(",", v1Pod.Status.ContainerStatuses.Select(f => f.State.Running != null ? "Running" : "Not Running"))
+                : "Empty",
             IP = v1Pod.Status.PodIP
         };
     }

@@ -9,7 +9,7 @@ internal static class PersistentVolumesSourceHelper
     internal static readonly IDictionary<string, int> PersistentVolumesNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(PersistentVolumeEntity.Name), 0},
-        {nameof(PersistentVolumeEntity.Capacity), 1},
+        {nameof(PersistentVolumeEntity.Namespace), 1},
         {nameof(PersistentVolumeEntity.AccessModes), 2},
         {nameof(PersistentVolumeEntity.ReclaimPolicy), 3},
         {nameof(PersistentVolumeEntity.Status), 4},
@@ -22,7 +22,7 @@ internal static class PersistentVolumesSourceHelper
     internal static readonly IDictionary<int, Func<PersistentVolumeEntity, object?>> PersistentVolumesIndexToMethodAccessMap = new Dictionary<int, Func<PersistentVolumeEntity, object?>>
     {
         {0, c => c.Name},
-        {1, c => c.Capacity},
+        {1, c => c.Namespace},
         {2, c => c.AccessModes},
         {3, c => c.ReclaimPolicy},
         {4, c => c.Status},
@@ -34,7 +34,7 @@ internal static class PersistentVolumesSourceHelper
 
     internal static readonly ISchemaColumn[] PersistentVolumesColumns = {
         new SchemaColumn(nameof(PersistentVolumeEntity.Name), 0, typeof(string)),
-        new SchemaColumn(nameof(PersistentVolumeEntity.Capacity), 1, typeof(IDictionary<string, ResourceQuantity>)),
+        new SchemaColumn(nameof(PersistentVolumeEntity.Namespace), 1, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeEntity.AccessModes), 2, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeEntity.ReclaimPolicy), 3, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeEntity.Status), 4, typeof(string)),

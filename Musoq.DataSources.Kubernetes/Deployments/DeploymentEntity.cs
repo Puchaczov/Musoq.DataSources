@@ -12,19 +12,13 @@ public class DeploymentEntity
     
     public string ResourceVersion { get; set; }
     
-    public string Image { get; set; }
+    public string Images { get; set; }
     
-    public string ImagePullPolicy { get; set; }
+    public string ImagePullPolicies { get; set; }
     
     public string RestartPolicy { get; set; }
     
-    public string Type { get; set; }
+    public string ContainersNames { get; set; }
     
     public string Status { get; set; }
-    
-    public string ClusterIP { get; set; }
-    
-    public string ExternalIP { get; set; }
-    
-    public string Ports { get; set; }
 }

@@ -30,7 +30,7 @@ internal class CronJobsSource : RowSourceBase<CronJobEntity>
             Name = v1CronJob.Metadata.Name,
             Namespace = v1CronJob.Metadata.NamespaceProperty,
             Schedule = v1CronJob.Spec.Schedule,
-            Active = v1CronJob.Status.Active.Any(f => f.Name == v1CronJob.Metadata.Name),
+            Statuses = v1CronJob.Status.Active != null ? string.Join(",", v1CronJob.Status.Active.Select(f => f.Name)) : string.Empty,
             LastScheduleTime = v1CronJob.Status.LastScheduleTime
         };
     }

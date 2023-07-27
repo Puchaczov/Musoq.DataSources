@@ -4,9 +4,9 @@ namespace Musoq.DataSources.Kubernetes.PersistentVolumes;
 
 public class PersistentVolumeEntity
 {
+    public string Namespace { get; set; }
+    
     public string Name { get; set; }
-
-    public IDictionary<string, ResourceQuantity> Capacity { get; set; }
     
     public string AccessModes { get; set; }
     

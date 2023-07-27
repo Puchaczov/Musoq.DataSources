@@ -8,7 +8,7 @@ public class CronJobEntity
 
     public string Schedule { get; set; }
 
-    public bool Active { get; set; }
+    public string Statuses { get; set; }
 
     public DateTime? LastScheduleTime { get; set; }
 }

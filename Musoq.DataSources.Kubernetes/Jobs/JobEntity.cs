@@ -12,5 +12,7 @@ public class JobEntity
     
     public string Images { get; set; }
     
+    public string Containers { get; set; }
+    
     public DateTime? Age { get; set; }
 }

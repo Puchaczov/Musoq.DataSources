@@ -29,8 +29,8 @@ internal class IngressesSource : RowSourceBase<IngressEntity>
             Namespace = v1Ingress.Metadata.NamespaceProperty,
             Class = v1Ingress.Spec.IngressClassName,
             Hosts = string.Join(",", v1Ingress.Spec.Rules.Select(c => c.Host)),
-            Address = string.Join(",", v1Ingress.Status.LoadBalancer.Ingress.Select(c => c.Ip)),
-            Ports = string.Join(",", v1Ingress.Spec.DefaultBackend.Service.Port.Number),
+            Address = string.Join(",", v1Ingress.Status.LoadBalancer.Ingress.Select(c => c.Hostname ?? c.Ip)),
+            Ports = string.Join(",", v1Ingress.Spec.Tls.SelectMany(c => c.Hosts)),
             Age = v1Ingress.Metadata.CreationTimestamp
         };
     }

@@ -30,7 +30,7 @@ internal class ServicesSource : RowSourceBase<ServiceEntity>
             Namespace = v1Service.Metadata.NamespaceProperty,
             Type = v1Service.Spec.Type,
             ClusterIP = v1Service.Spec.ClusterIP,
-            ExternalIP = v1Service.Spec.ExternalIPs != null ? string.Join(",", v1Service.Spec.ExternalIPs) : string.Empty,
+            ExternalIPs = v1Service.Spec.ExternalIPs != null ? string.Join(",", v1Service.Spec.ExternalIPs) : string.Empty,
             Ports = v1Service.Spec.Ports != null ? string.Join(",", v1Service.Spec.Ports.Select(c => c.Port)) : string.Empty
         };
     }

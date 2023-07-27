@@ -28,7 +28,8 @@ internal class SecretsSource : RowSourceBase<SecretEntity>
             Name = v1Secret.Metadata.Name,
             Namespace = v1Secret.Metadata.NamespaceProperty,
             Type = v1Secret.Type,
-            Age = v1Secret.Metadata.CreationTimestamp
+            Immutable = v1Secret.Immutable,
+            Age = v1Secret.Metadata.CreationTimestamp,
         };
     }
 }

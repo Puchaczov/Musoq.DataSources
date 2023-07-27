@@ -6,19 +6,15 @@ public class PodEntity
     
     public string Name { get; set; }
     
-    public string Type { get; set; }
+    public string ContainersNames { get; set; }
     
     public string PF { get; set; }
     
     public bool Ready { get; set; }
     
-    public int Restarts { get; set; }
+    public string Restarts { get; set; }
     
-    public string Status { get; set; }
-    
-    public string Cpu { get; set; }
-    
-    public string Memory { get; set; }
+    public string Statuses { get; set; }
     
     public string IP { get; set; }
 }

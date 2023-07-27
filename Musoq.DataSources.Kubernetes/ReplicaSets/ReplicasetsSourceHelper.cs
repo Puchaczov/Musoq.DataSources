@@ -29,7 +29,7 @@ internal static class ReplicaSetsSourceHelper
         new SchemaColumn(nameof(ReplicaSetEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(ReplicaSetEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(ReplicaSetEntity.Desired), 2, typeof(int?)),
-        new SchemaColumn(nameof(ReplicaSetEntity.Current), 3, typeof(string)),
+        new SchemaColumn(nameof(ReplicaSetEntity.Current), 3, typeof(int)),
         new SchemaColumn(nameof(ReplicaSetEntity.Ready), 4, typeof(int?)),
         new SchemaColumn(nameof(ReplicaSetEntity.Age), 5, typeof(DateTime?))
     };

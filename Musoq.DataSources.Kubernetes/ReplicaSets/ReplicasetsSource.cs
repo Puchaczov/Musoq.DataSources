@@ -28,7 +28,7 @@ internal class ReplicaSetsSource : RowSourceBase<ReplicaSetEntity>
             Name = v1ReplicaSet.Metadata.Name,
             Namespace = v1ReplicaSet.Metadata.NamespaceProperty,
             Desired = v1ReplicaSet.Spec.Replicas,
-            Current = v1ReplicaSet.Status.Replicas.ToString(),
+            Current = v1ReplicaSet.Status.Replicas,
             Ready = v1ReplicaSet.Status.ReadyReplicas,
             Age = v1ReplicaSet.Metadata.CreationTimestamp
         };

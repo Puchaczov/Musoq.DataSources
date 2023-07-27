@@ -292,6 +292,26 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
+    
+    [TestMethod]
+    public void SecretsDataPlaygroundDesc_ShouldBeIgnored()
+    {
+        const string query = "desc #kubernetes.secretsdata()";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+    }
+    
+    [TestMethod]
+    public void SecretsDataPlayground_ShouldBeIgnored()
+    {
+        const string query = "select * from #kubernetes.secretsdata()";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+    }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
@@ -299,7 +319,7 @@ public class KubernetesPlaygroundTests
             script, 
             Guid.NewGuid().ToString(), 
             new PlaygroundSchemaProvider(), 
-            new Dictionary<uint, IReadOnlyDictionary<string, string>>()
+            new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
                 {0, new Dictionary<string, string>()},
                 {1, new Dictionary<string, string>()}

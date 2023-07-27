@@ -8,7 +8,7 @@ public class ReplicaSetEntity
     
     public int? Desired { get; set; }
     
-    public string Current { get; set; }
+    public int Current { get; set; }
     
     public int? Ready { get; set; }
     

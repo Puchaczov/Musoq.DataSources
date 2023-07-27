@@ -31,11 +31,11 @@ internal class DeploymentsSource : RowSourceBase<DeploymentEntity>
             CreationTimestamp = v1Deployment.Metadata.CreationTimestamp,
             Generation = v1Deployment.Metadata.Generation,
             ResourceVersion = v1Deployment.Metadata.ResourceVersion,
-            Image = v1Deployment.Spec.Template.Spec.Containers[0].Image,
-            ImagePullPolicy = v1Deployment.Spec.Template.Spec.Containers[0].ImagePullPolicy,
+            Images = string.Join(',', v1Deployment.Spec.Template.Spec.Containers.Select(f => f.Image)),
+            ImagePullPolicies = string.Join(',', v1Deployment.Spec.Template.Spec.Containers.Select(f => f.ImagePullPolicy)),
             RestartPolicy = v1Deployment.Spec.Template.Spec.RestartPolicy,
-            Type = v1Deployment.Spec.Template.Spec.Containers[0].Name,
-            Status = v1Deployment.Status.Conditions[0].Status
+            ContainersNames = string.Join(',', v1Deployment.Spec.Template.Spec.Containers.Select(f => f.Name)),
+            Status = v1Deployment.Status.Conditions != null ? v1Deployment.Status.Conditions.Select(f => f.Status).ElementAt(0) : string.Empty
         };
     }
 }

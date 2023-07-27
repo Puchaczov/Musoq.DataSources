@@ -10,7 +10,8 @@ internal static class SecretsSourceHelper
         {nameof(SecretEntity.Namespace), 0},
         {nameof(SecretEntity.Name), 1},
         {nameof(SecretEntity.Type), 2},
-        {nameof(SecretEntity.Age), 3}
+        {nameof(SecretEntity.Immutable), 3},
+        {nameof(SecretEntity.Age), 4}
     };
 
     internal static readonly IDictionary<int, Func<SecretEntity, object?>> SecretsIndexToMethodAccessMap = new Dictionary<int, Func<SecretEntity, object?>>
@@ -18,7 +19,8 @@ internal static class SecretsSourceHelper
         {0, t => t.Namespace},
         {1, t => t.Name},
         {2, t => t.Type},
-        {3, t => t.Age}
+        {3, t => t.Immutable},
+        {4, t => t.Age}
     };
     
     internal static readonly ISchemaColumn[] SecretsColumns = new ISchemaColumn[]
@@ -26,6 +28,7 @@ internal static class SecretsSourceHelper
         new SchemaColumn(nameof(SecretEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(SecretEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(SecretEntity.Type), 2, typeof(string)),
+        new SchemaColumn(nameof(SecretEntity.Immutable), 3, typeof(bool?)),
         new SchemaColumn(nameof(SecretEntity.Age), 3, typeof(DateTime?))
     };
 }

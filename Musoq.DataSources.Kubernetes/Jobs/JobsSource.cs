@@ -30,6 +30,7 @@ internal class JobsSource : RowSourceBase<JobEntity>
             Completions = v1Job.Spec.Completions ?? 0,
             Duration = v1Job.Status.CompletionTime - v1Job.Status.StartTime,
             Images = string.Join(",", v1Job.Spec.Template.Spec.Containers.Select(c => c.Image)),
+            Containers = string.Join(",", v1Job.Spec.Template.Spec.Containers.Select(c => c.Name)),
             Age = v1Job.Metadata.CreationTimestamp
         };
     }
