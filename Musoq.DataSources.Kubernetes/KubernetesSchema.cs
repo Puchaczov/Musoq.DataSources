@@ -58,7 +58,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.deployments()
     ///                 </from>
@@ -83,7 +83,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                         #kubernetes.pods()
     ///                 </from>
@@ -108,7 +108,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.services()
     ///                 </from>
@@ -129,7 +129,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                         #kubernetes.nodes()
     ///                 </from>
@@ -155,7 +155,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.configmaps()
     ///                 </from>
@@ -173,7 +173,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.cronJobs()
     ///                 </from>
@@ -193,7 +193,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.daemonSets()
     ///                 </from>
@@ -216,7 +216,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.jobs()
     ///                 </from>
@@ -237,7 +237,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.persistentVolumeClaims()
     ///                 </from>
@@ -258,7 +258,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.persistentVolumes()
     ///                 </from>
@@ -282,7 +282,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.replicaSets()
     ///                 </from>
@@ -302,7 +302,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.secretsData()
     ///                 </from>
@@ -321,7 +321,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.secrets()
     ///                 </from>
@@ -340,7 +340,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.statefulsets()
     ///                 </from>
@@ -359,7 +359,7 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
     ///                     </environmentVariables>
     ///                        #kubernetes.podcontainers()
     ///                 </from>
