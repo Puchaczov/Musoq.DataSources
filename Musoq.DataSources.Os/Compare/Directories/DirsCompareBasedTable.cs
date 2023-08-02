@@ -11,4 +11,6 @@ internal class DirsCompareBasedTable : ISchemaTable
     {
         return CompareDirectoriesHelper.CompareDirectoriesColumns.SingleOrDefault(column => column.ColumnName == name);
     }
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(CompareDirectoriesResult));
 }

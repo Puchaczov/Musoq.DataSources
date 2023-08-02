@@ -36,7 +36,7 @@ public class OpenAiLibrary : LibraryBase
     /// <param name="question">Question</param>
     /// <returns>True is content is about given question, otherwise false</returns> 
     [BindableMethod]
-    public bool IsContentAbout([InjectSource] OpenAiEntity entity, string content, string question)
+    public bool IsContentAbout([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content, string question)
     {
         var api = entity.Api;
         var isContentAboutResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
@@ -59,7 +59,7 @@ public class OpenAiLibrary : LibraryBase
     /// <param name="throwOnUnknown">Whether to throw an exception if the sentiment is unknown</param>
     /// <returns>Sentiment</returns>
     [BindableMethod]
-    public string Sentiment([InjectSource] OpenAiEntity entity, string content, bool throwOnUnknown = false)
+    public string Sentiment([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content, bool throwOnUnknown = false)
     {
         var api = entity.Api;
         var sentimentResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
@@ -84,7 +84,7 @@ public class OpenAiLibrary : LibraryBase
     /// <param name="content">Content</param>
     /// <returns>Summarized content</returns>
     [BindableMethod]
-    public string SummarizeContent([InjectSource] OpenAiEntity entity, string content)
+    public string SummarizeContent([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content)
     {
         var api = entity.Api;
         var summarizeResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
@@ -105,7 +105,7 @@ public class OpenAiLibrary : LibraryBase
     /// <param name="to">Destination language</param>
     /// <returns>Translated content</returns>
     [BindableMethod]
-    public string TranslateContent([InjectSource] OpenAiEntity entity, string content, string from, string to)
+    public string TranslateContent([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content, string from, string to)
     {
         var api = entity.Api;
         var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
@@ -125,7 +125,7 @@ public class OpenAiLibrary : LibraryBase
     /// <param name="throwOnException">Whether to throw an exception if an exception occurs</param>
     /// <returns>Array of entities</returns>
     [BindableMethod]
-    public string[] Entities([InjectSource] OpenAiEntity entity, string content, bool throwOnException = false)
+    public string[] Entities([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content, bool throwOnException = false)
     {
         var api = entity.Api;
         var getEntitiesResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()

@@ -1,4 +1,7 @@
-﻿using Musoq.DataSources.Kubernetes.SecretData;
+﻿using Musoq.DataSources.Kubernetes.Deployments;
+using Musoq.DataSources.Kubernetes.PodContainers;
+using Musoq.DataSources.Kubernetes.Pods;
+using Musoq.DataSources.Kubernetes.SecretData;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
 
@@ -15,7 +18,7 @@ public class KubernetesLibrary : LibraryBase
     /// <param name="row">The row</param>
     /// <returns>Decoded string</returns>
     [BindableMethod]
-    public string DecodeSecret([InjectSource] SecretDataEntity row)
+    public string DecodeSecret([InjectSpecificSource(typeof(SecretDataEntity))] SecretDataEntity row)
     {
         var text = System.Text.Encoding.UTF8.GetString(row.Value);
         var base64EncodedBytes = System.Convert.FromBase64String(text);
@@ -30,7 +33,7 @@ public class KubernetesLibrary : LibraryBase
     /// <param name="encoding">Encoding</param>
     /// <returns>Decoded secret</returns>
     [BindableMethod]
-    public string DecodeSecret([InjectSource] SecretDataEntity row, string encoding)
+    public string DecodeSecret([InjectSpecificSource(typeof(SecretDataEntity))] SecretDataEntity row, string encoding)
     {
         var text = System.Text.Encoding.GetEncoding(encoding).GetString(row.Value);
         var base64EncodedBytes = System.Convert.FromBase64String(text);
@@ -61,5 +64,59 @@ public class KubernetesLibrary : LibraryBase
     {
         var plainTextBytes = System.Text.Encoding.GetEncoding(encoding).GetBytes(text);
         return Convert.ToBase64String(plainTextBytes);
+    }
+
+    // /// <summary>
+    // /// Gets the deployment label.
+    // /// </summary>
+    // /// <param name="row">The row</param>
+    // /// <param name="key">The key</param>
+    // /// <returns>Label</returns>
+    // [BindableMethod]
+    // public string GetLabel([InjectSource] DeploymentEntity row, string key)
+    // {
+    //     return row.RawObject.Metadata.Labels[key];
+    // }
+    //
+    // /// <summary>
+    // /// Gets the pod label.
+    // /// </summary>
+    // /// <param name="row">The row</param>
+    // /// <param name="key">The key</param>
+    // /// <returns>Label</returns>
+    // [BindableMethod]
+    // public string GetLabel([InjectSource] PodEntity row, string key)
+    // {
+    //     return row.RawObject.Metadata.Labels[key];
+    // }
+    //
+    // /// <summary>
+    // /// Gets the pod container label.
+    // /// </summary>
+    // /// <param name="row">The row</param>
+    // /// <param name="key">The key</param>
+    // /// <returns>Label</returns>
+    // [BindableMethod]
+    // public string GetLabel([InjectSource] PodContainerEntity row, string key)
+    // {
+    //     return row.RawObjectMetadata.Labels[key];
+    // }
+
+    /// <summary>
+    /// Gets the pod container label.
+    /// </summary>
+    /// <param name="row">The row</param>
+    /// <param name="key">The key</param>
+    /// <returns>Label</returns>
+    [BindableMethod]
+    public string? GetLabelOrDefault([InjectSpecificSource(typeof(IWithObjectMetadata))] IWithObjectMetadata row, string key)
+    {
+        if (row.Metadata.Labels == null)
+            return null;
+        
+        if (row.Metadata.Labels.TryGetValue(key, out var keyValue))
+            return keyValue;
+        
+        return null;
     }
 }

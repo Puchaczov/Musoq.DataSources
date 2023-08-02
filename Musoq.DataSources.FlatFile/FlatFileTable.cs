@@ -11,5 +11,7 @@ namespace Musoq.DataSources.FlatFile
         {
             return Columns.SingleOrDefault(column => column.ColumnName == name);
         }
+    
+        public SchemaTableMetadata Metadata { get; } = new(typeof(FlatFileEntity));
     }
 }

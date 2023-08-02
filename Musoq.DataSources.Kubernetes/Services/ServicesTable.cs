@@ -10,4 +10,6 @@ internal class ServicesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => ServicesSourceHelper.ServicesColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(ServiceEntity));
 }

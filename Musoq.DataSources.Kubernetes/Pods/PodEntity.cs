@@ -1,20 +1,31 @@
-﻿namespace Musoq.DataSources.Kubernetes.Pods;
+﻿using k8s.Models;
 
-public class PodEntity
+namespace Musoq.DataSources.Kubernetes.Pods;
+
+public class PodEntity : IWithObjectMetadata
 {
-    public string Namespace { get; set; }
+    public PodEntity(V1Pod pod)
+    {
+        RawObject = pod;
+    }
+
+    public string Namespace { get; init; }
     
-    public string Name { get; set; }
+    public string Name { get; init; }
     
-    public string ContainersNames { get; set; }
+    public string ContainersNames { get; init; }
     
-    public string PF { get; set; }
+    public string PF { get; init; }
     
-    public bool Ready { get; set; }
+    public bool Ready { get; init; }
     
-    public string Restarts { get; set; }
+    public string Restarts { get; init; }
     
-    public string Statuses { get; set; }
+    public string Statuses { get; init; }
     
-    public string IP { get; set; }
+    public string IP { get; init; }
+
+    internal V1Pod RawObject { get; }
+    
+    public V1ObjectMeta Metadata => RawObject.Metadata;
 }

@@ -11,4 +11,6 @@ internal class AirtableBasesSchemaTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => AirtableBasesHelper.BasesColumns;
+
+    public SchemaTableMetadata Metadata { get; } = new(typeof(AirtableBase));
 }

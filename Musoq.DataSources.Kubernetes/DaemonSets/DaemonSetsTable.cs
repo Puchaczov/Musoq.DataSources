@@ -10,4 +10,6 @@ internal class DaemonSetsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => DaemonSetsSourceHelper.DaemonSetsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(DaemonSetEntity));
 }

@@ -21,7 +21,11 @@ internal class PodsSource : RowSourceBase<PodEntity>
 
         chunkedSource.Add(
             pods.Items.Select(c => 
-                new EntityResolver<PodEntity>(MapV1PodToPodEntity(c), PodsSourceHelper.PodsNameToIndexMap, PodsSourceHelper.PodsIndexToMethodAccessMap)).ToList());
+                new EntityResolver<PodEntity>(
+                    MapV1PodToPodEntity(c), 
+                    PodsSourceHelper.PodsNameToIndexMap, 
+                    PodsSourceHelper.PodsIndexToMethodAccessMap))
+                .ToList());
     }
 
     private static PodEntity MapV1PodToPodEntity(V1Pod v1Pod)
@@ -38,7 +42,7 @@ internal class PodsSource : RowSourceBase<PodEntity>
         if (v1Pod.Status.ContainerStatuses is null)
             throw new NullReferenceException(nameof(v1Pod.Status.ContainerStatuses));
 
-        return new PodEntity
+        return new PodEntity(v1Pod)
         {
             Name = v1Pod.Metadata.Name,
             Namespace = v1Pod.Metadata.NamespaceProperty,

@@ -44,6 +44,8 @@ public abstract class DatabaseTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns { get; private set; }
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(object));
 
     public ISchemaColumn? GetColumnByName(string name)
     {

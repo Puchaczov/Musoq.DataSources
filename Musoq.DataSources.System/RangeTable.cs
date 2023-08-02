@@ -6,6 +6,8 @@ namespace Musoq.DataSources.System
     internal class RangeTable : ISchemaTable
     {
         public ISchemaColumn[] Columns => RangeHelper.RangeColumns;
+    
+        public SchemaTableMetadata Metadata { get; } = new(typeof(RangeItemEntity));
 
         public ISchemaColumn GetColumnByName(string name)
         {

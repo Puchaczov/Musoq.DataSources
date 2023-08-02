@@ -6,6 +6,8 @@ namespace Musoq.Schema.Xml
     internal class XmlFileTable : ISchemaTable
     {
         public ISchemaColumn[] Columns => System.Array.Empty<ISchemaColumn>();
+    
+        public SchemaTableMetadata Metadata { get; } = new(typeof(DynamicElement));
 
         public ISchemaColumn GetColumnByName(string name)
         {

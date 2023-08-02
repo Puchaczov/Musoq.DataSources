@@ -33,6 +33,8 @@ namespace Musoq.DataSources.SeparatedValues
         }
 
         public ISchemaColumn[] Columns { get; }
+    
+        public SchemaTableMetadata Metadata { get; } = new(typeof(object[]));
 
         public ISchemaColumn GetColumnByName(string name)
         {

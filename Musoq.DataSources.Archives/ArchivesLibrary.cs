@@ -18,7 +18,7 @@ public class ArchivesLibrary : LibraryBase
     /// <param name="source" injectedByRuntime="true"></param>
     /// <returns>Content of a file</returns>
     [BindableMethod]
-    public byte[] GetContent([InjectSource] EntryWrapper source)
+    public byte[] GetContent([InjectSpecificSource(typeof(EntryWrapper))] EntryWrapper source)
     {
         using var stream = source.Reader.OpenEntryStream();
         using var memoryStream = new MemoryStream();
@@ -32,7 +32,7 @@ public class ArchivesLibrary : LibraryBase
     /// <param name="source" injectedByRuntime="true"></param>
     /// <returns>Stream of a file</returns>
     [BindableMethod]
-    public Stream GetContentStream([InjectSource] EntryWrapper source)
+    public Stream GetContentStream([InjectSpecificSource(typeof(EntryWrapper))] EntryWrapper source)
     {
         using var stream = source.Reader.OpenEntryStream();
         var memoryStream = new MemoryStream();

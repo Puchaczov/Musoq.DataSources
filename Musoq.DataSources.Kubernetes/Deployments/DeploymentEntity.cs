@@ -1,24 +1,35 @@
-﻿namespace Musoq.DataSources.Kubernetes.Deployments;
+﻿using k8s.Models;
 
-public class DeploymentEntity
+namespace Musoq.DataSources.Kubernetes.Deployments;
+
+public class DeploymentEntity : IWithObjectMetadata
 {
-    public string Namespace { get; set; }
+    public DeploymentEntity(V1Deployment rawObject)
+    {
+        RawObject = rawObject;
+    }
+
+    public string Namespace { get; init; }
     
-    public string Name { get; set; }
+    public string Name { get; init; }
     
-    public DateTime? CreationTimestamp { get; set; }
+    public DateTime? CreationTimestamp { get; init; }
     
-    public long? Generation { get; set; }
+    public long? Generation { get; init; }
     
-    public string ResourceVersion { get; set; }
+    public string ResourceVersion { get; init; }
     
-    public string Images { get; set; }
+    public string Images { get; init; }
     
-    public string ImagePullPolicies { get; set; }
+    public string ImagePullPolicies { get; init; }
     
-    public string RestartPolicy { get; set; }
+    public string RestartPolicy { get; init; }
     
-    public string ContainersNames { get; set; }
+    public string ContainersNames { get; init; }
     
-    public string Status { get; set; }
+    public string Status { get; init; }
+    
+    internal V1Deployment RawObject { get; init; }
+    
+    public V1ObjectMeta Metadata => RawObject.Metadata;
 }

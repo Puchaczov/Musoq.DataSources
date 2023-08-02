@@ -10,4 +10,6 @@ internal class OpenAiSingleRowTable : ISchemaTable
     {
         return Columns.Single(column => column.ColumnName == name);
     }
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(OpenAiEntity));
 }

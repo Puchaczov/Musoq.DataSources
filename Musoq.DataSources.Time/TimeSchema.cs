@@ -102,14 +102,11 @@ namespace Musoq.DataSources.Time
         private static MethodsAggregator CreateLibrary()
         {
             var methodsManager = new MethodsManager();
-            var propertiesManager = new PropertiesManager();
-
             var library = new TimeLibrary();
 
             methodsManager.RegisterLibraries(library);
-            propertiesManager.RegisterProperties(library);
 
-            return new MethodsAggregator(methodsManager, propertiesManager);
+            return new MethodsAggregator(methodsManager);
         }
     }
 }

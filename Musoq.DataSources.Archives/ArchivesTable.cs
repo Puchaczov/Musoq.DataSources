@@ -34,4 +34,6 @@ internal class ArchivesTable : ISchemaTable
         new SchemaColumn(nameof(EntryWrapper.Attrib), 16, typeof(int?)),
         new SchemaColumn(nameof(EntryWrapper.TextContent), 17, typeof(string))
     };
+
+    public SchemaTableMetadata Metadata { get; } = new(typeof(EntryWrapper));
 }

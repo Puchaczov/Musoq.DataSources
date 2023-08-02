@@ -10,4 +10,6 @@ internal class PersistentVolumeClaimsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => PersistentVolumeClaimsSourceHelper.PersistentVolumeClaimsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(PersistentVolumeClaimEntity));
 }

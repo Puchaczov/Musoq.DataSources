@@ -10,4 +10,6 @@ internal class NodesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => NodesSourceHelper.NodesColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(NodeEntity));
 }

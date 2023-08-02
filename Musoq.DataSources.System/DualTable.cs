@@ -10,6 +10,8 @@ namespace Musoq.DataSources.System
         {
             new SchemaColumn(nameof(DualEntity.Dummy), 0, typeof(string)), 
         };
+    
+        public SchemaTableMetadata Metadata { get; } = new(typeof(DualEntity));
 
         public ISchemaColumn GetColumnByName(string name)
         {

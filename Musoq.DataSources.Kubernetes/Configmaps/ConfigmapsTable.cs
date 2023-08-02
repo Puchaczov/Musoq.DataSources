@@ -10,4 +10,6 @@ internal class ConfigmapsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => ConfigmapsSourceHelper.ConfigmapsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(ConfigmapEntity));
 }

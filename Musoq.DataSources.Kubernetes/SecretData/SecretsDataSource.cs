@@ -23,10 +23,10 @@ internal class SecretsDataSource : RowSourceBase<SecretDataEntity>
         }) ?? Array.Empty<InternalSecretDataEntity>()).ToArray();
 
         chunkedSource.Add(
-            secrets.Select(c => new EntityResolver<SecretDataEntity>(MapV1SecretDataToSecretDataEntity(c), SecretsDataSourceHelper.SecretsNameToIndexMap, SecretsDataSourceHelper.SecretsIndexToMethodAccessMap)).ToList());
+            secrets.Select(c => new EntityResolver<SecretDataEntity>(MapInternalSecretDataEntityToSecretDataEntity(c), SecretsDataSourceHelper.SecretsNameToIndexMap, SecretsDataSourceHelper.SecretsIndexToMethodAccessMap)).ToList());
     }
     
-    private static SecretDataEntity MapV1SecretDataToSecretDataEntity(InternalSecretDataEntity v1Secret)
+    private static SecretDataEntity MapInternalSecretDataEntityToSecretDataEntity(InternalSecretDataEntity v1Secret)
     {
         return new SecretDataEntity
         {

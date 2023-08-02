@@ -77,14 +77,11 @@ namespace Musoq.DataSources.Json
         private static MethodsAggregator CreateLibrary()
         {
             var methodsManager = new MethodsManager();
-            var propertiesManager = new PropertiesManager();
-
             var library = new JsonLibrary();
 
             methodsManager.RegisterLibraries(library);
-            propertiesManager.RegisterProperties(library);
 
-            return new MethodsAggregator(methodsManager, propertiesManager);
+            return new MethodsAggregator(methodsManager);
         }
     }
 }

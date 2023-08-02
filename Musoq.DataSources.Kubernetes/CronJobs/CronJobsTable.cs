@@ -10,4 +10,6 @@ internal class CronJobsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => CronJobsSourceHelper.CronJobsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(CronJobEntity));
 }

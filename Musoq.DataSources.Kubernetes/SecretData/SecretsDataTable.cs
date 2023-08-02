@@ -10,4 +10,6 @@ internal class SecretsDataTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => SecretsDataSourceHelper.SecretsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(SecretDataEntity));
 }

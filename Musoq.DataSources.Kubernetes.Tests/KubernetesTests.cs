@@ -1048,6 +1048,87 @@ public class KubernetesTests
         Assert.AreEqual(4, table[0].Count);
     }
 
+    [TestMethod]
+    public void WhenPodContainersQueried_ShouldReturnValues()
+    {
+        var api = new Mock<IKubernetesApi>();
+        
+        api.Setup(f => f.ListPodsForAllNamespaces())
+            .Returns(new V1PodList
+            {
+                Items = new List<V1Pod>
+                {
+                    new()
+                    {
+                        Metadata = new V1ObjectMeta
+                        {
+                            Name = "Name",
+                            CreationTimestamp = DateTime.MinValue,
+                            NamespaceProperty = "Namespace",
+                            Labels = new Dictionary<string, string>
+                            {
+                                {"name", "PodName"}
+                            }
+                        },
+                        Spec = new V1PodSpec
+                        {
+                            Containers = new List<V1Container>
+                            {
+                                new()
+                                {
+                                    Image = "Image",
+                                    ImagePullPolicy = "ImagePullPolicy",
+                                    Name = "ContainerName"
+                                }
+                            },
+                            RestartPolicy = "Always"
+                        },
+                        Status = new V1PodStatus
+                        {
+                            Phase = "Phase",
+                            StartTime = DateTime.MinValue,
+                            ContainerStatuses = new List<V1ContainerStatus>
+                            {
+                                new()
+                                {
+                                    Image = "Image",
+                                    ImageID = "ImageID",
+                                    Name = "Name",
+                                    Ready = true,
+                                    RestartCount = 1,
+                                    Started = true,
+                                    State = new V1ContainerState
+                                    {
+                                        Running = new V1ContainerStateRunning
+                                        {
+                                            StartedAt = DateTime.MinValue
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        
+        var query = "select Name, Namespace, ContainerName, Image, ImagePullPolicy, Age from #kubernetes.podcontainers()";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        
+        Assert.AreEqual("Name", table[0][0]);
+        Assert.AreEqual("Namespace", table[0][1]);
+        Assert.AreEqual("ContainerName", table[0][2]);
+        Assert.AreEqual("Image", table[0][3]);
+        Assert.AreEqual("ImagePullPolicy", table[0][4]);
+        Assert.AreEqual(DateTime.MinValue, table[0][5]);
+        
+        Assert.AreEqual(6, table[0].Count);
+    }
+
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IKubernetesApi api)
     {
         var mockSchemaProvider = new Mock<ISchemaProvider>();

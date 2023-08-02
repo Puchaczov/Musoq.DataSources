@@ -205,7 +205,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">FileInfo that must be examined whether is zip or not</param>
     /// <returns><see langword="true" />if the specified extension is zip archive; otherwise, <see langword="false" /></returns>
     [BindableMethod]
-    public bool IsZipArchive([InjectSource] ExtendedFileInfo fileInfo) => IsZipArchiveSet.Contains(fileInfo.Extension);
+    public bool IsZipArchive([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo) => IsZipArchiveSet.Contains(fileInfo.Extension);
 
     /// <summary>
     /// Determine whether the extension is archive.
@@ -221,7 +221,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">FileInfo that must be examined whether is archive or not</param>
     /// <returns><see langword="true" />if the specified extension is archive; otherwise, <see langword="false" /></returns>
     [BindableMethod]
-    public bool IsArchive([InjectSource] ExtendedFileInfo fileInfo) => IsArchiveSet.Contains(fileInfo.Extension);
+    public bool IsArchive([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo) => IsArchiveSet.Contains(fileInfo.Extension);
 
     /// <summary>
     /// Determine whether the extension is audio.
@@ -237,7 +237,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if audio; otherwise false</returns>
     [BindableMethod]
-    public bool IsAudio([InjectSource] ExtendedFileInfo fileInfo) => IsAudioSet.Contains(fileInfo.Extension);
+    public bool IsAudio([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo) => IsAudioSet.Contains(fileInfo.Extension);
 
     /// <summary>
     /// Determine whether the extension is book.
@@ -253,7 +253,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if book; otherwise false</returns>
     [BindableMethod]
-    public bool IsBook([InjectSource] ExtendedFileInfo fileInfo) => IsBookSet.Contains(fileInfo.Extension);
+    public bool IsBook([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo) => IsBookSet.Contains(fileInfo.Extension);
 
     /// <summary>
     /// Determine whether the extension is document.
@@ -269,7 +269,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if document; otherwise false</returns>
     [BindableMethod]
-    public bool IsDoc([InjectSource] ExtendedFileInfo fileInfo) => IsDocSet.Contains(fileInfo.Extension);
+    public bool IsDoc([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo) => IsDocSet.Contains(fileInfo.Extension);
         
     /// <summary>
     /// Determine whether the extension is image.
@@ -285,7 +285,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if image; otherwise false</returns>
     [BindableMethod]
-    public bool IsImage([InjectSource] ExtendedFileInfo fileInfo) => IsImageSet.Contains(fileInfo.Extension);
+    public bool IsImage([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo) => IsImageSet.Contains(fileInfo.Extension);
 
     /// <summary>
     /// Determine whether the extension is source.
@@ -301,7 +301,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if source; otherwise false</returns>
     [BindableMethod]
-    public bool IsSource([InjectSource] ExtendedFileInfo fileInfo) => IsSourceSet.Contains(fileInfo.Extension);
+    public bool IsSource([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo) => IsSourceSet.Contains(fileInfo.Extension);
 
     /// <summary>
     /// Determine whether the extension is video.
@@ -317,7 +317,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if video; otherwise false</returns>
     [BindableMethod]
-    public bool IsVideo([InjectSource] ExtendedFileInfo fileInfo) => IsVideoSet.Contains(fileInfo.Extension);
+    public bool IsVideo([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo) => IsVideoSet.Contains(fileInfo.Extension);
 
     /// <summary>
     /// Gets the file content
@@ -325,7 +325,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="extendedFileInfo">The extendedFileInfo</param>
     /// <returns>String content of a file</returns>
     [BindableMethod]
-    public string GetFileContent([InjectSource] ExtendedFileInfo extendedFileInfo)
+    public string GetFileContent([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo extendedFileInfo)
     {
         if (!extendedFileInfo.Exists)
             return null;
@@ -341,7 +341,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>Relative file path to ComputationRootDirectoryPath</returns>
     [BindableMethod]
-    public string GetRelativePath([InjectSource] ExtendedFileInfo fileInfo)
+    public string GetRelativePath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo)
     {
         if (fileInfo == null)
             return null;
@@ -356,7 +356,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="basePath">The basePath</param>
     /// <returns>Relative file path to basePath</returns>
     [BindableMethod]
-    public string GetRelativePath([InjectSource] ExtendedFileInfo fileInfo, string basePath)
+    public string GetRelativePath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo, string basePath)
     {
         if (fileInfo == null)
             return null;
@@ -379,7 +379,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="length">The length</param>
     /// <returns>Head bytes of a file</returns>
     [BindableMethod]
-    public byte[] Head([InjectSource] ExtendedFileInfo file, int length)
+    public byte[] Head([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, int length)
         => GetFileBytes(file, length, 0);
 
     /// <summary>
@@ -389,7 +389,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="length">The length</param>
     /// <returns>Tail bytes of a file</returns>
     [BindableMethod]
-    public byte[] Tail([InjectSource] ExtendedFileInfo file, int length)
+    public byte[] Tail([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, int length)
     {
         if (file == null)
             throw new InjectSourceNullReferenceException(typeof(FileInfo));
@@ -415,7 +415,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="offset">The offset</param>
     /// <returns>Bytes of a file</returns>
     [BindableMethod]
-    public byte[] GetFileBytes([InjectSource] ExtendedFileInfo file, long bytesCount = long.MaxValue, long offset = 0)
+    public byte[] GetFileBytes([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, long bytesCount = long.MaxValue, long offset = 0)
     {
         if (file == null)
             throw new InjectSourceNullReferenceException(typeof(FileInfo));
@@ -441,7 +441,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="file">The file</param>
     /// <returns>Sha1 of a file</returns>
     [BindableMethod]
-    public string Sha1File([InjectSource] ExtendedFileInfo file)
+    public string Sha1File([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file)
     {
         if (file == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
@@ -456,7 +456,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="file">The file</param>
     /// <returns>Sha256 of a file</returns>
     [BindableMethod]
-    public string Sha256File([InjectSource] ExtendedFileInfo file)
+    public string Sha256File([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file)
     {
         if (file == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
@@ -484,7 +484,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="file">The file</param>
     /// <returns>Md5 of a file</returns>
     [BindableMethod]
-    public string Md5File([InjectSource] ExtendedFileInfo file)
+    public string Md5File([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file)
     {
         if (file == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
@@ -501,7 +501,7 @@ public partial class OsLibrary : LibraryBase
     /// <returns>True if has content; otherwise false</returns>
     /// <exception cref="InjectSourceNullReferenceException"></exception>
     [BindableMethod]
-    public bool HasContent([InjectSource] ExtendedFileInfo file, string pattern)
+    public bool HasContent([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, string pattern)
     {
         if (file == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
@@ -518,7 +518,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="flags">The flags</param>
     /// <returns>True if has attribute; otherwise false</returns>
     [BindableMethod]
-    public bool HasAttribute([InjectSource] ExtendedFileInfo file, long flags)
+    public bool HasAttribute([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, long flags)
     {
         return (flags & Convert.ToUInt32(file.Attributes)) == flags;
     }
@@ -530,7 +530,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="word">The word</param>
     /// <returns>Line containing searched word</returns>
     [BindableMethod]
-    public string GetLinesContainingWord([InjectSource] ExtendedFileInfo file, string word)
+    public string GetLinesContainingWord([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, string word)
     {
         if (file == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
@@ -563,7 +563,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="unit">The unit</param>
     /// <returns>File length</returns>
     [BindableMethod]
-    public long GetFileLength([InjectSource] ExtendedFileInfo context, string unit = "b")
+    public long GetFileLength([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, string unit = "b")
         => GetLengthOfFile(context, unit);
 
     /// <summary>
@@ -573,7 +573,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="unit">The unit</param>
     /// <returns>File length</returns>
     [BindableMethod]
-    public long GetLengthOfFile([InjectSource] ExtendedFileInfo context, string unit = "b")
+    public long GetLengthOfFile([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, string unit = "b")
     {
         if (context == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
@@ -600,7 +600,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="nesting">The nesting</param>
     /// <returns>SubPath based on nesting</returns>
     [BindableMethod]
-    public string SubPath([InjectSource] DirectoryInfo context, int nesting)
+    public string SubPath([InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo context, int nesting)
         => SubPath(context.FullName, nesting);
 
     /// <summary>
@@ -610,7 +610,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="nesting">The nesting</param>
     /// <returns>SubPath based on nesting</returns>
     [BindableMethod]
-    public string SubPath([InjectSource] ExtendedFileInfo context, int nesting)
+    public string SubPath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, int nesting)
         => SubPath(context.Directory.FullName, nesting);
 
     /// <summary>
@@ -620,7 +620,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="nesting">The nesting</param>
     /// <returns>Relative subPath based on nesting</returns>
     [BindableMethod]
-    public string RelativeSubPath([InjectSource] ExtendedFileInfo context, int nesting)
+    public string RelativeSubPath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, int nesting)
         => SubPath(GetRelativePath(context, context.ComputationRootDirectoryPath), nesting);
 
     /// <summary>
@@ -669,7 +669,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="unit">The unit</param>
     /// <returns>Length of a file</returns>
     [BindableMethod]
-    public long Length([InjectSource] ExtendedFileInfo context, string unit = "b")
+    public long Length([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, string unit = "b")
         => GetLengthOfFile(context, unit);
 
     /// <summary>
@@ -690,7 +690,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="context">The context</param>
     /// <returns>ExtendedFileInfo</returns>
     [BindableMethod]
-    public ExtendedFileInfo GetExtendedFileInfo([InjectSource] ExtendedFileInfo context)
+    public ExtendedFileInfo GetExtendedFileInfo([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context)
         => context;
 
     /// <summary>
@@ -699,7 +699,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="zipArchiveEntry">The zipArchiveEntry</param>
     /// <returns>ExtendedFileInfo</returns>
     [BindableMethod]
-    public ExtendedFileInfo GetZipEntryFileInfo([InjectSource] ZipArchiveEntry zipArchiveEntry)
+    public ExtendedFileInfo GetZipEntryFileInfo([InjectSpecificSource(typeof(ZipArchiveEntry))] ZipArchiveEntry zipArchiveEntry)
     {
         var fileInfo = SchemaZipHelper.UnpackZipEntry(zipArchiveEntry, zipArchiveEntry.FullName, Path.GetTempPath());
         return new ExtendedFileInfo(fileInfo, fileInfo.DirectoryName);
@@ -711,7 +711,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="context">The context</param>
     /// <returns>ExtendedFileInfo</returns>
     [BindableMethod]
-    public long CountOfLines([InjectSource] ExtendedFileInfo context)
+    public long CountOfLines([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context)
     {
         if (context == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
@@ -733,7 +733,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="context">The context</param>
     /// <returns>Count of non empty lines</returns>
     [BindableMethod]
-    public long CountOfNotEmptyLines([InjectSource] ExtendedFileInfo context)
+    public long CountOfNotEmptyLines([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context)
     {
         if (context == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
@@ -1001,7 +1001,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="zipArchiveEntry">The zipArchiveEntry</param>
     /// <returns>ZipArchiveEntry</returns>
     [BindableMethod]
-    public ZipArchiveEntry GetZipArchiveEntry([InjectSource] ZipArchiveEntry zipArchiveEntry)
+    public ZipArchiveEntry GetZipArchiveEntry([InjectSpecificSource(typeof(ZipArchiveEntry))] ZipArchiveEntry zipArchiveEntry)
     {
         return zipArchiveEntry;
     }
@@ -1013,7 +1013,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="destinationDirectory">The destinationDirectory</param>
     /// <returns>ZipArchiveEntry</returns>
     [BindableMethod]
-    public string UnpackTo([InjectSource] ZipArchiveEntry zipArchiveEntry, string destinationDirectory)
+    public string UnpackTo([InjectSpecificSource(typeof(ZipArchiveEntry))] ZipArchiveEntry zipArchiveEntry, string destinationDirectory)
     {
         var fileInfo = SchemaZipHelper.UnpackZipEntry(zipArchiveEntry, zipArchiveEntry.FullName, destinationDirectory);
             
@@ -1026,7 +1026,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="zipArchiveEntry">The zipArchiveEntry</param>
     /// <returns>Path to unpacked file</returns>
     [BindableMethod]
-    public string Unpack([InjectSource] ZipArchiveEntry zipArchiveEntry)
+    public string Unpack([InjectSpecificSource(typeof(ZipArchiveEntry))] ZipArchiveEntry zipArchiveEntry)
     {
         return UnpackTo(zipArchiveEntry, Path.GetTempPath());
     }

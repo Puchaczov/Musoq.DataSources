@@ -10,4 +10,6 @@ internal class StatefulSetsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => StatefulSetsSourceHelper.StatefulSetsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(StatefulSetEntity));
 }

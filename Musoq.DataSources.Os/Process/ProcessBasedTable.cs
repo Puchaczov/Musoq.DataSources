@@ -16,4 +16,6 @@ internal class ProcessBasedTable : ISchemaTable
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(System.Diagnostics.Process));
 }

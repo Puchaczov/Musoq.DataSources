@@ -10,4 +10,6 @@ internal class PersistentVolumesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => PersistentVolumesSourceHelper.PersistentVolumesColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(PersistentVolumeEntity));
 }

@@ -21,18 +21,6 @@ public partial class OsLibrary
     }
 
     /// <summary>
-    /// Gets the aggregated average value from the given group name
-    /// </summary>
-    /// <param name="group" injectedByRuntime="true">The group object</param>
-    /// <param name="name">The name of the group</param>
-    /// <returns>Aggregated value</returns>
-    [AggregationGetMethod]
-    public IReadOnlyList<DirectoryInfo> AggregateDirectories([InjectGroup] Group group, string name)
-    {
-        return group.GetValue<IReadOnlyList<DirectoryInfo>>(name);
-    }
-
-    /// <summary>
     /// Sets the value to average aggregation from the given group name
     /// </summary>
     /// <param name="group" injectedByRuntime="true">The group object</param>
@@ -55,11 +43,23 @@ public partial class OsLibrary
     /// <param name="file">The value to set</param>
     /// <returns>Aggregated value</returns>   
     [AggregationSetMethod]
-    public void SetAggregateFiles([InjectGroup] Group group, [InjectSource] ExtendedFileInfo file, string name)
+    public void SetAggregateFiles([InjectGroup] Group group, [InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, string name)
     {
         var list = group.GetOrCreateValue(name, new List<ExtendedFileInfo>());
 
         list.Add(file);
+    }
+
+    /// <summary>
+    /// Gets the aggregated average value from the given group name
+    /// </summary>
+    /// <param name="group" injectedByRuntime="true">The group object</param>
+    /// <param name="name">The name of the group</param>
+    /// <returns>Aggregated value</returns>
+    [AggregationGetMethod]
+    public IReadOnlyList<DirectoryInfo> AggregateDirectories([InjectGroup] Group group, string name)
+    {
+        return group.GetValue<IReadOnlyList<DirectoryInfo>>(name);
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public partial class OsLibrary
     /// <param name="name">The name of the group</param>
     /// <returns>Aggregated value</returns>   
     [AggregationSetMethod]
-    public void SetAggregateDirectories([InjectGroup] Group group, [InjectSource] DirectoryInfo directory, string name)
+    public void SetAggregateDirectories([InjectGroup] Group group, [InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo directory, string name)
     {
         var list = group.GetOrCreateValue(name, new List<DirectoryInfo>());
 

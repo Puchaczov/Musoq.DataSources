@@ -10,6 +10,7 @@ using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Kubernetes.Tests;
 
+[Ignore]
 [TestClass]
 public class KubernetesPlaygroundTests
 {
@@ -46,7 +47,7 @@ public class KubernetesPlaygroundTests
     [TestMethod]
     public void PodsPlayground_ShouldBeIgnored()
     {
-        const string query = "select * from #kubernetes.pods()";
+        const string query = "select *, GetLabelOrDefault('name') from #kubernetes.pods()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -312,6 +313,45 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
+    
+    [TestMethod]
+    public void PodContainersPlaygroundDesc_ShouldBeIgnored()
+    {
+        const string query = "desc #kubernetes.podcontainers()";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+    }
+    
+    [TestMethod]
+    public void PodContainersPlayground_ShouldBeIgnored()
+    {
+        const string query = "select * from #kubernetes.podcontainers()";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+    }
+    
+    [TestMethod]
+    public void DeploymentPodsAndContainersJoined_ShouldBeIgnored()
+    {
+        const string query = @"
+select 
+    deployments.Name, 
+    deployments.Namespace, 
+    pods.GetLabelOrDefault('name') as PodName, 
+    containers.GetLabelOrDefault('name') as ContainerName
+from #kubernetes.deployments() deployments 
+    inner join #kubernetes.pods() pods on deployments.Name = pods.GetLabelOrDefault('name') 
+    inner join #kubernetes.podcontainers() containers on pods.GetLabelOrDefault('name') = containers.GetLabelOrDefault('name')
+    where deployments.Namespace = 'musoq'";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+    }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
@@ -322,7 +362,8 @@ public class KubernetesPlaygroundTests
             new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
                 {0, new Dictionary<string, string>()},
-                {1, new Dictionary<string, string>()}
+                {1, new Dictionary<string, string>()},
+                {2, new Dictionary<string, string>()}
             });
     }
 

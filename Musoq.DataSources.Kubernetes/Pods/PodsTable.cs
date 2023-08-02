@@ -10,4 +10,6 @@ internal class PodsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => PodsSourceHelper.PodsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(PodEntity));
 }

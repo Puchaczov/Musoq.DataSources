@@ -69,6 +69,11 @@ namespace Musoq.DataSources.Json
                 return _columns;
             }
         }
+    
+        /// <summary>
+        /// Gets the metadata of the table.
+        /// </summary>
+        public SchemaTableMetadata Metadata { get; } = new(typeof(object));
 
         /// <summary>
         /// Gets the column by name.

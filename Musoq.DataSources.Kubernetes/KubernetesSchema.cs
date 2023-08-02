@@ -9,6 +9,7 @@ using Musoq.DataSources.Kubernetes.Jobs;
 using Musoq.DataSources.Kubernetes.Nodes;
 using Musoq.DataSources.Kubernetes.PersistentVolumeClaims;
 using Musoq.DataSources.Kubernetes.PersistentVolumes;
+using Musoq.DataSources.Kubernetes.PodContainers;
 using Musoq.DataSources.Kubernetes.Pods;
 using Musoq.DataSources.Kubernetes.ReplicaSets;
 using Musoq.DataSources.Kubernetes.SecretData;
@@ -47,6 +48,7 @@ public class KubernetesSchema : SchemaBase
     private const string CronJobsTableName = "cronjobs";
     private const string StatefulSetsTableName = "statefulsets";
     private const string DaemonSetsTableName = "daemonsets";
+    private const string PodContainersTableName = "podcontainers";
     
     private readonly Func<RuntimeContext, object[], IKubernetesApi> _clientFactory;
     
@@ -342,12 +344,33 @@ public class KubernetesSchema : SchemaBase
     ///                     </environmentVariables>
     ///                        #kubernetes.statefulsets()
     ///                 </from>
-    ///                 <description>StatefulSetEntity description</description>
+    ///                 <description>Enumerate statefulsets</description>
     ///                 <columns>
     ///                     <column name="Namespace" type="string">Namespace string</column>
     ///                     <column name="Name" type="string">Name string</column>
     ///                     <column name="Replicas" type="int?">Number of replicas</column>
     ///                     <column name="Age" type="DateTime?">Age of the StatefulSetEntity</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="true">Airtable API key</environmentVariable>
+    ///                     </environmentVariables>
+    ///                        #kubernetes.podcontainers()
+    ///                 </from>
+    ///                 <description>Enumerate pod containers</description>
+    ///                 <columns>
+    ///                     <column name="Namespace" type="string">Namespace string</column>
+    ///                     <column name="Name" type="string">Name string</column>
+    ///                     <column name="ContainerName" type="string">Container name string</column>
+    ///                     <column name="Image" type="string">Image string</column>
+    ///                     <column name="ImagePullPolicy" type="string">Image pull policy string</column>
+    ///                     <column name="Age" type="DateTime?">Container age</column>
     ///                 </columns>
     ///             </example>
     ///         </examples>
@@ -415,6 +438,7 @@ public class KubernetesSchema : SchemaBase
             ConfigMapsTableName => new ConfigmapsTable(),
             IngressesTableName => new IngressesTable(),
             PersistentVolumesTableName => new PersistentVolumesTable(),
+            PodContainersTableName => new PodContainersTable(),
             PersistentVolumeClaimsTableName => new PersistentVolumeClaimsTable(),
             JobsTableName => new JobsTable(),
             CronJobsTableName => new CronJobsTable(),
@@ -447,6 +471,7 @@ public class KubernetesSchema : SchemaBase
             ConfigMapsTableName => new ConfigmapsSource(client),
             IngressesTableName => new IngressesSource(client),
             PersistentVolumesTableName => new PersistentVolumesSource(client),
+            PodContainersTableName => new PodContainersSource(client),
             PersistentVolumeClaimsTableName => new PersistentVolumeClaimsSource(client),
             JobsTableName => new JobsSource(client),
             CronJobsTableName => new CronJobsSource(client),
@@ -459,13 +484,10 @@ public class KubernetesSchema : SchemaBase
     private static MethodsAggregator CreateLibrary()
     {
         var methodsManager = new MethodsManager();
-        var propertiesManager = new PropertiesManager();
-
         var library = new KubernetesLibrary();
 
         methodsManager.RegisterLibraries(library);
-        propertiesManager.RegisterProperties(library);
 
-        return new MethodsAggregator(methodsManager, propertiesManager);
+        return new MethodsAggregator(methodsManager);
     }
 }

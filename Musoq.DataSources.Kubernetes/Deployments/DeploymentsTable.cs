@@ -10,4 +10,6 @@ internal class DeploymentsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => DeploymentsSourceHelper.DeploymentsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(DeploymentEntity));
 }

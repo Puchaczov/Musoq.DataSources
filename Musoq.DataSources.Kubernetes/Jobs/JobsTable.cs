@@ -10,4 +10,6 @@ internal class JobsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => JobsSourceHelper.JobsColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(JobEntity));
 }

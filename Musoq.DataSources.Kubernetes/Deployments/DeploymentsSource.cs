@@ -24,7 +24,7 @@ internal class DeploymentsSource : RowSourceBase<DeploymentEntity>
 
     private static DeploymentEntity MapV1DeploymentToDeploymentEntity(V1Deployment v1Deployment)
     {
-        return new DeploymentEntity
+        return new DeploymentEntity(v1Deployment)
         {
             Name = v1Deployment.Metadata.Name,
             Namespace = v1Deployment.Metadata.NamespaceProperty,

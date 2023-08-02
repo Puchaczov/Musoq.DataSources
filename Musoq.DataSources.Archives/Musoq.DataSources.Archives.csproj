@@ -26,8 +26,8 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Plugins" Version="3.2.1" />
-        <PackageReference Include="Musoq.Schema" Version="4.0.1" />
+        <PackageReference Include="Musoq.Plugins" Version="4.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="5.0.1" />
         <PackageReference Include="SharpCompress" Version="0.33.0" />
     </ItemGroup>
 

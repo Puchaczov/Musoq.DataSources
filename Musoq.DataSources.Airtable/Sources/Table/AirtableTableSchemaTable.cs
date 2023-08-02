@@ -39,6 +39,8 @@ internal class AirtableTableSchemaTable : ISchemaTable
         }
     }
 
+    public SchemaTableMetadata Metadata { get; } = new(typeof(object));
+
     private static Type ConvertToCsharpType(AirtableField field)
     {
         return TypeMappingHelpers.Mapping[Enum.Parse<AirtableType>(field.Type, true)];

@@ -2,7 +2,7 @@
 
 namespace Musoq.DataSources.Kubernetes.Ingresses;
 
-public class IngressesTable : ISchemaTable
+internal class IngressesTable : ISchemaTable
 {
     public ISchemaColumn GetColumnByName(string name)
     {
@@ -10,4 +10,6 @@ public class IngressesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => IngressesSourceHelper.IngressesColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(IngressEntity));
 }
