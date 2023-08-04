@@ -10,7 +10,6 @@ using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Kubernetes.Tests;
 
-[Ignore]
 [TestClass]
 public class KubernetesPlaygroundTests
 {
@@ -350,6 +349,24 @@ from #kubernetes.deployments() deployments
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
+        var table = vm.Run();
+    }
+    
+    [TestMethod]
+    public void DeploymentPodsAndContainersJoinedWithWhere_ShouldBeIgnored()
+    {
+        const string query = @"
+select 
+    deployments.Name, 
+    deployments.Namespace, 
+    containers.SecurityContext.RunAsUser
+from #kubernetes.deployments() deployments 
+    inner join #kubernetes.pods() pods on deployments.Name = pods.GetLabelOrDefault('name') 
+    inner join #kubernetes.podcontainers() containers on pods.GetLabelOrDefault('name') = containers.GetLabelOrDefault('name')
+    where deployments.Namespace = 'musoq' and containers.SecurityContext is not null";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+        
         var table = vm.Run();
     }
 

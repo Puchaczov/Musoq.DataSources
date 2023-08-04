@@ -22,6 +22,20 @@ public class PodContainerEntity : IWithObjectMetadata
     
     public DateTime? Age { get; init; }
     
+    public V1SecurityContext SecurityContext { get; init; }
+    
+    public bool? Stdin { get; init; }
+    
+    public bool? StdinOnce { get; init; }
+    
+    public string TerminationMessagePath { get; init; }
+    
+    public string TerminationMessagePolicy { get; init; }
+    
+    public bool? Tty { get; init; }
+    
+    public string WorkingDir { get; init; }
+    
     internal V1ObjectMeta RawObjectMetadata { get; init; }
     
     internal V1Container RawObjectContainer { get; init; }

@@ -16,14 +16,15 @@ internal class PodContainersSource : RowSourceBase<PodContainerEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         var pods = _kubernetesApi.ListPodsForAllNamespaces();
-
-        chunkedSource.Add(
-            pods.Items.SelectMany(c => 
+        var containers = pods.Items.SelectMany(c =>
                 c.Spec.Containers
-                    .Select(f => new { c.Metadata, Container = f }))
-                    .Select(c => new EntityResolver<PodContainerEntity>(MapV1MetadataAndV1ContainerToPodContainerEntity(c.Metadata, c.Container), 
-                        PodContainersSourceHelper.PodContainersNameToIndexMap, 
-                        PodContainersSourceHelper.PodContainersIndexToMethodAccessMap)).ToList());
+                    .Select(f => new {c.Metadata, Container = f}))
+            .Select(c => new EntityResolver<PodContainerEntity>(
+                MapV1MetadataAndV1ContainerToPodContainerEntity(c.Metadata, c.Container),
+                PodContainersSourceHelper.PodContainersNameToIndexMap,
+                PodContainersSourceHelper.PodContainersIndexToMethodAccessMap)).ToList();
+        
+        chunkedSource.Add(containers);
     }
 
     private static PodContainerEntity MapV1MetadataAndV1ContainerToPodContainerEntity(V1ObjectMeta metadata, V1Container container)
@@ -36,6 +37,13 @@ internal class PodContainersSource : RowSourceBase<PodContainerEntity>
             Image = container.Image,
             ImagePullPolicy = container.ImagePullPolicy,
             Age = metadata.CreationTimestamp,
+            SecurityContext = container.SecurityContext,
+            Stdin = container.Stdin,
+            StdinOnce = container.StdinOnce,
+            TerminationMessagePath = container.TerminationMessagePath,
+            TerminationMessagePolicy = container.TerminationMessagePolicy,
+            Tty = container.Tty,
+            WorkingDir = container.WorkingDir
         };
     }
 }
