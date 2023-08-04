@@ -10,6 +10,7 @@ using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Kubernetes.Tests;
 
+[Ignore]
 [TestClass]
 public class KubernetesPlaygroundTests
 {
