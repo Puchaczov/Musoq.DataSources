@@ -365,12 +365,19 @@ public class KubernetesSchema : SchemaBase
     ///                 </from>
     ///                 <description>Enumerate pod containers</description>
     ///                 <columns>
-    ///                     <column name="Namespace" type="string">Namespace string</column>
-    ///                     <column name="Name" type="string">Name string</column>
-    ///                     <column name="ContainerName" type="string">Container name string</column>
+    ///                     <column name="Namespace" type="string">Namespace</column>
+    ///                     <column name="Name" type="string">Name</column>
+    ///                     <column name="ContainerName" type="string">Container name</column>
     ///                     <column name="Image" type="string">Image string</column>
-    ///                     <column name="ImagePullPolicy" type="string">Image pull policy string</column>
+    ///                     <column name="ImagePullPolicy" type="string">Image pull policy</column>
     ///                     <column name="Age" type="DateTime?">Container age</column>
+    ///                     <column name="SecurityContext" type="string">Security context</column>
+    ///                     <column name="Stdin" type="bool?">Stdin</column>
+    ///                     <column name="StdinOnce" type="bool?">Stdin once</column>
+    ///                     <column name="TerminationMessagePath" type="string">Termination message path</column>
+    ///                     <column name="TerminationMessagePolicy" type="string">Termination message policy</column>
+    ///                     <column name="Tty" type="bool?">Tty</column>
+    ///                     <column name="WorkingDir" type="string">Working directory</column>
     ///                 </columns>
     ///             </example>
     ///         </examples>

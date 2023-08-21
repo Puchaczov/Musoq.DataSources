@@ -111,6 +111,11 @@ namespace Musoq.DataSources.SeparatedValues
 
                         var header = csvReader.Context.Parser.Record;
 
+                        if (!csvFile.HasHeader || header == null || header.Length == 0)
+                        {
+                            throw new NotSupportedException("Header is not present in the file.");
+                        }
+
                         for (var i = 0; i < header.Length; ++i)
                         {
                             var headerName = csvFile.HasHeader ? SeparatedValuesHelper.MakeHeaderNameValidColumnName(header[i]) : string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
@@ -272,8 +277,6 @@ namespace Musoq.DataSources.SeparatedValues
                                 parsedRecords[i] = ulongValue;
                             else
                                 parsedRecords[i] = null;
-                            break;
-                        default:
                             break;
                     }
                 }
