@@ -1,4 +1,4 @@
-﻿namespace Musoq.DataSources.SeparatedValues
+﻿namespace Musoq.DataSources.SeparatedValues.Common
 {
     internal static class SizeConverter
     {

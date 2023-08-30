@@ -19,12 +19,6 @@
     <PackageId>Musoq.DataSources.SeparatedValues</PackageId>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="Musoq.Plugins" Version="4.0.0" />
-    <PackageReference Include="Musoq.Schema" Version="5.0.1" />
-  </ItemGroup>
-
   <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
     <ItemGroup>
       <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
@@ -40,7 +34,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="30.0.1" />
+    <ProjectReference Include="..\Musoq.DataSources.SeparatedValues.Common\Musoq.DataSources.SeparatedValues.Common.csproj" />
   </ItemGroup>
 
 </Project>

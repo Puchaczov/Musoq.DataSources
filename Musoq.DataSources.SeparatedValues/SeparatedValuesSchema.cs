@@ -1,4 +1,5 @@
-﻿using Musoq.Schema;
+﻿using Musoq.DataSources.SeparatedValues.Common;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
 

@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -13,6 +12,7 @@ using Musoq.Evaluator.Tables;
 using Musoq.Plugins;
 using Musoq.Schema;
 using Musoq.Tests.Common;
+using Musoq.DataSources.SeparatedValues.Common;
 using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.SeparatedValues.Tests

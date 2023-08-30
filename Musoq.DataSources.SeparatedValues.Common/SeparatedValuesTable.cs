@@ -1,10 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using Musoq.Schema;
+﻿using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.SeparatedValues
+namespace Musoq.DataSources.SeparatedValues.Common
 {
     internal class SeparatedValuesTable : ISchemaTable
     {
@@ -36,7 +33,7 @@ namespace Musoq.DataSources.SeparatedValues
     
         public SchemaTableMetadata Metadata { get; } = new(typeof(object[]));
 
-        public ISchemaColumn GetColumnByName(string name)
+        public ISchemaColumn? GetColumnByName(string name)
         {
             return Columns.SingleOrDefault(column => column.ColumnName == name);
         }

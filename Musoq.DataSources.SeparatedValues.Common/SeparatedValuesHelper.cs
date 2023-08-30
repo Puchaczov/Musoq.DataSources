@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Musoq.DataSources.SeparatedValues
+namespace Musoq.DataSources.SeparatedValues.Common
 {
     internal static class SeparatedValuesHelper
     {
@@ -21,7 +21,7 @@ namespace Musoq.DataSources.SeparatedValues
             newString.Append(header[0]);
             var lastChar = header[0];
 
-            for (int i = 1; i < header.Length; i++)
+            for (var i = 1; i < header.Length; i++)
             {
                 var currentChar = header[i];
                 if (lastChar == '_' && char.IsLower(currentChar))

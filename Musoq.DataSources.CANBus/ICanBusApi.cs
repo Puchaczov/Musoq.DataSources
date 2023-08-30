@@ -1,9 +1,14 @@
 using System.Collections.Concurrent;
+using System.Drawing;
 using System.Dynamic;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
+using CsvHelper;
 using DbcParserLib;
 using DbcParserLib.Model;
 using Musoq.Schema.DataSources;
-using Iot.Device.SocketCan;
+using IObjectResolver = Musoq.Schema.DataSources.IObjectResolver;
 
 namespace Musoq.DataSources.CANBus;
 
@@ -206,6 +211,8 @@ internal class MessageFrame : DynamicObject
 
 internal abstract class CanFramesSource : RowSourceBase<MessageFrame>
 {
+    protected abstract void Initialize();
+    
     protected abstract IEnumerable<SourceCanFrame> GetFrames();
     
     protected abstract HashSet<string> AllMessagesSet { get; }
@@ -218,6 +225,8 @@ internal abstract class CanFramesSource : RowSourceBase<MessageFrame>
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
+        Initialize();
+        
         foreach (var frame in GetFrames())
         {
             var itemsAdded = 0;
@@ -253,11 +262,20 @@ internal class CsvFileCanFramesSource : CanFramesSource
 {
     private readonly string _framesCsvPath;
     private readonly MessagesLookup _messages;
+    private readonly FileInfo _file;
+    private readonly char _separator;
+    private readonly bool _hasHeader;
 
-    public CsvFileCanFramesSource(string framesCsvPath, string dbcPath)
+    public CsvFileCanFramesSource(string framesCsvPath, string? dbcPath, char separator, bool hasHeader)
     {
         _framesCsvPath = framesCsvPath;
         _messages = new MessagesLookup();
+        _file = new FileInfo(framesCsvPath);
+        _separator = separator;
+        _hasHeader = hasHeader;
+
+        if (dbcPath is null) return;
+        
         var dbc = DbcParserLib.Parser.ParseFromPath(dbcPath);
 
         foreach (var message in dbc.Messages)
@@ -265,9 +283,63 @@ internal class CsvFileCanFramesSource : CanFramesSource
             _messages.Add(message.Name, message);
         }
     }
+    
+    protected override void Initialize()
+    {
+        if (!_file.Exists)
+        {
+            return;
+        }
+
+        var nameToIndexMap = new Dictionary<string, int>();
+        var indexToMethodAccess = new Dictionary<int, Func<object[], object>>();
+        var indexToNameMap = new Dictionary<int, string>();
+
+        var modifiedCulture = new CultureInfo(CultureInfo.InvariantCulture.Name)
+        {
+            TextInfo =
+            {
+                ListSeparator = _separator.ToString()
+            }
+        };
+
+        using var stream = CreateStreamFromFile(_file);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        SkipLines(reader, 0);
+
+        using var csvReader = new CsvReader(reader,  modifiedCulture);
+        csvReader.Read();
+
+        var header = csvReader.Context.Parser.Record;
+
+        if (!_hasHeader || header == null || header.Length == 0)
+        {
+            throw new NotSupportedException("Header is not present in the file.");
+        }
+
+        for (var i = 0; i < header.Length; ++i)
+        {
+            var headerName = _hasHeader ? SeparatedValuesHelper.MakeHeaderNameValidColumnName(header[i]) : string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
+            nameToIndexMap.Add(headerName, i);
+            indexToNameMap.Add(i, headerName);
+            var i1 = i;
+            indexToMethodAccess.Add(i, row => row[i1]);
+        }
+    }
 
     protected override IEnumerable<SourceCanFrame> GetFrames()
     {
+        using var stream = CreateStreamFromFile(_file);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        
+        SkipLines(reader, _hasHeader ? 1 : 0);
+        
+        using var csvReader = new CsvReader(reader, CultureInfo.InvariantCulture);
+
+        while (csvReader.Read())
+        {
+            csvReader.
+        }
     }
 
     protected override HashSet<string> AllMessagesSet => _messages.Select(f => f.Key).ToHashSet();
@@ -278,4 +350,56 @@ internal class CsvFileCanFramesSource : CanFramesSource
 
     protected override IDictionary<string, int> MessagesNameToIndexMap { get; }
     protected override IDictionary<int, Func<MessageFrame, object?>> MessagesIndexToMethodAccessMap { get; }
+
+    private static void SkipLines(TextReader reader, int skipLines)
+    {
+        if (skipLines <= 0) return;
+
+        var skippedLines = 0;
+        while (skippedLines < skipLines)
+        {
+            reader.ReadLine();
+            skippedLines += 1;
+        }
+    }
+
+    private static Stream CreateStreamFromFile(FileInfo file)
+    {
+        return file.OpenRead();
+    }
+}
+
+internal static class SeparatedValuesHelper
+{
+    public const string AutoColumnName = "Column{0}";
+
+    private static readonly Regex NonAlphaNumericCharacters = new("[^a-zA-Z0-9 -]");
+
+    public static string MakeHeaderNameValidColumnName(string header)
+    {
+        if (header.Length == 0)
+            return string.Empty;
+
+        header = header.Replace(' ', '_');
+
+        var newString = new StringBuilder();
+
+        newString.Append(header[0]);
+        var lastChar = header[0];
+
+        for (var i = 1; i < header.Length; i++)
+        {
+            var currentChar = header[i];
+            if (lastChar == '_' && char.IsLower(currentChar))
+                newString.Append(char.ToUpper(currentChar));
+            else
+                newString.Append(currentChar);
+
+            lastChar = currentChar;
+        }
+
+        header = NonAlphaNumericCharacters.Replace(newString.ToString(), string.Empty);
+
+        return header;
+    }
 }

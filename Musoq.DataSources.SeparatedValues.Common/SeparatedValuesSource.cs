@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -11,7 +7,7 @@ using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Helpers;
 
-namespace Musoq.DataSources.SeparatedValues
+namespace Musoq.DataSources.SeparatedValues.Common
 {
     internal class SeparatedValuesSource : RowSourceBase<object[]>
     {
