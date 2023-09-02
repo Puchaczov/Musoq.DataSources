@@ -151,6 +151,11 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         _builder.Append($" '{node.Value}' ");
     }
 
+    public void Visit(NullNode node)
+    {
+        _builder.Append(" NULL ");
+    }
+
     public void Visit(ContainsNode node)
     {
         throw new NotImplementedException();
@@ -431,6 +436,21 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
     }
 
     public void Visit(CaseNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(WhenNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(ThenNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(ElseNode node)
     {
         throw new NotImplementedException();
     }
