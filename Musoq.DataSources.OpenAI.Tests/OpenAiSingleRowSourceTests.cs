@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Musoq.DataSources.OpenAIHelpers;
 using Musoq.Schema;
 using OpenAI_API.Chat;
 using OpenAI_API.Models;

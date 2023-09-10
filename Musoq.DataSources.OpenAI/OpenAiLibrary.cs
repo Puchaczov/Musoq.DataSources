@@ -178,6 +178,11 @@ public class OpenAiLibrary : LibraryBase
     
     private class ExtractedEntities
     {
+        public ExtractedEntities(string[] entities)
+        {
+            Entities = entities;
+        }
+
         public string[] Entities { get; set; }
     }
 }

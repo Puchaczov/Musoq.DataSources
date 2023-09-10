@@ -2,19 +2,15 @@
 
 namespace Musoq.DataSources.Airtable.Components;
 
-public class AirtableTable
+internal class AirtableTable
 {
-    public AirtableTable()
-    {
-        Fields = Array.Empty<AirtableField>();
-    }
-    
     public AirtableTable(string id, string name, string primaryFieldId, string description)
     {
         Id = id;
         Name = name;
         PrimaryFieldId = primaryFieldId;
         Description = description;
+        Fields = Array.Empty<AirtableField>();
     }
     
     [JsonPropertyName("fields")]

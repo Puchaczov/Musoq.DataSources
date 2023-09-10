@@ -8,7 +8,7 @@ namespace Musoq.DataSources.System
     {
         public ISchemaColumn[] Columns => new ISchemaColumn[]
         {
-            new SchemaColumn(nameof(DualEntity.Dummy), 0, typeof(string)), 
+            new SchemaColumn(nameof(DualEntity.Dummy), 0, typeof(string))
         };
     
         public SchemaTableMetadata Metadata { get; } = new(typeof(DualEntity));
@@ -16,6 +16,11 @@ namespace Musoq.DataSources.System
         public ISchemaColumn GetColumnByName(string name)
         {
             return Columns.SingleOrDefault(column => column.ColumnName == name);
+        }
+        
+        public ISchemaColumn[] GetColumnsByName(string name)
+        {
+            return Columns.Where(column => column.ColumnName == name).ToArray();
         }
     }
 }

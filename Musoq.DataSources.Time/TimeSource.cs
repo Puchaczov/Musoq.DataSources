@@ -18,29 +18,16 @@ namespace Musoq.DataSources.Time
             _startAt = startAt;
             _resolution = resolution.ToLowerInvariant();
 
-            switch (_resolution)
+            _stopAt = _resolution switch
             {
-                case "seconds":
-                    _stopAt = stopAt.Add(TimeSpan.FromMilliseconds(1));
-                    break;
-                case "minutes":
-                    _stopAt = stopAt.AddSeconds(1);
-                    break;
-                case "hours":
-                    _stopAt = stopAt.AddMinutes(1);
-                    break;
-                case "days":
-                    _stopAt = stopAt.AddHours(1);
-                    break;
-                case "months":
-                    _stopAt = stopAt.AddDays(1);
-                    break;
-                case "years":
-                    _stopAt = stopAt.AddMonths(1);
-                    break;
-                default:
-                    throw new NotSupportedException($"Chosen resolution '{_resolution}' is not supported.");
-            }
+                "seconds" => stopAt.Add(TimeSpan.FromMilliseconds(1)),
+                "minutes" => stopAt.AddSeconds(1),
+                "hours" => stopAt.AddMinutes(1),
+                "days" => stopAt.AddHours(1),
+                "months" => stopAt.AddDays(1),
+                "years" => stopAt.AddMonths(1),
+                _ => throw new NotSupportedException($"Chosen resolution '{_resolution}' is not supported.")
+            };
 
             _communicator = communicator;
         }

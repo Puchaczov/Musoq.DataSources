@@ -19,7 +19,7 @@ internal class PostgresRowSource : DatabaseRowSource
         _schema = schema;
     }
 
-    protected override IDbConnection CreateConnection(IReadOnlyDictionary<string, string> environmentVariables)
+    protected override IDbConnection CreateConnection()
     {
         return new NpgsqlConnection(_runtimeContext.EnvironmentVariables["NPGSQL_CONNECTION_STRING"]);
     }

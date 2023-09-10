@@ -58,7 +58,7 @@ namespace Musoq.Schema.Xml
 
         public bool TryGetValue(string key, out object value)
         {
-            return TryGetValue(key, out value);
+            return _values.TryGetValue(key, out value);
         }
 
         public void Add(KeyValuePair<string, object> item)
@@ -78,7 +78,7 @@ namespace Musoq.Schema.Xml
 
         public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
         {
-
+            ((ICollection<KeyValuePair<string, object>>) _values).CopyTo(array, arrayIndex);
         }
 
         public bool Remove(KeyValuePair<string, object> item)

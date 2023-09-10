@@ -111,6 +111,10 @@ namespace Musoq.DataSources.SeparatedValues
 
                         var header = csvReader.Context.Parser.Record;
 
+                        if (header == null)
+                            throw new NotSupportedException(
+                                "File has no header or no data. Please check if file is not empty.");
+
                         for (var i = 0; i < header.Length; ++i)
                         {
                             var headerName = csvFile.HasHeader ? SeparatedValuesHelper.MakeHeaderNameValidColumnName(header[i]) : string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
@@ -168,7 +172,7 @@ namespace Musoq.DataSources.SeparatedValues
         {
             var parsedRecords = new object[rawRow.Length];
 
-            for (int i = 0; i < rawRow.Length; ++i)
+            for (var i = 0; i < rawRow.Length; ++i)
             {
                 var headerName = indexToNameMap[i];
                 if (_types.ContainsKey(headerName))

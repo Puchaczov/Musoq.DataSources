@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Musoq.DataSources.JsonHelpers;
 using Musoq.Schema.DataSources;
 using Newtonsoft.Json;
 
@@ -55,11 +55,10 @@ namespace Musoq.DataSources.Json
             if (!reader.Read())
                 throw new NotSupportedException("Cannot read file. Json is probably malformed.");
             
-            var serializer = new JsonSerializer();
             var rows = reader.TokenType switch
             {
-                JsonToken.StartObject => new[] { ParseObject(serializer, reader) },
-                JsonToken.StartArray => ParseArray(serializer, reader),
+                JsonToken.StartObject => new[] { JsonParser.ParseObject(reader, _endWorkToken) },
+                JsonToken.StartArray => JsonParser.ParseArray(reader, _endWorkToken),
                 _ => null
             };
 
@@ -100,90 +99,6 @@ namespace Musoq.DataSources.Json
             }
             
             chunkedSource.Add(list, _endWorkToken);
-        }
-
-
-        private IEnumerable<ExpandoObject> ParseArray(JsonSerializer serializer, JsonTextReader reader)
-        {
-            _endWorkToken.ThrowIfCancellationRequested();
-            
-            var result = new List<ExpandoObject>();
-            while (reader.Read() && reader.TokenType != JsonToken.EndArray)
-            {
-                if (reader.TokenType == JsonToken.StartObject)
-                {
-                    result.Add(ParseObject(serializer, reader));
-                }
-            }
-            return result;
-        }
-
-        private List<object> ParseInnerArray(JsonSerializer serializer, JsonTextReader reader)
-        {
-            _endWorkToken.ThrowIfCancellationRequested();
-            
-            var result = new List<object>();
-            while (reader.Read() && reader.TokenType != JsonToken.EndArray)
-            {
-                switch (reader.TokenType)
-                {
-                    case JsonToken.StartObject:
-                        result.Add(ParseObject(serializer, reader));
-                        break;
-                    case JsonToken.StartArray:
-                        result.Add(ParseInnerArray(serializer, reader));
-                        break;
-                    default:
-                        result.Add(reader.Value!);
-                        break;
-                }
-            }
-            return result;
-        }
-
-        private ExpandoObject ParseObject(JsonSerializer serializer, JsonTextReader reader)
-        {
-            _endWorkToken.ThrowIfCancellationRequested();
-            
-            var obj = new ExpandoObject();
-            while (reader.Read() && reader.TokenType != JsonToken.EndObject)
-            {
-                if (reader.TokenType != JsonToken.PropertyName) continue;
-                
-                var propertyName = reader.Value!.ToString();
-                reader.Read();
-                switch (reader.TokenType)
-                {
-                    case JsonToken.StartObject:
-                        obj.TryAdd(propertyName, ParseObject(serializer, reader));
-                        break;
-                    case JsonToken.StartArray:
-                        obj.TryAdd(propertyName, ParseInnerArray(serializer, reader));
-                        break;
-                    case JsonToken.Integer:
-                    case JsonToken.Float:
-                    case JsonToken.Boolean:
-                        obj.TryAdd(propertyName, reader.Value!);
-                        break;
-                    case JsonToken.None:
-                    case JsonToken.StartConstructor:
-                    case JsonToken.PropertyName:
-                    case JsonToken.Comment:
-                    case JsonToken.Raw:
-                    case JsonToken.Null:
-                    case JsonToken.String:
-                    case JsonToken.Undefined:
-                    case JsonToken.EndObject:
-                    case JsonToken.EndArray:
-                    case JsonToken.EndConstructor:
-                    case JsonToken.Date:
-                    case JsonToken.Bytes:
-                    default:
-                        obj.TryAdd(propertyName, reader.Value.ToString());
-                        break;
-                }
-            }
-            return obj;
         }
     }
 }

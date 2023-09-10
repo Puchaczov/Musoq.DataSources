@@ -1,4 +1,5 @@
-﻿using Musoq.Schema;
+﻿using Musoq.DataSources.OpenAIHelpers;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.OpenAI;
@@ -34,8 +35,8 @@ internal class OpenAiSingleRowSource : RowSource
                         _openAiRequestInfo.MaxTokens,
                         _openAiRequestInfo.PresencePenalty,
                         _openAiRequestInfo.Temperature),
-                    SchemaOpenAiHelper.NameToIndexMap, 
-                    SchemaOpenAiHelper.IndexToMethodAccessMap)
+                    OpenAiSchemaHelper.NameToIndexMap, 
+                    OpenAiSchemaHelper.IndexToMethodAccessMap)
             };
         }
     }

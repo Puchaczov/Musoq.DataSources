@@ -4,7 +4,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Docker.Networks;
 
-public class NetworksSource : RowSourceBase<NetworkResponse>
+internal class NetworksSource : RowSourceBase<NetworkResponse>
 {
     private readonly IDockerApi _api;
 
@@ -16,7 +16,7 @@ public class NetworksSource : RowSourceBase<NetworkResponse>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         var networks = _api.ListNetworksAsync().Result;
-
+        
         chunkedSource.Add(
             networks.Select(c => new EntityResolver<NetworkResponse>(c, NetworksSourceHelper.NetworksNameToIndexMap, NetworksSourceHelper.NetworksIndexToMethodAccessMap)).ToList());
     }

@@ -1,6 +1,6 @@
 using OpenAI_API.Chat;
 
-namespace Musoq.DataSources.OpenAI;
+namespace Musoq.DataSources.OpenAIHelpers;
 
 /// <summary>
 /// Interface for OpenAI API

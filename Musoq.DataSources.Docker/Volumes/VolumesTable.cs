@@ -3,14 +3,19 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Docker.Volumes;
 
-public class VolumesTable : ISchemaTable
+internal class VolumesTable : ISchemaTable
 {
+    public ISchemaColumn[] Columns => VolumesSourceHelper.VolumesColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(VolumeResponse));
+    
     public ISchemaColumn? GetColumnByName(string name)
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
 
-    public ISchemaColumn[] Columns => VolumesSourceHelper.VolumesColumns;
-    
-    public SchemaTableMetadata Metadata { get; } = new(typeof(VolumeResponse));
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
 }

@@ -6,17 +6,17 @@ namespace Musoq.DataSources.Os.Zip;
 
 internal class ZipBasedTable : ISchemaTable
 {
-    public ZipBasedTable()
-    {
-        Columns = SchemaZipHelper.SchemaColumns;
-    }
-
-    public ISchemaColumn[] Columns { get; }
+    public ISchemaColumn[] Columns => SchemaZipHelper.SchemaColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(ZipArchiveEntry));
 
     public ISchemaColumn GetColumnByName(string name)
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
     
-    public SchemaTableMetadata Metadata { get; } = new(typeof(ZipArchiveEntry));
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
 }

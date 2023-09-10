@@ -12,7 +12,7 @@ internal class TestsPostgresRowSource : PostgresRowSource
     {
     }
 
-    protected override IDbConnection CreateConnection(IReadOnlyDictionary<string, string> environmentVariables)
+    protected override IDbConnection CreateConnection()
     {
         var mock = new Mock<IDbConnection>();
         

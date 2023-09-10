@@ -295,26 +295,6 @@ public class KubernetesPlaygroundTests
     }
     
     [TestMethod]
-    public void SecretsDataPlaygroundDesc_ShouldBeIgnored()
-    {
-        const string query = "desc #kubernetes.secretsdata()";
-
-        var vm = CreateAndRunVirtualMachineWithResponse(query);
-
-        var table = vm.Run();
-    }
-    
-    [TestMethod]
-    public void SecretsDataPlayground_ShouldBeIgnored()
-    {
-        const string query = "select * from #kubernetes.secretsdata()";
-
-        var vm = CreateAndRunVirtualMachineWithResponse(query);
-
-        var table = vm.Run();
-    }
-    
-    [TestMethod]
     public void PodContainersPlaygroundDesc_ShouldBeIgnored()
     {
         const string query = "desc #kubernetes.podcontainers()";

@@ -2,7 +2,7 @@
 
 namespace Musoq.DataSources.Airtable.Components;
 
-public class AirtableField
+internal class AirtableField
 {
     public AirtableField()
     {

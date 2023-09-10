@@ -52,6 +52,11 @@ public abstract class DatabaseTable : ISchemaTable
         return Columns.SingleOrDefault(f => f.ColumnName == name);
     }
 
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
+
     protected abstract IDbConnection CreateConnection(RuntimeContext runtimeContext);
 
     protected abstract string CreateQueryCommand(string name);

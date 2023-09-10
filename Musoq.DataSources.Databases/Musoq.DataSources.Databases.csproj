@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -27,7 +27,7 @@
         <PackageReference Include="Dapper" Version="2.0.151" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Musoq.Plugins" Version="4.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="5.0.2" />
+        <PackageReference Include="Musoq.Schema" Version="5.0.3" />
     </ItemGroup>
 
 </Project>

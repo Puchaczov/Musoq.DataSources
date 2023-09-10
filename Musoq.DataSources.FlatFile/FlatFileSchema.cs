@@ -48,13 +48,11 @@ public class FlatFileSchema : SchemaBase
     /// <returns>Requested table metadata</returns>
     public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
-        switch (name.ToLowerInvariant())
+        return name.ToLowerInvariant() switch
         {
-            case "file":
-                return new FlatFileTable();
-        }
-
-        throw new TableNotFoundException(nameof(name));
+            "file" => new FlatFileTable(),
+            _ => throw new TableNotFoundException(nameof(name))
+        };
     }
 
     /// <summary>
@@ -66,13 +64,11 @@ public class FlatFileSchema : SchemaBase
     /// <returns>Data source</returns>
     public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
     {
-        switch (name.ToLowerInvariant())
+        return name.ToLowerInvariant() switch
         {
-            case "file":
-                return new FlatFileSource((string)parameters[0], interCommunicator);
-        }
-
-        throw new SourceNotFoundException(nameof(name));
+            "file" => new FlatFileSource((string) parameters[0], interCommunicator),
+            _ => throw new SourceNotFoundException(nameof(name))
+        };
     }
 
     /// <summary>

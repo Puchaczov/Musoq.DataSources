@@ -17,7 +17,7 @@ internal class SqliteRowSource : DatabaseRowSource
         _runtimeContext = runtimeContext;
     }
 
-    protected override DbConnection CreateConnection(IReadOnlyDictionary<string, string> environmentVariables)
+    protected override DbConnection CreateConnection()
     {
         return new SqliteConnection(_runtimeContext.EnvironmentVariables["SQLITE_CONNECTION_STRING"]);
     }

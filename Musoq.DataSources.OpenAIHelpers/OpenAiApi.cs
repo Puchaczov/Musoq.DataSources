@@ -1,9 +1,9 @@
 using OpenAI_API;
 using OpenAI_API.Chat;
 
-namespace Musoq.DataSources.OpenAI;
+namespace Musoq.DataSources.OpenAIHelpers;
 
-internal class OpenAiApi : IOpenAiApi
+public class OpenAiApi : IOpenAiApi
 {
     private readonly OpenAIAPI _api;
 

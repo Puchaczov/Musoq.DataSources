@@ -10,6 +10,11 @@ internal class ContainersTable : ISchemaTable
         return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
 
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
+
     public ISchemaColumn[] Columns => ContainersSourceHelper.ContainersColumns;
     
     public SchemaTableMetadata Metadata { get; } = new(typeof(ContainerListResponse));

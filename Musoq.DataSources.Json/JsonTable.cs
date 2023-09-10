@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using Musoq.Schema;
@@ -10,38 +9,23 @@ using Newtonsoft.Json.Linq;
 
 namespace Musoq.DataSources.Json
 {
-    /// <summary>
-    /// Represents a json based table.
-    /// </summary>
-    public class JsonTable : ISchemaTable
+    internal class JsonTable : ISchemaTable
     {
         private readonly Stream _stream;
         private ISchemaColumn[] _columns;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JsonTable"/> class.
-        /// </summary>
-        /// <param name="filePath">The filepath</param>
         public JsonTable(string filePath)
         {
             _stream = File.OpenRead(filePath);
             _columns = null;
         }
         
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JsonTable"/> class.
-        /// </summary>
-        /// <param name="stream">The stream</param>
         public JsonTable(Stream stream)
         {
             _stream = stream;
             _columns = null;
         }
 
-        /// <summary>
-        /// Gets columns from json file.
-        /// </summary>
-        /// <exception cref="NotSupportedException"></exception>
         public ISchemaColumn[] Columns
         {
             get
@@ -54,35 +38,27 @@ namespace Musoq.DataSources.Json
                 var jsonSchema = contentReader.ReadToEnd();
                 var schema = JsonConvert.DeserializeObject(jsonSchema);
 
-                switch (schema)
+                _columns = schema switch
                 {
-                    case JObject jObj:
-                        _columns = ParseObject(jObj);
-                        break;
-                    case JArray jArr:
-                        _columns = ParseArray(jArr);
-                        break;
-                    default:
-                        throw new NotSupportedException($"Unsupported object in schema {schema.GetType().Name}");
-                }
-                
+                    JObject jObj => ParseObject(jObj),
+                    JArray jArr => ParseArray(jArr),
+                    _ => throw new NotSupportedException($"Unsupported object in schema {schema.GetType().Name}")
+                };
+
                 return _columns;
             }
         }
     
-        /// <summary>
-        /// Gets the metadata of the table.
-        /// </summary>
         public SchemaTableMetadata Metadata { get; } = new(typeof(object));
-
-        /// <summary>
-        /// Gets the column by name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        
         public ISchemaColumn GetColumnByName(string name)
         {
             return Columns.SingleOrDefault(column => column.ColumnName == name);
+        }
+
+        public ISchemaColumn[] GetColumnsByName(string name)
+        {
+            return Columns.Where(column => column.ColumnName == name).ToArray();
         }
 
         private ISchemaColumn[] ParseArray(JArray jarr)
@@ -140,6 +116,8 @@ namespace Musoq.DataSources.Json
                         columns.Add(new SchemaColumn(prop.Name, columnIndex++, GetType(prop.Value)));
                         break;
                     case JTokenType.Null:
+                        columns.Add(new SchemaColumn(prop.Name, columnIndex++, typeof(object)));
+                        break;
                     case JTokenType.Undefined:
                     case JTokenType.Date:
                     case JTokenType.Raw:

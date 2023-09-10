@@ -13,5 +13,13 @@ namespace Musoq.Schema.Xml
         {
             return new SchemaColumn(name, 0, typeof(IDynamicMetaObjectProvider));
         }
+        
+        public ISchemaColumn[] GetColumnsByName(string name)
+        {
+            return new ISchemaColumn[]
+            {
+                new SchemaColumn(name, 0, typeof(IDynamicMetaObjectProvider))
+            };
+        }
     }
 }

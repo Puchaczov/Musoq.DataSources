@@ -4,7 +4,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Docker.Images;
 
-public class ImagesSource : RowSourceBase<ImagesListResponse>
+internal class ImagesSource : RowSourceBase<ImagesListResponse>
 {
     private readonly IDockerApi _api;
 

@@ -13,6 +13,11 @@ internal class ArchivesTable : ISchemaTable
         return Columns.FirstOrDefault(column => column.ColumnName == name);
     }
 
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
+
     public ISchemaColumn[] Columns { get; } =
     {
         new SchemaColumn(nameof(EntryWrapper.CompressionType), 0, typeof(CompressionType)),

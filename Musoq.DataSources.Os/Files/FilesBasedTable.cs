@@ -5,17 +5,17 @@ namespace Musoq.DataSources.Os.Files;
 
 internal class FilesBasedTable : ISchemaTable
 {
-    public FilesBasedTable()
-    {
-        Columns = SchemaFilesHelper.FilesColumns;
-    }
-
-    public ISchemaColumn[] Columns { get; }
+    public ISchemaColumn[] Columns => SchemaFilesHelper.FilesColumns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(ExtendedFileInfo));
 
     public ISchemaColumn GetColumnByName(string name)
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);
     }
-    
-    public SchemaTableMetadata Metadata { get; } = new(typeof(ExtendedFileInfo));
+
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
 }

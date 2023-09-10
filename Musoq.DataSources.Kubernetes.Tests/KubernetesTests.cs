@@ -888,50 +888,6 @@ public class KubernetesTests
     }
 
     [TestMethod]
-    public void WhenSecretDataQueried_ShouldReturnValues()
-    {
-        var api = new Mock<IKubernetesApi>();
-        var keyBytes = new byte[] {1, 2, 3};
-        
-        api.Setup(f => f.ListSecretsForAllNamespaces())
-            .Returns(new V1SecretList
-            {
-                Items = new List<V1Secret>
-                {
-                    new()
-                    {
-                        Metadata = new V1ObjectMeta
-                        {
-                            Name = "Name",
-                            CreationTimestamp = DateTime.MinValue,
-                            NamespaceProperty = "Namespace"
-                        },
-                        Type = "Type",
-                        Data = new Dictionary<string, byte[]>
-                        {
-                            {"Key", keyBytes}
-                        }
-                    }
-                }
-            });
-        
-        var query = "select Name, Namespace, Key, Value from #kubernetes.secretsdata()";
-        
-        var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
-        var table = vm.Run();
-        
-        Assert.AreEqual(1, table.Count);
-
-        Assert.AreEqual("Name", table[0][0]);
-        Assert.AreEqual("Namespace", table[0][1]);
-        Assert.AreEqual("Key", table[0][2]);
-        Assert.AreEqual(keyBytes, table[0][3]);
-        
-        Assert.AreEqual(4, table[0].Count);
-    }
-
-    [TestMethod]
     public void WhenSecretsQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();

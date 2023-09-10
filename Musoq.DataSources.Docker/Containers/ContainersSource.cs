@@ -4,7 +4,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Docker.Containers;
 
-public class ContainersSource : RowSourceBase<ContainerListResponse>
+internal class ContainersSource : RowSourceBase<ContainerListResponse>
 {
     private readonly IDockerApi _api;
 

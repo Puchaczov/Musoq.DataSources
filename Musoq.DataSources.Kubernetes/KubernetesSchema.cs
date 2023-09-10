@@ -12,7 +12,6 @@ using Musoq.DataSources.Kubernetes.PersistentVolumes;
 using Musoq.DataSources.Kubernetes.PodContainers;
 using Musoq.DataSources.Kubernetes.Pods;
 using Musoq.DataSources.Kubernetes.ReplicaSets;
-using Musoq.DataSources.Kubernetes.SecretData;
 using Musoq.DataSources.Kubernetes.Secrets;
 using Musoq.DataSources.Kubernetes.Services;
 using Musoq.DataSources.Kubernetes.StatefulSets;
@@ -432,7 +431,6 @@ public class KubernetesSchema : SchemaBase
             ServicesTableName => new ServicesTable(),
             DeploymentsTableName => new DeploymentsTable(),
             ReplicaSetsTableName => new ReplicaSetsTable(),
-            SecretsDataTableName => new SecretsDataTable(),
             NodesTableName => new NodesTable(),
             SecretsTableName => new SecretsTable(),
             ConfigMapsTableName => new ConfigmapsTable(),
@@ -465,7 +463,6 @@ public class KubernetesSchema : SchemaBase
             ServicesTableName => new ServicesSource(client),
             DeploymentsTableName => new DeploymentsSource(client),
             ReplicaSetsTableName => new ReplicaSetsSource(client),
-            SecretsDataTableName => new SecretsDataSource(client),
             NodesTableName => new NodesSource(client),
             SecretsTableName => new SecretsSource(client),
             ConfigMapsTableName => new ConfigmapsSource(client),

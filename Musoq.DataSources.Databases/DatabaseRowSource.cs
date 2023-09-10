@@ -22,13 +22,13 @@ public abstract class DatabaseRowSource : RowSourceBase<dynamic>
     {
         DatabaseHelpers.GetDataFromDatabase(
             chunkedSource,
-            () => CreateConnection(_runtimeContext.EnvironmentVariables),
+            CreateConnection,
             CreateQueryCommand,
             (query, connection) => _returnQuery?.Invoke() ?? connection.Query(query),
             _runtimeContext.EndWorkToken);
     }
 
-    protected abstract IDbConnection CreateConnection(IReadOnlyDictionary<string, string> environmentVariables);
+    protected abstract IDbConnection CreateConnection();
 
     protected abstract string CreateQueryCommand();
 }
