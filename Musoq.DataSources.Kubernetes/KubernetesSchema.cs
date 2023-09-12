@@ -10,6 +10,7 @@ using Musoq.DataSources.Kubernetes.Nodes;
 using Musoq.DataSources.Kubernetes.PersistentVolumeClaims;
 using Musoq.DataSources.Kubernetes.PersistentVolumes;
 using Musoq.DataSources.Kubernetes.PodContainers;
+using Musoq.DataSources.Kubernetes.PodLogs;
 using Musoq.DataSources.Kubernetes.Pods;
 using Musoq.DataSources.Kubernetes.ReplicaSets;
 using Musoq.DataSources.Kubernetes.Secrets;
@@ -36,7 +37,6 @@ public class KubernetesSchema : SchemaBase
     private const string ServicesTableName = "services";
     private const string DeploymentsTableName = "deployments";
     private const string ReplicaSetsTableName = "replicasets";
-    private const string SecretsDataTableName = "secretsdata";
     private const string NodesTableName = "nodes";
     private const string SecretsTableName = "secrets";
     private const string ConfigMapsTableName = "configmaps";
@@ -48,6 +48,7 @@ public class KubernetesSchema : SchemaBase
     private const string StatefulSetsTableName = "statefulsets";
     private const string DaemonSetsTableName = "daemonsets";
     private const string PodContainersTableName = "podcontainers";
+    private const string PodLogsTableName = "podlogs";
     
     private readonly Func<RuntimeContext, object[], IKubernetesApi> _clientFactory;
     
@@ -374,39 +375,51 @@ public class KubernetesSchema : SchemaBase
     ///             </example>
     ///         </examples>
     ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param>Pod Name</virtual-param>
+    ///         <virtual-param>Container name</virtual-param>
+    ///         <virtual-param>Namespace</virtual-param>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                     </environmentVariables>
+    ///                        #kubernetes.podlogs(string podName, string string containerName, string namespace)
+    ///                 </from>
+    ///                 <description>Enumerate pod containers</description>
+    ///                 <columns>
+    ///                     <column name="Namespace" type="string">Namespace string</column>
+    ///                     <column name="Name" type="string">Name string</column>
+    ///                     <column name="ContainerName" type="string">Container name string</column>
+    ///                     <column name="Line" type="string">Line string</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
     /// </virtual-constructors>
     public KubernetesSchema() 
         : base(SchemaName, CreateLibrary())
     {
         _clientFactory = (context, parameters) =>
         {
-            switch (parameters.Length)
+            KubernetesClientConfiguration clientConfiguration;
+            k8s.Kubernetes client;
+            
+            if (context.EnvironmentVariables.ContainsKey("MUSOQ_KUBERNETES_CONFIG_FILE"))
             {
-                case 1 when parameters[0] is string config:
-                {
-                    var clientConfiguration = KubernetesClientConfiguration.BuildConfigFromConfigFile(config);
-                    var client = new k8s.Kubernetes(clientConfiguration);
-                    return new KubernetesApi(client);
-                }
-                case 0 when context.EnvironmentVariables.ContainsKey("MUSOQ_KUBERNETES_CONFIG_FILE"):
-                {
-                    var fileContent = context.EnvironmentVariables["MUSOQ_KUBERNETES_CONFIG_FILE"];
-                    using var stream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
-                    var clientConfiguration = KubernetesClientConfiguration.BuildConfigFromConfigFile(stream);
-                    var client = new k8s.Kubernetes(clientConfiguration);
+                var fileContent = context.EnvironmentVariables["MUSOQ_KUBERNETES_CONFIG_FILE"];
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+                clientConfiguration = KubernetesClientConfiguration.BuildConfigFromConfigFile(stream);
+                client = new k8s.Kubernetes(clientConfiguration);
             
-                    return new KubernetesApi(client);
-                }
-                case 0:
-                {
-                    var clientConfiguration = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-                    var client = new k8s.Kubernetes(clientConfiguration);
-            
-                    return new KubernetesApi(client);
-                }
-                default:
-                    throw new NotSupportedException("Only one parameter is supported. It should be a path to Kubernetes config file.");
+                return new KubernetesApi(client);
             }
+            
+            clientConfiguration = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            client = new k8s.Kubernetes(clientConfiguration);
+                    
+            return new KubernetesApi(client);
         };
     }
     
@@ -442,6 +455,7 @@ public class KubernetesSchema : SchemaBase
             CronJobsTableName => new CronJobsTable(),
             DaemonSetsTableName => new DaemonSetsTable(),
             StatefulSetsTableName => new StatefulSetsTable(),
+            PodLogsTableName => new PodLogsTable(),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }
@@ -474,6 +488,7 @@ public class KubernetesSchema : SchemaBase
             CronJobsTableName => new CronJobsSource(client),
             DaemonSetsTableName => new DaemonSetsSource(client),
             StatefulSetsTableName => new StatefulSetsSource(client),
+            PodLogsTableName => new PodLogsSource(client, (string)parameters[0], (string)parameters[1], (string)parameters[2]),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }

@@ -21,7 +21,6 @@ public class StreamLimeRowsReader : IRowsReader<string>
         return new ValueTask();
     }
 
-
     public async ValueTask<bool> MoveNextAsync()
     {
         while (!_reader.EndOfStream)

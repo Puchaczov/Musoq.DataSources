@@ -16,7 +16,12 @@ internal class KubernetesApi : IKubernetesApi
     {
         return _client.ListPodForAllNamespaces();
     }
-    
+
+    public Stream ReadNamespacedPodLogs(string podName, string namespaceName, string containerName)
+    {
+        return _client.ReadNamespacedPodLog(podName, namespaceName, containerName, false);
+    }
+
     public V1ServiceList ListServicesForAllNamespaces()
     {
         return _client.ListServiceForAllNamespaces();

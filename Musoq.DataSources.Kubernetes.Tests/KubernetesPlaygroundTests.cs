@@ -350,6 +350,32 @@ from #kubernetes.deployments() deployments
         
         var table = vm.Run();
     }
+    
+    [TestMethod]
+    public void PodLogsPlaygroundDesc_ShouldBeIgnored()
+    {
+        const string query = "desc #kubernetes.podlogs()";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+    }
+    
+    [TestMethod]
+    public void PodLogsPlayground_ShouldBeIgnored()
+    {
+        const string query = "select Name, ContainerName, Namespace from #kubernetes.podcontainers() where Namespace = 'musoq' and ContainerName = 'rabbitmq'";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+        
+        var query2 = $"select * from #kubernetes.podlogs('{table[0][0]}', '{table[0][1]}', '{table[0][2]}')";
+        
+        var vm2 = CreateAndRunVirtualMachineWithResponse(query2);
+        
+        var table2 = vm2.Run();
+    }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {

@@ -6,6 +6,8 @@ internal interface IKubernetesApi
 {
     V1PodList ListPodsForAllNamespaces();
     
+    Stream ReadNamespacedPodLogs(string podName, string namespaceName, string containerName);
+    
     V1ServiceList ListServicesForAllNamespaces();
     
     V1DeploymentList ListDeploymentsForAllNamespaces();

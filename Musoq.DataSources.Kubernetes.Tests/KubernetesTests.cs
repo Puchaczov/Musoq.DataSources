@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using k8s.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -1083,6 +1085,28 @@ public class KubernetesTests
         Assert.AreEqual(DateTime.MinValue, table[0][5]);
         
         Assert.AreEqual(6, table[0].Count);
+    }
+    
+    [TestMethod]
+    public void WhenPodLogsQueried_ShouldReturnValues()
+    {
+        var api = new Mock<IKubernetesApi>();
+        
+        api.Setup(f => f.ReadNamespacedPodLogs(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(() => new MemoryStream(Encoding.UTF8.GetBytes("Test")));
+        
+        var query = "select Name, Namespace, ContainerName, Line from #kubernetes.podlogs('podName', 'containerName', 'namespace')";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        
+        Assert.AreEqual("podName", table[0][0]);
+        Assert.AreEqual("namespace", table[0][1]);
+        Assert.AreEqual("containerName", table[0][2]);
+        Assert.AreEqual("Test", table[0][3]);
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IKubernetesApi api)
