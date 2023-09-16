@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -9,7 +7,6 @@ using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 using Musoq.Tests.Common;
-using Newtonsoft.Json.Linq;
 using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Json.Tests

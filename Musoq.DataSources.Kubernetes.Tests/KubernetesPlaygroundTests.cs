@@ -376,6 +376,26 @@ from #kubernetes.deployments() deployments
         
         var table2 = vm2.Run();
     }
+    
+    [TestMethod]
+    public void EventsPlayground_ShouldBeIgnored()
+    {
+        const string query = "select * from #kubernetes.events()";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+    }
+    
+    [TestMethod]
+    public void EventsNamespacedPlayground_ShouldBeIgnored()
+    {
+        const string query = "select * from #kubernetes.events('musoq')";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query);
+
+        var table = vm.Run();
+    }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {

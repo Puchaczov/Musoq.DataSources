@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>4.0.2</Version>
+    <Version>4.0.3</Version>
     <Authors>Jakub Puchała</Authors>
     <Product>Musoq</Product>
     <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -27,8 +27,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="Musoq.Plugins" Version="4.0.0" />
-    <PackageReference Include="Musoq.Schema" Version="5.0.3" />
+    <PackageReference Include="Musoq.Plugins" Version="4.0.1" />
+    <PackageReference Include="Musoq.Schema" Version="5.0.4" />
   </ItemGroup>
 
 </Project>

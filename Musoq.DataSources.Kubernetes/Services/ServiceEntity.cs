@@ -1,16 +1,14 @@
-﻿namespace Musoq.DataSources.Kubernetes.Services;
+﻿using k8s.Models;
+
+namespace Musoq.DataSources.Kubernetes.Services;
 
 public class ServiceEntity
 {
-    public string Namespace { get; set; }
+    public V1ObjectMeta Metadata { get; set; }
     
-    public string Name { get; set; }
+    public V1ServiceSpec Spec { get; set; }
     
-    public string Type { get; set; }
+    public string Kind { get; set; }
     
-    public string ClusterIP { get; set; }
-    
-    public string ExternalIPs { get; set; }
-    
-    public string Ports { get; set; }
+    public V1ServiceStatus Status { get; set; }
 }

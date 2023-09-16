@@ -33,4 +33,8 @@ internal interface IKubernetesApi
     V1DaemonSetList ListDaemonSetsForAllNamespaces();
     
     V1StatefulSetList ListStatefulSetsForAllNamespaces();
+    
+    Corev1EventList ListEvents();
+    
+    Corev1EventList ListNamespacedEvents(string @namespace);
 }

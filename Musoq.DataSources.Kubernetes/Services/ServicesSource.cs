@@ -26,12 +26,10 @@ internal class ServicesSource : RowSourceBase<ServiceEntity>
     {
         return new ServiceEntity
         {
-            Name = v1Service.Metadata.Name,
-            Namespace = v1Service.Metadata.NamespaceProperty,
-            Type = v1Service.Spec.Type,
-            ClusterIP = v1Service.Spec.ClusterIP,
-            ExternalIPs = v1Service.Spec.ExternalIPs != null ? string.Join(",", v1Service.Spec.ExternalIPs) : string.Empty,
-            Ports = v1Service.Spec.Ports != null ? string.Join(",", v1Service.Spec.Ports.Select(c => c.Port)) : string.Empty
+            Metadata = v1Service.Metadata,
+            Spec = v1Service.Spec,
+            Kind = v1Service.Kind,
+            Status = v1Service.Status
         };
     }
 }

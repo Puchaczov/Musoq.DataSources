@@ -86,4 +86,14 @@ internal class KubernetesApi : IKubernetesApi
     {
         return _client.ListStatefulSetForAllNamespaces();
     }
+
+    public Corev1EventList ListEvents()
+    {
+        return CoreV1OperationsExtensions.ListEventForAllNamespaces(_client);
+    }
+
+    public Corev1EventList ListNamespacedEvents(string @namespace)
+    {
+        return CoreV1OperationsExtensions.ListNamespacedEvent(_client, @namespace);
+    }
 }

@@ -209,12 +209,27 @@ public class KubernetesTests
                                     TargetPort = 2
                                 }
                             }
+                        },
+                        Kind = "Kind",
+                        Status = new V1ServiceStatus
+                        {
+                            LoadBalancer = new V1LoadBalancerStatus
+                            {
+                                Ingress = new List<V1LoadBalancerIngress>
+                                {
+                                    new()
+                                    {
+                                        Hostname = "Hostname",
+                                        Ip = "Ip"
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             });
         
-        var query = "select Name, Namespace, Type, ClusterIP, ExternalIPs, Ports from #kubernetes.services()";
+        var query = "select Metadata is not null, Spec is not null, Kind, Status is not null from #kubernetes.services()";
         
         
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
@@ -223,14 +238,10 @@ public class KubernetesTests
         
         Assert.AreEqual(1, table.Count);
         
-        Assert.AreEqual("Name", table[0][0]);
-        Assert.AreEqual("Namespace", table[0][1]);
-        Assert.AreEqual("Type", table[0][2]);
-        Assert.AreEqual("ClusterIP", table[0][3]);
-        Assert.AreEqual("ExternalIP", table[0][4]);
-        Assert.AreEqual("1", table[0][5]);
-        
-        Assert.AreEqual(6, table[0].Count);
+        Assert.IsTrue((bool)table[0][0]);
+        Assert.IsTrue((bool)table[0][1]);
+        Assert.AreEqual("Kind", table[0][2]);
+        Assert.IsTrue((bool)table[0][3]);
     }
 
     [TestMethod]
@@ -1107,6 +1118,157 @@ public class KubernetesTests
         Assert.AreEqual("namespace", table[0][1]);
         Assert.AreEqual("containerName", table[0][2]);
         Assert.AreEqual("Test", table[0][3]);
+    }
+
+    [TestMethod]
+    public void WhenEventsQueried_ShouldReturnValues()
+    {
+        var api = new Mock<IKubernetesApi>();
+
+        api.Setup(f => f.ListEvents())
+            .Returns(new Corev1EventList
+            {
+                Items = new List<Corev1Event>()
+                {
+                    new()
+                    {
+                        Action = "Action",
+                        ApiVersion = "ApiVersion",
+                        Count = 1,
+                        EventTime = DateTime.MinValue,
+                        FirstTimestamp = DateTime.MinValue,
+                        InvolvedObject = new V1ObjectReference
+                        {
+                            ApiVersion = "ApiVersion",
+                            FieldPath = "FieldPath",
+                            Kind = "Kind",
+                            Name = "Name",
+                            NamespaceProperty = "Namespace",
+                            ResourceVersion = "ResourceVersion",
+                            Uid = "Uid"
+                        },
+                        Kind = "Kind",
+                        LastTimestamp = DateTime.MinValue,
+                        Message = "Message",
+                        Metadata = new V1ObjectMeta
+                        {
+                            CreationTimestamp = DateTime.MinValue,
+                            Name = "Name",
+                            NamespaceProperty = "Namespace",
+                            ResourceVersion = "ResourceVersion",
+                            SelfLink = "SelfLink",
+                            Uid = "Uid"
+                        },
+                        Reason = "Reason",
+                        Related = new V1ObjectReference
+                        {
+                            ApiVersion = "ApiVersion",
+                            FieldPath = "FieldPath",
+                            Kind = "Kind",
+                            Name = "Name",
+                            NamespaceProperty = "Namespace",
+                            ResourceVersion = "ResourceVersion",
+                            Uid = "Uid"
+                        },
+                        ReportingComponent = "ReportingComponent",
+                        ReportingInstance = "ReportingInstance",
+                        Series = new Corev1EventSeries
+                        {
+                            Count = 1,
+                            LastObservedTime = DateTime.MinValue
+                        },
+                        Source = new V1EventSource()
+                        {
+                            Component = "Component",
+                            Host = "Host"
+                        },
+                        Type = "Type"
+                    }
+                }
+            });
+
+        var query = @"
+select 
+    Action,
+    ApiVersion,
+    Count,
+    EventTime,
+    FirstTimestamp,
+    InvolvedObject.ApiVersion,
+    InvolvedObject.FieldPath,
+    InvolvedObject.Kind,
+    InvolvedObject.Name,
+    InvolvedObject.NamespaceProperty,
+    InvolvedObject.ResourceVersion,
+    InvolvedObject.Uid,
+    Kind,
+    LastTimestamp,
+    Message,
+    Metadata.CreationTimestamp,
+    Metadata.Name,
+    Metadata.NamespaceProperty,
+    Metadata.ResourceVersion,
+    Metadata.SelfLink,
+    Metadata.Uid,
+    Reason,
+    Related.ApiVersion,
+    Related.FieldPath,
+    Related.Kind,
+    Related.Name,
+    Related.NamespaceProperty,
+    Related.ResourceVersion,
+    Related.Uid,
+    ReportingComponent,
+    ReportingInstance,
+    Series.Count,
+    Series.LastObservedTime,
+    Source.Component,
+    Source.Host,
+    Type
+from #kubernetes.events()";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
+
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        
+        Assert.AreEqual("Action", table[0][0]);
+        Assert.AreEqual("ApiVersion", table[0][1]);
+        Assert.AreEqual(1, table[0][2]);
+        Assert.AreEqual(DateTime.MinValue, table[0][3]);
+        Assert.AreEqual(DateTime.MinValue, table[0][4]);
+        Assert.AreEqual("ApiVersion", table[0][5]);
+        Assert.AreEqual("FieldPath", table[0][6]);
+        Assert.AreEqual("Kind", table[0][7]);
+        Assert.AreEqual("Name", table[0][8]);
+        Assert.AreEqual("Namespace", table[0][9]);
+        Assert.AreEqual("ResourceVersion", table[0][10]);
+        Assert.AreEqual("Uid", table[0][11]);
+        Assert.AreEqual("Kind", table[0][12]);
+        Assert.AreEqual(DateTime.MinValue, table[0][13]);
+        Assert.AreEqual("Message", table[0][14]);
+        Assert.AreEqual(DateTime.MinValue, table[0][15]);
+        Assert.AreEqual("Name", table[0][16]);
+        Assert.AreEqual("Namespace", table[0][17]);
+        Assert.AreEqual("ResourceVersion", table[0][18]);
+        Assert.AreEqual("SelfLink", table[0][19]);
+        Assert.AreEqual("Uid", table[0][20]);
+        Assert.AreEqual("Reason", table[0][21]);
+        Assert.AreEqual("ApiVersion", table[0][22]);
+        Assert.AreEqual("FieldPath", table[0][23]);
+        Assert.AreEqual("Kind", table[0][24]);
+        Assert.AreEqual("Name", table[0][25]);
+        Assert.AreEqual("Namespace", table[0][26]);
+        Assert.AreEqual("ResourceVersion", table[0][27]);
+        Assert.AreEqual("Uid", table[0][28]);
+        Assert.AreEqual("ReportingComponent", table[0][29]);
+        Assert.AreEqual("ReportingInstance", table[0][30]);
+        Assert.AreEqual(1, table[0][31]);
+        Assert.AreEqual(DateTime.MinValue, table[0][32]);
+        Assert.AreEqual("Component", table[0][33]);
+        Assert.AreEqual("Host", table[0][34]);
+        Assert.AreEqual("Type", table[0][35]);
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IKubernetesApi api)

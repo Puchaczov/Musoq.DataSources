@@ -1,4 +1,5 @@
-﻿using Musoq.Schema;
+﻿using k8s.Models;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Kubernetes.Services;
@@ -13,32 +14,26 @@ internal static class ServicesSourceHelper
     {
         ServicesNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(ServiceEntity.Namespace), 0},
-            {nameof(ServiceEntity.Name), 1},
-            {nameof(ServiceEntity.Type), 2},
-            {nameof(ServiceEntity.ClusterIP), 3},
-            {nameof(ServiceEntity.ExternalIPs), 4},
-            {nameof(ServiceEntity.Ports), 5}
+            {nameof(ServiceEntity.Metadata), 0},
+            {nameof(ServiceEntity.Spec), 1},
+            {nameof(ServiceEntity.Kind), 2},
+            {nameof(ServiceEntity.Status), 3}
         };
         
         ServicesIndexToMethodAccessMap = new Dictionary<int, Func<ServiceEntity, object?>>
         {
-            {0, info => info.Namespace},
-            {1, info => info.Name},
-            {2, info => info.Type},
-            {3, info => info.ClusterIP},
-            {4, info => info.ExternalIPs},
-            {5, info => info.Ports}
+            {0, t => t.Metadata},
+            {1, t => t.Spec},
+            {2, t => t.Kind},
+            {3, t => t.Status}
         };
         
         ServicesColumns = new ISchemaColumn[]
         {
-            new SchemaColumn(nameof(ServiceEntity.Namespace), 0, typeof(string)),
-            new SchemaColumn(nameof(ServiceEntity.Name), 1, typeof(string)),
-            new SchemaColumn(nameof(ServiceEntity.Type), 2, typeof(string)),
-            new SchemaColumn(nameof(ServiceEntity.ClusterIP), 3, typeof(string)),
-            new SchemaColumn(nameof(ServiceEntity.ExternalIPs), 4, typeof(string)),
-            new SchemaColumn(nameof(ServiceEntity.Ports), 5, typeof(string))
+            new SchemaColumn(nameof(ServiceEntity.Metadata), 0, typeof(V1ObjectMeta)),
+            new SchemaColumn(nameof(ServiceEntity.Spec), 1, typeof(V1ServiceSpec)),
+            new SchemaColumn(nameof(ServiceEntity.Kind), 2, typeof(string)),
+            new SchemaColumn(nameof(ServiceEntity.Status), 3, typeof(V1ServiceStatus))
         };
     }
 }

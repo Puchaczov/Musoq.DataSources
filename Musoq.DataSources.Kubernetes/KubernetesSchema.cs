@@ -4,6 +4,7 @@ using Musoq.DataSources.Kubernetes.Configmaps;
 using Musoq.DataSources.Kubernetes.CronJobs;
 using Musoq.DataSources.Kubernetes.DaemonSets;
 using Musoq.DataSources.Kubernetes.Deployments;
+using Musoq.DataSources.Kubernetes.Events;
 using Musoq.DataSources.Kubernetes.Ingresses;
 using Musoq.DataSources.Kubernetes.Jobs;
 using Musoq.DataSources.Kubernetes.Nodes;
@@ -49,6 +50,7 @@ public class KubernetesSchema : SchemaBase
     private const string DaemonSetsTableName = "daemonsets";
     private const string PodContainersTableName = "podcontainers";
     private const string PodLogsTableName = "podlogs";
+    private const string EventsTableName = "events";
     
     private readonly Func<RuntimeContext, object[], IKubernetesApi> _clientFactory;
     
@@ -114,12 +116,10 @@ public class KubernetesSchema : SchemaBase
     ///                 </from>
     ///                 <description>Enumerates services</description>
     ///                 <columns>
-    ///                     <column name="Namespace" type="string">Namespace string</column>
-    ///                     <column name="Name" type="string">Name string</column>
-    ///                     <column name="Type" type="string">Service type</column>
-    ///                     <column name="ClusterIP" type="string">Cluster IP</column>
-    ///                     <column name="ExternalIP" type="string">External IP</column>
-    ///                     <column name="Ports" type="string">Ports used</column>
+    ///                     <column name="Metadata" type="V1ObjectMeta">Metadata of the ServiceEntity</column>
+    ///                     <column name="Spec" type="V1ServiceSpec">Spec of the ServiceEntity</column>
+    ///                     <column name="Kind" type="string">Kind string</column>
+    ///                     <column name="Status" type="V1ServiceStatus">Status of the ServiceEntity</column>
     ///                 </columns>
     ///             </example>
     ///         </examples>
@@ -397,6 +397,68 @@ public class KubernetesSchema : SchemaBase
     ///             </example>
     ///         </examples>
     ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                     </environmentVariables>
+    ///                        #kubernetes.events()
+    ///                 </from>
+    ///                 <description>Enumerate events</description>
+    ///                 <columns>
+    ///                     <column name="Action" type="string">Action string</column>
+    ///                     <column name="ApiVersion" type="string">ApiVersion string</column>
+    ///                     <column name="Count" type="int?">Count of the event</column>
+    ///                     <column name="EventTime" type="DateTime?">EventTime of the event</column>
+    ///                     <column name="FirstTimestamp" type="DateTime?">FirstTimestamp of the event</column>
+    ///                     <column name="InvolvedObject" type="V1ObjectReference">InvolvedObject of the event</column>
+    ///                     <column name="Kind" type="string">Kind string</column>
+    ///                     <column name="LastTimestamp" type="DateTime?">LastTimestamp of the event</column>
+    ///                     <column name="Message" type="string">Message string</column>
+    ///                     <column name="Reason" type="string">Reason string</column>
+    ///                     <column name="Related" type="V1ObjectReference">Related of the event</column>
+    ///                     <column name="ReportingComponent" type="string">ReportingComponent string</column>
+    ///                     <column name="ReportingInstance" type="string">ReportingInstance string</column>
+    ///                     <column name="Series" type="Corev1EventSeries">Series of the event</column>
+    ///                     <column name="Source" type="V1EventSource">Source of the event</column>
+    ///                     <column name="Type" type="string">Type string</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                     </environmentVariables>
+    ///                        #kubernetes.events(string namespace)
+    ///                 </from>
+    ///                 <description>Enumerate events</description>
+    ///                 <columns>
+    ///                     <column name="Action" type="string">Action string</column>
+    ///                     <column name="ApiVersion" type="string">ApiVersion string</column>
+    ///                     <column name="Count" type="int?">Count of the event</column>
+    ///                     <column name="EventTime" type="DateTime?">EventTime of the event</column>
+    ///                     <column name="FirstTimestamp" type="DateTime?">FirstTimestamp of the event</column>
+    ///                     <column name="InvolvedObject" type="V1ObjectReference">InvolvedObject of the event</column>
+    ///                     <column name="Kind" type="string">Kind string</column>
+    ///                     <column name="LastTimestamp" type="DateTime?">LastTimestamp of the event</column>
+    ///                     <column name="Message" type="string">Message string</column>
+    ///                     <column name="Reason" type="string">Reason string</column>
+    ///                     <column name="Related" type="V1ObjectReference">Related of the event</column>
+    ///                     <column name="ReportingComponent" type="string">ReportingComponent string</column>
+    ///                     <column name="ReportingInstance" type="string">ReportingInstance string</column>
+    ///                     <column name="Series" type="Corev1EventSeries">Series of the event</column>
+    ///                     <column name="Source" type="V1EventSource">Source of the event</column>
+    ///                     <column name="Type" type="string">Type string</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
     /// </virtual-constructors>
     public KubernetesSchema() 
         : base(SchemaName, CreateLibrary())
@@ -456,6 +518,7 @@ public class KubernetesSchema : SchemaBase
             DaemonSetsTableName => new DaemonSetsTable(),
             StatefulSetsTableName => new StatefulSetsTable(),
             PodLogsTableName => new PodLogsTable(),
+            EventsTableName => new EventsTable(),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }
@@ -489,6 +552,9 @@ public class KubernetesSchema : SchemaBase
             DaemonSetsTableName => new DaemonSetsSource(client),
             StatefulSetsTableName => new StatefulSetsSource(client),
             PodLogsTableName => new PodLogsSource(client, (string)parameters[0], (string)parameters[1], (string)parameters[2]),
+            EventsTableName => new EventsSource(client, 
+                parameters.Length == 0 ? 
+                    api => api.ListEvents() : api => api.ListNamespacedEvents((string)parameters[0])),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }
