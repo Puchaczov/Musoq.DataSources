@@ -91,7 +91,7 @@ namespace Musoq.DataSources.SeparatedValues
             var indexToNameMap = new Dictionary<int, string>();
             var endWorkToken = _context.EndWorkToken;
 
-            var modifiedCulture = new CultureInfo(CultureInfo.InvariantCulture.Name)
+            var modifiedCulture = new CultureInfo(CultureInfo.CurrentCulture.Name)
             {
                 TextInfo =
                 {
@@ -187,7 +187,7 @@ namespace Musoq.DataSources.SeparatedValues
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.Byte:
-                            if (byte.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var byteValue))
+                            if (byte.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var byteValue))
                                 parsedRecords[i] = byteValue;
                             else
                                 parsedRecords[i] = null;
@@ -199,7 +199,7 @@ namespace Musoq.DataSources.SeparatedValues
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.DateTime:
-                            if (DateTime.TryParse(colValue, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTimeValue))
+                            if (DateTime.TryParse(colValue, CultureInfo.CurrentCulture, DateTimeStyles.None, out var dateTimeValue))
                                 parsedRecords[i] = dateTimeValue;
                             else
                                 parsedRecords[i] = null;
@@ -207,13 +207,13 @@ namespace Musoq.DataSources.SeparatedValues
                         case TypeCode.DBNull:
                             throw new NotSupportedException($"Type {TypeCode.DBNull} is not supported.");
                         case TypeCode.Decimal:
-                            if (decimal.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var decimalValue))
+                            if (decimal.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var decimalValue))
                                 parsedRecords[i] = decimalValue;
                             else
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.Double:
-                            if (double.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var doubleValue))
+                            if (double.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var doubleValue))
                                 parsedRecords[i] = doubleValue;
                             else
                                 parsedRecords[i] = null;
@@ -221,19 +221,19 @@ namespace Musoq.DataSources.SeparatedValues
                         case TypeCode.Empty:
                             throw new NotSupportedException($"Type {TypeCode.Empty} is not supported.");
                         case TypeCode.Int16:
-                            if (short.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var shortValue))
+                            if (short.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var shortValue))
                                 parsedRecords[i] = shortValue;
                             else
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.Int32:
-                            if (int.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var intValue))
+                            if (int.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var intValue))
                                 parsedRecords[i] = intValue;
                             else
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.Int64:
-                            if (long.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var longValue))
+                            if (long.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var longValue))
                                 parsedRecords[i] = longValue;
                             else
                                 parsedRecords[i] = null;
@@ -242,13 +242,13 @@ namespace Musoq.DataSources.SeparatedValues
                             parsedRecords[i] = colValue;
                             break;
                         case TypeCode.SByte:
-                            if (sbyte.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var sbyteValue))
+                            if (sbyte.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var sbyteValue))
                                 parsedRecords[i] = sbyteValue;
                             else
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.Single:
-                            if (float.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var floatValue))
+                            if (float.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var floatValue))
                                 parsedRecords[i] = floatValue;
                             else
                                 parsedRecords[i] = null;
@@ -260,24 +260,22 @@ namespace Musoq.DataSources.SeparatedValues
                                 parsedRecords[i] = colValue;
                             break;
                         case TypeCode.UInt16:
-                            if (ushort.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var ushortValue))
+                            if (ushort.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var ushortValue))
                                 parsedRecords[i] = ushortValue;
                             else
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.UInt32:
-                            if (uint.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var uintValue))
+                            if (uint.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var uintValue))
                                 parsedRecords[i] = uintValue;
                             else
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.UInt64:
-                            if (ulong.TryParse(colValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var ulongValue))
+                            if (ulong.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var ulongValue))
                                 parsedRecords[i] = ulongValue;
                             else
                                 parsedRecords[i] = null;
-                            break;
-                        default:
                             break;
                     }
                 }

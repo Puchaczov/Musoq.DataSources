@@ -68,31 +68,31 @@ namespace Musoq.DataSources.SeparatedValues
         /// Gets the data source based on the given data source and parameters.
         /// </summary>
         /// <param name="name">Data source name</param>
-        /// <param name="interCommunicator">Runtime context</param>
+        /// <param name="runtimeContext">Runtime context</param>
         /// <param name="parameters">Parameters to pass data to data source</param>
         /// <returns>Data source</returns>
-        public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
+        public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
         {
             switch (name.ToLowerInvariant())
             {
                 case "csv":
                     if (parameters[0] is IReadOnlyTable csvTable)
-                        return new SeparatedValuesSource(csvTable, ",", interCommunicator);
+                        return new SeparatedValuesSource(csvTable, ",", runtimeContext);
 
-                    return new SeparatedValuesSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2], interCommunicator);
+                    return new SeparatedValuesSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2], runtimeContext);
                 case "tsv":
                     if (parameters[0] is IReadOnlyTable tsvTable)
-                        return new SeparatedValuesSource(tsvTable, "\t", interCommunicator);
+                        return new SeparatedValuesSource(tsvTable, "\t", runtimeContext);
 
-                    return new SeparatedValuesSource((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2], interCommunicator);
+                    return new SeparatedValuesSource((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2], runtimeContext);
                 case "semicolon":
                     if (parameters[0] is IReadOnlyTable semicolonTable)
-                        return new SeparatedValuesSource(semicolonTable, ";", interCommunicator);
+                        return new SeparatedValuesSource(semicolonTable, ";", runtimeContext);
 
-                    return new SeparatedValuesSource((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2], interCommunicator);
+                    return new SeparatedValuesSource((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2], runtimeContext);
             }
 
-            return base.GetRowSource(name, interCommunicator, parameters);
+            return base.GetRowSource(name, runtimeContext, parameters);
         }
 
         /// <summary>

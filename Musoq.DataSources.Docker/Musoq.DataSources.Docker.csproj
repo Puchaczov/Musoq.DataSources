@@ -28,7 +28,7 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
       <PackageReference Include="Docker.DotNet" Version="3.125.15" />
-      <PackageReference Include="Musoq.Plugins" Version="4.0.1" />
+      <PackageReference Include="Musoq.Plugins" Version="4.1.0" />
       <PackageReference Include="Musoq.Schema" Version="5.0.4" />
     </ItemGroup>
 
