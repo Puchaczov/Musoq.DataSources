@@ -1,14 +1,14 @@
-using System.Linq;
+﻿using System.Linq;
 using Musoq.DataSources.CANBus.Helpers;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.CANBus;
+namespace Musoq.DataSources.CANBus.Messages;
 
-internal class SignalsTable : ISchemaTable
+internal class MessagesTable : ISchemaTable
 {
-    public ISchemaColumn[] Columns => SignalsSourceHelper.Columns;
+    public ISchemaColumn[] Columns => MessagesSourceHelper.Columns;
 
-    public SchemaTableMetadata Metadata => new(typeof(SignalEntity));
+    public SchemaTableMetadata Metadata => new(typeof(MessageEntity));
     
     public ISchemaColumn? GetColumnByName(string name)
     {

@@ -12,21 +12,19 @@ using CsvHelper.Configuration;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.CANBus;
+namespace Musoq.DataSources.CANBus.SeparatedValuesFromFile;
 
 internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
 {
     private readonly MessagesLookup _messages;
     private readonly FileInfo _file;
-    private readonly bool _hasHeader;
     private readonly ICANBusApi _canBusApi;
     private readonly RuntimeContext _runtimeContext;
 
-    public SeparatedValuesFromFileCanFramesSource(string framesCsvPath, bool hasHeader, ICANBusApi canBusApi, RuntimeContext runtimeContext)
+    public SeparatedValuesFromFileCanFramesSource(string framesCsvPath, ICANBusApi canBusApi, RuntimeContext runtimeContext)
     {
         _messages = new MessagesLookup();
         _file = new FileInfo(framesCsvPath);
-        _hasHeader = hasHeader;
         _canBusApi = canBusApi;
         _runtimeContext = runtimeContext;
     }
@@ -133,7 +131,7 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
         }
     }
 
-    protected override IReadOnlyDictionary<int, Func<MessageFrame, object?>> MessagesIndexToMethodAccessMap
+    protected override IReadOnlyDictionary<int, Func<MessageFrameEntity, object?>> MessagesIndexToMethodAccessMap
     {
         get
         {
@@ -141,7 +139,7 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
                 throw new InvalidOperationException("Index to messages name map cannot be null.");
 
             var indexToMessagesNameMap = _indexToMessagesNameMap;
-            var indexToMethodAccessMap = new Dictionary<int, Func<MessageFrame, object?>>();
+            var indexToMethodAccessMap = new Dictionary<int, Func<MessageFrameEntity, object?>>();
             
             for (var i = 0; i < _indexToMessagesNameMap.Count; i++)
             {

@@ -1,12 +1,16 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Dynamic;
 
 namespace Musoq.Schema.Xml
 {
-    internal class DynamicElement : DynamicObject, IDictionary<string, object>
+    internal class DynamicElement : DynamicObject
     {
-        private readonly Dictionary<string, object> _values = new();
+        private readonly Dictionary<string, object> _values;
+
+        public DynamicElement(Dictionary<string, object> values)
+        {
+            _values = values;
+        }
 
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
@@ -21,79 +25,9 @@ namespace Musoq.Schema.Xml
             return true;
         }
 
-        public ICollection<string> Keys => _values.Keys;
-
-        public ICollection<object> Values => _values.Values;
-
-        public int Count => _values.Count;
-
-        public bool IsReadOnly => true;
-
-        public object this[string key]
+        internal void Add(string key, object @object)
         {
-            get
-            {
-                if (_values.TryGetValue(key, out var item))
-                    return item;
-
-                return null;
-            }
-
-            set => _values[key] = value; }
-
-        public void Add(string key, object value)
-        {
-            _values.Add(key, value);
-        }
-
-        public bool ContainsKey(string key)
-        {
-            return _values.ContainsKey(key);
-        }
-
-        public bool Remove(string key)
-        {
-            return _values.Remove(key);
-        }
-
-        public bool TryGetValue(string key, out object value)
-        {
-            return _values.TryGetValue(key, out value);
-        }
-
-        public void Add(KeyValuePair<string, object> item)
-        {
-            _values.Add(item.Key, item.Value);
-        }
-
-        public void Clear()
-        {
-            _values.Clear();
-        }
-
-        public bool Contains(KeyValuePair<string, object> item)
-        {
-            return _values.ContainsKey(item.Key) && _values[item.Key].Equals(item.Value);
-        }
-
-        public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
-        {
-            ((ICollection<KeyValuePair<string, object>>) _values).CopyTo(array, arrayIndex);
-        }
-
-        public bool Remove(KeyValuePair<string, object> item)
-        {
-            return Values.Remove(item);
-        }
-
-        public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
-        {
-            return _values.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+            _values.Add(key, @object);
         }
     }
 }

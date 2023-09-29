@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using DbcParserLib;
-using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
@@ -26,20 +24,84 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte[] value)
-    {
-        var signal = message.Message?.Signals.FirstOrDefault(s => s.Name == name);
-        
-        if (signal is null)
-            throw new InvalidOperationException($"Signal with name {name} does not exist.");
-
-        var copiedArray = new byte[sizeof(double)];
-        Array.Copy(value, copiedArray, value.Length);
-        var doubleValue = BitConverter.ToDouble(copiedArray, 0);
-        var encodedMessage = Packer.TxSignalPack(doubleValue, signal);
-        
-        return BitConverter.GetBytes(encodedMessage);
-    }
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte value) => EncodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Converts short to encoded signal of a message for CAN bus.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to encode.</param>
+    /// <returns>Encoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, short value) => EncodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Converts ushort to encoded signal of a message for CAN bus.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to encode.</param>
+    /// <returns>Encoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ushort value) => EncodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Converts int to encoded signal of a message for CAN bus.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to encode.</param>
+    /// <returns>Encoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, int value) => EncodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Converts uint to encoded signal of a message for CAN bus.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to encode.</param>
+    /// <returns>Encoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, uint value) => EncodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Converts long to encoded signal of a message for CAN bus.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to encode.</param>
+    /// <returns>Encoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, long value) => EncodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Converts ulong to encoded signal of a message for CAN bus.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to encode.</param>
+    /// <returns>Encoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ulong value) => EncodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Converts float to encoded signal of a message for CAN bus.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to encode.</param>
+    /// <returns>Encoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, float value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts structured json to encoded signals of a message for CAN bus.
@@ -75,7 +137,7 @@ public class CANBusLibrary : LibraryBase
     }
     
     /// <summary>
-    /// Treats bytes as encoded signal of a message for CAN bus and decodes it.
+    /// Treats byte as encoded signal of a message for CAN bus and decodes it.
     /// </summary>
     /// <param name="message">Message frame.</param>
     /// <param name="name">Name of the signal.</param>
@@ -83,41 +145,124 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte[] value)
+    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte value) => DecodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Treats short as encoded signal of a message for CAN bus and decodes it.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to decode.</param>
+    /// <returns>Decoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, short value) => DecodeMessage(message, name, value,
+        v =>
+        {
+            ulong result = 0;
+            
+            result |= (ushort)v;
+            
+            return result;
+        });
+    
+    /// <summary>
+    /// Treats ushort as encoded signal of a message for CAN bus and decodes it.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to decode.</param>
+    /// <returns>Decoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ushort value) => DecodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Treats int as encoded signal of a message for CAN bus and decodes it.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to decode.</param>
+    /// <returns>Decoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, int value) => DecodeMessage(message, name, value,
+        v =>
+        {
+            ulong result = 0;
+            
+            result |= (uint)v;
+            
+            return result;
+        });
+    
+    /// <summary>
+    /// Treats uint as encoded signal of a message for CAN bus and decodes it.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to decode.</param>
+    /// <returns>Decoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, uint value) => DecodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Treats long as encoded signal of a message for CAN bus and decodes it.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to decode.</param>
+    /// <returns>Decoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, long value) => DecodeMessage(message, name, value,
+        v =>
+        {
+            ulong result = 0;
+            
+            result |= (ulong)v;
+            
+            return result;
+        });
+    
+    /// <summary>
+    /// Treats ulong as encoded signal of a message for CAN bus and decodes it.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to decode.</param>
+    /// <returns>Decoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ulong value) => DecodeMessage(message, name, value, v => v);
+    
+    private static byte[] EncodeMessage<TNumeric>([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, TNumeric value, Func<TNumeric, double> convertToDouble)
+        where TNumeric : struct, IComparable, IComparable<TNumeric>, IConvertible, IEquatable<TNumeric>, IFormattable
     {
-        var uint64Value = BitConverter.ToUInt64(value, 0);
+        var signal = message.Message?.Signals.FirstOrDefault(s => s.Name == name);
+        
+        if (signal is null)
+            throw new InvalidOperationException($"Signal with name {name} does not exist.");
+        
+        var doubleValue = convertToDouble(value);
+        var encodedMessage = Packer.TxSignalPack(doubleValue, signal);
+        
+        return BitConverter.GetBytes(encodedMessage);
+    }
+    
+    private static byte[] DecodeMessage<TNumeric>([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, TNumeric value, Func<TNumeric, ulong> convertToUInt64)
+        where TNumeric : struct, IComparable, IComparable<TNumeric>, IConvertible, IEquatable<TNumeric>, IFormattable
+    {
         var signal = message.Message?.Signals.FirstOrDefault(s => s.Name == name);
         
         if (signal is null)
             throw new InvalidOperationException($"Signal with name {name} does not exist.");
 
+        var uint64Value = convertToUInt64(value);
         var unpackedValue = Packer.RxSignalUnpack(uint64Value, signal);
         var bytes = BitConverter.GetBytes(unpackedValue);
         
         return bytes;
-    }
-
-    /// <summary>
-    /// Treats bytes as encoded signals of a message for CAN bus and decodes it.
-    /// </summary>
-    /// <param name="message">Message frame.</param>
-    /// <param name="value">Value to decode.</param>
-    /// <returns>Decoded signals.</returns>
-    [BindableMethod]
-    public byte[][] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, byte[] value)
-    {
-        var uint64Value = BitConverter.ToUInt64(value, 0);
-        var signals = message.Message?.Signals ?? new List<Signal>();
-        var values = new byte[signals.Count][];
-
-        for (var index = 0; index < signals.Count; index++)
-        {
-            var signal = signals[index];
-            var unpackedValue = Packer.RxSignalUnpack(uint64Value, signal);
-            var bytes = BitConverter.GetBytes(unpackedValue);
-            values[index] = bytes;
-        }
-
-        return values;
     }
 }

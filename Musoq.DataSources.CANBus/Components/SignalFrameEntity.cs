@@ -11,17 +11,17 @@ namespace Musoq.DataSources.CANBus.Components;
 /// </summary>
 [DynamicObjectPropertyTypeHint("RawData", typeof(ulong))]
 [DynamicObjectPropertyDefaultTypeHint(typeof(double))]
-public class SignalFrame : DynamicObject
+public class SignalFrameEntity : DynamicObject
 {
     private readonly ulong _rawData;
     private readonly Message? _message;
 
     /// <summary>
-    /// Creates a new instance of <see cref="SignalFrame"/>.
+    /// Creates a new instance of <see cref="SignalFrameEntity"/>.
     /// </summary>
     /// <param name="rawData">Gets the raw data.</param>
     /// <param name="message">Gets the message.</param>
-    public SignalFrame(ulong rawData, Message? message)
+    public SignalFrameEntity(ulong rawData, Message? message)
     {
         _rawData = rawData;
         _message = message;

@@ -5,7 +5,7 @@ using Musoq.DataSources.CANBus.Components;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.CANBus;
+namespace Musoq.DataSources.CANBus.SeparatedValuesFromFile;
 
 internal class SeparatedValuesFromFileCanFramesTable : ISchemaTable
 {
@@ -35,7 +35,7 @@ internal class SeparatedValuesFromFileCanFramesTable : ISchemaTable
 
             foreach (var message in _canBusApi.GetMessages())
             {
-                columnsDictionary.Add(message.Name, new SchemaColumn(message.Name, columnsDictionary.Count, typeof(SignalFrame)));
+                columnsDictionary.Add(message.Name, new SchemaColumn(message.Name, columnsDictionary.Count, typeof(SignalFrameEntity)));
             }
             
             _columns = columnsDictionary.Values.ToArray();
@@ -43,7 +43,7 @@ internal class SeparatedValuesFromFileCanFramesTable : ISchemaTable
         }
     }
     
-    public SchemaTableMetadata Metadata => new(typeof(MessageFrame));
+    public SchemaTableMetadata Metadata => new(typeof(MessageFrameEntity));
     
     public ISchemaColumn? GetColumnByName(string name)
     {

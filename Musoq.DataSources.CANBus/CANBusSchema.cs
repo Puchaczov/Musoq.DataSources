@@ -1,5 +1,8 @@
 ﻿using System;
 using Musoq.DataSources.CANBus.Components;
+using Musoq.DataSources.CANBus.Messages;
+using Musoq.DataSources.CANBus.SeparatedValuesFromFile;
+using Musoq.DataSources.CANBus.Signals;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -35,7 +38,7 @@ internal class CANBusSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            "separatedvalues" => new SeparatedValuesFromFileCanFramesTable(_createCanBusApi((string)parameters[2])),
+            "separatedvalues" => new SeparatedValuesFromFileCanFramesTable(_createCanBusApi((string)parameters[1])),
             "messages" => new MessagesTable(),
             "signals" => new SignalsTable(),
             _ => base.GetTableByName(name, runtimeContext, parameters)
@@ -48,8 +51,7 @@ internal class CANBusSchema : SchemaBase
         {
             "separatedvalues" => new SeparatedValuesFromFileCanFramesSource(
                 (string)parameters[0], 
-                (bool)parameters[1], 
-                _createCanBusApi((string)parameters[2]), 
+                _createCanBusApi((string)parameters[1]), 
                 runtimeContext
             ),
             "messages" => new MessagesSource(_createCanBusApi((string)parameters[0]), runtimeContext),

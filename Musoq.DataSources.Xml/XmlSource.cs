@@ -1,4 +1,5 @@
-﻿using Musoq.Schema.DataSources;
+﻿#nullable enable
+using Musoq.Schema.DataSources;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
@@ -35,22 +36,23 @@ namespace Musoq.Schema.Xml
                 switch (xmlReader.NodeType)
                 {
                     case XmlNodeType.Element:
-                        var element = new DynamicElement
+                        var dictionary = new Dictionary<string, object?>()
                         {
-                            { "element", xmlReader.LocalName },
-                            { "parent", elements.Count > 0 ? elements.Peek() : null },
-                            { "value", xmlReader.HasValue ? xmlReader.Value : null }
+                            {"element", xmlReader.LocalName},
+                            {"parent", elements.Count > 0 ? elements.Peek() : null},
+                            {"value", xmlReader.HasValue ? xmlReader.Value : null}
                         };
-
-                        element.Add(xmlReader.Name, element);
-
+                        
+                        var element = new DynamicElement(dictionary);
+                        
+                        dictionary.Add(xmlReader.Name, element);
                         elements.Push(element);
 
                         if (xmlReader.HasAttributes)
                         {
                             while (xmlReader.MoveToNextAttribute())
                             {
-                                element.Add(xmlReader.Name, xmlReader.Value);
+                                dictionary.Add(xmlReader.Name, xmlReader.Value);
                             }
                         }
 
@@ -60,7 +62,7 @@ namespace Musoq.Schema.Xml
                         elements.Peek().Add("text", xmlReader.Value);
                         break;
                     case XmlNodeType.EndElement:
-                        chunk.Add(new DictionaryResolver(elements.Pop()));
+                        chunk.Add(new EntityResolver<DynamicElement>(elements.Pop(), null, null));
                         break;
                 }
 

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <breakfast_menu>
-  <food></food>
+  <food/>
   <food>
     <name special="1">Strawberry Belgian Waffles</name>
     <price>$7.95</price>

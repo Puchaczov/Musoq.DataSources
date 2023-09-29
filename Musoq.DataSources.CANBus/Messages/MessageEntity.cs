@@ -1,8 +1,9 @@
 ﻿using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
+
 // ReSharper disable InconsistentNaming
 
-namespace Musoq.DataSources.CANBus;
+namespace Musoq.DataSources.CANBus.Messages;
 
 /// <summary>
 /// Represents a single CAN message.

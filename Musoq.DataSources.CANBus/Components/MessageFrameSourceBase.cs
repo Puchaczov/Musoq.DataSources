@@ -7,7 +7,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.CANBus.Components;
 
-internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFrame>
+internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFrameEntity>
 {
     protected abstract Task InitializeAsync();
     
@@ -17,7 +17,7 @@ internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFram
     
     protected abstract IReadOnlyDictionary<string, int> MessagesNameToIndexMap { get; }
     
-    protected abstract IReadOnlyDictionary<int, Func<MessageFrame, object?>> MessagesIndexToMethodAccessMap { get; }
+    protected abstract IReadOnlyDictionary<int, Func<MessageFrameEntity, object?>> MessagesIndexToMethodAccessMap { get; }
 
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
@@ -29,7 +29,7 @@ internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFram
 
         await foreach (var frame in GetFramesAsync())
         {
-            var messageFrame = new MessageFrame(
+            var messageFrame = new MessageFrameEntity(
                 frame.Timestamp, 
                 frame.Frame, 
                 frame.Message,
@@ -48,19 +48,19 @@ internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFram
             }
                 
             var indexToMethodAccessMap = messageFrame.CreateMessageIndexToMethodAccessMap();
-            var indexToMethodAccessMapFinal = new Dictionary<int, Func<MessageFrame, object?>>(indexToMethodAccessMap);
+            var indexToMethodAccessMapFinal = new Dictionary<int, Func<MessageFrameEntity, object?>>(indexToMethodAccessMap);
             
             foreach (var (key, index) in addedKeysIndexes)
                 indexToMethodAccessMapFinal.Add(index, _ => null);
             
             if (itemsAdded != maxItems)
             {
-                chunk.Add(new EntityResolver<MessageFrame>(messageFrame, nameToIndexMapFinal, indexToMethodAccessMapFinal));
+                chunk.Add(new EntityResolver<MessageFrameEntity>(messageFrame, nameToIndexMapFinal, indexToMethodAccessMapFinal));
                 itemsAdded += 1;
                 continue;
             }
             
-            chunk.Add(new EntityResolver<MessageFrame>(messageFrame, nameToIndexMapFinal, indexToMethodAccessMapFinal));
+            chunk.Add(new EntityResolver<MessageFrameEntity>(messageFrame, nameToIndexMapFinal, indexToMethodAccessMapFinal));
             chunkedSource.Add(chunk);
             chunk = new List<IObjectResolver>();
             itemsAdded = 0;

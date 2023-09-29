@@ -9,14 +9,14 @@ using Musoq.DataSources.InferrableDataSourceHelpers;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.CANBus;
+namespace Musoq.DataSources.CANBus.Messages;
 
-internal class SignalsSource : AsyncRowsSourceBase<Signal>
+internal class MessagesSource : AsyncRowsSourceBase<Message>
 {
     private readonly ICANBusApi _canBusApi;
     private readonly RuntimeContext _runtimeContext;
 
-    public SignalsSource(ICANBusApi canBusApi, RuntimeContext runtimeContext)
+    public MessagesSource(ICANBusApi canBusApi, RuntimeContext runtimeContext)
     {
         _canBusApi = canBusApi;
         _runtimeContext = runtimeContext;
@@ -24,9 +24,9 @@ internal class SignalsSource : AsyncRowsSourceBase<Signal>
 
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        var signals = await _canBusApi.GetMessagesSignalsAsync(_runtimeContext.EndWorkToken);
+        var messages = await _canBusApi.GetMessagesAsync(_runtimeContext.EndWorkToken);
         
         chunkedSource.Add(
-            signals.Select(f => new EntityResolver<Signal>(f, SignalsSourceHelper.SignalsNameToIndexMap, SignalsSourceHelper.SignalsIndexToMethodAccessMap)).ToList());
+            messages.Select(f => new EntityResolver<MessageEntity>(new MessageEntity(f), MessagesSourceHelper.MessagesNameToIndexMap, MessagesSourceHelper.MessagesIndexToMethodAccessMap)).ToList());
     }
 }

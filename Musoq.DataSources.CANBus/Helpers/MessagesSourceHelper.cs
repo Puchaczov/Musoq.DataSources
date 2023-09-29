@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Musoq.DataSources.CANBus.Messages;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
