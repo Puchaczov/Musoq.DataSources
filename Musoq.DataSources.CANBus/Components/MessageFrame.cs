@@ -8,7 +8,7 @@ namespace Musoq.DataSources.CANBus.Components;
 /// <summary>
 /// Represents a message frame. It is a dynamic object that allows to access signals as properties.
 /// </summary>
-public class MessageFrame : DynamicObject
+public class MessageFrame : DynamicObject, ICANDbcMessage
 {
     private const string Timestamp = nameof(Timestamp);
 
@@ -41,8 +41,12 @@ public class MessageFrame : DynamicObject
         _memberToValueMap.Add(message.Name, () => expandoObject);
     }
     
+    /// <summary>
+    /// Gets the message.
+    /// </summary>
     public Message? Message => (Message?)_memberToValueMap[nameof(Message)]();
 
+    /// <inheritdoc />
     public override bool TryGetMember(GetMemberBinder binder, out object? result)
     {
         if (_memberToValueMap.TryGetValue(binder.Name, out var value))
@@ -61,6 +65,10 @@ public class MessageFrame : DynamicObject
         return false;
     }
     
+    /// <summary>
+    /// Creates a map of message names to their indexes.
+    /// </summary>
+    /// <returns></returns>
     public IReadOnlyDictionary<string, int> CreateMessageNameToIndexMap()
     {
         var index = 0;
@@ -75,6 +83,10 @@ public class MessageFrame : DynamicObject
         return map;
     }
     
+    /// <summary>
+    /// Creates a map of message indexes to their access methods.
+    /// </summary>
+    /// <returns></returns>
     public IReadOnlyDictionary<int, Func<MessageFrame, object?>> CreateMessageIndexToMethodAccessMap()
     {
         var index = 0;

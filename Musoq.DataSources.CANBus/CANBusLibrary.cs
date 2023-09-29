@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -26,14 +25,17 @@ public class CANBusLibrary : LibraryBase
     /// <param name="value">Value to encode.</param>
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    internal byte[] EncodeMessage([InjectSpecificSource(typeof(MessageFrame))] MessageFrame message, string name, byte[] value)
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte[] value)
     {
         var signal = message.Message?.Signals.FirstOrDefault(s => s.Name == name);
         
         if (signal is null)
             throw new InvalidOperationException($"Signal with name {name} does not exist.");
-        
-        var doubleValue = BitConverter.ToDouble(value, 0);
+
+        var copiedArray = new byte[sizeof(double)];
+        Array.Copy(value, copiedArray, value.Length);
+        var doubleValue = BitConverter.ToDouble(copiedArray, 0);
         var encodedMessage = Packer.TxSignalPack(doubleValue, signal);
         
         return BitConverter.GetBytes(encodedMessage);
@@ -46,7 +48,8 @@ public class CANBusLibrary : LibraryBase
     /// <param name="jsonValues">Structured json. It's structure is of { signalName1: signalValue1, ..., signalNameN : signalValueN }</param>
     /// <returns>Encoded signals.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    internal byte[] EncodeMessage([InjectSpecificSource(typeof(MessageFrame))] MessageFrame message, string jsonValues)
+    [BindableMethod]
+    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string jsonValues)
     {
         using var reader = new JTokenReader(JObject.Parse(jsonValues));
         var obj = JObject.Load(reader);
@@ -79,7 +82,8 @@ public class CANBusLibrary : LibraryBase
     /// <param name="value">Value to decode.</param>
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
-    internal byte[] DecodeMessage([InjectSpecificSource(typeof(MessageFrame))] MessageFrame message, string name, byte[] value)
+    [BindableMethod]
+    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte[] value)
     {
         var uint64Value = BitConverter.ToUInt64(value, 0);
         var signal = message.Message?.Signals.FirstOrDefault(s => s.Name == name);
@@ -99,7 +103,8 @@ public class CANBusLibrary : LibraryBase
     /// <param name="message">Message frame.</param>
     /// <param name="value">Value to decode.</param>
     /// <returns>Decoded signals.</returns>
-    internal byte[][] DecodeMessage([InjectSpecificSource(typeof(MessageFrame))] MessageFrame message, byte[] value)
+    [BindableMethod]
+    public byte[][] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, byte[] value)
     {
         var uint64Value = BitConverter.ToUInt64(value, 0);
         var signals = message.Message?.Signals ?? new List<Signal>();
@@ -114,137 +119,5 @@ public class CANBusLibrary : LibraryBase
         }
 
         return values;
-    }
-
-    /// <summary>
-    /// Converts boolean value to bytes.
-    /// </summary>
-    /// <param name="value">Value to convert.</param>
-    /// <returns>Bytes.</returns>
-    public byte[] ToBytes(bool value)
-    {
-        return BitConverter.GetBytes(value);
-    }
-
-    /// <summary>
-    /// Converts short value to bytes.
-    /// </summary>
-    /// <param name="value">Value to convert.</param>
-    /// <returns>Bytes.</returns>
-    public byte[] ToBytes(short value)
-    {
-        return BitConverter.GetBytes(value);
-    }
-
-    /// <summary>
-    /// Converts ushort value to bytes.
-    /// </summary>
-    /// <param name="value">Value to convert.</param>
-    /// <returns>Bytes.</returns>
-    public byte[] ToBytes(ushort value)
-    {
-        return BitConverter.GetBytes(value);
-    }
-
-    /// <summary>
-    /// Converts int value to bytes.
-    /// </summary>
-    /// <param name="value">Value to convert.</param>
-    /// <returns>Bytes.</returns>
-    public byte[] ToBytes(int value)
-    {
-        return BitConverter.GetBytes(value);
-    }
-
-
-    /// <summary>
-    /// Converts uint value to bytes.
-    /// </summary>
-    /// <param name="value">Value to convert.</param>
-    /// <returns>Bytes.</returns>
-    public byte[] ToBytes(uint value)
-    {
-        return BitConverter.GetBytes(value);
-    }
-
-
-    /// <summary>
-    /// Converts long value to bytes.
-    /// </summary>
-    /// <param name="value">Value to convert.</param>
-    /// <returns>Bytes.</returns>
-    public byte[] ToBytes(long value)
-    {
-        return BitConverter.GetBytes(value);
-    }
-
-
-    /// <summary>
-    /// Converts ulong value to bytes.
-    /// </summary>
-    /// <param name="value">Value to convert.</param>
-    /// <returns>Bytes.</returns>
-    public byte[] ToBytes(ulong value)
-    {
-        return BitConverter.GetBytes(value);
-    }
-    /// <summary>
-    /// Converts bytes to boolean value.
-    /// </summary>
-    /// <param name="value">Byte array containing the value to convert.</param>
-    /// <returns>Converted boolean value.</returns>
-    public bool FromBytesToBool(byte[] value)
-    {
-        return BitConverter.ToBoolean(value, 0);
-    }
-
-    /// <summary>
-    /// Converts bytes to a 16-bit signed integer.
-    /// </summary>
-    /// <param name="value">Byte array containing the value to convert.</param>
-    /// <returns>Converted 16-bit signed integer.</returns>
-    public short FromBytesToInt16(byte[] value)
-    {
-        return BitConverter.ToInt16(value, 0);
-    }
-
-    /// <summary>
-    /// Converts bytes to a 16-bit unsigned integer.
-    /// </summary>
-    /// <param name="value">Byte array containing the value to convert.</param>
-    /// <returns>Converted 16-bit unsigned integer.</returns>
-    public ushort FromBytesToUInt16(byte[] value)
-    {
-        return BitConverter.ToUInt16(value, 0);
-    }
-
-    /// <summary>
-    /// Converts bytes to a 32-bit signed integer.
-    /// </summary>
-    /// <param name="value">Byte array containing the value to convert.</param>
-    /// <returns>Converted 32-bit signed integer.</returns>
-    public int FromBytesToInt32(byte[] value)
-    {
-        return BitConverter.ToInt32(value, 0);
-    }
-
-    /// <summary>
-    /// Converts bytes to a 32-bit unsigned integer.
-    /// </summary>
-    /// <param name="value">Byte array containing the value to convert.</param>
-    /// <returns>Converted 32-bit unsigned integer.</returns>
-    public uint FromBytesToUInt32(byte[] value)
-    {
-        return BitConverter.ToUInt32(value, 0);
-    }
-
-    /// <summary>
-    /// Converts bytes to a 64-bit signed integer.
-    /// </summary>
-    /// <param name="value">Byte array containing the value to convert.</param>
-    /// <returns>Converted 64-bit signed integer.</returns>
-    public long FromBytesToInt64(byte[] value)
-    {
-        return BitConverter.ToInt64(value, 0);
     }
 }

@@ -74,6 +74,21 @@ where HVAC is not null";
         var hex = pack.ToString("X");
     }
 
+    [TestMethod]
+    public void Z2()
+    {
+        var query = @"
+select 
+    messages.ToHex(messages.EncodeMessage('Exhaust_Gas_Temperature', messages.GetBytes(124))) 
+from #can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_System'";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(2, table.Count);
+    }
+
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());

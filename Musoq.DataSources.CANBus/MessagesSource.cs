@@ -27,6 +27,6 @@ internal class MessagesSource : AsyncRowsSourceBase<Message>
         var messages = await _canBusApi.GetMessagesAsync(_runtimeContext.EndWorkToken);
         
         chunkedSource.Add(
-            messages.Select(f => new EntityResolver<Message>(f, MessagesSourceHelper.MessagesNameToIndexMap, MessagesSourceHelper.MessagesIndexToMethodAccessMap)).ToList());
+            messages.Select(f => new EntityResolver<MessageEntity>(new MessageEntity(f), MessagesSourceHelper.MessagesNameToIndexMap, MessagesSourceHelper.MessagesIndexToMethodAccessMap)).ToList());
     }
 }
