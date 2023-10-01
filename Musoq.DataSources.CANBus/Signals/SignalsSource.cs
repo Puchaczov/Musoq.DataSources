@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
-using Musoq.DataSources.CANBus.Helpers;
 using Musoq.DataSources.InferrableDataSourceHelpers;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -27,6 +26,6 @@ internal class SignalsSource : AsyncRowsSourceBase<Signal>
         var signals = await _canBusApi.GetMessagesSignalsAsync(_runtimeContext.EndWorkToken);
         
         chunkedSource.Add(
-            signals.Select(f => new EntityResolver<SignalEntity>(new SignalEntity(f), SignalsSourceHelper.SignalsNameToIndexMap, SignalsSourceHelper.SignalsIndexToMethodAccessMap)).ToList());
+            signals.Select(f => new EntityResolver<SignalEntity>(new SignalEntity(f.Signal, f.MessageName), SignalsSourceHelper.SignalsNameToIndexMap, SignalsSourceHelper.SignalsIndexToMethodAccessMap)).ToList());
     }
 }

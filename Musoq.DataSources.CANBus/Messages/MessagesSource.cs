@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
-using Musoq.DataSources.CANBus.Helpers;
 using Musoq.DataSources.InferrableDataSourceHelpers;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;

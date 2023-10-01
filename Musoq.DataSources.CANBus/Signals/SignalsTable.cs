@@ -1,5 +1,4 @@
 using System.Linq;
-using Musoq.DataSources.CANBus.Helpers;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.CANBus.Signals;

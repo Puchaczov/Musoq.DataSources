@@ -27,10 +27,11 @@ internal class SeparatedValuesFromFileCanFramesTable : ISchemaTable
             
             var columnsDictionary = new Dictionary<string, ISchemaColumn>
             {
-                {"Id", new SchemaColumn("Id", 0, typeof(uint))},
+                {"ID", new SchemaColumn("ID", 0, typeof(uint))},
                 {"Timestamp", new SchemaColumn("Timestamp", 0, typeof(ulong))},
                 {nameof(Message), new SchemaColumn(nameof(Message), 1, typeof(Message))},
-                {"IsWellKnown", new SchemaColumn("IsWellKnown", 2, typeof(bool))}
+                {"IsWellKnown", new SchemaColumn("IsWellKnown", 2, typeof(bool))},
+                {"UnknownMessage", new SchemaColumn("UnknownMessage", 3, typeof(SignalFrameEntity))}
             };
 
             foreach (var message in _canBusApi.GetMessages())

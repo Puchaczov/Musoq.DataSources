@@ -27,16 +27,20 @@ public class MessageFrameEntity : DynamicObject, ICANDbcMessage
         _allMessagesSet = allMessagesSet;
         _memberToValueMap = new Dictionary<string, Func<object?>>
         {
-            { "Id", () => frame.Id },
+            { "ID", () => frame.Id },
             { nameof(Timestamp), () => timestamp },
             { nameof(Message), () => message },
             { "IsWellKnown", () => message is not null }
         };
-
-        if (message is null) return;
         
         var uint64Value = ConvertToUInt64(frame.Data);
         var expandoObject = new SignalFrameEntity(uint64Value, message);
+
+        if (message is null)
+        {
+            _memberToValueMap.Add("UnknownMessage", () => expandoObject);
+            return;
+        }
         
         _memberToValueMap.Add(message.Name, () => expandoObject);
     }

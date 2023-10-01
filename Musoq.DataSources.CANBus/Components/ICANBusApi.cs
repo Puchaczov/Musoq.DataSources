@@ -10,5 +10,5 @@ internal interface ICANBusApi
 
     Message[] GetMessages();
     
-    Task<Signal[]> GetMessagesSignalsAsync(CancellationToken cancellationToken);
+    Task<(Signal Signal, string MessageName)[]> GetMessagesSignalsAsync(CancellationToken cancellationToken);
 }

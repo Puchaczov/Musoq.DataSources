@@ -36,7 +36,7 @@ namespace Musoq.Schema.Xml
                 switch (xmlReader.NodeType)
                 {
                     case XmlNodeType.Element:
-                        var dictionary = new Dictionary<string, object?>()
+                        var dictionary = new Dictionary<string, object?>
                         {
                             {"element", xmlReader.LocalName},
                             {"parent", elements.Count > 0 ? elements.Peek() : null},
@@ -62,7 +62,23 @@ namespace Musoq.Schema.Xml
                         elements.Peek().Add("text", xmlReader.Value);
                         break;
                     case XmlNodeType.EndElement:
-                        chunk.Add(new EntityResolver<DynamicElement>(elements.Pop(), null, null));
+                        var dynamicElement = elements.Pop();
+                        
+                        var nameToIndexMap = new Dictionary<string, int>();
+                        
+                        foreach (var key in dynamicElement.Keys)
+                        {
+                            nameToIndexMap.Add(key, nameToIndexMap.Count);
+                        }
+                        
+                        var indexToMethodAccessMap = new Dictionary<int, System.Func<DynamicElement, object?>>();
+                        
+                        foreach (var key in dynamicElement.Keys)
+                        {
+                            indexToMethodAccessMap.Add(indexToMethodAccessMap.Count, dynamicElementAccess => dynamicElementAccess.Values[key]);
+                        }
+                        
+                        chunk.Add(new XmlResolver<DynamicElement>(dynamicElement, nameToIndexMap, indexToMethodAccessMap));
                         break;
                 }
 

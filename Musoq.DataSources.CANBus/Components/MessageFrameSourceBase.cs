@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Musoq.DataSources.InferrableDataSourceHelpers;
 using Musoq.Schema.DataSources;
@@ -50,8 +51,8 @@ internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFram
             var indexToMethodAccessMap = messageFrame.CreateMessageIndexToMethodAccessMap();
             var indexToMethodAccessMapFinal = new Dictionary<int, Func<MessageFrameEntity, object?>>(indexToMethodAccessMap);
             
-            foreach (var (key, index) in addedKeysIndexes)
-                indexToMethodAccessMapFinal.Add(index, _ => null);
+            foreach (var grouping in addedKeysIndexes.GroupBy(f => f.Index))
+                indexToMethodAccessMapFinal.Add(grouping.Key, _ => null);
             
             if (itemsAdded != maxItems)
             {

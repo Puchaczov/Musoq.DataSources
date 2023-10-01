@@ -13,9 +13,11 @@ public class SignalEntity
     /// Creates a new instance of <see cref="SignalEntity"/>.
     /// </summary>
     /// <param name="signal">The signal.</param>
-    public SignalEntity(Signal signal)
+    /// <param name="messageName">The message name.</param>
+    public SignalEntity(Signal signal, string messageName)
     {
         _signal = signal;
+        MessageName = messageName;
     }
     
     /// <summary>
@@ -92,4 +94,9 @@ public class SignalEntity
     /// Gets the can signal multiplexing.
     /// </summary>
     public string Multiplexing => _signal.Multiplexing;
+    
+    /// <summary>
+    /// Gets the message name that the signal belongs to.
+    /// </summary>
+    public string MessageName { get; }
 }

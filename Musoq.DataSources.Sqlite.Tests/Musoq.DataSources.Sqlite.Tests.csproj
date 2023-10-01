@@ -13,7 +13,7 @@
         <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
         <PackageReference Include="Musoq.Converter" Version="2.4.0" />
         <PackageReference Include="Musoq.Evaluator" Version="5.4.0" />
-        <PackageReference Include="Musoq.Parser" Version="2.3.3" />
+        <PackageReference Include="Musoq.Parser" Version="2.3.4" />
         <PackageReference Include="Musoq.Plugins" Version="4.2.1" />
         <PackageReference Include="Musoq.Schema" Version="5.0.4" />
     </ItemGroup>

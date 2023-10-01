@@ -40,13 +40,13 @@ namespace Musoq.DataSources.Xml.Tests
 
             foreach(var row in table)
             {
-                Assert.IsTrue(new string[] { "food", "price" }.Contains((string)row[0]));
+                Assert.IsTrue(new[] { "food", "price" }.Contains((string)row[0]));
 
-                if (((string)row[0]) == "food")
+                if ((string)row[0] == "food")
                 {
                     Assert.AreEqual("breakfast_menu", (string)row[1]);
                 }
-                else if(((string)row[0]) == "price")
+                else if((string)row[0] == "price")
                 {
                     Assert.AreEqual("food", (string)row[1]);
                 }
@@ -101,7 +101,7 @@ namespace Musoq.DataSources.Xml.Tests
         [TestMethod]
         public void XmlFilterByDynamicAttributeIsNotNullTest()
         {
-            var query = @"select element, text from #xml.file('./TestFiles/Test1.xml') where special is not null";
+            var query = "select element, text from #xml.file('./TestFiles/Test1.xml') where special is not null";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -169,7 +169,6 @@ namespace Musoq.DataSources.Xml.Tests
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
-
             
             Assert.AreEqual(2, table.Count);
             Assert.AreEqual(39.95m, table[0][0]);

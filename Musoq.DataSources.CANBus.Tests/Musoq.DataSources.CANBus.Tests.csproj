@@ -12,7 +12,7 @@
         <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
         <PackageReference Include="Musoq.Converter" Version="2.4.0" />
         <PackageReference Include="Musoq.Evaluator" Version="5.4.0" />
-        <PackageReference Include="Musoq.Parser" Version="2.3.3" />
+        <PackageReference Include="Musoq.Parser" Version="2.3.4" />
         <PackageReference Include="Musoq.Plugins" Version="4.2.1" />
         <PackageReference Include="Musoq.Schema" Version="5.0.4" />
     </ItemGroup>
@@ -33,6 +33,12 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Data\1\1.dbc">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Data\2\2.dbc">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Data\3\3.dbc">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
