@@ -8,16 +8,6 @@ namespace Musoq.DataSources.Archives;
 
 internal class ArchivesTable : ISchemaTable
 {
-    public ISchemaColumn GetColumnByName(string name)
-    {
-        return Columns.FirstOrDefault(column => column.ColumnName == name);
-    }
-
-    public ISchemaColumn[] GetColumnsByName(string name)
-    {
-        return Columns.Where(column => column.ColumnName == name).ToArray();
-    }
-
     public ISchemaColumn[] Columns { get; } =
     {
         new SchemaColumn(nameof(EntryWrapper.CompressionType), 0, typeof(CompressionType)),
@@ -41,4 +31,14 @@ internal class ArchivesTable : ISchemaTable
     };
 
     public SchemaTableMetadata Metadata { get; } = new(typeof(EntryWrapper));
+    
+    public ISchemaColumn GetColumnByName(string name)
+    {
+        return Columns.FirstOrDefault(column => column.ColumnName == name);
+    }
+
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
 }

@@ -19,7 +19,9 @@ public abstract class AsyncRowsSourceBase<T> : RowSource
                 {
                     await CollectChunksAsync(chunkedSource);
                 }
-                catch (OperationCanceledException) {}
+                catch (OperationCanceledException)
+                {
+                }
                 finally
                 {
                     chunkedSource.Add(new List<EntityResolver<T>>());

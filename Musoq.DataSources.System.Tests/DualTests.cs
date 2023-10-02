@@ -31,7 +31,7 @@ namespace Musoq.DataSources.System.Tests
             var table = vm.Run();
 
             Assert.AreEqual(1, table.Count);
-            Assert.AreEqual(3L, table[0][0]);
+            Assert.AreEqual(3, table[0][0]);
         }
 
         [TestMethod]
