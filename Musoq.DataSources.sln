@@ -27,10 +27,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Time", "M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Time.Tests", "Musoq.DataSources.Time.Tests\Musoq.DataSources.Time.Tests.csproj", "{571A13BD-70DA-425C-B97F-BD133BA96B83}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Xml", "Musoq.DataSources.Xml\Musoq.DataSources.Xml.csproj", "{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Xml.Tests", "Musoq.DataSources.Xml.Tests\Musoq.DataSources.Xml.Tests.csproj", "{36D4B861-43D2-40B2-8E4B-F8964EB26266}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Tests.Common", "Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj", "{9B5CA21D-9C1B-4909-B056-5070D0354E52}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.OpenAI", "Musoq.DataSources.OpenAI\Musoq.DataSources.OpenAI.csproj", "{F28B83D9-821C-43AA-96D3-CE4D90FFFFFE}"
@@ -185,22 +181,6 @@ Global
 		{571A13BD-70DA-425C-B97F-BD133BA96B83}.Release|Any CPU.Build.0 = Release|Any CPU
 		{571A13BD-70DA-425C-B97F-BD133BA96B83}.Release|x64.ActiveCfg = Release|Any CPU
 		{571A13BD-70DA-425C-B97F-BD133BA96B83}.Release|x64.Build.0 = Release|Any CPU
-		{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}.Debug|x64.Build.0 = Debug|Any CPU
-		{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}.Release|x64.ActiveCfg = Release|Any CPU
-		{1EDD8D13-A5F9-4669-A40D-F73D91A0C770}.Release|x64.Build.0 = Release|Any CPU
-		{36D4B861-43D2-40B2-8E4B-F8964EB26266}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{36D4B861-43D2-40B2-8E4B-F8964EB26266}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{36D4B861-43D2-40B2-8E4B-F8964EB26266}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{36D4B861-43D2-40B2-8E4B-F8964EB26266}.Debug|x64.Build.0 = Debug|Any CPU
-		{36D4B861-43D2-40B2-8E4B-F8964EB26266}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{36D4B861-43D2-40B2-8E4B-F8964EB26266}.Release|Any CPU.Build.0 = Release|Any CPU
-		{36D4B861-43D2-40B2-8E4B-F8964EB26266}.Release|x64.ActiveCfg = Release|Any CPU
-		{36D4B861-43D2-40B2-8E4B-F8964EB26266}.Release|x64.Build.0 = Release|Any CPU
 		{9B5CA21D-9C1B-4909-B056-5070D0354E52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9B5CA21D-9C1B-4909-B056-5070D0354E52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B5CA21D-9C1B-4909-B056-5070D0354E52}.Debug|x64.ActiveCfg = Debug|Any CPU
