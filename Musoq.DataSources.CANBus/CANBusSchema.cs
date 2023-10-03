@@ -31,8 +31,8 @@ public class CANBusSchema : SchemaBase
     /// </environmentVariables>
     /// #can.separatedvalues(string csvData, string dbcData)
     /// </from>
-    /// <description>Provide description here</description>
-    /// <columns>
+    /// <description>Treats csv, tsv or others separated values files as CAN bus records. The file must be of format **Timestamp**, **ID**, **DLC**, **Data** where **Data** values must be in format of unsigned integer number (123) or in hexadecimal (0x7b). Based on the loaded dbc file, you will have access access to additional column named {DBC_MESSAGE_NAME}. From here, you can access value {DBC_SIGNAL_NAME} of a message (ie. {DBC_MESSAGE_NAME}.{DBC_SIGNAL_NAME}). Returned value will be of type double</description>
+    /// <columns isDynamic="true">
     /// <column name="ID" type="uint">ID of the message entity</column>
     /// <column name="Timestamp" type="ulong">Timestamp of the message entity</column>
     /// <column name="Message" type="Message">Message entity</column>
@@ -49,8 +49,8 @@ public class CANBusSchema : SchemaBase
     /// </environmentVariables>
     /// #can.messages(string dbc)
     /// </from>
-    /// <description>Provide description here</description>
-    /// <columns isDynamic="true">
+    /// <description>Parses dbc file and returns all messages defined within it.</description>
+    /// <columns>
     /// <column name="ID" type="uint">ID of the message entity</column>
     /// <column name="IsExtID" type="bool">Is external ID</column>
     /// <column name="Name" type="string">Name of the message entity</column>
@@ -70,7 +70,7 @@ public class CANBusSchema : SchemaBase
     /// </environmentVariables>
     /// #can.signals(string dbc)
     /// </from>
-    /// <description>Provide description here</description>
+    /// <description>Parses dbc file and returns all signals defined within it.</description>
     /// <columns>
     /// <column name="ID" type="uint">ID of the signal entity</column>
     /// <column name="Name" type="string">Name of the signal entity</column>
@@ -104,8 +104,6 @@ public class CANBusSchema : SchemaBase
     {
         _createCanBusApi = _ => canBusApi;
     }
-
-
 
     /// <summary>
     /// Gets the table name based on the given data source and parameters.

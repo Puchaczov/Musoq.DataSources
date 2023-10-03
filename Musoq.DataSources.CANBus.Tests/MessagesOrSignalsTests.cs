@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
@@ -9,57 +10,168 @@ using Musoq.Tests.Common;
 namespace Musoq.DataSources.CANBus.Tests;
 
 [TestClass]
-public class WorkingWithDbcFilesTests
+public class MessagesOrSignalsTests
 {
     [TestMethod]
-    public void WhenOnlyEnginePropertiesMustBeUsed_ShouldFilterToOnlyEngine()
+    public void WhenDescMessages_ShouldSucceed()
     {
-        const string query = @"
-select
-    Timestamp,
-    Message,
-    Engine.Is_Turned_On,
-    Engine.Oil_Temperature
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
-where Engine is not null";
+        const string query = @"desc #can.messages('./Data/1/1.dbc')";
         
         var vm = CreateAndRunVirtualMachine(query);
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
+        Assert.IsTrue(table.Count > 7);
         
-        Assert.AreEqual(0ul, table[0].Values[0]);
-        Assert.IsNotNull(table[0].Values[1]);
-        Assert.AreEqual(true, Convert.ToBoolean(table[0].Values[2]));
-        Assert.AreEqual(90d, table[0].Values[3]);
+        var row = table.SingleOrDefault(f => f.Values[0].ToString() == "ID");
+        Assert.IsNotNull(row);
         
-        Assert.AreEqual(1ul, table[1].Values[0]);
-        Assert.IsNotNull(table[1].Values[1]);
-        Assert.AreEqual(false, Convert.ToBoolean(table[1].Values[2]));
-        Assert.AreEqual(95d, table[1].Values[3]);
+        Assert.AreEqual(0, row.Values[1]);
+        Assert.AreEqual("System.UInt32", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "IsExtID");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(1, row.Values[1]);
+        Assert.AreEqual("System.Boolean", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Name");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(2, row.Values[1]);
+        Assert.AreEqual("System.String", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "DLC");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(3, row.Values[1]);
+        Assert.AreEqual("System.UInt16", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Transmitter");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(4, row.Values[1]);
+        Assert.AreEqual("System.String", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Comment");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(5, row.Values[1]);
+        Assert.AreEqual("System.String", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "CycleTime");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(6, row.Values[1]);
+        Assert.AreEqual("System.Int32", row.Values[2]);
     }
-    
+
     [TestMethod]
-    public void WhenOnlyExhaustSystemPropertiesMustBeUsed_ShouldFilterToOnlyEngine()
+    public void WhenDescSignals_ShouldSucceed()
     {
-        const string query = @"
-select
-    Timestamp,
-    Message,
-    Exhaust_System.Exhaust_Gas_Temperature
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
-where Exhaust_System is not null";
+        const string query = @"desc #can.signals('./Data/1/1.dbc')";
         
         var vm = CreateAndRunVirtualMachine(query);
         
         var table = vm.Run();
         
-        Assert.AreEqual(1, table.Count);
+        Assert.IsTrue(table.Count > 15);
         
-        Assert.AreEqual(2ul, table[0].Values[0]);
-        Assert.IsNotNull(table[0].Values[1]);
-        Assert.AreEqual(124d, table[0].Values[2]);
+        var row = table.SingleOrDefault(f => f.Values[0].ToString() == "ID");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(0, row.Values[1]);
+        Assert.AreEqual("System.UInt32", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Name");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(1, row.Values[1]);
+        Assert.AreEqual("System.String", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "StartBit");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(2, row.Values[1]);
+        Assert.AreEqual("System.UInt16", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Length");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(3, row.Values[1]);
+        Assert.AreEqual("System.UInt16", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "ByteOrder");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(4, row.Values[1]);
+        Assert.AreEqual("System.Byte", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "InitialValue");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(5, row.Values[1]);
+        Assert.AreEqual("System.Double", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Factor");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(6, row.Values[1]);
+        Assert.AreEqual("System.Double", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "IsInteger");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(7, row.Values[1]);
+        Assert.AreEqual("System.Boolean", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Offset");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(8, row.Values[1]);
+        Assert.AreEqual("System.Double", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Minimum");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(9, row.Values[1]);
+        Assert.AreEqual("System.Double", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Maximum");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(10, row.Values[1]);
+        Assert.AreEqual("System.Double", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Unit");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(11, row.Values[1]);
+        Assert.AreEqual("System.String", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Receiver");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(12, row.Values[1]);
+        Assert.AreEqual("System.String[]", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Comment");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(13, row.Values[1]);
+        Assert.AreEqual("System.String", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Multiplexing");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(14, row.Values[1]);
+        Assert.AreEqual("System.String", row.Values[2]);
+        
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "MessageName");
+        Assert.IsNotNull(row);
+        
+        Assert.AreEqual(15, row.Values[1]);
+        Assert.AreEqual("System.String", row.Values[2]);
     }
     
     [TestMethod]
@@ -148,46 +260,6 @@ from #can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_Sys
     }
 
     [TestMethod]
-    public void WhenMessageIsUnknown_ShouldBeAvailable()
-    {
-        const string query = @"
-select
-    Timestamp,
-    Message,
-    UnknownMessage.RawData
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
-where IsWellKnown = false";
-        
-        var vm = CreateAndRunVirtualMachine(query);
-        
-        var table = vm.Run();
-        
-        Assert.AreEqual(1, table.Count);
-        
-        Assert.AreEqual(3ul, table[0].Values[0]);
-        Assert.IsNull(table[0].Values[1]);
-        Assert.AreEqual(0x01ul, table[0].Values[2]);
-    }
-
-    [TestMethod]
-    public void WhenMessageIsUnknownAndUnknownColumnAccessed_ShouldReturnNull()
-    {
-        const string query = @"
-select
-    Engine
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
-where IsWellKnown = false";
-        
-        var vm = CreateAndRunVirtualMachine(query);
-
-        var table = vm.Run();
-        
-        Assert.AreEqual(1, table.Count);
-        
-        Assert.IsNull(table[0].Values[0]);
-    }
-
-    [TestMethod]
     public void WhenAllMessageColumnsAccessed_ShouldReturnValues()
     {
         const string query = @"
@@ -265,50 +337,12 @@ where Name = 'Oil_Temperature'";
         Assert.AreEqual("Engine", table[0].Values[15]);
     }
 
-    [TestMethod]
-    public void WhenAllBaseColumnsAreAccessedForCsvFile_ShouldAllowAccessToAllColumns()
-    {
-        const string query = @"
-select
-    ID,
-    Timestamp,
-    Message,
-    IsWellKnown
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')";
-        
-        var vm = CreateAndRunVirtualMachine(query);
-        
-        var table = vm.Run();
-        
-        Assert.AreEqual(4, table.Count);
-        
-        Assert.AreEqual(292u, table[0].Values[0]);
-        Assert.AreEqual(0ul, table[0].Values[1]);
-        Assert.IsNotNull(table[0].Values[2]);
-        Assert.AreEqual(true, table[0].Values[3]);
-        
-        Assert.AreEqual(292u, table[1].Values[0]);
-        Assert.AreEqual(1ul, table[1].Values[1]);
-        Assert.IsNotNull(table[1].Values[2]);
-        Assert.AreEqual(true, table[1].Values[3]);
-        
-        Assert.AreEqual(293u, table[2].Values[0]);
-        Assert.AreEqual(2ul, table[2].Values[1]);
-        Assert.IsNotNull(table[2].Values[2]);
-        Assert.AreEqual(true, table[2].Values[3]);
-        
-        Assert.AreEqual(115u, table[3].Values[0]);
-        Assert.AreEqual(3ul, table[3].Values[1]);
-        Assert.IsNull(table[3].Values[2]);
-        Assert.AreEqual(false, table[3].Values[3]);
-    }
-
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
-    static WorkingWithDbcFilesTests()
+    static MessagesOrSignalsTests()
     {
         new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
