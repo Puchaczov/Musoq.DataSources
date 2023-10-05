@@ -34,7 +34,7 @@ NS_ :
 BS_:
 
 BU_:
-
+VAL_TABLE_ test 0 \"Running\" 1 \"Idle\"  ;
 
 BO_ 293 Exhaust_System: 1 Vector__XXX
  SG_ Exhaust_Gas_Temperature : 0|8@1+ (1,0) [0|255] "CelciusDegree" Vector__XXX
@@ -42,6 +42,7 @@ BO_ 293 Exhaust_System: 1 Vector__XXX
 BO_ 292 Engine: 2 Vector__XXX
  SG_ Oil_Temperature : 0|8@1- (1,0) [-50|100] "CelciusDegree" Vector__XXX
  SG_ Is_Turned_On : 0|1@1+ (1,0) [0|1] "" Vector__XXX
+
 
 
 BA_DEF_  "MultiplexExtEnabled" ENUM  "No","Yes";

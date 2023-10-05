@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
@@ -13,19 +14,23 @@ namespace Musoq.DataSources.CANBus.Signals;
 internal class SignalsSource : AsyncRowsSourceBase<Signal>
 {
     private readonly ICANBusApi _canBusApi;
-    private readonly RuntimeContext _runtimeContext;
 
     public SignalsSource(ICANBusApi canBusApi, RuntimeContext runtimeContext)
+        : base(runtimeContext.EndWorkToken)
     {
         _canBusApi = canBusApi;
-        _runtimeContext = runtimeContext;
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
-        var signals = await _canBusApi.GetMessagesSignalsAsync(_runtimeContext.EndWorkToken);
+        var signals = await _canBusApi.GetMessagesSignalsAsync(cancellationToken);
         
         chunkedSource.Add(
-            signals.Select(f => new EntityResolver<SignalEntity>(new SignalEntity(f.Signal, f.MessageName), SignalsSourceHelper.SignalsNameToIndexMap, SignalsSourceHelper.SignalsIndexToMethodAccessMap)).ToList());
+            signals.Select(f => new EntityResolver<SignalEntity>(
+                new SignalEntity(f.Signal, f.MessageName), 
+                SignalsSourceHelper.SignalsNameToIndexMap, 
+                SignalsSourceHelper.SignalsIndexToMethodAccessMap)
+            ).ToList(), 
+        cancellationToken);
     }
 }

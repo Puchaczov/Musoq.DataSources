@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.Schema;
@@ -10,11 +11,13 @@ namespace Musoq.DataSources.CANBus.SeparatedValuesFromFile;
 internal class SeparatedValuesFromFileCanFramesTable : ISchemaTable
 {
     private readonly ICANBusApi _canBusApi;
+    private readonly CancellationToken _cancellationToken;
     private ISchemaColumn[]? _columns;
 
-    public SeparatedValuesFromFileCanFramesTable(ICANBusApi canBusApi)
+    public SeparatedValuesFromFileCanFramesTable(ICANBusApi canBusApi, CancellationToken cancellationToken)
     {
         _canBusApi = canBusApi;
+        _cancellationToken = cancellationToken;
         _columns = null;
     }
 
@@ -34,7 +37,7 @@ internal class SeparatedValuesFromFileCanFramesTable : ISchemaTable
                 {"UnknownMessage", new SchemaColumn("UnknownMessage", 3, typeof(SignalFrameEntity))}
             };
 
-            foreach (var message in _canBusApi.GetMessages())
+            foreach (var message in _canBusApi.GetMessages(_cancellationToken))
             {
                 columnsDictionary.Add(message.Name, new SchemaColumn(message.Name, columnsDictionary.Count, typeof(SignalFrameEntity)));
             }

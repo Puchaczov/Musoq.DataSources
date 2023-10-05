@@ -5,6 +5,16 @@ namespace Musoq.DataSources.InferrableDataSourceHelpers;
 
 public abstract class AsyncRowsSourceBase<T> : RowSource
 {
+    private readonly CancellationToken _endWorkToken;
+    
+    private Exception? _exception;
+
+    protected AsyncRowsSourceBase(CancellationToken endWorkToken)
+    {
+        _endWorkToken = endWorkToken;
+        _exception = null;
+    }
+
     public override IEnumerable<IObjectResolver> Rows
     {
         get
@@ -12,15 +22,22 @@ public abstract class AsyncRowsSourceBase<T> : RowSource
             var chunkedSource = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
             var workFinishedSignalizer = new CancellationTokenSource();
             var workFinishedToken = workFinishedSignalizer.Token;
+            var errorSignalizer = new CancellationTokenSource();
+            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(workFinishedToken, errorSignalizer.Token, _endWorkToken);
+            var linkedToken = linkedTokenSource.Token;
 
             Task.Run(async () =>
             {
                 try
                 {
-                    await CollectChunksAsync(chunkedSource);
+                    await CollectChunksAsync(chunkedSource, linkedToken);
                 }
                 catch (OperationCanceledException)
                 {
+                }
+                catch (Exception exc)
+                {
+                    _exception = exc;
                 }
                 finally
                 {
@@ -29,9 +46,14 @@ public abstract class AsyncRowsSourceBase<T> : RowSource
                 }
             });
 
-            return new ChunkedSource<T>(chunkedSource, workFinishedToken);
+            return new ChunkedSource(chunkedSource, workFinishedToken, GetParentException);
         }
     }
 
-    protected abstract Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource);
+    protected abstract Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken);
+    
+    private Exception? GetParentException()
+    {
+        return _exception;
+    }
 }
