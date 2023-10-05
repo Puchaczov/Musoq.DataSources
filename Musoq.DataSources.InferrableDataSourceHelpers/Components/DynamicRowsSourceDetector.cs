@@ -3,6 +3,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Musoq.DataSources.CompiledCode;
 using Musoq.DataSources.CodeGenerator;
+using Musoq.Parser.Nodes;
+using Musoq.Parser.Nodes.From;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
@@ -19,7 +21,7 @@ public abstract class DynamicRowsSourceDetector<TInput> : IRowsSourceDetector<TI
         _tool = tool;
     }
 
-    public async Task<IRowsReader<TInput>> InferAsync(RuntimeContext context, Type inputType)
+    public async Task<IRowsReader<TInput>> InferAsync((SchemaFromNode FromNode, IReadOnlyCollection<ISchemaColumn> Columns, WhereNode WhereNode) queryInformation, Type inputType, CancellationToken cancellationToken)
     {
         var code = string.Empty;
         code += "using Musoq.DataSources.CompiledCode;\n";
@@ -27,7 +29,7 @@ public abstract class DynamicRowsSourceDetector<TInput> : IRowsSourceDetector<TI
         code += "using System;\n";
         code += "using System.Collections.Generic;\n";
         code += "using System.Threading;\n";
-        code += await _codeGenerator.GenerateClassAsync(context.QueryInformation.Columns.Select(f => f.ColumnName).ToArray(), _tool, await ProbeAsync());
+        code += await _codeGenerator.GenerateClassAsync(queryInformation.Columns.Select(f => f.ColumnName).ToArray(), _tool, await ProbeAsync(cancellationToken));
         
         var syntaxTree = CSharpSyntaxTree.ParseText(code);
         
@@ -70,7 +72,7 @@ public abstract class DynamicRowsSourceDetector<TInput> : IRowsSourceDetector<TI
 
     public abstract IObjectResolver Resolve(TInput item, CancellationToken cancellationToken);
 
-    protected abstract Task<string> ProbeAsync();
+    protected abstract Task<string> ProbeAsync(CancellationToken cancellationToken);
     
     protected abstract IRowsReader<TInput> CreateReader(ICompiledCode<TInput> compiledCode);
 }

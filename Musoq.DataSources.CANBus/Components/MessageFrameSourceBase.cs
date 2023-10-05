@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.InferrableDataSourceHelpers;
 using Musoq.Schema.DataSources;
@@ -10,9 +11,13 @@ namespace Musoq.DataSources.CANBus.Components;
 
 internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFrameEntity>
 {
-    protected abstract Task InitializeAsync();
+    protected MessageFrameSourceBase(CancellationToken endWorkToken) : base(endWorkToken)
+    {
+    }
     
-    protected abstract IAsyncEnumerable<SourceCanFrame> GetFramesAsync();
+    protected abstract Task InitializeAsync(CancellationToken cancellationToken);
+    
+    protected abstract IAsyncEnumerable<SourceCanFrame> GetFramesAsync(CancellationToken cancellationToken);
     
     protected abstract HashSet<string> AllMessagesSet { get; }
     
@@ -20,15 +25,15 @@ internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFram
     
     protected abstract IReadOnlyDictionary<int, Func<MessageFrameEntity, object?>> MessagesIndexToMethodAccessMap { get; }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
-        await InitializeAsync();
+        await InitializeAsync(cancellationToken);
         
         var itemsAdded = 0;
         const int maxItems = 1000;
         var chunk = new List<IObjectResolver>();
 
-        await foreach (var frame in GetFramesAsync())
+        await foreach (var frame in GetFramesAsync(cancellationToken))
         {
             var messageFrame = new MessageFrameEntity(
                 frame.Timestamp, 
@@ -62,12 +67,12 @@ internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFram
             }
             
             chunk.Add(new EntityResolver<MessageFrameEntity>(messageFrame, nameToIndexMapFinal, indexToMethodAccessMapFinal));
-            chunkedSource.Add(chunk);
+            chunkedSource.Add(chunk, cancellationToken);
             chunk = new List<IObjectResolver>();
             itemsAdded = 0;
         }
         
         if (chunk.Count > 0)
-            chunkedSource.Add(chunk);
+            chunkedSource.Add(chunk, cancellationToken);
     }
 }

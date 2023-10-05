@@ -33,7 +33,7 @@ public class InputStreamStringLineRowsSourceDetector : DynamicRowsSourceDetector
         return new JsonObjectResolver(parsedObject, _indexToNameMap);
     }
 
-    protected override Task<string> ProbeAsync()
+    protected override Task<string> ProbeAsync(CancellationToken cancellationToken)
     {
         if (_allText != null)
             return Task.FromResult(_allText);

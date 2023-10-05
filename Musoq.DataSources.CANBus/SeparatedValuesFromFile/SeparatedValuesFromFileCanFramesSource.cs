@@ -5,7 +5,9 @@ using System.Dynamic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -19,19 +21,18 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
     private readonly MessagesLookup _messages;
     private readonly FileInfo _file;
     private readonly ICANBusApi _canBusApi;
-    private readonly RuntimeContext _runtimeContext;
 
     public SeparatedValuesFromFileCanFramesSource(string framesCsvPath, ICANBusApi canBusApi, RuntimeContext runtimeContext)
+        : base(runtimeContext.EndWorkToken)
     {
         _messages = new MessagesLookup();
         _file = new FileInfo(framesCsvPath);
         _canBusApi = canBusApi;
-        _runtimeContext = runtimeContext;
     }
     
-    protected override async Task InitializeAsync()
+    protected override async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        var messages = await _canBusApi.GetMessagesAsync(_runtimeContext.EndWorkToken);
+        var messages = await _canBusApi.GetMessagesAsync(cancellationToken);
         
         foreach (var message in messages)
         {
@@ -39,7 +40,7 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
         }
     }
 
-    protected override async IAsyncEnumerable<SourceCanFrame> GetFramesAsync()
+    protected override async IAsyncEnumerable<SourceCanFrame> GetFramesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         using var reader = new StreamReader(_file.FullName, Encoding.UTF8);
         var configuration = new CsvConfiguration(CultureInfo.CurrentCulture)

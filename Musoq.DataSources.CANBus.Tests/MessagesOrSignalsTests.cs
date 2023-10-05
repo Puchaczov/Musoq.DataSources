@@ -13,6 +13,37 @@ namespace Musoq.DataSources.CANBus.Tests;
 public class MessagesOrSignalsTests
 {
     [TestMethod]
+    public void WhenDbcFileHasUnnecessarySpaceBeforeTheSemicolon_AndSignalsToRetrieve_ShouldSuccess()
+    {
+        const string query = "select Name from #can.signals('./Data/4/4.dbc')";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(3, table.Count);
+        
+        Assert.AreEqual("Exhaust_Gas_Temperature", table[0].Values[0]);
+        Assert.AreEqual("Oil_Temperature", table[1].Values[0]);
+        Assert.AreEqual("Is_Turned_On", table[2].Values[0]);
+    }
+    
+    [TestMethod]
+    public void WhenDbcFileHasUnnecessarySpaceBeforeTheSemicolon_AndMessagesToRetrieve_ShouldSuccess()
+    {
+        const string query = "select Name from #can.messages('./Data/4/4.dbc')";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(2, table.Count);
+        
+        Assert.AreEqual("Exhaust_System", table[0].Values[0]);
+        Assert.AreEqual("Engine", table[1].Values[0]);
+    }
+    
+    [TestMethod]
     public void WhenDescMessages_ShouldSucceed()
     {
         const string query = @"desc #can.messages('./Data/1/1.dbc')";

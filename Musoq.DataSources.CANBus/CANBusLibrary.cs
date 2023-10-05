@@ -104,7 +104,7 @@ public class CANBusLibrary : LibraryBase
     public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, float value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
-    /// Converts structured json to encoded signals of a message for CAN bus.
+    /// Converts structured json to encoded signals of a message for CAN bus. It's structure is of `{ signalName1: signalValue1, ..., signalNameN : signalValueN }`
     /// </summary>
     /// <param name="message">Message frame.</param>
     /// <param name="jsonValues">Structured json. It's structure is of { signalName1: signalValue1, ..., signalNameN : signalValueN }</param>

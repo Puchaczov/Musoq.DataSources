@@ -1,4 +1,5 @@
-﻿using Musoq.DataSources.InferrableDataSourceHelpers.Components;
+﻿using System.Runtime.CompilerServices;
+using Musoq.DataSources.InferrableDataSourceHelpers.Components;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
@@ -10,14 +11,15 @@ public abstract class DynamicallyInferrableRowSource<TInput> : GenericRowSource<
     private readonly RuntimeContext _context;
 
     protected DynamicallyInferrableRowSource(IRowsSourceDetector<TInput> rowsSourceDetector, RuntimeContext context)
+        : base(context.EndWorkToken)
     {
         _rowsSourceDetector = rowsSourceDetector;
         _context = context;
     }
 
-    protected override async IAsyncEnumerable<TInput> GetDataAsync()
+    protected override async IAsyncEnumerable<TInput> GetDataAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var reader = await _rowsSourceDetector.InferAsync(_context, typeof(TInput));
+        var reader = await _rowsSourceDetector.InferAsync(_context.QueryInformation, typeof(TInput), cancellationToken);
         
         while (await reader.MoveNextAsync())
             yield return reader.Current;
