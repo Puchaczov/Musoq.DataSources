@@ -140,6 +140,42 @@ from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')";
         Assert.AreEqual(false, table[3].Values[3]);
     }
 
+    [TestMethod]
+    public void WhenNeedToRetrieveCanMessagesYoungerThan_ShouldSucceed()
+    {
+        const string query = @"
+select ID from #can.separatedvalues('./Data/5/5.csv', './Data/5/5.dbc')
+where FromTimestamp(Timestamp, 's') >= ToDateTimeOffset('2023-10-08T18:19:00','yyyy-MM-ddTHH:mm:ss')
+";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(2, table.Count);
+        
+        Assert.AreEqual(293u, table[0].Values[0]);
+        Assert.AreEqual(115u, table[1].Values[0]);
+    }
+
+    [TestMethod]
+    public void WhenNeedToRetrieveCanMessagesOlderThan_ShouldSucceed()
+    {
+        const string query = @"
+select ID from #can.separatedvalues('./Data/5/5.csv', './Data/5/5.dbc')
+where FromTimestamp(Timestamp, 's') < ToDateTimeOffset('2023-10-08T18:19:00','yyyy-MM-ddTHH:mm:ss')
+";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(2, table.Count);
+        
+        Assert.AreEqual(292u, table[0].Values[0]);
+        Assert.AreEqual(292u, table[1].Values[0]);
+    }
+
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());

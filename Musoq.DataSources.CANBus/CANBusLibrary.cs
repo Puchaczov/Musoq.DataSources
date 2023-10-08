@@ -236,6 +236,52 @@ public class CANBusLibrary : LibraryBase
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
     public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ulong value) => DecodeMessage(message, name, value, v => v);
+
+    /// <summary>
+    /// Converts timestamp to date time offset.
+    /// </summary>
+    /// <param name="timestamp">Timestamp.</param>
+    /// <param name="resolution">Resolution of the timestamp. Possible values are: s, ms, us, ns.</param>
+    /// <returns>Date time offset.</returns>
+    [BindableMethod]
+    public DateTimeOffset? FromTimestamp(ulong timestamp, string resolution)
+    {
+        var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        switch (resolution)
+        {
+            case "s":
+                dateTime = dateTime.AddSeconds(timestamp);
+                break;
+            case "ms":
+                dateTime = dateTime.AddMilliseconds(timestamp);
+                break;
+            case "us":
+                dateTime = dateTime.AddTicks((long)timestamp);
+                break;
+            case "ns":
+                dateTime = dateTime.AddTicks((long)timestamp);
+                break;
+            default:
+                throw new InvalidOperationException($"Resolution {resolution} is not supported.");
+        }
+        return dateTime;
+    }
+    
+    /// <summary>
+    /// Creates the date time offset from given date and time in a given format.
+    /// </summary>
+    /// <param name="date">Date.</param>
+    /// <param name="format">Format of the date.</param>
+    /// <returns>Date time offset.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public DateTimeOffset? ToDateTimeOffset(string date, string format)
+    {
+        if (!DateTimeOffset.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var dateTimeOffset))
+            throw new InvalidOperationException($"Date {date} cannot be parsed to DateTimeOffset with format {format}.");
+        
+        return dateTimeOffset;
+    }
     
     private static byte[] EncodeMessage<TNumeric>([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, TNumeric value, Func<TNumeric, double> convertToDouble)
         where TNumeric : struct, IComparable, IComparable<TNumeric>, IConvertible, IEquatable<TNumeric>, IFormattable
