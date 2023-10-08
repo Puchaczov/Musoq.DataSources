@@ -4,7 +4,11 @@
         <TargetFramework>net6.0</TargetFramework>
         <Platforms>AnyCPU;x64</Platforms>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+<<<<<<< HEAD
         <Version>0.10.0</Version>
+=======
+        <Version>0.9.1</Version>
+>>>>>>> 85db89d9e20f75b1f3d6b67c7db18ea3c301cbe4
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -33,6 +37,7 @@
         <PackageReference Include="Musoq.Parser" Version="2.4.0" />
         <PackageReference Include="Musoq.Plugins" Version="4.3.0" />
         <PackageReference Include="Musoq.Schema" Version="5.1.0" />
+        <Version>0.10.0</Version>
         <PackageReference Include="Iot.Device.Bindings" Version="2.2.0" />
         <PackageReference Include="System.Device.Gpio" Version="2.2.0" />
     </ItemGroup>
