@@ -34,7 +34,9 @@ internal class SeparatedValuesFromFileCanFramesTable : ISchemaTable
                 {"Timestamp", new SchemaColumn("Timestamp", 0, typeof(ulong))},
                 {nameof(Message), new SchemaColumn(nameof(Message), 1, typeof(Message))},
                 {"IsWellKnown", new SchemaColumn("IsWellKnown", 2, typeof(bool))},
-                {"UnknownMessage", new SchemaColumn("UnknownMessage", 3, typeof(SignalFrameEntity))}
+                {"DataAsBytes", new SchemaColumn("DataAsBytes", 3, typeof(byte[]))},
+                {"Data", new SchemaColumn("Data", 4, typeof(ulong))},
+                {"UnknownMessage", new SchemaColumn("UnknownMessage", 5, typeof(SignalFrameEntity))}
             };
 
             foreach (var message in _canBusApi.GetMessages(_cancellationToken))

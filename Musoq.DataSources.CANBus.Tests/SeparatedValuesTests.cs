@@ -41,6 +41,25 @@ where Engine is not null";
     }
     
     [TestMethod]
+    public void WhenDataRetrieve_ShouldSuccess()
+    {
+        const string query = @"
+select
+    Data
+from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
+where Engine is not null";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(2, table.Count);
+        
+        Assert.AreEqual(0x169ul, table[0].Values[0]);
+        Assert.AreEqual(0x17Cul, table[1].Values[0]);
+    }
+    
+    [TestMethod]
     public void WhenOnlyExhaustSystemPropertiesMustBeUsed_ShouldFilterToOnlyEngine()
     {
         const string query = @"
@@ -174,6 +193,55 @@ where FromTimestamp(Timestamp, 's') < ToDateTimeOffset('2023-10-08T18:19:00','yy
         
         Assert.AreEqual(292u, table[0].Values[0]);
         Assert.AreEqual(292u, table[1].Values[0]);
+    }
+    
+    [TestMethod]
+    public void WhenDlcIsMissing_ShouldSucceed()
+    {
+        const string query = @"
+select
+    1
+from #can.separatedvalues('./Data/6/6.csv', './Data/6/6.dbc')";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(4, table.Count);
+        
+        Assert.AreEqual(1, table[0].Values[0]);
+        Assert.AreEqual(1, table[1].Values[0]);
+        Assert.AreEqual(1, table[2].Values[0]);
+        Assert.AreEqual(1, table[3].Values[0]);
+    }
+    
+    [TestMethod]
+    public void WhenHexValuesInIdUsed_ShouldSuccess()
+    {
+        const string query = @"
+select
+    Timestamp,
+    Message,
+    Engine.Is_Turned_On,
+    Engine.Oil_Temperature
+from #can.separatedvalues('./Data/7/7.csv', './Data/7/7.dbc', 'hex')
+where Engine is not null";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(2, table.Count);
+        
+        Assert.AreEqual(0ul, table[0].Values[0]);
+        Assert.IsNotNull(table[0].Values[1]);
+        Assert.AreEqual(true, Convert.ToBoolean(table[0].Values[2]));
+        Assert.AreEqual(90d, table[0].Values[3]);
+        
+        Assert.AreEqual(1ul, table[1].Values[0]);
+        Assert.IsNotNull(table[1].Values[1]);
+        Assert.AreEqual(false, Convert.ToBoolean(table[1].Values[2]));
+        Assert.AreEqual(95d, table[1].Values[3]);
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)

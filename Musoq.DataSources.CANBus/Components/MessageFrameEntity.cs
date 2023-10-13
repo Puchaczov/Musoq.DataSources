@@ -25,15 +25,18 @@ public class MessageFrameEntity : DynamicObject, ICANDbcMessage
     public MessageFrameEntity(ulong timestamp, CANFrame frame, Message? message, HashSet<string> allMessagesSet)
     {
         _allMessagesSet = allMessagesSet;
+        
+        var uint64Value = ConvertToUInt64(frame.Data);
+        
         _memberToValueMap = new Dictionary<string, Func<object?>>
         {
             { "ID", () => frame.Id },
             { nameof(Timestamp), () => timestamp },
             { nameof(Message), () => message },
-            { "IsWellKnown", () => message is not null }
+            { "IsWellKnown", () => message is not null },
+            { "DataAsBytes", () => frame.Data },
+            { "Data", () => uint64Value }
         };
-        
-        var uint64Value = ConvertToUInt64(frame.Data);
         var expandoObject = new SignalFrameEntity(uint64Value, message);
 
         if (message is null)

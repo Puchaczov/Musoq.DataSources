@@ -21,13 +21,15 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
     private readonly MessagesLookup _messages;
     private readonly FileInfo _file;
     private readonly ICANBusApi _canBusApi;
+    private readonly string _idOfType;
 
-    public SeparatedValuesFromFileCanFramesSource(string framesCsvPath, ICANBusApi canBusApi, RuntimeContext runtimeContext)
+    public SeparatedValuesFromFileCanFramesSource(string framesCsvPath, ICANBusApi canBusApi, RuntimeContext runtimeContext, string idOfType)
         : base(runtimeContext.EndWorkToken)
     {
         _messages = new MessagesLookup();
         _file = new FileInfo(framesCsvPath);
         _canBusApi = canBusApi;
+        _idOfType = idOfType;
     }
     
     protected override async Task InitializeAsync(CancellationToken cancellationToken)
@@ -45,8 +47,19 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
         using var reader = new StreamReader(_file.FullName, Encoding.UTF8);
         var configuration = new CsvConfiguration(CultureInfo.CurrentCulture)
         {
-            DetectDelimiter = true
+            DetectDelimiter = true,
+            HeaderValidated = null,
+            MissingFieldFound = null
         };
+
+        var convertFrom = _idOfType switch
+        {
+            "hex" => ConvertFrom.Hex,
+            "dec" => ConvertFrom.Decimal,
+            "bin" => ConvertFrom.Binary,
+            _ => throw new ArgumentOutOfRangeException(nameof(_idOfType), _idOfType, null)
+        };
+
         using var csvReader = new CsvReader(reader, configuration);
         while (await csvReader.ReadAsync())
         {
@@ -58,10 +71,10 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
             var canFrame = new CANFrame
             {
                 Data = ConvertStringToByteArray(record.Data),
-                Id = record.ID
+                Id = ConvertStringToUInt32(record.ID, convertFrom)
             };
             
-            var message = _messages.SingleOrDefault(f => f.Value.ID == record.ID).Value;
+            var message = _messages.SingleOrDefault(f => f.Value.ID == canFrame.Id).Value;
 
             if (message is null)
             {
@@ -81,7 +94,7 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
         //tread data as hex string and convert to byte array (ie. 0x123)
         if (recordData.StartsWith("0x"))
         {
-            var number = ulong.Parse(recordData.Substring(2), NumberStyles.HexNumber);
+            var number = ulong.Parse(recordData[2..], NumberStyles.HexNumber);
             return BitConverter.GetBytes(number);
         }
         
@@ -101,8 +114,34 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
             return bytes;
         }
         
-        throw new InvalidOperationException($"Cannot convert {recordData} to byte array.");
+        return BitConverter.GetBytes(ulong.Parse(recordData, NumberStyles.HexNumber));
     }
+    
+    private enum ConvertFrom
+    {
+        Hex,
+        Decimal,
+        Binary
+    }
+    
+    private static uint ConvertStringToUInt32(string? recordData, ConvertFrom convertFrom)
+    {
+        if (recordData is null)
+            return 0;
+
+        switch (convertFrom)
+        {
+            case ConvertFrom.Hex:
+                return uint.Parse(recordData.StartsWith("0x") ? recordData[2..] : recordData, NumberStyles.HexNumber);
+            case ConvertFrom.Decimal:
+                return uint.Parse(recordData);
+            case ConvertFrom.Binary:
+                var binaryString = recordData.StartsWith("0b") ? recordData[2..] : recordData;
+                return Convert.ToUInt32(binaryString, 2);
+            default:
+                return uint.Parse(recordData, NumberStyles.HexNumber);
+        }
+    } 
 
     protected override HashSet<string> AllMessagesSet => _messages.Select(f => f.Key).ToHashSet();
 
@@ -171,9 +210,9 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
     {
         public ulong Timestamp { get; set; }
         
-        public uint ID { get; set; }
+        public string? ID { get; set; }
         
-        public byte DLC { get; set; }
+        public byte? DLC { get; set; }
         
         public string? Data { get; set; }
     }

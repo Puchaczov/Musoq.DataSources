@@ -29,7 +29,7 @@ public class CANBusSchema : SchemaBase
     /// <from>
     /// <environmentVariables>
     /// </environmentVariables>
-    /// #can.separatedvalues(string csvData, string dbcData)
+    /// #can.separatedvalues(string csvData, string dbcData, string idOfType = "dec" | "hex" | "bin")
     /// </from>
     /// <description>Treats csv, tsv or others separated values files as CAN bus records. The file must be of format **Timestamp**, **ID**, **DLC**, **Data** where **Data** values must be in format of unsigned integer number (123) or in hexadecimal (0x7b). Based on the loaded dbc file, you will have access access to additional column named {DBC_MESSAGE_NAME}. From here, you can access value {DBC_SIGNAL_NAME} of a message (ie. {DBC_MESSAGE_NAME}.{DBC_SIGNAL_NAME}). Returned value will be of type double</description>
     /// <columns isDynamic="true">
@@ -37,6 +37,8 @@ public class CANBusSchema : SchemaBase
     /// <column name="Timestamp" type="ulong">Timestamp of the message entity</column>
     /// <column name="Message" type="Message">Message entity</column>
     /// <column name="IsWellKnown" type="uint">Whether the message is well known or not (is within dbc file)</column>
+    /// <column name="DataAsBytes" type="byte[]">Data as bytes</column>
+    /// <column name="Data" type="ulong">Data as ulong</column>
     /// </columns>
     /// </example>
     /// </examples>
@@ -138,7 +140,8 @@ public class CANBusSchema : SchemaBase
             "separatedvalues" => new SeparatedValuesFromFileCanFramesSource(
                 (string)parameters[0], 
                 _createCanBusApi((string)parameters[1]), 
-                runtimeContext
+                runtimeContext,
+                parameters.Length > 2 ? (string)parameters[2] : "dec"
             ),
             "messages" => new MessagesSource(_createCanBusApi((string)parameters[0]), runtimeContext),
             "signals" => new SignalsSource(_createCanBusApi((string)parameters[0]), runtimeContext),
