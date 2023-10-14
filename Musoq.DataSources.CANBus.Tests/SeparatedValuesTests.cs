@@ -55,12 +55,12 @@ where Engine is not null";
         
         Assert.AreEqual(2, table.Count);
         
-        Assert.AreEqual(0x169ul, table[0].Values[0]);
-        Assert.AreEqual(0x17Cul, table[1].Values[0]);
+        Assert.AreEqual(361ul, table[0].Values[0]);
+        Assert.AreEqual(380ul, table[1].Values[0]);
     }
     
     [TestMethod]
-    public void WhenOnlyExhaustSystemPropertiesMustBeUsed_ShouldFilterToOnlyEngine()
+    public void WhenOnlyExhaustSystemPropertiesMustBeUsed_ShouldFilterToOnlyExhaustSystem()
     {
         const string query = @"
 select
@@ -100,7 +100,7 @@ where IsWellKnown = false";
         
         Assert.AreEqual(3ul, table[0].Values[0]);
         Assert.IsNull(table[0].Values[1]);
-        Assert.AreEqual(0x01ul, table[0].Values[2]);
+        Assert.AreEqual(72057594037927936ul, table[0].Values[2]);
     }
 
     [TestMethod]
@@ -242,6 +242,42 @@ where Engine is not null";
         Assert.IsNotNull(table[1].Values[1]);
         Assert.AreEqual(false, Convert.ToBoolean(table[1].Values[2]));
         Assert.AreEqual(95d, table[1].Values[3]);
+    }
+    
+    [TestMethod]
+    public void WhenVehicleSpeedHasCertainValue_ShouldSucceed()
+    {
+        const string query = @"
+select
+    Driving.Vehicle_Speed
+from #can.separatedvalues('./Data/8/8.csv', './Data/8/8.dbc')";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        
+        Assert.AreEqual(25d, table[0].Values[0]);
+    }
+    
+    [TestMethod]
+    public void WhenVehicleHasIdAndSpeedOfCertainValue_ShouldSucceed()
+    {
+        const string query = @"
+select
+    ID,
+    Driving.Vehicle_Speed
+from #can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc')";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        
+        Assert.AreEqual(444u, table[0].Values[0]);
+        Assert.AreEqual(65.53d, table[0].Values[1]);
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)

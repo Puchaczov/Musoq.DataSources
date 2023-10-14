@@ -94,7 +94,9 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
         //tread data as hex string and convert to byte array (ie. 0x123)
         if (recordData.StartsWith("0x"))
         {
-            var number = ulong.Parse(recordData[2..], NumberStyles.HexNumber);
+            var paddedNumber = recordData[2..].PadLeft(16, '0');
+            var paddedBytes = Convert.FromHexString(paddedNumber);
+            var number = BitConverter.ToUInt64(paddedBytes, 0);
             return BitConverter.GetBytes(number);
         }
         
@@ -114,7 +116,7 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
             return bytes;
         }
         
-        return BitConverter.GetBytes(ulong.Parse(recordData, NumberStyles.HexNumber));
+        return Convert.FromHexString(recordData.PadLeft(16, '0'));
     }
     
     private enum ConvertFrom

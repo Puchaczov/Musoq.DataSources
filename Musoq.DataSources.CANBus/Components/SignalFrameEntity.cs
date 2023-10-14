@@ -49,7 +49,7 @@ public class SignalFrameEntity : DynamicObject
             result = null;
             return false;
         }
-
+        
         result = Packer.RxSignalUnpack(_rawData, signal);
         return true;
     }

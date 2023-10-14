@@ -8,9 +8,9 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
-      <PackageReference Include="Musoq.Parser" Version="2.4.1" />
-      <PackageReference Include="Musoq.Plugins" Version="4.4.0" />
-      <PackageReference Include="Musoq.Schema" Version="5.1.1" />
+      <PackageReference Include="Musoq.Parser" Version="2.5.0" />
+      <PackageReference Include="Musoq.Plugins" Version="4.5.0" />
+      <PackageReference Include="Musoq.Schema" Version="5.1.2" />
     </ItemGroup>
 
     <ItemGroup>
