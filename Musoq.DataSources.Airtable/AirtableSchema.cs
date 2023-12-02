@@ -86,14 +86,15 @@ public class AirtableSchema : SchemaBase
     {
         _api = api;
     }
-
-    /// &lt;summary&gt;
-    /// Gets the table name based on the given data source and parameters.
-    /// &lt;/summary&gt;
-    /// &lt;param name="name"&gt;Data Source name&lt;/param&gt;
-    /// &lt;param name="runtimeContext"&gt;Runtime context&lt;/param&gt;
-    /// &lt;param name="parameters"&gt;Parameters to pass to data source&lt;/param&gt;
-    /// &lt;returns&gt;Requested table metadata&lt;/returns&gt;
+    
+    /// <summary>
+    /// Gets the data source based on the given data source and parameters.
+    /// </summary>
+    /// <param name="name">Data source name</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="parameters">Parameters to pass data to data source</param>
+    /// <returns>Data source</returns>
+    /// <exception cref="NotSupportedException">Thrown when data source is not supported.</exception>
     public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object?[] parameters)
     {
         return name switch

@@ -15,6 +15,8 @@ namespace Musoq.DataSources.CANBus;
 /// </summary>
 public class CANBusLibrary : LibraryBase
 {
+    private static DateTime _unixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    
     /// <summary>
     /// Converts bytes to encoded signal of a message for CAN bus.
     /// </summary>
@@ -246,25 +248,14 @@ public class CANBusLibrary : LibraryBase
     [BindableMethod]
     public DateTimeOffset? FromTimestamp(ulong timestamp, string resolution)
     {
-        var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        switch (resolution)
+        return resolution switch
         {
-            case "s":
-                dateTime = dateTime.AddSeconds(timestamp);
-                break;
-            case "ms":
-                dateTime = dateTime.AddMilliseconds(timestamp);
-                break;
-            case "us":
-                dateTime = dateTime.AddTicks((long)timestamp);
-                break;
-            case "ns":
-                dateTime = dateTime.AddTicks((long)timestamp);
-                break;
-            default:
-                throw new InvalidOperationException($"Resolution {resolution} is not supported.");
-        }
-        return dateTime;
+            "s" => _unixEpoch.AddSeconds(timestamp),
+            "ms" => _unixEpoch.AddMilliseconds(timestamp),
+            "us" => _unixEpoch.AddTicks((long) timestamp),
+            "ns" => _unixEpoch.AddTicks((long) timestamp),
+            _ => throw new InvalidOperationException($"Resolution {resolution} is not supported.")
+        };
     }
     
     /// <summary>
