@@ -3,7 +3,7 @@ using Docker.DotNet.Models;
 
 namespace Musoq.DataSources.Docker;
 
-public class DockerApi : IDockerApi
+internal class DockerApi : IDockerApi
 {
     private readonly DockerClient _client;
 

@@ -8,7 +8,6 @@ using Musoq.DataSources.Os.Zip;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
-using Musoq.Tests.Common;
 using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Os.Tests

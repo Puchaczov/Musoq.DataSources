@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace Musoq.Tests.Common
+namespace Musoq.DataSources.Tests.Common
 {
     public static class Culture
     {

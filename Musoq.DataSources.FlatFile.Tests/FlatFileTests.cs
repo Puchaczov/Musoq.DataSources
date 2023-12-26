@@ -8,7 +8,6 @@ using Musoq.DataSources.FlatFile;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
-using Musoq.Tests.Common;
 
 namespace Musoq.Schema.FlatFile.Tests
 {

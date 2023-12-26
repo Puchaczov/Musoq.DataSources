@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
-using Musoq.Tests.Common;
 using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Postgres.Tests;

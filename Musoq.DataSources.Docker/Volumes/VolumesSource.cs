@@ -4,7 +4,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Docker.Volumes;
 
-public class VolumesSource : RowSourceBase<VolumeResponse>
+internal class VolumesSource : RowSourceBase<VolumeResponse>
 {
     private readonly IDockerApi _api;
 

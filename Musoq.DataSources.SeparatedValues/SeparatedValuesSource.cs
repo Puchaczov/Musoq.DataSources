@@ -15,23 +15,11 @@ namespace Musoq.DataSources.SeparatedValues
 {
     internal class SeparatedValuesSource : RowSourceBase<object[]>
     {
-        private class SeparatedValueFile
-        {
-            public string FilePath { get; set; }
-
-            public string Separator { get; set; }
-
-            public bool HasHeader { get; set; }
-
-            public int SkipLines { get; set; }
-        }
-
         private readonly SeparatedValueFile[] _files;
-        private readonly RuntimeContext _context;
-        private readonly IReadOnlyDictionary<string, Type> _types;
+        
+        public RuntimeContext? RuntimeContext { get; init; }
 
-        public SeparatedValuesSource(string filePath, string separator, bool hasHeader, int skipLines, RuntimeContext context)
-            : this(context)
+        public SeparatedValuesSource(string filePath, string separator, bool hasHeader, int skipLines)
         {
             _files = new[] {
                 new SeparatedValueFile()
@@ -44,8 +32,7 @@ namespace Musoq.DataSources.SeparatedValues
             };
         }
 
-        public SeparatedValuesSource(IReadOnlyTable table, string separator, RuntimeContext context)
-            : this(context)
+        public SeparatedValuesSource(IReadOnlyTable table, string separator)
         {
             _files = new SeparatedValueFile[table.Count];
 
@@ -62,12 +49,6 @@ namespace Musoq.DataSources.SeparatedValues
             }
         }
 
-        private SeparatedValuesSource(RuntimeContext context)
-        {
-            _context = context;
-            _types = _context.AllColumns.ToDictionary(col => col.ColumnName, col => col.ColumnType.GetUnderlyingNullable());
-        }
-
         protected override void CollectChunks(BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource)
         {
             foreach (var csvFile in _files)
@@ -78,6 +59,21 @@ namespace Musoq.DataSources.SeparatedValues
 
         private void ProcessFile(SeparatedValueFile csvFile, BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource)
         {
+            if (RuntimeContext is null)
+            {
+                throw new InvalidOperationException("Runtime context is not set.");
+            }
+            
+            if (csvFile.FilePath is null)
+            {
+                throw new InvalidOperationException("File path cannot be null.");
+            }
+            
+            if (csvFile.Separator is null)
+            {
+                throw new InvalidOperationException("Separator cannot be null.");
+            }
+            
             var file = new FileInfo(csvFile.FilePath);
 
             if (!file.Exists)
@@ -87,9 +83,9 @@ namespace Musoq.DataSources.SeparatedValues
             }
 
             var nameToIndexMap = new Dictionary<string, int>();
-            var indexToMethodAccess = new Dictionary<int, Func<object[], object>>();
+            var indexToMethodAccess = new Dictionary<int, Func<object?[], object?>>();
             var indexToNameMap = new Dictionary<int, string>();
-            var endWorkToken = _context.EndWorkToken;
+            var endWorkToken = RuntimeContext.EndWorkToken;
 
             var modifiedCulture = new CultureInfo(CultureInfo.CurrentCulture.Name)
             {
@@ -137,7 +133,7 @@ namespace Musoq.DataSources.SeparatedValues
                     {
 
                         int i = 1, j = 11;
-                        var list = new List<EntityResolver<object[]>>(100);
+                        var list = new List<EntityResolver<object?[]>>(100);
                         var rowsToRead = 1000;
                         const int rowsToReadBase = 100;
 
@@ -147,7 +143,11 @@ namespace Musoq.DataSources.SeparatedValues
                         while (csvReader.Read())
                         {
                             var rawRow = csvReader.Context.Parser.Record;
-                            list.Add(new EntityResolver<object[]>(ParseRecords(rawRow, indexToNameMap), nameToIndexMap, indexToMethodAccess));
+                            
+                            if (rawRow == null)
+                                continue;
+                            
+                            list.Add(new EntityResolver<object?[]>(ParseRecords(rawRow, indexToNameMap), nameToIndexMap, indexToMethodAccess));
 
                             if (i++ < rowsToRead) continue;
 
@@ -159,7 +159,7 @@ namespace Musoq.DataSources.SeparatedValues
                             rowsToRead = rowsToReadBase * j;
 
                             chunkedSource.Add(list, endWorkToken);
-                            list = new List<EntityResolver<object[]>>(rowsToRead);
+                            list = new List<EntityResolver<object?[]>>(rowsToRead);
                         }
 
                         chunkedSource.Add(list, endWorkToken);
@@ -168,17 +168,27 @@ namespace Musoq.DataSources.SeparatedValues
             }
         }
 
-        private object[] ParseRecords(string[] rawRow, IReadOnlyDictionary<int, string> indexToNameMap)
+        private object?[] ParseRecords(string?[] rawRow, IReadOnlyDictionary<int, string> indexToNameMap)
         {
-            var parsedRecords = new object[rawRow.Length];
+            if (RuntimeContext is null)
+            {
+                throw new InvalidOperationException("Runtime context is not set.");
+            }
+            
+            var parsedRecords = new object?[rawRow.Length];
+            var types = RuntimeContext
+                .AllColumns
+                .ToDictionary(
+                    col => col.ColumnName,
+                    col => col.ColumnType.GetUnderlyingNullable());
 
             for (var i = 0; i < rawRow.Length; ++i)
             {
                 var headerName = indexToNameMap[i];
-                if (_types.ContainsKey(headerName))
+                if (types.TryGetValue(headerName, out var type))
                 {
                     var colValue = rawRow[i];
-                    switch (Type.GetTypeCode(_types[headerName]))
+                    switch (Type.GetTypeCode(type))
                     {
                         case TypeCode.Boolean:
                             if (bool.TryParse(colValue, out var boolValue))
@@ -239,8 +249,7 @@ namespace Musoq.DataSources.SeparatedValues
                                 parsedRecords[i] = null;
                             break;
                         case TypeCode.Object:
-                            parsedRecords[i] = colValue;
-                            break;
+                            throw new NotSupportedException($"Type {TypeCode.Object} is not supported.");
                         case TypeCode.SByte:
                             if (sbyte.TryParse(colValue, NumberStyles.Any, CultureInfo.CurrentCulture, out var sbyteValue))
                                 parsedRecords[i] = sbyteValue;
@@ -277,6 +286,8 @@ namespace Musoq.DataSources.SeparatedValues
                             else
                                 parsedRecords[i] = null;
                             break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
                 }
                 else
@@ -309,6 +320,17 @@ namespace Musoq.DataSources.SeparatedValues
                 stream = new MemoryStream(Encoding.UTF8.GetBytes(file.OpenText().ReadToEnd()));
 
             return stream;
+        }
+        
+        private class SeparatedValueFile
+        {
+            public string? FilePath { get; set; }
+
+            public string? Separator { get; set; }
+
+            public bool HasHeader { get; set; }
+
+            public int SkipLines { get; set; }
         }
     }
 }

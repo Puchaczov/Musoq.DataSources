@@ -65,6 +65,37 @@ namespace Musoq.DataSources.SeparatedValues
         }
 
         /// <summary>
+        /// Gets the table name based on the given data source and parameters.
+        /// </summary>
+        /// <param name="name">Data Source name</param>
+        /// <param name="runtimeContext">Runtime context</param>
+        /// <param name="parameters">Parameters to pass to data source</param>
+        /// <returns>Requested table metadata</returns>
+        public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+        {
+            switch (name.ToLowerInvariant())
+            {
+                case "csv":
+                    if (parameters.Length == 0)
+                        return new InitiallyInferredTable(runtimeContext.AllColumns);
+                    
+                    return new SeparatedValuesTable((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
+                case "tsv":
+                    if (parameters.Length == 0)
+                        return new InitiallyInferredTable(runtimeContext.AllColumns);
+                    
+                    return new SeparatedValuesTable((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
+                case "semicolon":
+                    if (parameters.Length == 0)
+                        return new InitiallyInferredTable(runtimeContext.AllColumns);
+                    
+                    return new SeparatedValuesTable((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
+            }
+
+            return base.GetTableByName(name, runtimeContext, parameters);
+        }
+
+        /// <summary>
         /// Gets the data source based on the given data source and parameters.
         /// </summary>
         /// <param name="name">Data source name</param>
@@ -77,44 +108,22 @@ namespace Musoq.DataSources.SeparatedValues
             {
                 case "csv":
                     if (parameters[0] is IReadOnlyTable csvTable)
-                        return new SeparatedValuesSource(csvTable, ",", runtimeContext);
+                        return new SeparatedValuesSource(csvTable, ",") { RuntimeContext = runtimeContext };
 
-                    return new SeparatedValuesSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2], runtimeContext);
+                    return new SeparatedValuesSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2]) { RuntimeContext = runtimeContext };
                 case "tsv":
                     if (parameters[0] is IReadOnlyTable tsvTable)
-                        return new SeparatedValuesSource(tsvTable, "\t", runtimeContext);
+                        return new SeparatedValuesSource(tsvTable, "\t") { RuntimeContext = runtimeContext };
 
-                    return new SeparatedValuesSource((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2], runtimeContext);
+                    return new SeparatedValuesSource((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2]) { RuntimeContext = runtimeContext };
                 case "semicolon":
                     if (parameters[0] is IReadOnlyTable semicolonTable)
-                        return new SeparatedValuesSource(semicolonTable, ";", runtimeContext);
+                        return new SeparatedValuesSource(semicolonTable, ";") { RuntimeContext = runtimeContext };
 
-                    return new SeparatedValuesSource((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2], runtimeContext);
+                    return new SeparatedValuesSource((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2]) { RuntimeContext = runtimeContext };
             }
 
             return base.GetRowSource(name, runtimeContext, parameters);
-        }
-
-        /// <summary>
-        /// Gets the table name based on the given data source and parameters.
-        /// </summary>
-        /// <param name="name">Data Source name</param>
-        /// <param name="runtimeContext">Runtime context</param>
-        /// <param name="parameters">Parameters to pass to data source</param>
-        /// <returns>Requested table metadata</returns>
-        public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
-        {
-            switch (name.ToLowerInvariant())
-            {
-                case "csv":
-                    return new SeparatedValuesTable((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2]);
-                case "tsv":
-                    return new SeparatedValuesTable((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2]);
-                case "semicolon":
-                    return new SeparatedValuesTable((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2]);
-            }
-
-            return base.GetTableByName(name, runtimeContext, parameters);
         }
 
         private static MethodsAggregator CreateLibrary()

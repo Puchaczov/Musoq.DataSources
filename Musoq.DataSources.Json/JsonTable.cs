@@ -11,18 +11,12 @@ namespace Musoq.DataSources.Json
 {
     internal class JsonTable : ISchemaTable
     {
-        private readonly Stream _stream;
+        private readonly string _filePath;
         private ISchemaColumn[] _columns;
 
         public JsonTable(string filePath)
         {
-            _stream = File.OpenRead(filePath);
-            _columns = null;
-        }
-        
-        public JsonTable(Stream stream)
-        {
-            _stream = stream;
+            _filePath = filePath;
             _columns = null;
         }
 
@@ -33,7 +27,7 @@ namespace Musoq.DataSources.Json
                 if (_columns != null)
                     return _columns;
                 
-                using var contentStream = _stream;
+                using var contentStream = File.OpenRead(_filePath);
                 using var contentReader = new StreamReader(contentStream);
                 var jsonSchema = contentReader.ReadToEnd();
                 var schema = JsonConvert.DeserializeObject(jsonSchema);

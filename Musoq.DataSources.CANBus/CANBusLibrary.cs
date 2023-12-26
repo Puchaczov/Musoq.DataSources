@@ -15,7 +15,7 @@ namespace Musoq.DataSources.CANBus;
 /// </summary>
 public class CANBusLibrary : LibraryBase
 {
-    private static DateTime _unixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime UnixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     
     /// <summary>
     /// Converts bytes to encoded signal of a message for CAN bus.
@@ -250,10 +250,10 @@ public class CANBusLibrary : LibraryBase
     {
         return resolution switch
         {
-            "s" => _unixEpoch.AddSeconds(timestamp),
-            "ms" => _unixEpoch.AddMilliseconds(timestamp),
-            "us" => _unixEpoch.AddTicks((long) timestamp),
-            "ns" => _unixEpoch.AddTicks((long) timestamp),
+            "s" => UnixEpoch.AddSeconds(timestamp),
+            "ms" => UnixEpoch.AddMilliseconds(timestamp),
+            "us" => UnixEpoch.AddTicks((long) timestamp),
+            "ns" => UnixEpoch.AddTicks((long) timestamp),
             _ => throw new InvalidOperationException($"Resolution {resolution} is not supported.")
         };
     }

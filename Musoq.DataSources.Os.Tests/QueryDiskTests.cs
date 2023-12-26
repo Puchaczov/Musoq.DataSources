@@ -17,7 +17,6 @@ using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 using Musoq.Schema;
-using Musoq.Tests.Common;
 using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Os.Tests
@@ -422,7 +421,7 @@ namespace Musoq.DataSources.Os.Tests
         }
 
         [TestMethod]
-        public void Query_CompareTwoDirectiories()
+        public void Query_CompareTwoDirectories()
         {
             var query = "select * from #disk.DirsCompare('./Directories/Directory1', './Directories/Directory2')";
 
@@ -431,7 +430,7 @@ namespace Musoq.DataSources.Os.Tests
         }
 
         [TestMethod]
-        public void Query_CompareTwoDirectiories_WithSha()
+        public void Query_CompareTwoDirectories_WithSha()
         {
             var query = "select Sha256File(SourceFile) from #disk.DirsCompare('./Directories/Directory1', './Directories/Directory2') where SourceFile is not null";
 

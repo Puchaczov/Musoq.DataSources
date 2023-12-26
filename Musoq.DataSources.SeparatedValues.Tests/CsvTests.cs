@@ -12,7 +12,6 @@ using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
 using Musoq.Plugins;
 using Musoq.Schema;
-using Musoq.Tests.Common;
 using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.SeparatedValues.Tests
@@ -190,13 +189,13 @@ namespace Musoq.DataSources.SeparatedValues.Tests
                 "table CsvFile {" +
                 "   Name 'System.String'" +
                 "};" +
-                "couple #separatedvalues.csv with table CsvFile as SourceCsvFile;" +
+                "couple #separatedvalues.csv with table CsvFile as SourceOfCsvFile;" +
                 "with FilesToScan as (" +
                 "   select './Files/BankingTransactionsWithSkippedLines.csv' as FileName, true, 2 from #separatedvalues.empty()" +
                 "   union all (FileName) " +
                 "   select './Files/BankingTransactionsWithSkippedLines.csv' as FileName, true, 2 from #separatedvalues.empty()" +
                 ")" +
-                "select Name from SourceCsvFile(FilesToScan);";
+                "select Name from SourceOfCsvFile(FilesToScan);";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -714,12 +713,18 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         {
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
-            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, 
-                new RuntimeContext(
+            var source = new SeparatedValuesSource(
+                "./Files/BankingTransactionsWithSkippedLines.csv", 
+                ",", 
+                true, 
+                2)
+            {
+                RuntimeContext = new RuntimeContext(
                     tokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null))
+            };
 
             var fired = source.Rows.Count();
 
@@ -755,7 +760,10 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                 new Dictionary<string, string>(),
                 (null, null, null));
 
-            var source = new SeparatedValuesSource("./Files/AllTypes.csv", ",", true, 0, context);
+            var source = new SeparatedValuesSource("./Files/AllTypes.csv", ",", true, 0)
+            {
+                RuntimeContext = context
+            };
 
             var rows = source.Rows;
 
@@ -805,11 +813,14 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         [TestMethod]
         public void CsvSource_FullLoadTest()
         {
-            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, new RuntimeContext(
-                CancellationToken.None, 
-                Array.Empty<ISchemaColumn>(), 
-                new Dictionary<string, string>(),
-                (null, null, null)));
+            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2)
+            {
+                RuntimeContext = new RuntimeContext(
+                    CancellationToken.None, 
+                    Array.Empty<ISchemaColumn>(), 
+                    new Dictionary<string, string>(),
+                    (null, null, null))
+            };
 
             var fired = source.Rows.Count();
 

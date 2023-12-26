@@ -5,7 +5,6 @@ using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
-using Musoq.Tests.Common;
 
 namespace Musoq.DataSources.CANBus.Tests;
 

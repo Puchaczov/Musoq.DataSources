@@ -6,10 +6,10 @@ using k8s.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.Converter;
+using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
 using Musoq.Schema;
-using Musoq.Tests.Common;
 using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Kubernetes.Tests;

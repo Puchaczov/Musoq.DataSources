@@ -9,7 +9,6 @@ using Musoq.DataSources.OpenAIHelpers;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
-using Musoq.Tests.Common;
 using OpenAI_API.Chat;
 using Environment = Musoq.Plugins.Environment;
 

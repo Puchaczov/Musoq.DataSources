@@ -2,7 +2,7 @@
 
 namespace Musoq.DataSources.Docker;
 
-public interface IDockerApi
+internal interface IDockerApi
 {
     Task<IList<ContainerListResponse>> ListContainersAsync();
     
