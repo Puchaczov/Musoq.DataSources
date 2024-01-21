@@ -290,7 +290,7 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void File_SkipTwoBytesAndTakeFiveBytes_Test()
         {
-            var query = "select ToHex(ToArray(Take(Skip(GetFileBytes(), 2), 5)), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
+            var query = "select ToHex(EnumerableToArray(Take(Skip(GetFileBytes(), 2), 5)), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -303,7 +303,7 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void File_SkipTwoBytesAndTakeFiveBytes2_Test()
         {
-            var query = "select ToHex(ToArray(SkipAndTake(GetFileBytes(), 2, 5)), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
+            var query = "select ToHex(EnumerableToArray(SkipAndTake(GetFileBytes(), 2, 5)), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();

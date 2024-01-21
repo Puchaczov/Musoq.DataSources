@@ -447,7 +447,7 @@ public partial class OsLibrary : LibraryBase
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
 
         using var stream = file.OpenRead();
-        return HashHelper.ComputeHash<SHA1CryptoServiceProvider>(stream);
+        return HashHelper.ComputeHash(stream, SHA1.Create);
     }
 
     /// <summary>
@@ -475,7 +475,7 @@ public partial class OsLibrary : LibraryBase
             throw new ArgumentNullException(nameof(file));
 
         using var stream = file.OpenRead();
-        return HashHelper.ComputeHash<SHA256CryptoServiceProvider>(stream);
+        return HashHelper.ComputeHash(stream, SHA256.Create);
     }
 
     /// <summary>
@@ -490,7 +490,7 @@ public partial class OsLibrary : LibraryBase
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
 
         using var stream = file.OpenRead();
-        return HashHelper.ComputeHash<MD5CryptoServiceProvider>(stream);
+        return HashHelper.ComputeHash(stream, MD5.Create);
     }
 
     /// <summary>
@@ -630,7 +630,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="nesting">The nesting</param>
     /// <returns>Relative subPath based on nesting</returns>
     [BindableMethod]
-    public string SubPath(string directoryPath, int nesting)
+    public string? SubPath(string? directoryPath, int nesting)
     {
         if (directoryPath == null)
             return null;

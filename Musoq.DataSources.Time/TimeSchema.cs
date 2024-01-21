@@ -25,18 +25,18 @@ namespace Musoq.DataSources.Time
         /// <examples>
         /// <example>
         /// <from>#time.interval(string startDateTime, string stopDateTime, string interval)</from>
-        /// <description>Gets the zip files</description>
+        /// <description>Compute dates between two ranges</description>
         /// <columns>
-        /// <column name="DateTime" type="DateTime">Gets the file name of the entry in the zip archive</column>
-        /// <column name="Second" type="int">Gets the file name of the entry in the zip archive</column>
-        /// <column name="Minute" type="int">Gets the relative path of the entry in the zip archive</column>
-        /// <column name="Hour" type="int">Gets the compressed size of the entry in the zip archive</column>
-        /// <column name="Day" type="int">Gets the last time the entry in the zip archive was changed</column>
-        /// <column name="Month" type="int">Gets the uncompressed size of the entry in the zip archive</column>
-        /// <column name="Year" type="int">Determine whether the entry is a directory</column>
-        /// <column name="DayOfWeek" type="int">Gets the nesting level</column>
-        /// <column name="DayOfYear" type="int">Gets the nesting level</column>
-        /// <column name="TimeOfDay" type="TimeSpan">Gets the nesting level</column>
+        /// <column name="DateTime" type="DateTime">Gets the DateTime object</column>
+        /// <column name="Second" type="int">Gets second of current computed DateTime</column>
+        /// <column name="Minute" type="int">Gets minute of current computed DateTime</column>
+        /// <column name="Hour" type="int">Gets the hour of current computed DateTime</column>
+        /// <column name="Day" type="int">Gets the day of current computed DateTime</column>
+        /// <column name="Month" type="int">Gets the month of current computed DateTime</column>
+        /// <column name="Year" type="int">Gets the year of current computed DateTime</column>
+        /// <column name="DayOfWeek" type="int">Gets the day of week of current computed DateTime</column>
+        /// <column name="DayOfYear" type="int">Gets the day of year of current computed DateTime</column>
+        /// <column name="TimeOfDay" type="TimeSpan">Gets the time of day of current computed DateTime</column>
         /// </columns>
         /// </example>
         /// </examples>
