@@ -114,8 +114,8 @@ namespace Musoq.DataSources.Os.Tests
             Assert.AreEqual(3, table.Columns.Count());
 
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.Name) && (string)row[2] == typeof(string).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.CreationTime) && (string)row[2] == typeof(DateTime).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.CreationTimeUtc) && (string)row[2] == typeof(DateTime).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.CreationTime) && (string)row[2] == typeof(DateTimeOffset).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.CreationTimeUtc) && (string)row[2] == typeof(DateTimeOffset).FullName));
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.DirectoryName) && (string)row[2] == typeof(string).FullName));
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.Extension) && (string)row[2] == typeof(string).FullName));
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.FullName) && (string)row[2] == typeof(string).FullName));
@@ -337,6 +337,19 @@ namespace Musoq.DataSources.Os.Tests
             Assert.AreEqual(1, table.Count);
 
             Assert.AreEqual("31|2E", table[0][0]);
+        }
+
+        [TestMethod]
+        public void File_GetBase64_Test()
+        {
+            var query = "select Base64File() from #disk.files('./Files', false) where Name = 'File1.txt'";
+
+            var vm = CreateAndRunVirtualMachine(query);
+            var table = vm.Run();
+
+            Assert.AreEqual(1, table.Count);
+
+            Assert.AreEqual("77u/RXhhbXBsZSBmaWxlIDEu", table[0][0]);
         }
 
         [TestMethod]

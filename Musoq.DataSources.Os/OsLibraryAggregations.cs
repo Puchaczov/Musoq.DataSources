@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Musoq.DataSources.Os.Files;
 using Musoq.Plugins;
@@ -15,7 +16,7 @@ public partial class OsLibrary
     /// <param name="name">The name of the group</param>
     /// <returns>Aggregated value</returns>
     [AggregationGetMethod]
-    public IReadOnlyList<ExtendedFileInfo> AggregateFiles([InjectGroup] Group group, string name)
+    public IReadOnlyList<ExtendedFileInfo>? AggregateFiles([InjectGroup] Group group, string name)
     {
         return group.GetValue<IReadOnlyList<ExtendedFileInfo>>(name);
     }
@@ -46,6 +47,9 @@ public partial class OsLibrary
     public void SetAggregateFiles([InjectGroup] Group group, [InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, string name)
     {
         var list = group.GetOrCreateValue(name, new List<ExtendedFileInfo>());
+        
+        if (list == null)
+            throw new InvalidOperationException("List is null");
 
         list.Add(file);
     }
@@ -57,7 +61,7 @@ public partial class OsLibrary
     /// <param name="name">The name of the group</param>
     /// <returns>Aggregated value</returns>
     [AggregationGetMethod]
-    public IReadOnlyList<DirectoryInfo> AggregateDirectories([InjectGroup] Group group, string name)
+    public IReadOnlyList<DirectoryInfo>? AggregateDirectories([InjectGroup] Group group, string name)
     {
         return group.GetValue<IReadOnlyList<DirectoryInfo>>(name);
     }
@@ -73,6 +77,9 @@ public partial class OsLibrary
     public void SetAggregateDirectories([InjectGroup] Group group, [InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo directory, string name)
     {
         var list = group.GetOrCreateValue(name, new List<DirectoryInfo>());
+        
+        if (list == null)
+            throw new InvalidOperationException("List is null");
 
         list.Add(directory);
     }

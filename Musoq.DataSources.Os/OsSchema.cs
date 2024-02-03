@@ -61,6 +61,10 @@ public class OsSchema : SchemaBase
     /// <column name="Attributes" type="FileAttributes">Directory attributes</column>
     /// <column name="CreationTime" type="DateTime">Creation time</column>
     /// <column name="CreationTimeUtc" type="DateTime">Creation time in UTC</column>
+    /// <column name="LastAccessTime" type="DateTime">Last access time</column>
+    /// <column name="LastAccessTimeUtc" type="DateTime">Last access time in UTC</column>
+    /// <column name="LastWriteTime" type="DateTime">Last write time</column>
+    /// <column name="LastWriteTimeUtc" type="DateTime">Last write time in UTC</column>
     /// <column name="Exists" type="bool">Determine does the directory exists</column>
     /// <column name="Extension" type="string">Gets the extension part of the file name</column>
     /// <column name="LastAccessTime" type="DateTime">Gets the time the current file or directory was last accessed</column>
@@ -113,6 +117,10 @@ public class OsSchema : SchemaBase
     /// <column name="Name" type="string">Full name of the directory</column>
     /// <column name="CreationTime" type="DateTime">Creation time</column>
     /// <column name="CreationTimeUtc" type="DateTime">Creation time in UTC</column>
+    /// <column name="LastAccessTime" type="DateTime">Last access time</column>
+    /// <column name="LastAccessTimeUtc" type="DateTime">Last access time in UTC</column>
+    /// <column name="LastWriteTime" type="DateTime">Last write time</column>
+    /// <column name="LastWriteTimeUtc" type="DateTime">Last write time in UTC</column>
     /// <column name="DirectoryName" type="string">Gets the directory name</column>
     /// <column name="Extension" type="string">Gets the extension part of the file name</column>
     /// <column name="FullName" type="string">Gets the full path of file</column>

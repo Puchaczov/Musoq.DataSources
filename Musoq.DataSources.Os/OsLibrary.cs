@@ -325,7 +325,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="extendedFileInfo">The extendedFileInfo</param>
     /// <returns>String content of a file</returns>
     [BindableMethod]
-    public string GetFileContent([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo extendedFileInfo)
+    public string? GetFileContent([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo extendedFileInfo)
     {
         if (!extendedFileInfo.Exists)
             return null;
@@ -343,9 +343,6 @@ public partial class OsLibrary : LibraryBase
     [BindableMethod]
     public string GetRelativePath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo)
     {
-        if (fileInfo == null)
-            return null;
-
         return fileInfo.FullName.Replace(fileInfo.ComputationRootDirectoryPath, string.Empty);
     }
 
@@ -358,9 +355,6 @@ public partial class OsLibrary : LibraryBase
     [BindableMethod]
     public string GetRelativePath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo, string basePath)
     {
-        if (fileInfo == null)
-            return null;
-
         if (basePath == null)
             throw new ArgumentNullException(nameof(basePath));
 
@@ -492,6 +486,24 @@ public partial class OsLibrary : LibraryBase
         using var stream = file.OpenRead();
         return HashHelper.ComputeHash(stream, MD5.Create);
     }
+    
+    /// <summary>
+    /// Turns file into base64 string
+    /// </summary>
+    /// <param name="file"></param>
+    /// <returns></returns>
+    /// <exception cref="InjectSourceNullReferenceException"></exception>
+    [BindableMethod]
+    public string Base64File([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file)
+    {
+        if (file == null)
+            throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
+
+        using var stream = file.OpenRead();
+        using var reader = new BinaryReader(stream);
+        var bytes = reader.ReadBytes((int)stream.Length);
+        return Convert.ToBase64String(bytes);
+    }
 
     /// <summary>
     /// Determine whether file has specific content
@@ -578,19 +590,14 @@ public partial class OsLibrary : LibraryBase
         if (context == null)
             throw new InjectSourceNullReferenceException(typeof(ExtendedFileInfo));
 
-        switch (unit.ToLowerInvariant())
+        return unit.ToLowerInvariant() switch
         {
-            case "b":
-                return context.Length;
-            case "kb":
-                return Convert.ToInt64(context.Length / 1024f);
-            case "mb":
-                return Convert.ToInt64(context.Length / 1024f / 1024f);
-            case "gb":
-                return Convert.ToInt64(context.Length / 1024f / 1024f / 1024f);
-            default:
-                throw new NotSupportedException($"unsupported unit ({unit})");
-        }
+            "b" => context.Length,
+            "kb" => Convert.ToInt64(context.Length / 1024f),
+            "mb" => Convert.ToInt64(context.Length / 1024f / 1024f),
+            "gb" => Convert.ToInt64(context.Length / 1024f / 1024f / 1024f),
+            _ => throw new NotSupportedException($"unsupported unit ({unit})")
+        };
     }
 
     /// <summary>
@@ -600,7 +607,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="nesting">The nesting</param>
     /// <returns>SubPath based on nesting</returns>
     [BindableMethod]
-    public string SubPath([InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo context, int nesting)
+    public string? SubPath([InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo context, int nesting)
         => SubPath(context.FullName, nesting);
 
     /// <summary>
@@ -610,7 +617,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="nesting">The nesting</param>
     /// <returns>SubPath based on nesting</returns>
     [BindableMethod]
-    public string SubPath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, int nesting)
+    public string? SubPath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, int nesting)
         => SubPath(context.Directory.FullName, nesting);
 
     /// <summary>
@@ -620,7 +627,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="nesting">The nesting</param>
     /// <returns>Relative subPath based on nesting</returns>
     [BindableMethod]
-    public string RelativeSubPath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, int nesting)
+    public string? RelativeSubPath([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo context, int nesting)
         => SubPath(GetRelativePath(context, context.ComputationRootDirectoryPath), nesting);
 
     /// <summary>
@@ -678,9 +685,16 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fullPath">The fullPath</param>
     /// <returns>ExtendedFileInfo</returns>
     [BindableMethod]
-    public ExtendedFileInfo GetFileInfo(string fullPath)
+    public ExtendedFileInfo? GetFileInfo(string fullPath)
     {
         var fileInfo = new FileInfo(fullPath);
+        
+        if (!fileInfo.Exists)
+            return null;
+        
+        if (fileInfo.DirectoryName == null)
+            throw new InvalidOperationException("Directory name is null.");
+        
         return new ExtendedFileInfo(fileInfo, fileInfo.DirectoryName);
     }
 

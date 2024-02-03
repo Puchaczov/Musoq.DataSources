@@ -9,7 +9,7 @@ internal class FilesBasedTable : ISchemaTable
     
     public SchemaTableMetadata Metadata { get; } = new(typeof(ExtendedFileInfo));
 
-    public ISchemaColumn GetColumnByName(string name)
+    public ISchemaColumn? GetColumnByName(string name)
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);
     }

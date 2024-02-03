@@ -90,7 +90,7 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DecompressZipWithHelperTest()
         {
-            var tempDir = "./Temp";
+            const string tempDir = "./Temp";
             using (var file = File.OpenRead("./Files.zip"))
             {
                 using (var zip = new ZipArchive(file))

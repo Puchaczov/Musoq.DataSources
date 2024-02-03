@@ -62,12 +62,33 @@ public class ExtendedFileInfo
     /// <summary>
     /// Gets the creation time
     /// </summary>
-    public DateTime CreationTime => FileInfo.CreationTime;
+    public DateTimeOffset CreationTime => FileInfo.CreationTime;
 
     /// <summary>
     /// Gets the creation time UTC
     /// </summary>
-    public DateTime CreationTimeUtc => FileInfo.CreationTimeUtc;
+    public DateTimeOffset CreationTimeUtc => FileInfo.CreationTimeUtc;
+    
+    
+    /// <summary>
+    /// Gets the last write time
+    /// </summary>
+    public DateTimeOffset LastAccessTime => FileInfo.LastAccessTime;
+    
+    /// <summary>
+    /// Gets the last write time UTC
+    /// </summary>
+    public DateTimeOffset LastAccessTimeUtc => FileInfo.LastAccessTimeUtc;
+    
+    /// <summary>
+    /// Gets the last write time
+    /// </summary>
+    public DateTimeOffset LastWriteTime => FileInfo.LastWriteTime;
+    
+    /// <summary>
+    /// Gets the last write time UTC
+    /// </summary>
+    public DateTimeOffset LastWriteTimeUtc => FileInfo.LastWriteTimeUtc;
 
     /// <summary>
     /// Gets the extension
