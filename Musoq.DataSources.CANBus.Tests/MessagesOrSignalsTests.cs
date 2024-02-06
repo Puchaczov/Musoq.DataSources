@@ -272,19 +272,16 @@ from #can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_Sys
         
         var table = vm.Run();
         
-        var encodedValue = (byte[])table[0].Values[0];
-        var encodedValueUlong = BitConverter.ToUInt64(encodedValue);
-        
         var queryDecode = $@"
 select 
-    messages.DecodeMessage('Exhaust_Gas_Temperature', {encodedValueUlong})
+    messages.DecodeMessage('Exhaust_Gas_Temperature', {(ulong)table[0].Values[0]})
 from #can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_System'";
         
         vm = CreateAndRunVirtualMachine(queryDecode);
         
         table = vm.Run();
 
-        var decodedValue = BitConverter.ToDouble((byte[]) table[0].Values[0]);
+        var decodedValue = (double)table[0].Values[0];
         
         Assert.AreEqual(124d, decodedValue);
     }

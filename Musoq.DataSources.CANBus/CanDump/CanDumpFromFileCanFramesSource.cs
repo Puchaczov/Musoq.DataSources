@@ -14,9 +14,9 @@ using CsvHelper.Configuration;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.CANBus.SeparatedValuesFromFile;
+namespace Musoq.DataSources.CANBus.CanDump;
 
-internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
+internal class CanDumpFromFileCanFramesSource : MessageFrameSourceBase
 {
     private readonly MessagesLookup _messages;
     private readonly FileInfo _file;
@@ -24,11 +24,11 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
     private readonly string _idOfType;
     private readonly string _bigOrLittle;
 
-    public SeparatedValuesFromFileCanFramesSource(string framesCsvPath, ICANBusApi canBusApi, RuntimeContext runtimeContext, string idOfType, string bigOrLittle)
+    public CanDumpFromFileCanFramesSource(string canDumpFile, ICANBusApi canBusApi, RuntimeContext runtimeContext, string idOfType, string bigOrLittle)
         : base(runtimeContext.EndWorkToken)
     {
         _messages = new MessagesLookup();
-        _file = new FileInfo(framesCsvPath);
+        _file = new FileInfo(canDumpFile);
         _canBusApi = canBusApi;
         _idOfType = idOfType;
         _bigOrLittle = bigOrLittle;

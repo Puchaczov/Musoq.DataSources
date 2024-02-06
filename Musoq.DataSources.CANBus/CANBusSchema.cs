@@ -118,7 +118,9 @@ public class CANBusSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            "separatedvalues" => new SeparatedValuesFromFileCanFramesTable(_createCanBusApi((string)parameters[1]), runtimeContext.EndWorkToken),
+            "separatedvalues" => new SeparatedValuesFromFileCanFramesTable(
+                _createCanBusApi((string)parameters[1]), 
+                runtimeContext.EndWorkToken),
             "messages" => new MessagesTable(),
             "signals" => new SignalsTable(),
             _ => base.GetTableByName(name, runtimeContext, parameters)
@@ -141,7 +143,8 @@ public class CANBusSchema : SchemaBase
                 (string)parameters[0], 
                 _createCanBusApi((string)parameters[1]), 
                 runtimeContext,
-                parameters.Length > 2 ? (string)parameters[2] : "dec"
+                parameters.Length > 2 ? (string)parameters[2] : "dec",
+                parameters.Length > 3 ? (string)parameters[3] : "little"
             ),
             "messages" => new MessagesSource(_createCanBusApi((string)parameters[0]), runtimeContext),
             "signals" => new SignalsSource(_createCanBusApi((string)parameters[0]), runtimeContext),

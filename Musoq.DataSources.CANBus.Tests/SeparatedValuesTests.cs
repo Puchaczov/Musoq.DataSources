@@ -19,7 +19,7 @@ select
     Message,
     Engine.Is_Turned_On,
     Engine.Oil_Temperature
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
+from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where Engine is not null";
         
         var vm = CreateAndRunVirtualMachine(query);
@@ -45,7 +45,7 @@ where Engine is not null";
         const string query = @"
 select
     Data
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
+from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where Engine is not null";
         
         var vm = CreateAndRunVirtualMachine(query);
@@ -66,7 +66,7 @@ select
     Timestamp,
     Message,
     Exhaust_System.Exhaust_Gas_Temperature
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
+from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where Exhaust_System is not null";
         
         var vm = CreateAndRunVirtualMachine(query);
@@ -88,7 +88,7 @@ select
     Timestamp,
     Message,
     UnknownMessage.RawData
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
+from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where IsWellKnown = false";
         
         var vm = CreateAndRunVirtualMachine(query);
@@ -108,7 +108,7 @@ where IsWellKnown = false";
         const string query = @"
 select
     Engine
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')
+from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where IsWellKnown = false";
         
         var vm = CreateAndRunVirtualMachine(query);
@@ -223,7 +223,7 @@ select
     Message,
     Engine.Is_Turned_On,
     Engine.Oil_Temperature
-from #can.separatedvalues('./Data/7/7.csv', './Data/7/7.dbc', 'hex')
+from #can.separatedvalues('./Data/7/7.csv', './Data/7/7.dbc', 'hex', 'big')
 where Engine is not null";
         
         var vm = CreateAndRunVirtualMachine(query);
@@ -249,7 +249,7 @@ where Engine is not null";
         const string query = @"
 select
     Driving.Vehicle_Speed
-from #can.separatedvalues('./Data/8/8.csv', './Data/8/8.dbc')";
+from #can.separatedvalues('./Data/8/8.csv', './Data/8/8.dbc', 'dec')";
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -267,7 +267,7 @@ from #can.separatedvalues('./Data/8/8.csv', './Data/8/8.dbc')";
 select
     ID,
     Driving.Vehicle_Speed
-from #can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc')";
+from #can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc', 'dec', 'big')";
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -277,6 +277,49 @@ from #can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc')";
         
         Assert.AreEqual(444u, table[0].Values[0]);
         Assert.AreEqual(65.53d, table[0].Values[1]);
+    }
+
+    [TestMethod]
+    public void X()
+    {
+        const string query = @"
+select
+    m.DecodeMessage('Is_Turned_On', s.Data)
+from #can.separatedvalues('./Data/10/10.csv', './Data/10/10.dbc', 'dec', 'little') s
+inner join #can.messages('./Data/10/10.dbc') m on s.ID = m.ID";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(2, table.Count);
+        
+        Assert.AreEqual(0d, table[0].Values[0]);
+        Assert.AreEqual(1d, table[1].Values[0]);
+    }
+    
+    [TestMethod]
+    public void Y()
+    {
+        const string query = @"
+select
+    m.DecodeMessage('Vehicle_Speed', s.Data),
+    m.EncodeMessage('Vehicle_Speed', m.DecodeMessage('Vehicle_Speed', s.Data))
+from #can.separatedvalues('./Data/11/11.csv', './Data/11/11.dbc', 'dec', 'big') s
+inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.ID";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+
+        ulong hexValue = 0x0000009099010000;
+        var bytes = BitConverter.GetBytes(hexValue);
+        Array.Reverse(bytes);
+        hexValue = BitConverter.ToUInt64(bytes, 0);
+        
+        Assert.AreEqual(hexValue, table[0].Values[1]);
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)

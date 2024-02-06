@@ -26,7 +26,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte value) => EncodeMessage(message, name, value, v => v);
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts short to encoded signal of a message for CAN bus.
@@ -37,7 +37,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, short value) => EncodeMessage(message, name, value, v => v);
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, short value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts ushort to encoded signal of a message for CAN bus.
@@ -48,7 +48,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ushort value) => EncodeMessage(message, name, value, v => v);
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ushort value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts int to encoded signal of a message for CAN bus.
@@ -59,7 +59,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, int value) => EncodeMessage(message, name, value, v => v);
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, int value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts uint to encoded signal of a message for CAN bus.
@@ -70,7 +70,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, uint value) => EncodeMessage(message, name, value, v => v);
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, uint value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts long to encoded signal of a message for CAN bus.
@@ -81,7 +81,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, long value) => EncodeMessage(message, name, value, v => v);
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, long value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts ulong to encoded signal of a message for CAN bus.
@@ -92,7 +92,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ulong value) => EncodeMessage(message, name, value, v => v);
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ulong value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts float to encoded signal of a message for CAN bus.
@@ -103,7 +103,18 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, float value) => EncodeMessage(message, name, value, v => v);
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, float value) => EncodeMessage(message, name, value, v => v);
+    
+    /// <summary>
+    /// Converts double to encoded signal of a message for CAN bus.
+    /// </summary>
+    /// <param name="message">Message frame.</param>
+    /// <param name="name">Name of the signal.</param>
+    /// <param name="value">Value to encode.</param>
+    /// <returns>Encoded signal.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    [BindableMethod]
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, double value) => EncodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Converts structured json to encoded signals of a message for CAN bus. It's structure is of `{ signalName1: signalValue1, ..., signalNameN : signalValueN }`
@@ -113,7 +124,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Encoded signals.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string jsonValues)
+    public ulong EncodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string jsonValues)
     {
         using var reader = new JTokenReader(JObject.Parse(jsonValues));
         var obj = JObject.Load(reader);
@@ -135,7 +146,7 @@ public class CANBusLibrary : LibraryBase
             encodedMessage |= Packer.TxSignalPack(doubleValue, signal);
         }
 
-        return BitConverter.GetBytes(encodedMessage);
+        return encodedMessage;
     }
     
     /// <summary>
@@ -147,7 +158,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte value) => DecodeMessage(message, name, value, v => v);
+    public double DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, byte value) => DecodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Treats short as encoded signal of a message for CAN bus and decodes it.
@@ -158,7 +169,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, short value) => DecodeMessage(message, name, value,
+    public double DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, short value) => DecodeMessage(message, name, value,
         v =>
         {
             ulong result = 0;
@@ -177,7 +188,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ushort value) => DecodeMessage(message, name, value, v => v);
+    public double DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ushort value) => DecodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Treats int as encoded signal of a message for CAN bus and decodes it.
@@ -188,7 +199,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, int value) => DecodeMessage(message, name, value,
+    public double DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, int value) => DecodeMessage(message, name, value,
         v =>
         {
             ulong result = 0;
@@ -207,7 +218,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, uint value) => DecodeMessage(message, name, value, v => v);
+    public double DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, uint value) => DecodeMessage(message, name, value, v => v);
     
     /// <summary>
     /// Treats long as encoded signal of a message for CAN bus and decodes it.
@@ -218,7 +229,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, long value) => DecodeMessage(message, name, value,
+    public double DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, long value) => DecodeMessage(message, name, value,
         v =>
         {
             ulong result = 0;
@@ -237,7 +248,7 @@ public class CANBusLibrary : LibraryBase
     /// <returns>Decoded signal.</returns>
     /// <exception cref="InvalidOperationException"></exception>
     [BindableMethod]
-    public byte[] DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ulong value) => DecodeMessage(message, name, value, v => v);
+    public double DecodeMessage([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, ulong value) => DecodeMessage(message, name, value, v => v);
 
     /// <summary>
     /// Converts timestamp to date time offset.
@@ -274,7 +285,7 @@ public class CANBusLibrary : LibraryBase
         return dateTimeOffset;
     }
     
-    private static byte[] EncodeMessage<TNumeric>([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, TNumeric value, Func<TNumeric, double> convertToDouble)
+    private static ulong EncodeMessage<TNumeric>([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, TNumeric value, Func<TNumeric, double> convertToDouble)
         where TNumeric : struct, IComparable, IComparable<TNumeric>, IConvertible, IEquatable<TNumeric>, IFormattable
     {
         var signal = message.Message?.Signals.FirstOrDefault(s => s.Name == name);
@@ -283,12 +294,10 @@ public class CANBusLibrary : LibraryBase
             throw new InvalidOperationException($"Signal with name {name} does not exist.");
         
         var doubleValue = convertToDouble(value);
-        var encodedMessage = Packer.TxSignalPack(doubleValue, signal);
-        
-        return BitConverter.GetBytes(encodedMessage);
+        return Packer.TxSignalPack(doubleValue, signal);
     }
     
-    private static byte[] DecodeMessage<TNumeric>([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, TNumeric value, Func<TNumeric, ulong> convertToUInt64)
+    private static double DecodeMessage<TNumeric>([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, TNumeric value, Func<TNumeric, ulong> convertToUInt64)
         where TNumeric : struct, IComparable, IComparable<TNumeric>, IConvertible, IEquatable<TNumeric>, IFormattable
     {
         var signal = message.Message?.Signals.FirstOrDefault(s => s.Name == name);
@@ -297,9 +306,6 @@ public class CANBusLibrary : LibraryBase
             throw new InvalidOperationException($"Signal with name {name} does not exist.");
 
         var uint64Value = convertToUInt64(value);
-        var unpackedValue = Packer.RxSignalUnpack(uint64Value, signal);
-        var bytes = BitConverter.GetBytes(unpackedValue);
-        
-        return bytes;
+        return Packer.RxSignalUnpack(uint64Value, signal);
     }
 }
