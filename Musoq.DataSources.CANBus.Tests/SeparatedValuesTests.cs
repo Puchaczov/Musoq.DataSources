@@ -280,7 +280,7 @@ from #can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc', 'dec', 'big')";
     }
 
     [TestMethod]
-    public void X()
+    public void WhenIsTurnedOnEncodedWithLittleEndian_ShouldSucceed()
     {
         const string query = @"
 select
@@ -299,11 +299,10 @@ inner join #can.messages('./Data/10/10.dbc') m on s.ID = m.ID";
     }
     
     [TestMethod]
-    public void Y()
+    public void WhenVehicleSpeedIsEncodedWithBigEndian_ShouldSucceed()
     {
         const string query = @"
 select
-    m.DecodeMessage('Vehicle_Speed', s.Data),
     m.EncodeMessage('Vehicle_Speed', m.DecodeMessage('Vehicle_Speed', s.Data))
 from #can.separatedvalues('./Data/11/11.csv', './Data/11/11.dbc', 'dec', 'big') s
 inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.ID";
@@ -319,7 +318,7 @@ inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.ID";
         Array.Reverse(bytes);
         hexValue = BitConverter.ToUInt64(bytes, 0);
         
-        Assert.AreEqual(hexValue, table[0].Values[1]);
+        Assert.AreEqual(hexValue, table[0].Values[0]);
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)

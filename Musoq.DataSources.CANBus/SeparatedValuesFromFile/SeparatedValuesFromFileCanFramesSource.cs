@@ -109,7 +109,12 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
         if (recordData.All(char.IsDigit))
         {
             var value = ulong.Parse(recordData);
-            return BitConverter.GetBytes(value);
+            var bytes = BitConverter.GetBytes(value);
+            
+            if (BitConverter.IsLittleEndian != isLittleEndian)
+                Array.Reverse(bytes);
+            
+            return bytes;
         }
         
         //tread data as binary string and convert to byte array (ie. 0b1010)
@@ -118,6 +123,10 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
             var binaryString = recordData.Substring(2);
             var value = Convert.ToUInt32(binaryString, 2);
             var bytes = BitConverter.GetBytes(value);
+            
+            if (BitConverter.IsLittleEndian != isLittleEndian)
+                Array.Reverse(bytes);
+            
             return bytes;
         }
         
