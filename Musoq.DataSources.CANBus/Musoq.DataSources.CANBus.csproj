@@ -4,7 +4,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <Platforms>AnyCPU;x64</Platforms>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.10.15</Version>
+        <Version>0.10.16</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -30,9 +30,13 @@
         <PackageReference Include="CsvHelper" Version="30.0.1" />
         <PackageReference Include="DbcParserLib" Version="1.5.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="2.5.1" />
+        <PackageReference Include="Musoq.Parser" Version="2.5.1">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
         <PackageReference Include="Musoq.Plugins" Version="4.7.1" />
-        <PackageReference Include="Musoq.Schema" Version="5.1.5" />
+        <PackageReference Include="Musoq.Schema" Version="5.1.5">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
         <PackageReference Include="Iot.Device.Bindings" Version="3.1.0" />
         <PackageReference Include="System.Device.Gpio" Version="3.1.0" />
     </ItemGroup>
@@ -41,15 +45,11 @@
       <ProjectReference Include="..\Musoq.DataSources.InferrableDataSourceHelpers\Musoq.DataSources.InferrableDataSourceHelpers.csproj" />
     </ItemGroup>
 
-
-
     <ItemGroup>
       <Compile Update="Components\CANBusApi.cs">
         <DependentUpon>ICANBusApi.cs</DependentUpon>
       </Compile>
     </ItemGroup>
-
-
 
     <ItemGroup>
       <Folder Include="Exceptions\" />

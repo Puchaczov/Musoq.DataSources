@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.11</Version>
+        <Version>1.0.12</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -28,9 +28,13 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
       <PackageReference Include="Docker.DotNet" Version="3.125.15" />
-      <PackageReference Include="Musoq.Parser" Version="2.5.1" />
-      <PackageReference Include="Musoq.Plugins" Version="4.7.1" />
-      <PackageReference Include="Musoq.Schema" Version="5.1.5" />
+        <PackageReference Include="Musoq.Parser" Version="2.5.1">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="Musoq.Plugins" Version="4.7.1" />
+        <PackageReference Include="Musoq.Schema" Version="5.1.5">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

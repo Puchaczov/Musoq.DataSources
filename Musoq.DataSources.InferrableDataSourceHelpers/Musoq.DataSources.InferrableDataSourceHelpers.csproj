@@ -8,9 +8,15 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
-      <PackageReference Include="Musoq.Parser" Version="2.5.1" />
-      <PackageReference Include="Musoq.Plugins" Version="4.7.1" />
-      <PackageReference Include="Musoq.Schema" Version="5.1.5" />
+        <PackageReference Include="Musoq.Parser" Version="2.5.1">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="Musoq.Plugins" Version="4.7.1">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="Musoq.Schema" Version="5.1.5">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
