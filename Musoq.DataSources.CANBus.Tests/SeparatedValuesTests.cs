@@ -286,7 +286,7 @@ from #can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc', 'dec', 'big')";
 select
     m.DecodeMessage('Is_Turned_On', s.Data)
 from #can.separatedvalues('./Data/10/10.csv', './Data/10/10.dbc', 'dec', 'little') s
-inner join #can.messages('./Data/10/10.dbc') m on s.ID = m.ID";
+inner join #can.messages('./Data/10/10.dbc') m on s.ID = m.Id";
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -305,7 +305,7 @@ inner join #can.messages('./Data/10/10.dbc') m on s.ID = m.ID";
 select
     m.EncodeMessage('Vehicle_Speed', m.DecodeMessage('Vehicle_Speed', s.Data))
 from #can.separatedvalues('./Data/11/11.csv', './Data/11/11.dbc', 'dec', 'big') s
-inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.ID";
+inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.Id";
         
         var vm = CreateAndRunVirtualMachine(query);
         

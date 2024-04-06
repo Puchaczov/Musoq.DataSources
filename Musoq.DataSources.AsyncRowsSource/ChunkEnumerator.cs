@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
-using Musoq.DataSources.InferrableDataSourceHelpers.Exceptions;
+using Musoq.DataSources.AsyncRowsSource.Exceptions;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.InferrableDataSourceHelpers;
+namespace Musoq.DataSources.AsyncRowsSource;
 
     public class ChunkEnumerator : IEnumerator<IObjectResolver>
     {

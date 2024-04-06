@@ -5,7 +5,7 @@ namespace Musoq.DataSources.OpenAI;
 /// <summary>
 /// Represents an OpenAI entity with various configuration properties.
 /// </summary>
-public class OpenAiEntity : Musoq.DataSources.OpenAIHelpers.OpenAiEntity
+public class OpenAiEntity : OpenAiEntityBase
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenAiEntity"/> class with the specified parameters.

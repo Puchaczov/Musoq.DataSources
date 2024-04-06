@@ -9,7 +9,7 @@ internal static class SignalsSourceHelper
 {
     internal static readonly IDictionary<string, int> SignalsNameToIndexMap = new Dictionary<string, int>
     {
-        { nameof(SignalEntity.ID), 0 },
+        { nameof(SignalEntity.Id), 0 },
         { nameof(SignalEntity.Name), 1 },
         { nameof(SignalEntity.StartBit), 2 },
         { nameof(SignalEntity.Length), 3 },
@@ -29,7 +29,7 @@ internal static class SignalsSourceHelper
 
     internal static readonly IDictionary<int, Func<SignalEntity, object>> SignalsIndexToMethodAccessMap = new Dictionary<int, Func<SignalEntity, object>>
     {
-        { 0, f => f.ID },
+        { 0, f => f.Id },
         { 1, f => f.Name },
         { 2, f => f.StartBit },
         { 3, f => f.Length },
@@ -49,7 +49,7 @@ internal static class SignalsSourceHelper
 
     internal static ISchemaColumn[] Columns => new ISchemaColumn[]
     {
-        new SchemaColumn(nameof(SignalEntity.ID), 0, typeof(uint)),
+        new SchemaColumn(nameof(SignalEntity.Id), 0, typeof(uint)),
         new SchemaColumn(nameof(SignalEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(SignalEntity.StartBit), 2, typeof(ushort)),
         new SchemaColumn(nameof(SignalEntity.Length), 3, typeof(ushort)),

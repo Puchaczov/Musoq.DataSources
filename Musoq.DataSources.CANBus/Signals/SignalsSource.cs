@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
-using Musoq.DataSources.InferrableDataSourceHelpers;
+using Musoq.DataSources.AsyncRowsSource;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
@@ -27,7 +27,7 @@ internal class SignalsSource : AsyncRowsSourceBase<Signal>
         
         chunkedSource.Add(
             signals.Select(f => new EntityResolver<SignalEntity>(
-                new SignalEntity(f.Signal, f.MessageName), 
+                new SignalEntity(f.Signal, f.Message), 
                 SignalsSourceHelper.SignalsNameToIndexMap, 
                 SignalsSourceHelper.SignalsIndexToMethodAccessMap)
             ).ToList(), 

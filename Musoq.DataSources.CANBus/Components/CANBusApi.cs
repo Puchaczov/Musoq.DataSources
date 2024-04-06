@@ -33,11 +33,11 @@ internal class CANBusApi : ICANBusApi
         return _dbc.Messages.ToArray();
     }
 
-    public async Task<(Signal Signal, string MessageName)[]> GetMessagesSignalsAsync(CancellationToken cancellationToken)
+    public async Task<(Signal Signal, Message Message)[]> GetMessagesSignalsAsync(CancellationToken cancellationToken)
     {
         _dbc ??= await ParseFromPathAsync(cancellationToken);
         
-        return _dbc.Messages.SelectMany(f => f.Signals.Select(s => (s, f.Name))).ToArray();
+        return _dbc.Messages.SelectMany(f => f.Signals.Select(s => (s, f))).ToArray();
     }
 
     private async Task<Dbc> ParseFromPathAsync(CancellationToken cancellationToken)

@@ -8,22 +8,28 @@ namespace Musoq.DataSources.CANBus.Signals;
 public class SignalEntity
 {
     private readonly Signal _signal;
+    private readonly Message _message;
 
     /// <summary>
     /// Creates a new instance of <see cref="SignalEntity"/>.
     /// </summary>
     /// <param name="signal">The signal.</param>
     /// <param name="messageName">The message name.</param>
-    public SignalEntity(Signal signal, string messageName)
+    public SignalEntity(Signal signal, Message message)
     {
         _signal = signal;
-        MessageName = messageName;
+        _message = message;
     }
     
     /// <summary>
     /// Gets the can signal id.
     /// </summary>
-    public uint ID => _signal.ID;
+    public uint Id => _signal.ID;
+    
+    /// <summary>
+    /// Gets the can signal message id.
+    /// </summary>
+    public uint MessageId => _message.ID;
     
     /// <summary>
     /// Gets the can signal name.
@@ -98,5 +104,5 @@ public class SignalEntity
     /// <summary>
     /// Gets the message name that the signal belongs to.
     /// </summary>
-    public string MessageName { get; }
+    public string MessageName => _message.Name;
 }

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.InferrableDataSourceHelpers;
+namespace Musoq.DataSources.AsyncRowsSource;
 
 public class ChunkedSource : IEnumerable<IObjectResolver>
 {

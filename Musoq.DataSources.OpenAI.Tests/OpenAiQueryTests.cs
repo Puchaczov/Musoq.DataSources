@@ -124,6 +124,45 @@ public class OpenAiQueryTests
         Assert.AreEqual(1, table.Count);
         Assert.IsTrue(table[0][0] is string[] entities && entities.Contains("a") && entities.Contains("b") && entities.Contains("c"));
     }
+    
+    [TestMethod]
+    public void WhenCountingTokens_ShouldReturnTokenCount()
+    {
+        const string script = "select CountTokens('Hello world!') from #openai.gpt()";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(script, string.Empty);
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+
+        Assert.AreEqual(3, table[0][0]);
+    }
+    
+    [TestMethod]
+    public void WhenCountingTokensForCl100k_base_ShouldReturnTokenCount()
+    {
+        const string script = "select CountTokens('cl100k_base', 'Hello world!') from #openai.gpt()";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(script, string.Empty);
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+
+        Assert.AreEqual(3, table[0][0]);
+    }
+    
+    [TestMethod]
+    public void WhenCountingTokensForP50k_base_ShouldReturnTokenCount()
+    {
+        const string script = "select CountTokens('p50k_base', 'Hello world!') from #openai.gpt()";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(script, string.Empty);
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+
+        Assert.AreEqual(3, table[0][0]);
+    }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, string response)
     {

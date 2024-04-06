@@ -14,5 +14,5 @@ public interface IOpenAiApi
     /// <param name="entity">The entity</param>
     /// <param name="messages">Messages</param>
     /// <returns>ChatResult</returns>
-    Task<ChatResult> GetCompletionAsync(OpenAiEntity entity, IList<ChatMessage> messages);
+    Task<ChatResult> GetCompletionAsync(OpenAiEntityBase entity, IList<ChatMessage> messages);
 }

@@ -2,6 +2,7 @@
 using Musoq.Plugins.Attributes;
 using Newtonsoft.Json;
 using OpenAI_API.Chat;
+using SharpToken;
 
 namespace Musoq.DataSources.OpenAI;
 
@@ -15,7 +16,7 @@ public class OpenAiLibrary : LibraryBase
     private const string SentimentPrompt = 
         @"You are skilled sentiment analyzer. Decide whether the sentiment of a text is POSITIVE, NEGATIVE or NEUTRAL. Responde by using only those three values.";
 
-    private const string IsContentAboutPrompt = 
+    private const string ContentAboutPrompt = 
         @"You are highly intelligent answering bot. For provided text respond with YES or NO whether the text is about the given question. Do not say anything but YES or NO.";
 
     private const string ExtractEntitiesPrompt = 
@@ -41,7 +42,7 @@ public class OpenAiLibrary : LibraryBase
         var api = entity.Api;
         var isContentAboutResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
         {                    
-            new(ChatMessageRole.System, IsContentAboutPrompt),
+            new(ChatMessageRole.System, ContentAboutPrompt),
             new(ChatMessageRole.User, content),
             new(ChatMessageRole.User, question),
         }));
@@ -151,6 +152,34 @@ public class OpenAiLibrary : LibraryBase
         }
     }
     
+    /// <summary>
+    /// Counts the number of tokens in the provided content using the specified model.
+    /// </summary>
+    /// <param name="entity">Entity</param>
+    /// <param name="content">Content</param>
+    /// <returns>Number of tokens</returns>
+    [BindableMethod]
+    public int CountTokens([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content)
+    {
+        var encoding = GptEncoding.GetEncodingForModel(entity.Model);
+
+        return encoding.CountTokens(content);
+    }
+
+    /// <summary>
+    /// Counts the number of tokens in the provided content using the specified model.
+    /// </summary>
+    /// <param name="encodingName">Encoding name: r50k_base, p50k_base, p50k_edit, cl100k_base</param>
+    /// <param name="content">Content</param>
+    /// <returns>Number of tokens</returns>
+    [BindableMethod]
+    public int CountTokens(string encodingName, string content)
+    {
+        var encoding = GptEncoding.GetEncoding(encodingName);
+
+        return encoding.CountTokens(content);
+    }
+    
     private static async Task<string> DoAsynchronously(Func<Task<ChatResult>> func)
     {
         var result = func();
@@ -168,7 +197,7 @@ public class OpenAiLibrary : LibraryBase
             if (message == null)
                 return stringResult;
             
-            return message.Content ?? string.Empty;
+            return message.TextContent ?? string.Empty;
         }
         catch (Exception)
         {

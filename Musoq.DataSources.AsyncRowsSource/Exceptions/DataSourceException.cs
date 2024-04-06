@@ -1,4 +1,4 @@
-﻿namespace Musoq.DataSources.InferrableDataSourceHelpers.Exceptions;
+﻿namespace Musoq.DataSources.AsyncRowsSource.Exceptions;
 
 public class DataSourceException : Exception
 {

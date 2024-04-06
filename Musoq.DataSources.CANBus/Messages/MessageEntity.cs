@@ -27,12 +27,12 @@ public class MessageEntity : ICANDbcMessage
     /// <summary>
     /// Gets the can message id.
     /// </summary>
-    public uint ID => Message.ID;
+    public uint Id => Message.ID;
     
     /// <summary>
     /// Determine whether the can message is extended.
     /// </summary>
-    public bool IsExtID => Message.IsExtID;
+    public bool IsExtId => Message.IsExtID;
     
     /// <summary>
     /// Gets the can message name.

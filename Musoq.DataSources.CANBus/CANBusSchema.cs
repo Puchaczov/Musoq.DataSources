@@ -53,8 +53,8 @@ public class CANBusSchema : SchemaBase
     /// </from>
     /// <description>Parses dbc file and returns all messages defined within it.</description>
     /// <columns>
-    /// <column name="ID" type="uint">ID of the message entity</column>
-    /// <column name="IsExtID" type="bool">Is external ID</column>
+    /// <column name="Id" type="uint">ID of the message entity</column>
+    /// <column name="IsExtId" type="bool">Is external Id</column>
     /// <column name="Name" type="string">Name of the message entity</column>
     /// <column name="DLC" type="ushort">DLC of the message entity</column>
     /// <column name="Transmitter" type="string">Transmitter of the message entity</column>
@@ -74,7 +74,7 @@ public class CANBusSchema : SchemaBase
     /// </from>
     /// <description>Parses dbc file and returns all signals defined within it.</description>
     /// <columns>
-    /// <column name="ID" type="uint">ID of the signal entity</column>
+    /// <column name="Id" type="uint">Id of the signal entity</column>
     /// <column name="Name" type="string">Name of the signal entity</column>
     /// <column name="StartBit" type="ushort">Start bit of the signal entity</column>
     /// <column name="Length" type="ushort">Length of the signal entity</column>

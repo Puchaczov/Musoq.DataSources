@@ -12,7 +12,7 @@ public class OpenAiApi : IOpenAiApi
         _api = new OpenAIAPI(new APIAuthentication(apiKey));
     }
 
-    public Task<ChatResult> GetCompletionAsync(OpenAiEntity entity, IList<ChatMessage> messages)
+    public Task<ChatResult> GetCompletionAsync(OpenAiEntityBase entity, IList<ChatMessage> messages)
     {
         return _api.Chat.CreateChatCompletionAsync(
             messages: messages, 

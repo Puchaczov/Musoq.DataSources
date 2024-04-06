@@ -53,13 +53,13 @@ public class MessagesOrSignalsTests
         
         Assert.IsTrue(table.Count > 7);
         
-        var row = table.SingleOrDefault(f => f.Values[0].ToString() == "ID");
+        var row = table.SingleOrDefault(f => f.Values[0].ToString() == "Id");
         Assert.IsNotNull(row);
         
         Assert.AreEqual(0, row.Values[1]);
         Assert.AreEqual("System.UInt32", row.Values[2]);
         
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "IsExtID");
+        row = table.SingleOrDefault(f => f.Values[0].ToString() == "IsExtId");
         Assert.IsNotNull(row);
         
         Assert.AreEqual(1, row.Values[1]);
@@ -107,7 +107,7 @@ public class MessagesOrSignalsTests
         
         Assert.IsTrue(table.Count > 15);
         
-        var row = table.SingleOrDefault(f => f.Values[0].ToString() == "ID");
+        var row = table.SingleOrDefault(f => f.Values[0].ToString() == "Id");
         Assert.IsNotNull(row);
         
         Assert.AreEqual(0, row.Values[1]);
@@ -291,15 +291,15 @@ from #can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_Sys
     {
         const string query = @"
 select
-    ID,
-    IsExtID,
+    Id,
+    IsExtId,
     Name,
     DLC,
     Transmitter,
     Comment,
     CycleTime
 from #can.messages('./Data/1/1.dbc')
-where ID = 293";
+where Id = 293";
         
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -321,7 +321,7 @@ where ID = 293";
     {
         const string query = @"
 select
-    ID,
+    Id,
     Name,
     StartBit,
     Length,
