@@ -1,5 +1,4 @@
-﻿using Musoq.DataSources.OpenAIHelpers;
-using Musoq.Schema;
+﻿using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.OpenAI;

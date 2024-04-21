@@ -1,5 +1,4 @@
-﻿using Musoq.DataSources.OpenAIHelpers;
-using Musoq.Schema;
+﻿using Musoq.Schema;
 
 namespace Musoq.DataSources.OpenAI.Tests.Components;
 

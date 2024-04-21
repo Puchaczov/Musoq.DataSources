@@ -5,7 +5,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.Converter;
 using Musoq.DataSources.OpenAI.Tests.Components;
-using Musoq.DataSources.OpenAIHelpers;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
@@ -123,6 +122,54 @@ public class OpenAiQueryTests
         
         Assert.AreEqual(1, table.Count);
         Assert.IsTrue(table[0][0] is string[] entities && entities.Contains("a") && entities.Contains("b") && entities.Contains("c"));
+    }
+    
+    [TestMethod]
+    public void WhenCallingLlmPerform_ShouldDoWhateverInstructedFor()
+    {
+        const string script = "select LlmPerform('extract email from text', 'example email is me@you.com and here is something else') from #openai.gpt()";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(script, "me@you.com");
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        Assert.AreEqual("me@you.com", table[0][0]);
+    }
+    
+    [TestMethod]
+    public void WhenCallingDescribeImage_ShouldReturnImageDescription()
+    {
+        const string script = "select DescribeImage('base64OfImage') from #openai.gpt()";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(script, "image description");
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        Assert.AreEqual("image description", table[0][0]);
+    }
+    
+    [TestMethod]
+    public void WhenCallingAskImage_ShouldReturnResponse()
+    {
+        const string script = "select AskImage('what color is the water in the picture?', 'base64OfImage') from #openai.gpt()";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(script, "dirty blue");
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        Assert.AreEqual("dirty blue", table[0][0]);
+    }
+    
+    [TestMethod]
+    public void WhenCallingIsQuestionApplicableToImage_ShouldReturnResponse()
+    {
+        const string script = "select IsQuestionApplicableToImage('does it contain plane in the background?', 'base64OfImage') from #openai.gpt()";
+        
+        var vm = CreateAndRunVirtualMachineWithResponse(script, "{ result: true }");
+        var table = vm.Run();
+        
+        Assert.AreEqual(1, table.Count);
+        Assert.AreEqual(true, table[0][0]);
     }
     
     [TestMethod]

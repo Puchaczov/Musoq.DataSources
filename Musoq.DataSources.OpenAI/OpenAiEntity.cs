@@ -1,6 +1,4 @@
-﻿using Musoq.DataSources.OpenAIHelpers;
-
-namespace Musoq.DataSources.OpenAI;
+﻿namespace Musoq.DataSources.OpenAI;
 
 /// <summary>
 /// Represents an OpenAI entity with various configuration properties.

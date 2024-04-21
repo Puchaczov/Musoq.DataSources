@@ -1,5 +1,4 @@
 ﻿using System;
-using Musoq.DataSources.OpenAIHelpers;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using OpenAI_API.Models;
@@ -27,7 +26,7 @@ internal class TestsOpenAiSchema : OpenAiSchema
     {
         return new TestsOpenAiSingleRowSource(_openAiApi, new OpenAiRequestInfo
         {
-            Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? Model.DavinciText : Model.DavinciText,
+            Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? Model.ChatGPTTurbo : Model.ChatGPTTurbo,
             MaxTokens = parameters.Length > 1 ? Convert.ToInt32(parameters[1]) : 4000,
             Temperature = parameters.Length > 2 ? Convert.ToDouble(parameters[2]) : 0.0,
             FrequencyPenalty = parameters.Length > 3 ? Convert.ToDouble(parameters[3]) : 0.0,

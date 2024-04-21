@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>1.0.1</Version>
+        <Authors>Jakub Puchała</Authors>
+        <Product>Musoq</Product>
+        <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageTags>sql, ollama, dotnet-core</PackageTags>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageId>Musoq.DataSources.Ollama</PackageId>
+    </PropertyGroup>
+
+    <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
+        <ItemGroup>
+            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="OllamaSharp" Version="1.1.1" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="Musoq.Parser" Version="2.5.2">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="Musoq.Plugins" Version="4.7.1" />
+        <PackageReference Include="Musoq.Schema" Version="5.1.5">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="SharpToken" Version="2.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Musoq.DataSources.LLMHelpers\Musoq.DataSources.LLMHelpers.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="OllamaApi.cs">
+        <DependentUpon>IOllamaApi.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
+</Project>

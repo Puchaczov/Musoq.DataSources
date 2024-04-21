@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.DataSources.OpenAIHelpers;
 using Musoq.Schema;
 using OpenAI_API.Chat;
 using OpenAI_API.Models;
@@ -24,11 +23,11 @@ public class OpenAiSingleRowSourceTests
                 Array.Empty<ISchemaColumn>(),
                 new Dictionary<string, string>()
                 {
-                    {"OPENAI_API_KEY", "OPEN_AI_KEY"}
+                    {"OPENAI_API_KEY", "OPENAI_API_KEY"}
                 },
                 (null, null, null)), new OpenAiRequestInfo()
             {
-                Model = Model.DavinciText
+                Model = Model.ChatGPTTurbo
             });
 
         var fired = source.Rows.Count();
@@ -44,7 +43,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.Sentiment(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -62,7 +61,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.Sentiment(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -80,7 +79,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.Sentiment(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -98,7 +97,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.Sentiment(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -116,7 +115,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.SummarizeContent(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -134,7 +133,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.IsContentAbout(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -153,7 +152,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.IsContentAbout(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -172,7 +171,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.TranslateContent(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -192,7 +191,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.Entities(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 
@@ -211,7 +210,7 @@ public class OpenAiSingleRowSourceTests
         var result = library.Entities(
             new OpenAiEntity(
                 mockOpenAiApi.Object, 
-                Model.DavinciText, 
+                Model.ChatGPTTurbo, 
                 0, 
                 0, 
                 0, 

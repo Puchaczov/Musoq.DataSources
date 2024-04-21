@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.DataSources.OpenAIHelpers;
 using OpenAI_API.Models;
 
 namespace Musoq.DataSources.OpenAI.Tests;

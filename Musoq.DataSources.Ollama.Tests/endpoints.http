@@ -1,0 +1,8 @@
+GET http://localhost:11434/api/tags
+
+POST http://localhost:11434/api/generate
+
+{
+    "model" : "llava:13b",
+    "prompt": "why is the sky blue?"
+}

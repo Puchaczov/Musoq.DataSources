@@ -1,10 +1,19 @@
-﻿namespace Musoq.DataSources.OpenAIHelpers;
+﻿namespace Musoq.DataSources.OpenAI;
 
 /// <summary>
 /// Represents an OpenAI entity with various configuration properties.
 /// </summary>
 public abstract class OpenAiEntityBase
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenAiEntityBase"/> class with the specified parameters.
+    /// </summary>
+    /// <param name="api">The Api</param>
+    /// <param name="model">The model</param>
+    /// <param name="frequencyPenalty">The frequency penalty</param>
+    /// <param name="maxTokens">The maximum number of tokens</param>
+    /// <param name="presencePenalty">The presence penalty</param>
+    /// <param name="temperature">The temperature</param>
     protected OpenAiEntityBase(IOpenAiApi api, string? model, double frequencyPenalty, int maxTokens, double presencePenalty, double temperature)
     {
         Api = api;

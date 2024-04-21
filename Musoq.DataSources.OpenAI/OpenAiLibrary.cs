@@ -1,4 +1,6 @@
-﻿using Musoq.Plugins;
+﻿using System.Text;
+using Musoq.DataSources.LLMHelpers;
+using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
 using Newtonsoft.Json;
 using OpenAI_API.Chat;
@@ -11,7 +13,7 @@ namespace Musoq.DataSources.OpenAI;
 /// to perform various natural language processing tasks such as sentiment analysis,
 /// text summarization, translation, and entity extraction.
 /// </summary>
-public class OpenAiLibrary : LibraryBase
+public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEntity>
 {
     private const string SentimentPrompt = 
         @"You are skilled sentiment analyzer. Decide whether the sentiment of a text is POSITIVE, NEGATIVE or NEUTRAL. Responde by using only those three values.";
@@ -151,7 +153,113 @@ public class OpenAiLibrary : LibraryBase
             return Array.Empty<string>();
         }
     }
-    
+
+    /// <summary>
+    /// Performs the specified action on the provided entity using the OpenAI API and returns the result.
+    /// </summary>
+    /// <param name="entity">OpenAI entity</param>
+    /// <param name="whatToDo">Action to perform</param>
+    /// <param name="column">Column</param>
+    /// <typeparam name="TColumnType">Column type</typeparam>
+    /// <returns>Result</returns>
+    [BindableMethod]
+    public string LlmPerform<TColumnType>([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string whatToDo, TColumnType column)
+    {
+        var api = entity.Api;
+        var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
+        {
+            new(ChatMessageRole.System, whatToDo),
+            new(ChatMessageRole.User, column?.ToString())
+        }));
+        
+        return translateResultTask.Result;
+    }
+
+    /// <summary>
+    /// Describes the provided image using the OpenAI API and returns a description of the image.
+    /// </summary>
+    /// <param name="entity">Entity</param>
+    /// <param name="imageBase64">Base64 encoded image</param>
+    /// <returns>Image description</returns>
+    [BindableMethod]
+    public string DescribeImage([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string imageBase64)
+    {
+        var api = entity.Api;
+        var describeResultTask = DoAsynchronously(() =>
+        {
+            const string youAreImageDescriberDescribeTheImage = "You are image describer. Describe the image.";
+            return api.GetCompletionAsync(entity, new List<ChatMessage>()
+            {
+                new(ChatMessageRole.System, youAreImageDescriberDescribeTheImage),
+                new(ChatMessageRole.User, string.Empty, new ChatMessage.ImageInput[] {new(Encoding.UTF8.GetBytes(imageBase64))})
+            });
+        });
+        
+        return describeResultTask.Result;
+    }
+
+    /// <summary>
+    /// Asks a question about the provided image using the OpenAI API and returns the answer to the question.
+    /// </summary>
+    /// <param name="entity">Entity</param>
+    /// <param name="question">Question</param>
+    /// <param name="imageBase64">Base64 encoded image</param>
+    /// <returns>Answer to the question</returns>
+    [BindableMethod]
+    public string AskImage([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string question, string imageBase64)
+    {
+        var api = entity.Api;
+        var askResultTask = DoAsynchronously(() =>
+        {
+            const string youAreImageQuestionerAskQuestionAboutImage = "You are image questioner. Ask a question about the image.";
+            return api.GetCompletionAsync(entity, new List<ChatMessage>()
+            {
+                new(ChatMessageRole.System, youAreImageQuestionerAskQuestionAboutImage),
+                new(ChatMessageRole.User, question, new ChatMessage.ImageInput[] { new(Encoding.UTF8.GetBytes(imageBase64)) })
+            });
+        });
+        
+        return askResultTask.Result;
+    }
+
+    /// <summary>
+    /// Asks a question about the provided image using the OpenAI API and returns a boolean result.
+    /// </summary>
+    /// <param name="entity">The OpenAI entity</param>
+    /// <param name="question">The question</param>
+    /// <param name="imageBase64">The base64 encoded image</param>
+    /// <returns>True if the image answers the question, otherwise false</returns>
+    [BindableMethod]
+    public bool IsQuestionApplicableToImage([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string question, string imageBase64)
+    {
+        var api = entity.Api;
+        var askResultTask = DoAsynchronously(() =>
+        {
+            var youAreImageQuestionerAskQuestionAboutImage = $"You are image based question answerer. Return only answer for the following question: {question}. You must respond with json {{ result: boolean }}. Do not comment or explain anything.";
+            return api.GetCompletionAsync(entity, new List<ChatMessage>
+            {
+                new(ChatMessageRole.System, youAreImageQuestionerAskQuestionAboutImage),
+                new(ChatMessageRole.User, question, new ChatMessage.ImageInput[] { new(Encoding.UTF8.GetBytes(imageBase64)) })
+            });
+        });
+        
+        var response = askResultTask.Result;
+        
+        try
+        {
+            var result = JsonConvert.DeserializeObject<Dictionary<string, bool>>(response);
+            
+            if (result == null)
+                return false;
+
+            return result["result"];
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     /// <summary>
     /// Counts the number of tokens in the provided content using the specified model.
     /// </summary>
@@ -163,6 +271,20 @@ public class OpenAiLibrary : LibraryBase
     {
         var encoding = GptEncoding.GetEncodingForModel(entity.Model);
 
+        return encoding.CountTokens(content);
+    }
+
+    /// <summary>
+    /// Counts the number of tokens in the provided content using the specified model.
+    /// </summary>
+    /// <param name="content">Content</param>
+    /// <returns>Number of tokens</returns>
+    /// <exception cref="NotImplementedException"></exception>
+    [BindableMethod]
+    public int CountTokens(string content)
+    {
+        var encoding = GptEncoding.GetEncoding("r50k_base");
+        
         return encoding.CountTokens(content);
     }
 
