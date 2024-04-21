@@ -1,15 +1,23 @@
 using OpenAI_API;
 using OpenAI_API.Chat;
 
-namespace Musoq.DataSources.OpenAIHelpers;
+namespace Musoq.DataSources.OpenAI;
 
-public class OpenAiApi : IOpenAiApi
+internal class OpenAiApi : IOpenAiApi
 {
     private readonly OpenAIAPI _api;
 
     public OpenAiApi(string apiKey)
     {
         _api = new OpenAIAPI(new APIAuthentication(apiKey));
+    }
+
+    public OpenAiApi(string apiKey, string apiUrlFormat)
+    {
+        _api = new OpenAIAPI(new APIAuthentication(apiKey))
+        {
+            ApiUrlFormat = apiUrlFormat
+        };
     }
 
     public Task<ChatResult> GetCompletionAsync(OpenAiEntityBase entity, IList<ChatMessage> messages)
