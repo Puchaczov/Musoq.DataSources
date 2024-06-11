@@ -715,7 +715,7 @@ public class KubernetesTests
                             VolumeName = "VolumeName",
                             VolumeMode = "VolumeMode",
                             StorageClassName = "StorageClassName",
-                            Resources = new V1ResourceRequirements
+                            Resources = new V1VolumeResourceRequirements
                             {
                                 Requests = new Dictionary<string, ResourceQuantity>
                                 {
