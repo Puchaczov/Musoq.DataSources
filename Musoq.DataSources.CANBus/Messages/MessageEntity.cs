@@ -1,4 +1,5 @@
-﻿using DbcParserLib.Model;
+﻿using DbcParserLib;
+using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
 
 // ReSharper disable InconsistentNaming
@@ -53,9 +54,9 @@ public class MessageEntity : ICANDbcMessage
     /// Gets the can message comment.
     /// </summary>
     public string Comment => Message.Comment;
-    
+
     /// <summary>
     /// Gets the can message cycle time.
     /// </summary>
-    public int CycleTime => Message.CycleTime;
+    public int CycleTime => Message.CycleTime(out var cycleTime) ? cycleTime : 0;
 }
