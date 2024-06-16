@@ -71,7 +71,7 @@ namespace Musoq.DataSources.Time.Tests
 
         static TimeTests()
         {
-            new Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+            new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
             Culture.ApplyWithDefaultCulture();
         }

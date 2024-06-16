@@ -50,8 +50,8 @@ internal static class ContainersSourceHelper
             {14, info => string.Join(",", info.Ports.Select(f => $"{f.PrivatePort}:{f.PublicPort}").ToList())}
         };
         
-        ContainersColumns = new ISchemaColumn[]
-        {
+        ContainersColumns =
+        [
             new SchemaColumn(nameof(ContainerListResponse.ID), 0, typeof(string)),
             new SchemaColumn(nameof(ContainerListResponse.Names), 1, typeof(IList<string>)),
             new SchemaColumn(nameof(ContainerListResponse.Image), 2, typeof(string)),
@@ -67,6 +67,6 @@ internal static class ContainersSourceHelper
             new SchemaColumn(nameof(ContainerListResponse.NetworkSettings), 12, typeof(SummaryNetworkSettings)),
             new SchemaColumn(nameof(ContainerListResponse.Mounts), 13, typeof(IList<MountPoint>)),
             new SchemaColumn("FlattenPorts", 14, typeof(string))
-        };
+        ];
     }
 }

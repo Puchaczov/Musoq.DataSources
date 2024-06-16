@@ -16,10 +16,10 @@ internal class TestsOpenAiSchema : OpenAiSchema
 
     public ISchemaTable[] GetSchema()
     {
-        return new ISchemaTable[]
-        {
+        return
+        [
             new OpenAiSingleRowTable()
-        };
+        ];
     }
 
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)

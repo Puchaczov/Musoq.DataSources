@@ -49,7 +49,7 @@ namespace Musoq.DataSources.SeparatedValues
                 if (line is null)
                     throw new InvalidOperationException("File is empty.");
 
-                var columns = line.Split(new[] { _separator }, StringSplitOptions.None);
+                var columns = line.Split([_separator], StringSplitOptions.None);
 
                 if (_hasHeader)
                     _columns = columns

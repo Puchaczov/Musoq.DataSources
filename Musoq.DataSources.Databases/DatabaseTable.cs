@@ -14,7 +14,7 @@ public abstract class DatabaseTable : ISchemaTable
     protected DatabaseTable(RuntimeContext runtimeContext)
     {
         _runtimeContext = runtimeContext;
-        Columns = Array.Empty<ISchemaColumn>();
+        Columns = [];
     }
 
     protected void Init(Func<IEnumerable<dynamic>>? returnQuery = null)

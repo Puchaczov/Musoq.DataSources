@@ -16,10 +16,10 @@ internal abstract class FilesSourceBase<TEntity> : RowSourceBase<TEntity>
     protected FilesSourceBase(string path, bool useSubDirectories, RuntimeContext communicator)
     {
         _communicator = communicator;
-        _source = new DirectorySourceSearchOptions[] 
-        { 
-            new(new DirectoryInfo(path).FullName, useSubDirectories) 
-        };
+        _source =
+        [
+            new(new DirectoryInfo(path).FullName, useSubDirectories)
+        ];
     }
 
     protected FilesSourceBase(IReadOnlyTable table, RuntimeContext context)

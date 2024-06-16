@@ -68,7 +68,7 @@ internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFram
             
             chunk.Add(new EntityResolver<MessageFrameEntity>(messageFrame, nameToIndexMapFinal, indexToMethodAccessMapFinal));
             chunkedSource.Add(chunk, cancellationToken);
-            chunk = new List<IObjectResolver>();
+            chunk = [];
             itemsAdded = 0;
         }
         

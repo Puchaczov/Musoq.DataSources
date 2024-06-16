@@ -19,10 +19,10 @@ internal static class ConfigmapsSourceHelper
         {2, t => t.Age}
     };
     
-    internal static readonly ISchemaColumn[] ConfigmapsColumns = new ISchemaColumn[]
-    {
+    internal static readonly ISchemaColumn[] ConfigmapsColumns =
+    [
         new SchemaColumn(nameof(ConfigmapEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(ConfigmapEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(ConfigmapEntity.Age), 2, typeof(DateTime?))
-    };
+    ];
 }

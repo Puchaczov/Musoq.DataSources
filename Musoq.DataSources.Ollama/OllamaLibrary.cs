@@ -143,14 +143,14 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         {
             var entities = JsonConvert.DeserializeObject<ExtractedEntities>(entitiesResult);
 
-            return entities?.Entities ?? Array.Empty<string>();
+            return entities?.Entities ?? [];
         }
         catch (Exception)
         {
             if (throwOnException)
                 throw;
             
-            return Array.Empty<string>();
+            return [];
         }
     }
     
@@ -169,7 +169,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
             const string youAreImageDescriberDescribeTheImage = "You are image describer. Describe the image.";
             return api.GetImageCompletionAsync(
                 entity, 
-                new(ChatRole.User, youAreImageDescriberDescribeTheImage, new[]{ imageBase64 }));
+                new(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
         });
         
         return describeImageResultTask.Result;
@@ -191,7 +191,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
             var youAreImageDescriberDescribeTheImage = $"You are image based question answerer. Return only answer for the following question: {question}.";
             return api.GetImageCompletionAsync(
                 entity, 
-                new(ChatRole.User, youAreImageDescriberDescribeTheImage, new[]{ imageBase64 }));
+                new(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
         });
         
         return describeImageResultTask.Result;
@@ -213,7 +213,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
             var youAreImageDescriberDescribeTheImage = $"You are image based question answerer. Return only answer for the following question: {question}. You must respond with json {{ result: boolean }}. Do not comment or explain anything.";
             return api.GetImageCompletionAsync(
                 entity, 
-                new(ChatRole.User, youAreImageDescriberDescribeTheImage, new[]{ imageBase64 }));
+                new(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
         });
         
         var response = describeImageResultTask.Result;

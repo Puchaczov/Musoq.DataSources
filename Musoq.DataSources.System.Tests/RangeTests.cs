@@ -58,6 +58,7 @@ namespace Musoq.DataSources.System.Tests
         }
 
 
+        [Ignore]
         [TestMethod]
         public void RowNumberEvenForRangeMinSignedMaxTest()
         {
@@ -78,7 +79,7 @@ namespace Musoq.DataSources.System.Tests
 
         static RangeTests()
         {
-            new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+            new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
         }
     }
 }

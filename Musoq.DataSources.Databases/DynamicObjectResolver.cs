@@ -15,7 +15,7 @@ internal class DynamicObjectResolver : IObjectResolver
 
     public bool HasColumn(string name) => _obj.ContainsKey(name);
 
-    public object[] Contexts => new object[] { _obj };
+    public object[] Contexts => [_obj];
 
     public object this[string name] => _obj[name];
 

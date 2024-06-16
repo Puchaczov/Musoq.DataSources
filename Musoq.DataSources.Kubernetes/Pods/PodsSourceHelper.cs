@@ -35,8 +35,8 @@ internal static class PodsSourceHelper
             {7, info => info.IP}
         };
         
-        PodsColumns = new ISchemaColumn[]
-        {
+        PodsColumns =
+        [
             new SchemaColumn(nameof(PodEntity.Namespace), 0, typeof(string)),
             new SchemaColumn(nameof(PodEntity.Name), 1, typeof(string)),
             new SchemaColumn(nameof(PodEntity.ContainersNames), 2, typeof(string)),
@@ -45,7 +45,7 @@ internal static class PodsSourceHelper
             new SchemaColumn(nameof(PodEntity.Restarts), 5, typeof(string)),
             new SchemaColumn(nameof(PodEntity.Statuses), 6, typeof(string)),
             new SchemaColumn(nameof(PodEntity.IP), 7, typeof(string))
-        };
+        ];
     }
     
 }

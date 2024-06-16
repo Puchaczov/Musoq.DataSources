@@ -328,7 +328,7 @@ inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.Id";
 
     static SeparatedValuesTests()
     {
-        new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+        new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
         Culture.ApplyWithDefaultCulture();
     }

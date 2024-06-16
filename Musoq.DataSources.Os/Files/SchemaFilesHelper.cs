@@ -47,8 +47,8 @@ internal static class SchemaFilesHelper
             {12, info => info.Length}
         };
 
-        FilesColumns = new ISchemaColumn[]
-        {
+        FilesColumns =
+        [
             new SchemaColumn(nameof(ExtendedFileInfo.Name), 0, typeof(string)),
             new SchemaColumn(nameof(ExtendedFileInfo.CreationTime), 1, typeof(DateTimeOffset)),
             new SchemaColumn(nameof(ExtendedFileInfo.CreationTimeUtc), 2, typeof(DateTimeOffset)),
@@ -62,6 +62,6 @@ internal static class SchemaFilesHelper
             new SchemaColumn(nameof(ExtendedFileInfo.Exists), 10, typeof(bool)),
             new SchemaColumn(nameof(ExtendedFileInfo.IsReadOnly), 11, typeof(bool)),
             new SchemaColumn(nameof(ExtendedFileInfo.Length), 12, typeof(long))
-        };
+        ];
     }
 }

@@ -29,8 +29,8 @@ internal static class MessagesSourceHelper
         { 6, f => f.CycleTime }
     };
     
-    internal static ISchemaColumn[] Columns => new ISchemaColumn[]
-    {
+    internal static ISchemaColumn[] Columns =>
+    [
         new SchemaColumn(nameof(MessageEntity.Id), 0, typeof(uint)),
         new SchemaColumn(nameof(MessageEntity.IsExtId), 1, typeof(bool)),
         new SchemaColumn(nameof(MessageEntity.Name), 2, typeof(string)),
@@ -38,5 +38,5 @@ internal static class MessagesSourceHelper
         new SchemaColumn(nameof(MessageEntity.Transmitter), 4, typeof(string)),
         new SchemaColumn(nameof(MessageEntity.Comment), 5, typeof(string)),
         new SchemaColumn(nameof(MessageEntity.CycleTime), 6, typeof(int))
-    };
+    ];
 }

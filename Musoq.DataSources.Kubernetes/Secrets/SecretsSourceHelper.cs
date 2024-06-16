@@ -23,12 +23,12 @@ internal static class SecretsSourceHelper
         {4, t => t.Age}
     };
     
-    internal static readonly ISchemaColumn[] SecretsColumns = new ISchemaColumn[]
-    {
+    internal static readonly ISchemaColumn[] SecretsColumns =
+    [
         new SchemaColumn(nameof(SecretEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(SecretEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(SecretEntity.Type), 2, typeof(string)),
         new SchemaColumn(nameof(SecretEntity.Immutable), 3, typeof(bool?)),
         new SchemaColumn(nameof(SecretEntity.Age), 3, typeof(DateTime?))
-    };
+    ];
 }

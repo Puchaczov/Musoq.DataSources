@@ -22,11 +22,11 @@ internal static class StatefulSetsSourceHelper
             {3, c => c.Age}
         };
 
-    internal static readonly ISchemaColumn[] StatefulSetsColumns = new ISchemaColumn[]
-    {
+    internal static readonly ISchemaColumn[] StatefulSetsColumns =
+    [
         new SchemaColumn(nameof(StatefulSetEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(StatefulSetEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(StatefulSetEntity.Replicas), 2, typeof(int?)),
         new SchemaColumn(nameof(StatefulSetEntity.Age), 3, typeof(DateTime?))
-    };
+    ];
 }

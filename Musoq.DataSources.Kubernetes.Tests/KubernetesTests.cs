@@ -921,7 +921,7 @@ public class KubernetesTests
                         Type = "Type",
                         Data = new Dictionary<string, byte[]>
                         {
-                            {"Key", new byte[] {1, 2, 3}}
+                            {"Key", [1, 2, 3]}
                         }
                     }
                 }
@@ -1294,7 +1294,7 @@ from #kubernetes.events()";
 
     static KubernetesTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
         Culture.ApplyWithDefaultCulture();
     }

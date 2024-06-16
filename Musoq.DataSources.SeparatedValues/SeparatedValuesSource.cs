@@ -21,7 +21,8 @@ namespace Musoq.DataSources.SeparatedValues
 
         public SeparatedValuesSource(string filePath, string separator, bool hasHeader, int skipLines)
         {
-            _files = new[] {
+            _files =
+            [
                 new SeparatedValueFile()
                 {
                     FilePath = filePath,
@@ -29,7 +30,7 @@ namespace Musoq.DataSources.SeparatedValues
                     Separator = separator,
                     SkipLines = skipLines
                 }
-            };
+            ];
         }
 
         public SeparatedValuesSource(IReadOnlyTable table, string separator)

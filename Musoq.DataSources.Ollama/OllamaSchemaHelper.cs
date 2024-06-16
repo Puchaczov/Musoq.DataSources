@@ -12,6 +12,6 @@ internal static class OllamaSchemaHelper
     {
         NameToIndexMap = new Dictionary<string, int>();
         IndexToMethodAccessMap = new Dictionary<int, Func<OllamaEntity, object>>();
-        Columns = Array.Empty<ISchemaColumn>();
+        Columns = [];
     }
 }

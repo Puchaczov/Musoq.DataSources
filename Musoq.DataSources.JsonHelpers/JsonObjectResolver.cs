@@ -2,22 +2,21 @@
 
 namespace Musoq.DataSources.JsonHelpers;
 
-public class JsonObjectResolver : IObjectResolver
+/// <inheritdoc />
+public class JsonObjectResolver(IDictionary<string, object?> obj, IDictionary<int, string> indexToNameMap)
+    : IObjectResolver
 {
-    private readonly IDictionary<string, object?> _obj;
-    private readonly IDictionary<int, string> _indexToNameMap;
+    private readonly IDictionary<string, object?> _obj = obj ?? throw new InvalidOperationException();
 
-    public JsonObjectResolver(IDictionary<string, object?> obj, IDictionary<int, string> indexToNameMap)
-    {
-        _obj = obj ?? throw new InvalidOperationException();
-        _indexToNameMap = indexToNameMap;
-    }
-
+    /// <inheritdoc />
     public bool HasColumn(string name) => _obj.ContainsKey(name);
 
-    public object[] Contexts => new object[] { _obj };
+    /// <inheritdoc />
+    public object[] Contexts => [_obj];
 
+    /// <inheritdoc />
     public object? this[string name] => _obj[name];
 
-    public object? this[int index] => _obj[_indexToNameMap[index]];
+    /// <inheritdoc />
+    public object? this[int index] => _obj[indexToNameMap[index]];
 }

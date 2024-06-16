@@ -6,12 +6,12 @@ namespace Musoq.DataSources.Kubernetes.PodLogs;
 internal static class PodLogsSourceHelper
 {
     public static readonly ISchemaColumn[] PodLogsColumns =
-    {
+    [
         new SchemaColumn(nameof(PodLogsEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(PodLogsEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(PodLogsEntity.ContainerName), 2, typeof(string)),
-        new SchemaColumn(nameof(PodLogsEntity.Line), 3, typeof(string)),
-    };
+        new SchemaColumn(nameof(PodLogsEntity.Line), 3, typeof(string))
+    ];
     
     public static readonly IDictionary<string, int> PodLogsNameToIndexMap = new Dictionary<string, int>
     {

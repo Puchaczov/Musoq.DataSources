@@ -26,11 +26,11 @@ internal static class AirtableBasesHelper
             {2, @base => @base.PermissionLevel},
         };
 
-        BasesColumns = new ISchemaColumn[]
-        {
+        BasesColumns =
+        [
             new SchemaColumn(nameof(AirtableBase.Id), 0, typeof(string)),
             new SchemaColumn(nameof(AirtableBase.Name), 1, typeof(string)),
-            new SchemaColumn(nameof(AirtableBase.PermissionLevel), 2, typeof(string)),
-        };
+            new SchemaColumn(nameof(AirtableBase.PermissionLevel), 2, typeof(string))
+        ];
     }
 }

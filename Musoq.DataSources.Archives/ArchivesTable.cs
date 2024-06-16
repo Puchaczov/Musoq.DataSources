@@ -9,7 +9,7 @@ namespace Musoq.DataSources.Archives;
 internal class ArchivesTable : ISchemaTable
 {
     public ISchemaColumn[] Columns { get; } =
-    {
+    [
         new SchemaColumn(nameof(EntryWrapper.CompressionType), 0, typeof(CompressionType)),
         new SchemaColumn(nameof(EntryWrapper.ArchivedTime), 1, typeof(DateTime?)),
         new SchemaColumn(nameof(EntryWrapper.CompressedSize), 2, typeof(long)),
@@ -28,7 +28,7 @@ internal class ArchivesTable : ISchemaTable
         new SchemaColumn(nameof(EntryWrapper.Size), 15, typeof(long)),
         new SchemaColumn(nameof(EntryWrapper.Attrib), 16, typeof(int?)),
         new SchemaColumn(nameof(EntryWrapper.TextContent), 17, typeof(string))
-    };
+    ];
 
     public SchemaTableMetadata Metadata { get; } = new(typeof(EntryWrapper));
     

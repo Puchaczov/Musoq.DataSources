@@ -31,7 +31,7 @@ internal class ProcessesSource : RowSourceBase<System.Diagnostics.Process>
 
             i = 0;
             chunkedSource.Add(list, endWorkToken);
-            list = new List<EntityResolver<System.Diagnostics.Process>>();
+            list = [];
         }
 
         chunkedSource.Add(list, endWorkToken);

@@ -35,15 +35,14 @@ public class PostgresQueryTests
     {
         const string script = "select Key, Value, Id from #postgres.test_table('schema')";
         
-        var vm = CreateAndRunVirtualMachineWithResponse(script, new []
-        {
+        var vm = CreateAndRunVirtualMachineWithResponse(script, [
             new PostgresTestTable()
             {
                 Key = "1",
                 Value = 1,
                 Id = Guid.Empty
             }
-        });
+        ]);
         var table = vm.Run();
         
         Assert.AreEqual(1, table.Count);
@@ -127,7 +126,7 @@ public class PostgresQueryTests
 
     static PostgresQueryTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
         Culture.ApplyWithDefaultCulture();
     }

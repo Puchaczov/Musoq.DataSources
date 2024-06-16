@@ -39,8 +39,8 @@ internal static class DeploymentsSourceHelper
             {9, info => info.Status},
         };
         
-        DeploymentsColumns = new ISchemaColumn[]
-        {
+        DeploymentsColumns =
+        [
             new SchemaColumn(nameof(DeploymentEntity.Namespace), 0, typeof(string)),
             new SchemaColumn(nameof(DeploymentEntity.Name), 1, typeof(string)),
             new SchemaColumn(nameof(DeploymentEntity.CreationTimestamp), 2, typeof(DateTime)),
@@ -50,7 +50,7 @@ internal static class DeploymentsSourceHelper
             new SchemaColumn(nameof(DeploymentEntity.ImagePullPolicies), 6, typeof(string)),
             new SchemaColumn(nameof(DeploymentEntity.RestartPolicy), 7, typeof(string)),
             new SchemaColumn(nameof(DeploymentEntity.ContainersNames), 8, typeof(string)),
-            new SchemaColumn(nameof(DeploymentEntity.Status), 9, typeof(string)),
-        };
+            new SchemaColumn(nameof(DeploymentEntity.Status), 9, typeof(string))
+        ];
     }
 }

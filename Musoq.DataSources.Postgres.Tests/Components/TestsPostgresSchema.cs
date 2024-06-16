@@ -17,11 +17,11 @@ public class TestsPostgresSchema : PostgresSchema
     
     public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
-        return new TestsPostgresTable(runtimeContext, name, _columns ?? Array.Empty<dynamic>());
+        return new TestsPostgresTable(runtimeContext, name, _columns ?? []);
     }
 
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
-        return new TestsPostgresRowSource(runtimeContext, name, _rows ?? Array.Empty<dynamic>());
+        return new TestsPostgresRowSource(runtimeContext, name, _rows ?? []);
     }
 }

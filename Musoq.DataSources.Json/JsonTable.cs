@@ -57,10 +57,10 @@ namespace Musoq.DataSources.Json
 
         private ISchemaColumn[] ParseArray(JArray jarr)
         {
-            return new ISchemaColumn[]
-            {
+            return
+            [
                 new SchemaColumn("Array", 0, typeof(List<object>))
-            };
+            ];
         }
 
         private ISchemaColumn[] ParseObject(JObject jobj)

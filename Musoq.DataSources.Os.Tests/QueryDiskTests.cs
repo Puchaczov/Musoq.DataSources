@@ -557,7 +557,7 @@ select RelativeName, 'added' as state from ThoseInRight";
 
         static QueryDiskTests()
         {
-            new Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+            new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
             Culture.ApplyWithDefaultCulture();
         }

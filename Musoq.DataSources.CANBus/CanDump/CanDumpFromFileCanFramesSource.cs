@@ -91,7 +91,7 @@ internal class CanDumpFromFileCanFramesSource : MessageFrameSourceBase
     private static byte[] ConvertStringToByteArray(string? recordData, bool isLittleEndian)
     {
         if (recordData is null)
-            return Array.Empty<byte>();
+            return [];
 
         //tread data as hex string and convert to byte array (ie. 0x123)
         if (recordData.StartsWith("0x"))

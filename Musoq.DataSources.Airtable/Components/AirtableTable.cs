@@ -10,7 +10,7 @@ internal class AirtableTable
         Name = name;
         PrimaryFieldId = primaryFieldId;
         Description = description;
-        Fields = Array.Empty<AirtableField>();
+        Fields = [];
     }
     
     [JsonPropertyName("fields")]

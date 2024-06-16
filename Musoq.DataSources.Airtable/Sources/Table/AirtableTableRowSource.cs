@@ -54,7 +54,7 @@ internal class AirtableTableRowSource : RowSourceBase<dynamic>
         while (enumeratorChunks.MoveNext())
         {
             var currentChunk = enumeratorChunks.Current;
-            evaluatorChunk = new List<IObjectResolver>();
+            evaluatorChunk = [];
             
             foreach (var record in currentChunk)
             {

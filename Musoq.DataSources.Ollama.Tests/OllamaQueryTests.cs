@@ -200,16 +200,16 @@ public class OllamaQueryTests
         var mockOllamaApi = new Mock<IOllamaApi>();
 
         mockOllamaApi.Setup(x => x.GetCompletionAsync(It.IsAny<OllamaEntity>(), It.IsAny<IList<Message>>()))
-            .ReturnsAsync(new ConversationContextWithResponse(response, Array.Empty<long>()));
+            .ReturnsAsync(new ConversationContextWithResponse(response, []));
         mockOllamaApi.Setup(x => x.GetImageCompletionAsync(It.IsAny<OllamaEntity>(), It.IsAny<Message>()))
-            .ReturnsAsync(new ConversationContextWithResponse(response, Array.Empty<long>()));
+            .ReturnsAsync(new ConversationContextWithResponse(response, []));
         
         return mockOllamaApi;
     }
 
     static OllamaQueryTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
         Culture.ApplyWithDefaultCulture();
     }

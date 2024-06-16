@@ -28,12 +28,12 @@ internal static class ServicesSourceHelper
             {3, t => t.Status}
         };
         
-        ServicesColumns = new ISchemaColumn[]
-        {
+        ServicesColumns =
+        [
             new SchemaColumn(nameof(ServiceEntity.Metadata), 0, typeof(V1ObjectMeta)),
             new SchemaColumn(nameof(ServiceEntity.Spec), 1, typeof(V1ServiceSpec)),
             new SchemaColumn(nameof(ServiceEntity.Kind), 2, typeof(string)),
             new SchemaColumn(nameof(ServiceEntity.Status), 3, typeof(V1ServiceStatus))
-        };
+        ];
     }
 }

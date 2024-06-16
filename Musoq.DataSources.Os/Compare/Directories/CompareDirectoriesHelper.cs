@@ -37,8 +37,8 @@ internal static class CompareDirectoriesHelper
             {6, info => info.DestinationFileRelative}
         };
 
-        CompareDirectoriesColumns = new ISchemaColumn[]
-        {
+        CompareDirectoriesColumns =
+        [
             new SchemaColumn(nameof(CompareDirectoriesResult.SourceFile), 0, typeof(ExtendedFileInfo)),
             new SchemaColumn(nameof(CompareDirectoriesResult.DestinationFile), 1, typeof(ExtendedFileInfo)),
             new SchemaColumn(nameof(CompareDirectoriesResult.State), 2, typeof(string)),
@@ -46,6 +46,6 @@ internal static class CompareDirectoriesHelper
             new SchemaColumn(nameof(CompareDirectoriesResult.DestinationRoot), 4, typeof(DirectoryInfo)),
             new SchemaColumn(nameof(CompareDirectoriesResult.SourceFileRelative), 5, typeof(string)),
             new SchemaColumn(nameof(CompareDirectoriesResult.DestinationFileRelative), 6, typeof(string))
-        };
+        ];
     }
 }

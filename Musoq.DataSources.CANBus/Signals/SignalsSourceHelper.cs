@@ -47,8 +47,8 @@ internal static class SignalsSourceHelper
         { 15, f => f.MessageName }
     };
 
-    internal static ISchemaColumn[] Columns => new ISchemaColumn[]
-    {
+    internal static ISchemaColumn[] Columns =>
+    [
         new SchemaColumn(nameof(SignalEntity.Id), 0, typeof(uint)),
         new SchemaColumn(nameof(SignalEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(SignalEntity.StartBit), 2, typeof(ushort)),
@@ -65,5 +65,5 @@ internal static class SignalsSourceHelper
         new SchemaColumn(nameof(SignalEntity.Comment), 13, typeof(string)),
         new SchemaColumn(nameof(SignalEntity.Multiplexing), 14, typeof(string)),
         new SchemaColumn(nameof(SignalEntity.MessageName), 15, typeof(string))
-    };
+    ];
 }

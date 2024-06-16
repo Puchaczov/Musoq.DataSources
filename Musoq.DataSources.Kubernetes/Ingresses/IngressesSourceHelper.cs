@@ -27,8 +27,8 @@ internal static class IngressesSourceHelper
         {6, c => c.Age}
     };
     
-    internal static readonly ISchemaColumn[] IngressesColumns = new ISchemaColumn[]
-    {
+    internal static readonly ISchemaColumn[] IngressesColumns =
+    [
         new SchemaColumn(nameof(IngressEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(IngressEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(IngressEntity.Class), 2, typeof(string)),
@@ -36,5 +36,5 @@ internal static class IngressesSourceHelper
         new SchemaColumn(nameof(IngressEntity.Address), 4, typeof(string)),
         new SchemaColumn(nameof(IngressEntity.Ports), 5, typeof(string)),
         new SchemaColumn(nameof(IngressEntity.Age), 6, typeof(DateTime?))
-    };
+    ];
 }

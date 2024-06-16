@@ -37,8 +37,8 @@ internal static class SchemaZipHelper
             {6, info => info.FullName.Trim('/').Split('/').Length - 1}
         };
 
-        SchemaColumns = new ISchemaColumn[]
-        {
+        SchemaColumns =
+        [
             new SchemaColumn(nameof(ZipArchiveEntry.Name), 0, typeof(string)),
             new SchemaColumn(nameof(ZipArchiveEntry.FullName), 1, typeof(string)),
             new SchemaColumn(nameof(ZipArchiveEntry.CompressedLength), 2, typeof(long)),
@@ -46,7 +46,7 @@ internal static class SchemaZipHelper
             new SchemaColumn(nameof(ZipArchiveEntry.Length), 4, typeof(long)),
             new SchemaColumn("IsDirectory", 5, typeof(bool)),
             new SchemaColumn("Level", 6, typeof(int))
-        };
+        ];
     }
 
     public static FileInfo UnpackZipEntry(ZipArchiveEntry entry, string name, string destDir)
