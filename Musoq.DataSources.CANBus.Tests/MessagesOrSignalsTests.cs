@@ -371,7 +371,7 @@ where Name = 'Oil_Temperature'";
 
     static MessagesOrSignalsTests()
     {
-        new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+        new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
         Culture.ApplyWithDefaultCulture();
     }

@@ -24,16 +24,16 @@ namespace Musoq.DataSources.Os;
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public partial class OsLibrary : LibraryBase
 {
-    private static readonly HashSet<string> IsZipArchiveSet = new()
-    {
+    private static readonly HashSet<string> IsZipArchiveSet =
+    [
         ".zip",
         ".jar",
         ".war",
         ".ear"
-    };
+    ];
 
-    private static readonly HashSet<string> IsArchiveSet = new()
-    {
+    private static readonly HashSet<string> IsArchiveSet =
+    [
         ".7z",
         ".bz2",
         ".bzip2",
@@ -43,10 +43,10 @@ public partial class OsLibrary : LibraryBase
         ".tar",
         ".xz",
         ".zip"
-    };
+    ];
 
-    private static readonly HashSet<string> IsAudioSet = new()
-    {
+    private static readonly HashSet<string> IsAudioSet =
+    [
         ".aac",
         ".aiff",
         ".amr",
@@ -58,20 +58,20 @@ public partial class OsLibrary : LibraryBase
         ".mp3",
         ".ogg",
         ".wma",
-        ".aa", 
-        ".aax", 
-        ".ape", 
-        ".dsf", 
-        ".mpc", 
-        ".mpp", 
-        ".oga", 
-        ".wav", 
-        ".wv", 
+        ".aa",
+        ".aax",
+        ".ape",
+        ".dsf",
+        ".mpc",
+        ".mpp",
+        ".oga",
+        ".wav",
+        ".wv",
         ".webm"
-    };
+    ];
 
-    private static readonly HashSet<string> IsBookSet = new()
-    {
+    private static readonly HashSet<string> IsBookSet =
+    [
         ".azw3",
         ".chm",
         ".djvu",
@@ -79,10 +79,10 @@ public partial class OsLibrary : LibraryBase
         ".fb2",
         ".mobi",
         ".pdf"
-    };
+    ];
 
-    private static readonly HashSet<string> IsDocSet = new()
-    {
+    private static readonly HashSet<string> IsDocSet =
+    [
         ".accdb",
         ".doc",
         ".docm",
@@ -108,10 +108,10 @@ public partial class OsLibrary : LibraryBase
         ".xltm",
         ".xltx",
         ".xps"
-    };
+    ];
 
-    private static readonly HashSet<string> IsImageSet = new()
-    {
+    private static readonly HashSet<string> IsImageSet =
+    [
         ".bmp",
         ".gif",
         ".jpeg",
@@ -121,17 +121,17 @@ public partial class OsLibrary : LibraryBase
         ".psd",
         ".tiff",
         ".webp",
-        ".pbm", 
-        ".pgm", 
-        ".ppm", 
-        ".pnm", 
-        ".pcx", 
-        ".dng", 
+        ".pbm",
+        ".pgm",
+        ".ppm",
+        ".pnm",
+        ".pcx",
+        ".dng",
         ".svg"
-    };
+    ];
 
-    private static readonly HashSet<string> IsSourceSet = new()
-    {
+    private static readonly HashSet<string> IsSourceSet =
+    [
         ".asm",
         ".bas",
         ".c",
@@ -168,10 +168,10 @@ public partial class OsLibrary : LibraryBase
         ".tcl",
         ".vala",
         ".vb"
-    };
+    ];
 
-    private static readonly HashSet<string> IsVideoSet = new()
-    {
+    private static readonly HashSet<string> IsVideoSet =
+    [
         ".3gp",
         ".avi",
         ".flv",
@@ -184,12 +184,12 @@ public partial class OsLibrary : LibraryBase
         ".mpg",
         ".webm",
         ".wmv",
-        ".ogv", 
-        ".asf", 
-        ".mpe", 
-        ".mpv", 
+        ".ogv",
+        ".asf",
+        ".mpe",
+        ".mpv",
         ".m2v"
-    };
+    ];
 
     /// <summary>
     /// Determines whether the extension is zip archive.

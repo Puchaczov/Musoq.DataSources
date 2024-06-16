@@ -41,7 +41,8 @@ internal static class PodContainersSourceHelper
             {12, f => f.WorkingDir},
         };
     
-    public static readonly ISchemaColumn[] PodContainersColumns = {
+    public static readonly ISchemaColumn[] PodContainersColumns =
+    [
         new SchemaColumn(nameof(PodContainerEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(PodContainerEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(PodContainerEntity.ContainerName), 2, typeof(string)),
@@ -54,6 +55,6 @@ internal static class PodContainersSourceHelper
         new SchemaColumn(nameof(PodContainerEntity.TerminationMessagePath), 9, typeof(string)),
         new SchemaColumn(nameof(PodContainerEntity.TerminationMessagePolicy), 10, typeof(string)),
         new SchemaColumn(nameof(PodContainerEntity.Tty), 11, typeof(bool?)),
-        new SchemaColumn(nameof(PodContainerEntity.WorkingDir), 12, typeof(string)),
-    };
+        new SchemaColumn(nameof(PodContainerEntity.WorkingDir), 12, typeof(string))
+    ];
 }

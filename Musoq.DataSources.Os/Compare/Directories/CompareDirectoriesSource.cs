@@ -64,7 +64,7 @@ internal class CompareDirectoriesSource : RowSourceBase<CompareDirectoriesResult
             _runtimeContext.EndWorkToken.ThrowIfCancellationRequested();
 
             chunkedSource.Add(source);
-            source = new List<IObjectResolver>();
+            source = [];
         }
 
         if (source.Count > 0)

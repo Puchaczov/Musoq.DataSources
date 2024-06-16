@@ -27,7 +27,8 @@ internal static class JobsSourceHelper
         {6, c => c.Age}
     };
     
-    internal static readonly ISchemaColumn[] JobsColumns = {
+    internal static readonly ISchemaColumn[] JobsColumns =
+    [
         new SchemaColumn(nameof(JobEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(JobEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(JobEntity.Completions), 2, typeof(int)),
@@ -35,5 +36,5 @@ internal static class JobsSourceHelper
         new SchemaColumn(nameof(JobEntity.Images), 4, typeof(string)),
         new SchemaColumn(nameof(JobEntity.Containers), 5, typeof(string)),
         new SchemaColumn(nameof(JobEntity.Age), 6, typeof(DateTime?))
-    };
+    ];
 }

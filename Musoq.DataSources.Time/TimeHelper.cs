@@ -41,8 +41,8 @@ namespace Musoq.DataSources.Time
                 {9, date => date.TimeOfDay}
             };
 
-            TimeColumns = new ISchemaColumn[]
-            {
+            TimeColumns =
+            [
                 new SchemaColumn("DateTime", 0, typeof(DateTimeOffset)),
                 new SchemaColumn(nameof(DateTimeOffset.Second), 1, typeof(int)),
                 new SchemaColumn(nameof(DateTimeOffset.Minute), 2, typeof(int)),
@@ -53,7 +53,7 @@ namespace Musoq.DataSources.Time
                 new SchemaColumn(nameof(DateTimeOffset.DayOfWeek), 7, typeof(int)),
                 new SchemaColumn(nameof(DateTimeOffset.DayOfYear), 8, typeof(int)),
                 new SchemaColumn(nameof(DateTimeOffset.TimeOfDay), 9, typeof(TimeSpan))
-            };
+            ];
         }
     }
 }

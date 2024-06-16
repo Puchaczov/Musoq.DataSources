@@ -16,10 +16,10 @@ internal class DirectoriesSource : RowSourceBase<DirectoryInfo>
     public DirectoriesSource(string path, bool recursive, RuntimeContext communicator)
     {
         _communicator = communicator;
-        _sources = new DirectorySourceSearchOptions[] 
-        {
+        _sources =
+        [
             new(new DirectoryInfo(path).FullName, recursive)
-        };
+        ];
     }
 
     public DirectoriesSource(IReadOnlyTable table, RuntimeContext context)

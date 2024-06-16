@@ -50,8 +50,8 @@ internal static class SchemaDirectoriesHelper
             {13, info => info}
         };
 
-        DirectoriesColumns = new ISchemaColumn[]
-        {
+        DirectoriesColumns =
+        [
             new SchemaColumn(nameof(DirectoryInfo.FullName), 0, typeof(string)),
             new SchemaColumn(nameof(DirectoryInfo.Attributes), 1, typeof(FileAttributes)),
             new SchemaColumn(nameof(DirectoryInfo.CreationTime), 2, typeof(DateTimeOffset)),
@@ -66,6 +66,6 @@ internal static class SchemaDirectoriesHelper
             new SchemaColumn(nameof(DirectoryInfo.Parent), 11, typeof(DirectoryInfo)),
             new SchemaColumn(nameof(DirectoryInfo.Root), 12, typeof(string)),
             new SchemaColumn(nameof(DirectoryInfo), 13, typeof(DirectoryInfo))
-        };
+        ];
     }
 }

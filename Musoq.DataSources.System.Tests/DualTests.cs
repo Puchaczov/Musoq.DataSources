@@ -66,7 +66,7 @@ namespace Musoq.DataSources.System.Tests
 
         static DualTests()
         {
-            new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+            new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
         }
     }
 }

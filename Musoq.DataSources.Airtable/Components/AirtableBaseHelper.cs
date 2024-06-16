@@ -25,11 +25,11 @@ internal static class AirtableBaseHelper
             {2, @base => @base.PrimaryFieldId},
         };
 
-        BaseColumns = new ISchemaColumn[]
-        {
+        BaseColumns =
+        [
             new SchemaColumn(nameof(AirtableTable.Id), 0, typeof(string)),
             new SchemaColumn(nameof(AirtableTable.Name), 1, typeof(string)),
-            new SchemaColumn(nameof(AirtableTable.PrimaryFieldId), 2, typeof(string)),
-        };
+            new SchemaColumn(nameof(AirtableTable.PrimaryFieldId), 2, typeof(string))
+        ];
     }
 }

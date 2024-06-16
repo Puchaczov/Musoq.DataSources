@@ -35,7 +35,7 @@ internal class OllamaApi : IOllamaApi
         var completion = await _api.GetCompletion(new GenerateCompletionRequest()
         {
             Model = entity.Model,
-            Context = Array.Empty<long>(),
+            Context = [],
             Images = message.Images,
             Prompt = message.Content,
             Stream = false,
@@ -70,7 +70,7 @@ internal class OllamaApi : IOllamaApi
                 return;
             }
             
-            completionSource.SetResult(new ConversationContextWithResponse(stringResponse.ToString(), Array.Empty<long>()));
+            completionSource.SetResult(new ConversationContextWithResponse(stringResponse.ToString(), []));
         }, entity.CancellationToken);
         
         return completionSource.Task.Result;

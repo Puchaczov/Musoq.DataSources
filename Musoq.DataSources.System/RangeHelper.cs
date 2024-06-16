@@ -23,10 +23,10 @@ namespace Musoq.DataSources.System
                 {0, info => info.Value}
             };
 
-            RangeColumns = new ISchemaColumn[]
-            {
-                new SchemaColumn(nameof(RangeItemEntity.Value), 0, typeof(long)),
-            };
+            RangeColumns =
+            [
+                new SchemaColumn(nameof(RangeItemEntity.Value), 0, typeof(long))
+            ];
         }
     }
 }

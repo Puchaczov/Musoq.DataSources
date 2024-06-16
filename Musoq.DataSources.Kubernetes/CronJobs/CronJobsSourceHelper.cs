@@ -24,11 +24,12 @@ internal static class CronJobsSourceHelper
             {4, cj => cj.LastScheduleTime}
         };
 
-    internal static readonly ISchemaColumn[] CronJobsColumns = {
+    internal static readonly ISchemaColumn[] CronJobsColumns =
+    [
         new SchemaColumn(nameof(CronJobEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(CronJobEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(CronJobEntity.Schedule), 2, typeof(string)),
         new SchemaColumn(nameof(CronJobEntity.Statuses), 3, typeof(string)),
         new SchemaColumn(nameof(CronJobEntity.LastScheduleTime), 4, typeof(DateTime?))
-    };
+    ];
 }

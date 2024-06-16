@@ -84,8 +84,8 @@ internal static class ProcessHelper
             }
         };
 
-        ProcessColumns = new ISchemaColumn[]
-        {
+        ProcessColumns =
+        [
             new SchemaColumn(nameof(System.Diagnostics.Process.BasePriority), 0, typeof(int)),
             new SchemaColumn(nameof(System.Diagnostics.Process.EnableRaisingEvents), 1, typeof(bool)),
             new SchemaColumn(nameof(System.Diagnostics.Process.ExitCode), 2, typeof(int)),
@@ -105,6 +105,6 @@ internal static class ProcessHelper
             new SchemaColumn(nameof(System.Diagnostics.Process.UserProcessorTime), 16, typeof(TimeSpan)),
             new SchemaColumn("Directory", 17, typeof(string)),
             new SchemaColumn("FileName", 18, typeof(string))
-        };
+        ];
     }
 }

@@ -139,7 +139,7 @@ public class CANBusLibrary : LibraryBase
             if (signal is null)
                 throw new InvalidOperationException($"Signal with name {key.Name} does not exist.");
 
-            var valueString = value.ToString(Formatting.None, Array.Empty<JsonConverter>());
+            var valueString = value.ToString(Formatting.None, []);
             if (!double.TryParse(valueString, NumberStyles.Any, CultureInfo.CurrentCulture, out var doubleValue))
                 throw new InvalidOperationException($"Value {valueString} cannot be parsed to double.");
                 

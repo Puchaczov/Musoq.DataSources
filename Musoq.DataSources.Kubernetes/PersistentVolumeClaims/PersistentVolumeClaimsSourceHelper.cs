@@ -26,13 +26,13 @@ internal static class PersistentVolumeClaimsSourceHelper
             {5, c => c.Age}
         };
 
-    internal static readonly ISchemaColumn[] PersistentVolumeClaimsColumns = new ISchemaColumn[]
-    {
+    internal static readonly ISchemaColumn[] PersistentVolumeClaimsColumns =
+    [
         new SchemaColumn(nameof(PersistentVolumeClaimEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeClaimEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeClaimEntity.Capacity), 2, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeClaimEntity.Volume), 3, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeClaimEntity.Status), 4, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeClaimEntity.Age), 5, typeof(DateTime?))
-    };
+    ];
 }

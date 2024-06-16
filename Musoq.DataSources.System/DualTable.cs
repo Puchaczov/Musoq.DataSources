@@ -6,10 +6,10 @@ namespace Musoq.DataSources.System
 {
     internal class DualTable : ISchemaTable
     {
-        public ISchemaColumn[] Columns => new ISchemaColumn[]
-        {
+        public ISchemaColumn[] Columns =>
+        [
             new SchemaColumn(nameof(DualEntity.Dummy), 0, typeof(string))
-        };
+        ];
     
         public SchemaTableMetadata Metadata { get; } = new(typeof(DualEntity));
 

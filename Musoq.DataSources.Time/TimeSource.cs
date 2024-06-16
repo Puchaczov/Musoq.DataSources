@@ -75,7 +75,7 @@ namespace Musoq.DataSources.Time
                     continue;
 
                 chunkedSource.Add(listOfCalcTimes, endWorkToken);
-                listOfCalcTimes = new List<EntityResolver<DateTimeOffset>>();
+                listOfCalcTimes = [];
                 i = 0;
             }
 

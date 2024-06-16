@@ -143,14 +143,14 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         {
             var entities = JsonConvert.DeserializeObject<ExtractedEntities>(entitiesResult);
 
-            return entities?.Entities ?? Array.Empty<string>();
+            return entities?.Entities ?? [];
         }
         catch (Exception)
         {
             if (throwOnException)
                 throw;
             
-            return Array.Empty<string>();
+            return [];
         }
     }
 
@@ -191,7 +191,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
             return api.GetCompletionAsync(entity, new List<ChatMessage>()
             {
                 new(ChatMessageRole.System, youAreImageDescriberDescribeTheImage),
-                new(ChatMessageRole.User, string.Empty, new ChatMessage.ImageInput[] {new(Encoding.UTF8.GetBytes(imageBase64))})
+                new(ChatMessageRole.User, string.Empty, [new(Encoding.UTF8.GetBytes(imageBase64))])
             });
         });
         
@@ -215,7 +215,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
             return api.GetCompletionAsync(entity, new List<ChatMessage>()
             {
                 new(ChatMessageRole.System, youAreImageQuestionerAskQuestionAboutImage),
-                new(ChatMessageRole.User, question, new ChatMessage.ImageInput[] { new(Encoding.UTF8.GetBytes(imageBase64)) })
+                new(ChatMessageRole.User, question, [new(Encoding.UTF8.GetBytes(imageBase64))])
             });
         });
         
@@ -239,7 +239,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
             return api.GetCompletionAsync(entity, new List<ChatMessage>
             {
                 new(ChatMessageRole.System, youAreImageQuestionerAskQuestionAboutImage),
-                new(ChatMessageRole.User, question, new ChatMessage.ImageInput[] { new(Encoding.UTF8.GetBytes(imageBase64)) })
+                new(ChatMessageRole.User, question, [new(Encoding.UTF8.GetBytes(imageBase64))])
             });
         });
         

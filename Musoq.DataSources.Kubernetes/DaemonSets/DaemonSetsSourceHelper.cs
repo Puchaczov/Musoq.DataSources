@@ -29,8 +29,8 @@ internal static class DaemonSetsSourceHelper
         {7, c => c.Age}
     };
     
-    internal static readonly ISchemaColumn[] DaemonSetsColumns = new ISchemaColumn[]
-    {
+    internal static readonly ISchemaColumn[] DaemonSetsColumns =
+    [
         new SchemaColumn(nameof(DaemonSetEntity.Namespace), 0, typeof(string)),
         new SchemaColumn(nameof(DaemonSetEntity.Name), 1, typeof(string)),
         new SchemaColumn(nameof(DaemonSetEntity.Desired), 2, typeof(int)),
@@ -39,5 +39,5 @@ internal static class DaemonSetsSourceHelper
         new SchemaColumn(nameof(DaemonSetEntity.UpToDate), 5, typeof(int?)),
         new SchemaColumn(nameof(DaemonSetEntity.Available), 6, typeof(int?)),
         new SchemaColumn(nameof(DaemonSetEntity.Age), 7, typeof(DateTime?))
-    };
+    ];
 }

@@ -94,7 +94,7 @@ public class OllamaSchema : SchemaBase
     /// <returns>Data sources constructors</returns>
     public override SchemaMethodInfo[] GetConstructors()
     {
-        return Array.Empty<SchemaMethodInfo>();
+        return [];
     }
 
     private static MethodsAggregator CreateLibrary()

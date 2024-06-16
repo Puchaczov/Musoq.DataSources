@@ -25,11 +25,11 @@ namespace Musoq.DataSources.FlatFile
                 {1, info => info.Line}
             };
 
-            FlatColumns = new ISchemaColumn[]
-            {
+            FlatColumns =
+            [
                 new SchemaColumn(nameof(FlatFileEntity.LineNumber), 0, typeof(int)),
                 new SchemaColumn(nameof(FlatFileEntity.Line), 1, typeof(string))
-            };
+            ];
         }
     }
 }

@@ -12,6 +12,6 @@ internal static class OpenAiSchemaHelper
     {
         NameToIndexMap = new Dictionary<string, int>();
         IndexToMethodAccessMap = new Dictionary<int, Func<OpenAiEntity, object>>();
-        Columns = Array.Empty<ISchemaColumn>();
+        Columns = [];
     }
 }

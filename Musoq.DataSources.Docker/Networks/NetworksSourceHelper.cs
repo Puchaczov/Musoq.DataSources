@@ -54,8 +54,8 @@ internal static class NetworksSourceHelper
             {16, info => info.Services}
         };
         
-        NetworksColumns = new ISchemaColumn[]
-        {
+        NetworksColumns =
+        [
             new SchemaColumn(nameof(NetworkResponse.Name), 0, typeof(string)),
             new SchemaColumn(nameof(NetworkResponse.ID), 1, typeof(string)),
             new SchemaColumn(nameof(NetworkResponse.Created), 2, typeof(DateTime)),
@@ -73,6 +73,6 @@ internal static class NetworksSourceHelper
             new SchemaColumn(nameof(NetworkResponse.Labels), 14, typeof(IDictionary<string, string>)),
             new SchemaColumn(nameof(NetworkResponse.Peers), 15, typeof(IList<PeerInfo>)),
             new SchemaColumn(nameof(NetworkResponse.Services), 16, typeof(IDictionary<string, ServiceInfo>))
-        };
+        ];
     }
 }

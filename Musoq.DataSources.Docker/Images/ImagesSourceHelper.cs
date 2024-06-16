@@ -40,8 +40,8 @@ internal static class ImagesSourceHelper
             {9, info => info.VirtualSize}
         };
         
-        ImagesColumns = new ISchemaColumn[]
-        {
+        ImagesColumns =
+        [
             new SchemaColumn(nameof(ImagesListResponse.Containers), 0, typeof(long)),
             new SchemaColumn(nameof(ImagesListResponse.Created), 1, typeof(DateTime)),
             new SchemaColumn(nameof(ImagesListResponse.ID), 2, typeof(string)),
@@ -52,6 +52,6 @@ internal static class ImagesSourceHelper
             new SchemaColumn(nameof(ImagesListResponse.SharedSize), 7, typeof(long)),
             new SchemaColumn(nameof(ImagesListResponse.Size), 8, typeof(long)),
             new SchemaColumn(nameof(ImagesListResponse.VirtualSize), 9, typeof(long))
-        };
+        ];
     }
 }

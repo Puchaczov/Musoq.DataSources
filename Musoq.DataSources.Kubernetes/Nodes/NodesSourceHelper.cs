@@ -36,8 +36,8 @@ internal static class NodesSourceHelper
             {10, t => t.Memory}
         };
     
-    internal static readonly ISchemaColumn[] NodesColumns = new ISchemaColumn[] 
-    {
+    internal static readonly ISchemaColumn[] NodesColumns =
+    [
         new SchemaColumn(nameof(NodeEntity.Name), 0, typeof(string)),
         new SchemaColumn(nameof(NodeEntity.Status), 1, typeof(string)),
         new SchemaColumn(nameof(NodeEntity.Roles), 2, typeof(string)),
@@ -49,5 +49,5 @@ internal static class NodesSourceHelper
         new SchemaColumn(nameof(NodeEntity.ContainerRuntime), 8, typeof(string)),
         new SchemaColumn(nameof(NodeEntity.Cpu), 9, typeof(string)),
         new SchemaColumn(nameof(NodeEntity.Memory), 10, typeof(string))
-    };
+    ];
 }

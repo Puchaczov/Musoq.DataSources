@@ -32,7 +32,8 @@ internal static class PersistentVolumesSourceHelper
         {8, c => c.Age}
     };
 
-    internal static readonly ISchemaColumn[] PersistentVolumesColumns = {
+    internal static readonly ISchemaColumn[] PersistentVolumesColumns =
+    [
         new SchemaColumn(nameof(PersistentVolumeEntity.Name), 0, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeEntity.Namespace), 1, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeEntity.AccessModes), 2, typeof(string)),
@@ -42,5 +43,5 @@ internal static class PersistentVolumesSourceHelper
         new SchemaColumn(nameof(PersistentVolumeEntity.StorageClass), 6, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeEntity.Reason), 7, typeof(string)),
         new SchemaColumn(nameof(PersistentVolumeEntity.Age), 8, typeof(DateTime?))
-    };
+    ];
 }

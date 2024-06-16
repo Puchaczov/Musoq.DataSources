@@ -38,8 +38,8 @@ internal static class VolumesSourceHelper
             {8, info => info.UsageData}
         };
         
-        VolumesColumns = new ISchemaColumn[]
-        {
+        VolumesColumns =
+        [
             new SchemaColumn(nameof(VolumeResponse.CreatedAt), 0, typeof(string)),
             new SchemaColumn(nameof(VolumeResponse.Driver), 1, typeof(string)),
             new SchemaColumn(nameof(VolumeResponse.Labels), 2, typeof(IDictionary<string, string>)),
@@ -49,6 +49,6 @@ internal static class VolumesSourceHelper
             new SchemaColumn(nameof(VolumeResponse.Scope), 6, typeof(string)),
             new SchemaColumn(nameof(VolumeResponse.Status), 7, typeof(IDictionary<string, string>)),
             new SchemaColumn(nameof(VolumeResponse.UsageData), 8, typeof(VolumeUsageData))
-        };
+        ];
     }
 }

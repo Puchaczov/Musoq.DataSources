@@ -15,10 +15,10 @@ internal class TestsOllamaSchema : OllamaSchema
 
     public ISchemaTable[] GetSchema()
     {
-        return new ISchemaTable[]
-        {
+        return
+        [
             new OllamaSingleRowTable()
-        };
+        ];
     }
 
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)

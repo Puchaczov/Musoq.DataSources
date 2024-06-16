@@ -30,11 +30,11 @@ internal static class DllInfosHelper
             {2, info => info.Version},
         };
 
-        DllInfosColumns = new ISchemaColumn[]
-        {
+        DllInfosColumns =
+        [
             new SchemaColumn(nameof(DllInfo.FileInfo), 0, typeof(FileInfo)),
             new SchemaColumn(nameof(DllInfo.Assembly), 1, typeof(Assembly)),
-            new SchemaColumn(nameof(DllInfo.Version), 2, typeof(FileVersionInfo)),
-        };
+            new SchemaColumn(nameof(DllInfo.Version), 2, typeof(FileVersionInfo))
+        ];
     }
 }

@@ -49,7 +49,8 @@ internal class EventsSourceHelper
             {16, info => info.Type}
         };
     
-    public static readonly ISchemaColumn[] EventsColumns = {
+    public static readonly ISchemaColumn[] EventsColumns =
+    [
         new SchemaColumn(nameof(EventEntity.Action), 0, typeof(string)),
         new SchemaColumn(nameof(EventEntity.ApiVersion), 1, typeof(string)),
         new SchemaColumn(nameof(EventEntity.Count), 2, typeof(int?)),
@@ -67,5 +68,5 @@ internal class EventsSourceHelper
         new SchemaColumn(nameof(EventEntity.Series), 14, typeof(Corev1EventSeries)),
         new SchemaColumn(nameof(EventEntity.Source), 15, typeof(V1EventSource)),
         new SchemaColumn(nameof(EventEntity.Type), 16, typeof(string))
-    };
+    ];
 }

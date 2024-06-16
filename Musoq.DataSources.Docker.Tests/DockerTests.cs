@@ -280,7 +280,7 @@ public class DockerTests
 
     static DockerTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
+        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
 
         Culture.ApplyWithDefaultCulture();
     }
