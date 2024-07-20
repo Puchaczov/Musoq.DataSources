@@ -50,7 +50,7 @@ namespace Musoq.DataSources.Os.Tests
             var table = vm.Run();
 
             Assert.AreEqual(1, table.Columns.Count());
-            Assert.AreEqual("Decompress(AggregateFiles(GetZipEntryFileInfo()), './Results/DecompressTest')",
+            Assert.AreEqual("Decompress(AggregateFiles(GetZipEntryFileInfo()), ./Results/DecompressTest)",
                 table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
@@ -74,7 +74,7 @@ namespace Musoq.DataSources.Os.Tests
             var table = vm.Run();
 
             Assert.AreEqual(1, table.Columns.Count());
-            Assert.AreEqual("Decompress(AggregateFiles(GetZipEntryFileInfo()), './Results/DecompressWithFilterTest')",
+            Assert.AreEqual("Decompress(AggregateFiles(GetZipEntryFileInfo()), ./Results/DecompressWithFilterTest)",
                 table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 

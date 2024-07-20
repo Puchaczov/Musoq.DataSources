@@ -41,7 +41,7 @@ namespace Musoq.DataSources.Os.Tests
             var table = vm.Run();
 
             Assert.AreEqual(1, table.Columns.Count());
-            Assert.AreEqual($"Compress(AggregateFiles(), './Results/{nameof(CompressFilesTest)}.zip', 'fastest')",
+            Assert.AreEqual($"Compress(AggregateFiles(), ./Results/{nameof(CompressFilesTest)}.zip, fastest)",
                 table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
@@ -63,7 +63,7 @@ namespace Musoq.DataSources.Os.Tests
             var table = vm.Run();
 
             Assert.AreEqual(1, table.Columns.Count());
-            Assert.AreEqual($"Compress(AggregateDirectories(), '{resultName}', 'fastest')",
+            Assert.AreEqual($"Compress(AggregateDirectories(), {resultName}, fastest)",
                 table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
