@@ -22,7 +22,7 @@ namespace Musoq.DataSources.SeparatedValues
         /// <virtual-param>How many lines should be skipped</virtual-param>
         /// <examples>
         /// <example>
-        /// <from>#separatedvalues.csv(string path, bool hasHeader, int skipLines)</from>
+        /// <from>#separatedvalues.comma(string path, bool hasHeader, int skipLines)</from>
         /// <description>Gives the ability to process .CSV files</description>
         /// <columns isDynamic="true"></columns>
         /// </example>
@@ -34,7 +34,7 @@ namespace Musoq.DataSources.SeparatedValues
         /// <virtual-param>How many lines should be skipped</virtual-param>
         /// <examples>
         /// <example>
-        /// <from>#separatedvalues.tsv(string path, bool hasHeader, int skipLines)</from>
+        /// <from>#separatedvalues.tab(string path, bool hasHeader, int skipLines)</from>
         /// <description>Gives the ability to process .TSV files</description>
         /// <columns isDynamic="true"></columns>
         /// </example>
@@ -56,11 +56,11 @@ namespace Musoq.DataSources.SeparatedValues
         public SeparatedValuesSchema()
             : base(SchemaName.ToLowerInvariant(), CreateLibrary())
         {
-            AddSource<SeparatedValuesSource>("csv");
-            AddSource<SeparatedValuesSource>("tsv");
+            AddSource<SeparatedValuesSource>("comma");
+            AddSource<SeparatedValuesSource>("tab");
             AddSource<SeparatedValuesSource>("semicolon");
-            AddTable<SeparatedValuesTable>("csv");
-            AddTable<SeparatedValuesTable>("tsv");
+            AddTable<SeparatedValuesTable>("comma");
+            AddTable<SeparatedValuesTable>("tab");
             AddTable<SeparatedValuesTable>("semicolon");
         }
 
@@ -75,12 +75,12 @@ namespace Musoq.DataSources.SeparatedValues
         {
             switch (name.ToLowerInvariant())
             {
-                case "csv":
+                case "comma":
                     if (parameters.Length == 0)
                         return new InitiallyInferredTable(runtimeContext.AllColumns);
                     
                     return new SeparatedValuesTable((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
-                case "tsv":
+                case "tab":
                     if (parameters.Length == 0)
                         return new InitiallyInferredTable(runtimeContext.AllColumns);
                     
@@ -106,12 +106,12 @@ namespace Musoq.DataSources.SeparatedValues
         {
             switch (name.ToLowerInvariant())
             {
-                case "csv":
+                case "comma":
                     if (parameters[0] is IReadOnlyTable csvTable)
                         return new SeparatedValuesSource(csvTable, ",") { RuntimeContext = runtimeContext };
 
                     return new SeparatedValuesSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2]) { RuntimeContext = runtimeContext };
-                case "tsv":
+                case "tab":
                     if (parameters[0] is IReadOnlyTable tsvTable)
                         return new SeparatedValuesSource(tsvTable, "\t") { RuntimeContext = runtimeContext };
 
