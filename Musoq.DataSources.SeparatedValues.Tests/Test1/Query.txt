@@ -4,7 +4,7 @@
 	stringValue 'string'
 };
 
-couple #separatedvalues.csv with table CsvFileTable as SourceOfRows;
+couple #separatedvalues.comma with table CsvFileTable as SourceOfRows;
 
 with ReadFiles as (
 	select fileName, intValue, stringValue from SourceOfRows('.\Test1\file1.csv', true, 0)
