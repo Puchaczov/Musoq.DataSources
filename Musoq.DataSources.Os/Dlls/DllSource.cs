@@ -7,16 +7,12 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Dlls;
 
-internal class DllSource : FilesSourceBase<DllInfo>
+internal class DllSource(string path, bool useSubDirectories, RuntimeContext communicator)
+    : EnumerateFilesSourceBase<DllInfo>(path, useSubDirectories, communicator)
 {
-    public DllSource(string path, bool useSubDirectories, RuntimeContext communicator) 
-        : base(path, useSubDirectories, communicator)
+    protected override EntityResolver<DllInfo>? CreateBasedOnFile(FileInfo file, string rootDirectory)
     {
-    }
-
-    protected override EntityResolver<DllInfo> CreateBasedOnFile(FileInfo file, string rootDirectory)
-    {
-        Assembly asm = null;
+        Assembly? asm;
         try
         {
             asm = Assembly.LoadFrom(file.FullName);
@@ -25,6 +21,9 @@ internal class DllSource : FilesSourceBase<DllInfo>
         {
             asm = null;
         }
+        
+        if (asm == null)
+            return null;
 
         var version = FileVersionInfo.GetVersionInfo(asm.Location);
         return new EntityResolver<DllInfo>(new DllInfo

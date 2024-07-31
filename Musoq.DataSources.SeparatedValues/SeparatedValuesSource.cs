@@ -23,7 +23,7 @@ namespace Musoq.DataSources.SeparatedValues
         {
             _files =
             [
-                new SeparatedValueFile()
+                new SeparatedValueFile
                 {
                     FilePath = filePath,
                     HasHeader = hasHeader,

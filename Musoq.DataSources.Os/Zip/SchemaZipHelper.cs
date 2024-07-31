@@ -48,22 +48,4 @@ internal static class SchemaZipHelper
             new SchemaColumn("Level", 6, typeof(int))
         ];
     }
-
-    public static FileInfo UnpackZipEntry(ZipArchiveEntry entry, string name, string destDir)
-    {
-        //CONSIDER USING MEMORY MAPPED FILES!
-        var destFilePath = Path.GetFullPath(Path.Combine(destDir, name));
-        var destDirectoryPath = Path.GetFullPath(destDir + Path.DirectorySeparatorChar);
-
-        if (!destFilePath.StartsWith(destDirectoryPath))
-            throw new InvalidOperationException($"Entry is outside the target dir: {destFilePath}");
-
-        var fullDestDirectory = Path.GetDirectoryName(destFilePath);
-        if (!Directory.Exists(fullDestDirectory))
-            Directory.CreateDirectory(fullDestDirectory);
-
-        entry.ExtractToFile(destFilePath, true);
-
-        return new FileInfo(destFilePath);
-    }
 }

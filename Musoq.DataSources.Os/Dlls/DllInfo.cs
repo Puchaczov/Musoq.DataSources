@@ -8,7 +8,7 @@ internal class DllInfo
 {
     public FileInfo FileInfo { get; set; }
 
-    public Assembly Assembly { get; set; }
+    public Assembly? Assembly { get; set; }
 
-    public FileVersionInfo Version { get; set; }
+    public FileVersionInfo? Version { get; set; }
 }

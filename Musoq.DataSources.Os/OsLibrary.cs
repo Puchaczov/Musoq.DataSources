@@ -7,13 +7,17 @@ using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using MetadataExtractor;
 using Musoq.DataSources.Os.Files;
 using Musoq.DataSources.Os.Zip;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
 using Musoq.Plugins.Helpers;
 using Musoq.Schema.Exceptions;
+using Directory = System.IO.Directory;
 
 namespace Musoq.DataSources.Os;
 
@@ -708,18 +712,6 @@ public partial class OsLibrary : LibraryBase
         => context;
 
     /// <summary>
-    /// Gets zip entry file info
-    /// </summary>
-    /// <param name="zipArchiveEntry">The zipArchiveEntry</param>
-    /// <returns>ExtendedFileInfo</returns>
-    [BindableMethod]
-    public ExtendedFileInfo GetZipEntryFileInfo([InjectSpecificSource(typeof(ZipArchiveEntry))] ZipArchiveEntry zipArchiveEntry)
-    {
-        var fileInfo = SchemaZipHelper.UnpackZipEntry(zipArchiveEntry, zipArchiveEntry.FullName, Path.GetTempPath());
-        return new ExtendedFileInfo(fileInfo, fileInfo.DirectoryName);
-    }
-
-    /// <summary>
     /// Gets the count of lines of a file
     /// </summary>
     /// <param name="context">The context</param>
@@ -765,183 +757,6 @@ public partial class OsLibrary : LibraryBase
         }
 
         return lines;
-    }
-
-    /// <summary>
-    /// Compresses the directories and write to path
-    /// </summary>
-    /// <param name="directories">The directories</param>
-    /// <param name="path">The path</param>
-    /// <param name="method">The method</param>
-    /// <returns>Path to compressed directories</returns>
-    [BindableMethod]
-    public string Compress(IReadOnlyList<DirectoryInfo> directories, string path, string method)
-    {
-        if (directories.Count == 0)
-            return string.Empty;
-
-        CompressionLevel level;
-        switch (method.ToLowerInvariant())
-        {
-            case "fastest":
-                level = CompressionLevel.Fastest;
-                break;
-            case "optimal":
-                level = CompressionLevel.Optimal;
-                break;
-            case "nocompression":
-                level = CompressionLevel.NoCompression;
-                break;
-            default:
-                throw new NotSupportedException(method);
-        }
-
-        var operationExecutedSuccessfully = true;
-        using (var zipArchiveFile = File.Open(path, FileMode.OpenOrCreate))
-        {
-            try
-            {
-                using var zip = new ZipArchive(zipArchiveFile, ZipArchiveMode.Create);
-                var dirs = new Stack<DirectoryInfoPosition>();
-
-                foreach (var dir in directories)
-                    dirs.Push(new DirectoryInfoPosition(dir, dir.Parent));
-
-                while (dirs.Count > 0)
-                {
-                    var dir = dirs.Pop();
-
-                    foreach (var file in dir.Directory.GetFiles())
-                    {
-                        var entryName = file.FullName.Substring(dir.RootDirectory.FullName.Length);
-                        zip.CreateEntryFromFile(file.FullName, entryName.Trim('\\'), level);
-                    }
-
-                    foreach (var subDir in dir.Directory.GetDirectories())
-                        dirs.Push(new DirectoryInfoPosition(subDir, dir.RootDirectory));
-                }
-            }
-            catch (Exception)
-            {
-                operationExecutedSuccessfully = false;
-            }
-        }
-
-        return operationExecutedSuccessfully ? path : string.Empty;
-    }
-
-    /// <summary>
-    /// Compresses the files and write to path
-    /// </summary>
-    /// <param name="files">The directories</param>
-    /// <param name="path">The path</param>
-    /// <param name="method">The method</param>
-    /// <returns>Path to compressed directories</returns>
-    [BindableMethod]
-    public string Compress(IReadOnlyList<ExtendedFileInfo> files, string path, string method)
-    {
-        if (files.Count == 0)
-            return string.Empty;
-
-        var level = method.ToLowerInvariant() switch
-        {
-            "fastest" => CompressionLevel.Fastest,
-            "optimal" => CompressionLevel.Optimal,
-            "nocompression" => CompressionLevel.NoCompression,
-            _ => throw new NotSupportedException(method)
-        };
-
-        var operationExecutedSuccessfully = true;
-        using (var zipArchiveFile = File.Open(path, FileMode.OpenOrCreate))
-        {
-            try
-            {
-                using var zip = new ZipArchive(zipArchiveFile, ZipArchiveMode.Create);
-                foreach (var file in files) zip.CreateEntryFromFile(file.FullName, file.Name, level);
-            }
-            catch (Exception)
-            {
-                operationExecutedSuccessfully = false;
-            }
-        }
-
-        return operationExecutedSuccessfully ? path : string.Empty;
-    }
-
-    /// <summary>
-    /// Decompresses the files and write to path
-    /// </summary>
-    /// <param name="files">The directories</param>
-    /// <param name="path">The path</param>
-    /// <returns>Path to decompressed files</returns>
-    [BindableMethod]
-    public string Decompress(IReadOnlyList<ExtendedFileInfo> files, string path)
-    {
-        if (files.Count == 0)
-            return string.Empty;
-
-        var operationExecutedSuccessfully = true;
-
-        try
-        {
-            var tempPath = Path.GetTempPath();
-            var groupedByDir = files.GroupBy(f => f.DirectoryName.Substring(tempPath.Length)).ToArray();
-            tempPath = tempPath.TrimEnd('\\');
-
-            var di = new DirectoryInfo(tempPath);
-            var rootDirs = di.GetDirectories();
-            foreach (var dir in groupedByDir)
-            {
-                if (rootDirs.All(f =>
-                        dir.Key.Contains('\\') || !f.FullName.Substring(tempPath.Length).EndsWith(dir.Key)))
-                    continue;
-
-                if (!Directory.Exists(path))
-                    Directory.CreateDirectory(path);
-
-                var extractedDirs = new Stack<DirectoryInfo>();
-                extractedDirs.Push(new DirectoryInfo(Path.Combine(tempPath, dir.Key)));
-
-                while (extractedDirs.Count > 0)
-                {
-                    var extractedDir = extractedDirs.Pop();
-
-                    foreach (var file in extractedDir.GetFiles())
-                    {
-                        var subDir = string.Empty;
-                        var pUri = new Uri(extractedDir.Parent.FullName);
-                        var tUri = new Uri(tempPath);
-                        if (pUri != tUri)
-                            subDir = extractedDir.FullName.Substring(tempPath.Length).Replace(dir.Key, string.Empty)
-                                .TrimStart('\\');
-
-                        var destDir = Path.Combine(path, subDir);
-                        var destPath = Path.Combine(destDir, file.Name);
-
-                        if (!Directory.Exists(destDir))
-                            Directory.CreateDirectory(destDir);
-
-                        if (File.Exists(destPath))
-                            File.Delete(destPath);
-
-                        File.Move(file.FullName, destPath);
-                    }
-
-                    foreach (var subDir in extractedDir.GetDirectories()) extractedDirs.Push(subDir);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            if (Debugger.IsAttached)
-                Debugger.Break();
-            else
-                Debug.WriteLine(e);
-
-            operationExecutedSuccessfully = false;
-        }
-
-        return operationExecutedSuccessfully ? path : string.Empty;
     }
 
     /// <summary>
@@ -1008,53 +823,159 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.Combine(paths);
     }
-
+    
     /// <summary>
-    /// Gets the zip archive entry
+    /// Gets the directory name
     /// </summary>
-    /// <param name="zipArchiveEntry">The zipArchiveEntry</param>
-    /// <returns>ZipArchiveEntry</returns>
+    /// <param name="path">The path</param>
+    /// <returns>Directory name</returns>
     [BindableMethod]
-    public ZipArchiveEntry GetZipArchiveEntry([InjectSpecificSource(typeof(ZipArchiveEntry))] ZipArchiveEntry zipArchiveEntry)
+    public string? GetDirectoryName(string? path)
     {
-        return zipArchiveEntry;
+        return Path.GetDirectoryName(path);
     }
-
+    
     /// <summary>
-    /// Unpacks to destination directory
+    /// Gets the file name
     /// </summary>
-    /// <param name="zipArchiveEntry">The zipArchiveEntry</param>
-    /// <param name="destinationDirectory">The destinationDirectory</param>
-    /// <returns>ZipArchiveEntry</returns>
+    /// <param name="path">The path</param>
+    /// <returns>File name</returns>
     [BindableMethod]
-    public string UnpackTo([InjectSpecificSource(typeof(ZipArchiveEntry))] ZipArchiveEntry zipArchiveEntry, string destinationDirectory)
+    public string? GetFileName(string? path)
     {
-        var fileInfo = SchemaZipHelper.UnpackZipEntry(zipArchiveEntry, zipArchiveEntry.FullName, destinationDirectory);
-            
-        return fileInfo.FullName;
+        return Path.GetFileName(path);
     }
-
+    
     /// <summary>
-    /// Unpacks to temp directory
+    /// Gets the file name without extension
     /// </summary>
-    /// <param name="zipArchiveEntry">The zipArchiveEntry</param>
-    /// <returns>Path to unpacked file</returns>
+    /// <param name="path">The path</param>
+    /// <returns>File name without extension</returns>
     [BindableMethod]
-    public string Unpack([InjectSpecificSource(typeof(ZipArchiveEntry))] ZipArchiveEntry zipArchiveEntry)
+    public string? GetFileNameWithoutExtension(string? path)
     {
-        return UnpackTo(zipArchiveEntry, Path.GetTempPath());
+        return Path.GetFileNameWithoutExtension(path);
     }
-
-    private class DirectoryInfoPosition
+    
+    /// <summary>
+    /// Gets the extension
+    /// </summary>
+    /// <param name="path">The path</param>
+    /// <returns>Extension</returns>
+    [BindableMethod]
+    public string? GetExtension(string? path)
     {
-        public DirectoryInfoPosition(DirectoryInfo dir, DirectoryInfo root)
+        return Path.GetExtension(path);
+    }
+    
+    /// <summary>
+    /// Gets the metadata of a file
+    /// </summary>
+    /// <param name="fileInfo">The fileInfo</param>
+    /// <param name="directoryName">The directoryName</param>
+    /// <param name="tagName">The tagName</param>
+    /// <returns>Metadata of a file</returns>
+    [BindableMethod]
+    public string? GetMetadata([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo, string directoryName, string tagName)
+    {
+        foreach (var directory in fileInfo.Metadata)
         {
-            Directory = dir;
-            RootDirectory = root;
+            if (directory.Name != directoryName) continue;
+            
+            foreach (var tag in directory.Tags)
+            {
+                if (tag.Name == tagName)
+                    return tag.Description;
+            }
         }
-
-        public DirectoryInfo Directory { get; }
-
-        public DirectoryInfo RootDirectory { get; }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Gets the metadata of a file
+    /// </summary>
+    /// <param name="fileInfo">The fileInfo</param>
+    /// <param name="tagName">The tagName</param>
+    /// <returns>Metadata of a file</returns>
+    [BindableMethod]
+    public string? GetMetadata([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo, string tagName)
+    {
+        foreach (var directory in fileInfo.Metadata)
+        {
+            foreach (var tag in directory.Tags)
+            {
+                if (tag.Name == tagName)
+                    return tag.Description;
+            }
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Checks whether file has metadata directory
+    /// </summary>
+    /// <param name="fileInfo">The fileInfo</param>
+    /// <param name="directoryName">The directoryName</param>
+    /// <returns>True if has metadata directory; otherwise false</returns>
+    [BindableMethod]
+    public bool HasMetadataDirectory([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo, string directoryName)
+    {
+        return fileInfo.Metadata.Any(directory => directory.Name == directoryName);
+    }
+    
+    /// <summary>
+    /// Checks whether file has metadata tag
+    /// </summary>
+    /// <param name="fileInfo">The fileInfo</param>
+    /// <param name="directoryName">The directoryName</param>
+    /// <param name="tagName">The tagName</param>
+    /// <returns>True if has metadata tag; otherwise false</returns>
+    [BindableMethod]
+    public bool HasMetadataTag([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo, string directoryName, string tagName)
+    {
+        foreach (var directory in fileInfo.Metadata)
+        {
+            if (directory.Name != directoryName) continue;
+            
+            foreach (var tag in directory.Tags)
+            {
+                if (tag.Name == tagName)
+                    return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Checks whether file has metadata tag
+    /// </summary>
+    /// <param name="fileInfo">The fileInfo</param>
+    /// <param name="tagName">The tagName</param>
+    /// <returns>True if has metadata tag; otherwise false</returns>
+    [BindableMethod]
+    public bool HasMetadataTag([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo, string tagName)
+    {
+        return fileInfo.Metadata.Any(directory => directory.Tags.Any(tag => tag.Name == tagName));
+    }
+    
+    /// <summary>
+    /// Gets all metadata of a file and returns it as json
+    /// </summary>
+    /// <param name="fileInfo">The fileInfo</param>
+    /// <returns>All metadata of a file in a json format</returns>
+    [BindableMethod]
+    public string AllMetadataJson([InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo fileInfo)
+    {
+        return JsonSerializer.Serialize(fileInfo.Metadata.GroupBy(f => f.Name).Select(f => new
+        {
+            Directory = f.Key,
+            Tags = f.SelectMany(t => t.Tags.Select(tag => new
+            {
+                Tag = tag.Name, tag.Description
+            }))
+        }));
     }
 }

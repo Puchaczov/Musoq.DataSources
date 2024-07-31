@@ -1,8 +1,10 @@
 ﻿using System;
+using System.IO;
 using Musoq.DataSources.Os.Compare.Directories;
 using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
 using Musoq.DataSources.Os.Files;
+using Musoq.DataSources.Os.Metadata;
 using Musoq.DataSources.Os.Process;
 using Musoq.DataSources.Os.Zip;
 using Musoq.Schema;
@@ -28,6 +30,7 @@ public class OsSchema : SchemaBase
     private const string ProcessesName = "processes";
     private const string DirsCompare = "dirscompare";
     private const string Single = "single";
+    private const string Metadata = "metadata";
 
     /// <virtual-constructors>
     /// <virtual-constructor>
@@ -178,6 +181,31 @@ public class OsSchema : SchemaBase
     /// </example>
     /// </examples>
     /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <virtual-param>Path to file</virtual-param>
+    /// <examples>
+    /// <example>
+    /// <from>#os.metadata(string directoryOrFile)</from>
+    /// <description>Gets the metadata for file or for files within the directory</description>
+    /// <columns>
+    /// <column name="FullName" type="string">Gets the full path of the file</column>
+    /// <column name="DirectoryName" type="string">Gets the directory the metadata resides in</column>
+    /// <column name="TagName" type="string">Gets the tag name</column>
+    /// <column name="Description" type="string">Gets the description</column>
+    /// </columns>
+    /// </example>
+    /// <example>
+    /// <from>#os.metadata(string directory, bool useSubdirectories)</from>
+    /// <description>Gets the metadata for files within directories</description>
+    /// <columns>
+    /// <column name="FullName" type="string">Gets the full path of the file</column>
+    /// <column name="DirectoryName" type="string">Gets the directory the metadata resides in</column>
+    /// <column name="TagName" type="string">Gets the tag name</column>
+    /// <column name="Description" type="string">Gets the description</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
     /// </virtual-constructors>
     public OsSchema()
         : base(SchemaName, CreateLibrary())
@@ -199,6 +227,9 @@ public class OsSchema : SchemaBase
 
         AddSource<CompareDirectoriesSource>(DirsCompare);
         AddTable<DirsCompareBasedTable>(DirsCompare);
+        
+        AddSource<MetadataSource>(Metadata);
+        AddTable<MetadataTable>(Metadata);
     }
 
     /// <summary>
@@ -226,6 +257,8 @@ public class OsSchema : SchemaBase
                 return new DirsCompareBasedTable();
             case Single:
                 return new SingleRowSchemaTable();
+            case Metadata:
+                return new MetadataTable();
         }
 
         throw new NotSupportedException($"Unsupported table {name}.");
@@ -235,33 +268,49 @@ public class OsSchema : SchemaBase
     /// Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="interCommunicator">Runtime context</param>
+    /// <param name="runtimeContext">Runtime context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
+    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
         switch (name.ToLowerInvariant())
         {
             case FilesTable:
                 if (parameters[0] is IReadOnlyTable filesTable)
-                    return new FilesSource(filesTable, interCommunicator);
+                    return new FilesSource(filesTable, runtimeContext);
 
-                return new FilesSource((string)parameters[0], (bool)parameters[1], interCommunicator);
+                return new FilesSource((string)parameters[0], (bool)parameters[1], runtimeContext);
             case DirectoriesTable:
                 if (parameters[0] is IReadOnlyTable directoriesTable)
-                    return new DirectoriesSource(directoriesTable, interCommunicator);
+                    return new DirectoriesSource(directoriesTable, runtimeContext);
 
-                return new DirectoriesSource((string)parameters[0], (bool)parameters[1], interCommunicator);
+                return new DirectoriesSource((string)parameters[0], (bool)parameters[1], runtimeContext);
             case ZipTable:
-                return new ZipSource((string)parameters[0], interCommunicator);
+                return new ZipSource((string)parameters[0], runtimeContext);
             case ProcessesName:
-                return new ProcessesSource(interCommunicator);
+                return new ProcessesSource(runtimeContext);
             case DllsTable:
-                return new DllSource((string)parameters[0], (bool)parameters[1], interCommunicator);
+                return new DllSource((string)parameters[0], (bool)parameters[1], runtimeContext);
             case DirsCompare:
-                return new CompareDirectoriesSource((string)parameters[0], (string)parameters[1], interCommunicator);
+                return new CompareDirectoriesSource((string)parameters[0], (string)parameters[1], runtimeContext);
             case Single:
                 return new SingleRowSource();
+            case Metadata:
+                if (parameters is [IReadOnlyTable table])
+                    return new MetadataSource(table, runtimeContext);
+                
+                if (parameters is [string pathDirectory, bool useSubDirectories])
+                    return new MetadataSource(pathDirectory, null, useSubDirectories, MetadataSource.PathType.MustBeDirectory, runtimeContext);
+
+                if (parameters is [string pathDirectoryOrFile])
+                {
+                    var isDirectory = Directory.Exists(pathDirectoryOrFile);
+                    var directoryPath = isDirectory ? pathDirectoryOrFile : Path.GetDirectoryName(pathDirectoryOrFile) ?? throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
+                    var fileName = isDirectory ? null : Path.GetFileName(pathDirectoryOrFile);
+                    return new MetadataSource(directoryPath, fileName, false, MetadataSource.PathType.DirectoryOrFile, runtimeContext);
+                }
+                
+                throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
         }
 
         throw new NotSupportedException($"Unsupported row source {name}");
