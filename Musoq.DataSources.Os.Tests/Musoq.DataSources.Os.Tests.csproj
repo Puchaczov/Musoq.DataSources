@@ -16,6 +16,12 @@
     <None Remove="Files2\File3.txt" />
     <None Remove="Files\File1.txt" />
     <None Remove="Files\File2.txt" />
+    <None Update="Images\IMG_2426.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\IMG_2427.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

@@ -6,23 +6,23 @@ using System.Threading.Tasks;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.Os.Files;
+namespace Musoq.DataSources.Os;
 
-internal abstract class FilesSourceBase<TEntity> : RowSourceBase<TEntity>
+internal abstract class EnumerateFilesSourceBase<TEntity> : RowSourceBase<TEntity>
 {
     private readonly RuntimeContext _communicator;
     private readonly DirectorySourceSearchOptions[] _source;
 
-    protected FilesSourceBase(string path, bool useSubDirectories, RuntimeContext communicator)
+    protected EnumerateFilesSourceBase(string path, bool useSubDirectories, RuntimeContext communicator)
     {
         _communicator = communicator;
         _source =
         [
-            new(new DirectoryInfo(path).FullName, useSubDirectories)
+            new DirectorySourceSearchOptions(new DirectoryInfo(path).FullName, useSubDirectories)
         ];
     }
 
-    protected FilesSourceBase(IReadOnlyTable table, RuntimeContext context)
+    protected EnumerateFilesSourceBase(IReadOnlyTable table, RuntimeContext context)
     {
         _communicator = context;
         var sources = new List<DirectorySourceSearchOptions>();
@@ -43,7 +43,7 @@ internal abstract class FilesSourceBase<TEntity> : RowSourceBase<TEntity>
             { 
                 MaxDegreeOfParallelism = Environment.ProcessorCount 
             }, 
-            (source) => 
+            source => 
             {
                 try
                 {
@@ -61,13 +61,14 @@ internal abstract class FilesSourceBase<TEntity> : RowSourceBase<TEntity>
                     {
                         var currentSource = sources.Pop();
                         var dir = new DirectoryInfo(currentSource.Path);
-
                         var dirFiles = new List<EntityResolver<TEntity>>();
 
                         try
                         {
                             foreach (var file in GetFiles(dir))
-                                dirFiles.Add(CreateBasedOnFile(file, source.Path));
+                            {
+                                ProcessFile(file, source, dirFiles);
+                            }
                         }
                         catch (UnauthorizedAccessException)
                         {
@@ -88,7 +89,14 @@ internal abstract class FilesSourceBase<TEntity> : RowSourceBase<TEntity>
             });
     }
 
-    protected abstract EntityResolver<TEntity> CreateBasedOnFile(FileInfo file, string rootDirectory);
-
     protected virtual FileInfo[] GetFiles(DirectoryInfo directoryInfo) => directoryInfo.GetFiles();
+
+    protected virtual void ProcessFile(FileInfo file, DirectorySourceSearchOptions source, List<EntityResolver<TEntity>> dirFiles)
+    {
+        var entity = CreateBasedOnFile(file, source.Path);
+        if (entity != null)
+            dirFiles.Add(entity);
+    }
+
+    protected virtual EntityResolver<TEntity>? CreateBasedOnFile(FileInfo file, string rootDirectory) => null;
 }

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using MetadataExtractor;
 
 namespace Musoq.DataSources.Os.Files;
 
@@ -8,6 +10,8 @@ namespace Musoq.DataSources.Os.Files;
 /// </summary>
 public class ExtendedFileInfo
 {
+    private IReadOnlyList<MetadataExtractor.Directory>? _directories;
+    
     /// <summary>
     /// Initializes a new instance of extended file info
     /// </summary>
@@ -42,12 +46,12 @@ public class ExtendedFileInfo
     /// <summary>
     /// Gets the directory name
     /// </summary>
-    public string DirectoryName => FileInfo.DirectoryName;
+    public string? DirectoryName => FileInfo.DirectoryName;
         
     /// <summary>
     /// Gets the directory info
     /// </summary>
-    public DirectoryInfo Directory => FileInfo.Directory;
+    public DirectoryInfo? Directory => FileInfo.Directory;
         
     /// <summary>
     /// Gets the file length
@@ -101,13 +105,30 @@ public class ExtendedFileInfo
     public string FullName => FileInfo.FullName;
 
     /// <summary>
+    /// Gets the file attributes
+    /// </summary>
+    public FileAttributes Attributes => FileInfo.Attributes;
+
+    /// <summary>
+    /// Gets the metadata of the file
+    /// </summary>
+    public IReadOnlyList<MetadataExtractor.Directory> Metadata
+    {
+        get
+        {
+            if (_directories != null)
+                return _directories;
+            
+            using (var stream = OpenRead())
+                _directories = ImageMetadataReader.ReadMetadata(stream);
+            
+            return _directories;
+        }
+    }
+
+    /// <summary>
     /// Opens the file for reading
     /// </summary>
     /// <returns>FileStream</returns>
     public FileStream OpenRead() => FileInfo.OpenRead();
-
-    /// <summary>
-    /// Gets the file attributes
-    /// </summary>
-    public FileAttributes Attributes => FileInfo.Attributes;
 }

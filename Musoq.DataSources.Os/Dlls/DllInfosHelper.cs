@@ -11,7 +11,7 @@ namespace Musoq.DataSources.Os.Dlls;
 internal static class DllInfosHelper
 {
     public static readonly IDictionary<string, int> DllInfosNameToIndexMap;
-    public static readonly IDictionary<int, Func<DllInfo, object>> DllInfosIndexToMethodAccessMap;
+    public static readonly IDictionary<int, Func<DllInfo, object?>> DllInfosIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] DllInfosColumns;
 
     static DllInfosHelper()
@@ -23,7 +23,7 @@ internal static class DllInfosHelper
             {nameof(DllInfo.Version), 2}
         };
 
-        DllInfosIndexToMethodAccessMap = new Dictionary<int, Func<DllInfo, object>>
+        DllInfosIndexToMethodAccessMap = new Dictionary<int, Func<DllInfo, object?>>
         {
             {0, info => info.FileInfo},
             {1, info => info.Assembly},
