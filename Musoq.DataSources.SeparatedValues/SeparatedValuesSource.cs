@@ -132,7 +132,6 @@ namespace Musoq.DataSources.SeparatedValues
 
                     using (var csvReader = new CsvReader(reader, new CsvConfiguration(modifiedCulture) { BadDataFound = _ => {} }))
                     {
-
                         int i = 1, j = 11;
                         var list = new List<EntityResolver<object?[]>>(100);
                         var rowsToRead = 1000;

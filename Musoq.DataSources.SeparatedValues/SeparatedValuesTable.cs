@@ -7,24 +7,12 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.SeparatedValues
 {
-    internal class SeparatedValuesTable : ISchemaTable
+    internal class SeparatedValuesTable(string fileName, string separator, bool hasHeader, int skipLines)
+        : ISchemaTable
     {
-        private readonly string _fileName;
-        private readonly string _separator;
-        private readonly bool _hasHeader;
-        private readonly int _skipLines;
-        
         private ISchemaColumn[]? _columns;
         
         public IReadOnlyCollection<ISchemaColumn>? InferredColumns { get; init; }
-        
-        public SeparatedValuesTable(string fileName, string separator, bool hasHeader, int skipLines)
-        {
-            _fileName = fileName;
-            _separator = separator;
-            _hasHeader = hasHeader;
-            _skipLines = skipLines;
-        }
 
         public ISchemaColumn[] Columns
         {
@@ -36,12 +24,12 @@ namespace Musoq.DataSources.SeparatedValues
                 if (InferredColumns is null)
                     throw new InvalidOperationException("Inferred columns cannot be null.");
                 
-                var file = new FileInfo(_fileName);
+                var file = new FileInfo(fileName);
                 using var stream = new StreamReader(file.OpenRead());
                 var line = string.Empty;
 
                 var currentLine = 0;
-                while (!stream.EndOfStream && ((line = stream.ReadLine()) == string.Empty || currentLine < _skipLines))
+                while (!stream.EndOfStream && ((line = stream.ReadLine()) == string.Empty || currentLine < skipLines))
                 {
                     currentLine += 1;
                 }
@@ -49,9 +37,10 @@ namespace Musoq.DataSources.SeparatedValues
                 if (line is null)
                     throw new InvalidOperationException("File is empty.");
 
-                var columns = line.Split([_separator], StringSplitOptions.None);
+                var columns = line.Split([separator], StringSplitOptions.None);
 
-                if (_hasHeader)
+                if (hasHeader)
+                {
                     _columns = columns
                         .Select((header, i) =>
                         {
@@ -66,12 +55,15 @@ namespace Musoq.DataSources.SeparatedValues
                         })
                         .Cast<ISchemaColumn>()
                         .ToArray();
+                }
                 else
+                {
                     _columns = columns
                         .Select((f, i) => new SchemaColumn(string.Format(SeparatedValuesHelper.AutoColumnName, i + 1), i, typeof(string)))
                         .Cast<ISchemaColumn>()
                         .ToArray();
-                
+                }
+
                 return _columns;
             }
         }

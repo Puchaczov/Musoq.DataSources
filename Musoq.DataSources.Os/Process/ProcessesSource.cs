@@ -5,20 +5,13 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Process;
 
-internal class ProcessesSource : RowSourceBase<System.Diagnostics.Process>
+internal class ProcessesSource(RuntimeContext communicator) : RowSourceBase<System.Diagnostics.Process>
 {
-    private readonly RuntimeContext _communicator;
-
-    public ProcessesSource(RuntimeContext communicator)
-    {
-        _communicator = communicator;
-    }
-
     protected override void CollectChunks(
         BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         var list = new List<EntityResolver<System.Diagnostics.Process>>();
-        var endWorkToken = _communicator.EndWorkToken;
+        var endWorkToken = communicator.EndWorkToken;
         var i = 0;
         foreach (var process in System.Diagnostics.Process.GetProcesses())
         {

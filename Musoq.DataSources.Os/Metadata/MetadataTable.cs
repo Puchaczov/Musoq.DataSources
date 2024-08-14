@@ -5,9 +5,9 @@ namespace Musoq.DataSources.Os.Metadata;
 
 internal class MetadataTable : ISchemaTable
 {
-    public ISchemaColumn[] Columns { get; } = SchemaMetadataHelper.MetadataColumns;
-    
-    public SchemaTableMetadata Metadata { get; } = new(typeof(MetadataEntity));
+    public ISchemaColumn[] Columns => SchemaMetadataHelper.MetadataColumns;
+
+    public SchemaTableMetadata Metadata => new(typeof(MetadataEntity));
 
     public ISchemaColumn? GetColumnByName(string name)
     {
