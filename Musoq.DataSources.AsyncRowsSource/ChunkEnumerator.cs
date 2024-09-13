@@ -1,96 +1,80 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Concurrent;
-using Musoq.DataSources.AsyncRowsSource.Exceptions;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.AsyncRowsSource;
-
-    public class ChunkEnumerator : IEnumerator<IObjectResolver>
+namespace Musoq.DataSources.AsyncRowsSource
+{
+    public class ChunkEnumerator(
+        BlockingCollection<IReadOnlyList<IObjectResolver>> readRows,
+        Func<Exception?> getException,
+        CancellationToken token)
+        : IEnumerator<IObjectResolver>
     {
-        private readonly BlockingCollection<IReadOnlyList<IObjectResolver>> _readRows;
-
+        private readonly BlockingCollection<IReadOnlyList<IObjectResolver>> _readRows = readRows ?? throw new ArgumentNullException(nameof(readRows));
         private IReadOnlyList<IObjectResolver>? _currentChunk;
         private int _currentIndex = -1;
-        private readonly CancellationToken _token;
-        private readonly Func<Exception?> _getParentException;
-
-        public ChunkEnumerator(BlockingCollection<IReadOnlyList<IObjectResolver>> readRows, CancellationToken token, Func<Exception?> getParentException)
-        {
-            _readRows = readRows;
-            _token = token;
-            _getParentException = getParentException;
-        }
+        private const int MaxTakeAttempts = 10;
 
         public bool MoveNext()
         {
-            var exception = _getParentException();
+            var exception = getException();
             
             if (exception != null)
                 throw exception;
             
-            if (_currentChunk != null && _currentIndex++ < _currentChunk.Count - 1)
+            if (_currentChunk != null && ++_currentIndex < _currentChunk.Count)
                 return true;
+
+            return TryGetNextChunk();
+        }
+
+        private bool TryGetNextChunk()
+        {
+            for (int i = 0; i < MaxTakeAttempts; i++)
+            {
+                if (TryTakeValidChunk(out _currentChunk))
+                {
+                    _currentIndex = 0;
+                    return true;
+                }
+            }
 
             try
             {
-                var wasTaken = false;
-                for (var i = 0; i < 10; i++)
-                {
-                    if (!_readRows.TryTake(out _currentChunk) || _currentChunk == null || _currentChunk.Count == 0) continue;
-
-                    wasTaken = true;
-                    break;
-                }
-
-                if (!wasTaken)
-                {
-                    IReadOnlyList<IObjectResolver>? newChunk = null;
-                    while (newChunk == null || newChunk.Count == 0)
-                        newChunk = _readRows.Count > 0 ? _readRows.Take() : _readRows.Take(_token);
-
-                    _currentChunk = newChunk;
-                }
-
+                _currentChunk = _readRows.Take(token);
                 _currentIndex = 0;
-                return true;
+                return _currentChunk.Count > 0;
             }
             catch (OperationCanceledException)
             {
-                exception = _getParentException();
-                
-                if (exception != null)
-                    throw new DataSourceException(exception);
-                
-                if (_readRows.Count <= 0) return false;
-
-                _currentChunk = _readRows.Take();
-                while (_readRows.Count > 0 && _currentChunk.Count == 0)
-                    _currentChunk = _readRows.Take();
-
-                _currentIndex = 0;
-                return _currentChunk.Count > 0;
-
-            }
-            catch (NullReferenceException)
-            {
-                return false;
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return false;
+                return TryTakeRemainingItems();
             }
         }
 
-        public void Reset()
+        private bool TryTakeValidChunk(out IReadOnlyList<IObjectResolver>? chunk)
         {
-            throw new NotSupportedException("Chunk enumerator does not support reseting enumeration.");
+            return _readRows.TryTake(out chunk) && chunk is {Count: > 0};
         }
 
-        public IObjectResolver Current => _currentChunk[_currentIndex];
+        private bool TryTakeRemainingItems()
+        {
+            while (_readRows.Count > 0)
+            {
+                if (TryTakeValidChunk(out _currentChunk))
+                {
+                    _currentIndex = 0;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void Reset() => throw new NotSupportedException("Chunk enumerator does not support reset.");
+
+        public IObjectResolver Current => _currentChunk![_currentIndex];
 
         object IEnumerator.Current => Current;
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
     }
+}

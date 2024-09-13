@@ -1,25 +1,32 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Musoq.DataSources.AsyncRowsSource;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Helpers;
 
 namespace Musoq.DataSources.SeparatedValues
 {
-    internal class SeparatedValuesSource : RowSourceBase<object[]>
+    internal class SeparatedValuesSource : AsyncRowsSourceBase<object[]>
     {
         private readonly SeparatedValueFile[] _files;
+        private const int BufferSize = 65536; // 64KB buffer
+        private const int ChunkSize = 100000; // Number of rows per chunk
         
         public RuntimeContext? RuntimeContext { get; init; }
 
-        public SeparatedValuesSource(string filePath, string separator, bool hasHeader, int skipLines)
+        public SeparatedValuesSource(string filePath, string separator, bool hasHeader, int skipLines, CancellationToken cancellationToken)
+            : base(cancellationToken)
         {
             _files =
             [
@@ -33,7 +40,8 @@ namespace Musoq.DataSources.SeparatedValues
             ];
         }
 
-        public SeparatedValuesSource(IReadOnlyTable table, string separator)
+        public SeparatedValuesSource(IReadOnlyTable table, string separator, CancellationToken cancellationToken)
+            : base(cancellationToken)
         {
             _files = new SeparatedValueFile[table.Count];
 
@@ -50,36 +58,27 @@ namespace Musoq.DataSources.SeparatedValues
             }
         }
 
-        protected override void CollectChunks(BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource)
+        protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
         {
-            foreach (var csvFile in _files)
-            {
-                ProcessFile(csvFile, chunkedSource);
-            }
+            await Parallel.ForEachAsync(_files, cancellationToken, async (file, loopToken) => await ProcessFileAsync(file, chunkedSource, loopToken));
         }
 
-        private void ProcessFile(SeparatedValueFile csvFile, BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource)
+        private async Task ProcessFileAsync(SeparatedValueFile csvFile, BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
         {
             if (RuntimeContext is null)
-            {
                 throw new InvalidOperationException("Runtime context is not set.");
-            }
-            
+
             if (csvFile.FilePath is null)
-            {
                 throw new InvalidOperationException("File path cannot be null.");
-            }
-            
+
             if (csvFile.Separator is null)
-            {
                 throw new InvalidOperationException("Separator cannot be null.");
-            }
-            
+
             var file = new FileInfo(csvFile.FilePath);
 
             if (!file.Exists)
             {
-                chunkedSource.Add(new List<EntityResolver<object[]>>());
+                chunkedSource.Add(new List<EntityResolver<object[]>>(), cancellationToken);
                 return;
             }
 
@@ -90,81 +89,81 @@ namespace Musoq.DataSources.SeparatedValues
 
             var modifiedCulture = new CultureInfo(CultureInfo.CurrentCulture.Name)
             {
-                TextInfo =
-                {
-                    ListSeparator = csvFile.Separator
-                }
+                TextInfo = { ListSeparator = csvFile.Separator }
             };
 
-            using (var stream = CreateStreamFromFile(file))
+            // Process header
+            await ProcessHeaderAsync(file, csvFile, nameToIndexMap, indexToMethodAccess, indexToNameMap, modifiedCulture);
+
+            // Process data
+            await ProcessDataAsync(file, csvFile, chunkedSource, nameToIndexMap, indexToMethodAccess, indexToNameMap, modifiedCulture, endWorkToken);
+        }
+
+        private static async Task ProcessHeaderAsync(FileInfo file, SeparatedValueFile csvFile, Dictionary<string, int> nameToIndexMap, 
+            Dictionary<int, Func<object?[], object?>> indexToMethodAccess, Dictionary<int, string> indexToNameMap, CultureInfo modifiedCulture)
+        {
+            await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, FileOptions.SequentialScan);
+            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, BufferSize);
+            
+            await SkipLinesAsync(reader, csvFile.SkipLines);
+
+            using var csvReader = new CsvReader(reader, modifiedCulture);
+            await csvReader.ReadAsync();
+
+            var header = csvReader.Context.Parser!.Record;
+
+            if (header == null)
+                throw new NotSupportedException("File has no header or no data. Please check if file is not empty.");
+
+            for (var i = 0; i < header.Length; ++i)
             {
-                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                var headerName = csvFile.HasHeader ? SeparatedValuesHelper.MakeHeaderNameValidColumnName(header[i]) : string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
+                nameToIndexMap.Add(headerName, i);
+                indexToNameMap.Add(i, headerName);
+                var i1 = i;
+                indexToMethodAccess.Add(i, row => row[i1]);
+            }
+        }
+
+        private async Task ProcessDataAsync(FileInfo file, SeparatedValueFile csvFile, 
+            BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource,
+            Dictionary<string, int> nameToIndexMap, Dictionary<int, Func<object?[], object?>> indexToMethodAccess, 
+            Dictionary<int, string> indexToNameMap, CultureInfo modifiedCulture,  CancellationToken endWorkToken)
+        {
+            await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, FileOptions.SequentialScan);
+            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, BufferSize);
+            
+            await SkipLinesAsync(reader, csvFile.SkipLines);
+
+            using var csvReader = new CsvReader(reader, new CsvConfiguration(modifiedCulture) { BadDataFound = _ => { } });
+
+            if (csvFile.HasHeader)
+                await csvReader.ReadAsync(); // Skip header
+
+            var chunk = new List<EntityResolver<object?[]>>(ChunkSize);
+
+            while (await csvReader.ReadAsync())
+            {
+                if (endWorkToken.IsCancellationRequested)
+                    break;
+
+                var rawRow = csvReader.Context.Parser!.Record;
+                
+                if (rawRow == null)
+                    continue;
+                
+                chunk.Add(new EntityResolver<object?[]>(ParseRecords(rawRow, indexToNameMap), nameToIndexMap, indexToMethodAccess));
+
+                if (chunk.Count >= ChunkSize)
                 {
-                    SkipLines(reader, csvFile);
-                    
-                    using (var csvReader = new CsvReader(reader,  modifiedCulture))
-                    {
-                        csvReader.Read();
-
-                        var header = csvReader.Context.Parser.Record;
-
-                        if (header == null)
-                            throw new NotSupportedException(
-                                "File has no header or no data. Please check if file is not empty.");
-
-                        for (var i = 0; i < header.Length; ++i)
-                        {
-                            var headerName = csvFile.HasHeader ? SeparatedValuesHelper.MakeHeaderNameValidColumnName(header[i]) : string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
-                            nameToIndexMap.Add(headerName, i);
-                            indexToNameMap.Add(i, headerName);
-                            var i1 = i;
-                            indexToMethodAccess.Add(i, row => row[i1]);
-                        }
-                    }
+                    chunkedSource.Add(chunk, endWorkToken);
+                    chunk = new List<EntityResolver<object?[]>>(ChunkSize);
                 }
             }
 
-            using (var stream = CreateStreamFromFile(file))
+            if (chunk.Count > 0)
             {
-                using (var reader = new StreamReader(stream))
-                {
-                    SkipLines(reader, csvFile);
-
-                    using (var csvReader = new CsvReader(reader, new CsvConfiguration(modifiedCulture) { BadDataFound = _ => {} }))
-                    {
-                        int i = 1, j = 11;
-                        var list = new List<EntityResolver<object?[]>>(100);
-                        var rowsToRead = 1000;
-                        const int rowsToReadBase = 100;
-
-                        if (csvFile.HasHeader)
-                            csvReader.Read(); //skip header.
-
-                        while (csvReader.Read())
-                        {
-                            var rawRow = csvReader.Context.Parser.Record;
-                            
-                            if (rawRow == null)
-                                continue;
-                            
-                            list.Add(new EntityResolver<object?[]>(ParseRecords(rawRow, indexToNameMap), nameToIndexMap, indexToMethodAccess));
-
-                            if (i++ < rowsToRead) continue;
-
-                            i = 1;
-
-                            if (j > 1)
-                                j -= 1;
-
-                            rowsToRead = rowsToReadBase * j;
-
-                            chunkedSource.Add(list, endWorkToken);
-                            list = new List<EntityResolver<object?[]>>(rowsToRead);
-                        }
-
-                        chunkedSource.Add(list, endWorkToken);
-                    }
-                }
+                chunkedSource.Add(chunk, endWorkToken);
             }
         }
 
@@ -299,27 +298,12 @@ namespace Musoq.DataSources.SeparatedValues
             return parsedRecords;
         }
 
-        private void SkipLines(TextReader reader, SeparatedValueFile csvFile)
+        private static async Task SkipLinesAsync(TextReader reader, int linesToSkip)
         {
-            if (csvFile.SkipLines <= 0) return;
-
-            var skippedLines = 0;
-            while (skippedLines < csvFile.SkipLines)
+            for (var i = 0; i < linesToSkip; i++)
             {
-                reader.ReadLine();
-                skippedLines += 1;
+                await reader.ReadLineAsync();
             }
-        }
-
-        private Stream CreateStreamFromFile(FileInfo file)
-        {
-            Stream stream;
-            if (SizeConverter.ToMegabytes(file.Length) > Performance.FreeMemoryInMegabytes())
-                stream = file.OpenRead();
-            else
-                stream = new MemoryStream(Encoding.UTF8.GetBytes(file.OpenText().ReadToEnd()));
-
-            return stream;
         }
         
         private class SeparatedValueFile

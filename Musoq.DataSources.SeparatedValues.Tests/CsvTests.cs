@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -717,7 +716,8 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                 "./Files/BankingTransactionsWithSkippedLines.csv", 
                 ",", 
                 true, 
-                2)
+                2, 
+                tokenSource.Token)
             {
                 RuntimeContext = new RuntimeContext(
                     tokenSource.Token, 
@@ -760,7 +760,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                 new Dictionary<string, string>(),
                 (null, null, null));
 
-            var source = new SeparatedValuesSource("./Files/AllTypes.csv", ",", true, 0)
+            var source = new SeparatedValuesSource("./Files/AllTypes.csv", ",", true, 0, tokenSource.Token)
             {
                 RuntimeContext = context
             };
@@ -813,7 +813,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         [TestMethod]
         public void CsvSource_FullLoadTest()
         {
-            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2)
+            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, CancellationToken.None)
             {
                 RuntimeContext = new RuntimeContext(
                     CancellationToken.None, 

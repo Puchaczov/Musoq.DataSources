@@ -3,27 +3,19 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.AsyncRowsSource;
 
-public abstract class AsyncRowsSourceBase<T> : RowSource
+public abstract class AsyncRowsSourceBase<T>(CancellationToken endWorkToken) : RowSource
 {
-    private readonly CancellationToken _endWorkToken;
-    
     private Exception? _exception;
-
-    protected AsyncRowsSourceBase(CancellationToken endWorkToken)
-    {
-        _endWorkToken = endWorkToken;
-        _exception = null;
-    }
 
     public override IEnumerable<IObjectResolver> Rows
     {
         get
         {
             var chunkedSource = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
-            var workFinishedSignalizer = new CancellationTokenSource();
-            var workFinishedToken = workFinishedSignalizer.Token;
-            var errorSignalizer = new CancellationTokenSource();
-            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(workFinishedToken, errorSignalizer.Token, _endWorkToken);
+            var workFinishedCancellationTokenSource = new CancellationTokenSource();
+            var workFinishedToken = workFinishedCancellationTokenSource.Token;
+            var errorCancellationTokenSource = new CancellationTokenSource();
+            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(workFinishedToken, errorCancellationTokenSource.Token, endWorkToken);
             var linkedToken = linkedTokenSource.Token;
 
             Task.Run(async () =>
@@ -42,7 +34,7 @@ public abstract class AsyncRowsSourceBase<T> : RowSource
                 finally
                 {
                     chunkedSource.Add(new List<EntityResolver<T>>());
-                    workFinishedSignalizer.Cancel();
+                    workFinishedCancellationTokenSource.Cancel();
                 }
             });
 

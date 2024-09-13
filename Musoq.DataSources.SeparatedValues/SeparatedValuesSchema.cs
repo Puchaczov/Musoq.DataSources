@@ -108,19 +108,19 @@ namespace Musoq.DataSources.SeparatedValues
             {
                 case "comma":
                     if (parameters[0] is IReadOnlyTable csvTable)
-                        return new SeparatedValuesSource(csvTable, ",") { RuntimeContext = runtimeContext };
+                        return new SeparatedValuesSource(csvTable, ",", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
 
-                    return new SeparatedValuesSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2]) { RuntimeContext = runtimeContext };
+                    return new SeparatedValuesSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
                 case "tab":
                     if (parameters[0] is IReadOnlyTable tsvTable)
-                        return new SeparatedValuesSource(tsvTable, "\t") { RuntimeContext = runtimeContext };
+                        return new SeparatedValuesSource(tsvTable, "\t", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
 
-                    return new SeparatedValuesSource((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2]) { RuntimeContext = runtimeContext };
+                    return new SeparatedValuesSource((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
                 case "semicolon":
                     if (parameters[0] is IReadOnlyTable semicolonTable)
-                        return new SeparatedValuesSource(semicolonTable, ";") { RuntimeContext = runtimeContext };
+                        return new SeparatedValuesSource(semicolonTable, ";", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
 
-                    return new SeparatedValuesSource((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2]) { RuntimeContext = runtimeContext };
+                    return new SeparatedValuesSource((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
             }
 
             return base.GetRowSource(name, runtimeContext, parameters);
