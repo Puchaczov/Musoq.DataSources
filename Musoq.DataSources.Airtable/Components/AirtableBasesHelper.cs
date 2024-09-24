@@ -6,8 +6,8 @@ namespace Musoq.DataSources.Airtable.Components;
 
 internal static class AirtableBasesHelper
 {
-    public static readonly IDictionary<string, int> BasesNameToIndexMap;
-    public static readonly IDictionary<int, Func<AirtableBase, object>> BasesIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> BasesNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<AirtableBase, object>> BasesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] BasesColumns;
 
     static AirtableBasesHelper()

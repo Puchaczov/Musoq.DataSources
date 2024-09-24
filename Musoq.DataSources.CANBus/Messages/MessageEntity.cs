@@ -1,6 +1,10 @@
-﻿using DbcParserLib;
+﻿using System.Collections.Generic;
+using System.Linq;
+using DbcParserLib;
 using DbcParserLib.Model;
 using Musoq.DataSources.CANBus.Components;
+using Musoq.DataSources.CANBus.Signals;
+using Musoq.Plugins.Attributes;
 
 // ReSharper disable InconsistentNaming
 
@@ -59,4 +63,10 @@ public class MessageEntity : ICANDbcMessage
     /// Gets the can message cycle time.
     /// </summary>
     public int CycleTime => Message.CycleTime(out var cycleTime) ? cycleTime : 0;
+
+    /// <summary>
+    /// Gets the can message signals.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<SignalEntity> Signals => Message.Signals.Select(f => new SignalEntity(f, Message));
 }

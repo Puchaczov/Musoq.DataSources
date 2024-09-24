@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Kubernetes.PodContainers;
 
 internal static class PodContainersSourceHelper
 {
-    public static readonly IDictionary<string, int> PodContainersNameToIndexMap = new Dictionary<string, int>
+    public static readonly IReadOnlyDictionary<string, int> PodContainersNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(PodContainerEntity.Namespace), 0},
         {nameof(PodContainerEntity.Name), 1},
@@ -23,7 +23,7 @@ internal static class PodContainersSourceHelper
         {nameof(PodContainerEntity.WorkingDir), 12},
     };
 
-    public static readonly IDictionary<int, Func<PodContainerEntity, object?>> PodContainersIndexToMethodAccessMap =
+    public static readonly IReadOnlyDictionary<int, Func<PodContainerEntity, object?>> PodContainersIndexToMethodAccessMap =
         new Dictionary<int, Func<PodContainerEntity, object?>>
         {
             {0, f => f.Namespace},

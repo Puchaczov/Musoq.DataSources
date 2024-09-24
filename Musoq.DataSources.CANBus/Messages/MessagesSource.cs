@@ -11,21 +11,12 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.CANBus.Messages;
 
-internal class MessagesSource : AsyncRowsSourceBase<Message>
+internal class MessagesSource(ICANBusApi canBusApi, RuntimeContext runtimeContext)
+    : AsyncRowsSourceBase<Message>(runtimeContext.EndWorkToken)
 {
-    private readonly ICANBusApi _canBusApi;
-    private readonly RuntimeContext _runtimeContext;
-
-    public MessagesSource(ICANBusApi canBusApi, RuntimeContext runtimeContext)
-        : base(runtimeContext.EndWorkToken)
-    {
-        _canBusApi = canBusApi;
-        _runtimeContext = runtimeContext;
-    }
-
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
-        var messages = await _canBusApi.GetMessagesAsync(_runtimeContext.EndWorkToken);
+        var messages = await canBusApi.GetMessagesAsync(runtimeContext.EndWorkToken);
         
         chunkedSource.Add(
             messages.Select(f => new EntityResolver<MessageEntity>(

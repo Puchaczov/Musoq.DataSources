@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -25,14 +26,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity> : RowSourceBase<TEntit
     protected EnumerateFilesSourceBase(IReadOnlyTable table, RuntimeContext context)
     {
         _communicator = context;
-        var sources = new List<DirectorySourceSearchOptions>();
-
-        foreach (var row in table.Rows)
-        {
-            sources.Add(new DirectorySourceSearchOptions(new DirectoryInfo((string)row[0]).FullName, (bool)row[1]));
-        }
-
-        _source = sources.ToArray();
+        _source = table.Rows.Select(row => new DirectorySourceSearchOptions(new DirectoryInfo((string) row[0]).FullName, (bool) row[1])).ToArray();
     }
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)

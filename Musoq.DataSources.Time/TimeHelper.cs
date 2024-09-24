@@ -7,8 +7,8 @@ namespace Musoq.DataSources.Time
 {
     internal static class TimeHelper
     {
-        public static readonly IDictionary<string, int> TimeNameToIndexMap;
-        public static readonly IDictionary<int, Func<DateTimeOffset, object>> TimeIndexToMethodAccessMap;
+        public static readonly IReadOnlyDictionary<string, int> TimeNameToIndexMap;
+        public static readonly IReadOnlyDictionary<int, Func<DateTimeOffset, object>> TimeIndexToMethodAccessMap;
         public static readonly ISchemaColumn[] TimeColumns;
 
         static TimeHelper()

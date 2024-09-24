@@ -14,7 +14,7 @@ public class SignalEntity
     /// Creates a new instance of <see cref="SignalEntity"/>.
     /// </summary>
     /// <param name="signal">The signal.</param>
-    /// <param name="messageName">The message name.</param>
+    /// <param name="message">The message.</param>
     public SignalEntity(Signal signal, Message message)
     {
         _signal = signal;
@@ -24,7 +24,7 @@ public class SignalEntity
     /// <summary>
     /// Gets the can signal id.
     /// </summary>
-    public uint Id => _signal.ID;
+    public uint Id => _signal.Parent.ID;
     
     /// <summary>
     /// Gets the can signal message id.

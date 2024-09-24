@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Kubernetes.Nodes;
 
 internal static class NodesSourceHelper
 {
-    internal static readonly IDictionary<string, int> NodesNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> NodesNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(NodeEntity.Name), 0},
         {nameof(NodeEntity.Status), 1},
@@ -20,7 +20,7 @@ internal static class NodesSourceHelper
         {nameof(NodeEntity.Memory), 10}
     };
 
-    internal static readonly IDictionary<int, Func<NodeEntity, object?>> NodesIndexToMethodAccessMap =
+    internal static readonly IReadOnlyDictionary<int, Func<NodeEntity, object?>> NodesIndexToMethodAccessMap =
         new Dictionary<int, Func<NodeEntity, object?>>
         {
             {0, t => t.Name},

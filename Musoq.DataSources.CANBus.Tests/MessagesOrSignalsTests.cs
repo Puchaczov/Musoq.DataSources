@@ -364,6 +364,27 @@ where Name = 'Oil_Temperature'";
         Assert.AreEqual("Engine", table[0].Values[15]);
     }
 
+    [TestMethod]
+    public void WhenMessagesCrossAppliedWithSignals_ShouldPass()
+    {
+        const string query = "select m.Name, s.Name from #can.messages('./Data/1/1.dbc') m cross apply m.Signals s";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(3, table.Count);
+        
+        Assert.AreEqual("Exhaust_System", table[0].Values[0]);
+        Assert.AreEqual("Exhaust_Gas_Temperature", table[0].Values[1]);
+        
+        Assert.AreEqual("Engine", table[1].Values[0]);
+        Assert.AreEqual("Oil_Temperature", table[1].Values[1]);
+        
+        Assert.AreEqual("Engine", table[2].Values[0]);
+        Assert.AreEqual("Is_Turned_On", table[2].Values[1]);
+    }
+
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());

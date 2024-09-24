@@ -5,8 +5,8 @@ namespace Musoq.DataSources.Kubernetes.Pods;
 
 internal static class PodsSourceHelper
 {
-    public static readonly IDictionary<string, int> PodsNameToIndexMap;
-    public static readonly IDictionary<int, Func<PodEntity, object?>> PodsIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> PodsNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<PodEntity, object?>> PodsIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] PodsColumns;
 
     static PodsSourceHelper()

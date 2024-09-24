@@ -6,8 +6,8 @@ namespace Musoq.DataSources.Docker.Volumes;
 
 internal static class VolumesSourceHelper
 {
-    public static readonly IDictionary<string, int> VolumesNameToIndexMap;
-    public static readonly IDictionary<int, Func<VolumeResponse, object>> VolumesIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> VolumesNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<VolumeResponse, object>> VolumesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] VolumesColumns;
 
     static VolumesSourceHelper()

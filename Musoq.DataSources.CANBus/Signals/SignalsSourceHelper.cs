@@ -7,7 +7,7 @@ namespace Musoq.DataSources.CANBus.Signals;
 
 internal static class SignalsSourceHelper
 {
-    internal static readonly IDictionary<string, int> SignalsNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> SignalsNameToIndexMap = new Dictionary<string, int>
     {
         { nameof(SignalEntity.Id), 0 },
         { nameof(SignalEntity.Name), 1 },
@@ -27,7 +27,7 @@ internal static class SignalsSourceHelper
         { nameof(SignalEntity.MessageName), 15 }
     };
 
-    internal static readonly IDictionary<int, Func<SignalEntity, object>> SignalsIndexToMethodAccessMap = new Dictionary<int, Func<SignalEntity, object>>
+    internal static readonly IReadOnlyDictionary<int, Func<SignalEntity, object>> SignalsIndexToMethodAccessMap = new Dictionary<int, Func<SignalEntity, object>>
     {
         { 0, f => f.Id },
         { 1, f => f.Name },

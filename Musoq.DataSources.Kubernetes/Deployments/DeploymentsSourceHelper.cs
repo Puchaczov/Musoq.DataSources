@@ -5,8 +5,8 @@ namespace Musoq.DataSources.Kubernetes.Deployments;
 
 internal static class DeploymentsSourceHelper
 {
-    public static readonly IDictionary<string, int> DeploymentsNameToIndexMap;
-    public static readonly IDictionary<int, Func<DeploymentEntity, object?>> DeploymentsIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> DeploymentsNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<DeploymentEntity, object?>> DeploymentsIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] DeploymentsColumns;
 
     static DeploymentsSourceHelper()

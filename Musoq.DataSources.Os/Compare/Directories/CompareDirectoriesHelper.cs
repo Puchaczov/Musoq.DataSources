@@ -9,8 +9,8 @@ namespace Musoq.DataSources.Os.Compare.Directories;
 
 internal static class CompareDirectoriesHelper
 {
-    public static readonly IDictionary<string, int> CompareDirectoriesNameToIndexMap;
-    public static readonly IDictionary<int, Func<CompareDirectoriesResult, object>> CompareDirectoriesIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> CompareDirectoriesNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<CompareDirectoriesResult, object>> CompareDirectoriesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] CompareDirectoriesColumns;
 
     static CompareDirectoriesHelper()

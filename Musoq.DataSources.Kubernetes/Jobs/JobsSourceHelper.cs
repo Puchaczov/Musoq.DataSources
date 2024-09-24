@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Kubernetes.Jobs;
 
 internal static class JobsSourceHelper
 {
-    internal static readonly IDictionary<string, int> JobsNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> JobsNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(JobEntity.Namespace), 0},
         {nameof(JobEntity.Name), 1},
@@ -16,7 +16,7 @@ internal static class JobsSourceHelper
         {nameof(JobEntity.Age), 6}
     };
 
-    internal static readonly IDictionary<int, Func<JobEntity, object?>> JobsIndexToMethodAccessMap = new Dictionary<int, Func<JobEntity, object?>>
+    internal static readonly IReadOnlyDictionary<int, Func<JobEntity, object?>> JobsIndexToMethodAccessMap = new Dictionary<int, Func<JobEntity, object?>>
     {
         {0, c => c.Namespace},
         {1, c => c.Name},

@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Kubernetes.Events;
 
 internal class EventsSourceHelper
 {
-    public static readonly IDictionary<string, int> EventsNameToIndexMap = new Dictionary<string, int>
+    public static readonly IReadOnlyDictionary<string, int> EventsNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(EventEntity.Action), 0},
         {nameof(EventEntity.ApiVersion), 1},
@@ -27,7 +27,7 @@ internal class EventsSourceHelper
         {nameof(EventEntity.Type), 16}
     }; 
 
-    public static readonly IDictionary<int, Func<EventEntity, object?>> EventsIndexToMethodAccessMap =
+    public static readonly IReadOnlyDictionary<int, Func<EventEntity, object?>> EventsIndexToMethodAccessMap =
         new Dictionary<int, Func<EventEntity, object?>>
         {
             {0, info => info.Action},

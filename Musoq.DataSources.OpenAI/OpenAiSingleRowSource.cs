@@ -20,23 +20,17 @@ internal class OpenAiSingleRowSource : RowSource
         _openAiRequestInfo = openAiRequestInfo;
     }
 
-    public override IEnumerable<IObjectResolver> Rows
-    {
-        get
-        {
-            return new IObjectResolver[]
-            {
-                new EntityResolver<OpenAiEntity>(
-                    new OpenAiEntity(
-                        _openAiApi,
-                        _openAiRequestInfo.Model,
-                        _openAiRequestInfo.FrequencyPenalty,
-                        _openAiRequestInfo.MaxTokens,
-                        _openAiRequestInfo.PresencePenalty,
-                        _openAiRequestInfo.Temperature),
-                    OpenAiSchemaHelper.NameToIndexMap, 
-                    OpenAiSchemaHelper.IndexToMethodAccessMap)
-            };
-        }
-    }
+    public override IEnumerable<IObjectResolver> Rows =>
+    [
+        new EntityResolver<OpenAiEntity>(
+            new OpenAiEntity(
+                _openAiApi,
+                _openAiRequestInfo.Model,
+                _openAiRequestInfo.FrequencyPenalty,
+                _openAiRequestInfo.MaxTokens,
+                _openAiRequestInfo.PresencePenalty,
+                _openAiRequestInfo.Temperature),
+            OpenAiSchemaHelper.NameToIndexMap, 
+            OpenAiSchemaHelper.IndexToMethodAccessMap)
+    ];
 }

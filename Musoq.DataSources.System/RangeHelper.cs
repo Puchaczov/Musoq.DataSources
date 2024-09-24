@@ -7,8 +7,8 @@ namespace Musoq.DataSources.System
 {
     internal static class RangeHelper
     {
-        public static readonly IDictionary<string, int> RangeToIndexMap;
-        public static readonly IDictionary<int, Func<RangeItemEntity, object>> RangeToMethodAccessMap;
+        public static readonly IReadOnlyDictionary<string, int> RangeToIndexMap;
+        public static readonly IReadOnlyDictionary<int, Func<RangeItemEntity, object>> RangeToMethodAccessMap;
         public static readonly ISchemaColumn[] RangeColumns;
 
         static RangeHelper()

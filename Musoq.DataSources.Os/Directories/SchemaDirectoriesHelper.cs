@@ -8,8 +8,8 @@ namespace Musoq.DataSources.Os.Directories;
 
 internal static class SchemaDirectoriesHelper
 {
-    public static readonly IDictionary<string, int> DirectoriesNameToIndexMap;
-    public static readonly IDictionary<int, Func<DirectoryInfo, object?>> DirectoriesIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> DirectoriesNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<DirectoryInfo, object?>> DirectoriesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] DirectoriesColumns;
 
     static SchemaDirectoriesHelper()

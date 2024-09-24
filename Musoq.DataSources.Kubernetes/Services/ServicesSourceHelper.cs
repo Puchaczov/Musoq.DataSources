@@ -6,8 +6,8 @@ namespace Musoq.DataSources.Kubernetes.Services;
 
 internal static class ServicesSourceHelper
 {
-    public static readonly IDictionary<string, int> ServicesNameToIndexMap;
-    public static readonly IDictionary<int, Func<ServiceEntity, object?>> ServicesIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> ServicesNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<ServiceEntity, object?>> ServicesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] ServicesColumns;
 
     static ServicesSourceHelper()

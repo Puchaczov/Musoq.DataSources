@@ -13,7 +13,7 @@ internal static class PodLogsSourceHelper
         new SchemaColumn(nameof(PodLogsEntity.Line), 3, typeof(string))
     ];
     
-    public static readonly IDictionary<string, int> PodLogsNameToIndexMap = new Dictionary<string, int>
+    public static readonly IReadOnlyDictionary<string, int> PodLogsNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(PodLogsEntity.Namespace), 0},
         {nameof(PodLogsEntity.Name), 1},
@@ -21,7 +21,7 @@ internal static class PodLogsSourceHelper
         {nameof(PodLogsEntity.Line), 3},
     };
     
-    public static readonly IDictionary<int, Func<PodLogsEntity, object?>> PodLogsIndexToMethodAccessMap =
+    public static readonly IReadOnlyDictionary<int, Func<PodLogsEntity, object?>> PodLogsIndexToMethodAccessMap =
         new Dictionary<int, Func<PodLogsEntity, object?>>
         {
             {0, f => f.Namespace},

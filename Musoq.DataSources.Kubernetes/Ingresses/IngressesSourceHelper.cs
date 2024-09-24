@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Kubernetes.Ingresses;
 
 internal static class IngressesSourceHelper
 {
-    internal static readonly IDictionary<string, int> IngressesNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> IngressesNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(IngressEntity.Namespace), 0},
         {nameof(IngressEntity.Name), 1},
@@ -16,7 +16,7 @@ internal static class IngressesSourceHelper
         {nameof(IngressEntity.Age), 6}
     };
 
-    internal static readonly IDictionary<int, Func<IngressEntity, object?>> IngressesIndexToMethodAccessMap = new Dictionary<int, Func<IngressEntity, object?>>
+    internal static readonly IReadOnlyDictionary<int, Func<IngressEntity, object?>> IngressesIndexToMethodAccessMap = new Dictionary<int, Func<IngressEntity, object?>>
     {
         {0, c => c.Namespace},
         {1, c => c.Name},

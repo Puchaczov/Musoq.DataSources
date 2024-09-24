@@ -7,8 +7,8 @@ namespace Musoq.DataSources.Os.Files;
 
 internal static class SchemaFilesHelper
 {
-    public static readonly IDictionary<string, int> FilesNameToIndexMap;
-    public static readonly IDictionary<int, Func<ExtendedFileInfo, object?>> FilesIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> FilesNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<ExtendedFileInfo, object?>> FilesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] FilesColumns;
 
     static SchemaFilesHelper()

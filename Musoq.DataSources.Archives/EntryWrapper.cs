@@ -129,7 +129,7 @@ public class EntryWrapper : IEntry
     /// </summary>
     internal IReader Reader { get; }
 
-    internal static IDictionary<string, int> NameToIndexMap { get; } = new Dictionary<string, int>()
+    internal static IReadOnlyDictionary<string, int> NameToIndexMap { get; } = new Dictionary<string, int>()
     {
         {nameof(CompressionType), 0},
         {nameof(ArchivedTime), 1},
@@ -151,7 +151,7 @@ public class EntryWrapper : IEntry
         {nameof(TextContent), 17}
     };
 
-    internal static IDictionary<int, Func<EntryWrapper, object>> IndexToMethodAccessMap { get; } =
+    internal static IReadOnlyDictionary<int, Func<EntryWrapper, object>> IndexToMethodAccessMap { get; } =
         new Dictionary<int, Func<EntryWrapper, object>>()
         {
             {0, wrapper => wrapper.CompressionType},

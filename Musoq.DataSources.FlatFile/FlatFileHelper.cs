@@ -7,8 +7,8 @@ namespace Musoq.DataSources.FlatFile
 {
     internal static class FlatFileHelper
     {
-        public static readonly IDictionary<string, int> FlatNameToIndexMap;
-        public static readonly IDictionary<int, Func<FlatFileEntity, object>> FlatIndexToMethodAccessMap;
+        public static readonly IReadOnlyDictionary<string, int> FlatNameToIndexMap;
+        public static readonly IReadOnlyDictionary<int, Func<FlatFileEntity, object>> FlatIndexToMethodAccessMap;
         public static readonly ISchemaColumn[] FlatColumns;
 
         static FlatFileHelper()

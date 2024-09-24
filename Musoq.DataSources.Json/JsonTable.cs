@@ -35,7 +35,7 @@ namespace Musoq.DataSources.Json
                 _columns = schema switch
                 {
                     JObject jObj => ParseObject(jObj),
-                    JArray jArr => ParseArray(jArr),
+                    JArray => ParseArray(),
                     _ => throw new NotSupportedException($"Unsupported object in schema {schema.GetType().Name}")
                 };
 
@@ -55,7 +55,7 @@ namespace Musoq.DataSources.Json
             return Columns.Where(column => column.ColumnName == name).ToArray();
         }
 
-        private ISchemaColumn[] ParseArray(JArray jarr)
+        private ISchemaColumn[] ParseArray()
         {
             return
             [
@@ -129,21 +129,14 @@ namespace Musoq.DataSources.Json
 
         private static Type GetType(JToken value)
         {
-            switch (value.Value<string>()?.ToLowerInvariant())
+            return value.Value<string>()?.ToLowerInvariant() switch
             {
-                case "float":
-                    return typeof(decimal);
-                case "int":
-                case "long":
-                    return typeof(long);
-                case "string":
-                    return typeof(string);
-                case "bool":
-                case "boolean":
-                    return typeof(bool);
-            }
-
-            throw new NotSupportedException($"Type {value.Value<string>()} is not supported.");
+                "float" => typeof(decimal),
+                "int" or "long" => typeof(long),
+                "string" => typeof(string),
+                "bool" or "boolean" => typeof(bool),
+                _ => throw new NotSupportedException($"Type {value.Value<string>()} is not supported.")
+            };
         }
     }
 }

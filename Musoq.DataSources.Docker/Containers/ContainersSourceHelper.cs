@@ -6,8 +6,8 @@ namespace Musoq.DataSources.Docker.Containers;
 
 internal static class ContainersSourceHelper
 {
-    public static readonly IDictionary<string, int> ContainersNameToIndexMap;
-    public static readonly IDictionary<int, Func<ContainerListResponse, object>> ContainersIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> ContainersNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<ContainerListResponse, object>> ContainersIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] ContainersColumns;
 
     static ContainersSourceHelper()

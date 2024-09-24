@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Kubernetes.Secrets;
 
 internal static class SecretsSourceHelper
 {
-    internal static readonly IDictionary<string, int> SecretsNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> SecretsNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(SecretEntity.Namespace), 0},
         {nameof(SecretEntity.Name), 1},
@@ -14,7 +14,7 @@ internal static class SecretsSourceHelper
         {nameof(SecretEntity.Age), 4}
     };
 
-    internal static readonly IDictionary<int, Func<SecretEntity, object?>> SecretsIndexToMethodAccessMap = new Dictionary<int, Func<SecretEntity, object?>>
+    internal static readonly IReadOnlyDictionary<int, Func<SecretEntity, object?>> SecretsIndexToMethodAccessMap = new Dictionary<int, Func<SecretEntity, object?>>
     {
         {0, t => t.Namespace},
         {1, t => t.Name},

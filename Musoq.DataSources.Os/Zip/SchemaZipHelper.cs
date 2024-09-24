@@ -9,8 +9,8 @@ namespace Musoq.DataSources.Os.Zip;
 
 internal static class SchemaZipHelper
 {
-    public static readonly IDictionary<string, int> NameToIndexMap;
-    public static readonly IDictionary<int, Func<ZipArchiveEntry, object>> IndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<ZipArchiveEntry, object>> IndexToMethodAccessMap;
     public static readonly ISchemaColumn[] SchemaColumns;
 
     static SchemaZipHelper()

@@ -9,10 +9,9 @@ namespace Musoq.DataSources.System
         protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
         {
             chunkedSource.Add(
-                new[]
-                {
-                    new EntityResolver<DualEntity>(new DualEntity(), SystemSchemaHelper.FlatNameToIndexMap, SystemSchemaHelper.FlatIndexToMethodAccessMap)
-                });
+            [
+                new EntityResolver<DualEntity>(new DualEntity(), SystemSchemaHelper.FlatNameToIndexMap, SystemSchemaHelper.FlatIndexToMethodAccessMap)
+            ]);
         }
     }
 }

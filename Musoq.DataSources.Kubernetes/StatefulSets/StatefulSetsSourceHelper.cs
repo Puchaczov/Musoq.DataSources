@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Kubernetes.StatefulSets;
 
 internal static class StatefulSetsSourceHelper
 {
-    internal static readonly IDictionary<string, int> StatefulSetsNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> StatefulSetsNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(StatefulSetEntity.Namespace), 0},
         {nameof(StatefulSetEntity.Name), 1},
@@ -13,7 +13,7 @@ internal static class StatefulSetsSourceHelper
         {nameof(StatefulSetEntity.Age), 3}
     };
 
-    internal static readonly IDictionary<int, Func<StatefulSetEntity, object?>> StatefulSetsIndexToMethodAccessMap =
+    internal static readonly IReadOnlyDictionary<int, Func<StatefulSetEntity, object?>> StatefulSetsIndexToMethodAccessMap =
         new Dictionary<int, Func<StatefulSetEntity, object?>>
         {
             {0, c => c.Namespace},

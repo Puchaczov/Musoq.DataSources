@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Kubernetes.PersistentVolumes;
 
 internal static class PersistentVolumesSourceHelper
 {
-    internal static readonly IDictionary<string, int> PersistentVolumesNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> PersistentVolumesNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(PersistentVolumeEntity.Name), 0},
         {nameof(PersistentVolumeEntity.Namespace), 1},
@@ -19,7 +19,7 @@ internal static class PersistentVolumesSourceHelper
         {nameof(PersistentVolumeEntity.Age), 8}
     };
 
-    internal static readonly IDictionary<int, Func<PersistentVolumeEntity, object?>> PersistentVolumesIndexToMethodAccessMap = new Dictionary<int, Func<PersistentVolumeEntity, object?>>
+    internal static readonly IReadOnlyDictionary<int, Func<PersistentVolumeEntity, object?>> PersistentVolumesIndexToMethodAccessMap = new Dictionary<int, Func<PersistentVolumeEntity, object?>>
     {
         {0, c => c.Name},
         {1, c => c.Namespace},

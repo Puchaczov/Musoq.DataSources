@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Kubernetes.DaemonSets;
 
 internal static class DaemonSetsSourceHelper
 {
-    internal static readonly IDictionary<string, int> DaemonSetsNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> DaemonSetsNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(DaemonSetEntity.Namespace), 0},
         {nameof(DaemonSetEntity.Name), 1},
@@ -17,7 +17,7 @@ internal static class DaemonSetsSourceHelper
         {nameof(DaemonSetEntity.Age), 7}
     };
 
-    internal static readonly IDictionary<int, Func<DaemonSetEntity, object?>> DaemonSetsIndexToMethodAccessMap = new Dictionary<int, Func<DaemonSetEntity, object?>>
+    internal static readonly IReadOnlyDictionary<int, Func<DaemonSetEntity, object?>> DaemonSetsIndexToMethodAccessMap = new Dictionary<int, Func<DaemonSetEntity, object?>>
     {
         {0, c => c.Namespace},
         {1, c => c.Name},

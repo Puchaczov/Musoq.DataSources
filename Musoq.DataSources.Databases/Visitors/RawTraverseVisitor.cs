@@ -161,6 +161,12 @@ public class RawTraverseVisitor<TExpressionVisitor> : IExpressionVisitor
         node.Accept(Visitor);
     }
 
+    public void Visit(ApplyInMemoryWithSourceTableFromNode node)
+    {
+        node.SourceTable.Accept(this);
+        node.Accept(Visitor);
+    }
+
     public virtual void Visit(SchemaFromNode node)
     {
         node.Parameters.Accept(this);
@@ -170,6 +176,14 @@ public class RawTraverseVisitor<TExpressionVisitor> : IExpressionVisitor
     public virtual void Visit(JoinSourcesTableFromNode node)
     {
         node.Expression.Accept(this);
+        node.First.Accept(this);
+        node.Second.Accept(this);
+
+        node.Accept(Visitor);
+    }
+
+    public void Visit(ApplySourcesTableFromNode node)
+    {
         node.First.Accept(this);
         node.Second.Accept(this);
 
@@ -189,9 +203,22 @@ public class RawTraverseVisitor<TExpressionVisitor> : IExpressionVisitor
         node.Accept(Visitor);
     }
 
+    public void Visit(ApplyFromNode node)
+    {
+        node.Source.Accept(this);
+        node.With.Accept(this);
+        node.Accept(Visitor);
+    }
+
     public virtual void Visit(ExpressionFromNode node)
     {
         node.Expression.Accept(this);
+        node.Accept(Visitor);
+    }
+
+    public void Visit(AccessMethodFromNode node)
+    {
+        node.AccessMethod.Accept(this);
         node.Accept(Visitor);
     }
 
@@ -486,21 +513,15 @@ public class RawTraverseVisitor<TExpressionVisitor> : IExpressionVisitor
         node.Accept(Visitor);
     }
 
-    public virtual void Visit(JoinsNode node)
-    {
-        node.Joins.Accept(this);
-        node.Accept(Visitor);
-    }
-
     public virtual void Visit(JoinNode node)
     {
-        node.From.Accept(this);
-        node.Expression.Accept(this);
+        node.Join.Accept(this);
         node.Accept(Visitor);
     }
 
-    public virtual void Visit(FromNode node)
+    public void Visit(ApplyNode node)
     {
+        node.Apply.Accept(this);
         node.Accept(Visitor);
     }
 
@@ -523,6 +544,11 @@ public class RawTraverseVisitor<TExpressionVisitor> : IExpressionVisitor
     }
 
     public virtual void Visit(SchemaMethodFromNode node)
+    {
+        node.Accept(Visitor);
+    }
+
+    public void Visit(PropertyFromNode node)
     {
         node.Accept(Visitor);
     }

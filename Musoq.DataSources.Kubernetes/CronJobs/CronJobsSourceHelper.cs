@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Kubernetes.CronJobs;
 
 internal static class CronJobsSourceHelper
 {
-    internal static readonly IDictionary<string, int> CronJobsNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> CronJobsNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(CronJobEntity.Namespace), 0},
         {nameof(CronJobEntity.Name), 1},
@@ -14,7 +14,7 @@ internal static class CronJobsSourceHelper
         {nameof(CronJobEntity.LastScheduleTime), 4}
     };
 
-    internal static readonly IDictionary<int, Func<CronJobEntity, object?>> CronJobsIndexToMethodAccessMap =
+    internal static readonly IReadOnlyDictionary<int, Func<CronJobEntity, object?>> CronJobsIndexToMethodAccessMap =
         new Dictionary<int, Func<CronJobEntity, object?>>
         {
             {0, cj => cj.Namespace},

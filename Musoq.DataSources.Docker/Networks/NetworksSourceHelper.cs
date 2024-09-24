@@ -6,8 +6,8 @@ namespace Musoq.DataSources.Docker.Networks;
 
 internal static class NetworksSourceHelper
 {
-    public static readonly IDictionary<string, int> NetworksNameToIndexMap;
-    public static readonly IDictionary<int, Func<NetworkResponse, object>> NetworksIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> NetworksNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<NetworkResponse, object>> NetworksIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] NetworksColumns;
 
     static NetworksSourceHelper()

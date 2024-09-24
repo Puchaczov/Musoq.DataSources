@@ -265,6 +265,11 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         throw new NotImplementedException();
     }
 
+    public void Visit(ApplyInMemoryWithSourceTableFromNode node)
+    {
+        throw new NotImplementedException();
+    }
+
     public void Visit(SchemaFromNode node)
     {
         throw new NotImplementedException();
@@ -280,6 +285,11 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         throw new NotImplementedException();
     }
 
+    public void Visit(ApplySourcesTableFromNode node)
+    {
+        throw new NotImplementedException();
+    }
+
     public void Visit(InMemoryTableFromNode node)
     {
         throw new NotImplementedException();
@@ -290,12 +300,27 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         throw new NotImplementedException();
     }
 
+    public void Visit(ApplyFromNode node)
+    {
+        throw new NotImplementedException();
+    }
+
     public void Visit(ExpressionFromNode node)
     {
         throw new NotImplementedException();
     }
 
     public void Visit(SchemaMethodFromNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(PropertyFromNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(AccessMethodFromNode node)
     {
         throw new NotImplementedException();
     }
@@ -410,12 +435,12 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         throw new NotImplementedException();
     }
 
-    public void Visit(JoinsNode node)
+    public void Visit(JoinNode node)
     {
         throw new NotImplementedException();
     }
 
-    public void Visit(JoinNode node)
+    public void Visit(ApplyNode node)
     {
         throw new NotImplementedException();
     }

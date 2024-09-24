@@ -7,8 +7,8 @@ namespace Musoq.DataSources.Os.Metadata;
 
 internal static class SchemaMetadataHelper
 {
-    public static readonly IDictionary<string, int> MetadataNameToIndexMap;
-    public static readonly IDictionary<int, Func<MetadataEntity, object?>> MetadataIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> MetadataNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<MetadataEntity, object?>> MetadataIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] MetadataColumns;
 
     static SchemaMetadataHelper()

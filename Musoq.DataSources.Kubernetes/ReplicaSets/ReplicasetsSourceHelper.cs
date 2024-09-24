@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Kubernetes.ReplicaSets;
 
 internal static class ReplicaSetsSourceHelper
 {
-    internal static readonly IDictionary<string, int> ReplicaSetsNameToIndexMap = new Dictionary<string, int>
+    internal static readonly IReadOnlyDictionary<string, int> ReplicaSetsNameToIndexMap = new Dictionary<string, int>
     {
         {nameof(ReplicaSetEntity.Namespace), 0},
         {nameof(ReplicaSetEntity.Name), 1},
@@ -15,7 +15,7 @@ internal static class ReplicaSetsSourceHelper
         {nameof(ReplicaSetEntity.Age), 5}
     };
 
-    internal static readonly IDictionary<int, Func<ReplicaSetEntity, object?>> ReplicaSetsIndexToMethodAccessMap = new Dictionary<int, Func<ReplicaSetEntity, object?>>
+    internal static readonly IReadOnlyDictionary<int, Func<ReplicaSetEntity, object?>> ReplicaSetsIndexToMethodAccessMap = new Dictionary<int, Func<ReplicaSetEntity, object?>>
     {
         {0, t => t.Namespace},
         {1, t => t.Name},

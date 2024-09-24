@@ -8,8 +8,8 @@ namespace Musoq.DataSources.Os.Process;
 
 internal static class ProcessHelper
 {
-    public static readonly IDictionary<string, int> ProcessNameToIndexMap;
-    public static readonly IDictionary<int, Func<System.Diagnostics.Process, object>> ProcessIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<string, int> ProcessNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<System.Diagnostics.Process, object>> ProcessIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] ProcessColumns;
 
     static ProcessHelper()
