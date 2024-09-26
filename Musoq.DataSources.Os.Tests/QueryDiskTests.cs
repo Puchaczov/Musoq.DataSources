@@ -92,7 +92,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var folders = source.GetFiles();
 
@@ -109,7 +109,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var folders = source.GetFiles();
 
@@ -129,7 +129,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var directories = source.GetDirectories();
 
@@ -147,7 +147,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var directories = source.GetDirectories();
 
@@ -166,7 +166,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var directories = source.GetDirectories();
 
@@ -181,7 +181,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var directories = source.GetFiles();
 
@@ -197,7 +197,7 @@ namespace Musoq.DataSources.Os.Tests
                 tokenSource.Token, 
                 Array.Empty<ISchemaColumn>(), 
                 new Dictionary<string, string>(),
-                (null, null, null)));
+                (null, null, null, false)));
 
             var fired = source.Rows.Count();
 
@@ -212,7 +212,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var fired = source.Rows.Count();
 
@@ -306,7 +306,7 @@ namespace Musoq.DataSources.Os.Tests
                 tokenSource.Token, 
                 Array.Empty<ISchemaColumn>(), 
                 new Dictionary<string, string>(),
-                (null, null, null)));
+                (null, null, null, false)));
 
             var fired = source.Rows.Count();
 
@@ -321,7 +321,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var fired = source.Rows.Count();
 
@@ -336,7 +336,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var rows = source.Rows.ToArray();
 
@@ -367,7 +367,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var rows = source.Rows.ToArray();
 

@@ -18,11 +18,11 @@ public class ArchivesSchema : SchemaBase
 
     /// <virtual-constructors>
     /// <virtual-constructor>
-    /// <virtual-param>Path of the given file</virtual-param>
+    /// <virtual-param>Path to the archive file</virtual-param>
     /// <examples>
     /// <example>
     /// <from>#archives.file(string path)</from>
-    /// <description>Gives ability to process flat files</description>
+    /// <description>Enumerate archive files like they were regular files</description>
     /// <columns>
     /// <column name="CompressionType" type="CompressionType">Compression type</column>
     /// <column name="ArchivedTime" type="DateTime?">When the file or directory were archived</column>

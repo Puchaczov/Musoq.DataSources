@@ -15,6 +15,8 @@ namespace Musoq.DataSources.CANBus.Messages;
 /// </summary>
 public class MessageEntity : ICANDbcMessage
 {
+    private SignalEntity[]? _signals;
+    
     /// <summary>
     /// Creates a new instance of <see cref="MessageEntity"/>.
     /// </summary>
@@ -68,5 +70,5 @@ public class MessageEntity : ICANDbcMessage
     /// Gets the can message signals.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<SignalEntity> Signals => Message.Signals.Select(f => new SignalEntity(f, Message));
+    public IEnumerable<SignalEntity> Signals => _signals ??= Message.Signals.Select(f => new SignalEntity(f, Message)).ToArray();
 }

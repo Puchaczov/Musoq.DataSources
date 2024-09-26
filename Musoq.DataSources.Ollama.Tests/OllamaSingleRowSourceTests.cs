@@ -22,7 +22,7 @@ public class OllamaSingleRowSourceTests
                 CancellationToken.None,
                 Array.Empty<ISchemaColumn>(),
                 new Dictionary<string, string>(),
-                (null, null, null)), new OllamaRequestInfo
+                (null, null, null, false)), new OllamaRequestInfo
             {
                 Model = "test-model",
                 Temperature = 0,

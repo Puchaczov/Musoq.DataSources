@@ -35,7 +35,7 @@ public class CANBusSchema : SchemaBase
     /// <columns isDynamic="true">
     /// <column name="ID" type="uint">ID of the message entity</column>
     /// <column name="Timestamp" type="ulong">Timestamp of the message entity</column>
-    /// <column name="Message" type="Message">Message entity</column>
+    /// <column name="Message" type="MessageEntity">The Message</column>
     /// <column name="IsWellKnown" type="uint">Whether the message is well known or not (is within dbc file)</column>
     /// <column name="DataAsBytes" type="byte[]">Data as bytes</column>
     /// <column name="Data" type="ulong">Data as ulong</column>
@@ -60,6 +60,7 @@ public class CANBusSchema : SchemaBase
     /// <column name="Transmitter" type="string">Transmitter of the message entity</column>
     /// <column name="Comment" type="string">Comment for the message entity</column>
     /// <column name="CycleTime" type="int">Cycle time for the message entity</column>
+    /// <column name="Signals" type="SignalEntity[]">Signals of the message</column>
     /// </columns>
     /// </example>
     /// </examples>

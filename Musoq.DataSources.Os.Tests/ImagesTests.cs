@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
@@ -114,6 +115,32 @@ public class ImagesTests
         
         Assert.IsTrue(IsValidJson((string)table[0][0]));
         Assert.IsTrue(IsValidJson((string)table[1][0]));
+    }
+
+    [TestMethod]
+    public void WhenRetrieveMetadataFromMultipleFiles_ShouldPass()
+    {
+        var query = "select f.Name, m.DirectoryName, m.TagName, m.Description from #os.files('./Images', false) f cross apply #os.metadata(f.FullName) m";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(4, table.Columns.Count());
+        
+        Assert.AreEqual("f.Name", table.Columns.ElementAt(0).ColumnName);
+        Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
+        
+        Assert.AreEqual("m.DirectoryName", table.Columns.ElementAt(1).ColumnName);
+        Assert.AreEqual(typeof(string), table.Columns.ElementAt(1).ColumnType);
+        
+        Assert.AreEqual("m.TagName", table.Columns.ElementAt(2).ColumnName);
+        Assert.AreEqual(typeof(string), table.Columns.ElementAt(2).ColumnType);
+        
+        Assert.AreEqual("m.Description", table.Columns.ElementAt(3).ColumnName);
+        Assert.AreEqual(typeof(string), table.Columns.ElementAt(3).ColumnType);
+        
+        Assert.IsTrue(table.Count() > 100);
     }
 
     private static bool IsValidJson(string s)

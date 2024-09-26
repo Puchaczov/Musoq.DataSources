@@ -26,8 +26,7 @@ internal class ArchivesTable : ISchemaTable
         new SchemaColumn(nameof(EntryWrapper.LastAccessedTime), 13, typeof(DateTime?)),
         new SchemaColumn(nameof(EntryWrapper.LastModifiedTime), 14, typeof(DateTime?)),
         new SchemaColumn(nameof(EntryWrapper.Size), 15, typeof(long)),
-        new SchemaColumn(nameof(EntryWrapper.Attrib), 16, typeof(int?)),
-        new SchemaColumn(nameof(EntryWrapper.TextContent), 17, typeof(string))
+        new SchemaColumn(nameof(EntryWrapper.Attrib), 16, typeof(int?))
     ];
 
     public SchemaTableMetadata Metadata { get; } = new(typeof(EntryWrapper));

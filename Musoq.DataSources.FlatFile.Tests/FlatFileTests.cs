@@ -59,7 +59,7 @@ namespace Musoq.Schema.FlatFile.Tests
                     endWorkTokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             int fires = 0;
             foreach (var item in schema.Rows)
@@ -76,7 +76,7 @@ namespace Musoq.Schema.FlatFile.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             int fires = 0;
             foreach (var item in schema.Rows)

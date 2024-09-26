@@ -40,7 +40,7 @@ namespace Musoq.DataSources.Time.Tests
                     tokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(), 
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var fired = source.Rows.Count();
 
@@ -57,7 +57,7 @@ namespace Musoq.DataSources.Time.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null)));
+                    (null, null, null, false)));
 
             var fired = source.Rows.Count();
 

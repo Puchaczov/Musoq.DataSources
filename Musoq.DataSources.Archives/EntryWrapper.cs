@@ -17,11 +17,13 @@ public class EntryWrapper : IEntry
     /// Initializes a new instance of the EntryWrapper class.
     /// </summary>
     /// <param name="entry">The IEntry object that this wrapper is encapsulating.</param>
-    /// <param name="reader">The IReader object responsible for reading entry data.</param>
-    public EntryWrapper(IEntry entry, IReader reader)
+    /// <param name="pathToArchive">The path to the archive that contains the entry.</param>
+    /// <param name="index">The index of the entry in the archive.</param>
+    public EntryWrapper(IEntry entry, string pathToArchive, int index)
     {
         _entry = entry;
-        Reader = reader;
+        PathToArchive = pathToArchive;
+        Index = index;
     }
 
     /// <summary>
@@ -107,27 +109,11 @@ public class EntryWrapper : IEntry
     /// <summary>
     /// Gets the file attributes of the entry, if available.
     /// </summary>
-    public int? Attrib => _entry.Attrib;
+    public int? Attrib => null;
 
-    /// <summary>
-    /// Gets the text content of the entry, if
-    /// available. This property reads the entry data using the provided IReader.
-    /// </summary>
-    public string TextContent
-    {
-        get
-        {
-            // Read entry data using the provided IReader
-            using var stream = Reader.OpenEntryStream();
-            using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
-        }
-    }
-
-    /// <summary>
-    /// Gets the IReader object responsible for reading entry data.
-    /// </summary>
-    internal IReader Reader { get; }
+    internal string PathToArchive { get; }
+    
+    internal int Index { get; }
 
     internal static IReadOnlyDictionary<string, int> NameToIndexMap { get; } = new Dictionary<string, int>()
     {
@@ -147,12 +133,11 @@ public class EntryWrapper : IEntry
         {nameof(LastAccessedTime), 13},
         {nameof(LastModifiedTime), 14},
         {nameof(Size), 15},
-        {nameof(Attrib), 16},
-        {nameof(TextContent), 17}
+        {nameof(Attrib), 16}
     };
 
     internal static IReadOnlyDictionary<int, Func<EntryWrapper, object>> IndexToMethodAccessMap { get; } =
-        new Dictionary<int, Func<EntryWrapper, object>>()
+        new Dictionary<int, Func<EntryWrapper, object>>
         {
             {0, wrapper => wrapper.CompressionType},
             {1, wrapper => wrapper.ArchivedTime},
@@ -170,7 +155,6 @@ public class EntryWrapper : IEntry
             {13, wrapper => wrapper.LastAccessedTime},
             {14, wrapper => wrapper.LastModifiedTime},
             {15, wrapper => wrapper.Size},
-            {16, wrapper => wrapper.Attrib},
-            {17, wrapper => wrapper.TextContent}
+            {16, wrapper => wrapper.Attrib}
         };
 }

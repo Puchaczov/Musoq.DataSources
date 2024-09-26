@@ -25,7 +25,7 @@ public class OpenAiSingleRowSourceTests
                 {
                     {"OPENAI_API_KEY", "OPENAI_API_KEY"}
                 },
-                (null, null, null)), new OpenAiRequestInfo()
+                (null, null, null, false)), new OpenAiRequestInfo()
             {
                 Model = Model.ChatGPTTurbo
             });

@@ -13,7 +13,7 @@ public class ArchivesTests
     [TestMethod]
     public void WhenWorkingWithZipArchive_ShouldRead()
     {
-        const string script = "select Key, IsDirectory, (case when IsDirectory = false then TextContent else '' end) from #archives.file('./Files/Example1/archives.zip')";
+        const string script = "select Key, IsDirectory, (case when IsDirectory = false then GetTextContent() else '' end) from #archives.file('./Files/Example1/archives.zip')";
         
         var vm = CreateAndRunVirtualMachine(script);
         
@@ -37,7 +37,7 @@ public class ArchivesTests
     [TestMethod]
     public void WhenWorkingWithTarArchive_ShouldRead()
     {
-        var script = "select Key, IsDirectory, (case when IsDirectory = false then TextContent else '' end) from #archives.file('./Files/Example1/archives.tar')";
+        var script = "select Key, IsDirectory, (case when IsDirectory = false then GetTextContent() else '' end) from #archives.file('./Files/Example1/archives.tar')";
         
         var vm = CreateAndRunVirtualMachine(script);
         

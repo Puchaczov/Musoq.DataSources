@@ -4,14 +4,9 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.SeparatedValues;
 
-internal class InitiallyInferredTable : ISchemaTable
+internal class InitiallyInferredTable(IReadOnlyCollection<ISchemaColumn> columns) : ISchemaTable
 {
-    public InitiallyInferredTable(IReadOnlyCollection<ISchemaColumn> columns)
-    {
-        Columns = columns.ToArray();
-    }
-
-    public ISchemaColumn[] Columns { get; }
+    public ISchemaColumn[] Columns { get; } = columns.ToArray();
 
     public SchemaTableMetadata Metadata => new(typeof(object));
     

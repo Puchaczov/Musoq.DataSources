@@ -712,7 +712,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         {
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
-            var source = new SeparatedValuesSource(
+            var source = new SeparatedValuesFromFileRowsSource(
                 "./Files/BankingTransactionsWithSkippedLines.csv", 
                 ",", 
                 true, 
@@ -723,7 +723,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                     tokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null))
+                    (null, null, null, false))
             };
 
             var fired = source.Rows.Count();
@@ -758,9 +758,9 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                 tokenSource.Token, 
                 columns, 
                 new Dictionary<string, string>(),
-                (null, null, null));
+                (null, null, null, false));
 
-            var source = new SeparatedValuesSource("./Files/AllTypes.csv", ",", true, 0, tokenSource.Token)
+            var source = new SeparatedValuesFromFileRowsSource("./Files/AllTypes.csv", ",", true, 0, tokenSource.Token)
             {
                 RuntimeContext = context
             };
@@ -813,13 +813,13 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         [TestMethod]
         public void CsvSource_FullLoadTest()
         {
-            var source = new SeparatedValuesSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, CancellationToken.None)
+            var source = new SeparatedValuesFromFileRowsSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, CancellationToken.None)
             {
                 RuntimeContext = new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null))
+                    (null, null, null, false))
             };
 
             var fired = source.Rows.Count();

@@ -1,4 +1,5 @@
-﻿using Musoq.Schema;
+﻿using System.IO;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
 
@@ -56,9 +57,9 @@ namespace Musoq.DataSources.SeparatedValues
         public SeparatedValuesSchema()
             : base(SchemaName.ToLowerInvariant(), CreateLibrary())
         {
-            AddSource<SeparatedValuesSource>("comma");
-            AddSource<SeparatedValuesSource>("tab");
-            AddSource<SeparatedValuesSource>("semicolon");
+            AddSource<SeparatedValuesFromFileRowsSource>("comma");
+            AddSource<SeparatedValuesFromFileRowsSource>("tab");
+            AddSource<SeparatedValuesFromFileRowsSource>("semicolon");
             AddTable<SeparatedValuesTable>("comma");
             AddTable<SeparatedValuesTable>("tab");
             AddTable<SeparatedValuesTable>("semicolon");
@@ -76,17 +77,17 @@ namespace Musoq.DataSources.SeparatedValues
             switch (name.ToLowerInvariant())
             {
                 case "comma":
-                    if (parameters.Length == 0)
+                    if (runtimeContext.QueryInformation.HasExternallyProvidedTypes)
                         return new InitiallyInferredTable(runtimeContext.AllColumns);
                     
                     return new SeparatedValuesTable((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
                 case "tab":
-                    if (parameters.Length == 0)
+                    if (runtimeContext.QueryInformation.HasExternallyProvidedTypes)
                         return new InitiallyInferredTable(runtimeContext.AllColumns);
                     
                     return new SeparatedValuesTable((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
                 case "semicolon":
-                    if (parameters.Length == 0)
+                    if (runtimeContext.QueryInformation.HasExternallyProvidedTypes)
                         return new InitiallyInferredTable(runtimeContext.AllColumns);
                     
                     return new SeparatedValuesTable((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
@@ -108,19 +109,28 @@ namespace Musoq.DataSources.SeparatedValues
             {
                 case "comma":
                     if (parameters[0] is IReadOnlyTable csvTable)
-                        return new SeparatedValuesSource(csvTable, ",", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                        return new SeparatedValuesFromFileRowsSource(csvTable, ",", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                    
+                    if (parameters[0] is Stream csvStream)
+                        return new SeparatedValuesFromStreamRowsSource(csvStream, ",", (bool)parameters[1], (int)parameters[2], runtimeContext);
 
-                    return new SeparatedValuesSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                    return new SeparatedValuesFromFileRowsSource((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
                 case "tab":
                     if (parameters[0] is IReadOnlyTable tsvTable)
-                        return new SeparatedValuesSource(tsvTable, "\t", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                        return new SeparatedValuesFromFileRowsSource(tsvTable, "\t", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                    
+                    if (parameters[0] is Stream tsvStream)
+                        return new SeparatedValuesFromStreamRowsSource(tsvStream, "\t", (bool)parameters[1], (int)parameters[2], runtimeContext);
 
-                    return new SeparatedValuesSource((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                    return new SeparatedValuesFromFileRowsSource((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
                 case "semicolon":
                     if (parameters[0] is IReadOnlyTable semicolonTable)
-                        return new SeparatedValuesSource(semicolonTable, ";", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                        return new SeparatedValuesFromFileRowsSource(semicolonTable, ";", runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                    
+                    if (parameters[0] is Stream semicolonStream)
+                        return new SeparatedValuesFromStreamRowsSource(semicolonStream, ";", (bool)parameters[1], (int)parameters[2], runtimeContext);
 
-                    return new SeparatedValuesSource((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
+                    return new SeparatedValuesFromFileRowsSource((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
             }
 
             return base.GetRowSource(name, runtimeContext, parameters);
