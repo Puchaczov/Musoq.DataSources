@@ -4,6 +4,13 @@ using Musoq.Schema.Managers;
 
 namespace Musoq.DataSources.Roslyn;
 
+/// <description>
+/// Provides schema to work with Roslyn data source.
+/// </description>
+/// <short-description>
+/// Provides schema to work with Roslyn data source.
+/// </short-description>
+/// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class RoslynSchema : SchemaBase
 {
     private const string SchemaName = nameof(Roslyn);
