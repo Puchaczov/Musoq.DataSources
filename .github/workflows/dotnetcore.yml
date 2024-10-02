@@ -22,7 +22,7 @@ jobs:
         $scriptLocationDirectory=(Get-Location).ToString()
         $scriptLocationFilePath=[System.IO.Path]::Combine($scriptLocationDirectory, "Publish.Nuget.ps1")
         $nugetExecutable=[System.IO.Path]::Combine($scriptLocationDirectory, "nuget", "nuget.exe")
-        $projects = @('Musoq.DataSources.FlatFile', 'Musoq.DataSources.Json', 'Musoq.DataSources.JsonHelpers', 'Musoq.DataSources.Os', 'Musoq.DataSources.SeparatedValues', 'Musoq.DataSources.System', 'Musoq.DataSources.Time', 'Musoq.DataSources.OpenAI', 'Musoq.DataSources.Postgres', 'Musoq.DataSources.Sqlite', 'Musoq.DataSources.Archives', 'Musoq.DataSources.Airtable', 'Musoq.DataSources.Docker', 'Musoq.DataSources.Kubernetes')
+        $projects = @('Musoq.DataSources.FlatFile', 'Musoq.DataSources.Json', 'Musoq.DataSources.JsonHelpers', 'Musoq.DataSources.Os', 'Musoq.DataSources.SeparatedValues', 'Musoq.DataSources.System', 'Musoq.DataSources.Time', 'Musoq.DataSources.OpenAI', 'Musoq.DataSources.Postgres', 'Musoq.DataSources.Sqlite', 'Musoq.DataSources.Archives', 'Musoq.DataSources.Airtable', 'Musoq.DataSources.Docker', 'Musoq.DataSources.Kubernetes', 'Musoq.DataSources.Roslyn')
         
         foreach ($project in $projects) {
           pushd

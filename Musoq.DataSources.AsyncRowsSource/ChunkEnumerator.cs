@@ -30,13 +30,12 @@ namespace Musoq.DataSources.AsyncRowsSource
 
         private bool TryGetNextChunk()
         {
-            for (int i = 0; i < MaxTakeAttempts; i++)
+            for (var i = 0; i < MaxTakeAttempts; i++)
             {
-                if (TryTakeValidChunk(out _currentChunk))
-                {
-                    _currentIndex = 0;
-                    return true;
-                }
+                if (!TryTakeValidChunk(out _currentChunk)) continue;
+                
+                _currentIndex = 0;
+                return true;
             }
 
             try
@@ -60,11 +59,10 @@ namespace Musoq.DataSources.AsyncRowsSource
         {
             while (_readRows.Count > 0)
             {
-                if (TryTakeValidChunk(out _currentChunk))
-                {
-                    _currentIndex = 0;
-                    return true;
-                }
+                if (!TryTakeValidChunk(out _currentChunk)) continue;
+                
+                _currentIndex = 0;
+                return true;
             }
             return false;
         }

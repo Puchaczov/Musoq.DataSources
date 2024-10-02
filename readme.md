@@ -17,5 +17,6 @@ This project contains data sources for Musoq engine. Musoq data sources are plug
 - Sqlite (allows to treat sqlite database as tables)
 - System (mostly utils, ranges and dual table resides here)
 - Time (allows to treat time as table)
+- Roslyn (allows to query C# code)
 
 ### To look at the engine itself go to [Musoq](https://github.com/Puchaczov/Musoq) repository.

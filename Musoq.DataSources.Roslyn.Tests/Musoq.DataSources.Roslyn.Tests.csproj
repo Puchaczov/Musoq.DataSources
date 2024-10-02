@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <DefaultItemExcludes>$(DefaultItemExcludes);TestsSolutions\**\*</DefaultItemExcludes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
+        <PackageReference Include="MSTest.TestAdapter" Version="3.1.1"/>
+        <PackageReference Include="MSTest.TestFramework" Version="3.1.1"/>
+        <PackageReference Include="Musoq.Converter" Version="3.1.1" />
+        <PackageReference Include="Musoq.Evaluator" Version="7.1.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Musoq.DataSources.Roslyn\Musoq.DataSources.Roslyn.csproj" />
+      <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="TestsSolutions\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Remove="TestsSolutions\**\obj\**" />
+        <Content Remove="TestsSolutions\**\.idea\**" />
+    </ItemGroup>
+
+</Project>

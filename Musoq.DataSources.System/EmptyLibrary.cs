@@ -5,6 +5,5 @@ namespace Musoq.DataSources.System
     /// <summary>
     /// System schema helper methods
     /// </summary>
-    public class EmptyLibrary : LibraryBase
-    { }
+    public class EmptyLibrary : LibraryBase;
 }
