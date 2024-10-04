@@ -15,9 +15,8 @@ public class RoslynSchema : SchemaBase
 {
     private const string SchemaName = nameof(Roslyn);
     
-    /// <summary>
-    /// <virtual-controctors>
-    /// <virtual-controctor>
+    /// <virtual-constructors>
+    /// <virtual-constructor>
     /// <examples>
     /// <example>
     /// <from>
@@ -31,8 +30,11 @@ public class RoslynSchema : SchemaBase
     /// </columns>
     /// </example>
     /// </examples>
-    /// </virtual-controctor>
+    /// </virtual-constructor>
+    /// </virtual-constructors>
     /// <additional-tables>
+    /// <additional-table>
+    /// <description>Represent project of solution</description>
     /// <columns type="ProjectEntity">
     /// <column name="Id" type="string">Project id</column>
     /// <column name="FilePath" type="string">File path</column>
@@ -46,6 +48,9 @@ public class RoslynSchema : SchemaBase
     /// <column name="Version" type="string">Version</column>
     /// <column name="Documents" type="DocumentEntity[]">Documents</column>
     /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent document of project</description>
     /// <columns type="DocumentEntity">
     /// <column name="Name" type="string">Name</column>
     /// <column name="Text" type="string">Text</column>
@@ -56,6 +61,9 @@ public class RoslynSchema : SchemaBase
     /// <column name="Interfaces" type="InterfaceEntity[]">Interfaces</column>
     /// <column name="Enums" type="EnumEntity[]">Enums</column>
     /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent class of document</description>
     /// <columns type="ClassEntity">
     /// <column name="Text" type="string">Text</column>
     /// <column name="IsAbstract" type="bool">Is abstract</column>
@@ -73,6 +81,9 @@ public class RoslynSchema : SchemaBase
     /// <column name="Methods" type="MethodEntity[]">Methods</column>
     /// <column name="Properties" type="PropertyEntity[]">Properties</column>
     /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent enum of document</description>
     /// <columns type="EnumEntity">
     /// <column name="Members" type="string[]">Members</column>
     /// <column name="Name" type="string">Name</column>
@@ -82,6 +93,9 @@ public class RoslynSchema : SchemaBase
     /// <column name="Methods" type="MethodEntity[]">Methods</column>
     /// <column name="Properties" type="PropertyEntity[]">Properties</column>
     /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent interface of document</description>
     /// <columns type="InterfaceEntity">
     /// <column name="BaseInterfaces" type="string[]">Base interfaces</column>
     /// <column name="Name" type="string">Name</column>
@@ -91,6 +105,9 @@ public class RoslynSchema : SchemaBase
     /// <column name="Methods" type="MethodEntity[]">Methods</column>
     /// <column name="Properties" type="PropertyEntity[]">Properties</column>
     /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent method of class</description>
     /// <columns type="MethodEntity">
     /// <column name="Name" type="string">Name</column>
     /// <column name="ReturnType" type="string">Return type</column>
@@ -99,6 +116,9 @@ public class RoslynSchema : SchemaBase
     /// <column name="Body" type="string">Body</column>
     /// <column name="Attributes" type="AttributeEntity[]">Attributes</column>
     /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent property of class</description>
     /// <columns type="PropertyEntity">
     /// <column name="Name" type="string">Name</column>
     /// <column name="Type" type="string">Type</column>
@@ -114,6 +134,9 @@ public class RoslynSchema : SchemaBase
     /// <column name="IsStatic" type="bool">Is static</column>
     /// <column name="Modifiers" type="string[]">Modifiers</column>
     /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent parameter of method</description>
     /// <columns type="ParameterEntity">
     /// <column name="Name" type="string">Name</column>
     /// <column name="Type" type="string">Type</column>
@@ -127,9 +150,8 @@ public class RoslynSchema : SchemaBase
     /// <column name="IsByRef" type="bool">Is by ref</column>
     /// <column name="IsByValue" type="bool">Is by value</column>
     /// </columns>
+    /// </additional-table>
     /// </additional-tables>
-    /// </virtual-controctors>
-    /// </summary>
     public RoslynSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
