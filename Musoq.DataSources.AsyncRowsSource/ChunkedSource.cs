@@ -4,7 +4,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.AsyncRowsSource;
 
-public class ChunkedSource(
+internal class ChunkedSource(
     BlockingCollection<IReadOnlyList<IObjectResolver>> readRows,
     CancellationToken token,
     Func<Exception?> getParentException)

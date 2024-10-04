@@ -4,7 +4,7 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.AsyncRowsSource
 {
-    public class ChunkEnumerator(
+    internal class ChunkEnumerator(
         BlockingCollection<IReadOnlyList<IObjectResolver>> readRows,
         Func<Exception?> getException,
         CancellationToken token)
