@@ -2,23 +2,18 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.Roslyn;
+namespace Musoq.DataSources.Roslyn.RowsSources;
 
-internal class SolutionRowsSource(string solutionFilePath, CancellationToken endWorkToken) 
+internal class CSharpSolutionRowsSource(string solutionFilePath, CancellationToken endWorkToken) 
     : AsyncRowsSourceBase<SolutionEntity>(endWorkToken)
 {
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
-        if (!MSBuildLocator.IsRegistered)
-        {
-            MSBuildLocator.RegisterDefaults();
-        }
         var workspace = MSBuildWorkspace.Create();
         var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
         var solutionEntity = new SolutionEntity(solution);

@@ -11,19 +11,12 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.CANBus.Signals;
 
-internal class SignalsSource : AsyncRowsSourceBase<Signal>
+internal class SignalsSource(ICANBusApi canBusApi, RuntimeContext runtimeContext)
+    : AsyncRowsSourceBase<Signal>(runtimeContext.EndWorkToken)
 {
-    private readonly ICANBusApi _canBusApi;
-
-    public SignalsSource(ICANBusApi canBusApi, RuntimeContext runtimeContext)
-        : base(runtimeContext.EndWorkToken)
-    {
-        _canBusApi = canBusApi;
-    }
-
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
-        var signals = await _canBusApi.GetMessagesSignalsAsync(cancellationToken);
+        var signals = await canBusApi.GetMessagesSignalsAsync(cancellationToken);
         
         chunkedSource.Add(
             signals.Select(f => new EntityResolver<SignalEntity>(

@@ -1,4 +1,8 @@
+using System.Collections.Concurrent;
+using Musoq.DataSources.Roslyn.Entities;
+using Musoq.DataSources.Roslyn.RowsSources;
 using Musoq.Schema;
+using Musoq.Schema.Attributes;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
 
@@ -11,9 +15,11 @@ namespace Musoq.DataSources.Roslyn;
 /// Provides schema to work with Roslyn data source.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
-public class RoslynSchema : SchemaBase
+public class CSharpSchema : SchemaBase
 {
-    private const string SchemaName = nameof(Roslyn);
+    private const string SchemaName = "Csharp";
+    
+    internal static readonly ConcurrentDictionary<string, SolutionEntity> Solutions = new();
     
     /// <virtual-constructors>
     /// <virtual-constructor>
@@ -152,11 +158,11 @@ public class RoslynSchema : SchemaBase
     /// </columns>
     /// </additional-table>
     /// </additional-tables>
-    public RoslynSchema()
+    public CSharpSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
-        AddSource<SolutionRowsSource>("file");
-        AddTable<SolutionTable>("file");
+        AddSource<CSharpSolutionRowsSource>("file");
+        AddTable<CSharpSolutionTable>("file");
     }
 
     /// <summary>
@@ -170,8 +176,8 @@ public class RoslynSchema : SchemaBase
     {
         switch (name.ToLowerInvariant())
         {
-            case "file":
-                return new SolutionTable();
+            case "solution":
+                return new CSharpSolutionTable();
         }
 
         return base.GetTableByName(name, runtimeContext, parameters);
@@ -188,8 +194,13 @@ public class RoslynSchema : SchemaBase
     {
         switch (name.ToLowerInvariant())
         {
-            case "file":
-                return new SolutionRowsSource((string) parameters[0], runtimeContext.EndWorkToken);
+            case "solution":
+                if (Solutions.TryGetValue((string) parameters[0], out var solutionFilePath))
+                {
+                    return new CSharpInMemorySolutionRowsSource(solutionFilePath, runtimeContext.EndWorkToken);
+                }
+                
+                return new CSharpSolutionRowsSource((string) parameters[0], runtimeContext.EndWorkToken);
         }
 
         return base.GetRowSource(name, runtimeContext, parameters);
@@ -198,7 +209,7 @@ public class RoslynSchema : SchemaBase
     private static MethodsAggregator CreateLibrary()
     {
         var methodsManager = new MethodsManager();
-        var library = new RoslynLibrary();
+        var library = new CSharpLibrary();
 
         methodsManager.RegisterLibraries(library);
 

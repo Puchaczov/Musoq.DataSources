@@ -6,6 +6,7 @@ public class RoslynSchemaProvider : ISchemaProvider
 {
     public ISchema GetSchema(string schema)
     {
-        return new RoslynSchema();
+        CSharpLifecycleHooks.LoadRequiredDependencies();
+        return new CSharpSchema();
     }
 }

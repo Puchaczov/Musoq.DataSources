@@ -4,7 +4,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Roslyn;
 
-internal class SolutionTable : ISchemaTable
+internal class CSharpSolutionTable : ISchemaTable
 {
     public ISchemaColumn[] Columns => SolutionEntity.Columns;
 

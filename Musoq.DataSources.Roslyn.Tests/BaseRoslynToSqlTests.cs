@@ -14,7 +14,7 @@ public class BaseRoslynToSqlTests
     [TestMethod]
     public void WhenSolutionQueried_ShouldPass()
     {
-        var query = $"select s.Id from #roslyn.file('{Solution1SolutionPath}') s";
+        var query = $"select s.Id from #csharp.solution('{Solution1SolutionPath}') s";
         
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -27,7 +27,7 @@ public class BaseRoslynToSqlTests
     [TestMethod]
     public void WhenProjectQueried_ShouldPass()
     {
-        var query = $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #roslyn.file('{Solution1SolutionPath}') s cross apply s.Projects p";
+        var query = $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.solution('{Solution1SolutionPath}') s cross apply s.Projects p";
         
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -59,7 +59,7 @@ public class BaseRoslynToSqlTests
     [TestMethod]
     public void WhenDocumentQueries_ShouldPass()
     {
-        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #roslyn.file('{Solution1SolutionPath}') s cross apply s.Projects p cross apply p.Documents d";
+        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath}') s cross apply s.Projects p cross apply p.Documents d";
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -115,7 +115,7 @@ select
     c.TypeParameters, 
     c.MemberNames, 
     c.Attributes 
-from #roslyn.file('{Solution1SolutionPath}') s 
+from #csharp.solution('{Solution1SolutionPath}') s 
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -173,7 +173,7 @@ where c.Name = 'Class1'
         var query = """
                     select
                         c.Attributes 
-                    from #roslyn.file('{Solution1SolutionPath}') s 
+                    from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -205,7 +205,7 @@ where c.Name = 'Class1'
                         m.Modifiers,
                         m.Body,
                         m.Attributes
-                    from #roslyn.file('{Solution1SolutionPath}') s 
+                    from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -266,7 +266,7 @@ where c.Name = 'Class1'
                         p.IsSealed,
                         p.IsStatic,
                         p.Modifiers
-                    from #roslyn.file('{Solution1SolutionPath}') s 
+                    from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Classes c
@@ -311,7 +311,7 @@ where c.Name = 'Class1'
                         p.IsRef,
                         p.IsByRef,
                         p.IsByValue
-                    from #roslyn.file('{Solution1SolutionPath}') s 
+                    from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Classes c
@@ -349,7 +349,7 @@ where c.Name = 'Class1'
                         e.Namespace,
                         e.Modifiers,
                         e.Members
-                    from #roslyn.file('{Solution1SolutionPath}') s 
+                    from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Enums e
@@ -388,7 +388,7 @@ where c.Name = 'Class1'
                         i.BaseInterfaces,
                         i.Methods,
                         i.Properties
-                    from #roslyn.file('{Solution1SolutionPath}') s 
+                    from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Interfaces i
@@ -436,7 +436,7 @@ where c.Name = 'Class1'
                     select
                         a.Name,
                         a.ConstructorArguments
-                    from #roslyn.file('{Solution1SolutionPath}') s 
+                    from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Classes c
