@@ -1,3 +1,3 @@
 using Musoq.Schema.Attributes;
 
-[assembly: PluginSchemas("sqlite")]
+[assembly: PluginSchemas("system")]
