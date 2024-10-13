@@ -27,7 +27,7 @@ public class CSharpSchema : SchemaBase
     /// <example>
     /// <from>
     /// <environmentVariables></environmentVariables>
-    /// #roslyn.file(string path)
+    /// #csharp.solution(string path)
     /// </from>
     /// <description>Allows to perform queries on the given solution file.</description>
     /// <columns>

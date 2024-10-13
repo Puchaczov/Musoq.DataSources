@@ -1,4 +1,7 @@
-﻿using DbcParserLib.Model;
+﻿using System.Collections.Generic;
+using System.Linq;
+using DbcParserLib.Model;
+using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.CANBus.Signals;
 
@@ -9,6 +12,8 @@ public class SignalEntity
 {
     private readonly Signal _signal;
     private readonly Message _message;
+    
+    private ValueMapEntity[]? _valueMapEntities;
 
     /// <summary>
     /// Creates a new instance of <see cref="SignalEntity"/>.
@@ -105,4 +110,16 @@ public class SignalEntity
     /// Gets the message name that the signal belongs to.
     /// </summary>
     public string MessageName => _message.Name;
+
+    /// <summary>
+    /// Gets the map of values and names can be observed in the signal.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public ValueMapEntity[] ValueMap
+    {
+        get
+        {
+            return _valueMapEntities ??= _signal.ValueTableMap.Select(x => new ValueMapEntity(x)).ToArray();
+        }
+    }
 }

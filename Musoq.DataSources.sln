@@ -79,6 +79,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Roslyn", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Roslyn.Tests", "Musoq.DataSources.Roslyn.Tests\Musoq.DataSources.Roslyn.Tests.csproj", "{F89F908A-C9D3-4AF2-A8AC-1D242E632424}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Roslyn.CommandLineArguments", "Musoq.DataSources.Roslyn.CommandLineArguments\Musoq.DataSources.Roslyn.CommandLineArguments.csproj", "{743F6025-EA01-4E59-B803-8C97486E4EFF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -383,6 +385,14 @@ Global
 		{F89F908A-C9D3-4AF2-A8AC-1D242E632424}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F89F908A-C9D3-4AF2-A8AC-1D242E632424}.Release|x64.ActiveCfg = Release|Any CPU
 		{F89F908A-C9D3-4AF2-A8AC-1D242E632424}.Release|x64.Build.0 = Release|Any CPU
+		{743F6025-EA01-4E59-B803-8C97486E4EFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{743F6025-EA01-4E59-B803-8C97486E4EFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{743F6025-EA01-4E59-B803-8C97486E4EFF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{743F6025-EA01-4E59-B803-8C97486E4EFF}.Debug|x64.Build.0 = Debug|Any CPU
+		{743F6025-EA01-4E59-B803-8C97486E4EFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{743F6025-EA01-4E59-B803-8C97486E4EFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{743F6025-EA01-4E59-B803-8C97486E4EFF}.Release|x64.ActiveCfg = Release|Any CPU
+		{743F6025-EA01-4E59-B803-8C97486E4EFF}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

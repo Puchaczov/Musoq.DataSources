@@ -96,6 +96,15 @@ public class CANBusSchema : SchemaBase
     /// </examples>
     /// </virtual-constructor>
     /// </virtual-constructors>
+    /// <additional-tables>
+    /// <additional-table>
+    /// <description>Represent possible values of a signal</description>
+    /// <columns type="ValueMapEntity[]">
+    /// <column name="Value" type="int">Value of signal</column>
+    /// <column name="Name" type="string">Name of the value</column>
+    /// </columns>
+    /// </additional-table>
+    /// </additional-tables>
     public CANBusSchema() 
         : base(SchemaName, CreateLibrary())
     {

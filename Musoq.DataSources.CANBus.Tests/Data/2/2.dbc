@@ -35,28 +35,6 @@ BS_:
 
 BU_:
 
-
-        const string query = @"
-select 
-    1
-from 
-    #can.messages('./Data/2/2.dbc') m1
-inner join
-    #can.signals('./Data/2/2.dbc') s1 on m1.Name = s1.MessageName
-inner join
-    #can.signals('./Data/2/2.dbc') s2 on m1.Name = s2.MessageName
-where
-    s1.Name <> s2.Name and
-    (
-        s1.StartBit <= s2.StartBit + s2.Length and
-        s1.StartBit + s1.Length >= s2.StartBit
-    )";
-        
-        var vm = CreateAndRunVirtualMachine(query);
-        
-        var table = vm.Run();
-        
-        Assert.AreEqual(0, table.Count);
 BO_ 293 Exhaust_System: 1 Vector__XXX
  SG_ Exhaust_Gas_Temperature : 0|8@1+ (1,0) [0|255] "CelciusDegree" Vector__XXX
 

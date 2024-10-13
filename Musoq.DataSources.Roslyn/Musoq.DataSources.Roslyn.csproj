@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.1.0.4-rc1</Version>
+        <Version>1.1.0</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -26,16 +26,21 @@
     </Target>
 
     <ItemGroup>
+        <PackageReference Include="Cocona" Version="2.2.0" />
+        <PackageReference Include="ConsoleAppFramework" Version="5.2.4">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.Build.Locator" Version="1.6.10" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.7.0" />
-        <PackageReference Include="Musoq.Parser" Version="4.0.1-rc1">
+        <PackageReference Include="Musoq.Parser" Version="4.0.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.0.1-rc1">
+        <PackageReference Include="Musoq.Plugins" Version="6.0.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Schema" Version="7.3.0-rc3">
+        <PackageReference Include="Musoq.Schema" Version="7.3.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -43,6 +48,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
+      <ProjectReference Include="..\Musoq.DataSources.Roslyn.CommandLineArguments\Musoq.DataSources.Roslyn.CommandLineArguments.csproj" />
     </ItemGroup>
 
 </Project>
