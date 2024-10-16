@@ -70,5 +70,5 @@ public class MessageEntity : ICANDbcMessage
     /// Gets the can message signals.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<SignalEntity> Signals => _signals ??= Message.Signals.Select(f => new SignalEntity(f, Message)).ToArray();
+    public IEnumerable<SignalEntity> Signals => _signals ??= Message.Signals.Select((f, i) => new SignalEntity(f, Message, i)).ToArray();
 }

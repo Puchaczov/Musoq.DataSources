@@ -12,7 +12,7 @@ public class SignalEntity
 {
     private readonly Signal _signal;
     private readonly Message _message;
-    
+
     private ValueMapEntity[]? _valueMapEntities;
 
     /// <summary>
@@ -20,10 +20,12 @@ public class SignalEntity
     /// </summary>
     /// <param name="signal">The signal.</param>
     /// <param name="message">The message.</param>
-    public SignalEntity(Signal signal, Message message)
+    /// <param name="order">The order of the signal in the message.</param>
+    public SignalEntity(Signal signal, Message message, int order)
     {
         _signal = signal;
         _message = message;
+        MessageOrder = order;
     }
     
     /// <summary>
@@ -110,6 +112,11 @@ public class SignalEntity
     /// Gets the message name that the signal belongs to.
     /// </summary>
     public string MessageName => _message.Name;
+    
+    /// <summary>
+    /// Order of signal within the message definition.
+    /// </summary>
+    public int MessageOrder { get; }
 
     /// <summary>
     /// Gets the map of values and names can be observed in the signal.

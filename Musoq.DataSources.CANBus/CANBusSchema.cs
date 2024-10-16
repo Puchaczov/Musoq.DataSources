@@ -91,6 +91,8 @@ public class CANBusSchema : SchemaBase
     /// <column name="Comment" type="string">Comment for the signal entity</column>
     /// <column name="Multiplexing" type="string">Multiplexing details for the signal entity</column>
     /// <column name="MessageName" type="string">Message name for the signal entity</column>
+    /// <column name="ValueMap" type="string">Value map for the signal entity</column>
+    /// <column name="MessageOrder" type="int">Order of signal within the message definition</column>
     /// </columns>
     /// </example>
     /// </examples>

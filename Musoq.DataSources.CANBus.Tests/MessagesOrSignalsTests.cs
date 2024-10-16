@@ -28,6 +28,27 @@ public class MessagesOrSignalsTests
     }
     
     [TestMethod]
+    public void WhenSignalOrderRetrieved_ShouldSuccess()
+    {
+        const string query = "select MessageOrder, Name from #can.signals('./Data/1/1.dbc') s";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var table = vm.Run();
+        
+        Assert.AreEqual(3, table.Count);
+        
+        Assert.AreEqual(0, table[0].Values[0]);
+        Assert.AreEqual("Exhaust_Gas_Temperature", table[0].Values[1]);
+        
+        Assert.AreEqual(0, table[1].Values[0]);
+        Assert.AreEqual("Oil_Temperature", table[1].Values[1]);
+        
+        Assert.AreEqual(1, table[2].Values[0]);
+        Assert.AreEqual("Is_Turned_On", table[2].Values[1]);
+    }
+    
+    [TestMethod]
     public void WhenDbcFileHasUnnecessarySpaceBeforeTheSemicolon_AndMessagesToRetrieve_ShouldSuccess()
     {
         const string query = "select Name from #can.messages('./Data/4/4.dbc')";

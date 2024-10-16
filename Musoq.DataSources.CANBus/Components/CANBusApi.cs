@@ -7,16 +7,9 @@ using DbcParserLib.Model;
 
 namespace Musoq.DataSources.CANBus.Components;
 
-internal class CANBusApi : ICANBusApi
+internal class CANBusApi(string dbcPath) : ICANBusApi
 {
-    private readonly string _dbcPath;
     private Dbc? _dbc;
-
-    public CANBusApi(string dbcPath)
-    {
-        _dbcPath = dbcPath;
-        _dbc = null;
-    }
 
     public async Task<Message[]> GetMessagesAsync(CancellationToken cancellationToken)
     {
@@ -44,7 +37,7 @@ internal class CANBusApi : ICANBusApi
     {
         cancellationToken.ThrowIfCancellationRequested();
         
-        await using var stream = File.OpenRead(_dbcPath);
+        await using var stream = File.OpenRead(dbcPath);
         using var reader = new StreamReader(stream, leaveOpen: true);
         using var modifiedFileStream = new MemoryStream();
         await using var writer = new StreamWriter(modifiedFileStream, leaveOpen: true);
@@ -53,7 +46,7 @@ internal class CANBusApi : ICANBusApi
         {
             cancellationToken.ThrowIfCancellationRequested();
             
-            var line = await reader.ReadLineAsync();
+            var line = await reader.ReadLineAsync(cancellationToken);
 
             if (string.IsNullOrWhiteSpace(line))
             {
@@ -85,7 +78,7 @@ internal class CANBusApi : ICANBusApi
             await writer.WriteLineAsync(line);
         }
         
-        await writer.FlushAsync();
+        await writer.FlushAsync(cancellationToken);
         
         modifiedFileStream.Seek(0, SeekOrigin.Begin);
         var dbc = DbcParserLib.Parser.ParseFromStream(modifiedFileStream);

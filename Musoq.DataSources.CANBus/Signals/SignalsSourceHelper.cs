@@ -25,7 +25,8 @@ internal static class SignalsSourceHelper
         { nameof(SignalEntity.Comment), 13 },
         { nameof(SignalEntity.Multiplexing), 14 },
         { nameof(SignalEntity.MessageName), 15 },
-        { nameof(SignalEntity.ValueMap), 16 }
+        { nameof(SignalEntity.ValueMap), 16 },
+        { nameof(SignalEntity.MessageOrder), 17 }
     };
 
     internal static readonly IReadOnlyDictionary<int, Func<SignalEntity, object>> SignalsIndexToMethodAccessMap = new Dictionary<int, Func<SignalEntity, object>>
@@ -46,7 +47,8 @@ internal static class SignalsSourceHelper
         { 13, f => f.Comment },
         { 14, f => f.Multiplexing },
         { 15, f => f.MessageName },
-        { 16, f => f.ValueMap }
+        { 16, f => f.ValueMap },
+        { 17, f => f.MessageOrder }
     };
 
     internal static ISchemaColumn[] Columns =>
@@ -67,6 +69,7 @@ internal static class SignalsSourceHelper
         new SchemaColumn(nameof(SignalEntity.Comment), 13, typeof(string)),
         new SchemaColumn(nameof(SignalEntity.Multiplexing), 14, typeof(string)),
         new SchemaColumn(nameof(SignalEntity.MessageName), 15, typeof(string)),
-        new SchemaColumn(nameof(SignalEntity.ValueMap), 16, typeof(ValueMapEntity[]))
+        new SchemaColumn(nameof(SignalEntity.ValueMap), 16, typeof(ValueMapEntity[])),
+        new SchemaColumn(nameof(SignalEntity.MessageOrder), 17, typeof(int))
     ];
 }
