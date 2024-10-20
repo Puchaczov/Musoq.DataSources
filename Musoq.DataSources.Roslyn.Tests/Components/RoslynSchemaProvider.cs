@@ -1,6 +1,6 @@
 using Musoq.Schema;
 
-namespace Musoq.DataSources.Roslyn.Tests;
+namespace Musoq.DataSources.Roslyn.Tests.Components;
 
 public class RoslynSchemaProvider : ISchemaProvider
 {

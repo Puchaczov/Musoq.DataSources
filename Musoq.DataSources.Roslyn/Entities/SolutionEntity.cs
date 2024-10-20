@@ -32,7 +32,8 @@ namespace Musoq.DataSources.Roslyn.Entities
             new SchemaColumn(nameof(Projects), 1, typeof(ProjectEntity[]))
         ];
 
-        private readonly Solution _solution;
+        internal readonly Solution Solution;
+        
         private ProjectEntity[] _projects;
         private bool _wasLoaded;
 
@@ -42,7 +43,7 @@ namespace Musoq.DataSources.Roslyn.Entities
         /// <param name="solution">The solution.</param>
         public SolutionEntity(Solution solution)
         {
-            _solution = solution;
+            Solution = solution;
             _projects = [];
         }
 
@@ -67,7 +68,7 @@ namespace Musoq.DataSources.Roslyn.Entities
         /// <summary>
         /// Gets the ID of the solution.
         /// </summary>
-        public string Id => _solution.Id.Id.ToString();
+        public string Id => Solution.Id.Id.ToString();
 
         /// <summary>
         /// Gets the projects within the solution.
@@ -79,7 +80,7 @@ namespace Musoq.DataSources.Roslyn.Entities
             {
                 if (_wasLoaded) return _projects;
 
-                _projects = _solution.Projects.Select(p => new ProjectEntity(p, this)).ToArray();
+                _projects = Solution.Projects.Select(p => new ProjectEntity(p)).ToArray();
                 _wasLoaded = true;
 
                 return _projects;

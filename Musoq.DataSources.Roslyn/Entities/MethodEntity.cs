@@ -13,14 +13,17 @@ namespace Musoq.DataSources.Roslyn.Entities;
 public class MethodEntity
 {
     private readonly IMethodSymbol _methodSymbol;
+    private readonly MethodDeclarationSyntax _methodDeclaration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MethodEntity"/> class.
     /// </summary>
     /// <param name="methodSymbol">The method symbol to extract information from.</param>
-    public MethodEntity(IMethodSymbol methodSymbol)
+    /// <param name="methodDeclaration">The method declaration syntax node.</param>
+    public MethodEntity(IMethodSymbol methodSymbol, MethodDeclarationSyntax methodDeclaration)
     {
         _methodSymbol = methodSymbol;
+        _methodDeclaration = methodDeclaration;
     }
 
     /// <summary>
@@ -80,6 +83,34 @@ public class MethodEntity
             return _methodSymbol.GetAttributes().Select(attr => new AttributeEntity(attr));
         }
     }
+    
+    /// <summary>
+    /// Gets the cyclomatic complexity of the method.
+    /// </summary>
+    public int CyclomaticComplexity
+    {
+        get
+        {
+            // Start with 1 for the method entry point
+            var complexity = 1;
+
+            // Count branching statements
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.IfStatement);
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.ElseClause);
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.CasePatternSwitchLabel);
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.WhileStatement);
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.ForStatement);
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.ForEachStatement);
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.CatchClause);
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.ConditionalExpression);
+
+            // Count logical operators
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.LogicalAndExpression);
+            complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.LogicalOrExpression);
+
+            return complexity;
+        }
+    }
 
     /// <summary>
     /// Returns a string that represents the current object.
@@ -90,5 +121,10 @@ public class MethodEntity
         var modifiers = string.Join(" ", Modifiers);
         var parameters = string.Join(", ", Parameters);
         return $"{modifiers} {ReturnType} {Name}({parameters})";
+    }
+    
+    private static int CountSyntaxKind(SyntaxNode node, SyntaxKind kind)
+    {
+        return node.DescendantNodes().Count(n => n.IsKind(kind));
     }
 }

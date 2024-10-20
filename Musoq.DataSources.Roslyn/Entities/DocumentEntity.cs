@@ -197,7 +197,7 @@ public class DocumentEntity
             throw new InvalidOperationException("Could not get symbol for type declaration.");
 
         if (typeof(TEntity) == typeof(ClassEntity))
-            return (TEntity)(object)new ClassEntity((INamedTypeSymbol)symbol);
+            return (TEntity)(object)new ClassEntity((INamedTypeSymbol)symbol, (ClassDeclarationSyntax)node, _semanticModel);
         if (typeof(TEntity) == typeof(InterfaceEntity))
             return (TEntity)(object)new InterfaceEntity((INamedTypeSymbol)symbol);
         if (typeof(TEntity) == typeof(EnumEntity))

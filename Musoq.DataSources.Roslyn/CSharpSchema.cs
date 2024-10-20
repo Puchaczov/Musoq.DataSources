@@ -86,6 +86,15 @@ public class CSharpSchema : SchemaBase
     /// <column name="Modifiers" type="string[]">Modifiers</column>
     /// <column name="Methods" type="MethodEntity[]">Methods</column>
     /// <column name="Properties" type="PropertyEntity[]">Properties</column>
+    /// <column name="MethodsCount" type="int">Methods count</column>
+    /// <column name="PropertiesCount" type="int">Properties count</column>
+    /// <column name="FieldsCount" type="int">Fields count</column>
+    /// <column name="InheritanceDepth" type="int">Inheritance depth</column>
+    /// <column name="ConstructorsCount" type="int">Constructors count</column>
+    /// <column name="NestedClassesCount" type="int">Nested classes count</column>
+    /// <column name="NestedInterfacesCount" type="int">Nested interfaces count</column>
+    /// <column name="InterfacesCount" type="int">Interfaces count</column>
+    /// <column name="LackOfCohesion" type="int">Lack of cohesion</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>
@@ -121,6 +130,7 @@ public class CSharpSchema : SchemaBase
     /// <column name="Modifiers" type="string[]">Modifiers</column>
     /// <column name="Body" type="string">Body</column>
     /// <column name="Attributes" type="AttributeEntity[]">Attributes</column>
+    /// <column name="CyclomaticComplexity" type="int">Cyclomatic complexity</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>
@@ -155,6 +165,21 @@ public class CSharpSchema : SchemaBase
     /// <column name="IsRef" type="bool">Is ref</column>
     /// <column name="IsByRef" type="bool">Is by ref</column>
     /// <column name="IsByValue" type="bool">Is by value</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent project reference</description>
+    /// <columns type="ProjectReferenceEntity">
+    /// <column name="Name" type="string">Name</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent library reference</description>
+    /// <columns type="LibraryReferenceEntity">
+    /// <column name="Name" type="string">Name</column>
+    /// <column name="Version" type="string">Version</column>
+    /// <column name="Culture" type="string">Culture</column>
+    /// <column name="Location" type="string">Location</column>
     /// </columns>
     /// </additional-table>
     /// </additional-tables>

@@ -38,11 +38,12 @@ public class ProjectEntity
         new SchemaColumn(nameof(Name), 7, typeof(string)),
         new SchemaColumn(nameof(IsSubmission), 8, typeof(bool)),
         new SchemaColumn(nameof(Version), 9, typeof(string)),
-        new SchemaColumn(nameof(Documents), 10, typeof(DocumentEntity[]))
+        new SchemaColumn(nameof(Documents), 10, typeof(DocumentEntity[])),
+        new SchemaColumn(nameof(ProjectReferences), 11, typeof(ProjectReferenceEntity[])),
+        new SchemaColumn(nameof(LibraryReferences), 12, typeof(LibraryReferenceEntity[]))
     ];
 
     private readonly Project _project;
-    private readonly SolutionEntity _solution;
 
     private DocumentEntity[] _documents;
     private bool _wasLoaded;
@@ -51,11 +52,9 @@ public class ProjectEntity
     /// Initializes a new instance of the <see cref="ProjectEntity"/> class.
     /// </summary>
     /// <param name="project">The project.</param>
-    /// <param name="solution">The solution.</param>
-    public ProjectEntity(Project project, SolutionEntity solution)
+    public ProjectEntity(Project project)
     {
         _project = project;
-        _solution = solution;
         _documents = [];
     }
 
@@ -76,7 +75,9 @@ public class ProjectEntity
             {nameof(Name), 7},
             {nameof(IsSubmission), 8},
             {nameof(Version), 9},
-            {nameof(Documents), 10}
+            {nameof(Documents), 10},
+            {nameof(ProjectReferences), 11},
+            {nameof(LibraryReferences), 12}
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<ProjectEntity, object?>>
@@ -91,7 +92,9 @@ public class ProjectEntity
             {7, entity => entity.Name},
             {8, entity => entity.IsSubmission},
             {9, entity => entity.Version},
-            {10, entity => entity.Documents}
+            {10, entity => entity.Documents},
+            {11, entity => entity.ProjectReferences},
+            {12, entity => entity.LibraryReferences}
         };
     }
 
@@ -161,4 +164,22 @@ public class ProjectEntity
             return _documents;
         }
     }
+    
+    /// <summary>
+    /// Gets the references of the project.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<ProjectReferenceEntity> ProjectReferences => 
+        _project.ProjectReferences.Select(reference => new ProjectReferenceEntity(reference, _project.Solution));
+    
+    /// <summary>
+    /// Gets the library references of the project.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<LibraryReferenceEntity> LibraryReferences => 
+        _project
+            .MetadataReferences
+            .OfType<PortableExecutableReference>()
+            .Where(f => f.Properties.Kind == MetadataImageKind.Assembly)
+            .Select(reference => new LibraryReferenceEntity(reference));
 }

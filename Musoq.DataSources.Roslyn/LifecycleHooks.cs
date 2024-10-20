@@ -37,11 +37,6 @@ public static class LifecycleHooks
     /// <returns>0 if succeeded, otherwise error code</returns>
     public static async Task<(int ReturnValue, Exception[] Exceptions)> LoadToMemoryAsync(string[] args, CancellationToken cancellationToken)
     {
-        if (Debugger.IsAttached)
-        {
-            Debugger.Break();            
-        }
-        
         try
         {
             var app = ConsoleApp.Create();
@@ -58,6 +53,11 @@ public static class LifecycleHooks
         }
         catch (Exception e)
         {
+            if (Debugger.IsAttached)
+            {
+                Debugger.Break();            
+            }
+
             return (-1, [e]);
         }
     }
@@ -69,12 +69,7 @@ public static class LifecycleHooks
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>0 if succeeded, otherwise error code</returns>
     public static async Task<(int ReturnValue, Exception[] Exceptions)> UnloadFromMemoryAsync(string[] args, CancellationToken cancellationToken)
-    {
-        if (Debugger.IsAttached)
-        {
-            Debugger.Break();            
-        }
-        
+    {   
         try
         {
             var app = ConsoleApp.Create();
@@ -91,6 +86,11 @@ public static class LifecycleHooks
         }
         catch (Exception e)
         {
+            if (Debugger.IsAttached)
+            {
+                Debugger.Break();            
+            }
+            
             return (-1, [e]);
         }
     }

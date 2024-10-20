@@ -1,6 +1,7 @@
 using System.Globalization;
 using Musoq.Converter;
 using Musoq.DataSources.Roslyn.Entities;
+using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
@@ -77,7 +78,7 @@ public class BaseRoslynToSqlTests
             documentContent.Contains("interface Interface1") && 
             documentContent.Contains("enum Enum1")
         );
-        Assert.AreEqual(1, result[0][2]);
+        Assert.AreEqual(2, result[0][2]);
         Assert.AreEqual(1, result[0][3]);
         Assert.AreEqual(1, result[0][4]);
         
@@ -114,7 +115,19 @@ select
     c.Interfaces, 
     c.TypeParameters, 
     c.MemberNames, 
-    c.Attributes 
+    c.Attributes,
+    c.Name,
+    c.FullName,
+    c.Namespace,
+    c.MethodsCount,
+    c.PropertiesCount,
+    c.FieldsCount,
+    c.InheritanceDepth,
+    c.ConstructorsCount,
+    c.NestedClassesCount,
+    c.NestedInterfacesCount,
+    c.InterfacesCount,
+    c.LackOfCohesion
 from #csharp.solution('{Solution1SolutionPath}') s 
 cross apply s.Projects p 
 cross apply p.Documents d 
@@ -152,7 +165,7 @@ where c.Name = 'Class1'
         var memberNames = (result[0][6] as IEnumerable<string> ?? []).ToList();
         
         Assert.IsNotNull(memberNames);
-        Assert.AreEqual(7, memberNames.Count);
+        Assert.AreEqual(8, memberNames.Count);
         Assert.IsTrue(memberNames.Contains("Method1Async"));
         Assert.IsTrue(memberNames.Contains("Method2"));
         Assert.IsTrue(memberNames.Contains("Method3"));
@@ -165,6 +178,19 @@ where c.Name = 'Class1'
         
         Assert.IsNotNull(attributes);
         Assert.AreEqual(0, attributes.Count);
+        
+        Assert.AreEqual("Class1", result[0][8].ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Class1", result[0][9].ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", result[0][10].ToString());
+        Assert.AreEqual(5, result[0][11]);
+        Assert.AreEqual(1, result[0][12]);
+        Assert.AreEqual(0, result[0][13]);
+        Assert.AreEqual(1, result[0][14]);
+        Assert.AreEqual(1, result[0][15]);
+        Assert.AreEqual(0, result[0][16]);
+        Assert.AreEqual(0, result[0][17]);
+        Assert.AreEqual(1, result[0][18]);
+        Assert.AreEqual(2.0, result[0][19]);
     }
 
     [TestMethod]
@@ -191,7 +217,7 @@ where c.Name = 'Class1'
         Assert.IsNotNull(attributes);
         Assert.AreEqual(1, attributes.Count);
         
-        Assert.AreEqual("NotNull", attributes.First().Name);
+        Assert.AreEqual("ExcludeFromCodeCoverage", attributes.First().Name);
     }
 
     [TestMethod]
@@ -217,7 +243,7 @@ where c.Name = 'Class1'
         
         var result = vm.Run();
         
-        Assert.AreEqual(4, result.Count);
+        Assert.AreEqual(5, result.Count);
         
         Assert.AreEqual("Method1Async", result[0][0].ToString());
         Assert.AreEqual("Task", result[0][1].ToString());
@@ -235,17 +261,23 @@ where c.Name = 'Class1'
         
         Assert.AreEqual("Method3", result[2][0].ToString());
         Assert.AreEqual("Class1", result[2][1].ToString());
-        Assert.AreEqual(1, (result[2][2] as IEnumerable<ParameterEntity> ?? []).Count());
+        Assert.AreEqual(0, (result[2][2] as IEnumerable<ParameterEntity> ?? []).Count());
         Assert.AreEqual(1, (result[2][3] as IEnumerable<string> ?? []).Count());
         Assert.IsNotNull(result[2][4]);
         Assert.AreEqual(0, (result[2][5] as IEnumerable<AttributeEntity> ?? []).Count());
         
-        Assert.AreEqual("Method4", result[3][0].ToString());
-        Assert.AreEqual("Enum1", result[3][1].ToString());
-        Assert.AreEqual(0, (result[3][2] as IEnumerable<ParameterEntity> ?? []).Count());
+        Assert.AreEqual("Method3", result[3][0].ToString());
+        Assert.AreEqual("Class1", result[3][1].ToString());
+        Assert.AreEqual(1, (result[3][2] as IEnumerable<ParameterEntity> ?? []).Count());
         Assert.AreEqual(1, (result[3][3] as IEnumerable<string> ?? []).Count());
         Assert.IsNotNull(result[3][4]);
         Assert.AreEqual(0, (result[3][5] as IEnumerable<AttributeEntity> ?? []).Count());
+        
+        Assert.AreEqual("Method4", result[4][0].ToString());
+        Assert.AreEqual("Enum1", result[4][1].ToString());
+        Assert.AreEqual(0, (result[4][2] as IEnumerable<ParameterEntity> ?? []).Count());
+        Assert.AreEqual(1, (result[4][3] as IEnumerable<string> ?? []).Count());
+        Assert.IsNotNull(result[4][4]);
     }
     
     [TestMethod]
@@ -450,8 +482,68 @@ where c.Name = 'Class1'
         
         Assert.AreEqual(1, result.Count);
         
-        Assert.AreEqual("NotNull", result[0][0].ToString());
+        Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
         Assert.AreEqual(0, (result[0][1] as IEnumerable<string> ?? []).Count());
+    }
+
+    [TestMethod]
+    public void WhenCyclomaticComplexityIsOne_ShouldPass()
+    {
+        var query = """
+                    select
+                        m.CyclomaticComplexity
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
+                    cross apply c.Methods m
+                    where m.Name = 'CyclomaticComplexityMethod1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(1, result[0][0]);
+    }
+
+    [TestMethod]
+    public void WhenCyclomaticComplexityIsTwo_ShouldPass()
+    {
+        var query = """
+                    select
+                        m.CyclomaticComplexity
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
+                    cross apply c.Methods m
+                    where m.Name = 'CyclomaticComplexityMethod2'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(2, result[0][0]);
+    }
+
+    [TestMethod]
+    public void WhenCyclomaticComplexityIsThree_ShouldPass()
+    {
+        var query = """
+                    select
+                        m.CyclomaticComplexity
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
+                    cross apply c.Methods m
+                    where m.Name = 'CyclomaticComplexityMethod3'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(3, result[0][0]);
     }
 
     static BaseRoslynToSqlTests()

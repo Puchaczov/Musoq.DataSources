@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -56,7 +57,7 @@ public abstract class TypeEntity(INamedTypeSymbol symbol)
         .OfType<IMethodSymbol>()
         .Where(m => !m.IsImplicitlyDeclared)
         .Where(m => m.MethodKind != MethodKind.PropertyGet && m.MethodKind != MethodKind.PropertySet)
-        .Select(m => new MethodEntity(m));
+        .Select(m => new MethodEntity(m, (MethodDeclarationSyntax)m.DeclaringSyntaxReferences.First().GetSyntax()));
 
     /// <summary>
     /// Gets the properties of the type.

@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Solution1.ClassLibrary1.Tests;
 
-[NotNull]
+[ExcludeFromCodeCoverage]
 public class Tests
 {
     [SetUp]
