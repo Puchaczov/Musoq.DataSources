@@ -68,6 +68,8 @@ public interface Interface1
     public Enum1 Method4();
 }
 
+public interface Interface2 : Interface1{}
+
 public enum Enum1
 {
     Value1,

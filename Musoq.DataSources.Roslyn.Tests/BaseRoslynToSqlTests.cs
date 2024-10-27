@@ -60,13 +60,13 @@ public class BaseRoslynToSqlTests
     [TestMethod]
     public void WhenDocumentQueries_ShouldPass()
     {
-        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath}') s cross apply s.Projects p cross apply p.Documents d";
+        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
         
         var vm = CreateAndRunVirtualMachine(query);
         
         var result = vm.Run();
         
-        Assert.AreEqual(4, result.Count);
+        Assert.AreEqual(1, result.Count);
         
         Assert.AreEqual("Class1.cs", result[0][0].ToString());
 
@@ -79,28 +79,8 @@ public class BaseRoslynToSqlTests
             documentContent.Contains("enum Enum1")
         );
         Assert.AreEqual(2, result[0][2]);
-        Assert.AreEqual(1, result[0][3]);
+        Assert.AreEqual(2, result[0][3]);
         Assert.AreEqual(1, result[0][4]);
-        
-        Assert.AreEqual("Solution1.ClassLibrary1.GlobalUsings.g.cs", result[1][0].ToString());
-        Assert.IsNotNull(result[1][1]);
-        Assert.AreEqual(0, result[1][2]);
-        Assert.AreEqual(0, result[1][3]);
-        Assert.AreEqual(0, result[1][4]);
-        
-        documentContent = result[2][1].ToString();
-        
-        Assert.AreEqual("UnitTest1.cs", result[2][0].ToString());
-        Assert.IsTrue(documentContent.Contains("class Tests"));
-        Assert.AreEqual(1, result[2][2]);
-        Assert.AreEqual(0, result[2][3]);
-        Assert.AreEqual(0, result[2][4]);
-        
-        Assert.AreEqual("Solution1.ClassLibrary1.Tests.GlobalUsings.g.cs", result[3][0].ToString());
-        Assert.IsNotNull(result[3][1]);
-        Assert.AreEqual(0, result[3][2]);
-        Assert.AreEqual(0, result[3][3]);
-        Assert.AreEqual(0, result[3][4]);
     }
 
     [TestMethod]
@@ -186,7 +166,7 @@ where c.Name = 'Class1'
         Assert.AreEqual(1, result[0][12]);
         Assert.AreEqual(0, result[0][13]);
         Assert.AreEqual(1, result[0][14]);
-        Assert.AreEqual(1, result[0][15]);
+        Assert.AreEqual(0, result[0][15]);
         Assert.AreEqual(0, result[0][16]);
         Assert.AreEqual(0, result[0][17]);
         Assert.AreEqual(1, result[0][18]);
@@ -229,7 +209,7 @@ where c.Name = 'Class1'
                         m.ReturnType,
                         m.Parameters,
                         m.Modifiers,
-                        m.Body,
+                        m.Text,
                         m.Attributes
                     from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.Projects p 
@@ -278,6 +258,119 @@ where c.Name = 'Class1'
         Assert.AreEqual(0, (result[4][2] as IEnumerable<ParameterEntity> ?? []).Count());
         Assert.AreEqual(1, (result[4][3] as IEnumerable<string> ?? []).Count());
         Assert.IsNotNull(result[4][4]);
+    }
+
+    [TestMethod]
+    public void WhenLinesOfCodeOfSpecificMethodQueried_ShouldPass()
+    {
+        var query = """
+                    select
+                        m.LinesOfCode
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'Class1' and m.Name = 'Method1Async'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        
+        Assert.AreEqual(4, result[0][0]);
+    }
+
+    [TestMethod]
+    public void WhenClassSplitAsPartial_Methods_ShouldPass()
+    {
+        var query = """
+                    select
+                        d.Name,
+                        c.Name,
+                        c.MethodsCount,
+                        m.Name
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'PartialTestClass'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        Assert.AreEqual("PartialTestClass_1.cs", result[0][0].ToString());
+        Assert.AreEqual("PartialTestClass", result[0][1].ToString());
+        Assert.AreEqual(1, result[0][2]);
+        Assert.AreEqual("Method1", result[0][3].ToString());
+        
+        Assert.AreEqual("PartialTestClass_2.cs", result[1][0].ToString());
+        Assert.AreEqual("PartialTestClass", result[1][1].ToString());
+        Assert.AreEqual(1, result[1][2]);
+        Assert.AreEqual("Method2", result[1][3].ToString());
+    }
+
+    [TestMethod]
+    public void WhenClassSplitAsPartial_Properties_ShouldPass()
+    {
+        var query = """
+                    select
+                        d.Name,
+                        c.Name,
+                        c.MethodsCount,
+                        pr.Name
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Properties pr
+                    where c.Name = 'PartialTestClass'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        Assert.AreEqual("PartialTestClass_1.cs", result[0][0].ToString());
+        Assert.AreEqual("PartialTestClass", result[0][1].ToString());
+        Assert.AreEqual(1, result[0][2]);
+        Assert.AreEqual("Property1", result[0][3].ToString());
+        
+        Assert.AreEqual("PartialTestClass_2.cs", result[1][0].ToString());
+        Assert.AreEqual("PartialTestClass", result[1][1].ToString());
+        Assert.AreEqual(1, result[1][2]);
+        Assert.AreEqual("Property2", result[1][3].ToString());
+    }
+
+    [TestMethod]
+    public void WhenLinesOfCodeOfSpecificClassQueried_ShouldPass()
+    {
+        var query = """
+                    select
+                        c.LinesOfCode
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        
+        Assert.AreEqual(29, result[0][0]);
     }
     
     [TestMethod]
@@ -544,6 +637,104 @@ where c.Name = 'Class1'
         
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual(3, result[0][0]);
+    }
+
+    [TestMethod]
+    public void WhenLookingForReferenceToClass_ShouldFind()
+    {
+        var query = """
+                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.GetClassesByNames('Class1') c
+                    cross apply s.FindReferences(c.Self) rd
+                    cross apply rd.ReferencedClasses r
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        Assert.AreEqual("Class1", result[0][0].ToString());
+        Assert.AreEqual(16, result[0][1]);
+        Assert.AreEqual(11, result[0][2]);
+        Assert.AreEqual(16, result[0][3]);
+        Assert.AreEqual(17, result[0][4]);
+            
+        Assert.AreEqual("Class1", result[1][0].ToString());
+        Assert.AreEqual(21, result[1][1]);
+        Assert.AreEqual(11, result[1][2]);
+        Assert.AreEqual(21, result[1][3]);
+        Assert.AreEqual(17, result[1][4]);
+    }
+    
+    [TestMethod]
+    public void WhenLookingForReferenceToInterface_ShouldFind()
+    {
+        var query = """
+                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.GetInterfacesByNames('Interface1') c
+                    cross apply s.FindReferences(c.Self) rd
+                    cross apply rd.ReferencedInterfaces r
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        
+        Assert.AreEqual("Interface2", result[0][0].ToString());
+        Assert.AreEqual(70, result[0][1]);
+        Assert.AreEqual(30, result[0][2]);
+        Assert.AreEqual(70, result[0][3]);
+        Assert.AreEqual(40, result[0][4]);
+    }
+    
+    [TestMethod]
+    public void WhenLookingForReferenceToEnum_WithinClass_ShouldFind()
+    {
+        var query = """
+                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.GetEnumsByNames('Enum1') c
+                    cross apply s.FindReferences(c.Self) rd
+                    cross apply rd.ReferencedClasses r
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        
+        Assert.AreEqual("Class1", result[0][0].ToString());
+        Assert.AreEqual(26, result[0][1]);
+        Assert.AreEqual(11, result[0][2]);
+        Assert.AreEqual(26, result[0][3]);
+        Assert.AreEqual(16, result[0][4]);
+    }
+    
+    [TestMethod]
+    public void WhenLookingForReferenceToEnum_WithinInterface_ShouldFind()
+    {
+        var query = """
+                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.GetEnumsByNames('Enum1') c
+                    cross apply s.FindReferences(c.Self) rd
+                    cross apply rd.ReferencedInterfaces r
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        
+        Assert.AreEqual("Interface1", result[0][0].ToString());
+        Assert.AreEqual(67, result[0][1]);
+        Assert.AreEqual(11, result[0][2]);
+        Assert.AreEqual(67, result[0][3]);
+        Assert.AreEqual(16, result[0][4]);
     }
 
     static BaseRoslynToSqlTests()

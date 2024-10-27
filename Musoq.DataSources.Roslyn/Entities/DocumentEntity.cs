@@ -14,6 +14,7 @@ namespace Musoq.DataSources.Roslyn.Entities;
 public class DocumentEntity
 {
     private readonly Document _document;
+    private readonly Solution _solution;
     private SyntaxTree? _syntaxTree;
     private SemanticModel? _semanticModel;
     private bool _wasInitialized;
@@ -22,9 +23,27 @@ public class DocumentEntity
     /// Initializes a new instance of the <see cref="DocumentEntity"/> class.
     /// </summary>
     /// <param name="document">The Roslyn document to be represented by this entity.</param>
-    public DocumentEntity(Document document)
+    /// <param name="solution">The Roslyn solution that contains the document.</param>
+    public DocumentEntity(Document document, Solution solution)
     {
         _document = document;
+        _solution = solution;
+    }
+    
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DocumentEntity"/> class.
+    /// </summary>
+    /// <param name="document">The Roslyn document to be represented by this entity.</param>
+    /// <param name="solution">The Roslyn solution that contains the document.</param>
+    /// <param name="syntaxTree">The syntax tree of the document.</param>
+    /// <param name="semanticModel">The semantic model of the document.</param>
+    protected DocumentEntity(Document document, Solution solution, SyntaxTree syntaxTree, SemanticModel semanticModel)
+    {
+        _document = document;
+        _solution = solution;
+        _syntaxTree = syntaxTree;
+        _semanticModel = semanticModel;
+        _wasInitialized = true;
     }
 
     /// <summary>
@@ -156,7 +175,7 @@ public class DocumentEntity
     /// <typeparam name="TEntity">The type of the entity.</typeparam>
     /// <returns>A collection of type entities.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
-    private IEnumerable<TEntity> GetTypeEntities<TSyntax, TEntity>()
+    protected IEnumerable<TEntity> GetTypeEntities<TSyntax, TEntity>()
         where TSyntax : BaseTypeDeclarationSyntax
         where TEntity : TypeEntity
     {
@@ -197,11 +216,11 @@ public class DocumentEntity
             throw new InvalidOperationException("Could not get symbol for type declaration.");
 
         if (typeof(TEntity) == typeof(ClassEntity))
-            return (TEntity)(object)new ClassEntity((INamedTypeSymbol)symbol, (ClassDeclarationSyntax)node, _semanticModel);
+            return (TEntity)(object)new ClassEntity((INamedTypeSymbol)symbol, (ClassDeclarationSyntax)node, _semanticModel, _solution, this);
         if (typeof(TEntity) == typeof(InterfaceEntity))
-            return (TEntity)(object)new InterfaceEntity((INamedTypeSymbol)symbol);
+            return (TEntity)(object)new InterfaceEntity((INamedTypeSymbol)symbol, (InterfaceDeclarationSyntax)node, _semanticModel, _solution, this);
         if (typeof(TEntity) == typeof(EnumEntity))
-            return (TEntity)(object)new EnumEntity((INamedTypeSymbol)symbol);
+            return (TEntity)(object)new EnumEntity((INamedTypeSymbol)symbol, (EnumDeclarationSyntax)node, _semanticModel, _solution, this);
 
         throw new ArgumentException($"Unsupported entity type: {typeof(TEntity)}");
     }

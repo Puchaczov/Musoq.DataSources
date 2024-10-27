@@ -1,8 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Musoq.Plugins.Attributes;
+using CSharpExtensions = Microsoft.CodeAnalysis.CSharp.CSharpExtensions;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -11,26 +14,59 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class ClassEntity : TypeEntity
 {
-    private readonly ClassDeclarationSyntax _syntax;
-    private readonly SemanticModel _semanticModel;
+    internal readonly SemanticModel SemanticModel;
+
+    internal readonly Solution Solution;
+    
+    internal new readonly INamedTypeSymbol Symbol;
+    
+    internal ClassDeclarationSyntax Syntax { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClassEntity"/> class.
     /// </summary>
     /// <param name="symbol">The named type symbol from Roslyn.</param>
     /// <param name="syntax">The syntax node of the class.</param>
-    /// <param name="semanticModel"></param>
-    public ClassEntity(INamedTypeSymbol symbol, ClassDeclarationSyntax syntax, SemanticModel semanticModel)
+    /// <param name="semanticModel">Semantic model of the class.</param>
+    /// <param name="solution">Solution that contains the class.</param>
+    /// <param name="document">The document that contains the class.</param>
+    public ClassEntity(INamedTypeSymbol symbol, ClassDeclarationSyntax syntax, SemanticModel semanticModel, Solution solution, DocumentEntity document)
         : base(symbol)
     {
-        _syntax = syntax;
-        _semanticModel = semanticModel;
+        Syntax = syntax;
+        SemanticModel = semanticModel;
+        Solution = solution;
+        Symbol = symbol;
+        Document = document;
     }
+    
+    /// <summary>
+    /// Gets the document that contains the class.
+    /// </summary>
+    public DocumentEntity Document { get; }
 
     /// <summary>
     /// Gets the text of the class.
     /// </summary>
-    public string Text => Symbol.ToDisplayString();
+    public string Text => Syntax.GetText(Encoding.UTF8).ToString();
+    
+    /// <summary>
+    /// Gets the lines of code metric for the class.
+    /// </summary>
+    public int LinesOfCode
+    {
+        get
+        {
+            var lineSpan = Syntax.SyntaxTree
+                .GetLineSpan(Syntax.Span);
+
+            var startLine = lineSpan.StartLinePosition.Line;
+            var endLine = lineSpan.EndLinePosition.Line;
+            var totalLines = endLine - startLine + 1;
+            
+            return totalLines;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether the class is abstract.
@@ -80,25 +116,17 @@ public class ClassEntity : TypeEntity
     /// <summary>
     /// Gets the count of methods in the class.
     /// </summary>
-    public int MethodsCount => Symbol.GetMembers().Count(m => m.Kind == SymbolKind.Method && 
-                                                              ((IMethodSymbol)m).MethodKind != MethodKind.PropertyGet && 
-                                                              ((IMethodSymbol)m).MethodKind != MethodKind.PropertySet && 
-                                                              ((IMethodSymbol)m).MethodKind != MethodKind.EventAdd && 
-                                                              ((IMethodSymbol)m).MethodKind != MethodKind.EventRemove && 
-                                                              ((IMethodSymbol)m).MethodKind != MethodKind.EventRaise && 
-                                                              ((IMethodSymbol)m).MethodKind != MethodKind.Destructor && 
-                                                              ((IMethodSymbol)m).MethodKind != MethodKind.StaticConstructor && 
-                                                              ((IMethodSymbol)m).MethodKind != MethodKind.Constructor);
+    public int MethodsCount => Syntax.Members.Count(m => m.Kind() == SyntaxKind.MethodDeclaration);
 
     /// <summary>
     /// Gets the count of properties in the class.
     /// </summary>
-    public int PropertiesCount => Symbol.GetMembers().Count(m => m.Kind == SymbolKind.Property);
+    public int PropertiesCount => Syntax.Members.Count(m => m.Kind() == SyntaxKind.PropertyDeclaration);
     
     /// <summary>
     /// Gets the count of fields in the class.
     /// </summary>
-    public int FieldsCount => Symbol.GetMembers().Count(m => m.Kind == SymbolKind.Field);
+    public int FieldsCount => Syntax.Members.Count(m => m.Kind() == SyntaxKind.FieldDeclaration);
 
     /// <summary>
     /// Gets the inheritance depth of the class.
@@ -124,17 +152,17 @@ public class ClassEntity : TypeEntity
     /// <summary>
     /// Gets the count of constructors in the class.
     /// </summary>
-    public int ConstructorsCount => Symbol.GetMembers().Count(m => m.Kind == SymbolKind.Method && ((IMethodSymbol)m).MethodKind == MethodKind.Constructor);
+    public int ConstructorsCount => Syntax.Members.Count(m => m.Kind() == SyntaxKind.ConstructorDeclaration);
     
     /// <summary>
     /// Gets the count of nested classes in the class.
     /// </summary>
-    public int NestedClassesCount => Symbol.GetMembers().Count(m => m.Kind == SymbolKind.NamedType);
+    public int NestedClassesCount => Syntax.Members.Count(m => m.Kind() == SyntaxKind.ClassDeclaration);
     
     /// <summary>
     /// Gets the count of nested interfaces in the class.
     /// </summary>
-    public int NestedInterfacesCount => Symbol.GetMembers().Count(m => m.Kind == SymbolKind.NamedType && ((INamedTypeSymbol)m).TypeKind == TypeKind.Interface);
+    public int NestedInterfacesCount => Syntax.Members.Count(m => m.Kind() == SyntaxKind.InterfaceDeclaration);
     
     /// <summary>
     /// Gets the count of interfaces implemented by the class.
@@ -148,8 +176,8 @@ public class ClassEntity : TypeEntity
     {
         get
         {
-            var methods = _syntax.Members.OfType<MethodDeclarationSyntax>().ToList();
-            var fields = _syntax.Members.OfType<FieldDeclarationSyntax>().ToList();
+            var methods = Syntax.Members.OfType<MethodDeclarationSyntax>().ToList();
+            var fields = Syntax.Members.OfType<FieldDeclarationSyntax>().ToList();
 
             if (methods.Count < 2)
             {
@@ -165,7 +193,7 @@ public class ClassEntity : TypeEntity
 
             foreach (var method in methods)
             {
-                var usedFields = GetUsedFields(method, _semanticModel);
+                var usedFields = GetUsedFields(method, SemanticModel);
                 foreach (var field in usedFields.Where(field => fieldUsage.ContainsKey(field)))
                 {
                     fieldUsage[field].Add(method.Identifier.Text);
@@ -200,6 +228,25 @@ public class ClassEntity : TypeEntity
                 : 0;
         }
     }
+    
+    /// <summary>
+    /// Gets itself.
+    /// </summary>
+    public ClassEntity Self => this;
+
+    /// <summary>
+    /// Gets the properties of the type.
+    /// </summary>
+    public override IEnumerable<MethodEntity> Methods => Syntax.Members
+        .OfType<MethodDeclarationSyntax>()
+        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m));
+
+    /// <summary>
+    /// Gets the properties of the type.
+    /// </summary>
+    public override IEnumerable<PropertyEntity> Properties => Syntax.Members
+        .OfType<PropertyDeclarationSyntax>()
+        .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!));
 
     private static HashSet<string> GetUsedFields(MethodDeclarationSyntax method, SemanticModel semanticModel)
     {
@@ -207,7 +254,7 @@ public class ClassEntity : TypeEntity
 
         foreach (var identifier in method.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            var symbol = semanticModel.GetSymbolInfo(identifier).Symbol;
+            var symbol = ModelExtensions.GetSymbolInfo(semanticModel, identifier).Symbol;
             if (symbol is IFieldSymbol fieldSymbol)
             {
                 usedFields.Add(fieldSymbol.Name);

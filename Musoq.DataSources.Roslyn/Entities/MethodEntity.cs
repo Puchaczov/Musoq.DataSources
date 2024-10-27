@@ -62,13 +62,31 @@ public class MethodEntity
     /// <summary>
     /// Gets the body of the method as a string.
     /// </summary>
-    public string Body
+    public string Text
     {
         get
         {
             var syntaxReference = _methodSymbol.DeclaringSyntaxReferences.FirstOrDefault();
             var methodDeclaration = syntaxReference?.GetSyntax() as MethodDeclarationSyntax;
-            return methodDeclaration?.Body == null ? string.Empty : methodDeclaration.Body.ToString();
+            return methodDeclaration?.Body == null ? string.Empty : methodDeclaration.ToFullString();
+        }
+    }
+    
+    /// <summary>
+    /// Gets the lines of code metric for the class.
+    /// </summary>
+    public int LinesOfCode
+    {
+        get
+        {
+            var lineSpan = _methodDeclaration.SyntaxTree
+                .GetLineSpan(_methodDeclaration.Span);
+
+            var startLine = lineSpan.StartLinePosition.Line;
+            var endLine = lineSpan.EndLinePosition.Line;
+            var totalLines = endLine - startLine + 1;
+            
+            return totalLines;
         }
     }
 

@@ -53,17 +53,11 @@ public abstract class TypeEntity(INamedTypeSymbol symbol)
     /// Gets the methods of the type.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<MethodEntity> Methods => Symbol.GetMembers()
-        .OfType<IMethodSymbol>()
-        .Where(m => !m.IsImplicitlyDeclared)
-        .Where(m => m.MethodKind != MethodKind.PropertyGet && m.MethodKind != MethodKind.PropertySet)
-        .Select(m => new MethodEntity(m, (MethodDeclarationSyntax)m.DeclaringSyntaxReferences.First().GetSyntax()));
+    public abstract IEnumerable<MethodEntity> Methods { get; }
 
     /// <summary>
     /// Gets the properties of the type.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<PropertyEntity> Properties => Symbol.GetMembers()
-        .OfType<IPropertySymbol>()
-        .Select(p => new PropertyEntity(p));
+    public abstract IEnumerable<PropertyEntity> Properties { get; }
 }

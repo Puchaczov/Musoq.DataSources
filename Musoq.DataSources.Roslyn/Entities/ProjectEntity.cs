@@ -158,7 +158,7 @@ public class ProjectEntity
         {
             if (_wasLoaded) return _documents;
 
-            _documents = _project.Documents.Select(document => new DocumentEntity(document)).ToArray();
+            _documents = _project.Documents.Select(document => new DocumentEntity(document, _project.Solution)).ToArray();
             _wasLoaded = true;
 
             return _documents;

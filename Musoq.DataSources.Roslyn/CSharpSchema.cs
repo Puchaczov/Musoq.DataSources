@@ -69,8 +69,26 @@ public class CSharpSchema : SchemaBase
     /// </columns>
     /// </additional-table>
     /// <additional-table>
+    /// <description>Represent referenced document of project</description>
+    /// <columns type="ReferencedDocumentEntity">
+    /// <column name="Name" type="string">Name</column>
+    /// <column name="Text" type="string">Text</column>
+    /// <column name="ClassCount" type="int">Class count</column>
+    /// <column name="InterfaceCount" type="int">Interface count</column>
+    /// <column name="EnumCount" type="int">Enum count</column>
+    /// <column name="Classes" type="ClassEntity[]">Struct count</column>
+    /// <column name="Interfaces" type="InterfaceEntity[]">Interfaces</column>
+    /// <column name="Enums" type="EnumEntity[]">Enums</column>
+    /// <column name="StartLine" type="int">Start line</column>
+    /// <column name="StartColumn" type="int">Start column</column>
+    /// <column name="EndLine" type="int">End line</column>
+    /// <column name="EndColumn" type="int">End column</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
     /// <description>Represent class of document</description>
     /// <columns type="ClassEntity">
+    /// <column name="Document" type="DocumentEntity">Document</column>
     /// <column name="Text" type="string">Text</column>
     /// <column name="IsAbstract" type="bool">Is abstract</column>
     /// <column name="IsSealed" type="bool">Is sealed</column>
@@ -95,11 +113,13 @@ public class CSharpSchema : SchemaBase
     /// <column name="NestedInterfacesCount" type="int">Nested interfaces count</column>
     /// <column name="InterfacesCount" type="int">Interfaces count</column>
     /// <column name="LackOfCohesion" type="int">Lack of cohesion</column>
+    /// <column name="LinesOfCode" type="int">Lines of code</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>
     /// <description>Represent enum of document</description>
     /// <columns type="EnumEntity">
+    /// <column name="Document" type="DocumentEntity">Document</column>
     /// <column name="Members" type="string[]">Members</column>
     /// <column name="Name" type="string">Name</column>
     /// <column name="FullName" type="string">Full name</column>
@@ -112,6 +132,7 @@ public class CSharpSchema : SchemaBase
     /// <additional-table>
     /// <description>Represent interface of document</description>
     /// <columns type="InterfaceEntity">
+    /// <column name="Document" type="DocumentEntity">Document</column>
     /// <column name="BaseInterfaces" type="string[]">Base interfaces</column>
     /// <column name="Name" type="string">Name</column>
     /// <column name="FullName" type="string">Full name</column>
@@ -128,7 +149,7 @@ public class CSharpSchema : SchemaBase
     /// <column name="ReturnType" type="string">Return type</column>
     /// <column name="Parameters" type="ParameterEntity[]">Parameters</column>
     /// <column name="Modifiers" type="string[]">Modifiers</column>
-    /// <column name="Body" type="string">Body</column>
+    /// <column name="Text" type="string">Text</column>
     /// <column name="Attributes" type="AttributeEntity[]">Attributes</column>
     /// <column name="CyclomaticComplexity" type="int">Cyclomatic complexity</column>
     /// </columns>
