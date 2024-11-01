@@ -10,7 +10,7 @@ using Environment = Musoq.Plugins.Environment;
 namespace Musoq.DataSources.Roslyn.Tests;
 
 [TestClass]
-public class BaseRoslynToSqlTests
+public class RoslynToSqlTests
 {
     [TestMethod]
     public void WhenSolutionQueried_ShouldPass()
@@ -737,7 +737,7 @@ where c.Name = 'Class1'
         Assert.AreEqual(16, result[0][4]);
     }
 
-    static BaseRoslynToSqlTests()
+    static RoslynToSqlTests()
     {
         new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
@@ -768,7 +768,7 @@ where c.Name = 'Class1'
     {
         get
         {
-            var filePath = typeof(BaseRoslynToSqlTests).Assembly.Location;
+            var filePath = typeof(RoslynToSqlTests).Assembly.Location;
             var directory = Path.GetDirectoryName(filePath);
             
             if (string.IsNullOrEmpty(directory))
