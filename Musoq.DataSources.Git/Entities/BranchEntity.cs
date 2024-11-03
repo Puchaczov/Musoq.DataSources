@@ -10,7 +10,7 @@ namespace Musoq.DataSources.Git.Entities;
 /// </summary>
 public class BranchEntity
 {
-    private readonly Branch _branch;
+    internal readonly Branch LibGitBranch;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BranchEntity"/> class.
@@ -18,62 +18,62 @@ public class BranchEntity
     /// <param name="branch">The Git branch to wrap.</param>
     public BranchEntity(Branch branch)
     {
-        _branch = branch;
+        LibGitBranch = branch;
     }
 
     /// <summary>
     /// Gets the friendly name of the branch.
     /// </summary>
-    public string FriendlyName => _branch.FriendlyName;
+    public string FriendlyName => LibGitBranch.FriendlyName;
 
     /// <summary>
     /// Gets the canonical name of the branch.
     /// </summary>
-    public string CanonicalName => _branch.CanonicalName;
+    public string CanonicalName => LibGitBranch.CanonicalName;
 
     /// <summary>
     /// Gets a value indicating whether the branch is remote.
     /// </summary>
-    public bool IsRemote => _branch.IsRemote;
+    public bool IsRemote => LibGitBranch.IsRemote;
 
     /// <summary>
     /// Gets a value indicating whether the branch is tracking another branch.
     /// </summary>
-    public bool IsTracking => _branch.IsTracking;
+    public bool IsTracking => LibGitBranch.IsTracking;
 
     /// <summary>
     /// Gets a value indicating whether the branch is the current repository head.
     /// </summary>
-    public bool IsCurrentRepositoryHead => _branch.IsCurrentRepositoryHead;
+    public bool IsCurrentRepositoryHead => LibGitBranch.IsCurrentRepositoryHead;
 
     /// <summary>
     /// Gets the tracked branch entity if the branch is tracking another branch.
     /// </summary>
-    public BranchEntity? TrackedBranch => _branch.TrackedBranch != null ? new BranchEntity(_branch.TrackedBranch) : null;
+    public BranchEntity TrackedBranch => new(LibGitBranch.TrackedBranch);
 
     /// <summary>
     /// Gets the branch tracking details entity if the branch has tracking details.
     /// </summary>
-    public BranchTrackingDetailsEntity? BranchTrackingDetails => _branch.TrackingDetails != null ? new BranchTrackingDetailsEntity(_branch.TrackingDetails) : null;
+    public BranchTrackingDetailsEntity BranchTrackingDetails => new(LibGitBranch.TrackingDetails);
 
     /// <summary>
     /// Gets the commit entity representing the tip of the branch.
     /// </summary>
-    public CommitEntity? Tip => _branch.Tip != null ? new CommitEntity(_branch.Tip) : null;
+    public CommitEntity Tip => new(LibGitBranch.Tip);
 
     /// <summary>
     /// Gets the collection of commit entities in the branch.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<CommitEntity>? Commits => _branch.Commits?.Select(f => new CommitEntity(f));
+    public IEnumerable<CommitEntity> Commits => LibGitBranch.Commits.Select(f => new CommitEntity(f));
 
     /// <summary>
     /// Gets the canonical name of the upstream branch.
     /// </summary>
-    public string UpstreamBranchCanonicalName => _branch.UpstreamBranchCanonicalName;
+    public string UpstreamBranchCanonicalName => LibGitBranch.UpstreamBranchCanonicalName;
 
     /// <summary>
     /// Gets the name of the remote associated with the branch.
     /// </summary>
-    public string RemoteName => _branch.RemoteName;
+    public string RemoteName => LibGitBranch.RemoteName;
 }

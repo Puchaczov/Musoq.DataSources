@@ -8,8 +8,22 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git.Entities;
 
-public class RepositoryEntity(Repository repository)
-{    
+/// <summary>
+/// Represents a Git repository entity, providing access to various repository properties and collections.
+/// </summary>
+public class RepositoryEntity
+{
+    private readonly Repository _repository;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RepositoryEntity"/> class.
+    /// </summary>
+    /// <param name="repository">The Git repository.</param>
+    public RepositoryEntity(Repository repository)
+    {
+        _repository = repository;
+    }
+
     /// <summary>
     /// A read-only dictionary mapping column names to their respective indices.
     /// </summary>
@@ -31,11 +45,14 @@ public class RepositoryEntity(Repository repository)
         new SchemaColumn(nameof(Tags), 3, typeof(IEnumerable<TagEntity>)),
         new SchemaColumn(nameof(Commits), 4, typeof(IEnumerable<CommitEntity>)),
         new SchemaColumn(nameof(Head), 5, typeof(BranchEntity)),
-        new SchemaColumn(nameof(Config), 6, typeof(ConfigurationEntity)),
-        new SchemaColumn(nameof(Info), 7, typeof(RepositoryInformationEntity)),
+        new SchemaColumn(nameof(Configuration), 6, typeof(IEnumerable<ConfigurationEntityKeyValue>)),
+        new SchemaColumn(nameof(Information), 7, typeof(RepositoryInformationEntity)),
         new SchemaColumn(nameof(Stashes), 8, typeof(IEnumerable<StashEntity>))
     ];
 
+    /// <summary>
+    /// Static constructor to initialize the static read-only dictionaries.
+    /// </summary>
     static RepositoryEntity()
     {
         NameToIndexMap = new Dictionary<string, int>
@@ -46,8 +63,8 @@ public class RepositoryEntity(Repository repository)
             {nameof(Tags), 3},
             {nameof(Commits), 4},
             {nameof(Head), 5},
-            {nameof(Config), 6},
-            {nameof(Info), 7},
+            {nameof(Configuration), 6},
+            {nameof(Information), 7},
             {nameof(Stashes), 8}
         };
 
@@ -59,31 +76,64 @@ public class RepositoryEntity(Repository repository)
             {3, entity => entity.Tags},
             {4, entity => entity.Commits},
             {5, entity => entity.Head},
-            {6, entity => entity.Config},
-            {7, entity => entity.Info},
+            {6, entity => entity.Configuration},
+            {7, entity => entity.Information},
             {8, entity => entity.Stashes}
         };
     }
-    
-    public string Path => repository.Info.Path;
-    
-    public string WorkingDirectory => repository.Info.WorkingDirectory;
-    
-    [BindablePropertyAsTable]
-    public IEnumerable<BranchEntity> Branches => repository.Branches.Select(branch => new BranchEntity(branch));
 
-    [BindablePropertyAsTable]
-    public IEnumerable<TagEntity> Tags => repository.Tags.Select(tag => new TagEntity(tag));
-    
-    [BindablePropertyAsTable]
-    public IEnumerable<CommitEntity> Commits => repository.Commits.Select(commit => new CommitEntity(commit));
-    
-    public BranchEntity Head => new(repository.Head);
-    
-    public ConfigurationEntity Config => new(repository.Config);
+    /// <summary>
+    /// Gets the path of the repository.
+    /// </summary>
+    public string Path => _repository.Info.Path;
 
-    public RepositoryInformationEntity Info => new RepositoryInformationEntity(repository.Info);
-    
+    /// <summary>
+    /// Gets the working directory of the repository.
+    /// </summary>
+    public string WorkingDirectory => _repository.Info.WorkingDirectory;
+
+    /// <summary>
+    /// Gets the branches in the repository.
+    /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<StashEntity> Stashes => repository.Stashes.Select(stash => new StashEntity(stash));
+    public IEnumerable<BranchEntity> Branches => _repository.Branches.Select(branch => new BranchEntity(branch));
+
+    /// <summary>
+    /// Gets the tags in the repository.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<TagEntity> Tags => _repository.Tags.Select(tag => new TagEntity(tag));
+
+    /// <summary>
+    /// Gets the commits in the repository.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<CommitEntity> Commits => _repository.Commits.Select(commit => new CommitEntity(commit));
+
+    /// <summary>
+    /// Gets the head branch of the repository.
+    /// </summary>
+    public BranchEntity Head => new(_repository.Head);
+
+    /// <summary>
+    /// Gets the configuration key-value pairs of the repository.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<ConfigurationEntityKeyValue> Configuration => _repository.Config.Select(f => new ConfigurationEntityKeyValue(f));
+
+    /// <summary>
+    /// Gets the information about the repository.
+    /// </summary>
+    public RepositoryInformationEntity Information => new(_repository.Info);
+
+    /// <summary>
+    /// Gets the stashes in the repository.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<StashEntity> Stashes => _repository.Stashes.Select(stash => new StashEntity(stash));
+
+    /// <summary>
+    /// Gets the underlying LibGit2Sharp repository.
+    /// </summary>
+    internal Repository LibGitRepository => _repository;
 }

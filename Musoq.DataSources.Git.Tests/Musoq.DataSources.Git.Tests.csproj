@@ -28,4 +28,19 @@
         <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Repositories\Repository1.zip">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Repositories\Repository2.zip">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Repositories\Repository3.zip">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Repositories\Repository4.zip">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -9,11 +10,11 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git;
 
-internal class RepositoryRowsSource(string repositoryPath, CancellationToken cancellationToken) : AsyncRowsSourceBase<RepositoryEntity>(cancellationToken)
+internal class RepositoryRowsSource(string repositoryPath, CancellationToken cancellationToken, Func<string, Repository> createRepository) : AsyncRowsSourceBase<RepositoryEntity>(cancellationToken)
 {
     protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
-        var repository = new Repository(repositoryPath);
+        var repository = createRepository(repositoryPath);
         var repositoryEntity = new RepositoryEntity(repository);
         
         chunkedSource.Add([new EntityResolver<RepositoryEntity>(repositoryEntity, RepositoryEntity.NameToIndexMap, RepositoryEntity.IndexToObjectAccessMap)], cancellationToken);
