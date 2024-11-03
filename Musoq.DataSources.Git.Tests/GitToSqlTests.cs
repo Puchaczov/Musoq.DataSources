@@ -48,7 +48,7 @@ public class GitToSqlTests
 
             var result = vm.Run();
 
-            Assert.IsTrue(result.Count == 1);
+            Assert.AreEqual(1, result.Count);
 
             var row = result[0];
 
@@ -103,7 +103,7 @@ public class GitToSqlTests
 
         var result = vm.Run();
 
-        Assert.IsTrue(result.Count == 2);
+        Assert.AreEqual(2, result.Count);
 
         var row = result[0];
 
