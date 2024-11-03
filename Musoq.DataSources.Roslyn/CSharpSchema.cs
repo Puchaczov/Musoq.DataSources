@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.RowsSources;
 using Musoq.Schema;
-using Musoq.Schema.Attributes;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
 
