@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.0</Version>
+        <Version>0.9.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -38,10 +38,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Repositories\Repository1\" />
     </ItemGroup>
 
 </Project>

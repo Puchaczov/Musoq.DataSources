@@ -14,6 +14,7 @@ public class GitSchema : SchemaBase
     private const string SchemaName = "Git";
 
     private readonly Func<string, Repository> _createRepository;
+    private Repository? _repository;
     
     /// <virtual-constructors>
     /// <virtual-constructor>
@@ -172,7 +173,7 @@ public class GitSchema : SchemaBase
     public GitSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
-        _createRepository = path => new Repository(path);
+        _createRepository = path => _repository ??= new Repository(path);
     }
 
     /// <summary>

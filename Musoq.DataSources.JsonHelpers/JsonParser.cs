@@ -3,12 +3,21 @@ using Newtonsoft.Json;
 
 namespace Musoq.DataSources.JsonHelpers;
 
+/// <summary>
+/// Provides methods for parsing JSON data into dynamic objects.
+/// </summary>
 public static class JsonParser
 {
+    /// <summary>
+    /// Parses a JSON array from the specified reader.
+    /// </summary>
+    /// <param name="reader">The JSON reader.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An enumerable of dynamic objects representing the JSON array.</returns>
     public static IEnumerable<ExpandoObject> ParseArray(JsonTextReader reader, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         var result = new List<ExpandoObject>();
         while (reader.Read() && reader.TokenType != JsonToken.EndArray)
         {
@@ -20,20 +29,26 @@ public static class JsonParser
         return result;
     }
 
+    /// <summary>
+    /// Parses a JSON object from the specified reader.
+    /// </summary>
+    /// <param name="reader">The JSON reader.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A dynamic object representing the JSON object.</returns>
     public static ExpandoObject ParseObject(JsonTextReader reader, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         var obj = new ExpandoObject();
         while (reader.Read() && reader.TokenType != JsonToken.EndObject)
         {
             if (reader.TokenType != JsonToken.PropertyName) continue;
-            
+
             var propertyName = reader.Value?.ToString();
-            
+
             if (propertyName == null)
                 throw new InvalidOperationException("Property name cannot be null.");
-            
+
             reader.Read();
             switch (reader.TokenType)
             {
@@ -55,16 +70,6 @@ public static class JsonParser
                 case JsonToken.None:
                     obj.TryAdd(propertyName, null);
                     break;
-                case JsonToken.StartConstructor:
-                case JsonToken.PropertyName:
-                case JsonToken.Comment:
-                case JsonToken.Raw:
-                case JsonToken.String:
-                case JsonToken.EndObject:
-                case JsonToken.EndArray:
-                case JsonToken.EndConstructor:
-                case JsonToken.Date:
-                case JsonToken.Bytes:
                 default:
                     obj.TryAdd(propertyName, reader.Value?.ToString());
                     break;
@@ -73,10 +78,16 @@ public static class JsonParser
         return obj;
     }
 
+    /// <summary>
+    /// Parses a JSON array from the specified reader.
+    /// </summary>
+    /// <param name="reader">The JSON reader.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A list of objects representing the JSON array.</returns>
     private static List<object> ParseInnerArray(JsonTextReader reader, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         var result = new List<object>();
         while (reader.Read() && reader.TokenType != JsonToken.EndArray)
         {
