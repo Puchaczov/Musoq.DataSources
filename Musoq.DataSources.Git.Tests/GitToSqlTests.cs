@@ -49,7 +49,8 @@ public class GitToSqlTests
     [TestMethod]
     public async Task WhenBasicInfoFromRepositoryRetrieved_ShouldPass()
     {
-        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+        // ReSharper disable once ExplicitCallerInfoArgument
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath, "wbifrr");
 
         {
             var query = """
@@ -109,7 +110,7 @@ public class GitToSqlTests
     [TestMethod]
     public async Task WhenBranchesFromRepositoryRetrieved_ShouldPass()
     {
-        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath, "wbfrr");
 
         var query = """
                         select 
