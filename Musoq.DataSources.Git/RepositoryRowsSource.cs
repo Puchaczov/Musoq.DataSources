@@ -14,11 +14,19 @@ internal class RepositoryRowsSource(string repositoryPath, CancellationToken can
 {
     protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
-        var repository = createRepository(repositoryPath);
-        var repositoryEntity = new RepositoryEntity(repository);
+        try
+        {
+            var repository = createRepository(repositoryPath);
+            var repositoryEntity = new RepositoryEntity(repository);
         
-        chunkedSource.Add([new EntityResolver<RepositoryEntity>(repositoryEntity, RepositoryEntity.NameToIndexMap, RepositoryEntity.IndexToObjectAccessMap)], cancellationToken);
-        
+            chunkedSource.Add([new EntityResolver<RepositoryEntity>(repositoryEntity, RepositoryEntity.NameToIndexMap, RepositoryEntity.IndexToObjectAccessMap)], cancellationToken);
+        }
+        catch (Exception exc)
+        {
+            Console.WriteLine("Error while collecting chunks.");
+            Console.WriteLine(exc);
+            throw;
+        }
         return Task.CompletedTask;
     }
 }
