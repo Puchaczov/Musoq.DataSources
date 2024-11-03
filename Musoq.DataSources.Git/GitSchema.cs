@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Security;
 using LibGit2Sharp;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -203,6 +205,18 @@ public class GitSchema : SchemaBase
     /// <returns>Data source</returns>
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
+        var path = (string)parameters[0];
+
+        if (!DirectoryOrFile(path))
+        {
+            throw new InvalidOperationException($"The path '{path}' is not a directory");
+        }
+
+        if (!DirectoryContainsGitFolder(path))
+        {
+            throw new InvalidOperationException($"The path '{path}' does not contain a Git repository");
+        }
+        
         switch (name.ToLowerInvariant())
         {
             case "repository":
@@ -211,7 +225,7 @@ public class GitSchema : SchemaBase
 
         return base.GetRowSource(name, runtimeContext, parameters);
     }
-    
+
     private static MethodsAggregator CreateLibrary()
     {
         var methodsManager = new MethodsManager();
@@ -220,5 +234,36 @@ public class GitSchema : SchemaBase
         methodsManager.RegisterLibraries(library);
         
         return new MethodsAggregator(methodsManager);
+    }
+    
+    private static bool DirectoryOrFile(string path)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            var attr = File.GetAttributes(path);
+        
+            return (attr & FileAttributes.Directory) == FileAttributes.Directory;
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException or DirectoryNotFoundException or FileNotFoundException)
+        {
+            return false;
+        }
+    }
+
+    private static bool DirectoryContainsGitFolder(string path)
+    {
+        try
+        {
+            return Directory.Exists(Path.Combine(path, ".git"));
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException or DirectoryNotFoundException or FileNotFoundException)
+        {
+            return false;
+        }
     }
 }

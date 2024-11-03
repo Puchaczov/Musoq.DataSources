@@ -15,6 +15,38 @@ namespace Musoq.DataSources.Git.Tests;
 public class GitToSqlTests
 {
     [TestMethod]
+    public void WhenNonExistentPathPassed_ShouldThrow()
+    {
+        var query = """
+                        select 
+                            Path, 
+                            WorkingDirectory, 
+                            Head.FriendlyName,
+                            Head.CanonicalName,
+                            Head.IsRemote,
+                            Head.IsTracking,
+                            Head.IsCurrentRepositoryHead,
+                            Head.RemoteName,
+                            Head.Tip.Sha,
+                            Head.Tip.Message,
+                            Head.Tip.MessageShort,
+                            Head.Tip.Author,
+                            Head.Tip.Committer,
+                            Information.Path,
+                            Information.WorkingDirectory,
+                            Information.IsBare, 
+                            Information.IsHeadDetached, 
+                            Information.IsHeadUnborn, 
+                            Information.IsShallow
+                        from #git.repository('{RepositoryPath}')
+                    """.Replace("{RepositoryPath}", "C:\\NonExistentPath");
+
+        var vm = CreateAndRunVirtualMachine(query);
+
+        Assert.ThrowsException<InvalidOperationException>(() => vm.Run());
+    }
+
+    [TestMethod]
     public async Task WhenBasicInfoFromRepositoryRetrieved_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
