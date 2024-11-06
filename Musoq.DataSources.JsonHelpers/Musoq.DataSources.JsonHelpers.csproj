@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>3.2.5</Version>
+        <Version>3.2.6</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -20,10 +20,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="4.0.2">
+        <PackageReference Include="Musoq.Parser" Version="4.1.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.4.0" />
+        <PackageReference Include="Musoq.Plugins" Version="6.5.0" />
         <PackageReference Include="Musoq.Schema" Version="7.3.3">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>

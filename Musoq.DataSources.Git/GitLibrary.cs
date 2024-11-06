@@ -25,8 +25,17 @@ public class GitLibrary : LibraryBase
         CommitEntity second)
     {
         var firstLibGitCommit = first.LibGitCommit;
+        
+        if (firstLibGitCommit == null)
+            yield break;
+        
         var secondLibGitCommit = second.LibGitCommit;
+        
+        if (secondLibGitCommit == null)
+            yield break;
+        
         var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(firstLibGitCommit.Tree, secondLibGitCommit.Tree);
+        
         foreach (var treeEntryChange in diff)
         {
             yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
@@ -98,6 +107,10 @@ public class GitLibrary : LibraryBase
     {
         var branchLibGitBranch = branch.LibGitBranch;
         var commitLibGitCommit = commit.LibGitCommit;
+        
+        if (commitLibGitCommit == null)
+            yield break;
+        
         var branchLibGitCommit = branchLibGitBranch.Tip;
         var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(commitLibGitCommit.Tree, branchLibGitCommit.Tree);
 
@@ -123,6 +136,10 @@ public class GitLibrary : LibraryBase
     {
         var branchLibGitBranch = branch.LibGitBranch;
         var commitLibGitCommit = commit.LibGitCommit;
+        
+        if (commitLibGitCommit == null)
+            yield break;
+        
         var branchLibGitCommit = branchLibGitBranch.Tip;
         var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(branchLibGitCommit.Tree, commitLibGitCommit.Tree);
 
@@ -172,7 +189,14 @@ public class GitLibrary : LibraryBase
         CommitEntity second)
     {
         var firstLibGitCommit = first.LibGitCommit;
+        
+        if (firstLibGitCommit == null)
+            yield break;
+        
         var secondLibGitCommit = second.LibGitCommit;
+        
+        if (secondLibGitCommit == null)
+            yield break;
         
         yield return new PatchEntity(repository.LibGitRepository.Diff.Compare<Patch>(firstLibGitCommit.Tree, secondLibGitCommit.Tree));
     }

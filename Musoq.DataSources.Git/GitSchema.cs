@@ -8,9 +8,13 @@ using Musoq.Schema.Managers;
 
 namespace Musoq.DataSources.Git;
 
-/// <summary>
-/// Provides schema to work with Git data source
-/// </summary>
+/// <description>
+/// Provides schema to work with Git repositories.
+/// </description>
+/// <short-description>
+/// Provides schema to work with Git repositories.
+/// </short-description>
+/// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class GitSchema : SchemaBase
 {
     private const string SchemaName = "Git";

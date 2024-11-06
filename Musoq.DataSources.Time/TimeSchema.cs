@@ -6,107 +6,106 @@ using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
 
-namespace Musoq.DataSources.Time
+namespace Musoq.DataSources.Time;
+
+/// <description>
+/// Provides schema to work with time.
+/// </description>
+/// <short-description>
+/// Provides schema to work with time.
+/// </short-description>
+/// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
+public class TimeSchema : SchemaBase
 {
-    /// <summary>
-    /// Provides schema to work with time
-    /// </summary>
-    /// <short-description>
-    /// Provides schema to work with time
-    /// </short-description>
-    /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
-    public class TimeSchema : SchemaBase
+    /// <virtual-constructors>
+    /// <virtual-constructor>
+    /// <virtual-param>Start datetime</virtual-param>
+    /// <virtual-param>Stop datetime</virtual-param>
+    /// <virtual-param>interval</virtual-param>
+    /// <examples>
+    /// <example>
+    /// <from>#time.interval(string startDateTime, string stopDateTime, string interval)</from>
+    /// <description>Compute dates between two ranges</description>
+    /// <columns>
+    /// <column name="DateTime" type="DateTime">Gets the DateTime object</column>
+    /// <column name="Second" type="int">Gets second of current computed DateTime</column>
+    /// <column name="Minute" type="int">Gets minute of current computed DateTime</column>
+    /// <column name="Hour" type="int">Gets the hour of current computed DateTime</column>
+    /// <column name="Day" type="int">Gets the day of current computed DateTime</column>
+    /// <column name="Month" type="int">Gets the month of current computed DateTime</column>
+    /// <column name="Year" type="int">Gets the year of current computed DateTime</column>
+    /// <column name="DayOfWeek" type="int">Gets the day of week of current computed DateTime</column>
+    /// <column name="DayOfYear" type="int">Gets the day of year of current computed DateTime</column>
+    /// <column name="TimeOfDay" type="TimeSpan">Gets the time of day of current computed DateTime</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// </virtual-constructors>
+    public TimeSchema() : base("time", CreateLibrary())
     {
-        /// <virtual-constructors>
-        /// <virtual-constructor>
-        /// <virtual-param>Start datetime</virtual-param>
-        /// <virtual-param>Stop datetime</virtual-param>
-        /// <virtual-param>interval</virtual-param>
-        /// <examples>
-        /// <example>
-        /// <from>#time.interval(string startDateTime, string stopDateTime, string interval)</from>
-        /// <description>Compute dates between two ranges</description>
-        /// <columns>
-        /// <column name="DateTime" type="DateTime">Gets the DateTime object</column>
-        /// <column name="Second" type="int">Gets second of current computed DateTime</column>
-        /// <column name="Minute" type="int">Gets minute of current computed DateTime</column>
-        /// <column name="Hour" type="int">Gets the hour of current computed DateTime</column>
-        /// <column name="Day" type="int">Gets the day of current computed DateTime</column>
-        /// <column name="Month" type="int">Gets the month of current computed DateTime</column>
-        /// <column name="Year" type="int">Gets the year of current computed DateTime</column>
-        /// <column name="DayOfWeek" type="int">Gets the day of week of current computed DateTime</column>
-        /// <column name="DayOfYear" type="int">Gets the day of year of current computed DateTime</column>
-        /// <column name="TimeOfDay" type="TimeSpan">Gets the time of day of current computed DateTime</column>
-        /// </columns>
-        /// </example>
-        /// </examples>
-        /// </virtual-constructor>
-        /// </virtual-constructors>
-        public TimeSchema() : base("time", CreateLibrary())
+    }
+
+    /// <summary>
+    /// Gets the table name based on the given data source and parameters.
+    /// </summary>
+    /// <param name="name">Data Source name</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="parameters">Parameters to pass to data source</param>
+    /// <returns>Requested table metadata</returns>
+    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    {
+        switch (name.ToLowerInvariant())
         {
+            case "interval":
+                return new TimeTable();
         }
 
-        /// <summary>
-        /// Gets the table name based on the given data source and parameters.
-        /// </summary>
-        /// <param name="name">Data Source name</param>
-        /// <param name="runtimeContext">Runtime context</param>
-        /// <param name="parameters">Parameters to pass to data source</param>
-        /// <returns>Requested table metadata</returns>
-        public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
-        {
-            switch (name.ToLowerInvariant())
-            {
-                case "interval":
-                    return new TimeTable();
-            }
+        throw new NotSupportedException($"Table {name} not found.");
+    }
 
-            throw new NotSupportedException($"Table {name} not found.");
+    /// <summary>
+    /// Gets the data source based on the given data source and parameters.
+    /// </summary>
+    /// <param name="name">Data source name</param>
+    /// <param name="interCommunicator">Runtime context</param>
+    /// <param name="parameters">Parameters to pass data to data source</param>
+    /// <returns>Data source</returns>
+    public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
+    {
+        switch (name.ToLowerInvariant())
+        {
+            case "interval":
+                return new TimeSource(
+                    DateTimeOffset.Parse((string)parameters[0]), 
+                    DateTimeOffset.Parse((string)parameters[1]),
+                    (string)parameters[2], 
+                    interCommunicator);
         }
 
-        /// <summary>
-        /// Gets the data source based on the given data source and parameters.
-        /// </summary>
-        /// <param name="name">Data source name</param>
-        /// <param name="interCommunicator">Runtime context</param>
-        /// <param name="parameters">Parameters to pass data to data source</param>
-        /// <returns>Data source</returns>
-        public override RowSource GetRowSource(string name, RuntimeContext interCommunicator, params object[] parameters)
-        {
-            switch (name.ToLowerInvariant())
-            {
-                case "interval":
-                    return new TimeSource(
-                        DateTimeOffset.Parse((string)parameters[0]), 
-                        DateTimeOffset.Parse((string)parameters[1]),
-                        (string)parameters[2], 
-                        interCommunicator);
-            }
-
-            throw new NotSupportedException($"Table {name} not found.");
-        }
+        throw new NotSupportedException($"Table {name} not found.");
+    }
         
-        /// <summary>
-        /// Gets information's about all tables in the schema.
-        /// </summary>
-        /// <returns>Data sources constructors</returns>
-        public override SchemaMethodInfo[] GetConstructors()
-        {
-            var constructors = new List<SchemaMethodInfo>();
+    /// <summary>
+    /// Gets information's about all tables in the schema.
+    /// </summary>
+    /// <returns>Data sources constructors</returns>
+    public override SchemaMethodInfo[] GetConstructors()
+    {
+        var constructors = new List<SchemaMethodInfo>();
 
-            constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<TimeSource>("interval"));
+        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<TimeSource>("interval"));
 
-            return constructors.ToArray();
-        }
+        return constructors.ToArray();
+    }
         
-        private static MethodsAggregator CreateLibrary()
-        {
-            var methodsManager = new MethodsManager();
-            var library = new TimeLibrary();
+    private static MethodsAggregator CreateLibrary()
+    {
+        var methodsManager = new MethodsManager();
+        var library = new TimeLibrary();
 
-            methodsManager.RegisterLibraries(library);
+        methodsManager.RegisterLibraries(library);
 
-            return new MethodsAggregator(methodsManager);
-        }
+        return new MethodsAggregator(methodsManager);
     }
 }
