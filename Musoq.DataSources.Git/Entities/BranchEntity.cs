@@ -11,14 +11,17 @@ namespace Musoq.DataSources.Git.Entities;
 public class BranchEntity
 {
     internal readonly Branch LibGitBranch;
+    internal readonly Repository LibGitRepository;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BranchEntity"/> class.
     /// </summary>
     /// <param name="branch">The Git branch to wrap.</param>
-    public BranchEntity(Branch branch)
+    /// <param name="repository">The Git repository the branch belongs to.</param>
+    public BranchEntity(Branch branch, Repository repository)
     {
         LibGitBranch = branch;
+        LibGitRepository = repository;
     }
 
     /// <summary>
@@ -49,7 +52,7 @@ public class BranchEntity
     /// <summary>
     /// Gets the tracked branch entity if the branch is tracking another branch.
     /// </summary>
-    public BranchEntity TrackedBranch => new(LibGitBranch.TrackedBranch);
+    public BranchEntity TrackedBranch => new(LibGitBranch.TrackedBranch, LibGitRepository);
 
     /// <summary>
     /// Gets the branch tracking details entity if the branch has tracking details.
@@ -76,4 +79,65 @@ public class BranchEntity
     /// Gets the name of the remote associated with the branch.
     /// </summary>
     public string RemoteName => LibGitBranch.RemoteName;
+
+    /// <summary>
+    /// Gets the parent branch of the branch, if any.
+    /// </summary>
+    public BranchEntity? ParentBranch
+    {
+        get
+        {
+            var branch = LibGitBranch;
+            var libGitBranch = LibGitRepository.Branches[branch.FriendlyName];
+            
+            if (libGitBranch == null)
+                return null;
+
+            if (libGitBranch.TrackedBranch != null)
+                return new BranchEntity(libGitBranch.TrackedBranch, LibGitRepository);
+
+            var branchTip = libGitBranch.Tip;
+            var candidates = new Dictionary<Branch, int>();
+
+            foreach (var possibleParent in LibGitRepository.Branches.Where(b => b.FriendlyName != branch.FriendlyName && !b.IsRemote))
+            {
+                try
+                {
+                    var mergeBase = LibGitRepository.ObjectDatabase.FindMergeBase(branchTip, possibleParent.Tip);
+                    if (mergeBase == null) continue;
+                    
+                    var filter = new CommitFilter
+                    {
+                        IncludeReachableFrom = branchTip,
+                        ExcludeReachableFrom = possibleParent.Tip
+                    };
+                    
+                    var distance = LibGitRepository.Commits.QueryBy(filter).Count();
+                    
+                    if (distance == 0)
+                        continue;
+                    
+                    candidates[possibleParent] = distance;
+                }
+                catch
+                {
+                    // Skip if we can't find merge base
+                }
+            }
+
+            if (candidates.Count != 0)
+            {
+                var closestCandidate = candidates.OrderBy(c => c.Value).First();
+                return new BranchEntity(closestCandidate.Key, LibGitRepository);
+            }
+
+            var defaultBranch = LibGitRepository.Branches["main"] ?? LibGitRepository.Branches["master"];
+            return defaultBranch != null ? new BranchEntity(defaultBranch, LibGitRepository) : null;
+        }
+    }
+    
+    /// <summary>
+    /// Gets the branch entity itself.
+    /// </summary>
+    public BranchEntity Self => this;
 }

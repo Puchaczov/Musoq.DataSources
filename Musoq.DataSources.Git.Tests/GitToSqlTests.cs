@@ -382,6 +382,170 @@ public class GitToSqlTests
         Assert.IsTrue((string) row[5] == "0293f650617fe1ca2c99d4f6dad995b472120843");
         Assert.IsTrue((string) row[6] == "0000000000000000000000000000000000000000");
     }
+    
+    [TestMethod]
+    public async Task WhenBranchSpecificCommitsFromBranchToMaster_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtm1");
+        
+        var query = @"
+            with BranchInfo as (
+                select
+                    c.Sha,
+                    c.Message,
+                    c.Author,
+                    c.AuthorEmail,
+                    c.CommittedWhen
+                from #git.repository('{RepositoryPath}') r 
+                cross apply r.SearchForBranches('feature/branch_1') b
+                cross apply b.GetBranchSpecificCommits(r.Self, b.Self) c
+            )
+            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 1);
+        
+        var row = result[0];
+        
+        Assert.IsTrue((string) row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
+        Assert.IsTrue((string) row[1] == "finished implementation for branch_1\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
+    }
+    
+    [TestMethod]
+    public async Task WhenBranchSpecificCommitsFromBranchToMaster_ExcludeMergeBaseFalse_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtm2");
+        
+        var query = @"
+            with BranchInfo as (
+                select
+                    c.Sha,
+                    c.Message,
+                    c.Author,
+                    c.AuthorEmail,
+                    c.CommittedWhen
+                from #git.repository('{RepositoryPath}') r 
+                cross apply r.SearchForBranches('feature/branch_1') b
+                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
+            )
+            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 2);
+        
+        var row = result[0];
+        
+        Assert.IsTrue((string) row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
+        Assert.IsTrue((string) row[1] == "finished implementation for branch_1\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
+        
+        row = result[1];
+        
+        Assert.IsTrue((string) row[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb");
+        Assert.IsTrue((string) row[1] == "add documentation index\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 02, 8, 43, 41, TimeSpan.FromHours(1)));
+    }
+    
+    [TestMethod]
+    public async Task WhenBranchSpecificCommitsFromBranchToAnotherBranch_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtab3");
+        
+        var query = @"
+            with BranchInfo as (
+                select
+                    c.Sha,
+                    c.Message,
+                    c.Author,
+                    c.AuthorEmail,
+                    c.CommittedWhen
+                from #git.repository('{RepositoryPath}') r 
+                cross apply r.SearchForBranches('feature/branch_2') b
+                cross apply b.GetBranchSpecificCommits(r.Self, b.Self) c
+            )
+            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 2);
+        
+        var row = result[0];
+        
+        Assert.IsTrue((string) row[0] == "389642ba15392c4540e82628bdff9c99dc6f7923");
+        Assert.IsTrue((string) row[1] == "modified main.py\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1)));
+        
+        row = result[1];
+        
+        Assert.IsTrue((string) row[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f");
+        Assert.IsTrue((string) row[1] == "add file_branch_2.py\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1)));
+    }
+    
+    [TestMethod]
+    public async Task WhenBranchSpecificCommitsFromBranchToAnotherBranch_ExcludeMergeBaseFalse_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtab4");
+        
+        var query = @"
+            with BranchInfo as (
+                select
+                    c.Sha,
+                    c.Message,
+                    c.Author,
+                    c.AuthorEmail,
+                    c.CommittedWhen
+                from #git.repository('{RepositoryPath}') r 
+                cross apply r.SearchForBranches('feature/branch_2') b
+                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
+            )
+            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 3);
+        
+        var row = result[0];
+        
+        Assert.IsTrue((string) row[0] == "389642ba15392c4540e82628bdff9c99dc6f7923");
+        Assert.IsTrue((string) row[1] == "modified main.py\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1)));
+        
+        row = result[1];
+        
+        Assert.IsTrue((string) row[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f");
+        Assert.IsTrue((string) row[1] == "add file_branch_2.py\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1)));
+        
+        row = result[2];
+        
+        Assert.IsTrue((string) row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
+        Assert.IsTrue((string) row[1] == "finished implementation for branch_1\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
+    }
 
     static GitToSqlTests()
     {
@@ -432,6 +596,8 @@ public class GitToSqlTests
     private static string Repository3ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository3.zip");
 
     private static string Repository4ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository4.zip");
+
+    private static string Repository5ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository5.zip");
 
     private static string StartDirectory
     {

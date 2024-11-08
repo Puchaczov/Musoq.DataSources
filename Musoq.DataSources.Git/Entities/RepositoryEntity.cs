@@ -47,7 +47,8 @@ public class RepositoryEntity
         new SchemaColumn(nameof(Head), 5, typeof(BranchEntity)),
         new SchemaColumn(nameof(Configuration), 6, typeof(IEnumerable<ConfigurationEntityKeyValue>)),
         new SchemaColumn(nameof(Information), 7, typeof(RepositoryInformationEntity)),
-        new SchemaColumn(nameof(Stashes), 8, typeof(IEnumerable<StashEntity>))
+        new SchemaColumn(nameof(Stashes), 8, typeof(IEnumerable<StashEntity>)),
+        new SchemaColumn(nameof(Self), 9, typeof(RepositoryEntity))
     ];
 
     /// <summary>
@@ -65,7 +66,8 @@ public class RepositoryEntity
             {nameof(Head), 5},
             {nameof(Configuration), 6},
             {nameof(Information), 7},
-            {nameof(Stashes), 8}
+            {nameof(Stashes), 8},
+            {nameof(Self), 9}
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<RepositoryEntity, object?>>
@@ -78,7 +80,8 @@ public class RepositoryEntity
             {5, entity => entity.Head},
             {6, entity => entity.Configuration},
             {7, entity => entity.Information},
-            {8, entity => entity.Stashes}
+            {8, entity => entity.Stashes},
+            {9, entity => entity.Self}
         };
     }
 
@@ -96,7 +99,7 @@ public class RepositoryEntity
     /// Gets the branches in the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<BranchEntity> Branches => _repository.Branches.Select(branch => new BranchEntity(branch));
+    public IEnumerable<BranchEntity> Branches => _repository.Branches.Select(branch => new BranchEntity(branch, _repository));
 
     /// <summary>
     /// Gets the tags in the repository.
@@ -113,7 +116,7 @@ public class RepositoryEntity
     /// <summary>
     /// Gets the head branch of the repository.
     /// </summary>
-    public BranchEntity Head => new(_repository.Head);
+    public BranchEntity Head => new(_repository.Head, _repository);
 
     /// <summary>
     /// Gets the configuration key-value pairs of the repository.
@@ -131,6 +134,11 @@ public class RepositoryEntity
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<StashEntity> Stashes => _repository.Stashes.Select(stash => new StashEntity(stash));
+    
+    /// <summary>
+    /// Gets the repository entity itself.
+    /// </summary>
+    public RepositoryEntity Self => this;
 
     /// <summary>
     /// Gets the underlying LibGit2Sharp repository.

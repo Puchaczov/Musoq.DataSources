@@ -41,6 +41,7 @@ public class GitSchema : SchemaBase
     /// <column name="Configuration" type="ConfigurationEntityKeyValue[]">Repository configuration</column>
     /// <column name="Information" type="RepositoryInformationEntity">Repository information</column>
     /// <column name="Stashes" type="StashEntity[]">Repository stashes</column>
+    /// <column name="Self" type="RepositoryEntity">This instance</column>
     /// </columns>
     /// </example>
     /// </examples>
@@ -61,6 +62,8 @@ public class GitSchema : SchemaBase
     /// <column name="Commits" type="CommitEntity[]">Branch commits</column>
     /// <column name="UpstreamBranchCanonicalName" type="string">Upstream branch canonical name</column>
     /// <column name="RemoteName" type="string">Remote name</column>
+    /// <column name="ParentBranch" type="BranchEntity">Parent branch</column>
+    /// <column name="Self" type="BranchEntity">This instance</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>
@@ -173,6 +176,14 @@ public class GitSchema : SchemaBase
     /// <column name="OldMode" type="string">Gets the old mode</column>
     /// <column name="Mode" type="string">Gets the mode</column>
     /// <column name="IsBinaryComparison" type="string">Determines if at least one side of the comparison holds binary content</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represents a merge base in a git repository</description>
+    /// <columns type="MergeBaseEntity">
+    /// <column name="MergeBaseCommit" type="CommitEntity">Merge base commit</column>
+    /// <column name="FirstBranch" type="BranchEntity">First branch</column>
+    /// <column name="SecondBranch" type="BranchEntity">Second branch</column>
     /// </columns>
     /// </additional-table>
     /// </additional-tables>

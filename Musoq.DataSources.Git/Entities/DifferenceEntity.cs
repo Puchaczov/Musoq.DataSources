@@ -52,12 +52,12 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
     /// <summary>
     /// Gets the content of the old file as a string.
     /// </summary>
-    public string OldContent
+    public string? OldContent
     {
         get
         {
             if (changes.OldOid == null)
-                return string.Empty;
+                return null;
 
             var blob = repository.Lookup<Blob>(changes.OldOid);
             return blob.GetContentText();
@@ -67,12 +67,12 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
     /// <summary>
     /// Gets the content of the old file as a byte array.
     /// </summary>
-    public byte[] OldContentBytes
+    public byte[]? OldContentBytes
     {
         get
         {
             if (changes.OldOid == null)
-                return [];
+                return null;
 
             var blob = repository.Lookup<Blob>(changes.OldOid);
             using var contentStream = blob.GetContentStream();
@@ -93,23 +93,39 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
     /// <summary>
     /// Gets the content of the new file as a string.
     /// </summary>
-    public string NewContent
+    public string? NewContent
     {
         get
         {
+            if (changes.Status == LibGit2Sharp.ChangeKind.Deleted)
+                return null;
+            
             var blob = repository.Lookup<Blob>(changes.Oid);
-            return blob.GetContentText();
+
+            if (blob == null)
+                return null;
+            
+            var contentText = blob.GetContentText();
+
+            return contentText;
         }
     }
 
     /// <summary>
     /// Gets the content of the new file as a byte array.
     /// </summary>
-    public byte[] NewContentBytes
+    public byte[]? NewContentBytes
     {
         get
         {
+            if (changes.Status == LibGit2Sharp.ChangeKind.Deleted)
+                return null;
+            
             var blob = repository.Lookup<Blob>(changes.Oid);
+            
+            if (blob == null)
+                return null;
+            
             using var contentStream = blob.GetContentStream();
 
             var buffer = new byte[contentStream.Length];
