@@ -77,6 +77,7 @@ public class GitSchema : SchemaBase
     /// <column name="Committer" type="string">Committer name</column>
     /// <column name="CommitterEmail" type="string">Committer email</column>
     /// <column name="CommittedWhen" type="DateTimeOffset">Commit date and time</column>
+    /// <column name="Self" type="CommitEntity">This instance</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>
@@ -87,6 +88,7 @@ public class GitSchema : SchemaBase
     /// <column name="Message" type="string?">Tag message</column>
     /// <column name="IsAnnotated" type="bool">Is annotated tag</column>
     /// <column name="Annotation" type="AnnotationEntity">Tag annotation</column>
+    /// <column name="Commit" type="CommitEntity?">Tag commit</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>

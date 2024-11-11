@@ -58,6 +58,11 @@ public class CommitEntity
     /// Gets the date and time when the commit was made.
     /// </summary>
     public DateTimeOffset? CommittedWhen => _commit?.Committer?.When;
+    
+    /// <summary>
+    /// Gets the commit itself.
+    /// </summary>
+    public CommitEntity Self => this;
 
     /// <summary>
     /// Gets the underlying LibGit2Sharp commit object.

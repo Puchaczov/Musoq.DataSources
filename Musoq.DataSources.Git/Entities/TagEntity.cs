@@ -1,3 +1,4 @@
+using System;
 using LibGit2Sharp;
 
 namespace Musoq.DataSources.Git.Entities;
@@ -42,4 +43,20 @@ public class TagEntity
     /// Gets the annotation entity of the tag.
     /// </summary>
     public AnnotationEntity Annotation => new(_tag.Annotation);
+
+    /// <summary>
+    /// Gets the commit entity that the tag points to.
+    /// </summary>
+    public CommitEntity? Commit
+    {
+        get
+        {
+            if (_tag.Target is Commit commit)
+            {
+                return new CommitEntity(commit);
+            }
+
+            return null;
+        }
+    }
 }

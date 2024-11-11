@@ -547,6 +547,36 @@ public class GitToSqlTests
         Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
     }
 
+    [TestMethod]
+    public async Task WhenMinMaxCommitsFromMaster_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wmmcfm");
+        
+        var query = @"
+            with Commits as (
+                select
+                    c.MinCommit(c.Self) as Min,
+                    c.MaxCommit(c.Self) as Max
+                from #git.repository('{RepositoryPath}') r
+                cross apply r.Commits c
+                group by 'fake'
+            )
+            select
+                Min.Sha as MinSha,
+                Max.Sha as MaxSha
+            from Commits;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 1);
+        
+        var row = result[0];
+        
+        Assert.IsTrue((string) row[0] == "789f584ce162424f61b33e020e2138aad47e60ba");
+        Assert.IsTrue((string) row[1] == "389642ba15392c4540e82628bdff9c99dc6f7923");
+    }
+
     static GitToSqlTests()
     {
         new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName,

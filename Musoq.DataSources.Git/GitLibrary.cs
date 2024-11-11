@@ -285,5 +285,108 @@ public class GitLibrary : LibraryBase
         );
     }
     
+    /// <summary>
+    /// Gets the max commit from a given group.
+    /// </summary>
+    /// <param name="group">The group to retrieve the value from.</param>
+    /// <param name="name">The name of the value to retrieve.</param>
+    /// <param name="parent">The parent group index.</param>
+    /// <returns>The commit.</returns>
+    [AggregationGetMethod]
+    public CommitEntity? MaxCommit([InjectGroup] Group group, string name, int parent)
+    {
+        var parentGroup = GetParentGroup(group, parent);
+        return parentGroup.GetValue<CommitEntity>(name);
+    }
     
+    /// <summary>
+    /// Gets the max commit from a given group.
+    /// </summary>
+    /// <param name="group">The group to retrieve the value from.</param>
+    /// <param name="name">The name of the value to retrieve.</param>
+    /// <returns>The commit.</returns>
+    [AggregationGetMethod]
+    public CommitEntity? MaxCommit([InjectGroup] Group group, string name)
+    {
+        var parentGroup = GetParentGroup(group, 0);
+        return parentGroup.GetValue<CommitEntity>(name);
+    }
+    
+    /// <summary>
+    /// Sets the max commit in the specified group.
+    /// </summary>
+    /// <param name="group">The group to set the value in.</param>
+    /// <param name="name">The name of the value to set.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="parent">The parent group index.</param>
+    [AggregationSetMethod]
+    public void SetMaxCommit([InjectGroup] Group group, string name, CommitEntity? value, int parent = 0)
+    {
+        var parentGroup = GetParentGroup(group, parent);
+
+        if (value == null)
+        {
+            parentGroup.GetOrCreateValue<CommitEntity>(name);
+            return;
+        }
+        
+        if (value.LibGitCommit == null)
+            return;
+
+        var currentValue = parentGroup.GetOrCreateValue<CommitEntity>(name);
+        parentGroup.SetValue(name, currentValue is null || value.LibGitCommit.Committer.When > currentValue.LibGitCommit!.Committer.When ? value : currentValue);
+    }
+    
+    /// <summary>
+    /// Gets the min commit from a given group.
+    /// </summary>
+    /// <param name="group">The group to retrieve the value from.</param>
+    /// <param name="name">The name of the value to retrieve.</param>
+    /// <param name="parent">The parent group index.</param>
+    /// <returns>The commit.</returns>
+    [AggregationGetMethod]
+    public CommitEntity? MinCommit([InjectGroup] Group group, string name, int parent)
+    {
+        var parentGroup = GetParentGroup(group, parent);
+        return parentGroup.GetValue<CommitEntity>(name);
+    }
+    
+    
+    /// <summary>
+    /// Gets the min commit from a given group.
+    /// </summary>
+    /// <param name="group">The group to retrieve the value from.</param>
+    /// <param name="name">The name of the value to retrieve.</param>
+    /// <returns>The commit.</returns>
+    [AggregationGetMethod]
+    public CommitEntity? MinCommit([InjectGroup] Group group, string name)
+    {
+        var parentGroup = GetParentGroup(group, 0);
+        return parentGroup.GetValue<CommitEntity>(name);
+    }
+    
+    /// <summary>
+    /// Sets the min commit in the specified group.
+    /// </summary>
+    /// <param name="group">The group to set the value in.</param>
+    /// <param name="name">The name of the value to set.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="parent">The parent group index.</param>
+    [AggregationSetMethod]
+    public void SetMinCommit([InjectGroup] Group group, string name, CommitEntity? value, int parent = 0)
+    {
+        var parentGroup = GetParentGroup(group, parent);
+
+        if (value == null)
+        {
+            parentGroup.GetOrCreateValue<CommitEntity>(name);
+            return;
+        }
+        
+        if (value.LibGitCommit == null)
+            return;
+
+        var currentValue = parentGroup.GetOrCreateValue<CommitEntity>(name);
+        parentGroup.SetValue(name, currentValue is null || value.LibGitCommit.Committer.When < currentValue.LibGitCommit!.Committer.When ? value : currentValue);
+    }
 }
