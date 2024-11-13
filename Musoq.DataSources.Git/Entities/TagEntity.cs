@@ -9,14 +9,17 @@ namespace Musoq.DataSources.Git.Entities;
 public class TagEntity
 {
     private readonly Tag _tag;
+    private readonly Repository _libGitRepository;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TagEntity"/> class.
     /// </summary>
     /// <param name="tag">The tag object from LibGit2Sharp.</param>
-    public TagEntity(Tag tag)
+    /// <param name="repository">The Git repository.</param>
+    public TagEntity(Tag tag, Repository repository)
     {
         _tag = tag;
+        _libGitRepository = repository;
     }
 
     /// <summary>
@@ -42,7 +45,7 @@ public class TagEntity
     /// <summary>
     /// Gets the annotation entity of the tag.
     /// </summary>
-    public AnnotationEntity Annotation => new(_tag.Annotation);
+    public AnnotationEntity Annotation => new(_tag.Annotation, _libGitRepository);
 
     /// <summary>
     /// Gets the commit entity that the tag points to.
@@ -53,7 +56,7 @@ public class TagEntity
         {
             if (_tag.Target is Commit commit)
             {
-                return new CommitEntity(commit);
+                return new CommitEntity(commit, _libGitRepository);
             }
 
             return null;

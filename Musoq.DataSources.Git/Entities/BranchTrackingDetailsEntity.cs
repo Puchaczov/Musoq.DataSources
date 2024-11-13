@@ -8,14 +8,18 @@ namespace Musoq.DataSources.Git.Entities;
 public class BranchTrackingDetailsEntity
 {
     private readonly BranchTrackingDetails _trackingDetails;
+    
+    internal readonly Repository LibGitRepository;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BranchTrackingDetailsEntity"/> class.
     /// </summary>
     /// <param name="trackingDetails">The tracking details to wrap.</param>
-    public BranchTrackingDetailsEntity(BranchTrackingDetails trackingDetails)
+    /// <param name="repository">The Git repository.</param>
+    public BranchTrackingDetailsEntity(BranchTrackingDetails trackingDetails, Repository repository)
     {
         _trackingDetails = trackingDetails;
+        LibGitRepository = repository;
     }
 
     /// <summary>

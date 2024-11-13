@@ -6,8 +6,10 @@ namespace Musoq.DataSources.Git.Entities;
 /// Represents a key-value pair in a Git configuration.
 /// </summary>
 /// <param name="configurationEntry">The configuration entry object.</param>
-public class ConfigurationEntityKeyValue(ConfigurationEntry<string> configurationEntry)
+public class ConfigurationEntityKeyValue(ConfigurationEntry<string> configurationEntry, Repository repository)
 {
+    internal readonly Repository LibGitRepository = repository;
+    
     /// <summary>
     /// Gets the key of the configuration entry.
     /// </summary>

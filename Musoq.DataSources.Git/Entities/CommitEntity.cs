@@ -9,14 +9,18 @@ namespace Musoq.DataSources.Git.Entities;
 public class CommitEntity
 {
     private readonly Commit? _commit;
+    
+    internal readonly Repository LibGitRepository;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommitEntity"/> class.
     /// </summary>
     /// <param name="commit">The LibGit2Sharp commit object.</param>
-    public CommitEntity(Commit? commit)
+    /// <param name="repository">The repository the commit belongs to.</param>
+    public CommitEntity(Commit? commit, Repository repository)
     {
         _commit = commit;
+        LibGitRepository = repository;
     }
 
     /// <summary>

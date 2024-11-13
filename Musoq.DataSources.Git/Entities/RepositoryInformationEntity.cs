@@ -11,8 +11,10 @@ namespace Musoq.DataSources.Git.Entities;
 /// All properties are directly mapped from the wrapped RepositoryInformation object.
 /// </remarks>
 /// <param name="repositoryInformation">The LibGit2Sharp RepositoryInformation object to wrap.</param>
-public class RepositoryInformationEntity(RepositoryInformation repositoryInformation)
+public class RepositoryInformationEntity(RepositoryInformation repositoryInformation, Repository repository)
 {
+    internal readonly Repository LibGitRepository = repository;
+    
     /// <summary>
     /// Gets the path to the Git repository.
     /// </summary>

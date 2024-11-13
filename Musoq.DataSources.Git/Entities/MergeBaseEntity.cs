@@ -1,4 +1,5 @@
 using System;
+using LibGit2Sharp;
 
 namespace Musoq.DataSources.Git.Entities;
 
@@ -8,8 +9,10 @@ namespace Musoq.DataSources.Git.Entities;
 /// <param name="mergeBaseCommit">The commit entity representing the merge base.</param>
 /// <param name="firstBranch">The first branch entity involved in the merge base.</param>
 /// <param name="secondBranch">The second branch entity involved in the merge base.</param>
-public class MergeBaseEntity(CommitEntity mergeBaseCommit, BranchEntity firstBranch, BranchEntity secondBranch)
+public class MergeBaseEntity(CommitEntity mergeBaseCommit, BranchEntity firstBranch, BranchEntity secondBranch, Repository repository)
 {
+    internal readonly Repository LibGitRepository = repository;
+    
     /// <summary>
     /// Gets the commit entity representing the merge base.
     /// </summary>

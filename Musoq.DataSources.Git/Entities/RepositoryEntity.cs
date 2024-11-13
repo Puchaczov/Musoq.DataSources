@@ -14,6 +14,18 @@ namespace Musoq.DataSources.Git.Entities;
 public class RepositoryEntity
 {
     private readonly Repository _repository;
+    
+    ~RepositoryEntity()
+    {
+        try
+        {
+            _repository.Dispose();   
+        }
+        catch
+        {
+            // ignored
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RepositoryEntity"/> class.
@@ -105,13 +117,13 @@ public class RepositoryEntity
     /// Gets the tags in the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<TagEntity> Tags => _repository.Tags.Select(tag => new TagEntity(tag));
+    public IEnumerable<TagEntity> Tags => _repository.Tags.Select(tag => new TagEntity(tag, _repository));
 
     /// <summary>
     /// Gets the commits in the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<CommitEntity> Commits => _repository.Commits.Select(commit => new CommitEntity(commit));
+    public IEnumerable<CommitEntity> Commits => _repository.Commits.Select(commit => new CommitEntity(commit, _repository));
 
     /// <summary>
     /// Gets the head branch of the repository.
@@ -122,18 +134,18 @@ public class RepositoryEntity
     /// Gets the configuration key-value pairs of the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ConfigurationEntityKeyValue> Configuration => _repository.Config.Select(f => new ConfigurationEntityKeyValue(f));
+    public IEnumerable<ConfigurationEntityKeyValue> Configuration => _repository.Config.Select(f => new ConfigurationEntityKeyValue(f, _repository));
 
     /// <summary>
     /// Gets the information about the repository.
     /// </summary>
-    public RepositoryInformationEntity Information => new(_repository.Info);
+    public RepositoryInformationEntity Information => new(_repository.Info, _repository);
 
     /// <summary>
     /// Gets the stashes in the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<StashEntity> Stashes => _repository.Stashes.Select(stash => new StashEntity(stash));
+    public IEnumerable<StashEntity> Stashes => _repository.Stashes.Select(stash => new StashEntity(stash, _repository));
     
     /// <summary>
     /// Gets the repository entity itself.

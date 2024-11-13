@@ -7,8 +7,11 @@ namespace Musoq.DataSources.Git.Entities;
 /// Represents a tagger entity in a Git repository.
 /// </summary>
 /// <param name="tagger">The signature object from LibGit2Sharp.</param>
-public class TaggerEntity(Signature tagger)
+/// <param name="repository">The repository the tagger belongs to.</param>
+public class TaggerEntity(Signature tagger, Repository repository)
 {
+    internal readonly Repository LibGitRepository = repository;
+    
     /// <summary>
     /// Gets the name of the tagger.
     /// </summary>

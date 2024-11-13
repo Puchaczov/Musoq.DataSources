@@ -6,8 +6,10 @@ namespace Musoq.DataSources.Git.Entities;
 /// Represents the changes in a patch entry in a Git repository.
 /// </summary>
 /// <param name="patch">The patch entry changes object from LibGit2Sharp.</param>
-public class PatchEntryChangesEntity(PatchEntryChanges patch)
+public class PatchEntryChangesEntity(PatchEntryChanges patch, Repository repository)
 {
+    internal readonly Repository LibGitRepository = repository;
+    
     /// <summary>
     /// Gets the number of lines added in the patch entry.
     /// </summary>

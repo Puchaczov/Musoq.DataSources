@@ -7,15 +7,19 @@ namespace Musoq.DataSources.Git.Entities;
 /// </summary>
 public class AnnotationEntity
 {
+    private readonly Repository _libGitRepository;
+    
     private readonly TagAnnotation _annotation;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AnnotationEntity"/> class.
     /// </summary>
     /// <param name="annotation">The tag annotation.</param>
-    public AnnotationEntity(TagAnnotation annotation)
+    /// <param name="repository">The repository.</param>
+    public AnnotationEntity(TagAnnotation annotation, Repository repository)
     {
         _annotation = annotation;
+        _libGitRepository = repository;
     }
 
     /// <summary>
@@ -36,5 +40,5 @@ public class AnnotationEntity
     /// <summary>
     /// Gets the tagger entity of the tag annotation.
     /// </summary>
-    public TaggerEntity? Tagger => _annotation.Tagger != null ? new TaggerEntity(_annotation.Tagger) : null;
+    public TaggerEntity? Tagger => _annotation.Tagger != null ? new TaggerEntity(_annotation.Tagger, _libGitRepository) : null;
 }

@@ -161,7 +161,7 @@ public class GitLibrary : LibraryBase
     public CommitEntity CommitFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository, string sha)
     {
         var commit = repository.LibGitRepository.Lookup<Commit>(sha);
-        return new CommitEntity(commit);
+        return new CommitEntity(commit, repository.LibGitRepository);
     }
 
     /// <summary>
@@ -200,7 +200,7 @@ public class GitLibrary : LibraryBase
         if (secondLibGitCommit == null)
             yield break;
         
-        yield return new PatchEntity(repository.LibGitRepository.Diff.Compare<Patch>(firstLibGitCommit.Tree, secondLibGitCommit.Tree));
+        yield return new PatchEntity(repository.LibGitRepository.Diff.Compare<Patch>(firstLibGitCommit.Tree, secondLibGitCommit.Tree), repository.LibGitRepository);
     }
     
     /// <summary>
@@ -245,7 +245,7 @@ public class GitLibrary : LibraryBase
         };
 
         return repository.LibGitRepository.Commits.QueryBy(filter)
-            .Select(c => new CommitEntity(c));
+            .Select(c => new CommitEntity(c, repository.LibGitRepository));
     }
 
     /// <summary>
@@ -279,9 +279,10 @@ public class GitLibrary : LibraryBase
             return null;
 
         return new MergeBaseEntity(
-            new CommitEntity(mergeBase), 
+            new CommitEntity(mergeBase, repository.LibGitRepository), 
             first, 
-            second
+            second,
+            repository.LibGitRepository
         );
     }
     
