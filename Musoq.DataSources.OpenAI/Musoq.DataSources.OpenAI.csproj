@@ -30,8 +30,8 @@
         <PackageReference Include="Musoq.Parser" Version="4.1.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.6.0" />
-        <PackageReference Include="Musoq.Schema" Version="7.3.4">
+        <PackageReference Include="Musoq.Plugins" Version="6.7.0" />
+        <PackageReference Include="Musoq.Schema" Version="7.3.5">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="OpenAI" Version="1.11.0" />

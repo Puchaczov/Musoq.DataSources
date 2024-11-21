@@ -158,7 +158,7 @@ public class ImagesTests
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
     static ImagesTests()

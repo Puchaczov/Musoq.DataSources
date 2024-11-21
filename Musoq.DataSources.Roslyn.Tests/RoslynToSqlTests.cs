@@ -745,7 +745,7 @@ where c.Name = 'Class1'
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new RoslynSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new RoslynSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
     private static bool ValidateIsValidPathFor(string? toString, string extension, bool checkFileExists = true)

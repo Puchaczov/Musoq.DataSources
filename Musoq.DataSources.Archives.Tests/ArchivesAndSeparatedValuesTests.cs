@@ -215,7 +215,7 @@ public class ArchivesAndSeparatedValuesTests
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new ArchivesOrSeparatedValuesSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new ArchivesOrSeparatedValuesSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
     static ArchivesAndSeparatedValuesTests()

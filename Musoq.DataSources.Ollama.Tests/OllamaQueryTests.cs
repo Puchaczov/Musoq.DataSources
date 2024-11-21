@@ -188,7 +188,7 @@ public class OllamaQueryTests
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, string response)
     {
-        return InstanceCreator.CompileForExecution(
+        return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
             new TestsOllamaSchemaProvider(CreateOpenAiApiMock(response).Object), 

@@ -2,23 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Musoq.DataSources.Os.Directories;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Tests.Utils
 {
-    class TestDirectoriesSource : DirectoriesSource
+    class TestDirectoriesSource(string path, bool recursive, RuntimeContext context)
+        : DirectoriesSource(path, recursive, context)
     {
-        public TestDirectoriesSource(string path, bool recursive, RuntimeContext communicator) 
-            : base(path, recursive, communicator)
-        {
-        }
-
         public IReadOnlyList<EntityResolver<DirectoryInfo>> GetDirectories()
         {
             var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
-            CollectChunks(collection);
+            CollectChunksAsync(collection, CancellationToken.None).Wait();
 
             var list = new List<EntityResolver<DirectoryInfo>>();
 

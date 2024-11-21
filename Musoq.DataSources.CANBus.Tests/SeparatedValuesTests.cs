@@ -323,7 +323,7 @@ inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.Id";
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
     static SeparatedValuesTests()

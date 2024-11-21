@@ -76,7 +76,7 @@ public class AirtablePlaygroundTests
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
-        return InstanceCreator.CompileForExecution(
+        return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
             new PlaygroundSchemaProvider(), 

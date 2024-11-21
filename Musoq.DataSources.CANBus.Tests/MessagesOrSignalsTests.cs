@@ -408,7 +408,7 @@ where Name = 'Oil_Temperature'";
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
     static MessagesOrSignalsTests()

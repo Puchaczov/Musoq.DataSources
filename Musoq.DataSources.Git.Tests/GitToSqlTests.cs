@@ -615,7 +615,7 @@ public class GitToSqlTests
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new GitSchemaProvider(),
+        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new GitSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 

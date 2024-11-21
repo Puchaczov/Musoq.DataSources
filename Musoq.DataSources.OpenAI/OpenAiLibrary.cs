@@ -327,13 +327,8 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         }
     }
     
-    private class ExtractedEntities
+    private class ExtractedEntities(string[] entities)
     {
-        public ExtractedEntities(string[] entities)
-        {
-            Entities = entities;
-        }
-
-        public string[] Entities { get; set; }
+        public string[] Entities { get; } = entities;
     }
 }

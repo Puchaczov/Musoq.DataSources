@@ -213,7 +213,7 @@ public class OpenAiQueryTests
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, string response)
     {
-        return InstanceCreator.CompileForExecution(
+        return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
             new TestsOpenAiSchemaProvider(CreateOpenAiApiMock(response).Object), 

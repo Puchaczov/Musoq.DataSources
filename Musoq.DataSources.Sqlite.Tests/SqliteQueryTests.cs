@@ -73,7 +73,6 @@ public class SqliteQueryTests
     {
         var positionalEnvironmentVariables = new Dictionary<uint, IReadOnlyDictionary<string, string>>
         {
-            // sqlite in-file database
             {0, new Dictionary<string, string>
                 {
                     { "SQLITE_CONNECTION_STRING", "Data Source=./Files/FirstExampleDatabase.db" }
@@ -81,7 +80,7 @@ public class SqliteQueryTests
             }
         };
 
-        return InstanceCreator.CompileForExecution(
+        return InstanceCreatorHelpers.CompileForExecution(
             script,
             Guid.NewGuid().ToString(), 
             new TestsSqliteSchemaProvider(), 

@@ -281,9 +281,6 @@ public class OsSchema : SchemaBase
 
                 return new FilesSource((string)parameters[0], (bool)parameters[1], runtimeContext);
             case DirectoriesTable:
-                if (parameters[0] is IReadOnlyTable directoriesTable)
-                    return new DirectoriesSource(directoriesTable, runtimeContext);
-
                 return new DirectoriesSource((string)parameters[0], (bool)parameters[1], runtimeContext);
             case ZipTable:
                 return new ZipSource((string)parameters[0], runtimeContext);

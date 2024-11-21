@@ -18,9 +18,7 @@ namespace Musoq.DataSources.Git;
 public class GitSchema : SchemaBase
 {
     private const string SchemaName = "Git";
-
     private readonly Func<string, Repository> _createRepository;
-    private Repository? _repository;
     
     /// <virtual-constructors>
     /// <virtual-constructor>
@@ -192,7 +190,7 @@ public class GitSchema : SchemaBase
     public GitSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
-        _createRepository = path => _repository ??= new Repository(path);
+        _createRepository = path => new Repository(path);
     }
 
     /// <summary>
@@ -228,8 +226,10 @@ public class GitSchema : SchemaBase
         {
             throw new InvalidOperationException($"The path '{path}' is not a directory");
         }
+        
+        var directoryInfo = new DirectoryInfo(path);
 
-        if (!DirectoryContainsGitFolder(path))
+        if (!DirectoryContainsGitFolder(path) && directoryInfo.Name != ".git")
         {
             throw new InvalidOperationException($"The path '{path}' does not contain a Git repository");
         }

@@ -61,7 +61,7 @@ namespace Musoq.DataSources.System.Tests
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new SystemSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new SystemSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static DualTests()

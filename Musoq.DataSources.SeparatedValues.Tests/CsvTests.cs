@@ -829,7 +829,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new CsvSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new CsvSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static CsvTests()

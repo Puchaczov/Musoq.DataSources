@@ -264,7 +264,7 @@ public class DockerTests
         mockSchemaProvider.Setup(f => f.GetSchema(It.IsAny<string>())).Returns(
             new DockerSchema(api));
         
-        return InstanceCreator.CompileForExecution(
+        return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
             mockSchemaProvider.Object, 

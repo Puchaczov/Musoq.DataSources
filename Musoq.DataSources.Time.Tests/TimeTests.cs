@@ -66,7 +66,7 @@ namespace Musoq.DataSources.Time.Tests
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new TimeSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new TimeSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static TimeTests()

@@ -135,8 +135,8 @@ namespace Musoq.DataSources.Os.Tests
 
             Assert.AreEqual(2, directories.Count);
 
-            Assert.AreEqual("Directory1", ((DirectoryInfo)directories[0].Contexts[0]).Name);
-            Assert.AreEqual("Directory2", ((DirectoryInfo)directories[1].Contexts[0]).Name);
+            Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory1"));
+            Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory2"));
         }
 
         [TestMethod]
@@ -152,10 +152,10 @@ namespace Musoq.DataSources.Os.Tests
             var directories = source.GetDirectories();
 
             Assert.AreEqual(3, directories.Count);
-
-            Assert.AreEqual("Directory1", ((DirectoryInfo) directories[0].Contexts[0]).Name);
-            Assert.AreEqual("Directory2", ((DirectoryInfo) directories[1].Contexts[0]).Name);
-            Assert.AreEqual("Directory3", ((DirectoryInfo) directories[2].Contexts[0]).Name);
+            
+            Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory1"));
+            Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory2"));
+            Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory3"));
         }
 
         [TestMethod]
@@ -497,7 +497,7 @@ select RelativeName, 'added' as state from ThoseInRight";
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static QueryDiskTests()

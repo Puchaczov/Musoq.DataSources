@@ -87,7 +87,7 @@ namespace Musoq.Schema.FlatFile.Tests
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
-            return InstanceCreator.CompileForExecution(script, Guid.NewGuid().ToString(), new FlatFileSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new FlatFileSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
 
         static FlatFileTests()

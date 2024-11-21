@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LibGit2Sharp;
@@ -20,7 +21,6 @@ internal class RepositoryRowsSource(
     {
         var repository = createRepository(repositoryPath);
         var repositoryEntity = new RepositoryEntity(repository);
-
         chunkedSource.Add(
         [
             new EntityResolver<RepositoryEntity>(repositoryEntity, RepositoryEntity.NameToIndexMap,

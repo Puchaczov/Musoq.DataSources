@@ -81,7 +81,7 @@ public class PostgresQueryTests
             }
         }
         
-        return InstanceCreator.CompileForExecution(
+        return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
             new TestsPostgresSchemaProvider(columnsRows, rowsRows),

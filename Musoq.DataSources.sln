@@ -85,6 +85,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Git", "Mu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Git.Tests", "Musoq.DataSources.Git.Tests\Musoq.DataSources.Git.Tests.csproj", "{92D40511-3913-4FE8-8C5A-0914BCCDB5CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.OsAndGitTests", "Musoq.DataSources.OsAndGitTests\Musoq.DataSources.OsAndGitTests.csproj", "{3E9882DD-C8AF-43C4-A60E-5746E9A02432}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -413,6 +415,14 @@ Global
 		{92D40511-3913-4FE8-8C5A-0914BCCDB5CC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{92D40511-3913-4FE8-8C5A-0914BCCDB5CC}.Release|x64.ActiveCfg = Release|Any CPU
 		{92D40511-3913-4FE8-8C5A-0914BCCDB5CC}.Release|x64.Build.0 = Release|Any CPU
+		{3E9882DD-C8AF-43C4-A60E-5746E9A02432}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E9882DD-C8AF-43C4-A60E-5746E9A02432}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E9882DD-C8AF-43C4-A60E-5746E9A02432}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3E9882DD-C8AF-43C4-A60E-5746E9A02432}.Debug|x64.Build.0 = Debug|Any CPU
+		{3E9882DD-C8AF-43C4-A60E-5746E9A02432}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E9882DD-C8AF-43C4-A60E-5746E9A02432}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E9882DD-C8AF-43C4-A60E-5746E9A02432}.Release|x64.ActiveCfg = Release|Any CPU
+		{3E9882DD-C8AF-43C4-A60E-5746E9A02432}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

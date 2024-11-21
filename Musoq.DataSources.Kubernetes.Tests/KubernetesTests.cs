@@ -1278,7 +1278,7 @@ from #kubernetes.events()";
         mockSchemaProvider.Setup(f => f.GetSchema(It.IsAny<string>())).Returns(
             new KubernetesSchema(api));
         
-        return InstanceCreator.CompileForExecution(
+        return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
             mockSchemaProvider.Object, 
