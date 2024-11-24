@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using LibGit2Sharp;
@@ -11,7 +12,7 @@ namespace Musoq.DataSources.Git.Entities;
 public class BranchEntity
 {
     private readonly Repository _libGitRepository;
-    
+
     internal readonly Branch LibGitBranch;
 
     /// <summary>
@@ -69,7 +70,8 @@ public class BranchEntity
     /// Gets the collection of commit entities in the branch.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<CommitEntity> Commits => LibGitBranch.Commits.Select(f => new CommitEntity(f, _libGitRepository));
+    public IEnumerable<CommitEntity> Commits =>
+        LibGitBranch.Commits.Select(f => new CommitEntity(f, _libGitRepository));
 
     /// <summary>
     /// Gets the canonical name of the upstream branch.
@@ -90,53 +92,57 @@ public class BranchEntity
         {
             var branch = LibGitBranch;
             var libGitBranch = _libGitRepository.Branches[branch.FriendlyName];
-            
+        
             if (libGitBranch == null)
                 return null;
 
-            if (libGitBranch.TrackedBranch != null)
-                return new BranchEntity(libGitBranch.TrackedBranch, _libGitRepository);
-
-            var branchTip = libGitBranch.Tip;
-            var candidates = new Dictionary<Branch, int>();
-
-            foreach (var possibleParent in _libGitRepository.Branches.Where(b => b.FriendlyName != branch.FriendlyName && !b.IsRemote))
+            try
             {
-                try
-                {
-                    var mergeBase = _libGitRepository.ObjectDatabase.FindMergeBase(branchTip, possibleParent.Tip);
-                    if (mergeBase == null) continue;
-                    
-                    var filter = new CommitFilter
+                var possibleParents = _libGitRepository.Branches
+                    .Where(b => !b.IsRemote && 
+                                b.FriendlyName != branch.FriendlyName &&
+                                !b.FriendlyName.StartsWith("origin/"))
+                    .ToList();
+
+                var branchesWithMergeBases = possibleParents
+                    .Select(parentBranch => new
                     {
-                        IncludeReachableFrom = branchTip,
-                        ExcludeReachableFrom = possibleParent.Tip
-                    };
-                    
-                    var distance = _libGitRepository.Commits.QueryBy(filter).Count();
-                    
-                    if (distance == 0)
-                        continue;
-                    
-                    candidates[possibleParent] = distance;
-                }
-                catch
-                {
-                    // Skip if we can't find merge base
-                }
-            }
+                        Branch = parentBranch,
+                        MergeBase = _libGitRepository.ObjectDatabase.FindMergeBase(
+                            libGitBranch.Tip,
+                            parentBranch.Tip)
+                    })
+                    .Where(x => x.MergeBase != null)
+                    .ToList();
 
-            if (candidates.Count != 0)
+                var orderedBranches = branchesWithMergeBases
+                    .Where(x => x.MergeBase.Sha != branch.Tip.Sha)
+                    .Select(x => new 
+                    {
+                        x.Branch,
+                        x.MergeBase,
+                        CommitCount = _libGitRepository.Commits.QueryBy(new CommitFilter 
+                        {
+                            IncludeReachableFrom = branch.Tip,
+                            ExcludeReachableFrom = x.MergeBase
+                        }).Count()
+                    })
+                    .OrderBy(x => x.CommitCount);
+
+                var parentBranch = orderedBranches.FirstOrDefault()?.Branch;
+
+                return parentBranch != null 
+                    ? new BranchEntity(parentBranch, _libGitRepository) 
+                    : null;
+            }
+            catch
             {
-                var closestCandidate = candidates.OrderBy(c => c.Value).First();
-                return new BranchEntity(closestCandidate.Key, _libGitRepository);
+                var defaultBranch = _libGitRepository.Branches["main"] ?? _libGitRepository.Branches["master"];
+                return defaultBranch != null ? new BranchEntity(defaultBranch, _libGitRepository) : null;
             }
-
-            var defaultBranch = _libGitRepository.Branches["main"] ?? _libGitRepository.Branches["master"];
-            return defaultBranch != null ? new BranchEntity(defaultBranch, _libGitRepository) : null;
         }
     }
-    
+
     /// <summary>
     /// Gets the branch entity itself.
     /// </summary>

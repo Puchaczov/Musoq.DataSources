@@ -164,6 +164,7 @@ public class GitSchema : SchemaBase
     /// <column name="LinesAdded" type="int">Lines added</column>
     /// <column name="LinesDeleted" type="int">Lines deleted</column>
     /// <column name="Content" type="string">Gets the full patch file of this diff</column>
+    /// <column name="Changes" type="PatchEntryChangesEntity[]">Gets the changes in this patch</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>

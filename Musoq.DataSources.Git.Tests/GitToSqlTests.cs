@@ -438,7 +438,7 @@ public class GitToSqlTests
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
         
-        Assert.IsTrue(result.Count == 2);
+        Assert.AreEqual(2, result.Count);
         
         var row = result[0];
         
@@ -472,14 +472,14 @@ public class GitToSqlTests
                     c.CommittedWhen
                 from #git.repository('{RepositoryPath}') r 
                 cross apply r.SearchForBranches('feature/branch_2') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self) c
+                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
             select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
         
-        Assert.IsTrue(result.Count == 2);
+        Assert.AreEqual(3, result.Count);
         
         var row = result[0];
         
@@ -496,6 +496,14 @@ public class GitToSqlTests
         Assert.IsTrue((string) row[2] == "anonymous");
         Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
         Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1)));
+        
+        row = result[2];
+        
+        Assert.IsTrue((string) row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
+        Assert.IsTrue((string) row[1] == "finished implementation for branch_1\n");
+        Assert.IsTrue((string) row[2] == "anonymous");
+        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
     }
     
     [TestMethod]
@@ -520,7 +528,7 @@ public class GitToSqlTests
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
         
-        Assert.IsTrue(result.Count == 3);
+        Assert.AreEqual(3, result.Count);
         
         var row = result[0];
         

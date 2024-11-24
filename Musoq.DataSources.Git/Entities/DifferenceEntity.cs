@@ -60,6 +60,10 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
                 return null;
 
             var blob = repository.Lookup<Blob>(changes.OldOid);
+            
+            if (blob == null)
+                return null;
+            
             return blob.GetContentText();
         }
     }

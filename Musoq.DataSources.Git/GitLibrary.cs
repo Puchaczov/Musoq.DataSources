@@ -240,7 +240,9 @@ public class GitLibrary : LibraryBase
         var filter = new CommitFilter
         {
             IncludeReachableFrom = branch.LibGitBranch.Tip,
-            ExcludeReachableFrom = excludeMergeBase ? mergeBase.MergeBaseCommit.LibGitCommit : $"{mergeBase.MergeBaseCommit.LibGitCommit?.Sha}^",
+            ExcludeReachableFrom = excludeMergeBase 
+                ? mergeBase.MergeBaseCommit.LibGitCommit
+                : mergeBase.MergeBaseCommit.LibGitCommit?.Parents.FirstOrDefault(),
             SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
         };
 
