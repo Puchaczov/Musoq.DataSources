@@ -186,7 +186,8 @@ public class GitLibrary : LibraryBase
     /// <returns>The patch entity.</returns>
     [BindableMethod]
     public IEnumerable<PatchEntity> PatchBetween(
-        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] 
+        RepositoryEntity repository,
         CommitEntity first,
         CommitEntity second)
     {
@@ -210,7 +211,10 @@ public class GitLibrary : LibraryBase
     /// <param name="searchPatternRegex">The search pattern regex.</param>
     /// <returns>An enumerable of branch entities.</returns>
     [BindableMethod]
-    public IEnumerable<BranchEntity> SearchForBranches([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository, string searchPatternRegex)
+    public IEnumerable<BranchEntity> SearchForBranches(
+        [InjectSpecificSource(typeof(RepositoryEntity))] 
+        RepositoryEntity repository, 
+        string searchPatternRegex)
     {
         var branches = repository.LibGitRepository.Branches;
         
@@ -230,7 +234,11 @@ public class GitLibrary : LibraryBase
     /// <param name="excludeMergeBase">Whether to exclude the merge base commit</param>
     /// <returns>Collection of commits unique to this branch</returns>
     [BindableMethod]
-    public IEnumerable<CommitEntity> GetBranchSpecificCommits(RepositoryEntity repository, BranchEntity branch, bool excludeMergeBase = true)
+    public IEnumerable<CommitEntity> GetBranchSpecificCommits(
+        [InjectSpecificSource(typeof(RepositoryEntity))]
+        RepositoryEntity repository, 
+        BranchEntity branch, 
+        bool excludeMergeBase = true)
     {
         var mergeBase = FindMergeBase(repository, branch);
         
@@ -257,7 +265,10 @@ public class GitLibrary : LibraryBase
     /// <param name="branch">The branch entity.</param>
     /// <returns>Merge base result or null if no merge base found</returns>
     [BindableMethod]
-    public MergeBaseEntity? FindMergeBase(RepositoryEntity? repository, BranchEntity? branch)
+    public MergeBaseEntity? FindMergeBase(
+        RepositoryEntity? repository, 
+        BranchEntity? branch
+    )
     {
         var first = branch;
 
