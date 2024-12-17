@@ -398,7 +398,7 @@ public class GitToSqlTests
                     c.CommittedWhen
                 from #git.repository('{RepositoryPath}') r 
                 cross apply r.SearchForBranches('feature/branch_1') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self) c
+                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
             )
             select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
         

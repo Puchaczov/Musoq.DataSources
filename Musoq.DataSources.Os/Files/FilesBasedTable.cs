@@ -7,7 +7,7 @@ internal class FilesBasedTable : ISchemaTable
 {
     public ISchemaColumn[] Columns => SchemaFilesHelper.FilesColumns;
     
-    public SchemaTableMetadata Metadata { get; } = new(typeof(ExtendedFileInfo));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(FileEntity));
 
     public ISchemaColumn? GetColumnByName(string name)
     {

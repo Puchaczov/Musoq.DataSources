@@ -7,22 +7,20 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Tests.Utils
 {
-    class TestFilesSource : FilesSource
+    internal class TestFilesSource(string path, bool useSubDirectories, RuntimeContext communicator)
+        : FilesSource(path, useSubDirectories, communicator)
     {
-        public TestFilesSource(string path, bool useSubDirectories, RuntimeContext communicator) 
-            : base(path, useSubDirectories, communicator)
-        {
-        }
+        private readonly RuntimeContext _communicator = communicator;
 
-        public IReadOnlyList<EntityResolver<ExtendedFileInfo>> GetFiles()
+        public IReadOnlyList<EntityResolver<FileEntity>> GetFiles()
         {
             var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
-            CollectChunks(collection);
+            CollectChunksAsync(collection, _communicator.EndWorkToken).Wait();
 
-            var list = new List<EntityResolver<ExtendedFileInfo>>();
+            var list = new List<EntityResolver<FileEntity>>();
 
             foreach(var item in collection)
-                list.AddRange(item.Select(file => (EntityResolver<ExtendedFileInfo>)file));
+                list.AddRange(item.Select(file => (EntityResolver<FileEntity>)file));
 
             return list;
         }

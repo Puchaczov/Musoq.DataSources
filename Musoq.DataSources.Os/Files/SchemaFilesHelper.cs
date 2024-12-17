@@ -8,29 +8,29 @@ namespace Musoq.DataSources.Os.Files;
 internal static class SchemaFilesHelper
 {
     public static readonly IReadOnlyDictionary<string, int> FilesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<ExtendedFileInfo, object?>> FilesIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<int, Func<FileEntity, object?>> FilesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] FilesColumns;
 
     static SchemaFilesHelper()
     {
         FilesNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(ExtendedFileInfo.Name), 0},
-            {nameof(ExtendedFileInfo.CreationTime), 1},
-            {nameof(ExtendedFileInfo.CreationTimeUtc), 2},
-            {nameof(ExtendedFileInfo.LastAccessTime), 3},
-            {nameof(ExtendedFileInfo.LastAccessTimeUtc), 4},
-            {nameof(ExtendedFileInfo.LastWriteTime), 5},
-            {nameof(ExtendedFileInfo.LastWriteTimeUtc), 6},
-            {nameof(ExtendedFileInfo.DirectoryName), 7},
-            {nameof(ExtendedFileInfo.Extension), 8},
-            {nameof(ExtendedFileInfo.FullName), 9},
-            {nameof(ExtendedFileInfo.Exists), 10},
-            {nameof(ExtendedFileInfo.IsReadOnly), 11},
-            {nameof(ExtendedFileInfo.Length), 12},
+            {nameof(FileEntity.Name), 0},
+            {nameof(FileEntity.CreationTime), 1},
+            {nameof(FileEntity.CreationTimeUtc), 2},
+            {nameof(FileEntity.LastAccessTime), 3},
+            {nameof(FileEntity.LastAccessTimeUtc), 4},
+            {nameof(FileEntity.LastWriteTime), 5},
+            {nameof(FileEntity.LastWriteTimeUtc), 6},
+            {nameof(FileEntity.DirectoryName), 7},
+            {nameof(FileEntity.Extension), 8},
+            {nameof(FileEntity.FullPath), 9},
+            {nameof(FileEntity.Exists), 10},
+            {nameof(FileEntity.IsReadOnly), 11},
+            {nameof(FileEntity.Length), 12},
         };
 
-        FilesIndexToMethodAccessMap = new Dictionary<int, Func<ExtendedFileInfo, object?>>
+        FilesIndexToMethodAccessMap = new Dictionary<int, Func<FileEntity, object?>>
         {
             {0, info => info.Name},
             {1, info => info.CreationTime},
@@ -41,7 +41,7 @@ internal static class SchemaFilesHelper
             {6, info => info.LastWriteTimeUtc},
             {7, info => info.DirectoryName},
             {8, info => info.Extension},
-            {9, info => info.FullName},
+            {9, info => info.FullPath},
             {10, info => info.Exists},
             {11, info => info.IsReadOnly},
             {12, info => info.Length}
@@ -49,19 +49,19 @@ internal static class SchemaFilesHelper
 
         FilesColumns =
         [
-            new SchemaColumn(nameof(ExtendedFileInfo.Name), 0, typeof(string)),
-            new SchemaColumn(nameof(ExtendedFileInfo.CreationTime), 1, typeof(DateTimeOffset)),
-            new SchemaColumn(nameof(ExtendedFileInfo.CreationTimeUtc), 2, typeof(DateTimeOffset)),
-            new SchemaColumn(nameof(ExtendedFileInfo.LastAccessTime), 3, typeof(DateTimeOffset)),
-            new SchemaColumn(nameof(ExtendedFileInfo.LastAccessTimeUtc), 4, typeof(DateTimeOffset)),
-            new SchemaColumn(nameof(ExtendedFileInfo.LastWriteTime), 5, typeof(DateTimeOffset)),
-            new SchemaColumn(nameof(ExtendedFileInfo.LastWriteTimeUtc), 6, typeof(DateTimeOffset)),
-            new SchemaColumn(nameof(ExtendedFileInfo.DirectoryName), 7, typeof(string)),
-            new SchemaColumn(nameof(ExtendedFileInfo.Extension), 8, typeof(string)),
-            new SchemaColumn(nameof(ExtendedFileInfo.FullName), 9, typeof(string)),
-            new SchemaColumn(nameof(ExtendedFileInfo.Exists), 10, typeof(bool)),
-            new SchemaColumn(nameof(ExtendedFileInfo.IsReadOnly), 11, typeof(bool)),
-            new SchemaColumn(nameof(ExtendedFileInfo.Length), 12, typeof(long))
+            new SchemaColumn(nameof(FileEntity.Name), 0, typeof(string)),
+            new SchemaColumn(nameof(FileEntity.CreationTime), 1, typeof(DateTimeOffset)),
+            new SchemaColumn(nameof(FileEntity.CreationTimeUtc), 2, typeof(DateTimeOffset)),
+            new SchemaColumn(nameof(FileEntity.LastAccessTime), 3, typeof(DateTimeOffset)),
+            new SchemaColumn(nameof(FileEntity.LastAccessTimeUtc), 4, typeof(DateTimeOffset)),
+            new SchemaColumn(nameof(FileEntity.LastWriteTime), 5, typeof(DateTimeOffset)),
+            new SchemaColumn(nameof(FileEntity.LastWriteTimeUtc), 6, typeof(DateTimeOffset)),
+            new SchemaColumn(nameof(FileEntity.DirectoryName), 7, typeof(string)),
+            new SchemaColumn(nameof(FileEntity.Extension), 8, typeof(string)),
+            new SchemaColumn(nameof(FileEntity.FullPath), 9, typeof(string)),
+            new SchemaColumn(nameof(FileEntity.Exists), 10, typeof(bool)),
+            new SchemaColumn(nameof(FileEntity.IsReadOnly), 11, typeof(bool)),
+            new SchemaColumn(nameof(FileEntity.Length), 12, typeof(long))
         ];
     }
 }

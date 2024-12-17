@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using MetadataExtractor;
 using MetadataExtractor.Util;
+using Musoq.DataSources.Os.Exceptions;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
@@ -18,8 +19,9 @@ internal class MetadataSource : EnumerateFilesSourceBase<MetadataEntity>
     }
     
     private readonly string? _fileName;
+    private readonly bool _throwOnMetadataReadError;
     
-    public MetadataSource(string directoryPath, string? fileName, bool useSubDirectories, PathType pathType, RuntimeContext communicator) 
+    public MetadataSource(string directoryPath, string? fileName, bool useSubDirectories, PathType pathType, bool throwOnMetadataReadError, RuntimeContext communicator) 
         : base(directoryPath, useSubDirectories, communicator)
     {
         if (pathType == PathType.MustBeDirectory)
@@ -29,11 +31,7 @@ internal class MetadataSource : EnumerateFilesSourceBase<MetadataEntity>
         }
         
         _fileName = fileName;
-    }
-
-    public MetadataSource(IReadOnlyTable table, RuntimeContext context) 
-        : base(table, context)
-    {
+        _throwOnMetadataReadError = throwOnMetadataReadError;
     }
 
     protected override FileInfo[] GetFiles(DirectoryInfo directoryInfo)
@@ -50,16 +48,24 @@ internal class MetadataSource : EnumerateFilesSourceBase<MetadataEntity>
 
         if (FileTypeDetector.DetectFileType(stream) == FileType.Unknown)
             return;
-        
-        dirFiles.AddRange(
-            ImageMetadataReader.ReadMetadata(stream)
-                .SelectMany(directory => directory.Tags,
-                    (directory, tag) => new MetadataEntity(file.FullName, directory.Name, tag.Name, tag.Description))
-                .Select(metadata => new EntityResolver<MetadataEntity>(
-                    metadata,
-                    SchemaMetadataHelper.MetadataNameToIndexMap,
-                    SchemaMetadataHelper.MetadataIndexToMethodAccessMap
-                ))
-        );
+
+        try
+        {
+            dirFiles.AddRange(
+                ImageMetadataReader.ReadMetadata(stream)
+                    .SelectMany(directory => directory.Tags,
+                        (directory, tag) => new MetadataEntity(file.FullName, directory.Name, tag.Name, tag.Description))
+                    .Select(metadata => new EntityResolver<MetadataEntity>(
+                        metadata,
+                        SchemaMetadataHelper.MetadataNameToIndexMap,
+                        SchemaMetadataHelper.MetadataIndexToMethodAccessMap
+                    ))
+            );
+        }
+        catch (Exception exc)
+        {
+            if (_throwOnMetadataReadError)
+                throw new MetadataReadException(file, exc);
+        }
     }
 }

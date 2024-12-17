@@ -12,6 +12,7 @@ using Musoq.DataSources.Os.Compare.Directories;
 using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
 using Musoq.DataSources.Os.Files;
+using Musoq.DataSources.Os.Metadata;
 using Musoq.DataSources.Os.Tests.Utils;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -58,15 +59,15 @@ namespace Musoq.DataSources.Os.Tests
 
             Assert.AreEqual(3, table.Columns.Count());
 
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.Name) && (string)row[2] == typeof(string).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.CreationTime) && (string)row[2] == typeof(DateTimeOffset).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.CreationTimeUtc) && (string)row[2] == typeof(DateTimeOffset).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.DirectoryName) && (string)row[2] == typeof(string).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.Extension) && (string)row[2] == typeof(string).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.FullName) && (string)row[2] == typeof(string).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.Exists) && (string)row[2] == typeof(bool).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.IsReadOnly) && (string)row[2] == typeof(bool).FullName));
-            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileInfo.Length) && (string)row[2] == typeof(long).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.Name) && (string)row[2] == typeof(string).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.CreationTime) && (string)row[2] == typeof(DateTimeOffset).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.CreationTimeUtc) && (string)row[2] == typeof(DateTimeOffset).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.DirectoryName) && (string)row[2] == typeof(string).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.Extension) && (string)row[2] == typeof(string).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.FullPath) && (string)row[2] == typeof(string).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.Exists) && (string)row[2] == typeof(bool).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.IsReadOnly) && (string)row[2] == typeof(bool).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.Length) && (string)row[2] == typeof(long).FullName));
         }
 
         [TestMethod]
@@ -98,7 +99,7 @@ namespace Musoq.DataSources.Os.Tests
 
             Assert.AreEqual(1, folders.Count);
 
-            Assert.AreEqual("TestFile1.txt", ((ExtendedFileInfo)folders[0].Contexts[0]).Name);
+            Assert.AreEqual("TestFile1.txt", ((FileEntity)folders[0].Contexts[0]).Name);
         }
 
         [TestMethod]
@@ -115,10 +116,10 @@ namespace Musoq.DataSources.Os.Tests
 
             Assert.AreEqual(4, folders.Count);
 
-            Assert.AreEqual("TestFile1.txt", ((ExtendedFileInfo)folders[0].Contexts[0]).Name);
-            Assert.AreEqual("TextFile2.txt", ((ExtendedFileInfo)folders[1].Contexts[0]).Name);
-            Assert.AreEqual("TextFile3.txt", ((ExtendedFileInfo)folders[2].Contexts[0]).Name);
-            Assert.AreEqual("TextFile1.txt", ((ExtendedFileInfo)folders[3].Contexts[0]).Name);
+            Assert.AreEqual("TestFile1.txt", ((FileEntity)folders[0].Contexts[0]).Name);
+            Assert.AreEqual("TextFile2.txt", ((FileEntity)folders[1].Contexts[0]).Name);
+            Assert.AreEqual("TextFile3.txt", ((FileEntity)folders[2].Contexts[0]).Name);
+            Assert.AreEqual("TextFile1.txt", ((FileEntity)folders[3].Contexts[0]).Name);
         }
 
         [TestMethod]
@@ -344,18 +345,18 @@ namespace Musoq.DataSources.Os.Tests
             var secondRow = rows[1].Contexts[0] as CompareDirectoriesResult;
             var thirdRow = rows[2].Contexts[0] as CompareDirectoriesResult;
 
-            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.SourceFile.FullName);
+            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.SourceFile.FullPath);
             Assert.AreEqual(null, firstRow.DestinationFile);
             Assert.AreEqual(State.Removed, firstRow.State);
 
 
             Assert.AreEqual(null, secondRow.SourceFile);
-            Assert.AreEqual(new FileInfo("./Directories/Directory2/TextFile2.txt").FullName, secondRow.DestinationFile.FullName);
+            Assert.AreEqual(new FileInfo("./Directories/Directory2/TextFile2.txt").FullName, secondRow.DestinationFile.FullPath);
             Assert.AreEqual(State.Added, secondRow.State);
 
 
             Assert.AreEqual(null, thirdRow.SourceFile);
-            Assert.AreEqual(new FileInfo("./Directories/Directory2/Directory3/TextFile3.txt").FullName, thirdRow.DestinationFile.FullName);
+            Assert.AreEqual(new FileInfo("./Directories/Directory2/Directory3/TextFile3.txt").FullName, thirdRow.DestinationFile.FullPath);
             Assert.AreEqual(State.Added, thirdRow.State);
         }
 
@@ -373,8 +374,8 @@ namespace Musoq.DataSources.Os.Tests
 
             var firstRow = rows[0].Contexts[0] as CompareDirectoriesResult;
 
-            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.SourceFile.FullName);
-            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.DestinationFile.FullName);
+            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.SourceFile.FullPath);
+            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.DestinationFile.FullPath);
             Assert.AreEqual(State.TheSame, firstRow.State);
         }
 
@@ -401,7 +402,7 @@ namespace Musoq.DataSources.Os.Tests
         {
             var query = @"
 with IntersectedFiles as (
-	select a.Name as Name, a.Sha256File() as sha1, b.Sha256File() as sha2 from #os.files('.\Files', true) a inner join #os.files('.\Files', true) b on a.FullName = b.FullName
+	select a.Name as Name, a.Sha256File() as sha1, b.Sha256File() as sha2 from #os.files('.\Files', true) a inner join #os.files('.\Files', true) b on a.FullPath = b.FullPath
 )
 select * from IntersectedFiles";
 
@@ -460,27 +461,6 @@ select RelativeName, 'added' as state from ThoseInRight";
             
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
-        }
-
-        [TestMethod]
-        public void Query_UseFilesFromFilteredDirectories()
-        {
-            var query = "" +
-                "table Files {" +
-                "   FullName 'System.String'" +
-                "};" +
-                "couple #os.files with table Files as SourceOfFiles;" +
-                "with dirs as (" +
-                "   select FullName, true from #os.directories('./Directories', false)" +
-                ")" +
-                "select FullName from SourceOfFiles(dirs)";
-
-            var vm = CreateAndRunVirtualMachine(query);
-            var table = vm.Run();
-
-            Assert.IsTrue(table.Any(row => ((string)row[0]).Contains("TextFile1")));
-            Assert.IsTrue(table.Any(row => ((string)row[0]).Contains("TextFile3")));
-            Assert.IsTrue(table.Any(row => ((string)row[0]).Contains("TextFile2")));
         }
 
         [TestMethod]

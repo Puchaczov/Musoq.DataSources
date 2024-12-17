@@ -117,16 +117,17 @@ public class OsSchema : SchemaBase
     /// <from>#os.files(string, boolean)</from>
     /// <description>Gets the files</description>
     /// <columns>
-    /// <column name="Name" type="string">Full name of the directory</column>
+    /// <column name="FileName" type="string">Name of the file</column>
     /// <column name="CreationTime" type="DateTime">Creation time</column>
     /// <column name="CreationTimeUtc" type="DateTime">Creation time in UTC</column>
     /// <column name="LastAccessTime" type="DateTime">Last access time</column>
     /// <column name="LastAccessTimeUtc" type="DateTime">Last access time in UTC</column>
     /// <column name="LastWriteTime" type="DateTime">Last write time</column>
     /// <column name="LastWriteTimeUtc" type="DateTime">Last write time in UTC</column>
-    /// <column name="DirectoryName" type="string">Gets the directory name</column>
     /// <column name="Extension" type="string">Gets the extension part of the file name</column>
-    /// <column name="FullName" type="string">Gets the full path of file</column>
+    /// <column name="FullPath" type="string">Gets the full path of file</column>
+    /// <column name="DirectoryName" type="string">Gets the directory name</column>
+    /// <column name="DirectoryPath" type="string">Gets the directory path</column>
     /// <column name="Exists" type="bool">Determine whether file exists or not</column>
     /// <column name="IsReadOnly" type="bool">Determine whether the file is readonly</column>
     /// <column name="Length" type="long">Gets the length of file</column>
@@ -195,7 +196,17 @@ public class OsSchema : SchemaBase
     /// </columns>
     /// </example>
     /// <example>
-    /// <from>#os.metadata(string directory, bool useSubdirectories)</from>
+    /// <from>#os.metadata(string directory, bool throwOnMetadataReadError)</from>
+    /// <description>Gets the metadata for files within directories</description>
+    /// <columns>
+    /// <column name="FullName" type="string">Gets the full path of the file</column>
+    /// <column name="DirectoryName" type="string">Gets the directory the metadata resides in</column>
+    /// <column name="TagName" type="string">Gets the tag name</column>
+    /// <column name="Description" type="string">Gets the description</column>
+    /// </columns>
+    /// </example>
+    /// <example>
+    /// <from>#os.metadata(string directory, bool useSubdirectories, bool throwOnMetadataReadError)</from>
     /// <description>Gets the metadata for files within directories</description>
     /// <columns>
     /// <column name="FullName" type="string">Gets the full path of the file</column>
@@ -276,9 +287,6 @@ public class OsSchema : SchemaBase
         switch (name.ToLowerInvariant())
         {
             case FilesTable:
-                if (parameters[0] is IReadOnlyTable filesTable)
-                    return new FilesSource(filesTable, runtimeContext);
-
                 return new FilesSource((string)parameters[0], (bool)parameters[1], runtimeContext);
             case DirectoriesTable:
                 return new DirectoriesSource((string)parameters[0], (bool)parameters[1], runtimeContext);
@@ -293,21 +301,58 @@ public class OsSchema : SchemaBase
             case Single:
                 return new SingleRowSource();
             case Metadata:
-                if (parameters is [IReadOnlyTable table])
-                    return new MetadataSource(table, runtimeContext);
-                
-                if (parameters is [string pathDirectory, bool useSubDirectories])
-                    return new MetadataSource(pathDirectory, null, useSubDirectories, MetadataSource.PathType.MustBeDirectory, runtimeContext);
-
-                if (parameters is [string pathDirectoryOrFile])
+            {
                 {
-                    var isDirectory = Directory.Exists(pathDirectoryOrFile);
-                    var directoryPath = isDirectory ? pathDirectoryOrFile : Path.GetDirectoryName(pathDirectoryOrFile) ?? throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
-                    var fileName = isDirectory ? null : Path.GetFileName(pathDirectoryOrFile);
-                    return new MetadataSource(directoryPath, fileName, false, MetadataSource.PathType.DirectoryOrFile, runtimeContext);
+                    if (parameters is [string pathDirectory, bool useSubDirectories, bool throwOnMetadataReadError])
+                        return new MetadataSource(
+                            pathDirectory, 
+                            null, 
+                            useSubDirectories,
+                            MetadataSource.PathType.MustBeDirectory,
+                            throwOnMetadataReadError,
+                            runtimeContext);
+                }
+
+                {
+                    if (parameters is [string pathDirectoryOrFile, bool throwOnMetadataReadError])
+                    {
+                        var isDirectory = Directory.Exists(pathDirectoryOrFile);
+                        var directoryPath = isDirectory
+                            ? pathDirectoryOrFile
+                            : Path.GetDirectoryName(pathDirectoryOrFile) ??
+                              throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
+                        var fileName = isDirectory ? null : Path.GetFileName(pathDirectoryOrFile);
+                        return new MetadataSource(
+                            directoryPath, 
+                            fileName, 
+                            false,
+                            MetadataSource.PathType.DirectoryOrFile, 
+                            throwOnMetadataReadError,
+                            runtimeContext);
+                    }
+                }
+
+                {
+                    if (parameters is [string pathDirectoryOrFile])
+                    {
+                        var isDirectory = Directory.Exists(pathDirectoryOrFile);
+                        var directoryPath = isDirectory
+                            ? pathDirectoryOrFile
+                            : Path.GetDirectoryName(pathDirectoryOrFile) ??
+                              throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
+                        var fileName = isDirectory ? null : Path.GetFileName(pathDirectoryOrFile);
+                        return new MetadataSource(
+                            directoryPath, 
+                            fileName, 
+                            false,
+                            MetadataSource.PathType.DirectoryOrFile, 
+                            true,
+                            runtimeContext);
+                    }
                 }
                 
                 throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
+            }
         }
 
         throw new NotSupportedException($"Unsupported row source {name}");

@@ -33,7 +33,7 @@ public class ImagesTests
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
         
-        Assert.AreEqual(154, table.Count);
+        Assert.AreEqual(157, table.Count);
     }
     
     [TestMethod]
@@ -120,7 +120,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenRetrieveMetadataFromMultipleFiles_ShouldPass()
     {
-        var query = "select f.Name, m.DirectoryName, m.TagName, m.Description from #os.files('./Images', false) f cross apply #os.metadata(f.FullName) m";
+        var query = "select f.Name, m.DirectoryName, m.TagName, m.Description from #os.files('./Images', false) f cross apply #os.metadata(f.FullPath) m";
         
         var vm = CreateAndRunVirtualMachine(query);
         

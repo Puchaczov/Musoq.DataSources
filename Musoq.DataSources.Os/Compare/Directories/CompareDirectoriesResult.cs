@@ -3,33 +3,24 @@ using Musoq.DataSources.Os.Files;
 
 namespace Musoq.DataSources.Os.Compare.Directories;
 
-internal class CompareDirectoriesResult
+internal class CompareDirectoriesResult(
+    DirectoryInfo sourceRoot,
+    FileEntity? sourceFile,
+    DirectoryInfo destinationRoot,
+    FileEntity? destinationFile,
+    State state)
 {
-    public CompareDirectoriesResult(
-        DirectoryInfo sourceRoot,
-        ExtendedFileInfo sourceFile, 
-        DirectoryInfo destinationRoot,
-        ExtendedFileInfo destinationFile, 
-        State state)
-    {
-        SourceRoot = sourceRoot;
-        SourceFile = sourceFile;
-        DestinationRoot = destinationRoot;
-        DestinationFile = destinationFile;
-        State = state;
-    }
+    public DirectoryInfo SourceRoot { get; } = sourceRoot;
 
-    public DirectoryInfo SourceRoot { get; }
+    public FileEntity? SourceFile { get; } = sourceFile;
 
-    public ExtendedFileInfo SourceFile { get; }
+    public string? SourceFileRelative => SourceFile?.FullPath.Replace(SourceRoot.FullName, string.Empty);
 
-    public string SourceFileRelative => SourceFile?.FullName?.Replace(SourceRoot.FullName, string.Empty);
+    public DirectoryInfo DestinationRoot { get; } = destinationRoot;
 
-    public DirectoryInfo DestinationRoot { get; }
+    public FileEntity? DestinationFile { get; } = destinationFile;
 
-    public ExtendedFileInfo DestinationFile { get; }
+    public string? DestinationFileRelative => DestinationFile?.FullPath.Replace(DestinationRoot.FullName, string.Empty);
 
-    public string DestinationFileRelative => DestinationFile?.FullName?.Replace(DestinationRoot.FullName, string.Empty);
-
-    public State State { get; }
+    public State State { get; } = state;
 }

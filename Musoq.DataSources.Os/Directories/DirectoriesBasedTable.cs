@@ -10,7 +10,7 @@ internal class DirectoriesBasedTable : ISchemaTable
     
     public SchemaTableMetadata Metadata { get; } = new(typeof(DirectoryInfo));
 
-    public ISchemaColumn GetColumnByName(string name)
+    public ISchemaColumn? GetColumnByName(string name)
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);
     }

@@ -4,26 +4,19 @@ using Musoq.DataSources.Os.Files;
 
 namespace Musoq.DataSources.Os.Compare.Directories;
 
-internal class SourceDestinationFilesPair : IReadOnlyList<ExtendedFileInfo>
+internal class SourceDestinationFilesPair(IReadOnlyList<FileEntity> files) : IReadOnlyList<FileEntity>
 {
-    private readonly IReadOnlyList<ExtendedFileInfo> _files;
+    public FileEntity? Source => files.Count > 0 ? files[0] : null;
 
-    public SourceDestinationFilesPair(IReadOnlyList<ExtendedFileInfo> files)
+    public FileEntity? Destination => files.Count > 1 ? files[1] : null;
+
+    public FileEntity this[int index] => files[index];
+
+    public int Count => files.Count;
+
+    public IEnumerator<FileEntity> GetEnumerator()
     {
-        _files = files;
-    }
-
-    public ExtendedFileInfo Source => _files[0];
-
-    public ExtendedFileInfo Destination => _files[1];
-
-    public ExtendedFileInfo this[int index] => _files[index];
-
-    public int Count => _files.Count;
-
-    public IEnumerator<ExtendedFileInfo> GetEnumerator()
-    {
-        return _files.GetEnumerator();
+        return files.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()

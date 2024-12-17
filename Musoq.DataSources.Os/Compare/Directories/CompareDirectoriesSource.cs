@@ -8,29 +8,22 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Compare.Directories;
 
-internal class CompareDirectoriesSource : RowSourceBase<CompareDirectoriesResult>
+internal class CompareDirectoriesSource(string firstDirectory, string secondDirectory, RuntimeContext runtimeContext)
+    : RowSourceBase<CompareDirectoriesResult>
 {
-    private readonly DirectoryInfo _firstDirectory;
-    private readonly DirectoryInfo _secondDirectory;
-    private readonly RuntimeContext _runtimeContext;
-
-    public CompareDirectoriesSource(string firstDirectory, string secondDirectory, RuntimeContext runtimeContext)
-    {
-        _firstDirectory = new DirectoryInfo(firstDirectory);
-        _secondDirectory = new DirectoryInfo(secondDirectory);
-        _runtimeContext = runtimeContext;
-    }
+    private readonly DirectoryInfo _firstDirectory = new(firstDirectory);
+    private readonly DirectoryInfo _secondDirectory = new(secondDirectory);
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         var leftJoinedFiles = from firstDirFile in GetAllFiles(_firstDirectory)
-            join secondDirFile in GetAllFiles(_secondDirectory) on firstDirFile.FullName.Replace(_firstDirectory.FullName, string.Empty) equals secondDirFile.FullName.Replace(_secondDirectory.FullName, string.Empty) into files
+            join secondDirFile in GetAllFiles(_secondDirectory) on firstDirFile.FullPath.Replace(_firstDirectory.FullName, string.Empty) equals secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty) into files
             from secondDirFile in files.DefaultIfEmpty()
-            select new SourceDestinationFilesPair(new[] { firstDirFile, secondDirFile });
+            select new SourceDestinationFilesPair([firstDirFile, secondDirFile]);
 
         var rightJoinedFiles = from secondDirFile in GetAllFiles(_secondDirectory)
-            where !File.Exists(Path.Combine(_firstDirectory.FullName, secondDirFile.FullName.Replace(_secondDirectory.FullName, string.Empty).Trim('\\')))
-            select new SourceDestinationFilesPair(new[] { null, secondDirFile });
+            where !File.Exists(Path.Combine(_firstDirectory.FullName, secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty).Trim('\\')))
+            select new SourceDestinationFilesPair([null, secondDirFile]);
 
         var allFiles = leftJoinedFiles.Concat(rightJoinedFiles);
 
@@ -41,16 +34,26 @@ internal class CompareDirectoriesSource : RowSourceBase<CompareDirectoriesResult
         {
             State result;
 
+            // 11
             if (files.Source != null && files.Destination != null)
             {
                 result = lib.Sha256File(files.Source) != lib.Sha256File(files.Destination) ? State.Modified : State.TheSame;
             }
+            // 10
             else if (files.Source != null)
+            {
                 result = State.Removed;
+            }
+            // 01
             else if (files.Destination != null)
+            {
                 result = State.Added;
+            }
+            // 00
             else
+            {
                 continue;
+            }
 
             var value = new CompareDirectoriesResult(_firstDirectory, files.Source, _secondDirectory, files.Destination, result);
 
@@ -61,7 +64,7 @@ internal class CompareDirectoriesSource : RowSourceBase<CompareDirectoriesResult
                 continue;
             }
 
-            _runtimeContext.EndWorkToken.ThrowIfCancellationRequested();
+            runtimeContext.EndWorkToken.ThrowIfCancellationRequested();
 
             chunkedSource.Add(source);
             source = [];
@@ -71,7 +74,7 @@ internal class CompareDirectoriesSource : RowSourceBase<CompareDirectoriesResult
             chunkedSource.Add(source);
     }
 
-    private IEnumerable<ExtendedFileInfo> GetAllFiles(DirectoryInfo directory)
+    private static IEnumerable<FileEntity> GetAllFiles(DirectoryInfo directory)
     {
         var dirs = new Stack<DirectoryInfo>();
 
@@ -82,7 +85,7 @@ internal class CompareDirectoriesSource : RowSourceBase<CompareDirectoriesResult
             var currentDir = dirs.Pop();
 
             foreach (var file in currentDir.GetFiles())
-                yield return new ExtendedFileInfo(file, directory.FullName);
+                yield return new FileEntity(file, directory.FullName);
 
             foreach (var dir in currentDir.GetDirectories())
                 dirs.Push(dir);

@@ -17,10 +17,7 @@ namespace Musoq.DataSources.AsyncRowsSource
 
         public bool MoveNext()
         {
-            var exception = getException();
-            
-            if (exception != null)
-                throw exception;
+            ThrowWhenException();
             
             if (_currentChunk != null && ++_currentIndex < _currentChunk.Count)
                 return true;
@@ -34,14 +31,22 @@ namespace Musoq.DataSources.AsyncRowsSource
             {
                 if (!TryTakeValidChunk(out _currentChunk)) continue;
                 
+                ThrowWhenException();
+                
                 _currentIndex = 0;
                 return true;
             }
 
             try
             {
+                ThrowWhenException();
+                
                 _currentChunk = _readRows.Take(token);
+                
+                ThrowWhenException();
+                
                 _currentIndex = 0;
+                
                 return _currentChunk.Count > 0;
             }
             catch (OperationCanceledException)
@@ -59,8 +64,13 @@ namespace Musoq.DataSources.AsyncRowsSource
         {
             while (_readRows.Count > 0)
             {
-                if (!TryTakeValidChunk(out _currentChunk)) continue;
-                
+                if (!TryTakeValidChunk(out _currentChunk))
+                {
+                    ThrowWhenException();
+                    
+                    continue;
+                }
+
                 _currentIndex = 0;
                 return true;
             }
@@ -74,5 +84,13 @@ namespace Musoq.DataSources.AsyncRowsSource
         object IEnumerator.Current => Current;
 
         public void Dispose() { }
+
+        private void ThrowWhenException()
+        {
+            var exception = getException();
+            
+            if (exception is not null)
+                throw exception;
+        }
     }
 }

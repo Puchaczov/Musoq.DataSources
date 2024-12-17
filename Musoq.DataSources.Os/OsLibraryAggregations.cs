@@ -16,9 +16,9 @@ public partial class OsLibrary
     /// <param name="name">The name of the group</param>
     /// <returns>Aggregated value</returns>
     [AggregationGetMethod]
-    public IReadOnlyList<ExtendedFileInfo>? AggregateFiles([InjectGroup] Group group, string name)
+    public IReadOnlyList<FileEntity>? AggregateFiles([InjectGroup] Group group, string name)
     {
-        return group.GetValue<IReadOnlyList<ExtendedFileInfo>>(name);
+        return group.GetValue<IReadOnlyList<FileEntity>>(name);
     }
 
     /// <summary>
@@ -29,9 +29,9 @@ public partial class OsLibrary
     /// <param name="file">The value to set</param>
     /// <returns>Aggregated value</returns>    
     [AggregationSetMethod]
-    public void SetAggregateFiles([InjectGroup] Group group, string name, ExtendedFileInfo file)
+    public void SetAggregateFiles([InjectGroup] Group group, string name, FileEntity file)
     {
-        var list = group.GetOrCreateValue(name, new List<ExtendedFileInfo>());
+        var list = group.GetOrCreateValue(name, new List<FileEntity>());
 
         list.Add(file);
     }
@@ -44,9 +44,9 @@ public partial class OsLibrary
     /// <param name="file">The value to set</param>
     /// <returns>Aggregated value</returns>   
     [AggregationSetMethod]
-    public void SetAggregateFiles([InjectGroup] Group group, [InjectSpecificSource(typeof(ExtendedFileInfo))] ExtendedFileInfo file, string name)
+    public void SetAggregateFiles([InjectGroup] Group group, [InjectSpecificSource(typeof(FileEntity))] FileEntity file, string name)
     {
-        var list = group.GetOrCreateValue(name, new List<ExtendedFileInfo>());
+        var list = group.GetOrCreateValue(name, new List<FileEntity>());
         
         if (list == null)
             throw new InvalidOperationException("List is null");

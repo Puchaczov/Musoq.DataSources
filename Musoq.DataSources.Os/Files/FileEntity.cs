@@ -8,7 +8,7 @@ namespace Musoq.DataSources.Os.Files;
 /// <summary>
 /// File info for row processing
 /// </summary>
-public class ExtendedFileInfo
+public class FileEntity
 {
     private IReadOnlyList<MetadataExtractor.Directory>? _directories;
     
@@ -17,7 +17,7 @@ public class ExtendedFileInfo
     /// </summary>
     /// <param name="fileInfo">File info to be constructed from</param>
     /// <param name="computationRootDirectoryPath">Computation root directory path</param>
-    public ExtendedFileInfo(FileInfo fileInfo, string computationRootDirectoryPath)
+    public FileEntity(FileInfo fileInfo, string computationRootDirectoryPath)
     {
         FileInfo = fileInfo;
         ComputationRootDirectoryPath = computationRootDirectoryPath;
@@ -46,7 +46,12 @@ public class ExtendedFileInfo
     /// <summary>
     /// Gets the directory name
     /// </summary>
-    public string? DirectoryName => FileInfo.DirectoryName;
+    public string? DirectoryName => Path.GetDirectoryName(FileInfo.DirectoryName);
+    
+    /// <summary>
+    /// Gets the directory path
+    /// </summary>
+    public string? DirectoryPath => FileInfo.DirectoryName;
         
     /// <summary>
     /// Gets the directory info
@@ -62,6 +67,11 @@ public class ExtendedFileInfo
     /// Gets the file name
     /// </summary>
     public string Name => FileInfo.Name;
+        
+    /// <summary>
+    /// Gets the file name
+    /// </summary>
+    public string FileName => FileInfo.Name;
 
     /// <summary>
     /// Gets the creation time
@@ -102,7 +112,7 @@ public class ExtendedFileInfo
     /// <summary>
     /// Gets the full name
     /// </summary>
-    public string FullName => FileInfo.FullName;
+    public string FullPath => FileInfo.FullName;
 
     /// <summary>
     /// Gets the file attributes

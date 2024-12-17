@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices.JavaScript;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.AsyncRowsSource;
@@ -10,7 +11,7 @@ namespace Musoq.DataSources.AsyncRowsSource;
 /// <typeparam name="T">Type of the entity.</typeparam>
 public abstract class AsyncRowsSourceBase<T>(CancellationToken endWorkToken) : RowSource
 {
-    private Exception? _exception;
+    private readonly TaskCompletionSource<Exception?> _exception = new();
 
     /// <summary>
     /// Enumerate rows.
@@ -19,7 +20,7 @@ public abstract class AsyncRowsSourceBase<T>(CancellationToken endWorkToken) : R
     {
         get
         {
-            var chunkedSource = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
+            var chunkedSourceBlockingCollection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
             var workFinishedCancellationTokenSource = new CancellationTokenSource();
             var workFinishedToken = workFinishedCancellationTokenSource.Token;
             var errorCancellationTokenSource = new CancellationTokenSource();
@@ -30,23 +31,24 @@ public abstract class AsyncRowsSourceBase<T>(CancellationToken endWorkToken) : R
             {
                 try
                 {
-                    await CollectChunksAsync(chunkedSource, linkedToken);
+                    await CollectChunksAsync(chunkedSourceBlockingCollection, linkedToken);
+                    _exception.SetResult(null);
                 }
                 catch (OperationCanceledException)
                 {
                 }
                 catch (Exception exc)
                 {
-                    _exception = exc;
+                    _exception.SetResult(exc);
                 }
                 finally
                 {
-                    chunkedSource.Add(new List<EntityResolver<T>>());
+                    chunkedSourceBlockingCollection.Add(new List<EntityResolver<T>>());
                     workFinishedCancellationTokenSource.Cancel();
                 }
             });
 
-            return new ChunkedSource(chunkedSource, workFinishedToken, GetParentException);
+            return new ChunkedSource(chunkedSourceBlockingCollection, workFinishedToken, GetParentException);
         }
     }
 
@@ -60,6 +62,6 @@ public abstract class AsyncRowsSourceBase<T>(CancellationToken endWorkToken) : R
     
     private Exception? GetParentException()
     {
-        return _exception;
+        return _exception.Task.IsCompleted ? _exception.Task.Result : null;
     }
 }
