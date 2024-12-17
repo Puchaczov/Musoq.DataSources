@@ -116,22 +116,50 @@ public partial class OsLibrary : LibraryBase
 
     private static readonly HashSet<string> IsImageSet =
     [
-        ".bmp",
-        ".gif",
-        ".jpeg",
-        ".jpg",
-        ".png",
-        ".psb",
-        ".psd",
-        ".tiff",
-        ".webp",
-        ".pbm",
-        ".pgm",
-        ".ppm",
-        ".pnm",
-        ".pcx",
-        ".dng",
-        ".svg"
+        // Common web and general-purpose formats
+        ".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif",
+    
+        // Raw camera formats
+        ".arw",    // Sony
+        ".cr2",    // Canon
+        ".cr3",    // Canon
+        ".dng",    // Adobe Digital Negative
+        ".nef",    // Nikon
+        ".orf",    // Olympus
+        ".raf",    // Fujifilm
+        ".rw2",    // Panasonic
+    
+        // Professional/Design formats
+        ".psd",    // Adobe Photoshop
+        ".psb",    // Adobe Photoshop Big
+        ".tiff",   // Tagged Image File Format
+        ".tif",    // Alternative extension for TIFF
+    
+        // Vector formats
+        ".svg",    // Scalable Vector Graphics
+        ".ai",     // Adobe Illustrator
+        ".eps",    // Encapsulated PostScript
+    
+        // Bitmap formats
+        ".bmp",    // Bitmap
+        ".ico",    // Icon
+    
+        // High efficiency formats
+        ".heic",   // High Efficiency Image Format
+        ".heif",   // High Efficiency Image Format
+    
+        // Special purpose formats
+        ".pbm",    // Portable Bitmap
+        ".pgm",    // Portable Graymap
+        ".ppm",    // Portable Pixmap
+        ".pnm",    // Portable Anymap
+    
+        // Animation-capable formats
+        ".apng",   // Animated PNG
+    
+        // HDR formats
+        ".hdr",    // Radiance HDR
+        ".exr"     // OpenEXR
     ];
 
     private static readonly HashSet<string> IsSourceSet =
@@ -209,7 +237,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">FileInfo that must be examined whether is zip or not</param>
     /// <returns><see langword="true" />if the specified extension is zip archive; otherwise, <see langword="false" /></returns>
     [BindableMethod]
-    public bool IsZipArchive([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsZipArchiveSet.Contains(fileInfo.Extension);
+    public bool IsZipArchive([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsZipArchiveSet.Contains(fileInfo.Extension.ToLowerInvariant());
 
     /// <summary>
     /// Determine whether the extension is archive.
@@ -225,7 +253,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">FileInfo that must be examined whether is archive or not</param>
     /// <returns><see langword="true" />if the specified extension is archive; otherwise, <see langword="false" /></returns>
     [BindableMethod]
-    public bool IsArchive([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsArchiveSet.Contains(fileInfo.Extension);
+    public bool IsArchive([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsArchiveSet.Contains(fileInfo.Extension.ToLowerInvariant());
 
     /// <summary>
     /// Determine whether the extension is audio.
@@ -241,7 +269,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if audio; otherwise false</returns>
     [BindableMethod]
-    public bool IsAudio([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsAudioSet.Contains(fileInfo.Extension);
+    public bool IsAudio([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsAudioSet.Contains(fileInfo.Extension.ToLowerInvariant());
 
     /// <summary>
     /// Determine whether the extension is book.
@@ -257,7 +285,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if book; otherwise false</returns>
     [BindableMethod]
-    public bool IsBook([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsBookSet.Contains(fileInfo.Extension);
+    public bool IsBook([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsBookSet.Contains(fileInfo.Extension.ToLowerInvariant());
 
     /// <summary>
     /// Determine whether the extension is document.
@@ -273,7 +301,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if document; otherwise false</returns>
     [BindableMethod]
-    public bool IsDoc([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsDocSet.Contains(fileInfo.Extension);
+    public bool IsDoc([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsDocSet.Contains(fileInfo.Extension.ToLowerInvariant());
         
     /// <summary>
     /// Determine whether the extension is image.
@@ -289,7 +317,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if image; otherwise false</returns>
     [BindableMethod]
-    public bool IsImage([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsImageSet.Contains(fileInfo.Extension);
+    public bool IsImage([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsImageSet.Contains(fileInfo.Extension.ToLowerInvariant());
 
     /// <summary>
     /// Determine whether the extension is source.
@@ -305,7 +333,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if source; otherwise false</returns>
     [BindableMethod]
-    public bool IsSource([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsSourceSet.Contains(fileInfo.Extension);
+    public bool IsSource([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsSourceSet.Contains(fileInfo.Extension.ToLowerInvariant());
 
     /// <summary>
     /// Determine whether the extension is video.
@@ -321,7 +349,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if video; otherwise false</returns>
     [BindableMethod]
-    public bool IsVideo([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsVideoSet.Contains(fileInfo.Extension);
+    public bool IsVideo([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsVideoSet.Contains(fileInfo.Extension.ToLowerInvariant());
 
     /// <summary>
     /// Gets the file content
