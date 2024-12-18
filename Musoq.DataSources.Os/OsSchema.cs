@@ -38,7 +38,7 @@ public class OsSchema : SchemaBase
     /// <virtual-param>Second directory</virtual-param>
     /// <examples>
     /// <example>
-    /// <from>#os.dirscompare(string, string)</from>
+    /// <from>#os.dirscompare(string sourceDirectory, string destinationDirectory)</from>
     /// <description>Compares two directories</description>
     /// <columns>
     /// <column name="SourceFile" type="ExtendedFileInfo">Source file</column>
@@ -57,7 +57,7 @@ public class OsSchema : SchemaBase
     /// <virtual-param>Move through subfolders</virtual-param>
     /// <examples>
     /// <example>
-    /// <from>#os.directories(string, boolean)</from>
+    /// <from>#os.directories(string directory, boolean useSubdirectories)</from>
     /// <description>Gets the directories</description>
     /// <columns>
     /// <column name="FullName" type="string">Full name of the directory</column>
@@ -114,9 +114,10 @@ public class OsSchema : SchemaBase
     /// <virtual-param>Move through subfolders</virtual-param>
     /// <examples>
     /// <example>
-    /// <from>#os.files(string, boolean)</from>
+    /// <from>#os.files(string directory, boolean useSubdirectories)</from>
     /// <description>Gets the files</description>
     /// <columns>
+    /// <column name="Name" type="string">Name of the file</column>
     /// <column name="FileName" type="string">Name of the file</column>
     /// <column name="CreationTime" type="DateTime">Creation time</column>
     /// <column name="CreationTimeUtc" type="DateTime">Creation time in UTC</column>

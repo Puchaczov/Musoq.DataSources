@@ -2,17 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Os.Compare.Directories;
 using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
 using Musoq.DataSources.Os.Files;
-using Musoq.DataSources.Os.Metadata;
 using Musoq.DataSources.Os.Tests.Utils;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -60,8 +57,10 @@ namespace Musoq.DataSources.Os.Tests
             Assert.AreEqual(3, table.Columns.Count());
 
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.Name) && (string)row[2] == typeof(string).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.FileName) && (string)row[2] == typeof(string).FullName));
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.CreationTime) && (string)row[2] == typeof(DateTimeOffset).FullName));
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.CreationTimeUtc) && (string)row[2] == typeof(DateTimeOffset).FullName));
+            Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.DirectoryPath) && (string)row[2] == typeof(string).FullName));
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.DirectoryName) && (string)row[2] == typeof(string).FullName));
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.Extension) && (string)row[2] == typeof(string).FullName));
             Assert.IsTrue(table.Any(row => (string)row[0] == nameof(FileEntity.FullPath) && (string)row[2] == typeof(string).FullName));
