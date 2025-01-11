@@ -163,7 +163,7 @@ from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')";
     {
         const string query = @"
 select ID from #can.separatedvalues('./Data/5/5.csv', './Data/5/5.dbc')
-where FromTimestamp(Timestamp, 's') >= ToDateTimeOffset('2023-10-08T18:19:00','yyyy-MM-ddTHH:mm:ss')
+where FromTimestamp(Timestamp, 's') >= ToDateTimeOffset('2023-10-08T18:19:00','en-EN')
 ";
         
         var vm = CreateAndRunVirtualMachine(query);
@@ -181,7 +181,7 @@ where FromTimestamp(Timestamp, 's') >= ToDateTimeOffset('2023-10-08T18:19:00','y
     {
         const string query = @"
 select ID from #can.separatedvalues('./Data/5/5.csv', './Data/5/5.dbc')
-where FromTimestamp(Timestamp, 's') < ToDateTimeOffset('2023-10-08T18:19:00','yyyy-MM-ddTHH:mm:ss')
+where FromTimestamp(Timestamp, 's') < ToDateTimeOffset('2023-10-08T18:19:00', 'en-EN')
 ";
         
         var vm = CreateAndRunVirtualMachine(query);
