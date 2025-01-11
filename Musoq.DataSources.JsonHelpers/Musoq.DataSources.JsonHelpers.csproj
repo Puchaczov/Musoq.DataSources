@@ -3,13 +3,12 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>3.2.10</Version>
+        <Version>3.2.11</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</PackageLicenseUrl>
         <PackageTags>sql, json, dotnet-core</PackageTags>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -20,10 +19,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="4.1.1">
+        <PackageReference Include="Musoq.Parser" Version="4.1.2">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.7.1" />
+        <PackageReference Include="Musoq.Plugins" Version="6.8.0" >
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
         <PackageReference Include="Musoq.Schema" Version="7.3.5">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>

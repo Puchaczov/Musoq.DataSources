@@ -3,13 +3,12 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.9.15</Version>
+        <Version>0.9.16</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</PackageLicenseUrl>
         <PackageTags>sql, git, dotnet-core</PackageTags>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -27,10 +26,10 @@
 
     <ItemGroup>
         <PackageReference Include="LibGit2Sharp" Version="0.30.0"/>
-        <PackageReference Include="Musoq.Parser" Version="4.1.1">
+        <PackageReference Include="Musoq.Parser" Version="4.1.2">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.7.1" />
+        <PackageReference Include="Musoq.Plugins" Version="6.8.0" />
         <PackageReference Include="Musoq.Schema" Version="7.3.5">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>

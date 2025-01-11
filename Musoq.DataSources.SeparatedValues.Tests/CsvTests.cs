@@ -9,6 +9,7 @@ using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
+using Musoq.Parser.Helpers;
 using Musoq.Plugins;
 using Musoq.Schema;
 using Environment = Musoq.Plugins.Environment;

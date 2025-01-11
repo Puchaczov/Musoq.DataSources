@@ -6,6 +6,7 @@ using Musoq.Converter;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Parser.Helpers;
 using Musoq.Plugins;
 using Environment = Musoq.Plugins.Environment;
 
@@ -75,7 +76,7 @@ public class GitToSqlTests
                                 Information.IsHeadUnborn, 
                                 Information.IsShallow
                             from #git.repository('{RepositoryPath}')
-                        """.Replace("{RepositoryPath}", unpackedRepositoryPath);
+                        """.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
             var vm = CreateAndRunVirtualMachine(query);
 
@@ -130,7 +131,7 @@ public class GitToSqlTests
                             Branch.UpstreamBranchCanonicalName,
                             Branch.RemoteName
                         from #git.repository('{RepositoryPath}') repository cross apply repository.Branches as Branch
-                    """.Replace("{RepositoryPath}", unpackedRepositoryPath);
+                    """.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -189,7 +190,7 @@ public class GitToSqlTests
                 Commit.Committer
             from #git.repository('{RepositoryPath}') repository cross apply repository.Commits as Commit";
 
-        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath));
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
 
         Assert.IsTrue(result.Count == 5);
@@ -249,7 +250,7 @@ public class GitToSqlTests
             from #git.repository('{RepositoryPath}') repository cross apply repository.Tags as Tag
             where Tag.IsAnnotated = false";
 
-        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath));
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
 
         Assert.IsTrue(result.Count == 1);
@@ -276,7 +277,7 @@ public class GitToSqlTests
             from #git.repository('{RepositoryPath}') repository cross apply repository.Tags as Tag
             where Tag.IsAnnotated = true";
 
-        vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath));
+        vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
         result = vm.Run();
 
@@ -306,7 +307,7 @@ public class GitToSqlTests
                 Stash.Message
             from #git.repository('{RepositoryPath}') repository cross apply repository.Stashes as Stash";
 
-        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath));
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
         var result = vm.Run();
 
@@ -333,7 +334,7 @@ public class GitToSqlTests
                 Difference.NewSha
             from #git.repository('{RepositoryPath}') repository cross apply repository.DifferenceBetween(repository.CommitFrom('bf85425'), repository.CommitFrom('3250d89')) as Difference";
 
-        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath));
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
         var result = vm.Run();
 
@@ -366,7 +367,7 @@ public class GitToSqlTests
                 Difference.NewSha
             from #git.repository('{RepositoryPath}') repository cross apply repository.DifferenceBetween(repository.BranchFrom('master'), repository.BranchFrom('feature/feature_a')) as Difference";
 
-        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath));
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
         var result = vm.Run();
 
@@ -400,7 +401,7 @@ public class GitToSqlTests
                 cross apply r.SearchForBranches('feature/branch_1') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
             )
-            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -433,7 +434,7 @@ public class GitToSqlTests
                 cross apply r.SearchForBranches('feature/branch_1') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -474,7 +475,7 @@ public class GitToSqlTests
                 cross apply r.SearchForBranches('feature/branch_2') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -523,7 +524,7 @@ public class GitToSqlTests
                 cross apply r.SearchForBranches('feature/branch_2') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -572,7 +573,7 @@ public class GitToSqlTests
             select
                 Min.Sha as MinSha,
                 Max.Sha as MaxSha
-            from Commits;".Replace("{RepositoryPath}", unpackedRepositoryPath);
+            from Commits;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();

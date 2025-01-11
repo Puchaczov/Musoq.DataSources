@@ -269,22 +269,6 @@ public class CANBusLibrary : LibraryBase
         };
     }
     
-    /// <summary>
-    /// Creates the date time offset from given date and time in a given format.
-    /// </summary>
-    /// <param name="date">Date.</param>
-    /// <param name="format">Format of the date.</param>
-    /// <returns>Date time offset.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    [BindableMethod]
-    public DateTimeOffset? ToDateTimeOffset(string date, string format)
-    {
-        if (!DateTimeOffset.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var dateTimeOffset))
-            throw new InvalidOperationException($"Date {date} cannot be parsed to DateTimeOffset with format {format}.");
-        
-        return dateTimeOffset;
-    }
-    
     private static ulong EncodeMessage<TNumeric>([InjectSpecificSource(typeof(ICANDbcMessage))] ICANDbcMessage message, string name, TNumeric value, Func<TNumeric, double> convertToDouble)
         where TNumeric : struct, IComparable, IComparable<TNumeric>, IConvertible, IEquatable<TNumeric>, IFormattable
     {

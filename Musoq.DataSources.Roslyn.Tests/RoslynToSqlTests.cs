@@ -4,6 +4,7 @@ using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Parser.Helpers;
 using Musoq.Plugins;
 using Environment = Musoq.Plugins.Environment;
 
@@ -15,7 +16,7 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenSolutionQueried_ShouldPass()
     {
-        var query = $"select s.Id from #csharp.solution('{Solution1SolutionPath}') s";
+        var query = $"select s.Id from #csharp.solution('{Solution1SolutionPath.Escape()}') s";
         
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -28,7 +29,7 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenProjectQueried_ShouldPass()
     {
-        var query = $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.solution('{Solution1SolutionPath}') s cross apply s.Projects p";
+        var query = $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p";
         
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -60,7 +61,7 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenDocumentQueries_ShouldPass()
     {
-        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
+        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -113,7 +114,7 @@ cross apply s.Projects p
 cross apply p.Documents d 
 cross apply d.Classes c
 where c.Name = 'Class1'
-""".Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+""".Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -184,7 +185,7 @@ where c.Name = 'Class1'
                     cross apply p.Documents d 
                     cross apply d.Classes c
                     where c.Name = 'Tests'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -217,7 +218,7 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     cross apply c.Methods m
                     where c.Name = 'Class1'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -272,7 +273,7 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     cross apply c.Methods m
                     where c.Name = 'Class1' and m.Name = 'Method1Async'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -298,7 +299,7 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     cross apply c.Methods m
                     where c.Name = 'PartialTestClass'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -332,7 +333,7 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     cross apply c.Properties pr
                     where c.Name = 'PartialTestClass'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -362,7 +363,7 @@ where c.Name = 'Class1'
                     cross apply p.Documents d 
                     cross apply d.Classes c
                     where c.Name = 'Class1'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -397,7 +398,7 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     cross apply c.Properties p
                     where c.Name = 'Class1'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -443,7 +444,7 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     cross apply m.Parameters p
                     where c.Name = 'Class1' and m.Name = 'Method3'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -479,7 +480,7 @@ where c.Name = 'Class1'
                     cross apply pr.Documents d 
                     cross apply d.Enums e
                     where e.Name = 'Enum1'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -518,7 +519,7 @@ where c.Name = 'Class1'
                     cross apply pr.Documents d 
                     cross apply d.Interfaces i
                     where i.Name = 'Interface1'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -567,7 +568,7 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     cross apply c.Attributes a
                     where c.Name = 'Tests'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -589,7 +590,7 @@ where c.Name = 'Class1'
                     cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod1'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -609,7 +610,7 @@ where c.Name = 'Class1'
                     cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod2'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -629,7 +630,7 @@ where c.Name = 'Class1'
                     cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod3'
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -647,7 +648,7 @@ where c.Name = 'Class1'
                     cross apply s.GetClassesByNames('Class1') c
                     cross apply s.FindReferences(c.Self) rd
                     cross apply rd.ReferencedClasses r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -676,7 +677,7 @@ where c.Name = 'Class1'
                     cross apply s.GetInterfacesByNames('Interface1') c
                     cross apply s.FindReferences(c.Self) rd
                     cross apply rd.ReferencedInterfaces r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -699,7 +700,7 @@ where c.Name = 'Class1'
                     cross apply s.GetEnumsByNames('Enum1') c
                     cross apply s.FindReferences(c.Self) rd
                     cross apply rd.ReferencedClasses r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -722,7 +723,7 @@ where c.Name = 'Class1'
                     cross apply s.GetEnumsByNames('Enum1') c
                     cross apply s.FindReferences(c.Self) rd
                     cross apply rd.ReferencedInterfaces r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath);
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         

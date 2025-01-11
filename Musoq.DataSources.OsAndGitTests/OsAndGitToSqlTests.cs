@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Musoq.DataSources.OsAndGitTests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Parser.Helpers;
 using Musoq.Plugins;
 using Environment = Musoq.Plugins.Environment;
 
@@ -35,7 +36,7 @@ public class OsAndGitToSqlTests
         order by c.CommittedWhen, p.Name
         """;
         
-        query = query.Replace("{RepositoriesDirectory}", new FileInfo(firstRepository).Directory!.Parent!.FullName);
+        query = query.Replace("{RepositoriesDirectory}", new FileInfo(firstRepository).Directory!.Parent!.FullName.Escape());
 
         {
             var vm = CreateAndRunVirtualMachine(query);
@@ -96,7 +97,7 @@ public class OsAndGitToSqlTests
                     order by p.Name
                     """;
         
-        query = query.Replace("{RepositoriesDirectory}", new FileInfo(firstRepository).Directory!.Parent!.FullName);
+        query = query.Replace("{RepositoriesDirectory}", new FileInfo(firstRepository).Directory!.Parent!.FullName.Escape());
 
         {
             var vm = CreateAndRunVirtualMachine(query);

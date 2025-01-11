@@ -3,13 +3,12 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.4.5</Version>
+        <Version>1.4.6</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</PackageLicenseUrl>
         <PackageTags>sql, roslyn, dotnet-core</PackageTags>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -31,12 +30,13 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Build.Locator" Version="1.6.10" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.7.0" />
-        <PackageReference Include="Musoq.Parser" Version="4.1.1">
+        <PackageReference Include="Musoq.Parser" Version="4.1.2">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.7.1" />
+        <PackageReference Include="Musoq.Plugins" Version="6.8.0" />
         <PackageReference Include="Musoq.Schema" Version="7.3.5">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
