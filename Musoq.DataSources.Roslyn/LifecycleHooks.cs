@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConsoleAppFramework;
 using Microsoft.Build.Locator;
-using Microsoft.Extensions.DependencyInjection;
 using Musoq.DataSources.Roslyn.CoconaCommands;
 
 namespace Musoq.DataSources.Roslyn;
