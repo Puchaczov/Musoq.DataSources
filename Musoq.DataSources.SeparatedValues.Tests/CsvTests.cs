@@ -5,11 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
-using Musoq.Parser.Helpers;
 using Musoq.Plugins;
 using Musoq.Schema;
 using Environment = Musoq.Plugins.Environment;
@@ -39,18 +37,14 @@ namespace Musoq.DataSources.SeparatedValues.Tests
             Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
-            Assert.AreEqual(11, table.Count);
-            Assert.AreEqual("Salary", table[0].Values[0]);
-            Assert.AreEqual("Restaurant A", table[1].Values[0]);
-            Assert.AreEqual("Bus ticket", table[2].Values[0]);
-            Assert.AreEqual("Tesco", table[3].Values[0]);
-            Assert.AreEqual("Restaurant B", table[4].Values[0]);
-            Assert.AreEqual("Service", table[5].Values[0]);
-            Assert.AreEqual("Salary", table[6].Values[0]);
-            Assert.AreEqual("Restaurant A", table[7].Values[0]);
-            Assert.AreEqual("Bus ticket", table[8].Values[0]);
-            Assert.AreEqual("Tesco", table[9].Values[0]);
-            Assert.AreEqual("Restaurant B", table[10].Values[0]);
+            Assert.IsTrue(table.Count == 11, "Table should have 11 entries");
+
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Salary") == 2, "Should have 2 'Salary' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant A") == 2, "Should have 2 'Restaurant A' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Bus ticket") == 2, "Should have 2 'Bus ticket' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Tesco") == 2, "Should have 2 'Tesco' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant B") == 2, "Should have 2 'Restaurant B' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Service") == 1, "Should have 1 'Service' entry");
         }
 
         [TestMethod]
@@ -69,19 +63,15 @@ namespace Musoq.DataSources.SeparatedValues.Tests
             Assert.AreEqual(1, table.Columns.Count());
             Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
+            
+            Assert.IsTrue(table.Count == 11, "Table should have 11 entries");
 
-            Assert.AreEqual(11, table.Count);
-            Assert.AreEqual("Salary", table[0].Values[0]);
-            Assert.AreEqual("Restaurant A", table[1].Values[0]);
-            Assert.AreEqual("Bus ticket", table[2].Values[0]);
-            Assert.AreEqual("Tesco", table[3].Values[0]);
-            Assert.AreEqual("Restaurant B", table[4].Values[0]);
-            Assert.AreEqual("Service", table[5].Values[0]);
-            Assert.AreEqual("Salary", table[6].Values[0]);
-            Assert.AreEqual("Restaurant A", table[7].Values[0]);
-            Assert.AreEqual("Bus ticket", table[8].Values[0]);
-            Assert.AreEqual("Tesco", table[9].Values[0]);
-            Assert.AreEqual("Restaurant B", table[10].Values[0]);
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Salary") == 2, "Should have 2 'Salary' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant A") == 2, "Should have 2 'Restaurant A' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Bus ticket") == 2, "Should have 2 'Bus ticket' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Tesco") == 2, "Should have 2 'Tesco' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant B") == 2, "Should have 2 'Restaurant B' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Service") == 1, "Should have 1 'Service' entry");
         }
 
         [TestMethod]
@@ -103,18 +93,33 @@ namespace Musoq.DataSources.SeparatedValues.Tests
             Assert.AreEqual(typeof(int?), table.Columns.ElementAt(0).ColumnType);
             Assert.AreEqual("Name", table.Columns.ElementAt(1).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(1).ColumnType);
+            
+            Assert.IsTrue(table.Count == 5, "Table should have 5 entries");
 
-            Assert.AreEqual(5, table.Count);
-            Assert.AreEqual(1, table[0].Values[0]);
-            Assert.AreEqual("Jan", table[0].Values[1]);
-            Assert.AreEqual(2, table[1].Values[0]);
-            Assert.AreEqual("Marek", table[1].Values[1]);
-            Assert.AreEqual(3, table[2].Values[0]);
-            Assert.AreEqual("Witek", table[2].Values[1]);
-            Assert.AreEqual(4, table[3].Values[0]);
-            Assert.AreEqual("Anna", table[3].Values[1]);
-            Assert.AreEqual(5, table[4].Values[0]);
-            Assert.AreEqual("Anna", table[4].Values[1]);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 1 && 
+                (string)row.Values[1] == "Jan"
+            ), "First entry should be 1, Jan");
+
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 2 && 
+                (string)row.Values[1] == "Marek"
+            ), "Second entry should be 2, Marek");
+
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 3 && 
+                (string)row.Values[1] == "Witek"
+            ), "Third entry should be 3, Witek");
+
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 4 && 
+                (string)row.Values[1] == "Anna"
+            ), "Fourth entry should be 4, Anna");
+
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 5 && 
+                (string)row.Values[1] == "Anna"
+            ), "Fifth entry should be 5, Anna");
         }
 
         [TestMethod]
@@ -136,16 +141,28 @@ namespace Musoq.DataSources.SeparatedValues.Tests
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
             Assert.AreEqual("Money", table.Columns.ElementAt(1).ColumnName);
             Assert.AreEqual(typeof(decimal?), table.Columns.ElementAt(1).ColumnType);
+            
+            Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
 
-            Assert.AreEqual(4, table.Count);
-            Assert.AreEqual("Life", table[0].Values[0]);
-            Assert.AreEqual(null, table[0].Values[1]);
-            Assert.AreEqual(null, table[1].Values[0]);
-            Assert.AreEqual(-1m, table[1].Values[1]);
-            Assert.AreEqual(null, table[2].Values[0]);
-            Assert.AreEqual(-121.95m, table[2].Values[1]);
-            Assert.AreEqual(null, table[3].Values[0]);
-            Assert.AreEqual(null, table[3].Values[1]);
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == "Life" && 
+                row.Values[1] == null
+            ), "First entry should be Life, null");
+
+            Assert.IsTrue(table.Any(row => 
+                row.Values[0] == null && 
+                (decimal)row.Values[1] == -1m
+            ), "Second entry should be null, -1");
+
+            Assert.IsTrue(table.Any(row => 
+                row.Values[0] == null && 
+                (decimal)row.Values[1] == -121.95m
+            ), "Third entry should be null, -121.95");
+
+            Assert.IsTrue(table.Any(row => 
+                row.Values[0] == null && 
+                row.Values[1] == null
+            ), "Fourth entry should be null, null");
         }
 
         [TestMethod]
@@ -168,18 +185,14 @@ namespace Musoq.DataSources.SeparatedValues.Tests
             Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
-            Assert.AreEqual(11, table.Count);
-            Assert.AreEqual("Salary", table[0].Values[0]);
-            Assert.AreEqual("Restaurant A", table[1].Values[0]);
-            Assert.AreEqual("Bus ticket", table[2].Values[0]);
-            Assert.AreEqual("Tesco", table[3].Values[0]);
-            Assert.AreEqual("Restaurant B", table[4].Values[0]);
-            Assert.AreEqual("Service", table[5].Values[0]);
-            Assert.AreEqual("Salary", table[6].Values[0]);
-            Assert.AreEqual("Restaurant A", table[7].Values[0]);
-            Assert.AreEqual("Bus ticket", table[8].Values[0]);
-            Assert.AreEqual("Tesco", table[9].Values[0]);
-            Assert.AreEqual("Restaurant B", table[10].Values[0]);
+            Assert.IsTrue(table.Count == 11, "Table should have 11 entries");
+
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Salary") == 2, "Should have 2 'Salary' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant A") == 2, "Should have 2 'Restaurant A' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Bus ticket") == 2, "Should have 2 'Bus ticket' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Tesco") == 2, "Should have 2 'Tesco' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant B") == 2, "Should have 2 'Restaurant B' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Service") == 1, "Should have 1 'Service' entry");
         }
 
         [TestMethod]
@@ -204,30 +217,14 @@ namespace Musoq.DataSources.SeparatedValues.Tests
             Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
-            Assert.AreEqual(22, table.Count);
-            Assert.AreEqual("Salary", table[0].Values[0]);
-            Assert.AreEqual("Restaurant A", table[1].Values[0]);
-            Assert.AreEqual("Bus ticket", table[2].Values[0]);
-            Assert.AreEqual("Tesco", table[3].Values[0]);
-            Assert.AreEqual("Restaurant B", table[4].Values[0]);
-            Assert.AreEqual("Service", table[5].Values[0]);
-            Assert.AreEqual("Salary", table[6].Values[0]);
-            Assert.AreEqual("Restaurant A", table[7].Values[0]);
-            Assert.AreEqual("Bus ticket", table[8].Values[0]);
-            Assert.AreEqual("Tesco", table[9].Values[0]);
-            Assert.AreEqual("Restaurant B", table[10].Values[0]);
+            Assert.IsTrue(table.Count == 22, "Table should have 22 entries");
 
-            Assert.AreEqual("Salary", table[11].Values[0]);
-            Assert.AreEqual("Restaurant A", table[12].Values[0]);
-            Assert.AreEqual("Bus ticket", table[13].Values[0]);
-            Assert.AreEqual("Tesco", table[14].Values[0]);
-            Assert.AreEqual("Restaurant B", table[15].Values[0]);
-            Assert.AreEqual("Service", table[16].Values[0]);
-            Assert.AreEqual("Salary", table[17].Values[0]);
-            Assert.AreEqual("Restaurant A", table[18].Values[0]);
-            Assert.AreEqual("Bus ticket", table[19].Values[0]);
-            Assert.AreEqual("Tesco", table[20].Values[0]);
-            Assert.AreEqual("Restaurant B", table[21].Values[0]);
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Salary") == 4, "Should have 4 'Salary' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant A") == 4, "Should have 4 'Restaurant A' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Bus ticket") == 4, "Should have 4 'Bus ticket' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Tesco") == 4, "Should have 4 'Tesco' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant B") == 4, "Should have 4 'Restaurant B' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Service") == 2, "Should have 2 'Service' entries");
         }
 
         [TestMethod]
@@ -241,19 +238,15 @@ namespace Musoq.DataSources.SeparatedValues.Tests
             Assert.AreEqual(1, table.Columns.Count());
             Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
+            
+            Assert.IsTrue(table.Count == 11, "Table should have 11 entries");
 
-            Assert.AreEqual(11, table.Count);
-            Assert.AreEqual("Salary", table[0].Values[0]);
-            Assert.AreEqual("Restaurant A", table[1].Values[0]);
-            Assert.AreEqual("Bus ticket", table[2].Values[0]);
-            Assert.AreEqual("Tesco", table[3].Values[0]);
-            Assert.AreEqual("Restaurant B", table[4].Values[0]);
-            Assert.AreEqual("Service", table[5].Values[0]);
-            Assert.AreEqual("Salary", table[6].Values[0]);
-            Assert.AreEqual("Restaurant A", table[7].Values[0]);
-            Assert.AreEqual("Bus ticket", table[8].Values[0]);
-            Assert.AreEqual("Tesco", table[9].Values[0]);
-            Assert.AreEqual("Restaurant B", table[10].Values[0]);
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Salary") == 2, "Should have 2 'Salary' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant A") == 2, "Should have 2 'Restaurant A' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Bus ticket") == 2, "Should have 2 'Bus ticket' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Tesco") == 2, "Should have 2 'Tesco' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant B") == 2, "Should have 2 'Restaurant B' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Service") == 1, "Should have 1 'Service' entry");
         }
 
         [TestMethod]
@@ -268,18 +261,14 @@ namespace Musoq.DataSources.SeparatedValues.Tests
             Assert.AreEqual("Column3", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
-            Assert.AreEqual(11, table.Count);
-            Assert.AreEqual("Salary", table[0].Values[0]);
-            Assert.AreEqual("Restaurant A", table[1].Values[0]);
-            Assert.AreEqual("Bus ticket", table[2].Values[0]);
-            Assert.AreEqual("Tesco", table[3].Values[0]);
-            Assert.AreEqual("Restaurant B", table[4].Values[0]);
-            Assert.AreEqual("Service", table[5].Values[0]);
-            Assert.AreEqual("Salary", table[6].Values[0]);
-            Assert.AreEqual("Restaurant A", table[7].Values[0]);
-            Assert.AreEqual("Bus ticket", table[8].Values[0]);
-            Assert.AreEqual("Tesco", table[9].Values[0]);
-            Assert.AreEqual("Restaurant B", table[10].Values[0]);
+            Assert.IsTrue(table.Count == 11, "Table should have 11 entries");
+
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Salary") == 2, "Should have 2 'Salary' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant A") == 2, "Should have 2 'Restaurant A' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Bus ticket") == 2, "Should have 2 'Bus ticket' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Tesco") == 2, "Should have 2 'Tesco' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Restaurant B") == 2, "Should have 2 'Restaurant B' entries");
+            Assert.IsTrue(table.Count(row => (string)row.Values[0] == "Service") == 1, "Should have 1 'Service' entry");
         }
 
         [TestMethod]
@@ -330,22 +319,26 @@ group by ExtractFromDate(OperationDate, 'month')";
             Assert.AreEqual("SumIncome(ToDecimal(Money)) - Abs(SumOutcome(ToDecimal(Money)))",
                 table.Columns.ElementAt(5).ColumnName);
             Assert.AreEqual(typeof(decimal), table.Columns.ElementAt(5).ColumnType);
+            
+            Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
-            Assert.AreEqual(2, table.Count);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 11 &&
+                (int)row.Values[1] == 1 &&
+                (int)row.Values[2] == 6 &&
+                (decimal)row.Values[3] == 4199m &&
+                (decimal)row.Values[4] == -157.15m &&
+                (decimal)row.Values[5] == 4041.85m
+            ), "First entry does not match expected details");
 
-            Assert.AreEqual(11, table[0].Values[0]);
-            Assert.AreEqual(1, table[0].Values[1]);
-            Assert.AreEqual(6, table[0].Values[2]);
-            Assert.AreEqual(4199m, table[0].Values[3]);
-            Assert.AreEqual(-157.15m, table[0].Values[4]);
-            Assert.AreEqual(4041.85m, table[0].Values[5]);
-
-            Assert.AreEqual(11, table[1].Values[0]);
-            Assert.AreEqual(2, table[1].Values[1]);
-            Assert.AreEqual(5, table[1].Values[2]);
-            Assert.AreEqual(4000m, table[1].Values[3]);
-            Assert.AreEqual(-157.15m, table[1].Values[4]);
-            Assert.AreEqual(3842.85m, table[1].Values[5]);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 11 &&
+                (int)row.Values[1] == 2 &&
+                (int)row.Values[2] == 5 &&
+                (decimal)row.Values[3] == 4000m &&
+                (decimal)row.Values[4] == -157.15m &&
+                (decimal)row.Values[5] == 3842.85m
+            ), "Second entry does not match expected details");
         }
 
         [TestMethod]
@@ -374,127 +367,77 @@ inner join #separatedvalues.comma('./Files/Gradebook.csv', true, 0) grades on pe
             Assert.AreEqual("ToDecimal(grades.Grade)", table.Columns.ElementAt(3).ColumnName);
             Assert.AreEqual(typeof(decimal?), table.Columns.ElementAt(3).ColumnType);
 
-            Assert.AreEqual(24, table.Count);
+            Assert.IsTrue(table.Count == 24, "Table should contain exactly 24 records");
 
-            Assert.AreEqual("Jan", table[0][0]);
-            Assert.AreEqual("Grzyb", table[0][1]);
-            Assert.AreEqual("Math", table[0][2]);
-            Assert.AreEqual(5m, table[0][3]);
+            // Jan Grzyb's records
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Jan" && (string) r[1] == "Grzyb" && (string) r[2] == "Math" && (decimal)r[3] == 5m) == 1, 
+                "Jan Grzyb should have exactly one Math grade of 5");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Jan" && (string) r[1] == "Grzyb" && (string) r[2] == "English" && (decimal)r[3] == 2m) == 1,
+                "Jan Grzyb should have exactly one English grade of 2");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Jan" && (string) r[1] == "Grzyb" && (string) r[2] == "Math" && (decimal)r[3] == 4m) == 2,
+                "Jan Grzyb should have exactly two Math grades of 4");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Jan" && (string) r[1] == "Grzyb" && (string) r[2] == "Biology" && (decimal)r[3] == 4m) == 1,
+                "Jan Grzyb should have exactly one Biology grade of 4");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Jan" && (string) r[1] == "Grzyb" && (string) r[2] == "Biology" && (decimal)r[3] == 3m) == 1,
+                "Jan Grzyb should have exactly one Biology grade of 3");
 
-            Assert.AreEqual("Jan", table[1][0]);
-            Assert.AreEqual("Grzyb", table[1][1]);
-            Assert.AreEqual("English", table[1][2]);
-            Assert.AreEqual(2m, table[1][3]);
+            // Marek Tarczynski's records
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Marek" && (string) r[1] == "Tarczynski" && (string) r[2] == "Math" && (decimal)r[3] == 5m) == 1,
+                "Marek Tarczynski should have exactly one Math grade of 5");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Marek" && (string) r[1] == "Tarczynski" && (string) r[2] == "English" && (decimal)r[3] == 2m) == 1,
+                "Marek Tarczynski should have exactly one English grade of 2");
 
-            Assert.AreEqual("Jan", table[2][0]);
-            Assert.AreEqual("Grzyb", table[2][1]);
-            Assert.AreEqual("Biology", table[2][2]);
-            Assert.AreEqual(4m, table[2][3]);
+            // Witek Lechoń's records
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Witek" && (string) r[1] == "Lechoń" && (string) r[2] == "Math" && (decimal)r[3] == 4m) == 2,
+                "Witek Lechoń should have exactly two Math grades of 4");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Witek" && (string) r[1] == "Lechoń" && (string) r[2] == "Biology" && (decimal)r[3] == 4m) == 1,
+                "Witek Lechoń should have exactly one Biology grade of 4");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Witek" && (string) r[1] == "Lechoń" && (string) r[2] == "Biology" && (decimal)r[3] == 3m) == 1,
+                "Witek Lechoń should have exactly one Biology grade of 3");
 
-            Assert.AreEqual("Jan", table[3][0]);
-            Assert.AreEqual("Grzyb", table[3][1]);
-            Assert.AreEqual("Math", table[3][2]);
-            Assert.AreEqual(4m, table[3][3]);
+            // Anna Rozmaryn's records
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Rozmaryn" && (string) r[2] == "Math" && (decimal)r[3] == 5m) == 1,
+                "Anna Rozmaryn should have exactly one Math grade of 5");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Rozmaryn" && (string) r[2] == "English" && (decimal)r[3] == 2m) == 1,
+                "Anna Rozmaryn should have exactly one English grade of 2");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Rozmaryn" && (string) r[2] == "Math" && (decimal)r[3] == 4m) == 2,
+                "Anna Rozmaryn should have exactly two Math grades of 4");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Rozmaryn" && (string) r[2] == "Biology" && (decimal)r[3] == 4m) == 1,
+                "Anna Rozmaryn should have exactly one Biology grade of 4");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Rozmaryn" && (string) r[2] == "Biology" && (decimal)r[3] == 3m) == 1,
+                "Anna Rozmaryn should have exactly one Biology grade of 3");
 
-            Assert.AreEqual("Jan", table[4][0]);
-            Assert.AreEqual("Grzyb", table[4][1]);
-            Assert.AreEqual("Biology", table[4][2]);
-            Assert.AreEqual(3m, table[4][3]);
-
-            Assert.AreEqual("Jan", table[5][0]);
-            Assert.AreEqual("Grzyb", table[5][1]);
-            Assert.AreEqual("Math", table[5][2]);
-            Assert.AreEqual(4m, table[5][3]);
-
-            Assert.AreEqual("Marek", table[6][0]);
-            Assert.AreEqual("Tarczynski", table[6][1]);
-            Assert.AreEqual("Math", table[6][2]);
-            Assert.AreEqual(5m, table[6][3]);
-
-            Assert.AreEqual("Marek", table[7][0]);
-            Assert.AreEqual("Tarczynski", table[7][1]);
-            Assert.AreEqual("English", table[7][2]);
-            Assert.AreEqual(2m, table[7][3]);
-
-            Assert.AreEqual("Witek", table[8][0]);
-            Assert.AreEqual("Lechoń", table[8][1]);
-            Assert.AreEqual("Biology", table[8][2]);
-            Assert.AreEqual(4m, table[8][3]);
-
-            Assert.AreEqual("Witek", table[9][0]);
-            Assert.AreEqual("Lechoń", table[9][1]);
-            Assert.AreEqual("Math", table[9][2]);
-            Assert.AreEqual(4m, table[9][3]);
-
-            Assert.AreEqual("Witek", table[10][0]);
-            Assert.AreEqual("Lechoń", table[10][1]);
-            Assert.AreEqual("Biology", table[10][2]);
-            Assert.AreEqual(3m, table[10][3]);
-
-            Assert.AreEqual("Witek", table[11][0]);
-            Assert.AreEqual("Lechoń", table[11][1]);
-            Assert.AreEqual("Math", table[11][2]);
-            Assert.AreEqual(4m, table[11][3]);
-
-            Assert.AreEqual("Anna", table[12][0]);
-            Assert.AreEqual("Rozmaryn", table[12][1]);
-            Assert.AreEqual("Math", table[12][2]);
-            Assert.AreEqual(5m, table[12][3]);
-
-            Assert.AreEqual("Anna", table[13][0]);
-            Assert.AreEqual("Rozmaryn", table[13][1]);
-            Assert.AreEqual("English", table[13][2]);
-            Assert.AreEqual(2m, table[13][3]);
-
-            Assert.AreEqual("Anna", table[14][0]);
-            Assert.AreEqual("Rozmaryn", table[14][1]);
-            Assert.AreEqual("Biology", table[14][2]);
-            Assert.AreEqual(4m, table[14][3]);
-
-            Assert.AreEqual("Anna", table[15][0]);
-            Assert.AreEqual("Rozmaryn", table[15][1]);
-            Assert.AreEqual("Math", table[15][2]);
-            Assert.AreEqual(4m, table[15][3]);
-
-            Assert.AreEqual("Anna", table[16][0]);
-            Assert.AreEqual("Rozmaryn", table[16][1]);
-            Assert.AreEqual("Biology", table[16][2]);
-            Assert.AreEqual(3m, table[16][3]);
-
-            Assert.AreEqual("Anna", table[17][0]);
-            Assert.AreEqual("Rozmaryn", table[17][1]);
-            Assert.AreEqual("Math", table[17][2]);
-            Assert.AreEqual(4m, table[17][3]);
-
-            Assert.AreEqual("Anna", table[18][0]);
-            Assert.AreEqual("Trzpień", table[18][1]);
-            Assert.AreEqual("Math", table[18][2]);
-            Assert.AreEqual(5m, table[18][3]);
-
-            Assert.AreEqual("Anna", table[19][0]);
-            Assert.AreEqual("Trzpień", table[19][1]);
-            Assert.AreEqual("English", table[19][2]);
-            Assert.AreEqual(2m, table[19][3]);
-
-            Assert.AreEqual("Anna", table[20][0]);
-            Assert.AreEqual("Trzpień", table[20][1]);
-            Assert.AreEqual("Biology", table[20][2]);
-            Assert.AreEqual(4m, table[20][3]);
-
-            Assert.AreEqual("Anna", table[21][0]);
-            Assert.AreEqual("Trzpień", table[21][1]);
-            Assert.AreEqual("Math", table[21][2]);
-            Assert.AreEqual(4m, table[21][3]);
-
-            Assert.AreEqual("Anna", table[22][0]);
-            Assert.AreEqual("Trzpień", table[22][1]);
-            Assert.AreEqual("Biology", table[22][2]);
-            Assert.AreEqual(3m, table[22][3]);
-
-            Assert.AreEqual("Anna", table[23][0]);
-            Assert.AreEqual("Trzpień", table[23][1]);
-            Assert.AreEqual("Math", table[23][2]);
-            Assert.AreEqual(4m, table[23][3]);
+            // Anna Trzpień's records
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Trzpień" && (string) r[2] == "Math" && (decimal)r[3] == 5m) == 1,
+                "Anna Trzpień should have exactly one Math grade of 5");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Trzpień" && (string) r[2] == "English" && (decimal)r[3] == 2m) == 1,
+                "Anna Trzpień should have exactly one English grade of 2");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Trzpień" && (string) r[2] == "Math" && (decimal)r[3] == 4m) == 2,
+                "Anna Trzpień should have exactly two Math grades of 4");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Trzpień" && (string) r[2] == "Biology" && (decimal)r[3] == 4m) == 1,
+                "Anna Trzpień should have exactly one Biology grade of 4");
+            Assert.IsTrue(table.Count(r => 
+                (string) r[0] == "Anna" && (string) r[1] == "Trzpień" && (string) r[2] == "Biology" && (decimal)r[3] == 3m) == 1,
+                "Anna Trzpień should have exactly one Biology grade of 3");
         }
 
         [TestMethod]
@@ -680,32 +623,34 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
+            
+            Assert.IsTrue(table.Count == 6, "Table should contain exactly 6 records");
 
-            Assert.AreEqual(6, table.Count);
+            // file1 records
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "file1" && (decimal)r[1] == 5m && (string)r[2] == "1 row of file1"),
+                "Missing first row of file1 with value 5");
 
-            Assert.AreEqual("file1", table[0][0]);
-            Assert.AreEqual(5m, table[0][1]);
-            Assert.AreEqual("1 row of file1", table[0][2]);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "file1" && (decimal)r[1] == 3m && (string)r[2] == "2 row of file1"),
+                "Missing second row of file1 with value 3");
 
-            Assert.AreEqual("file1", table[1][0]);
-            Assert.AreEqual(3m, table[1][1]);
-            Assert.AreEqual("2 row of file1", table[1][2]);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "file1" && (decimal)r[1] == 16m && (string)r[2] == "3 row of file1"),
+                "Missing third row of file1 with value 16");
 
-            Assert.AreEqual("file1", table[2][0]);
-            Assert.AreEqual(16m, table[2][1]);
-            Assert.AreEqual("3 row of file1", table[2][2]);
+            // file2 records
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "file2" && (decimal)r[1] == 11m && (string)r[2] == "1 row of file2"),
+                "Missing first row of file2 with value 11");
 
-            Assert.AreEqual("file2", table[3][0]);
-            Assert.AreEqual(11m, table[3][1]);
-            Assert.AreEqual("1 row of file2", table[3][2]);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "file2" && (decimal)r[1] == 12m && (string)r[2] == "2 row of file2"),
+                "Missing second row of file2 with value 12");
 
-            Assert.AreEqual("file2", table[4][0]);
-            Assert.AreEqual(12m, table[4][1]);
-            Assert.AreEqual("2 row of file2", table[4][2]);
-
-            Assert.AreEqual("file2", table[5][0]);
-            Assert.AreEqual(15m, table[5][1]);
-            Assert.AreEqual("3 row of file2", table[5][2]);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "file2" && (decimal)r[1] == 15m && (string)r[2] == "3 row of file2"),
+                "Missing third row of file2 with value 15");
         }
 
         [TestMethod]

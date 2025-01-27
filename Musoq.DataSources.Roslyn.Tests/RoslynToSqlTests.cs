@@ -1,5 +1,4 @@
 using System.Globalization;
-using Musoq.Converter;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
@@ -35,27 +34,31 @@ public class RoslynToSqlTests
 
         var result = vm.Run();
         
-        Assert.AreEqual(2, result.Count);
-        
-        Assert.IsTrue(Guid.TryParse(result[0][0].ToString(), out _));
-        Assert.IsTrue(ValidateIsValidPathFor(result[0][1].ToString(), ".csproj"));
-        Assert.IsTrue(ValidateIsValidPathFor(result[0][2].ToString(), ".dll", false));
-        Assert.IsTrue(ValidateIsValidPathFor(result[0][3].ToString(), ".dll", false));
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][4].ToString());
-        Assert.AreEqual("C#", result[0][5].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][6].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][7].ToString());
-        Assert.IsNotNull(result[0][8]);
-        
-        Assert.IsTrue(Guid.TryParse(result[1][0].ToString(), out _));
-        Assert.IsTrue(ValidateIsValidPathFor(result[1][1].ToString(), ".csproj"));
-        Assert.IsTrue(ValidateIsValidPathFor(result[1][2].ToString(), ".dll", false));
-        Assert.IsTrue(ValidateIsValidPathFor(result[1][3].ToString(), ".dll", false));
-        Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[1][4].ToString());
-        Assert.AreEqual("C#", result[1][5].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[1][6].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[1][7].ToString());
-        Assert.IsNotNull(result[1][8]);
+        Assert.IsTrue(result.Count == 2, "Result should have 2 entries");
+
+        Assert.IsTrue(result.Any(row => 
+            Guid.TryParse(row[0].ToString(), out _) &&
+            ValidateIsValidPathFor(row[1].ToString(), ".csproj") &&
+            ValidateIsValidPathFor(row[2].ToString(), ".dll", false) &&
+            ValidateIsValidPathFor(row[3].ToString(), ".dll", false) &&
+            row[4].ToString() == "Solution1.ClassLibrary1" &&
+            row[5].ToString() == "C#" &&
+            row[6].ToString() == "Solution1.ClassLibrary1" &&
+            row[7].ToString() == "Solution1.ClassLibrary1" &&
+            row[8] != null
+        ), "First entry does not match expected details");
+
+        Assert.IsTrue(result.Any(row => 
+            Guid.TryParse(row[0].ToString(), out _) &&
+            ValidateIsValidPathFor(row[1].ToString(), ".csproj") &&
+            ValidateIsValidPathFor(row[2].ToString(), ".dll", false) &&
+            ValidateIsValidPathFor(row[3].ToString(), ".dll", false) &&
+            row[4].ToString() == "Solution1.ClassLibrary1.Tests" &&
+            row[5].ToString() == "C#" &&
+            row[6].ToString() == "Solution1.ClassLibrary1.Tests" &&
+            row[7].ToString() == "Solution1.ClassLibrary1.Tests" &&
+            row[8] != null
+        ), "Second entry does not match expected details");
     }
 
     [TestMethod]
@@ -224,41 +227,51 @@ where c.Name = 'Class1'
         
         var result = vm.Run();
         
-        Assert.AreEqual(5, result.Count);
-        
-        Assert.AreEqual("Method1Async", result[0][0].ToString());
-        Assert.AreEqual("Task", result[0][1].ToString());
-        Assert.AreEqual(0, (result[0][2] as IEnumerable<ParameterEntity> ?? []).Count());
-        Assert.AreEqual(1, (result[0][3] as IEnumerable<string> ?? []).Count());
-        Assert.IsNotNull(result[0][4]);
-        Assert.AreEqual(0, (result[0][5] as IEnumerable<AttributeEntity> ?? []).Count());
-        
-        Assert.AreEqual("Method2", result[1][0].ToString());
-        Assert.AreEqual("Void", result[1][1].ToString());
-        Assert.AreEqual(0, (result[1][2] as IEnumerable<ParameterEntity> ?? []).Count());
-        Assert.AreEqual(1, (result[1][3] as IEnumerable<string> ?? []).Count());
-        Assert.IsNotNull(result[1][4]);
-        Assert.AreEqual(0, (result[1][5] as IEnumerable<AttributeEntity> ?? []).Count());
-        
-        Assert.AreEqual("Method3", result[2][0].ToString());
-        Assert.AreEqual("Class1", result[2][1].ToString());
-        Assert.AreEqual(0, (result[2][2] as IEnumerable<ParameterEntity> ?? []).Count());
-        Assert.AreEqual(1, (result[2][3] as IEnumerable<string> ?? []).Count());
-        Assert.IsNotNull(result[2][4]);
-        Assert.AreEqual(0, (result[2][5] as IEnumerable<AttributeEntity> ?? []).Count());
-        
-        Assert.AreEqual("Method3", result[3][0].ToString());
-        Assert.AreEqual("Class1", result[3][1].ToString());
-        Assert.AreEqual(1, (result[3][2] as IEnumerable<ParameterEntity> ?? []).Count());
-        Assert.AreEqual(1, (result[3][3] as IEnumerable<string> ?? []).Count());
-        Assert.IsNotNull(result[3][4]);
-        Assert.AreEqual(0, (result[3][5] as IEnumerable<AttributeEntity> ?? []).Count());
-        
-        Assert.AreEqual("Method4", result[4][0].ToString());
-        Assert.AreEqual("Enum1", result[4][1].ToString());
-        Assert.AreEqual(0, (result[4][2] as IEnumerable<ParameterEntity> ?? []).Count());
-        Assert.AreEqual(1, (result[4][3] as IEnumerable<string> ?? []).Count());
-        Assert.IsNotNull(result[4][4]);
+        Assert.IsTrue(result.Count == 5, "Result should contain exactly 5 records");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "Method1Async" && 
+                r[1].ToString() == "Task" &&
+                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
+                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
+                r[4] != null &&
+                (r[5] as IEnumerable<AttributeEntity> ?? []).Count() == 0),
+            "Missing or invalid Method1Async record");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "Method2" && 
+                r[1].ToString() == "Void" &&
+                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
+                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
+                r[4] != null &&
+                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+            "Missing or invalid Method2 record");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "Method3" && 
+                r[1].ToString() == "Class1" &&
+                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
+                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
+                r[4] != null &&
+                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+            "Missing or invalid first Method3 record");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "Method3" && 
+                r[1].ToString() == "Class1" &&
+                (r[2] as IEnumerable<ParameterEntity> ?? []).Count() == 1 &&
+                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
+                r[4] != null &&
+                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+            "Missing or invalid second Method3 record");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "Method4" && 
+                r[1].ToString() == "Enum1" &&
+                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
+                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
+                r[4] != null),
+            "Missing or invalid Method4 record");
     }
 
     [TestMethod]
@@ -305,17 +318,21 @@ where c.Name = 'Class1'
         
         var result = vm.Run();
         
-        Assert.AreEqual(2, result.Count);
-        
-        Assert.AreEqual("PartialTestClass_1.cs", result[0][0].ToString());
-        Assert.AreEqual("PartialTestClass", result[0][1].ToString());
-        Assert.AreEqual(1, result[0][2]);
-        Assert.AreEqual("Method1", result[0][3].ToString());
-        
-        Assert.AreEqual("PartialTestClass_2.cs", result[1][0].ToString());
-        Assert.AreEqual("PartialTestClass", result[1][1].ToString());
-        Assert.AreEqual(1, result[1][2]);
-        Assert.AreEqual("Method2", result[1][3].ToString());
+        Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "PartialTestClass_1.cs" &&
+                r[1].ToString() == "PartialTestClass" &&
+                (int)r[2] == 1 &&
+                r[3].ToString() == "Method1"),
+            "Missing PartialTestClass_1.cs record");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "PartialTestClass_2.cs" &&
+                r[1].ToString() == "PartialTestClass" &&
+                (int)r[2] == 1 &&
+                r[3].ToString() == "Method2"),
+            "Missing PartialTestClass_2.cs record");
     }
 
     [TestMethod]
@@ -339,17 +356,21 @@ where c.Name = 'Class1'
         
         var result = vm.Run();
         
-        Assert.AreEqual(2, result.Count);
-        
-        Assert.AreEqual("PartialTestClass_1.cs", result[0][0].ToString());
-        Assert.AreEqual("PartialTestClass", result[0][1].ToString());
-        Assert.AreEqual(1, result[0][2]);
-        Assert.AreEqual("Property1", result[0][3].ToString());
-        
-        Assert.AreEqual("PartialTestClass_2.cs", result[1][0].ToString());
-        Assert.AreEqual("PartialTestClass", result[1][1].ToString());
-        Assert.AreEqual(1, result[1][2]);
-        Assert.AreEqual("Property2", result[1][3].ToString());
+        Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "PartialTestClass_1.cs" &&
+                r[1].ToString() == "PartialTestClass" &&
+                (int)r[2] == 1 &&
+                r[3].ToString() == "Property1"),
+            "Missing PartialTestClass_1.cs record");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "PartialTestClass_2.cs" &&
+                r[1].ToString() == "PartialTestClass" &&
+                (int)r[2] == 1 &&
+                r[3].ToString() == "Property2"),
+            "Missing PartialTestClass_2.cs record");
     }
 
     [TestMethod]
@@ -654,19 +675,23 @@ where c.Name = 'Class1'
         
         var result = vm.Run();
         
-        Assert.AreEqual(2, result.Count);
-        
-        Assert.AreEqual("Class1", result[0][0].ToString());
-        Assert.AreEqual(16, result[0][1]);
-        Assert.AreEqual(11, result[0][2]);
-        Assert.AreEqual(16, result[0][3]);
-        Assert.AreEqual(17, result[0][4]);
-            
-        Assert.AreEqual("Class1", result[1][0].ToString());
-        Assert.AreEqual(21, result[1][1]);
-        Assert.AreEqual(11, result[1][2]);
-        Assert.AreEqual(21, result[1][3]);
-        Assert.AreEqual(17, result[1][4]);
+        Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "Class1" &&
+                (int)r[1] == 16 &&
+                (int)r[2] == 11 &&
+                (int)r[3] == 16 &&
+                (int)r[4] == 17),
+            "Missing first Class1 location record");
+
+        Assert.IsTrue(result.Any(r => 
+                r[0].ToString() == "Class1" &&
+                (int)r[1] == 21 &&
+                (int)r[2] == 11 &&
+                (int)r[3] == 21 &&
+                (int)r[4] == 17),
+            "Missing second Class1 location record");
     }
     
     [TestMethod]

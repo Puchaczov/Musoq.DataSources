@@ -1,4 +1,3 @@
-using System;
 using LibGit2Sharp;
 
 namespace Musoq.DataSources.Git.Entities;

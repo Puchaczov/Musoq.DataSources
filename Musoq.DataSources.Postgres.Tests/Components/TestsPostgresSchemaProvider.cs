@@ -1,4 +1,3 @@
-using System;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Postgres.Tests.Components;

@@ -1,8 +1,6 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics;
 using k8s.Models;
 using Musoq.Schema.DataSources;
-using Newtonsoft.Json;
 
 namespace Musoq.DataSources.Kubernetes.Pods;
 

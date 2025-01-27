@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using SharpCompress.Common;
-using SharpCompress.Readers;
 
 namespace Musoq.DataSources.Archives;
 

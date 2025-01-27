@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Postgres.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;

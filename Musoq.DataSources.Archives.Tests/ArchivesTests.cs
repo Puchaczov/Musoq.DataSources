@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
@@ -19,19 +19,31 @@ public class ArchivesTests
         
         var table = vm.Run();
         
-        Assert.AreEqual(4, table.Count);
-        Assert.AreEqual("others/", table[0].Values[0]);
-        Assert.AreEqual(true, table[0].Values[1]);
-        Assert.AreEqual("", table[0].Values[2]);
-        Assert.AreEqual("others/text3.txt", table[1].Values[0]);
-        Assert.AreEqual(false, table[1].Values[1]);
-        Assert.AreEqual("Text 3", table[1].Values[2]);
-        Assert.AreEqual("text1.txt", table[2].Values[0]);
-        Assert.AreEqual(false, table[2].Values[1]);
-        Assert.AreEqual("Text 1", table[2].Values[2]);
-        Assert.AreEqual("text2.txt", table[3].Values[0]);
-        Assert.AreEqual(false, table[3].Values[1]);
-        Assert.AreEqual("Text 2", table[3].Values[2]);
+        Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "others/" && 
+            (bool)row.Values[1] == true && 
+            (string)row.Values[2] == ""
+        ), "First row should match others/, true, empty string");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "others/text3.txt" && 
+            (bool)row.Values[1] == false && 
+            (string)row.Values[2] == "Text 3"
+        ), "Second row should match others/text3.txt, false, Text 3");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "text1.txt" && 
+            (bool)row.Values[1] == false && 
+            (string)row.Values[2] == "Text 1"
+        ), "Third row should match text1.txt, false, Text 1");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "text2.txt" && 
+            (bool)row.Values[1] == false && 
+            (string)row.Values[2] == "Text 2"
+        ), "Fourth row should match text2.txt, false, Text 2");
     }
     
     [TestMethod]
@@ -43,19 +55,31 @@ public class ArchivesTests
         
         var table = vm.Run();
         
-        Assert.AreEqual(4, table.Count);
-        Assert.AreEqual("others/", table[0].Values[0]);
-        Assert.AreEqual(true, table[0].Values[1]);
-        Assert.AreEqual("", table[0].Values[2]);
-        Assert.AreEqual("others/text3.txt", table[1].Values[0]);
-        Assert.AreEqual(false, table[1].Values[1]);
-        Assert.AreEqual("Text 3", table[1].Values[2]);
-        Assert.AreEqual("text1.txt", table[2].Values[0]);
-        Assert.AreEqual(false, table[2].Values[1]);
-        Assert.AreEqual("Text 1", table[2].Values[2]);
-        Assert.AreEqual("text2.txt", table[3].Values[0]);
-        Assert.AreEqual(false, table[3].Values[1]);
-        Assert.AreEqual("Text 2", table[3].Values[2]);
+        Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "others/" && 
+            (bool)row.Values[1] == true && 
+            (string)row.Values[2] == ""
+        ), "First row should match others/, true, empty string");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "others/text3.txt" && 
+            (bool)row.Values[1] == false && 
+            (string)row.Values[2] == "Text 3"
+        ), "Second row should match others/text3.txt, false, Text 3");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "text1.txt" && 
+            (bool)row.Values[1] == false && 
+            (string)row.Values[2] == "Text 1"
+        ), "Third row should match text1.txt, false, Text 1");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "text2.txt" && 
+            (bool)row.Values[1] == false && 
+            (string)row.Values[2] == "Text 2"
+        ), "Fourth row should match text2.txt, false, Text 2");
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)

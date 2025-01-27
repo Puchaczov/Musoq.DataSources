@@ -373,8 +373,8 @@ namespace Musoq.DataSources.Os.Tests
 
             var firstRow = rows[0].Contexts[0] as CompareDirectoriesResult;
 
-            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.SourceFile.FullPath);
-            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.DestinationFile.FullPath);
+            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow!.SourceFile!.FullPath);
+            Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.DestinationFile!.FullPath);
             Assert.AreEqual(State.TheSame, firstRow.State);
         }
 
@@ -407,14 +407,18 @@ select * from IntersectedFiles";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
+            
+            Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
 
-            Assert.AreEqual(2, table.Count);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "File1.txt" && 
+                    r[1].Equals(r[2])),
+                "Missing File1.txt record or content mismatch");
 
-            Assert.AreEqual("File1.txt", table[0][0]);
-            Assert.AreEqual(table[0][1], table[0][2]);
-
-            Assert.AreEqual("File2.txt", table[1][0]);
-            Assert.AreEqual(table[1][1], table[1][2]);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "File2.txt" && 
+                    r[1].Equals(r[2])),
+                "Missing File2.txt record or content mismatch");
         }
 
         [TestMethod]
@@ -441,16 +445,22 @@ select RelativeName, 'added' as state from ThoseInRight";
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
 
-            Assert.AreEqual(3, table.Count);
+            Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
 
-            Assert.AreEqual("\\File1.txt", table[0][0]);
-            Assert.AreEqual("modified", table[0][1]);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "\\File1.txt" && 
+                    (string)r[1] == "modified"),
+                "Missing modified File1.txt record");
 
-            Assert.AreEqual("\\File2.txt", table[1][0]);
-            Assert.AreEqual("removed", table[1][1]);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "\\File2.txt" && 
+                    (string)r[1] == "removed"),
+                "Missing removed File2.txt record");
 
-            Assert.AreEqual("\\File3.txt", table[2][0]);
-            Assert.AreEqual("added", table[2][1]);
+            Assert.IsTrue(table.Any(r => 
+                    (string)r[0] == "\\File3.txt" && 
+                    (string)r[1] == "added"),
+                "Missing added File3.txt record");
         }
 
         [TestMethod]

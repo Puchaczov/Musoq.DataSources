@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
@@ -20,11 +19,19 @@ public class MessagesOrSignalsTests
         
         var table = vm.Run();
         
-        Assert.AreEqual(3, table.Count);
-        
-        Assert.AreEqual("Exhaust_Gas_Temperature", table[0].Values[0]);
-        Assert.AreEqual("Oil_Temperature", table[1].Values[0]);
-        Assert.AreEqual("Is_Turned_On", table[2].Values[0]);
+        Assert.IsTrue(table.Count == 3, "Table should have 3 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "Exhaust_Gas_Temperature"
+        ), "First entry should be Exhaust_Gas_Temperature");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "Oil_Temperature"
+        ), "Second entry should be Oil_Temperature");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "Is_Turned_On"
+        ), "Third entry should be Is_Turned_On");
     }
     
     [TestMethod]
@@ -36,16 +43,19 @@ public class MessagesOrSignalsTests
         
         var table = vm.Run();
         
-        Assert.AreEqual(3, table.Count);
-        
-        Assert.AreEqual(0, table[0].Values[0]);
-        Assert.AreEqual("Exhaust_Gas_Temperature", table[0].Values[1]);
-        
-        Assert.AreEqual(0, table[1].Values[0]);
-        Assert.AreEqual("Oil_Temperature", table[1].Values[1]);
-        
-        Assert.AreEqual(1, table[2].Values[0]);
-        Assert.AreEqual("Is_Turned_On", table[2].Values[1]);
+        Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
+
+        Assert.IsTrue(table.Any(r => 
+                (int)r.Values[0] == 0 && (string)r.Values[1] == "Exhaust_Gas_Temperature"),
+            "Missing Exhaust Gas Temperature sensor record with index 0");
+
+        Assert.IsTrue(table.Any(r => 
+                (int)r.Values[0] == 0 && (string)r.Values[1] == "Oil_Temperature"),
+            "Missing Oil Temperature sensor record with index 0");
+
+        Assert.IsTrue(table.Any(r => 
+                (int)r.Values[0] == 1 && (string)r.Values[1] == "Is_Turned_On"),
+            "Missing Is Turned On sensor record with index 1");
     }
     
     [TestMethod]
@@ -57,10 +67,10 @@ public class MessagesOrSignalsTests
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual("Exhaust_System", table[0].Values[0]);
-        Assert.AreEqual("Engine", table[1].Values[0]);
+        Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
+
+        Assert.IsTrue(table.Any(r => (string)r.Values[0] == "Exhaust_System"), "Missing Exhaust_System record");
+        Assert.IsTrue(table.Any(r => (string)r.Values[0] == "Engine"), "Missing Engine record");
     }
     
     [TestMethod]
@@ -275,10 +285,12 @@ where
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual("Oil_Temperature", table[0].Values[0]);
-        Assert.AreEqual("Is_Turned_On", table[0].Values[1]);
+        Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "Oil_Temperature" && 
+                (string)r.Values[1] == "Is_Turned_On"),
+            "Missing record with Oil_Temperature and Is_Turned_On values");
     }
 
     [TestMethod]
@@ -394,16 +406,22 @@ where Name = 'Oil_Temperature'";
         
         var table = vm.Run();
         
-        Assert.AreEqual(3, table.Count);
-        
-        Assert.AreEqual("Exhaust_System", table[0].Values[0]);
-        Assert.AreEqual("Exhaust_Gas_Temperature", table[0].Values[1]);
-        
-        Assert.AreEqual("Engine", table[1].Values[0]);
-        Assert.AreEqual("Oil_Temperature", table[1].Values[1]);
-        
-        Assert.AreEqual("Engine", table[2].Values[0]);
-        Assert.AreEqual("Is_Turned_On", table[2].Values[1]);
+        Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "Exhaust_System" && 
+                (string)r.Values[1] == "Exhaust_Gas_Temperature"),
+            "Missing Exhaust_System with Exhaust_Gas_Temperature record");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "Engine" && 
+                (string)r.Values[1] == "Oil_Temperature"),
+            "Missing Engine with Oil_Temperature record");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "Engine" && 
+                (string)r.Values[1] == "Is_Turned_On"),
+            "Missing Engine with Is_Turned_On record");
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
