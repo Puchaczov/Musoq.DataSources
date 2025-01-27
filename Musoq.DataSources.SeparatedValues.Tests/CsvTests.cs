@@ -151,12 +151,12 @@ namespace Musoq.DataSources.SeparatedValues.Tests
 
             Assert.IsTrue(table.Any(row => 
                 row.Values[0] == null && 
-                (decimal)row.Values[1] == -1m
+                (decimal?)row.Values[1] == -1m
             ), "Second entry should be null, -1");
 
             Assert.IsTrue(table.Any(row => 
                 row.Values[0] == null && 
-                (decimal)row.Values[1] == -121.95m
+                (decimal?)row.Values[1] == -121.95m
             ), "Third entry should be null, -121.95");
 
             Assert.IsTrue(table.Any(row => 
