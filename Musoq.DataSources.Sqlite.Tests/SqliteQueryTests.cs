@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Sqlite.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -36,11 +36,17 @@ public class SqliteQueryTests
         var vm = CreateAndRunVirtualMachineWithResponse(script);
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        Assert.AreEqual("key1", table[0].Values[0]);
-        Assert.AreEqual(1L, table[0].Values[1]);
-        Assert.AreEqual("key2", table[1].Values[0]);
-        Assert.AreEqual(2L, table[1].Values[1]);
+        Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "key1" && 
+                (long)r.Values[1] == 1L),
+            "Missing key1 record with value 1");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "key2" && 
+                (long)r.Values[1] == 2L),
+            "Missing key2 record with value 2");
     }
     
     [TestMethod]

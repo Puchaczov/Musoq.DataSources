@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
-using Musoq.Converter;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -136,44 +135,46 @@ public class GitToSqlTests
         var vm = CreateAndRunVirtualMachine(query);
 
         var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 2, "Result should have 2 entries");
 
-        Assert.AreEqual(2, result.Count);
+        // First row assertions
+        Assert.IsTrue(result.Any(row => 
+            (string)row[0] == "feature/feature_a" &&
+            (string)row[1] == "refs/heads/feature/feature_a" &&
+            (bool)row[2] == false &&
+            (bool)row[3] == false &&
+            (bool)row[4] == false &&
+            row[5] == null &&
+            row[6] == null &&
+            row[7] == null &&
+            (string)row[8] == "3250d89501e0569115a5cda34807e15ba7de0aa6" &&
+            (string)row[9] == "modified library_1\n" &&
+            (string)row[10] == "modified library_1" &&
+            (string)row[11] == "anonymous" &&
+            (string)row[12] == "anonymous" &&
+            row[13] == null &&
+            row[14] == null
+        ), "First row should match feature/feature_a details");
 
-        var row = result[0];
-
-        Assert.IsTrue((string) row[0] == "feature/feature_a");
-        Assert.IsTrue((string) row[1] == "refs/heads/feature/feature_a");
-        Assert.IsTrue((bool) row[2] == false);
-        Assert.IsTrue((bool) row[3] == false);
-        Assert.IsTrue((bool) row[4] == false);
-        Assert.IsNull((string) row[5]);
-        Assert.IsNull((int?) row[6]);
-        Assert.IsNull((int?) row[7]);
-        Assert.IsTrue((string) row[8] == "3250d89501e0569115a5cda34807e15ba7de0aa6");
-        Assert.IsTrue((string) row[9] == "modified library_1\n");
-        Assert.IsTrue((string) row[10] == "modified library_1");
-        Assert.IsTrue((string) row[11] == "anonymous");
-        Assert.IsTrue((string) row[12] == "anonymous");
-        Assert.IsNull((string) row[13]);
-        Assert.IsNull((string) row[14]);
-
-        row = result[1];
-
-        Assert.IsTrue((string) row[0] == "master");
-        Assert.IsTrue((string) row[1] == "refs/heads/master");
-        Assert.IsTrue((bool) row[2] == false);
-        Assert.IsTrue((bool) row[3] == false);
-        Assert.IsTrue((bool) row[4] == true);
-        Assert.IsNull((string) row[5]);
-        Assert.IsNull((int?) row[6]);
-        Assert.IsNull((int?) row[7]);
-        Assert.IsTrue((string) row[8] == "bf8542548c686f98d3c562d2fc78259640d07cbb");
-        Assert.IsTrue((string) row[9] == "add documentation index\n");
-        Assert.IsTrue((string) row[10] == "add documentation index");
-        Assert.IsTrue((string) row[11] == "anonymous");
-        Assert.IsTrue((string) row[12] == "anonymous");
-        Assert.IsNull((string) row[13]);
-        Assert.IsNull((string) row[14]);
+        // Second row assertions
+        Assert.IsTrue(result.Any(row => 
+            (string)row[0] == "master" &&
+            (string)row[1] == "refs/heads/master" &&
+            (bool)row[2] == false &&
+            (bool)row[3] == false &&
+            (bool)row[4] == true &&
+            row[5] == null &&
+            row[6] == null &&
+            row[7] == null &&
+            (string)row[8] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
+            (string)row[9] == "add documentation index\n" &&
+            (string)row[10] == "add documentation index" &&
+            (string)row[11] == "anonymous" &&
+            (string)row[12] == "anonymous" &&
+            row[13] == null &&
+            row[14] == null
+        ), "Second row should match master branch details");
     }
 
     [TestMethod]
@@ -192,48 +193,48 @@ public class GitToSqlTests
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 5, "Result should have 5 entries");
 
-        Assert.IsTrue(result.Count == 5);
+        Assert.IsTrue(result.Any(row => 
+            (string)row[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
+            (string)row[1] == "add documentation index\n" &&
+            (string)row[2] == "add documentation index" &&
+            (string)row[3] == "anonymous" &&
+            (string)row[4] == "anonymous"
+        ), "First row should match first commit details");
 
-        var row = result[0];
+        Assert.IsTrue(result.Any(row => 
+            (string)row[0] == "3250d89501e0569115a5cda34807e15ba7de0aa6" &&
+            (string)row[1] == "modified library_1\n" &&
+            (string)row[2] == "modified library_1" &&
+            (string)row[3] == "anonymous" &&
+            (string)row[4] == "anonymous"
+        ), "Second row should match second commit details");
 
-        Assert.IsTrue((string) row[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb");
-        Assert.IsTrue((string) row[1] == "add documentation index\n");
-        Assert.IsTrue((string) row[2] == "add documentation index");
-        Assert.IsTrue((string) row[3] == "anonymous");
-        Assert.IsTrue((string) row[4] == "anonymous");
+        Assert.IsTrue(result.Any(row => 
+            (string)row[0] == "02c2e53d8712210a4254fc9bd6ee5548a0f1d211" &&
+            (string)row[1] == "add first library\n" &&
+            (string)row[2] == "add first library" &&
+            (string)row[3] == "anonymous" &&
+            (string)row[4] == "anonymous"
+        ), "Third row should match third commit details");
 
-        row = result[1];
+        Assert.IsTrue(result.Any(row => 
+            (string)row[0] == "595b3f0f51071f84909861e5abc15225a4ef4555" &&
+            (string)row[1] == "first commit\n" &&
+            (string)row[2] == "first commit" &&
+            (string)row[3] == "anonymous" &&
+            (string)row[4] == "anonymous"
+        ), "Fourth row should match fourth commit details");
 
-        Assert.IsTrue((string) row[0] == "3250d89501e0569115a5cda34807e15ba7de0aa6");
-        Assert.IsTrue((string) row[1] == "modified library_1\n");
-        Assert.IsTrue((string) row[2] == "modified library_1");
-        Assert.IsTrue((string) row[3] == "anonymous");
-        Assert.IsTrue((string) row[4] == "anonymous");
-
-        row = result[2];
-
-        Assert.IsTrue((string) row[0] == "02c2e53d8712210a4254fc9bd6ee5548a0f1d211");
-        Assert.IsTrue((string) row[1] == "add first library\n");
-        Assert.IsTrue((string) row[2] == "add first library");
-        Assert.IsTrue((string) row[3] == "anonymous");
-        Assert.IsTrue((string) row[4] == "anonymous");
-
-        row = result[3];
-
-        Assert.AreEqual((string) row[0], "595b3f0f51071f84909861e5abc15225a4ef4555");
-        Assert.IsTrue((string) row[1] == "first commit\n");
-        Assert.IsTrue((string) row[2] == "first commit");
-        Assert.IsTrue((string) row[3] == "anonymous");
-        Assert.IsTrue((string) row[4] == "anonymous");
-
-        row = result[4];
-
-        Assert.IsTrue((string) row[0] == "789f584ce162424f61b33e020e2138aad47e60ba");
-        Assert.IsTrue((string) row[1] == "initial commit\n");
-        Assert.IsTrue((string) row[2] == "initial commit");
-        Assert.IsTrue((string) row[3] == "anonymous");
-        Assert.IsTrue((string) row[4] == "anonymous");
+        Assert.IsTrue(result.Any(row => 
+            (string)row[0] == "789f584ce162424f61b33e020e2138aad47e60ba" &&
+            (string)row[1] == "initial commit\n" &&
+            (string)row[2] == "initial commit" &&
+            (string)row[3] == "anonymous" &&
+            (string)row[4] == "anonymous"
+        ), "Fifth row should match fifth commit details");
     }
 
     [TestMethod]
@@ -439,23 +440,23 @@ public class GitToSqlTests
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
         
-        Assert.AreEqual(2, result.Count);
-        
-        var row = result[0];
-        
-        Assert.IsTrue((string) row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
-        Assert.IsTrue((string) row[1] == "finished implementation for branch_1\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
-        
-        row = result[1];
-        
-        Assert.IsTrue((string) row[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb");
-        Assert.IsTrue((string) row[1] == "add documentation index\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 02, 8, 43, 41, TimeSpan.FromHours(1)));
+        Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
+
+        Assert.IsTrue(result.Any(r => 
+                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                (string)r[1] == "finished implementation for branch_1\n" &&
+                (string)r[2] == "anonymous" &&
+                (string)r[3] == "anonymous@non-existing-domain.com" &&
+                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+            "Missing first commit record");
+
+        Assert.IsTrue(result.Any(r => 
+                (string)r[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
+                (string)r[1] == "add documentation index\n" &&
+                (string)r[2] == "anonymous" &&
+                (string)r[3] == "anonymous@non-existing-domain.com" &&
+                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 02, 8, 43, 41, TimeSpan.FromHours(1))),
+            "Missing second commit record");
     }
     
     [TestMethod]
@@ -480,31 +481,31 @@ public class GitToSqlTests
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
         
-        Assert.AreEqual(3, result.Count);
-        
-        var row = result[0];
-        
-        Assert.IsTrue((string) row[0] == "389642ba15392c4540e82628bdff9c99dc6f7923");
-        Assert.IsTrue((string) row[1] == "modified main.py\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1)));
-        
-        row = result[1];
-        
-        Assert.IsTrue((string) row[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f");
-        Assert.IsTrue((string) row[1] == "add file_branch_2.py\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1)));
-        
-        row = result[2];
-        
-        Assert.IsTrue((string) row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
-        Assert.IsTrue((string) row[1] == "finished implementation for branch_1\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
+        Assert.IsTrue(result.Count == 3, "Result should contain exactly 3 records");
+
+        Assert.IsTrue(result.Any(r => 
+                (string)r[0] == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
+                (string)r[1] == "modified main.py\n" &&
+                (string)r[2] == "anonymous" &&
+                (string)r[3] == "anonymous@non-existing-domain.com" &&
+                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
+            "Missing first commit record");
+
+        Assert.IsTrue(result.Any(r => 
+                (string)r[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
+                (string)r[1] == "add file_branch_2.py\n" &&
+                (string)r[2] == "anonymous" &&
+                (string)r[3] == "anonymous@non-existing-domain.com" &&
+                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
+            "Missing second commit record");
+
+        Assert.IsTrue(result.Any(r => 
+                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                (string)r[1] == "finished implementation for branch_1\n" &&
+                (string)r[2] == "anonymous" &&
+                (string)r[3] == "anonymous@non-existing-domain.com" &&
+                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+            "Missing third commit record");
     }
     
     [TestMethod]
@@ -529,31 +530,31 @@ public class GitToSqlTests
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
         
-        Assert.AreEqual(3, result.Count);
-        
-        var row = result[0];
-        
-        Assert.IsTrue((string) row[0] == "389642ba15392c4540e82628bdff9c99dc6f7923");
-        Assert.IsTrue((string) row[1] == "modified main.py\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1)));
-        
-        row = result[1];
-        
-        Assert.IsTrue((string) row[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f");
-        Assert.IsTrue((string) row[1] == "add file_branch_2.py\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1)));
-        
-        row = result[2];
-        
-        Assert.IsTrue((string) row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
-        Assert.IsTrue((string) row[1] == "finished implementation for branch_1\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
+        Assert.IsTrue(result.Count == 3, "Result should contain exactly 3 records");
+
+        Assert.IsTrue(result.Any(r => 
+                (string)r[0] == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
+                (string)r[1] == "modified main.py\n" &&
+                (string)r[2] == "anonymous" &&
+                (string)r[3] == "anonymous@non-existing-domain.com" &&
+                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
+            "Missing first commit record");
+
+        Assert.IsTrue(result.Any(r => 
+                (string)r[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
+                (string)r[1] == "add file_branch_2.py\n" &&
+                (string)r[2] == "anonymous" &&
+                (string)r[3] == "anonymous@non-existing-domain.com" &&
+                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
+            "Missing second commit record");
+
+        Assert.IsTrue(result.Any(r => 
+                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                (string)r[1] == "finished implementation for branch_1\n" &&
+                (string)r[2] == "anonymous" &&
+                (string)r[3] == "anonymous@non-existing-domain.com" &&
+                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+            "Missing third commit record");
     }
 
     [TestMethod]

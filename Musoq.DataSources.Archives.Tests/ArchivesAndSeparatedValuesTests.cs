@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Archives.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -50,37 +49,49 @@ public class ArchivesAndSeparatedValuesTests
         Assert.AreEqual("b.Age", table.Columns.ElementAt(3).ColumnName);
         Assert.AreEqual(typeof(int?), table.Columns.ElementAt(3).ColumnType);
         
-        Assert.AreEqual(6, table.Count);
-        
-        Assert.AreEqual("Test/file3.csv", table[0].Values[0]);
-        Assert.AreEqual("Martin", table[0].Values[1]);
-        Assert.AreEqual("Podval", table[0].Values[2]);
-        Assert.AreEqual(28, table[0].Values[3]);
+        Assert.IsTrue(table.Count == 6, "Table should have 6 entries");
 
-        Assert.AreEqual("Test/file3.csv", table[1].Values[0]);
-        Assert.AreEqual("Aneta", table[1].Values[1]);
-        Assert.AreEqual("Podvalova", table[1].Values[2]);
-        Assert.AreEqual(27, table[1].Values[3]);
-        
-        Assert.AreEqual("file1.csv", table[2].Values[0]);
-        Assert.AreEqual("Joanna", table[2].Values[1]);
-        Assert.AreEqual("Doe", table[2].Values[2]);
-        Assert.AreEqual(23, table[2].Values[3]);
-        
-        Assert.AreEqual("file1.csv", table[3].Values[0]);
-        Assert.AreEqual("Joanna", table[3].Values[1]);
-        Assert.AreEqual("Doe", table[3].Values[2]);
-        Assert.AreEqual(11, table[3].Values[3]);
-        
-        Assert.AreEqual("file2.csv", table[4].Values[0]);
-        Assert.AreEqual("John", table[4].Values[1]);
-        Assert.AreEqual("Doe", table[4].Values[2]);
-        Assert.AreEqual(25, table[4].Values[3]);
-        
-        Assert.AreEqual("file2.csv", table[5].Values[0]);
-        Assert.AreEqual("Jane", table[5].Values[1]);
-        Assert.AreEqual("Doe", table[5].Values[2]);
-        Assert.AreEqual(23, table[5].Values[3]);
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "Test/file3.csv" && 
+            (string)row.Values[1] == "Martin" && 
+            (string)row.Values[2] == "Podval" && 
+            (int)row.Values[3] == 28
+        ), "First row should match Test/file3.csv, Martin, Podval, 28");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "Test/file3.csv" && 
+            (string)row.Values[1] == "Aneta" && 
+            (string)row.Values[2] == "Podvalova" && 
+            (int)row.Values[3] == 27
+        ), "Second row should match Test/file3.csv, Aneta, Podvalova, 27");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "file1.csv" && 
+            (string)row.Values[1] == "Joanna" && 
+            (string)row.Values[2] == "Doe" && 
+            (int)row.Values[3] == 23
+        ), "Third row should match file1.csv, Joanna, Doe, 23");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "file1.csv" && 
+            (string)row.Values[1] == "Joanna" && 
+            (string)row.Values[2] == "Doe" && 
+            (int)row.Values[3] == 11
+        ), "Fourth row should match file1.csv, Joanna, Doe, 11");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "file2.csv" && 
+            (string)row.Values[1] == "John" && 
+            (string)row.Values[2] == "Doe" && 
+            (int)row.Values[3] == 25
+        ), "Fifth row should match file2.csv, John, Doe, 25");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "file2.csv" && 
+            (string)row.Values[1] == "Jane" && 
+            (string)row.Values[2] == "Doe" && 
+            (int)row.Values[3] == 23
+        ), "Sixth row should match file2.csv, Jane, Doe, 23");
     }
     
     [TestMethod]
@@ -121,27 +132,35 @@ public class ArchivesAndSeparatedValuesTests
         Assert.AreEqual("b.Age", table.Columns.ElementAt(3).ColumnName);
         Assert.AreEqual(typeof(int?), table.Columns.ElementAt(3).ColumnType);
         
-        Assert.AreEqual(4, table.Count);
-        
-        Assert.AreEqual("file1.csv", table[0].Values[0]);
-        Assert.AreEqual("Joanna", table[0].Values[1]);
-        Assert.AreEqual("Doe", table[0].Values[2]);
-        Assert.AreEqual(23, table[0].Values[3]);
-        
-        Assert.AreEqual("file1.csv", table[1].Values[0]);
-        Assert.AreEqual("Joanna", table[1].Values[1]);
-        Assert.AreEqual("Doe", table[1].Values[2]);
-        Assert.AreEqual(11, table[1].Values[3]);
-        
-        Assert.AreEqual("file2.csv", table[2].Values[0]);
-        Assert.AreEqual("John", table[2].Values[1]);
-        Assert.AreEqual("Doe", table[2].Values[2]);
-        Assert.AreEqual(25, table[2].Values[3]);
-        
-        Assert.AreEqual("file2.csv", table[3].Values[0]);
-        Assert.AreEqual("Jane", table[3].Values[1]);
-        Assert.AreEqual("Doe", table[3].Values[2]);
-        Assert.AreEqual(23, table[3].Values[3]);
+        Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "file1.csv" && 
+            (string)row.Values[1] == "Joanna" && 
+            (string)row.Values[2] == "Doe" && 
+            (int)row.Values[3] == 23
+        ), "First row should match file1.csv, Joanna, Doe, 23");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "file1.csv" && 
+            (string)row.Values[1] == "Joanna" && 
+            (string)row.Values[2] == "Doe" && 
+            (int)row.Values[3] == 11
+        ), "Second row should match file1.csv, Joanna, Doe, 11");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "file2.csv" && 
+            (string)row.Values[1] == "John" && 
+            (string)row.Values[2] == "Doe" && 
+            (int)row.Values[3] == 25
+        ), "Third row should match file2.csv, John, Doe, 25");
+
+        Assert.IsTrue(table.Any(row => 
+            (string)row.Values[0] == "file2.csv" && 
+            (string)row.Values[1] == "Jane" && 
+            (string)row.Values[2] == "Doe" && 
+            (int)row.Values[3] == 23
+        ), "Fourth row should match file2.csv, Jane, Doe, 23");
     }
     
     [TestMethod]

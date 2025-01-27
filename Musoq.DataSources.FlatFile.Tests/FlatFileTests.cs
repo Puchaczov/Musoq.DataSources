@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.FlatFile;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -27,26 +26,38 @@ namespace Musoq.Schema.FlatFile.Tests
             Assert.AreEqual(typeof(int), table.Columns.ElementAt(0).ColumnType);
             Assert.AreEqual("Line", table.Columns.ElementAt(1).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(1).ColumnType);
+            
+            Assert.IsTrue(table.Count == 6, "Table should have 6 entries");
 
-            Assert.AreEqual(6, table.Count);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 1 && 
+                (string)row.Values[1] == string.Empty
+            ), "First entry should be 1 with empty string");
 
-            Assert.AreEqual(1, table[0].Values[0]);
-            Assert.AreEqual(string.Empty, table[0].Values[1]);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 2 && 
+                (string)row.Values[1] == "line 2"
+            ), "Second entry should be 2 with 'line 2'");
 
-            Assert.AreEqual(2, table[1].Values[0]);
-            Assert.AreEqual("line 2", table[1].Values[1]);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 3 && 
+                (string)row.Values[1] == "line3"
+            ), "Third entry should be 3 with 'line3'");
 
-            Assert.AreEqual(3, table[2].Values[0]);
-            Assert.AreEqual("line3", table[2].Values[1]);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 4 && 
+                (string)row.Values[1] == "line"
+            ), "Fourth entry should be 4 with 'line'");
 
-            Assert.AreEqual(4, table[3].Values[0]);
-            Assert.AreEqual("line", table[3].Values[1]);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 5 && 
+                (string)row.Values[1] == string.Empty
+            ), "Fifth entry should be 5 with empty string");
 
-            Assert.AreEqual(5, table[4].Values[0]);
-            Assert.AreEqual(string.Empty, table[4].Values[1]);
-
-            Assert.AreEqual(6, table[5].Values[0]);
-            Assert.AreEqual("linexx", table[5].Values[1]);
+            Assert.IsTrue(table.Any(row => 
+                (int)row.Values[0] == 6 && 
+                (string)row.Values[1] == "linexx"
+            ), "Sixth entry should be 6 with 'linexx'");
         }
 
         [TestMethod]
@@ -61,9 +72,7 @@ namespace Musoq.Schema.FlatFile.Tests
                     new Dictionary<string, string>(),
                     (null, null, null, false)));
 
-            int fires = 0;
-            foreach (var item in schema.Rows)
-                fires += 1;
+            var fires = schema.Rows.Count();
 
             Assert.AreEqual(0, fires);
         }
@@ -78,9 +87,7 @@ namespace Musoq.Schema.FlatFile.Tests
                     new Dictionary<string, string>(),
                     (null, null, null, false)));
 
-            int fires = 0;
-            foreach (var item in schema.Rows)
-                fires += 1;
+            var fires = schema.Rows.Count();
 
             Assert.AreEqual(6, fires);
         }

@@ -5,7 +5,6 @@ using System.Text;
 using k8s.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;

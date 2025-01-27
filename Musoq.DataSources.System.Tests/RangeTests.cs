@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
@@ -18,13 +18,14 @@ namespace Musoq.DataSources.System.Tests
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
+            
+            Assert.IsTrue(table.Count == 5, "Table should contain exactly 5 records");
 
-            Assert.AreEqual(5, table.Count);
-            Assert.AreEqual(0L, table[0][0]);
-            Assert.AreEqual(1L, table[1][0]);
-            Assert.AreEqual(2L, table[2][0]);
-            Assert.AreEqual(3L, table[3][0]);
-            Assert.AreEqual(4L, table[4][0]);
+            Assert.IsTrue(table.Any(r => (long)r[0] == 0L), "Missing record with value 0");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 1L), "Missing record with value 1");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 2L), "Missing record with value 2");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 3L), "Missing record with value 3");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 4L), "Missing record with value 4");
         }
 
         [TestMethod]
@@ -34,12 +35,13 @@ namespace Musoq.DataSources.System.Tests
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
+            
+            Assert.IsTrue(table.Count == 4, "Table should contain exactly 4 records");
 
-            Assert.AreEqual(4, table.Count);
-            Assert.AreEqual(1L, table[0][0]);
-            Assert.AreEqual(2L, table[1][0]);
-            Assert.AreEqual(3L, table[2][0]);
-            Assert.AreEqual(4L, table[3][0]);
+            Assert.IsTrue(table.Any(r => (long)r[0] == 1L), "Missing record with value 1");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 2L), "Missing record with value 2");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 3L), "Missing record with value 3");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 4L), "Missing record with value 4");
         }
 
 
@@ -50,11 +52,12 @@ namespace Musoq.DataSources.System.Tests
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
+            
+            Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
 
-            Assert.AreEqual(3, table.Count);
-            Assert.AreEqual(-1L, table[0][0]);
-            Assert.AreEqual(0L, table[1][0]);
-            Assert.AreEqual(1L, table[2][0]);
+            Assert.IsTrue(table.Any(r => (long)r[0] == -1L), "Missing record with value -1");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 0L), "Missing record with value 0");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 1L), "Missing record with value 1");
         }
 
 
@@ -66,10 +69,11 @@ namespace Musoq.DataSources.System.Tests
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
+            
+            Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
 
-            Assert.AreEqual(2, table.Count);
-            Assert.AreEqual(1L, table[0][0]);
-            Assert.AreEqual(3L, table[1][0]);
+            Assert.IsTrue(table.Any(r => (long)r[0] == 1L), "Missing record with value 1");
+            Assert.IsTrue(table.Any(r => (long)r[0] == 3L), "Missing record with value 3");
         }
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)

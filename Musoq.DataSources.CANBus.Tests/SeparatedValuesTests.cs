@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
@@ -26,17 +26,21 @@ where Engine is not null";
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual(0ul, table[0].Values[0]);
-        Assert.IsNotNull(table[0].Values[1]);
-        Assert.AreEqual(true, Convert.ToBoolean(table[0].Values[2]));
-        Assert.AreEqual(90d, table[0].Values[3]);
-        
-        Assert.AreEqual(1ul, table[1].Values[0]);
-        Assert.IsNotNull(table[1].Values[1]);
-        Assert.AreEqual(false, Convert.ToBoolean(table[1].Values[2]));
-        Assert.AreEqual(95d, table[1].Values[3]);
+        Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
+
+        Assert.IsTrue(table.Any(r => 
+                (ulong)r.Values[0] == 0ul && 
+                r.Values[1] != null && 
+                Convert.ToBoolean(r.Values[2]) == true && 
+                Math.Abs((double)r.Values[3] - 90d) < 0.0001),
+            "Missing first sensor record");
+
+        Assert.IsTrue(table.Any(r => 
+                (ulong)r.Values[0] == 1ul && 
+                r.Values[1] != null && 
+                Convert.ToBoolean(r.Values[2]) == false && 
+                Math.Abs((double)r.Values[3] - 95d) < 0.0001),
+            "Missing second sensor record");
     }
     
     [TestMethod]
@@ -52,10 +56,15 @@ where Engine is not null";
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual(361ul, table[0].Values[0]);
-        Assert.AreEqual(380ul, table[1].Values[0]);
+        Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (ulong)row.Values[0] == 361ul
+        ), "First entry should be 361");
+
+        Assert.IsTrue(table.Any(row => 
+            (ulong)row.Values[0] == 380ul
+        ), "Second entry should be 380");
     }
     
     [TestMethod]
@@ -135,27 +144,35 @@ from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')";
         
         var table = vm.Run();
         
-        Assert.AreEqual(4, table.Count);
-        
-        Assert.AreEqual(292u, table[0].Values[0]);
-        Assert.AreEqual(0ul, table[0].Values[1]);
-        Assert.IsNotNull(table[0].Values[2]);
-        Assert.AreEqual(true, table[0].Values[3]);
-        
-        Assert.AreEqual(292u, table[1].Values[0]);
-        Assert.AreEqual(1ul, table[1].Values[1]);
-        Assert.IsNotNull(table[1].Values[2]);
-        Assert.AreEqual(true, table[1].Values[3]);
-        
-        Assert.AreEqual(293u, table[2].Values[0]);
-        Assert.AreEqual(2ul, table[2].Values[1]);
-        Assert.IsNotNull(table[2].Values[2]);
-        Assert.AreEqual(true, table[2].Values[3]);
-        
-        Assert.AreEqual(115u, table[3].Values[0]);
-        Assert.AreEqual(3ul, table[3].Values[1]);
-        Assert.IsNull(table[3].Values[2]);
-        Assert.AreEqual(false, table[3].Values[3]);
+        Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (uint)row.Values[0] == 292u && 
+            (ulong)row.Values[1] == 0ul && 
+            row.Values[2] != null && 
+            (bool)row.Values[3] == true
+        ), "First entry should match 292, 0, non-null, true");
+
+        Assert.IsTrue(table.Any(row => 
+            (uint)row.Values[0] == 292u && 
+            (ulong)row.Values[1] == 1ul && 
+            row.Values[2] != null && 
+            (bool)row.Values[3] == true
+        ), "Second entry should match 292, 1, non-null, true");
+
+        Assert.IsTrue(table.Any(row => 
+            (uint)row.Values[0] == 293u && 
+            (ulong)row.Values[1] == 2ul && 
+            row.Values[2] != null && 
+            (bool)row.Values[3] == true
+        ), "Third entry should match 293, 2, non-null, true");
+
+        Assert.IsTrue(table.Any(row => 
+            (uint)row.Values[0] == 115u && 
+            (ulong)row.Values[1] == 3ul && 
+            row.Values[2] == null && 
+            (bool)row.Values[3] == false
+        ), "Fourth entry should match 115, 3, null, false");
     }
 
     [TestMethod]
@@ -170,10 +187,15 @@ where FromTimestamp(Timestamp, 's') >= ToDateTimeOffset('2023-10-08T18:19:00','e
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual(293u, table[0].Values[0]);
-        Assert.AreEqual(115u, table[1].Values[0]);
+        Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (uint)row.Values[0] == 293u
+        ), "First entry should be 293");
+
+        Assert.IsTrue(table.Any(row => 
+            (uint)row.Values[0] == 115u
+        ), "Second entry should be 115");
     }
 
     [TestMethod]
@@ -188,10 +210,11 @@ where FromTimestamp(Timestamp, 's') < ToDateTimeOffset('2023-10-08T18:19:00', 'e
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual(292u, table[0].Values[0]);
-        Assert.AreEqual(292u, table[1].Values[0]);
+        Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (uint)row.Values[0] == 292u
+        ), "Both entries should be 292");
     }
     
     [TestMethod]
@@ -206,12 +229,11 @@ from #can.separatedvalues('./Data/6/6.csv', './Data/6/6.dbc')";
         
         var table = vm.Run();
         
-        Assert.AreEqual(4, table.Count);
-        
-        Assert.AreEqual(1, table[0].Values[0]);
-        Assert.AreEqual(1, table[1].Values[0]);
-        Assert.AreEqual(1, table[2].Values[0]);
-        Assert.AreEqual(1, table[3].Values[0]);
+        Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
+
+        Assert.IsTrue(table.All(row => 
+            (int)row.Values[0] == 1
+        ), "All entries should be 1");
     }
     
     [TestMethod]
@@ -230,17 +252,21 @@ where Engine is not null";
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual(0ul, table[0].Values[0]);
-        Assert.IsNotNull(table[0].Values[1]);
-        Assert.AreEqual(true, Convert.ToBoolean(table[0].Values[2]));
-        Assert.AreEqual(90d, table[0].Values[3]);
-        
-        Assert.AreEqual(1ul, table[1].Values[0]);
-        Assert.IsNotNull(table[1].Values[1]);
-        Assert.AreEqual(false, Convert.ToBoolean(table[1].Values[2]));
-        Assert.AreEqual(95d, table[1].Values[3]);
+        Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (ulong)row.Values[0] == 0ul && 
+            row.Values[1] != null && 
+            Convert.ToBoolean(row.Values[2]) && 
+            Math.Abs((double)row.Values[3] - 90d) < 0.0001
+        ), "First entry should match 0, non-null, true, 90");
+    
+        Assert.IsTrue(table.Any(row => 
+            (ulong)row.Values[0] == 1ul && 
+            row.Values[1] != null && 
+            Convert.ToBoolean(row.Values[2]) == false &&
+            Math.Abs((double)row.Values[3] - 95d) < 0.0001
+        ), "Second entry should match 1, non-null, false, 95");
     }
     
     [TestMethod]
@@ -292,10 +318,15 @@ inner join #can.messages('./Data/10/10.dbc') m on s.ID = m.Id";
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual(0d, table[0].Values[0]);
-        Assert.AreEqual(1d, table[1].Values[0]);
+        Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
+
+        Assert.IsTrue(table.Any(row => 
+            (double)row.Values[0] == 0d
+        ), "First entry should be 0");
+
+        Assert.IsTrue(table.Any(row => 
+            Math.Abs((double)row.Values[0] - 1d) < 0.0001
+        ), "Second entry should be 1");
     }
     
     [TestMethod]

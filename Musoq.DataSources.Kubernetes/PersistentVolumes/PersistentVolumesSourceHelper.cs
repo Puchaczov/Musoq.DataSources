@@ -1,5 +1,4 @@
-﻿using k8s.Models;
-using Musoq.Schema;
+﻿using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Kubernetes.PersistentVolumes;

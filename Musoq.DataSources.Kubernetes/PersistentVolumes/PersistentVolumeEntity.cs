@@ -1,6 +1,4 @@
-﻿using k8s.Models;
-
-namespace Musoq.DataSources.Kubernetes.PersistentVolumes;
+﻿namespace Musoq.DataSources.Kubernetes.PersistentVolumes;
 
 public class PersistentVolumeEntity
 {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.Converter;
 using Musoq.DataSources.Ollama.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;

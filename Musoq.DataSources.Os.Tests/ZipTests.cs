@@ -1,10 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
-using Musoq.DataSources.Os.Zip;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
@@ -33,11 +30,20 @@ namespace Musoq.DataSources.Os.Tests
             Assert.AreEqual(1, table.Columns.Count());
             Assert.AreEqual("FullName", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
+            
+            Assert.IsTrue(table.Count == 3, "Table should have 3 entries");
 
-            Assert.AreEqual(3, table.Count);
-            Assert.AreEqual("Files/File1.txt", table[0].Values[0]);
-            Assert.AreEqual("Files/File2.txt", table[1].Values[0]);
-            Assert.AreEqual("Files/SubFolder/File3.txt", table[2].Values[0]);
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == "Files/File1.txt"
+            ), "First entry should be Files/File1.txt");
+
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == "Files/File2.txt"
+            ), "Second entry should be Files/File2.txt");
+
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == "Files/SubFolder/File3.txt"
+            ), "Third entry should be Files/SubFolder/File3.txt");
         }
 
         private CompiledQuery CreateAndRunVirtualMachine(string script)

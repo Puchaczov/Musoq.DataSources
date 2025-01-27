@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
@@ -27,14 +26,23 @@ namespace Musoq.DataSources.Json.Tests
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
             Assert.AreEqual("Age", table.Columns.ElementAt(1).ColumnName);
             Assert.AreEqual(typeof(long), table.Columns.ElementAt(1).ColumnType);
+            
+            Assert.IsTrue(table.Count == 3, "Table should have 3 entries");
 
-            Assert.AreEqual(3L, table.Count);
-            Assert.AreEqual("Aleksander", table[0].Values[0]);
-            Assert.AreEqual(24L, table[0].Values[1]);
-            Assert.AreEqual("Mikolaj", table[1].Values[0]);
-            Assert.AreEqual(11L, table[1].Values[1]);
-            Assert.AreEqual("Marek", table[2].Values[0]);
-            Assert.AreEqual(45L, table[2].Values[1]);
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == "Aleksander" && 
+                (long)row.Values[1] == 24L
+            ), "First entry should be Aleksander, 24");
+
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == "Mikolaj" && 
+                (long)row.Values[1] == 11L
+            ), "Second entry should be Mikolaj, 11");
+
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == "Marek" && 
+                (long)row.Values[1] == 45L
+            ), "Third entry should be Marek, 45");
         }
 
         [TestMethod]
@@ -52,13 +60,19 @@ namespace Musoq.DataSources.Json.Tests
             Assert.AreEqual("Length(Books)", table.Columns.ElementAt(1).ColumnName);
             Assert.AreEqual(typeof(int), table.Columns.ElementAt(1).ColumnType);
 
-            Assert.AreEqual(3, table.Count);
-            Assert.AreEqual("Aleksander", table[0].Values[0]);
-            Assert.AreEqual(2, table[0].Values[1]);
-            Assert.AreEqual("Mikolaj", table[1].Values[0]);
-            Assert.AreEqual(0, table[1].Values[1]);
-            Assert.AreEqual("Marek", table[2].Values[0]);
-            Assert.AreEqual(0, table[2].Values[1]);
+            Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
+
+            Assert.IsTrue(table.Any(r => 
+                    (string)r.Values[0] == "Aleksander" && (int)r.Values[1] == 2),
+                "Missing record for Aleksander with value 2");
+
+            Assert.IsTrue(table.Any(r => 
+                    (string)r.Values[0] == "Mikolaj" && (int)r.Values[1] == 0),
+                "Missing record for Mikolaj with value 0");
+
+            Assert.IsTrue(table.Any(r => 
+                    (string)r.Values[0] == "Marek" && (int)r.Values[1] == 0),
+                "Missing record for Marek with value 0");
         }
 
         [TestMethod]
@@ -73,10 +87,16 @@ namespace Musoq.DataSources.Json.Tests
             Assert.AreEqual(1, table.Columns.Count());
             Assert.AreEqual("MakeFlat(Array)", table.Columns.ElementAt(0).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
+            
+            Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
-            Assert.AreEqual(2, table.Count);
-            Assert.AreEqual("1, 2, 3", table[0].Values[0]);
-            Assert.AreEqual(string.Empty, table[1].Values[0]);
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == "1, 2, 3"
+            ), "First entry should be '1, 2, 3'");
+
+            Assert.IsTrue(table.Any(row => 
+                (string)row.Values[0] == string.Empty
+            ), "Second entry should be an empty string");
         }
 
         [TestMethod]

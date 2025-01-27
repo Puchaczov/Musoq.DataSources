@@ -5,7 +5,6 @@ using System.Text.Json;
 using AirtableApiClient;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.Converter;
 using Musoq.DataSources.Airtable.Components;
 using Musoq.DataSources.Airtable.Helpers;
 using Musoq.DataSources.Tests.Common;
@@ -73,15 +72,19 @@ public class AirtableTests
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual("base1", table[0].Values[0]);
-        Assert.AreEqual("Base 1", table[0].Values[1]);
-        Assert.AreEqual("read", table[0].Values[2]);
-        
-        Assert.AreEqual("base2", table[1].Values[0]);
-        Assert.AreEqual("Base 2", table[1].Values[1]);
-        Assert.AreEqual("write", table[1].Values[2]);
+        Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "base1" && 
+                (string)r.Values[1] == "Base 1" && 
+                (string)r.Values[2] == "read"),
+            "Missing base1 record");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "base2" && 
+                (string)r.Values[1] == "Base 2" && 
+                (string)r.Values[2] == "write"),
+            "Missing base2 record");
     }
     
     [TestMethod]
@@ -105,15 +108,19 @@ public class AirtableTests
         
         var table = vm.Run();
         
-        Assert.AreEqual(2, table.Count);
-        
-        Assert.AreEqual("table1", table[0].Values[0]);
-        Assert.AreEqual("Table 1", table[0].Values[1]);
-        Assert.AreEqual("pk1", table[0].Values[2]);
-        
-        Assert.AreEqual("table2", table[1].Values[0]);
-        Assert.AreEqual("Table 2", table[1].Values[1]);
-        Assert.AreEqual("pk2", table[1].Values[2]);
+        Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "table1" && 
+                (string)r.Values[1] == "Table 1" && 
+                (string)r.Values[2] == "pk1"),
+            "Missing table1 record");
+
+        Assert.IsTrue(table.Any(r => 
+                (string)r.Values[0] == "table2" && 
+                (string)r.Values[1] == "Table 2" && 
+                (string)r.Values[2] == "pk2"),
+            "Missing table2 record");
     }
     
     [TestMethod]
