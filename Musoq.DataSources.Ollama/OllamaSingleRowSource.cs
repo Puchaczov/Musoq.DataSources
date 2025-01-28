@@ -23,21 +23,15 @@ internal class OllamaSingleRowSource : RowSource
         _cancellationToken = runtimeContext.EndWorkToken;
     }
 
-    public override IEnumerable<IObjectResolver> Rows
-    {
-        get
-        {
-            return new IObjectResolver[]
-            {
-                new EntityResolver<OllamaEntity>(
-                    new OllamaEntity(
-                        _openAiApi,
-                        _openAiRequestInfo.Model,
-                        _openAiRequestInfo.Temperature,
-                        _cancellationToken),
-                    OllamaSchemaHelper.NameToIndexMap, 
-                    OllamaSchemaHelper.IndexToMethodAccessMap)
-            };
-        }
-    }
+    public override IEnumerable<IObjectResolver> Rows =>
+    [
+        new EntityResolver<OllamaEntity>(
+            new OllamaEntity(
+                _openAiApi,
+                _openAiRequestInfo.Model,
+                _openAiRequestInfo.Temperature,
+                _cancellationToken),
+            OllamaSchemaHelper.NameToIndexMap, 
+            OllamaSchemaHelper.IndexToMethodAccessMap)
+    ];
 }

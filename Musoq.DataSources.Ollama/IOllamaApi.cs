@@ -14,14 +14,14 @@ public interface IOllamaApi
     /// </summary>
     /// <param name="entity">The entity</param>
     /// <param name="messages">Messages</param>
-    /// <returns>ConversationContextWithResponse</returns>
-    Task<ConversationContextWithResponse> GetCompletionAsync(OllamaEntityBase entity, IList<Message> messages);
+    /// <returns>CompletionResponse</returns>
+    Task<CompletionResponse> GetCompletionAsync(OllamaEntityBase entity, IList<Message> messages);
 
     /// <summary>
     /// Gets the image completion from Ollama API
     /// </summary>
     /// <param name="entity">The entity</param>
     /// <param name="message">Message</param>
-    /// <returns>ConversationContextWithResponse</returns>
-    Task<ConversationContextWithResponse> GetImageCompletionAsync(OllamaEntityBase entity, Message message);
+    /// <returns>CompletionResponse</returns>
+    Task<CompletionResponse> GetImageCompletionAsync(OllamaEntityBase entity, Message message);
 }

@@ -2,7 +2,6 @@ using Musoq.DataSources.LLMHelpers;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
 using Newtonsoft.Json;
-using OllamaSharp;
 using OllamaSharp.Models.Chat;
 using SharpToken;
 
@@ -213,7 +212,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
             var youAreImageDescriberDescribeTheImage = $"You are image based question answerer. Return only answer for the following question: {question}. You must respond with json {{ result: boolean }}. Do not comment or explain anything.";
             return api.GetImageCompletionAsync(
                 entity, 
-                new(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
+                new Message(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
         });
         
         var response = describeImageResultTask.Result;
@@ -280,7 +279,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         return encoding.CountTokens(content);
     }
     
-    private static async Task<string> DoAsynchronously(Func<Task<ConversationContextWithResponse>> func)
+    private static async Task<string> DoAsynchronously(Func<Task<CompletionResponse>> func)
     {
         var result = func();
 
@@ -288,21 +287,16 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         {
             var completion = await result;
             
-            return completion.Response ?? string.Empty;
+            return completion.Text;
         }
-        catch (Exception)
+        catch (Exception exc)
         {
-            return "ERROR";
+            return exc.Message;
         }
     }
     
-    private class ExtractedEntities
+    private class ExtractedEntities(string[] entities)
     {
-        public ExtractedEntities(string[] entities)
-        {
-            Entities = entities;
-        }
-
-        public string[] Entities { get; set; }
+        public string[] Entities { get; } = entities;
     }
 }

@@ -8,7 +8,7 @@ public abstract class OllamaEntityBase
     /// <summary>
     /// Initializes a new instance of the <see cref="api"/> class with the specified parameters.
     /// </summary>
-    protected OllamaEntityBase(IOllamaApi api, string? model, float temperature, CancellationToken cancellationToken)
+    protected OllamaEntityBase(IOllamaApi api, string model, float temperature, CancellationToken cancellationToken)
     {
         Api = api;
         Model = model;
@@ -24,7 +24,7 @@ public abstract class OllamaEntityBase
     /// <summary>
     /// Gets the optional model name to use for generating text.
     /// </summary>
-    public string? Model { get; }
+    public string Model { get; }
     
     /// <summary>
     /// Gets the temperature to control the randomness of the generated text.

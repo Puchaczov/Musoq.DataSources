@@ -207,7 +207,7 @@ public class OllamaSingleRowSourceTests
                 It.IsAny<IList<Message>>()))
             .Returns<OllamaEntity, IList<Message>>((entity, messages) =>
                 Task.FromResult(
-                    new ConversationContextWithResponse(response, [])));
+                    new CompletionResponse(response)));
         return mock;
     }
 }

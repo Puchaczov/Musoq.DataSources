@@ -30,49 +30,62 @@ internal class OllamaApi : IOllamaApi
         });
     }
     
-    public async Task<ConversationContextWithResponse> GetImageCompletionAsync(OllamaEntityBase entity, Message message)
+    public async Task<CompletionResponse> GetImageCompletionAsync(OllamaEntityBase entity, Message message)
     {
-        var completion = await _api.GetCompletion(new GenerateCompletionRequest()
+        StringBuilder modelResponse = new();
+        var chatRequest = new ChatRequest
         {
             Model = entity.Model,
-            Context = [],
-            Images = message.Images,
-            Prompt = message.Content,
-            Stream = false,
-            Options = new RequestOptions()
+            Messages = new List<Message>
+            {
+                message
+            },
+            Options = new RequestOptions
             {
                 Temperature = entity.Temperature
-            }
-        });
+            },
+            Stream = true
+        };
         
-        return completion;
+        await foreach (var token in _api.ChatAsync(chatRequest, entity.CancellationToken))
+        {
+            if (token is null)
+                continue;
+            
+            if (token.Done)
+                break;
+            
+            modelResponse.Append(token.Message.Content);
+        }
+        
+        return new CompletionResponse(modelResponse.ToString());
     }
 
-    public async Task<ConversationContextWithResponse> GetCompletionAsync(OllamaEntityBase entity, IList<Message> messages)
+    public async Task<CompletionResponse> GetCompletionAsync(OllamaEntityBase entity, IList<Message> messages)
     {
-        TaskCompletionSource<ConversationContextWithResponse> completionSource = new();
-        var stringResponse = new StringBuilder();
-        
-        await _api.SendChat(new ChatRequest()
+        StringBuilder modelResponse = new();
+        var chatRequest = new ChatRequest
         {
             Model = entity.Model,
             Messages = messages,
-            Options = new RequestOptions()
+            Options = new RequestOptions
             {
-                Temperature = entity.Temperature,
+                Temperature = entity.Temperature
             },
             Stream = true
-        }, stream =>
-        {
-            if (!stream.Done)
-            {
-                stringResponse.Append(stream.Message.Content);
-                return;
-            }
-            
-            completionSource.SetResult(new ConversationContextWithResponse(stringResponse.ToString(), []));
-        }, entity.CancellationToken);
+        };
         
-        return completionSource.Task.Result;
+        await foreach (var token in _api.ChatAsync(chatRequest, entity.CancellationToken))
+        {
+            if (token is null)
+                continue;
+            
+            if (token.Done)
+                break;
+            
+            modelResponse.Append(token.Message.Content);
+        }
+        
+        return new CompletionResponse(modelResponse.ToString());
     }
 }

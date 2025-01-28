@@ -199,9 +199,9 @@ public class OllamaQueryTests
         var mockOllamaApi = new Mock<IOllamaApi>();
 
         mockOllamaApi.Setup(x => x.GetCompletionAsync(It.IsAny<OllamaEntity>(), It.IsAny<IList<Message>>()))
-            .ReturnsAsync(new ConversationContextWithResponse(response, []));
+            .ReturnsAsync(new CompletionResponse(response));
         mockOllamaApi.Setup(x => x.GetImageCompletionAsync(It.IsAny<OllamaEntity>(), It.IsAny<Message>()))
-            .ReturnsAsync(new ConversationContextWithResponse(response, []));
+            .ReturnsAsync(new CompletionResponse(response));
         
         return mockOllamaApi;
     }
