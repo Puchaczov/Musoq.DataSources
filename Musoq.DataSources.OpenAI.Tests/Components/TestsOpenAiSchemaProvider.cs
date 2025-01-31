@@ -2,17 +2,10 @@
 
 namespace Musoq.DataSources.OpenAI.Tests.Components;
 
-internal class TestsOpenAiSchemaProvider : ISchemaProvider
+internal class TestsOpenAiSchemaProvider(IOpenAiApi openAiApi) : ISchemaProvider
 {
-    private readonly IOpenAiApi _openAiApi;
-
-    public TestsOpenAiSchemaProvider(IOpenAiApi openAiApi)
-    {
-        _openAiApi = openAiApi;
-    }
-
     public ISchema GetSchema(string schema)
     {
-        return new TestsOpenAiSchema(_openAiApi);
+        return new TestsOpenAiSchema(openAiApi);
     }
 }

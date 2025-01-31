@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>4.2.12</Version>
+        <Version>4.2.16</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -34,7 +34,7 @@
         <PackageReference Include="Musoq.Schema" Version="7.3.5">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="OpenAI" Version="1.11.0" />
+        <PackageReference Include="OpenAI" Version="2.1.0" />
         <PackageReference Include="SharpToken" Version="2.0.3" />
     </ItemGroup>
 

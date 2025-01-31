@@ -3,7 +3,7 @@ using Musoq.Schema.DataSources;
 using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
-using OpenAI_API.Models;
+using SharpToken;
 
 namespace Musoq.DataSources.OpenAI;
 
@@ -147,11 +147,11 @@ public class OpenAiSchema : SchemaBase
     {
         return new OpenAiSingleRowSource(runtimeContext, new OpenAiRequestInfo
         {
-            Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? Model.Davinci : Model.Davinci,
+            Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? Defaults.DefaultModel : Defaults.DefaultModel,
             MaxTokens = parameters.Length > 1 ? Convert.ToInt32(parameters[1]) : 4000,
-            Temperature = parameters.Length > 2 ? Convert.ToDouble(parameters[2]) : 0.0,
-            FrequencyPenalty = parameters.Length > 3 ? Convert.ToDouble(parameters[3]) : 0.0,
-            PresencePenalty = parameters.Length > 4 ? Convert.ToDouble(parameters[4]) : 0.0
+            Temperature = parameters.Length > 2 ? Convert.ToSingle(parameters[2]) : 0,
+            FrequencyPenalty = parameters.Length > 3 ? Convert.ToSingle(parameters[3]) : 0,
+            PresencePenalty = parameters.Length > 4 ? Convert.ToSingle(parameters[4]) : 0
         });
     }
 

@@ -165,10 +165,10 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         var api = entity.Api;
         var describeImageResultTask = DoAsynchronously(() =>
         {
-            const string youAreImageDescriberDescribeTheImage = "You are image describer. Describe the image.";
+            const string youAreImageDescriberDescribeTheImage = "You are images carefully analyzer. Describe the image.";
             return api.GetImageCompletionAsync(
                 entity, 
-                new(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
+                new Message(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
         });
         
         return describeImageResultTask.Result;
@@ -187,10 +187,13 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         var api = entity.Api;
         var describeImageResultTask = DoAsynchronously(() =>
         {
-            var youAreImageDescriberDescribeTheImage = $"You are image based question answerer. Return only answer for the following question: {question}.";
+            var youAreImageDescriberDescribeTheImage = "You are images carefully analyzer. You will be given with a question you must answer based on the photography provided.";
             return api.GetImageCompletionAsync(
                 entity, 
-                new(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
+                [
+                    new Message(ChatRole.System, youAreImageDescriberDescribeTheImage),
+                    new Message(ChatRole.User, question, [imageBase64])
+                ]);
         });
         
         return describeImageResultTask.Result;
@@ -209,10 +212,14 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         var api = entity.Api;
         var describeImageResultTask = DoAsynchronously(() =>
         {
-            var youAreImageDescriberDescribeTheImage = $"You are image based question answerer. Return only answer for the following question: {question}. You must respond with json {{ result: boolean }}. Do not comment or explain anything.";
+            var youAreImageDescriberDescribeTheImage = "You are images carefully analyzer. You will answer to the user question. You must respond with following json { result: boolean }. Do not comment or explain anything.";
             return api.GetImageCompletionAsync(
-                entity, 
-                new Message(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
+                entity,
+                new List<Message>
+                {
+                    new(ChatRole.System, youAreImageDescriberDescribeTheImage),
+                    new(ChatRole.User, question, [imageBase64])
+                });
         });
         
         var response = describeImageResultTask.Result;
@@ -242,11 +249,19 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
     [BindableMethod]
     public string LlmPerform<TColumnType>([InjectSpecificSource(typeof(OllamaEntity))] OllamaEntity entity, string whatToDo, TColumnType column)
     {
+        if (column == null)
+            return string.Empty;
+        
+        var columnString = column.ToString();
+        
+        if (string.IsNullOrWhiteSpace(columnString))
+            return string.Empty;
+        
         var api = entity.Api;
-        var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<Message>()
+        var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<Message>
         {
             new(ChatRole.System, whatToDo),
-            new(ChatRole.User, column.ToString())
+            new(ChatRole.User, columnString)
         }));
         
         return translateResultTask.Result;

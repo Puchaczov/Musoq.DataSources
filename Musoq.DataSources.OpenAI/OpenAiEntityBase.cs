@@ -14,7 +14,7 @@ public abstract class OpenAiEntityBase
     /// <param name="maxTokens">The maximum number of tokens</param>
     /// <param name="presencePenalty">The presence penalty</param>
     /// <param name="temperature">The temperature</param>
-    protected OpenAiEntityBase(IOpenAiApi api, string? model, double frequencyPenalty, int maxTokens, double presencePenalty, double temperature)
+    protected OpenAiEntityBase(IOpenAiApi api, string? model, float frequencyPenalty, int maxTokens, float presencePenalty, float temperature, CancellationToken cancellationToken)
     {
         Api = api;
         Model = model;
@@ -22,6 +22,7 @@ public abstract class OpenAiEntityBase
         MaxTokens = maxTokens;
         PresencePenalty = presencePenalty;
         Temperature = temperature;
+        CancellationToken = cancellationToken;
     }
 
     /// <summary>
@@ -37,7 +38,7 @@ public abstract class OpenAiEntityBase
     /// <summary>
     /// Gets the frequency penalty to control the text generation's repetition rate.
     /// </summary>
-    public double FrequencyPenalty { get; }
+    public float FrequencyPenalty { get; }
     
     /// <summary>
     /// Gets the maximum number of tokens the generated text should have.
@@ -47,10 +48,15 @@ public abstract class OpenAiEntityBase
     /// <summary>
     /// Gets the presence penalty to control the likelihood of generating tokens present in the input.
     /// </summary>
-    public double PresencePenalty { get; }
+    public float PresencePenalty { get; }
     
     /// <summary>
     /// Gets the temperature to control the randomness of the generated text.
     /// </summary>
-    public double Temperature { get; }
+    public float Temperature { get; }
+    
+    /// <summary>
+    /// Gets the cancellation token used to cancel the operation.
+    /// </summary>
+    public CancellationToken CancellationToken { get; }
 }

@@ -14,8 +14,9 @@ public class OpenAiEntity : OpenAiEntityBase
     /// <param name="maxTokens">The maximum number of tokens the generated text should have.</param>
     /// <param name="presencePenalty">The presence penalty to control the likelihood of generating tokens present in the input.</param>
     /// <param name="temperature">The temperature to control the randomness of the generated text.</param>
-    public OpenAiEntity(IOpenAiApi api, string? model, double frequencyPenalty, int maxTokens, double presencePenalty, double temperature) 
-        : base(api, model, frequencyPenalty, maxTokens, presencePenalty, temperature)
+    /// <param name="cancellationToken">The cancellation token used to cancel the text generation process.</param>
+    public OpenAiEntity(IOpenAiApi api, string? model, float frequencyPenalty, int maxTokens, float presencePenalty, float temperature, CancellationToken cancellationToken) 
+        : base(api, model, frequencyPenalty, maxTokens, presencePenalty, temperature, cancellationToken)
     {
     }
 }

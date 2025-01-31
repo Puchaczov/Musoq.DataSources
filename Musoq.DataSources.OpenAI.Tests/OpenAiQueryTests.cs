@@ -7,7 +7,7 @@ using Musoq.DataSources.OpenAI.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins;
-using OpenAI_API.Chat;
+using OpenAI.Chat;
 using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.OpenAI.Tests;
@@ -116,7 +116,7 @@ public class OpenAiQueryTests
     {
         const string script = "select Entities('abc') from #openai.gpt()";
         
-        var vm = CreateAndRunVirtualMachineWithResponse(script, "{ entities: ['a', 'b', 'c'] }");
+        var vm = CreateAndRunVirtualMachineWithResponse(script, "{ \"entities\": [\"a\", \"b\", \"c\"] }");
         var table = vm.Run();
         
         Assert.AreEqual(1, table.Count);
@@ -138,7 +138,7 @@ public class OpenAiQueryTests
     [TestMethod]
     public void WhenCallingDescribeImage_ShouldReturnImageDescription()
     {
-        const string script = "select DescribeImage('base64OfImage') from #openai.gpt()";
+        const string script = "select DescribeImage('/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=') from #openai.gpt()";
         
         var vm = CreateAndRunVirtualMachineWithResponse(script, "image description");
         var table = vm.Run();
@@ -150,7 +150,7 @@ public class OpenAiQueryTests
     [TestMethod]
     public void WhenCallingAskImage_ShouldReturnResponse()
     {
-        const string script = "select AskImage('what color is the water in the picture?', 'base64OfImage') from #openai.gpt()";
+        const string script = "select AskImage('what color is the water in the picture?', '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=') from #openai.gpt()";
         
         var vm = CreateAndRunVirtualMachineWithResponse(script, "dirty blue");
         var table = vm.Run();
@@ -162,9 +162,9 @@ public class OpenAiQueryTests
     [TestMethod]
     public void WhenCallingIsQuestionApplicableToImage_ShouldReturnResponse()
     {
-        const string script = "select IsQuestionApplicableToImage('does it contain plane in the background?', 'base64OfImage') from #openai.gpt()";
+        const string script = "select IsQuestionApplicableToImage('does it contain plane in the background?', '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=') from #openai.gpt()";
         
-        var vm = CreateAndRunVirtualMachineWithResponse(script, "{ result: true }");
+        var vm = CreateAndRunVirtualMachineWithResponse(script, "{ \"result\": true }");
         var table = vm.Run();
         
         Assert.AreEqual(1, table.Count);
@@ -224,16 +224,7 @@ public class OpenAiQueryTests
         var mockOpenAiApi = new Mock<IOpenAiApi>();
 
         mockOpenAiApi.Setup(x => x.GetCompletionAsync(It.IsAny<OpenAiEntity>(), It.IsAny<IList<ChatMessage>>()))
-            .ReturnsAsync(new ChatResult
-            {
-                Choices = new[]
-                {
-                    new ChatChoice()
-                    {
-                        Message = new ChatMessage(ChatMessageRole.Assistant, response)
-                    }
-                }
-            });
+            .ReturnsAsync(new CompletionResponse(response));
         return mockOpenAiApi;
     }
 

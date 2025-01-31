@@ -1,19 +1,12 @@
 ﻿using System;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using OpenAI_API.Models;
+using SharpToken;
 
 namespace Musoq.DataSources.OpenAI.Tests.Components;
 
-internal class TestsOpenAiSchema : OpenAiSchema
+internal class TestsOpenAiSchema(IOpenAiApi openAiApi) : OpenAiSchema
 {
-    private readonly IOpenAiApi _openAiApi;
-
-    public TestsOpenAiSchema(IOpenAiApi openAiApi)
-    {
-        _openAiApi = openAiApi;
-    }
-
     public ISchemaTable[] GetSchema()
     {
         return
@@ -24,13 +17,13 @@ internal class TestsOpenAiSchema : OpenAiSchema
 
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
-        return new TestsOpenAiSingleRowSource(_openAiApi, new OpenAiRequestInfo
+        return new TestsOpenAiSingleRowSource(openAiApi, new OpenAiRequestInfo
         {
-            Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? Model.ChatGPTTurbo : Model.ChatGPTTurbo,
+            Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? Defaults.DefaultModel : Defaults.DefaultModel,
             MaxTokens = parameters.Length > 1 ? Convert.ToInt32(parameters[1]) : 4000,
-            Temperature = parameters.Length > 2 ? Convert.ToDouble(parameters[2]) : 0.0,
-            FrequencyPenalty = parameters.Length > 3 ? Convert.ToDouble(parameters[3]) : 0.0,
-            PresencePenalty = parameters.Length > 4 ? Convert.ToDouble(parameters[4]) : 0.0
-        });
+            Temperature = parameters.Length > 2 ? Convert.ToSingle(parameters[2]) : 0,
+            FrequencyPenalty = parameters.Length > 3 ? Convert.ToSingle(parameters[3]) : 0,
+            PresencePenalty = parameters.Length > 4 ? Convert.ToSingle(parameters[4]) : 0
+        }, runtimeContext.EndWorkToken);
     }
 }

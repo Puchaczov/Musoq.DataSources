@@ -16,9 +16,9 @@ internal class OllamaSingleRowSource : RowSource
         _cancellationToken = CancellationToken.None;
     }
     
-    public OllamaSingleRowSource(RuntimeContext runtimeContext, OllamaRequestInfo openAiRequestInfo)
+    public OllamaSingleRowSource(RuntimeContext runtimeContext, OllamaRequestInfo openAiRequestInfo, IHttpClientFactory httpClientFactory)
     {
-        _openAiApi = new OllamaApi(openAiRequestInfo.OllamaBaseUrl);
+        _openAiApi = new OllamaApi(openAiRequestInfo.OllamaBaseUrl, httpClientFactory);
         _openAiRequestInfo = openAiRequestInfo;
         _cancellationToken = runtimeContext.EndWorkToken;
     }

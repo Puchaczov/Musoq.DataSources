@@ -1,6 +1,8 @@
 ﻿using System.IO;
+using System.Net.Http;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 namespace Musoq.DataSources.Ollama.Tests;
 
@@ -11,9 +13,14 @@ public class OllamaApiPlayground
     [TestMethod]
     public void DoSomeRealTests()
     {
+        var mockHttpClientFactory = new Mock<IHttpClientFactory>();
+        
+        mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(() => new HttpClient());
+        
         var library = new OllamaLibrary();
         var entity = new OllamaEntity(
-            new OllamaApi(), 
+            new OllamaApi(mockHttpClientFactory.Object), 
             "llama3.2-vision:latest",
             0,
             CancellationToken.None);
@@ -30,9 +37,14 @@ public class OllamaApiPlayground
     [TestMethod]
     public void DoSomeOtherRealTests()
     {
+        var mockHttpClientFactory = new Mock<IHttpClientFactory>();
+        
+        mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(() => new HttpClient());
+        
         var library = new OllamaLibrary();
         var entity = new OllamaEntity(
-            new OllamaApi(), 
+            new OllamaApi(mockHttpClientFactory.Object), 
             "llama3.2-vision:latest",
             0,
             CancellationToken.None);

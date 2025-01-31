@@ -1,34 +1,27 @@
-using OpenAI_API;
-using OpenAI_API.Chat;
+using OpenAI;
+using OpenAI.Chat;
 
 namespace Musoq.DataSources.OpenAI;
 
-internal class OpenAiApi : IOpenAiApi
+internal class OpenAiApi(string apiKey) : IOpenAiApi
 {
-    private readonly OpenAIAPI _api;
+    private readonly OpenAIClient _api = new(apiKey);
 
-    public OpenAiApi(string apiKey)
+    public async Task<CompletionResponse> GetCompletionAsync(OpenAiEntityBase entity, IList<ChatMessage> messages)
     {
-        _api = new OpenAIAPI(new APIAuthentication(apiKey));
-    }
+        entity.CancellationToken.ThrowIfCancellationRequested();
+        
+        var clientChat = _api.GetChatClient(entity.Model);
+        var clientResult = await clientChat.CompleteChatAsync(
+            messages: messages,
+            new ChatCompletionOptions
+            { 
+                Temperature = entity.Temperature, 
+                MaxOutputTokenCount = entity.MaxTokens,
+                FrequencyPenalty = entity.FrequencyPenalty,
+                PresencePenalty = entity.PresencePenalty
+            }, entity.CancellationToken);
 
-    public OpenAiApi(string apiKey, string apiUrlFormat)
-    {
-        _api = new OpenAIAPI(new APIAuthentication(apiKey))
-        {
-            ApiUrlFormat = apiUrlFormat
-        };
-    }
-
-    public Task<ChatResult> GetCompletionAsync(OpenAiEntityBase entity, IList<ChatMessage> messages)
-    {
-        return _api.Chat.CreateChatCompletionAsync(
-            messages: messages, 
-            model: entity.Model, 
-            temperature: entity.Temperature,
-            numOutputs: 1, 
-            max_tokens:entity.MaxTokens,
-            frequencyPenalty: entity.FrequencyPenalty,
-            presencePenalty: entity.PresencePenalty);
+        return new CompletionResponse(clientResult.Value.Content.First().Text);
     }
 }

@@ -6,7 +6,7 @@
 public abstract class OllamaEntityBase
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="api"/> class with the specified parameters.
+    /// Initializes a new instance of the <see cref="OllamaEntityBase"/> class.
     /// </summary>
     protected OllamaEntityBase(IOllamaApi api, string model, float temperature, CancellationToken cancellationToken)
     {

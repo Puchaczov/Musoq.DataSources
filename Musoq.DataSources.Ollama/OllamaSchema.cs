@@ -1,4 +1,5 @@
-﻿using Musoq.Schema;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
@@ -15,6 +16,8 @@ namespace Musoq.DataSources.Ollama;
 public class OllamaSchema : SchemaBase
 {
     private const string OllamaSchemaName = "Ollama";
+    
+    private readonly ServiceProvider _serviceProvider;
     
     /// <virtual-constructors>
     /// <virtual-constructor>
@@ -53,6 +56,11 @@ public class OllamaSchema : SchemaBase
     public OllamaSchema() 
         : base(OllamaSchemaName, CreateLibrary())
     {
+        var serviceCollection = new ServiceCollection();
+        
+        serviceCollection.AddHttpClient();
+        
+        _serviceProvider = serviceCollection.BuildServiceProvider();
     }
 
     /// <summary>
@@ -85,7 +93,7 @@ public class OllamaSchema : SchemaBase
             Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? throw new Exception("Model name cannot be null.") : throw new Exception("Model name is required."),
             Temperature = parameters.Length > 1 ? MapParameter(parameters[1]) : 0,
             OllamaBaseUrl = ollamaBaseUrl
-        });
+        }, _serviceProvider.GetRequiredService<IHttpClientFactory>());
     }
 
     /// <summary>

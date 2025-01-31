@@ -1,9 +1,9 @@
-﻿using System.Text;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Musoq.DataSources.LLMHelpers;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
-using Newtonsoft.Json;
-using OpenAI_API.Chat;
+using OpenAI.Chat;
 using SharpToken;
 
 namespace Musoq.DataSources.OpenAI;
@@ -43,10 +43,10 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
     {
         var api = entity.Api;
         var isContentAboutResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
-        {                    
-            new(ChatMessageRole.System, ContentAboutPrompt),
-            new(ChatMessageRole.User, content),
-            new(ChatMessageRole.User, question),
+        {
+            ChatMessage.CreateSystemMessage(ContentAboutPrompt),
+            ChatMessage.CreateUserMessage(content),
+            ChatMessage.CreateUserMessage(question)
         }));
         var sentimentResult = isContentAboutResultTask.Result.ToLowerInvariant();
         
@@ -67,8 +67,8 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         var api = entity.Api;
         var sentimentResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
         {
-            new(ChatMessageRole.System, SentimentPrompt),
-            new(ChatMessageRole.User, content)
+            ChatMessage.CreateSystemMessage(SentimentPrompt),
+            ChatMessage.CreateUserMessage(content)
         }));
         var sentimentResult = sentimentResultTask.Result.ToLowerInvariant();
         
@@ -92,8 +92,8 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         var api = entity.Api;
         var summarizeResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
         {
-            new(ChatMessageRole.System, SummarizerPrompt),
-            new(ChatMessageRole.User, content)
+            ChatMessage.CreateSystemMessage(SummarizerPrompt),
+            ChatMessage.CreateUserMessage(content),
         }));
         
         return summarizeResultTask.Result;
@@ -113,8 +113,8 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         var api = entity.Api;
         var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
         {
-            new(ChatMessageRole.System, TranslateGivenTextPrompt.Replace("{SOURCE_LANGUAGE}", from).Replace("{DESTINATION_LANGUAGE}", to)),
-            new(ChatMessageRole.User, content)
+            ChatMessage.CreateSystemMessage(TranslateGivenTextPrompt.Replace("{SOURCE_LANGUAGE}", from).Replace("{DESTINATION_LANGUAGE}", to)),
+            ChatMessage.CreateUserMessage(content)
         }));
         
         return translateResultTask.Result;
@@ -131,17 +131,17 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
     public string[] Entities([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content, bool throwOnException = false)
     {
         var api = entity.Api;
-        var getEntitiesResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
+        var getEntitiesResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>
         {
-            new(ChatMessageRole.System, ExtractEntitiesPrompt),
-            new(ChatMessageRole.User, content)
+            ChatMessage.CreateSystemMessage(ExtractEntitiesPrompt),
+            ChatMessage.CreateUserMessage(content),
         }));
         
         var entitiesResult = getEntitiesResultTask.Result.ToLowerInvariant();
 
         try
         {
-            var entities = JsonConvert.DeserializeObject<ExtractedEntities>(entitiesResult);
+            var entities = JsonSerializer.Deserialize<ExtractedEntities>(entitiesResult);
 
             return entities?.Entities ?? [];
         }
@@ -168,8 +168,8 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         var api = entity.Api;
         var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>()
         {
-            new(ChatMessageRole.System, whatToDo),
-            new(ChatMessageRole.User, column?.ToString())
+            ChatMessage.CreateSystemMessage(whatToDo),
+            ChatMessage.CreateUserMessage(column?.ToString())
         }));
         
         return translateResultTask.Result;
@@ -188,10 +188,11 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         var describeResultTask = DoAsynchronously(() =>
         {
             const string youAreImageDescriberDescribeTheImage = "You are image describer. Describe the image.";
+            var binaryData = BinaryData.FromBytes(FromBase64(imageBase64));
             return api.GetCompletionAsync(entity, new List<ChatMessage>()
             {
-                new(ChatMessageRole.System, youAreImageDescriberDescribeTheImage),
-                new(ChatMessageRole.User, string.Empty, [new(Encoding.UTF8.GetBytes(imageBase64))])
+                ChatMessage.CreateSystemMessage(youAreImageDescriberDescribeTheImage),
+                ChatMessage.CreateUserMessage(ChatMessageContentPart.CreateImagePart(binaryData, Base64MediaTypeDetector.DetectMimeType(imageBase64))),
             });
         });
         
@@ -211,11 +212,13 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         var api = entity.Api;
         var askResultTask = DoAsynchronously(() =>
         {
-            const string youAreImageQuestionerAskQuestionAboutImage = "You are image questioner. Ask a question about the image.";
-            return api.GetCompletionAsync(entity, new List<ChatMessage>()
+            const string youAreImageQuestionerAskQuestionAboutImage = "You are images carefully analyzer. You will be given with a question you must answer based on the photography provided.";
+            var binaryData = BinaryData.FromBytes(FromBase64(imageBase64));
+            return api.GetCompletionAsync(entity, new List<ChatMessage>
             {
-                new(ChatMessageRole.System, youAreImageQuestionerAskQuestionAboutImage),
-                new(ChatMessageRole.User, question, [new(Encoding.UTF8.GetBytes(imageBase64))])
+                ChatMessage.CreateSystemMessage(youAreImageQuestionerAskQuestionAboutImage),
+                ChatMessage.CreateUserMessage(ChatMessageContentPart.CreateImagePart(binaryData, Base64MediaTypeDetector.DetectMimeType(imageBase64))),
+                ChatMessage.CreateUserMessage(question)
             });
         });
         
@@ -236,10 +239,12 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         var askResultTask = DoAsynchronously(() =>
         {
             var youAreImageQuestionerAskQuestionAboutImage = $"You are image based question answerer. Return only answer for the following question: {question}. You must respond with json {{ result: boolean }}. Do not comment or explain anything.";
+            var binaryData = BinaryData.FromBytes(FromBase64(imageBase64));
             return api.GetCompletionAsync(entity, new List<ChatMessage>
             {
-                new(ChatMessageRole.System, youAreImageQuestionerAskQuestionAboutImage),
-                new(ChatMessageRole.User, question, [new(Encoding.UTF8.GetBytes(imageBase64))])
+                ChatMessage.CreateSystemMessage(youAreImageQuestionerAskQuestionAboutImage),
+                ChatMessage.CreateUserMessage(
+                    ChatMessageContentPart.CreateImagePart(binaryData, Base64MediaTypeDetector.DetectMimeType(imageBase64)))
             });
         });
         
@@ -247,7 +252,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         
         try
         {
-            var result = JsonConvert.DeserializeObject<Dictionary<string, bool>>(response);
+            var result = JsonSerializer.Deserialize<Dictionary<string, bool>>(response);
             
             if (result == null)
                 return false;
@@ -302,33 +307,26 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         return encoding.CountTokens(content);
     }
     
-    private static async Task<string> DoAsynchronously(Func<Task<ChatResult>> func)
+    private static async Task<string> DoAsynchronously(Func<Task<CompletionResponse>> func)
     {
         var result = func();
-        var stringResult = string.Empty;
 
         try
         {
             var completion = await result;
+            var message = completion.Text;
             
-            if (!completion.Choices.Any()) return stringResult;
-
-            var choice = completion.Choices[0];
-            var message = choice.Message;
-                    
-            if (message == null)
-                return stringResult;
-            
-            return message.TextContent ?? string.Empty;
+            return message;
         }
-        catch (Exception)
+        catch (Exception exc)
         {
-            return "ERROR";
+            return exc.Message;
         }
     }
     
-    private class ExtractedEntities(string[] entities)
+    private class ExtractedEntities
     {
-        public string[] Entities { get; } = entities;
+        [JsonPropertyName("entities")]
+        public required string[] Entities { get; init; }
     }
 }

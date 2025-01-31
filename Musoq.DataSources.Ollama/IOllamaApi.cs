@@ -21,7 +21,15 @@ public interface IOllamaApi
     /// Gets the image completion from Ollama API
     /// </summary>
     /// <param name="entity">The entity</param>
-    /// <param name="message">Message</param>
+    /// <param name="message">The Message</param>
     /// <returns>CompletionResponse</returns>
     Task<CompletionResponse> GetImageCompletionAsync(OllamaEntityBase entity, Message message);
+
+    /// <summary>
+    /// Gets the image completion from Ollama API
+    /// </summary>
+    /// <param name="entity">The entity</param>
+    /// <param name="messages">The Messages</param>
+    /// <returns>CompletionResponse</returns>
+    Task<CompletionResponse> GetImageCompletionAsync(OllamaEntityBase entity, IList<Message> messages);
 }

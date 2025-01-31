@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.Schema;
-using OllamaSharp;
 using OllamaSharp.Models.Chat;
 
 namespace Musoq.DataSources.Ollama.Tests;
@@ -17,6 +17,11 @@ public class OllamaSingleRowSourceTests
     [TestMethod]
     public void WhenRowsCalled_ShouldRetrieveSingle()
     {
+        var mockHttpClientFactory = new Mock<IHttpClientFactory>();
+        
+        mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(() => new HttpClient());
+        
         var source = new OllamaSingleRowSource(
             new RuntimeContext(
                 CancellationToken.None,
@@ -27,7 +32,7 @@ public class OllamaSingleRowSourceTests
                 Model = "test-model",
                 Temperature = 0,
                 OllamaBaseUrl = OllamaApi.DefaultAddress
-            });
+            }, mockHttpClientFactory.Object);
 
         var fired = source.Rows.Count();
         
