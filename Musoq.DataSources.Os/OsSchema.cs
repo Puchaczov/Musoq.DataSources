@@ -57,7 +57,7 @@ public class OsSchema : SchemaBase
     /// <virtual-param>Move through subfolders</virtual-param>
     /// <examples>
     /// <example>
-    /// <from>#os.directories(string directory, boolean useSubdirectories)</from>
+    /// <from>#os.directories(string directory, bool useSubdirectories)</from>
     /// <description>Gets the directories</description>
     /// <columns>
     /// <column name="FullName" type="string">Full name of the directory</column>
@@ -114,7 +114,7 @@ public class OsSchema : SchemaBase
     /// <virtual-param>Move through subfolders</virtual-param>
     /// <examples>
     /// <example>
-    /// <from>#os.files(string directory, boolean useSubdirectories)</from>
+    /// <from>#os.files(string directory, bool useSubdirectories)</from>
     /// <description>Gets the files</description>
     /// <columns>
     /// <column name="Name" type="string">Name of the file</column>

@@ -238,7 +238,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         var api = entity.Api;
         var askResultTask = DoAsynchronously(() =>
         {
-            var youAreImageQuestionerAskQuestionAboutImage = $"You are image based question answerer. Return only answer for the following question: {question}. You must respond with json {{ result: boolean }}. Do not comment or explain anything.";
+            var youAreImageQuestionerAskQuestionAboutImage = $"You are image based question answerer. Return only answer for the following question: {question}. You must respond with json {{ result: bool }}. Do not comment or explain anything.";
             var binaryData = BinaryData.FromBytes(FromBase64(imageBase64));
             return api.GetCompletionAsync(entity, new List<ChatMessage>
             {

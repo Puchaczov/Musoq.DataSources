@@ -45,7 +45,7 @@ public class OllamaSchema : SchemaBase
     /// <environmentVariables>
     /// <environmentVariable name="OLLAMA_BASE_URL" isRequired="false">Ollama base url, default http://localhost:11434</environmentVariable>
     /// </environmentVariables>
-    /// #ollama.llm(string model, float temperature)
+    /// #ollama.llm(string model, decimal temperature)
     /// </from>
     /// <description>Gives the access to Ollama api</description>
     /// <columns isDynamic="true"></columns>

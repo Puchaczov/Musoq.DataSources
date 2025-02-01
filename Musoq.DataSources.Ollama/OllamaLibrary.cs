@@ -212,7 +212,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         var api = entity.Api;
         var describeImageResultTask = DoAsynchronously(() =>
         {
-            var youAreImageDescriberDescribeTheImage = "You are images carefully analyzer. You will answer to the user question. You must respond with following json { result: boolean }. Do not comment or explain anything.";
+            var youAreImageDescriberDescribeTheImage = "You are images carefully analyzer. You will answer to the user question. You must respond with following json { result: bool }. Do not comment or explain anything.";
             return api.GetImageCompletionAsync(
                 entity,
                 new List<Message>
