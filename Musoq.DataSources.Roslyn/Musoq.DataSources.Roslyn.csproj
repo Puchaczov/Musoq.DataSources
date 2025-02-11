@@ -8,6 +8,7 @@
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>sql, roslyn, dotnet-core</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
@@ -29,6 +30,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
         <PackageReference Include="Microsoft.Build.Locator" Version="1.6.10" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
@@ -45,6 +47,15 @@
     <ItemGroup>
       <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
       <ProjectReference Include="..\Musoq.DataSources.Roslyn.CommandLineArguments\Musoq.DataSources.Roslyn.CommandLineArguments.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Components\NuGetPackageMetadataRetriever.cs">
+        <DependentUpon>INuGetPackageMetadataRetriever.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Components\NuGetCachePathResolver.cs">
+        <DependentUpon>INuGetCachePathResolver.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>

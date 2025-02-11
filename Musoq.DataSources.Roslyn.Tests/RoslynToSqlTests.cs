@@ -62,6 +62,43 @@ public class RoslynToSqlTests
     }
 
     [TestMethod]
+    public void WhenQuickAccessForTypes_ShouldPass()
+    {
+        var query = $"select t.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 8, "Result should be empty");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1") == 1, "Class1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1") == 1, "Interface1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface2") == 1, "Interface2 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Enum1") == 1, "Enum1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Tests") == 1, "Tests should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "PartialTestClass") == 2, "PartialTestClass should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "CyclomaticComplexityClass1") == 1, "CyclomaticComplexityClass1 should be present");
+    }
+
+    [TestMethod]
+    public void WhenChecksKindOfType_ShouldPass()
+    {
+        var query = $"select t.Name, t.IsClass, t.IsEnum, t.IsInterface from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t where t.Name in ('Class1', 'Interface1', 'Enum1', 'Tests', 'PartialTestClass', 'CyclomaticComplexityClass1')";
+        
+        var vm = CreateAndRunVirtualMachine(query);
+        
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count == 7, "Result must contain 6 records");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1, "Class1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1" && !(bool)r[1] && !(bool)r[2] && (bool)r[3]) == 1, "Interface1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Enum1" && !(bool)r[1] && (bool)r[2] && !(bool)r[3]) == 1, "Enum1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Tests" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1, "Tests should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "PartialTestClass" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 2, "PartialTestClass should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "CyclomaticComplexityClass1" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1, "CyclomaticComplexityClass1 should be present");
+    }
+
+    [TestMethod]
     public void WhenDocumentQueries_ShouldPass()
     {
         var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
@@ -235,7 +272,7 @@ where c.Name = 'Class1'
                 !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
                 (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
                 r[4] != null &&
-                (r[5] as IEnumerable<AttributeEntity> ?? []).Count() == 0),
+                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
             "Missing or invalid Method1Async record");
 
         Assert.IsTrue(result.Any(r => 

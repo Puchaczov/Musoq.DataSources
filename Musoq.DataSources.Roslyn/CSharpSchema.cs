@@ -52,6 +52,8 @@ public class CSharpSchema : SchemaBase
     /// <column name="IsSubmission" type="bool">Is submission</column>
     /// <column name="Version" type="string">Version</column>
     /// <column name="Documents" type="DocumentEntity[]">Documents</column>
+    /// <column name="Types" type="TypeEntity[]">Types</column>
+    /// <column name="NugetPackages" type="NugetPackageEntity[]">Nuget packages</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>
@@ -202,6 +204,45 @@ public class CSharpSchema : SchemaBase
     /// <column name="Location" type="string">Location</column>
     /// </columns>
     /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent type within project</description>
+    /// <columns type="TypeEntity">
+    /// <column name="Name" type="string">Name</column>
+    /// <column name="FullName" type="string">Full name</column>
+    /// <column name="Namespace" type="string">Namespace</column>
+    /// <column name="IsInterface" type="bool">Is interface</column>
+    /// <column name="IsClass" type="bool">Is class</column>
+    /// <column name="IsEnum" type="bool">Is enum</column>
+    /// <column name="IsStruct" type="bool">Is struct</column>
+    /// <column name="IsAbstract" type="bool">Is abstract</column>
+    /// <column name="IsSealed" type="bool">Is sealed</column>
+    /// <column name="IsStatic" type="bool">Is static</column>
+    /// <column name="IsNested" type="bool">Is nested</column>
+    /// <column name="IsGenericType" type="bool">Is generic type</column>
+    /// <column name="Modifiers" type="string[]">Modifiers</column>
+    /// <column name="Methods" type="MethodEntity[]">Methods</column>
+    /// <column name="Properties" type="PropertyEntity[]">Properties</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent nuget package</description>
+    /// <columns type="NugetPackageEntity">
+    /// <column name="Id" type="string">Package ID</column>
+    /// <column name="Version" type="string">Package version</column>
+    /// <column name="LicenseUrl" type="string">License URL</column>
+    /// <column name="ProjectUrl" type="string">Project URL</column>
+    /// <column name="Title" type="string">Package title</column>
+    /// <column name="Authors" type="string">Package authors</column>
+    /// <column name="Owners" type="string">Package owners</column>
+    /// <column name="RequireLicenseAcceptance" type="bool">License acceptance required</column>
+    /// <column name="Description" type="string">Package description</column>
+    /// <column name="Summary" type="string">Package summary</column>
+    /// <column name="ReleaseNotes" type="string">Release notes</column>
+    /// <column name="Copyright" type="string">Copyright info</column>
+    /// <column name="Language" type="string">Language</column>
+    /// <column name="Tags" type="string">Tags</column>
+    /// </columns>
+    /// </additional-table>
     /// </additional-tables>
     public CSharpSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
@@ -219,13 +260,11 @@ public class CSharpSchema : SchemaBase
     /// <returns>Requested table metadata</returns>
     public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
-        switch (name.ToLowerInvariant())
+        return name.ToLowerInvariant() switch
         {
-            case "solution":
-                return new CSharpSolutionTable();
-        }
-
-        return base.GetTableByName(name, runtimeContext, parameters);
+            "solution" => new CSharpSolutionTable(),
+            _ => base.GetTableByName(name, runtimeContext, parameters)
+        };
     }
 
     /// <summary>
@@ -237,15 +276,24 @@ public class CSharpSchema : SchemaBase
     /// <returns>Data source</returns>
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
+        string? nugetPropertiesResolveEndpoint = null;
+        
+        if (runtimeContext.EnvironmentVariables.TryGetValue("NUGET_PROPERTIES_RESOLVE_ENDPOINT", out var nugetPropertiesResolveEndpointValue))
+        {
+            nugetPropertiesResolveEndpoint = nugetPropertiesResolveEndpointValue;
+        }
+        
         switch (name.ToLowerInvariant())
         {
             case "solution":
+            {
                 if (Solutions.TryGetValue((string) parameters[0], out var solutionFilePath))
                 {
-                    return new CSharpInMemorySolutionRowsSource(solutionFilePath, runtimeContext.EndWorkToken);
+                    return new CSharpInMemorySolutionRowsSource(solutionFilePath, nugetPropertiesResolveEndpoint, runtimeContext.EndWorkToken);
                 }
                 
-                return new CSharpSolutionRowsSource((string) parameters[0], runtimeContext.EndWorkToken);
+                return new CSharpSolutionRowsSource((string) parameters[0], nugetPropertiesResolveEndpoint, runtimeContext.EndWorkToken);
+            }
         }
 
         return base.GetRowSource(name, runtimeContext, parameters);

@@ -8,6 +8,24 @@ namespace Musoq.DataSources.Roslyn.Components
         private readonly object _syncRoot = new();
         private readonly Dictionary<string, HtmlDocument> _htmlDocuments = new();
         private readonly string? _packagePath;
+        private string? _licenseUrl;
+
+        private string? _license;
+        private string? _authors;
+
+        private string? _projectUrl;
+        private string? _title;
+        private string? _owners;
+
+        private bool? _requireLicenseAcceptance;
+
+        private string? _description;
+
+        private string? _summary;
+        private string? _releaseNotes;
+        private string? _copyright;
+        private string? _language;
+        private string? _tags;
         
         public string? PackagePath
         {
@@ -23,14 +41,11 @@ namespace Musoq.DataSources.Roslyn.Components
                 if (value == null) return;
                 lock (_syncRoot)
                 {
-                    // If it has never been set, assign it
-                    // otherwise do not overwrite
                     _packagePath ??= value;
                 }
             }
         }
 
-        private string? _licenseUrl;
         public string? LicenseUrl
         {
             get
@@ -50,7 +65,25 @@ namespace Musoq.DataSources.Roslyn.Components
             }
         }
 
-        private string? _projectUrl;
+        public string? License
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _license;
+                }
+            }
+            set
+            {
+                if (value == null) return;
+                lock (_syncRoot)
+                {
+                    _license ??= value;
+                }
+            }
+        }
+
         public string? ProjectUrl
         {
             get
@@ -69,6 +102,186 @@ namespace Musoq.DataSources.Roslyn.Components
                 }
             }
         }
+
+        public string? Title
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _title;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _title = value;
+                }
+            }
+        }
+
+        public string? Authors
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _authors;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _authors = value;
+                }
+            }
+        }
+
+        public string? Owners
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _owners;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _owners = value;
+                }
+            }
+        }
+
+        public bool? RequireLicenseAcceptance
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _requireLicenseAcceptance;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _requireLicenseAcceptance = value;
+                }
+            }
+        }
+
+        public string? Description
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _description;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _description = value;
+                }
+            }
+        }
+        public string? Summary
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _summary;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _summary = value;
+                }
+            }
+        }
+
+        public string? ReleaseNotes
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _releaseNotes;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _releaseNotes = value;
+                }
+            }
+        }
+
+        public string? Copyright
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _copyright;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _copyright = value;
+                }
+            }
+        }
+
+        public string? Language
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _language;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _language = value;
+                }
+            }
+        }
+
+        public string? Tags
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _tags;
+                }
+            }
+            set
+            {
+                lock (_syncRoot)
+                {
+                    _tags = value;
+                }
+            }
+        }
+
         public bool TryGetHtmlDocument(string url, out HtmlDocument? doc)
         {
             lock (_syncRoot)

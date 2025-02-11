@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Musoq.Plugins.Attributes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using System.Xml.Linq;
+using Musoq.DataSources.Roslyn.Components;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -40,10 +44,14 @@ public class ProjectEntity
         new SchemaColumn(nameof(Version), 9, typeof(string)),
         new SchemaColumn(nameof(Documents), 10, typeof(DocumentEntity[])),
         new SchemaColumn(nameof(ProjectReferences), 11, typeof(ProjectReferenceEntity[])),
-        new SchemaColumn(nameof(LibraryReferences), 12, typeof(LibraryReferenceEntity[]))
+        new SchemaColumn(nameof(LibraryReferences), 12, typeof(LibraryReferenceEntity[])),
+        new SchemaColumn(nameof(NugetPackages), 13, typeof(NugetPackageEntity[])),
+        new SchemaColumn(nameof(Types), 14, typeof(TypeEntity[]))
     ];
 
     private readonly Project _project;
+    private readonly INuGetPackageMetadataRetriever _nuGetPackageMetadataRetriever;
+    private readonly CancellationToken _cancellationToken;
 
     private DocumentEntity[] _documents;
     private bool _wasLoaded;
@@ -52,10 +60,15 @@ public class ProjectEntity
     /// Initializes a new instance of the <see cref="ProjectEntity"/> class.
     /// </summary>
     /// <param name="project">The project.</param>
-    public ProjectEntity(Project project)
+    /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public ProjectEntity(Project project, INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
     {
         _project = project;
+        _nuGetPackageMetadataRetriever = nuGetPackageMetadataRetriever;
+        _cancellationToken = cancellationToken;
         _documents = [];
+        NugetPackages = GetNugetPackagesAsync(project).Result;
     }
 
     /// <summary>
@@ -77,7 +90,9 @@ public class ProjectEntity
             {nameof(Version), 9},
             {nameof(Documents), 10},
             {nameof(ProjectReferences), 11},
-            {nameof(LibraryReferences), 12}
+            {nameof(LibraryReferences), 12},
+            {nameof(NugetPackages), 13},
+            {nameof(Types), 14}
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<ProjectEntity, object?>>
@@ -94,7 +109,9 @@ public class ProjectEntity
             {9, entity => entity.Version},
             {10, entity => entity.Documents},
             {11, entity => entity.ProjectReferences},
-            {12, entity => entity.LibraryReferences}
+            {12, entity => entity.LibraryReferences},
+            {13, entity => entity.NugetPackages},
+            {14, entity => entity.Types}
         };
     }
 
@@ -182,4 +199,91 @@ public class ProjectEntity
             .OfType<PortableExecutableReference>()
             .Where(f => f.Properties.Kind == MetadataImageKind.Assembly)
             .Select(reference => new LibraryReferenceEntity(reference));
+
+    /// <summary>
+    /// Gets the Project types.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<TypeEntity> Types
+    {
+        get
+        {
+            var types = new List<TypeEntity>();
+
+            foreach (var document in Documents)
+            {
+                types.AddRange(document.Classes);
+                types.AddRange(document.Interfaces);
+                types.AddRange(document.Enums);
+            }
+
+            return types;
+        }
+    }
+    
+    /// <summary>
+    /// Gets the NuGet packages of the project.
+    /// </summary>
+    public IReadOnlyList<NugetPackageEntity> NugetPackages { get; }
+
+    private async Task<List<NugetPackageEntity>> GetNugetPackagesAsync(Project project)
+    {
+        var nugetPackages = new List<NugetPackageEntity>();
+        if (string.IsNullOrEmpty(project.FilePath))
+            return nugetPackages;
+
+        try
+        {
+            var projectXml = XDocument.Load(project.FilePath);
+            var packageRefs = projectXml.Descendants("PackageReference");
+
+            foreach (var packageRef in packageRefs)
+            {
+                var id = packageRef.Attribute("Include")?.Value ?? string.Empty;
+                var version = packageRef.Attribute("Version")?.Value ?? string.Empty;
+                var metadata = await _nuGetPackageMetadataRetriever.GetMetadataAsync(id, version, _cancellationToken);
+
+                var requireLicenseAcceptanceString = metadata.GetValueOrDefault(nameof(NugetPackageEntity.RequireLicenseAcceptance));
+                var requireLicenseAcceptance = string.IsNullOrWhiteSpace(requireLicenseAcceptanceString) ? "false" : requireLicenseAcceptanceString;
+                
+                nugetPackages.Add(new NugetPackageEntity(
+                    id,
+                    version,
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseUrl)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.ProjectUrl)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Title)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Authors)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Owners)),
+                    Convert.ToBoolean(requireLicenseAcceptance),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Description)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Summary)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.ReleaseNotes)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Copyright)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Language)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Tags))
+                ));
+            }
+        }
+        catch (Exception ex)
+        {
+            nugetPackages.Add(new NugetPackageEntity(
+                "error",
+                "error",
+                $"error: {ex.Message}",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
+            return nugetPackages;
+        }
+
+        return nugetPackages;
+    }
 }

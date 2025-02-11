@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.MSBuild;
+using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Entities;
 
 namespace Musoq.DataSources.Roslyn.CoconaCommands;
@@ -13,7 +14,8 @@ internal class SolutionOperationsCommand
         
         var workspace = MSBuildWorkspace.Create();
         var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
-        var solutionEntity = new SolutionEntity(solution);
+        var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(new NuGetCachePathResolver(), null);
+        var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, cancellationToken);
         
         await Parallel.ForEachAsync(solutionEntity.Projects, cancellationToken, async (project, token) =>
         {

@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Musoq.DataSources.Roslyn
+namespace Musoq.DataSources.Roslyn.Components
 {
-    public class NuGetCachePathResolver : INuGetCachePathResolver
+    internal class NuGetCachePathResolver : INuGetCachePathResolver
     {
         public string Resolve()
         {

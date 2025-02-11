@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
+using Musoq.DataSources.Roslyn.Components;
 using Musoq.Plugins.Attributes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -13,6 +15,13 @@ namespace Musoq.DataSources.Roslyn.Entities
     /// </summary>
     public class SolutionEntity
     {
+        private readonly Solution _solution;
+        private ProjectEntity[] _projects;
+        private bool _wasLoaded;
+
+        private readonly CancellationToken _cancellationToken;
+        private readonly NuGetPackageMetadataRetriever _nuGetPackageMetadataRetriever;
+        
         /// <summary>
         /// A read-only dictionary mapping column names to their respective indices.
         /// </summary>
@@ -32,19 +41,18 @@ namespace Musoq.DataSources.Roslyn.Entities
             new SchemaColumn(nameof(Projects), 1, typeof(ProjectEntity[]))
         ];
 
-        internal readonly Solution Solution;
-        
-        private ProjectEntity[] _projects;
-        private bool _wasLoaded;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SolutionEntity"/> class.
         /// </summary>
         /// <param name="solution">The solution.</param>
-        public SolutionEntity(Solution solution)
+        /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        public SolutionEntity(Solution solution, NuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
         {
-            Solution = solution;
+            _solution = solution;
+            _nuGetPackageMetadataRetriever = nuGetPackageMetadataRetriever;
             _projects = [];
+            _cancellationToken = cancellationToken;
         }
 
         /// <summary>
@@ -68,7 +76,7 @@ namespace Musoq.DataSources.Roslyn.Entities
         /// <summary>
         /// Gets the ID of the solution.
         /// </summary>
-        public string Id => Solution.Id.Id.ToString();
+        public string Id => _solution.Id.Id.ToString();
 
         /// <summary>
         /// Gets the projects within the solution.
@@ -80,11 +88,22 @@ namespace Musoq.DataSources.Roslyn.Entities
             {
                 if (_wasLoaded) return _projects;
 
-                _projects = Solution.Projects.Select(p => new ProjectEntity(p)).ToArray();
+                _projects = _solution.Projects.Select(p => new ProjectEntity(p, _nuGetPackageMetadataRetriever, _cancellationToken)).ToArray();
                 _wasLoaded = true;
 
                 return _projects;
             }
+        }
+    
+        /// <summary>
+        /// Clones the solution entity with the specified NuGet package metadata retriever and cancellation token.
+        /// </summary>
+        /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A new instance of the <see cref="SolutionEntity"/> class.</returns>
+        public SolutionEntity CloneWith(NuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
+        {
+            return new SolutionEntity(_solution, nuGetPackageMetadataRetriever, cancellationToken);
         }
     }
 }
