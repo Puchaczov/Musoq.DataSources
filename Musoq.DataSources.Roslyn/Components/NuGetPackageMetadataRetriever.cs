@@ -1,8 +1,8 @@
 using System;
 using System.Xml;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
-using HtmlAgilityPack;
 using System.Threading.Tasks;
 
 namespace Musoq.DataSources.Roslyn.Components
@@ -17,11 +17,22 @@ namespace Musoq.DataSources.Roslyn.Components
         string? customApiEndpoint)
         : INuGetPackageMetadataRetriever
     {
-        internal static readonly Dictionary<string, Func<HtmlDocument, string?>> HtmlStrategies = new()
+        internal static IReadOnlyDictionary<string, TraverseRetrievePair> ResolveHtmlStrategies(HttpClient client)
         {
-            [nameof(CommonResources.LicenseUrl)] = NuGetMetadataStrategies.GetLicenseUrlFromHtml,
-            [nameof(CommonResources.ProjectUrl)] = NuGetMetadataStrategies.GetProjectUrlFromHtml
-        };
+            var capturedClient = client;
+            return new Dictionary<string, TraverseRetrievePair>
+            {
+                [nameof(CommonResources.LicenseUrl)] = new(
+                    async (url, token) => await NuGetMetadataStrategies.TraverseToLicenseUrlAsync(url, capturedClient, token),
+                    NuGetMetadataStrategies.GetLicenseUrlFromHtml),
+                [nameof(CommonResources.ProjectUrl)] = new(
+                    async (url, token) => await NuGetMetadataStrategies.TraverseToProjectUrlAsync(url, capturedClient, token),
+                    NuGetMetadataStrategies.GetProjectUrlFromHtml),
+                [nameof(CommonResources.LicenseContent)] = new(
+                    async (url, token) => await NuGetMetadataStrategies.TraverseToLicenseContentAsync(url, capturedClient, token),
+                    NuGetMetadataStrategies.GetLicenseContentFromHtml)
+            };
+        }
         
         internal static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>> ResolveNuspecStrategies(string path)
         {
@@ -109,8 +120,6 @@ namespace Musoq.DataSources.Roslyn.Components
                     propertyName,
                     cancellationToken);
 
-                // If everything else fails, and we have a custom API,
-                // call it as the last resort.
                 var resolvedValue = webValue;
                 if (resolvedValue == null && !string.IsNullOrEmpty(customApiEndpoint))
                 {

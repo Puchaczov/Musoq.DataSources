@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Collections.Generic;
 using System.Linq;
-using HtmlAgilityPack;
 
 namespace Musoq.DataSources.Roslyn.Components;
 
@@ -27,6 +26,92 @@ internal static class NuGetRetrievalStrategies
             return Path.Combine(globalPackagesPath, packageName.ToLower(), packageVersion);
 
         return defaultPath;
+    }
+
+    public static Task<string?> GetMetadataFromPathAsync(
+        string packagePath,
+        string packageName,
+        string propertyName,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var nuspecFilePath = Path.Combine(packagePath, $"{packageName}.nuspec");
+        
+        if (!File.Exists(nuspecFilePath)) 
+            return Task.FromResult<string?>(null);
+
+        try
+        {
+            var xmlDoc = new XmlDocument();
+            xmlDoc.Load(nuspecFilePath);
+
+            var namespaceManager = new XmlNamespaceManager(xmlDoc.NameTable);
+            
+            var nugetNamespace = xmlDoc.DocumentElement?.NamespaceURI ?? string.Empty;
+            if (!string.IsNullOrEmpty(nugetNamespace))
+            {
+                namespaceManager.AddNamespace("nu", nugetNamespace);
+            }
+            
+            var strategies = NuGetPackageMetadataRetriever.ResolveNuspecStrategies(nuspecFilePath);
+
+            return Task.FromResult(strategies.TryGetValue(propertyName, out var strategy) ? 
+                strategy(xmlDoc, namespaceManager) : null);
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult<string?>($"error: {ex.Message}");
+        }
+    }
+
+    public static async Task<string?> GetMetadataFromWebAsync(
+        string baseUrl,
+        string packageName,
+        string packageVersion,
+        CommonResources commonResources,
+        string propertyName,
+        CancellationToken cancellationToken)
+    {
+        var url = $"{baseUrl}/{packageName}/{packageVersion}";
+        var strategies = NuGetPackageMetadataRetriever.ResolveHtmlStrategies(_httpClient);
+        TraverseRetrievePair? pair = null;
+        if (commonResources.TryGetHtmlDocument(url, out var doc) || !strategies.TryGetValue(propertyName, out pair))
+            return doc is null ? null : pair?.Retrieve(doc);
+        
+        try
+        {
+            doc = await pair.TraverseAsync(url, cancellationToken);
+            commonResources.AddHtmlDocument(url, doc);
+        }
+        catch (Exception ex)
+        {
+            return $"error: {ex.Message}";
+        }
+
+        return pair.Retrieve(doc);
+    }
+
+    public static async Task<string?> GetMetadataFromCustomApiAsync(
+        string apiEndpoint,
+        string packageName,
+        string packageVersion,
+        string propertyName,
+        CancellationToken cancellationToken)
+    {
+        var requestUrlBase = $"{apiEndpoint}?packageName={packageName}&packageVersion={packageVersion}&propertyName={propertyName}";
+        try
+        {
+            using var response = await _httpClient.GetAsync(requestUrlBase, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            // Assume the API returns a plain string
+            return string.IsNullOrWhiteSpace(content) ? null : content;
+        }
+        catch (Exception ex)
+        {
+            return $"error: {ex.Message}";
+        }
     }
 
     private static string? GetNuGetGlobalPackagesPath()
@@ -67,101 +152,6 @@ internal static class NuGetRetrievalStrategies
                 "packages");
 
             return defaultPath;
-        }
-        catch (Exception ex)
-        {
-            return $"error: {ex.Message}";
-        }
-    }
-
-    public static Task<string?> GetMetadataFromPathAsync(
-        string packagePath,
-        string packageName,
-        string propertyName,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var nuspecFilePath = Path.Combine(packagePath, $"{packageName}.nuspec");
-        
-        if (!File.Exists(nuspecFilePath)) 
-            return Task.FromResult<string?>(null);
-
-        try
-        {
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(nuspecFilePath);
-
-            var namespaceManager = new XmlNamespaceManager(xmlDoc.NameTable);
-            
-            // Extract the NuGet namespace from the nuspec file
-            var nugetNamespace = xmlDoc.DocumentElement?.NamespaceURI ?? string.Empty;
-            if (!string.IsNullOrEmpty(nugetNamespace))
-            {
-                namespaceManager.AddNamespace("nu", nugetNamespace);
-            }
-            
-            var strategies = NuGetPackageMetadataRetriever.ResolveNuspecStrategies(nuspecFilePath);
-
-            return Task.FromResult(strategies.TryGetValue(propertyName, out var strategy) ? 
-                strategy(xmlDoc, namespaceManager) : null);
-        }
-        catch (Exception ex)
-        {
-            return Task.FromResult<string?>($"error: {ex.Message}");
-        }
-    }
-
-    public static async Task<string?> GetMetadataFromWebAsync(
-        string baseUrl,
-        string packageName,
-        string packageVersion,
-        CommonResources commonResources,
-        string propertyName,
-        CancellationToken cancellationToken)
-    {
-        var url = $"{baseUrl}/{packageName}/{packageVersion}";
-        if (!commonResources.TryGetHtmlDocument(url, out var doc))
-        {
-            try
-            {
-                var response = await _httpClient.GetAsync(url, cancellationToken);
-                response.EnsureSuccessStatusCode();
-                var html = await response.Content.ReadAsStringAsync(cancellationToken);
-
-                var newDoc = new HtmlDocument();
-                newDoc.LoadHtml(html);
-                commonResources.AddHtmlDocument(url, newDoc);
-
-                doc = newDoc;
-            }
-            catch (Exception ex)
-            {
-                return $"error: {ex.Message}";
-            }
-        }
-
-        if (NuGetPackageMetadataRetriever.HtmlStrategies.TryGetValue(propertyName, out var strategy))
-            return strategy(doc);
-
-        return null;
-    }
-
-    public static async Task<string?> GetMetadataFromCustomApiAsync(
-        string apiEndpoint,
-        string packageName,
-        string packageVersion,
-        string propertyName,
-        CancellationToken cancellationToken)
-    {
-        var requestUrlBase = $"{apiEndpoint}?packageName={packageName}&packageVersion={packageVersion}&propertyName={propertyName}";
-        try
-        {
-            using var response = await _httpClient.GetAsync(requestUrlBase, cancellationToken);
-            response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            // Assume the API returns a plain string
-            return string.IsNullOrWhiteSpace(content) ? null : content;
         }
         catch (Exception ex)
         {

@@ -1,4 +1,7 @@
 using System.IO;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using HtmlAgilityPack;
 using System.Xml;
 
@@ -82,6 +85,59 @@ namespace Musoq.DataSources.Roslyn.Components
             return File.Exists(licenseFilePath) ? File.ReadAllText(licenseFilePath) : null;
         }
 
+        public static async Task<HtmlDocument> TraverseToLicenseUrlAsync(string url, HttpClient httpClient, CancellationToken cancellationToken)
+        {
+            var response = await httpClient.GetAsync(url, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            var html = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            var newDoc = new HtmlDocument();
+            newDoc.LoadHtml(html);
+            
+            return newDoc;
+        }
+        
+        public static async Task<HtmlDocument> TraverseToProjectUrlAsync(string url, HttpClient httpClient, CancellationToken cancellationToken)
+        {
+            var response = await httpClient.GetAsync(url, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            var html = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            var newDoc = new HtmlDocument();
+            newDoc.LoadHtml(html);
+            
+            return newDoc;
+        }
+        
+        public static async Task<HtmlDocument> TraverseToLicenseContentAsync(string url, HttpClient httpClient, CancellationToken cancellationToken)
+        {
+            var response = await httpClient.GetAsync(url, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            var html = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            var newDoc = new HtmlDocument();
+            newDoc.LoadHtml(html);
+            
+            // Find with xpath, element "a" that link points to https://licenses.nuget.org/* and get its href attribute
+            var licenseUrl = newDoc.DocumentNode.SelectSingleNode("//a[contains(@href, 'https://licenses.nuget.org')]")?.Attributes["href"]?.Value;
+
+            if (licenseUrl is not null)
+            {
+                var licenseResponse = await httpClient.GetAsync(licenseUrl, cancellationToken);
+                
+                licenseResponse.EnsureSuccessStatusCode();
+                var licenseHtml = await licenseResponse.Content.ReadAsStringAsync(cancellationToken);
+                
+                newDoc.LoadHtml(licenseHtml);
+                
+                return newDoc;
+            }
+            
+            newDoc.LoadHtml(string.Empty);
+            
+            return newDoc;
+        }
+
         public static string? GetLicenseUrlFromHtml(HtmlDocument doc)
         {
             return ExtractUrl(doc, "//a[@id='licenseUrl']", "href");
@@ -90,6 +146,11 @@ namespace Musoq.DataSources.Roslyn.Components
         public static string? GetProjectUrlFromHtml(HtmlDocument doc)
         {
             return ExtractUrl(doc, "//a[@id='projectUrl']", "href");
+        }
+        
+        public static string? GetLicenseContentFromHtml(HtmlDocument doc)
+        {
+            return doc.DocumentNode.SelectSingleNode("//div[@id='licenseContent']")?.InnerText;
         }
 
         private static string? ExtractUrl(HtmlDocument doc, string xpath, string attributeName)

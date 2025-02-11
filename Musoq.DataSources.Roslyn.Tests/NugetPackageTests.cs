@@ -1,5 +1,4 @@
 using System.Globalization;
-using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -7,11 +6,7 @@ using Musoq.Evaluator.Tables;
 using Musoq.Parser.Helpers;
 using Musoq.Plugins;
 using Environment = Musoq.Plugins.Environment;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Linq;
-using System.Collections.Generic;
 using System.Text;
-using System.IO;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 
