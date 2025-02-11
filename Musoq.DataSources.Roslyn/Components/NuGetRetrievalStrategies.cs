@@ -82,7 +82,9 @@ internal static class NuGetRetrievalStrategies
     {
         cancellationToken.ThrowIfCancellationRequested();
         var nuspecFilePath = Path.Combine(packagePath, $"{packageName}.nuspec");
-        if (!File.Exists(nuspecFilePath)) return Task.FromResult<string?>(null);
+        
+        if (!File.Exists(nuspecFilePath)) 
+            return Task.FromResult<string?>(null);
 
         try
         {
@@ -90,14 +92,22 @@ internal static class NuGetRetrievalStrategies
             xmlDoc.Load(nuspecFilePath);
 
             var namespaceManager = new XmlNamespaceManager(xmlDoc.NameTable);
+            
+            // Extract the NuGet namespace from the nuspec file
+            var nugetNamespace = xmlDoc.DocumentElement?.NamespaceURI ?? string.Empty;
+            if (!string.IsNullOrEmpty(nugetNamespace))
+            {
+                namespaceManager.AddNamespace("nu", nugetNamespace);
+            }
+            
+            var strategies = NuGetPackageMetadataRetriever.ResolveNuspecStrategies(nuspecFilePath);
 
-            return NuGetPackageMetadataRetriever.NuspecStrategies.TryGetValue(propertyName, out var strategy) ? 
-                Task.FromResult(strategy(xmlDoc, namespaceManager)) : 
-                Task.FromResult<string?>(null);
+            return Task.FromResult(strategies.TryGetValue(propertyName, out var strategy) ? 
+                strategy(xmlDoc, namespaceManager) : null);
         }
         catch (Exception ex)
         {
-            return Task.FromResult($"error: {ex.Message}");
+            return Task.FromResult<string?>($"error: {ex.Message}");
         }
     }
 
@@ -143,10 +153,10 @@ internal static class NuGetRetrievalStrategies
         string propertyName,
         CancellationToken cancellationToken)
     {
-        var requestUrl = $"{apiEndpoint}?packageName={packageName}&packageVersion={packageVersion}&propertyName={propertyName}";
+        var requestUrlBase = $"{apiEndpoint}?packageName={packageName}&packageVersion={packageVersion}&propertyName={propertyName}";
         try
         {
-            using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
+            using var response = await _httpClient.GetAsync(requestUrlBase, cancellationToken);
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
 

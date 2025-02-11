@@ -110,18 +110,18 @@ public class NugetPackageTests
                 ProjectName = "Solution1.ClassLibrary1.Tests",
                 Id = "coverlet.collector",
                 Version = "6.0.0",
-                LicenseUrl = null,
-                ProjectUrl = null,
-                Title = null,
-                Authors = null,
+                LicenseUrl = "https://licenses.nuget.org/MIT",
+                ProjectUrl = "https://github.com/coverlet-coverage/coverlet",
+                Title = "coverlet.collector",
+                Authors = "tonerdo",
                 Owners = null,
                 RequireLicenseAcceptance = null,
-                Description = null,
+                Description = "Coverlet is a cross platform code coverage library for .NET, with support for line, branch and method coverage.",
                 Summary = null,
                 ReleaseNotes = null,
                 Copyright = null,
                 Language = null,
-                Tags = null
+                Tags = "coverage testing unit-test lcov opencover quality"
             },
             new NugetPackageExpectation()
             {
@@ -174,36 +174,47 @@ public class NugetPackageTests
                 ProjectName = "Solution1.ClassLibrary1.Tests",
                 Id = "NUnit.Analyzers",
                 Version = "3.9.0",
-                LicenseUrl = null,
-                ProjectUrl = null,
-                Title = null,
-                Authors = null,
+                LicenseUrl = "https://aka.ms/deprecateLicenseUrl",
+                ProjectUrl = "https://github.com/nunit/nunit.analyzers",
+                Title = "NUnit Analyzers",
+                Authors = "NUnit",
                 Owners = null,
                 RequireLicenseAcceptance = null,
-                Description = null,
-                Summary = null,
-                ReleaseNotes = null,
-                Copyright = null,
+                Description = 
+                    """
+                    This package includes analyzers and code fixes for test projects using NUnit 3. The analyzers will mark wrong usages when writing tests, and the code fixes can be used to used to correct these usages.
+
+                    Version 3.0 and upwards works in Visual Studio 2019 and also enables supression of compiler errors such as errors arising from nullable reference types. For Visual Studio 2017 one must use versions below 3.0.
+                    """,
+                Summary = "Code analyzers and fixes for NUnit 3",
+                ReleaseNotes = "See the release notes on https://github.com/nunit/nunit.analyzers/blob/master/CHANGES.txt.",
+                Copyright = "Copyright (c) 2018-2023 NUnit project",
                 Language = null,
-                Tags = null
+                Tags = "nunit, analyzers, roslyn-analyzers"
             },
             new NugetPackageExpectation()
             {
                 ProjectName = "Solution1.ClassLibrary1.Tests",
                 Id = "NUnit3TestAdapter",
                 Version = "4.5.0",
-                LicenseUrl = null,
-                ProjectUrl = null,
-                Title = null,
-                Authors = null,
+                LicenseUrl = "https://licenses.nuget.org/MIT",
+                ProjectUrl = "https://docs.nunit.org/articles/vs-test-adapter/Index.html",
+                Title = "NUnit3 Test Adapter for Visual Studio and DotNet",
+                Authors = "Charlie Poole, Terje Sandstrom",
                 Owners = null,
                 RequireLicenseAcceptance = null,
-                Description = null,
-                Summary = null,
-                ReleaseNotes = null,
-                Copyright = null,
-                Language = null,
-                Tags = null
+                Description = 
+                """
+                The NUnit3 TestAdapter for Visual Studio, all versions from 2012 and onwards, and DotNet (incl. .Net core), versions .net framework 4.6.2 or higher, .net core 3.1, .net 5 or higher.
+                
+                      Note that this package ONLY contains the adapter, not the NUnit framework.
+                      For VS 2017 and forward, you should add this package to every test project in your solution. (Earlier versions only require a single adapter package per solution.)
+                """,
+                Summary = "NUnit3 adapter for running tests in Visual Studio and DotNet. Works with NUnit 3.x, use the NUnit 2 adapter for 2.x tests.",
+                ReleaseNotes = "See https://docs.nunit.org/articles/vs-test-adapter/Adapter-Release-Notes.html",
+                Copyright = "Copyright (c) 2011-2021 Charlie Poole, 2014-2023 Terje Sandstrom",
+                Language = "en-US",
+                Tags = "test visualstudio testadapter nunit nunit3 dotnet"
             }
         };
 

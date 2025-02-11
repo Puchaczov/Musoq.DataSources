@@ -17,28 +17,38 @@ namespace Musoq.DataSources.Roslyn.Components
         string? customApiEndpoint)
         : INuGetPackageMetadataRetriever
     {
-        internal static readonly Dictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>> NuspecStrategies = new()
-        {
-            [nameof(CommonResources.LicenseUrl)] = NuGetMetadataStrategies.GetLicenseUrlFromNuspec,
-            [nameof(CommonResources.License)] = NuGetMetadataStrategies.GetLicenseFromNuspec,
-            [nameof(CommonResources.ProjectUrl)] = NuGetMetadataStrategies.GetProjectUrlFromNuspec,
-            [nameof(CommonResources.Title)] = NuGetMetadataStrategies.GetTitleFromNuspec,
-            [nameof(CommonResources.Authors)] = NuGetMetadataStrategies.GetAuthorsFromNuspec,
-            [nameof(CommonResources.Owners)] = NuGetMetadataStrategies.GetOwnersFromNuspec,
-            [nameof(CommonResources.RequireLicenseAcceptance)] = NuGetMetadataStrategies.GetRequireLicenseAcceptanceFromNuspec,
-            [nameof(CommonResources.Description)] = NuGetMetadataStrategies.GetDescriptionFromNuspec,
-            [nameof(CommonResources.Summary)] = NuGetMetadataStrategies.GetSummaryFromNuspec,
-            [nameof(CommonResources.ReleaseNotes)] = NuGetMetadataStrategies.GetReleaseNotesFromNuspec,
-            [nameof(CommonResources.Copyright)] = NuGetMetadataStrategies.GetCopyrightFromNuspec,
-            [nameof(CommonResources.Language)] = NuGetMetadataStrategies.GetLanguageFromNuspec,
-            [nameof(CommonResources.Tags)] = NuGetMetadataStrategies.GetTagsFromNuspec
-        };
-
         internal static readonly Dictionary<string, Func<HtmlDocument, string?>> HtmlStrategies = new()
         {
             [nameof(CommonResources.LicenseUrl)] = NuGetMetadataStrategies.GetLicenseUrlFromHtml,
             [nameof(CommonResources.ProjectUrl)] = NuGetMetadataStrategies.GetProjectUrlFromHtml
         };
+        
+        internal static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>> ResolveNuspecStrategies(string path)
+        {
+            var capturedPath = path;
+            return new Dictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>>
+            {
+                [nameof(CommonResources.LicenseUrl)] = NuGetMetadataStrategies.GetLicenseUrlFromNuspec,
+                [nameof(CommonResources.License)] = NuGetMetadataStrategies.GetLicenseFromNuspec,
+                [nameof(CommonResources.ProjectUrl)] = NuGetMetadataStrategies.GetProjectUrlFromNuspec,
+                [nameof(CommonResources.Title)] = NuGetMetadataStrategies.GetTitleFromNuspec,
+                [nameof(CommonResources.Authors)] = NuGetMetadataStrategies.GetAuthorsFromNuspec,
+                [nameof(CommonResources.Owners)] = NuGetMetadataStrategies.GetOwnersFromNuspec,
+                [nameof(CommonResources.RequireLicenseAcceptance)] = NuGetMetadataStrategies.GetRequireLicenseAcceptanceFromNuspec,
+                [nameof(CommonResources.Description)] = NuGetMetadataStrategies.GetDescriptionFromNuspec,
+                [nameof(CommonResources.Summary)] = NuGetMetadataStrategies.GetSummaryFromNuspec,
+                [nameof(CommonResources.ReleaseNotes)] = NuGetMetadataStrategies.GetReleaseNotesFromNuspec,
+                [nameof(CommonResources.Copyright)] = NuGetMetadataStrategies.GetCopyrightFromNuspec,
+                [nameof(CommonResources.Language)] = NuGetMetadataStrategies.GetLanguageFromNuspec,
+                [nameof(CommonResources.Tags)] = NuGetMetadataStrategies.GetTagsFromNuspec,
+                [nameof(CommonResources.LicenseContent)] = (document, manager) =>
+                {
+                    var strategy = new NuGetMetadataStrategies(capturedPath);
+
+                    return strategy.GetLicenseContentFromNuspec(document, manager);
+                }
+            };
+        }
 
         /// <summary>
         /// Gets the metadata of the specified NuGet package.
@@ -74,7 +84,8 @@ namespace Musoq.DataSources.Roslyn.Components
                 nameof(CommonResources.ReleaseNotes),
                 nameof(CommonResources.Copyright),
                 nameof(CommonResources.Language),
-                nameof(CommonResources.Tags)
+                nameof(CommonResources.Tags),
+                nameof(CommonResources.LicenseContent)
             };
 
             foreach (var propertyName in propertyNames)
@@ -139,7 +150,8 @@ namespace Musoq.DataSources.Roslyn.Components
                 [nameof(CommonResources.ReleaseNotes)] = commonResources.ReleaseNotes,
                 [nameof(CommonResources.Copyright)] = commonResources.Copyright,
                 [nameof(CommonResources.Language)] = commonResources.Language,
-                [nameof(CommonResources.Tags)] = commonResources.Tags
+                [nameof(CommonResources.Tags)] = commonResources.Tags,
+                [nameof(CommonResources.LicenseContent)] = commonResources.LicenseContent
             };
 
             return result;

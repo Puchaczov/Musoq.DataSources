@@ -10,6 +10,8 @@ namespace Musoq.DataSources.Roslyn.Components
         private readonly string? _packagePath;
         private string? _licenseUrl;
 
+        private string? _licenseContent;
+
         private string? _license;
         private string? _authors;
 
@@ -80,6 +82,25 @@ namespace Musoq.DataSources.Roslyn.Components
                 lock (_syncRoot)
                 {
                     _license ??= value;
+                }
+            }
+        }
+
+        public string? LicenseContent
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _licenseContent;
+                }
+            }
+            set
+            {
+                if (value == null) return;
+                lock (_syncRoot)
+                {
+                    _licenseContent ??= value;
                 }
             }
         }
