@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Musoq.DataSources.Roslyn.Components
+namespace Musoq.DataSources.Roslyn.Components.NuGet
 {
     internal class NuGetCachePathResolver : INuGetCachePathResolver
     {
@@ -16,12 +16,14 @@ namespace Musoq.DataSources.Roslyn.Components
             }
 
             var userProfile = Environment.GetEnvironmentVariable("USERPROFILE");
+                
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !string.IsNullOrEmpty(userProfile))
             {
                 return Path.Combine(userProfile, ".nuget", "packages");
             }
 
             var home = Environment.GetEnvironmentVariable("HOME");
+            
             if (!string.IsNullOrEmpty(home))
             {
                 return Path.Combine(home, ".nuget", "packages");

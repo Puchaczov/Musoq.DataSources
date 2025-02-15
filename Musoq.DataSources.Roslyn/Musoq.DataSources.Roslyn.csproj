@@ -49,11 +49,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Components\NuGetPackageMetadataRetriever.cs">
-        <DependentUpon>INuGetPackageMetadataRetriever.cs</DependentUpon>
+      <Compile Update="Components\DefaultHttpClient.cs">
+        <DependentUpon>IHttpClient.cs</DependentUpon>
       </Compile>
-      <Compile Update="Components\NuGetCachePathResolver.cs">
-        <DependentUpon>INuGetCachePathResolver.cs</DependentUpon>
+      <Compile Update="Components\DefaultFileSystem.cs">
+        <DependentUpon>IFileSystem.cs</DependentUpon>
       </Compile>
     </ItemGroup>
 

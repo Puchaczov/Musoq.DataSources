@@ -1,13 +1,14 @@
+using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using HtmlAgilityPack;
 using System.Xml;
+using HtmlAgilityPack;
+using Musoq.DataSources.Roslyn.Services;
 
-namespace Musoq.DataSources.Roslyn.Components
+namespace Musoq.DataSources.Roslyn.Components.NuGet
 {
-    internal class NuGetMetadataStrategies(string packagePath)
+    internal class NuGetMetadataStrategies(string packagePath, INuGetRetrievalService retrievalService)
     {
         public static string? GetLicenseUrlFromNuspec(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager)
         {
@@ -82,12 +83,20 @@ namespace Musoq.DataSources.Roslyn.Components
             
             var licenseFilePath = Path.Combine(packagePath, licenseFileName);
             
-            return File.Exists(licenseFilePath) ? File.ReadAllText(licenseFilePath) : null;
+            if (retrievalService.FileSystem.Exists(licenseFilePath))
+                return retrievalService.FileSystem.ReadAllText(licenseFilePath);
+            
+            return null;
         }
 
-        public static async Task<HtmlDocument> TraverseToLicenseUrlAsync(string url, HttpClient httpClient, CancellationToken cancellationToken)
+        public static async Task<HtmlDocument> TraverseToLicenseUrlAsync(string url, IHttpClient httpClient, CancellationToken cancellationToken)
         {
             var response = await httpClient.GetAsync(url, cancellationToken);
+            if (response is null)
+            {
+                // Handle the null response appropriately, e.g., throw an exception or return a default HtmlDocument
+                throw new InvalidOperationException($"Failed to retrieve {url}");
+            }
             response.EnsureSuccessStatusCode();
             var html = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -97,9 +106,14 @@ namespace Musoq.DataSources.Roslyn.Components
             return newDoc;
         }
         
-        public static async Task<HtmlDocument> TraverseToProjectUrlAsync(string url, HttpClient httpClient, CancellationToken cancellationToken)
+        public static async Task<HtmlDocument> TraverseToProjectUrlAsync(string url, IHttpClient httpClient, CancellationToken cancellationToken)
         {
             var response = await httpClient.GetAsync(url, cancellationToken);
+            if (response is null)
+            {
+                // Handle the null response appropriately
+                throw new InvalidOperationException($"Failed to retrieve {url}");
+            }
             response.EnsureSuccessStatusCode();
             var html = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -109,9 +123,14 @@ namespace Musoq.DataSources.Roslyn.Components
             return newDoc;
         }
         
-        public static async Task<HtmlDocument> TraverseToLicenseContentAsync(string url, HttpClient httpClient, CancellationToken cancellationToken)
+        public static async Task<HtmlDocument> TraverseToLicenseContentAsync(string url, IHttpClient httpClient, CancellationToken cancellationToken)
         {
             var response = await httpClient.GetAsync(url, cancellationToken);
+            if (response is null)
+            {
+                // Handle the null response appropriately
+                throw new InvalidOperationException($"Failed to retrieve {url}");
+            }
             response.EnsureSuccessStatusCode();
             var html = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -124,7 +143,11 @@ namespace Musoq.DataSources.Roslyn.Components
             if (licenseUrl is not null)
             {
                 var licenseResponse = await httpClient.GetAsync(licenseUrl, cancellationToken);
-                
+                if (licenseResponse is null)
+                {
+                    // Handle the null response appropriately
+                    throw new InvalidOperationException($"Failed to retrieve {licenseUrl}");
+                }
                 licenseResponse.EnsureSuccessStatusCode();
                 var licenseHtml = await licenseResponse.Content.ReadAsStringAsync(cancellationToken);
                 

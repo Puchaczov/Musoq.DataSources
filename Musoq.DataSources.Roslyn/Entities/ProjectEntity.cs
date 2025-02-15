@@ -9,6 +9,7 @@ using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using System.Xml.Linq;
 using Musoq.DataSources.Roslyn.Components;
+using Musoq.DataSources.Roslyn.Components.NuGet;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -260,7 +261,8 @@ public class ProjectEntity
                     metadata.GetValueOrDefault(nameof(NugetPackageEntity.ReleaseNotes)),
                     metadata.GetValueOrDefault(nameof(NugetPackageEntity.Copyright)),
                     metadata.GetValueOrDefault(nameof(NugetPackageEntity.Language)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Tags))
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Tags)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseContent))
                 ));
             }
         }
@@ -275,6 +277,7 @@ public class ProjectEntity
                 null,
                 null,
                 false,
+                null,
                 null,
                 null,
                 null,

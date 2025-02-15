@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Musoq.DataSources.Roslyn.Components
+namespace Musoq.DataSources.Roslyn.Components.NuGet
 {
     /// <summary>
     /// Represents a component that retrieves metadata of NuGet packages.

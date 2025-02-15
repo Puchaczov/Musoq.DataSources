@@ -1,66 +1,24 @@
 using System;
-using System.Xml;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
+using Musoq.DataSources.Roslyn.Services;
 
-namespace Musoq.DataSources.Roslyn.Components
+namespace Musoq.DataSources.Roslyn.Components.NuGet
 {
     /// <summary>
     /// Represents a NuGet package metadata retriever that retrieves metadata
     /// </summary>
     /// <param name="nuGetCachePathResolver">Resolves the path to the NuGet cache.</param>
     /// <param name="customApiEndpoint">The custom API endpoint to use for last resort metadata retrieval.</param>
-    public sealed class NuGetPackageMetadataRetriever(
+    internal sealed class NuGetPackageMetadataRetriever(
         INuGetCachePathResolver nuGetCachePathResolver,
-        string? customApiEndpoint)
+        string? customApiEndpoint,
+        INuGetRetrievalService retrievalService)
         : INuGetPackageMetadataRetriever
     {
-        internal static IReadOnlyDictionary<string, TraverseRetrievePair> ResolveHtmlStrategies(HttpClient client)
-        {
-            var capturedClient = client;
-            return new Dictionary<string, TraverseRetrievePair>
-            {
-                [nameof(CommonResources.LicenseUrl)] = new(
-                    async (url, token) => await NuGetMetadataStrategies.TraverseToLicenseUrlAsync(url, capturedClient, token),
-                    NuGetMetadataStrategies.GetLicenseUrlFromHtml),
-                [nameof(CommonResources.ProjectUrl)] = new(
-                    async (url, token) => await NuGetMetadataStrategies.TraverseToProjectUrlAsync(url, capturedClient, token),
-                    NuGetMetadataStrategies.GetProjectUrlFromHtml),
-                [nameof(CommonResources.LicenseContent)] = new(
-                    async (url, token) => await NuGetMetadataStrategies.TraverseToLicenseContentAsync(url, capturedClient, token),
-                    NuGetMetadataStrategies.GetLicenseContentFromHtml)
-            };
-        }
-        
-        internal static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>> ResolveNuspecStrategies(string path)
-        {
-            var capturedPath = path;
-            return new Dictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>>
-            {
-                [nameof(CommonResources.LicenseUrl)] = NuGetMetadataStrategies.GetLicenseUrlFromNuspec,
-                [nameof(CommonResources.License)] = NuGetMetadataStrategies.GetLicenseFromNuspec,
-                [nameof(CommonResources.ProjectUrl)] = NuGetMetadataStrategies.GetProjectUrlFromNuspec,
-                [nameof(CommonResources.Title)] = NuGetMetadataStrategies.GetTitleFromNuspec,
-                [nameof(CommonResources.Authors)] = NuGetMetadataStrategies.GetAuthorsFromNuspec,
-                [nameof(CommonResources.Owners)] = NuGetMetadataStrategies.GetOwnersFromNuspec,
-                [nameof(CommonResources.RequireLicenseAcceptance)] = NuGetMetadataStrategies.GetRequireLicenseAcceptanceFromNuspec,
-                [nameof(CommonResources.Description)] = NuGetMetadataStrategies.GetDescriptionFromNuspec,
-                [nameof(CommonResources.Summary)] = NuGetMetadataStrategies.GetSummaryFromNuspec,
-                [nameof(CommonResources.ReleaseNotes)] = NuGetMetadataStrategies.GetReleaseNotesFromNuspec,
-                [nameof(CommonResources.Copyright)] = NuGetMetadataStrategies.GetCopyrightFromNuspec,
-                [nameof(CommonResources.Language)] = NuGetMetadataStrategies.GetLanguageFromNuspec,
-                [nameof(CommonResources.Tags)] = NuGetMetadataStrategies.GetTagsFromNuspec,
-                [nameof(CommonResources.LicenseContent)] = (document, manager) =>
-                {
-                    var strategy = new NuGetMetadataStrategies(capturedPath);
-
-                    return strategy.GetLicenseContentFromNuspec(document, manager);
-                }
-            };
-        }
-
         /// <summary>
         /// Gets the metadata of the specified NuGet package.
         /// </summary>
@@ -75,7 +33,7 @@ namespace Musoq.DataSources.Roslyn.Components
         {
             var commonResources = new CommonResources
             {
-                PackagePath = NuGetRetrievalStrategies.ResolvePackagePath(
+                PackagePath = retrievalService.ResolvePackagePath(
                     nuGetCachePathResolver, 
                     packageName, 
                     packageVersion)
@@ -106,13 +64,13 @@ namespace Musoq.DataSources.Roslyn.Components
                 var propertyInfo = typeof(CommonResources).GetProperty(propertyName);
                 if (propertyInfo == null) continue;
 
-                var localValue = await NuGetRetrievalStrategies.GetMetadataFromPathAsync(
+                var localValue = await retrievalService.GetMetadataFromPathAsync(
                     commonResources.PackagePath ?? string.Empty,
                     packageName,
                     propertyName,
                     cancellationToken);
 
-                var webValue = localValue ?? await NuGetRetrievalStrategies.GetMetadataFromWebAsync(
+                var webValue = localValue ?? await retrievalService.GetMetadataFromWebAsync(
                     "https://www.nuget.org/packages",
                     packageName,
                     packageVersion,
@@ -123,12 +81,19 @@ namespace Musoq.DataSources.Roslyn.Components
                 var resolvedValue = webValue;
                 if (resolvedValue == null && !string.IsNullOrEmpty(customApiEndpoint))
                 {
-                    resolvedValue = await NuGetRetrievalStrategies.GetMetadataFromCustomApiAsync(
-                        customApiEndpoint!,
-                        packageName,
-                        packageVersion,
-                        propertyName,
-                        cancellationToken);
+                    try
+                    {
+                        resolvedValue = await retrievalService.GetMetadataFromCustomApiAsync(
+                            customApiEndpoint!,
+                            packageName,
+                            packageVersion,
+                            propertyName,
+                            cancellationToken);
+                    }
+                    catch (HttpRequestException)
+                    {
+                        resolvedValue = null;
+                    }
                 }
 
                 var targetType = propertyInfo.PropertyType;
@@ -164,6 +129,49 @@ namespace Musoq.DataSources.Roslyn.Components
             };
 
             return result;
+        }
+        
+        internal static IReadOnlyDictionary<string, TraverseRetrievePair> ResolveHtmlStrategies(IHttpClient client)
+        {
+            var capturedClient = client;
+            return new Dictionary<string, TraverseRetrievePair>
+            {
+                [nameof(CommonResources.LicenseUrl)] = new(
+                    async (url, token) => await NuGetMetadataStrategies.TraverseToLicenseUrlAsync(url, capturedClient, token),
+                    NuGetMetadataStrategies.GetLicenseUrlFromHtml),
+                [nameof(CommonResources.ProjectUrl)] = new(
+                    async (url, token) => await NuGetMetadataStrategies.TraverseToProjectUrlAsync(url, capturedClient, token),
+                    NuGetMetadataStrategies.GetProjectUrlFromHtml),
+                [nameof(CommonResources.LicenseContent)] = new(
+                    async (url, token) => await NuGetMetadataStrategies.TraverseToLicenseContentAsync(url, capturedClient, token),
+                    NuGetMetadataStrategies.GetLicenseContentFromHtml)
+            };
+        }
+        
+        internal static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>> ResolveNuspecStrategies(string path, INuGetRetrievalService retrievalService)
+        {
+            var capturedPath = path;
+            return new Dictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>>
+            {
+                [nameof(CommonResources.LicenseUrl)] = NuGetMetadataStrategies.GetLicenseUrlFromNuspec,
+                [nameof(CommonResources.License)] = NuGetMetadataStrategies.GetLicenseFromNuspec,
+                [nameof(CommonResources.ProjectUrl)] = NuGetMetadataStrategies.GetProjectUrlFromNuspec,
+                [nameof(CommonResources.Title)] = NuGetMetadataStrategies.GetTitleFromNuspec,
+                [nameof(CommonResources.Authors)] = NuGetMetadataStrategies.GetAuthorsFromNuspec,
+                [nameof(CommonResources.Owners)] = NuGetMetadataStrategies.GetOwnersFromNuspec,
+                [nameof(CommonResources.RequireLicenseAcceptance)] = NuGetMetadataStrategies.GetRequireLicenseAcceptanceFromNuspec,
+                [nameof(CommonResources.Description)] = NuGetMetadataStrategies.GetDescriptionFromNuspec,
+                [nameof(CommonResources.Summary)] = NuGetMetadataStrategies.GetSummaryFromNuspec,
+                [nameof(CommonResources.ReleaseNotes)] = NuGetMetadataStrategies.GetReleaseNotesFromNuspec,
+                [nameof(CommonResources.Copyright)] = NuGetMetadataStrategies.GetCopyrightFromNuspec,
+                [nameof(CommonResources.Language)] = NuGetMetadataStrategies.GetLanguageFromNuspec,
+                [nameof(CommonResources.Tags)] = NuGetMetadataStrategies.GetTagsFromNuspec,
+                [nameof(CommonResources.LicenseContent)] = (document, manager) =>
+                {
+                    var strategy = new NuGetMetadataStrategies(capturedPath, retrievalService);
+                    return strategy.GetLicenseContentFromNuspec(document, manager);
+                }
+            };
         }
     }
 }

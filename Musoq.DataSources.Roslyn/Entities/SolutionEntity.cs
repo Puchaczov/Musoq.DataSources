@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
-using Musoq.DataSources.Roslyn.Components;
+using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.Plugins.Attributes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -20,7 +20,7 @@ namespace Musoq.DataSources.Roslyn.Entities
         private bool _wasLoaded;
 
         private readonly CancellationToken _cancellationToken;
-        private readonly NuGetPackageMetadataRetriever _nuGetPackageMetadataRetriever;
+        private readonly INuGetPackageMetadataRetriever _nuGetPackageMetadataRetriever;
         
         /// <summary>
         /// A read-only dictionary mapping column names to their respective indices.
@@ -47,7 +47,7 @@ namespace Musoq.DataSources.Roslyn.Entities
         /// <param name="solution">The solution.</param>
         /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        public SolutionEntity(Solution solution, NuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
+        public SolutionEntity(Solution solution, INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
         {
             _solution = solution;
             _nuGetPackageMetadataRetriever = nuGetPackageMetadataRetriever;
@@ -101,7 +101,7 @@ namespace Musoq.DataSources.Roslyn.Entities
         /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A new instance of the <see cref="SolutionEntity"/> class.</returns>
-        public SolutionEntity CloneWith(NuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
+        public SolutionEntity CloneWith(INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
         {
             return new SolutionEntity(_solution, nuGetPackageMetadataRetriever, cancellationToken);
         }

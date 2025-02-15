@@ -1,4 +1,4 @@
-namespace Musoq.DataSources.Roslyn.Components
+namespace Musoq.DataSources.Roslyn.Components.NuGet
 {
     /// <summary>
     /// Resolves the path to the NuGet cache.
@@ -8,7 +8,7 @@ namespace Musoq.DataSources.Roslyn.Components
         /// <summary>
         /// Resolves the path to the NuGet cache.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Path to the NuGet cache.</returns>
         string Resolve();
     }
 }
