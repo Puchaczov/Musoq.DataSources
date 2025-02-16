@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
-using Musoq.DataSources.Roslyn.Services;
 
 namespace Musoq.DataSources.Roslyn.CoconaCommands;
 
@@ -17,7 +16,7 @@ internal class SolutionOperationsCommand
         var workspace = MSBuildWorkspace.Create();
         var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
-            new NuGetCachePathResolver(), 
+            new NuGetCachePathResolver(solutionFilePath), 
             null,
             new NuGetRetrievalService(
                 new DefaultFileSystem(),

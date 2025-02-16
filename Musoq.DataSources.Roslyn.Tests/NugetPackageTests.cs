@@ -4,8 +4,6 @@ using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
 using Musoq.Parser.Helpers;
-using Musoq.Plugins;
-using Environment = Musoq.Plugins.Environment;
 using System.Text;
 
 namespace Musoq.DataSources.Roslyn.Tests;
@@ -118,7 +116,7 @@ public class NugetPackageTests
                 Language = null,
                 Tags = "coverage testing unit-test lcov opencover quality"
             },
-            new NugetPackageExpectation()
+            new NugetPackageExpectation
             {
                 ProjectName = "Solution1.ClassLibrary1.Tests",
                 Id = "Microsoft.NET.Test.Sdk",
@@ -136,7 +134,7 @@ public class NugetPackageTests
                 Language = null,
                 Tags = "vstest visual-studio unittest testplatform mstest microsoft test testing"
             },
-            new NugetPackageExpectation()
+            new NugetPackageExpectation
             {
                 ProjectName = "Solution1.ClassLibrary1.Tests",
                 Id = "NUnit",
@@ -164,7 +162,7 @@ public class NugetPackageTests
                 Language = "en-US",
                 Tags = "nunit test testing tdd framework fluent assert theory plugin addin"
             },
-            new NugetPackageExpectation()
+            new NugetPackageExpectation
             {
                 ProjectName = "Solution1.ClassLibrary1.Tests",
                 Id = "NUnit.Analyzers",
@@ -187,7 +185,7 @@ public class NugetPackageTests
                 Language = null,
                 Tags = "nunit, analyzers, roslyn-analyzers"
             },
-            new NugetPackageExpectation()
+            new NugetPackageExpectation
             {
                 ProjectName = "Solution1.ClassLibrary1.Tests",
                 Id = "NUnit3TestAdapter",
@@ -221,21 +219,21 @@ public class NugetPackageTests
 
     private class NugetPackageExpectation
     {
-        public string ProjectName { get; set; }
-        public string Id { get; set; }
-        public string Version { get; set; }
-        public string? LicenseUrl { get; set; }
-        public string? ProjectUrl { get; set; }
-        public string? Title { get; set; }
-        public string? Authors { get; set; }
-        public string? Owners { get; set; }
-        public bool? RequireLicenseAcceptance { get; set; }
-        public string? Description { get; set; }
-        public string? Summary { get; set; }
-        public string? ReleaseNotes { get; set; }
-        public string? Copyright { get; set; }
-        public string? Language { get; set; }
-        public string? Tags { get; set; }
+        public required string ProjectName { get; init; }
+        public required string Id { get; init; }
+        public required string Version { get; init; }
+        public string? LicenseUrl { get; init; }
+        public string? ProjectUrl { get; init; }
+        public string? Title { get; init; }
+        public string? Authors { get; init; }
+        public string? Owners { get; init; }
+        public bool? RequireLicenseAcceptance { get; init; }
+        public string? Description { get; init; }
+        public string? Summary { get; init; }
+        public string? ReleaseNotes { get; init; }
+        public string? Copyright { get; init; }
+        public string? Language { get; init; }
+        public string? Tags { get; init; }
     }
 
     private static void AssertHasNugetPackage(
@@ -338,7 +336,6 @@ public class NugetPackageTests
 
     static NugetPackageTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 }

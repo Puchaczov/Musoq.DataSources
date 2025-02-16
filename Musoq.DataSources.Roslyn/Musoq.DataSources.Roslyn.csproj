@@ -37,8 +37,8 @@
         <PackageReference Include="Musoq.Parser" Version="4.2.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.10.0" />
-        <PackageReference Include="Musoq.Schema" Version="7.3.5">
+        <PackageReference Include="Musoq.Plugins" Version="6.10.1" />
+        <PackageReference Include="Musoq.Schema" Version="7.3.6">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>
@@ -54,6 +54,12 @@
       </Compile>
       <Compile Update="Components\DefaultFileSystem.cs">
         <DependentUpon>IFileSystem.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Components\NuGet\NuGetCachePathResolver.cs">
+        <DependentUpon>INuGetCachePathResolver.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Components\NuGet\NuGetPackageMetadataRetriever.cs">
+        <DependentUpon>INuGetPackageMetadataRetriever.cs</DependentUpon>
       </Compile>
     </ItemGroup>
 

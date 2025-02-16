@@ -128,8 +128,6 @@ namespace Musoq.DataSources.Json.Tests
 
         static JsonTests()
         {
-            new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
             Culture.ApplyWithDefaultCulture();
         }
     }

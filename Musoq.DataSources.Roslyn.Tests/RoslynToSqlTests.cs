@@ -4,8 +4,6 @@ using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Parser.Helpers;
-using Musoq.Plugins;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 
@@ -802,7 +800,6 @@ where c.Name = 'Class1'
 
     static RoslynToSqlTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 

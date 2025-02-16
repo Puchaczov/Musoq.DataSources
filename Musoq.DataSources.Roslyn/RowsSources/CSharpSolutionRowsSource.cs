@@ -9,7 +9,6 @@ using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
-using Musoq.DataSources.Roslyn.Services;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.RowsSources;
@@ -22,7 +21,7 @@ internal class CSharpSolutionRowsSource(string solutionFilePath, string? nugetPr
         var workspace = MSBuildWorkspace.Create();
         var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
-            new NuGetCachePathResolver(), 
+            new NuGetCachePathResolver(solutionFilePath), 
             nugetPropertiesResolveEndpoint,
             new NuGetRetrievalService(
                 new DefaultFileSystem(),

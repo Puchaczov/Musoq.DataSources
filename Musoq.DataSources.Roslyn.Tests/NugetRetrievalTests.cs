@@ -1,7 +1,6 @@
 using Moq;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
-using Musoq.DataSources.Roslyn.Services;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 
@@ -17,10 +16,9 @@ public class NugetRetrievalTests
         fileSystemMock.Setup(x => x.ReadAllText(It.IsAny<string>())).Returns("Mocked License Content");
 
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
-        // ...set up retrievalServiceMock accordingly...
 
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
-        cachePathResolverMock.Setup(x => x.Resolve()).Returns("C:\\NugetCache");
+        cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
@@ -32,7 +30,6 @@ public class NugetRetrievalTests
 
         // Assert
         Assert.IsNotNull(result);
-        // ...additional assertions...
     }
 
     [TestMethod]
@@ -54,7 +51,7 @@ public class NugetRetrievalTests
             .ReturnsAsync("MockedNuGetOrgValue");
 
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
-        cachePathResolverMock.Setup(x => x.Resolve()).Returns("C:\\NugetCache");
+        cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
@@ -97,7 +94,7 @@ public class NugetRetrievalTests
             .ReturnsAsync("MeaningfulCustomApiValue");
 
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
-        cachePathResolverMock.Setup(x => x.Resolve()).Returns("C:\\NugetCache");
+        cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
@@ -118,7 +115,7 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
-        cachePathResolverMock.Setup(x => x.Resolve()).Returns("C:\\NugetCache");
+        cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
         var cts = new CancellationTokenSource();
         var retriever = new NuGetPackageMetadataRetriever(
@@ -148,6 +145,7 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
+        cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
         
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromPathAsync(
@@ -179,10 +177,7 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
-
-        retrievalServiceMock
-            .Setup(x => x.ResolvePackagePath(It.IsAny<INuGetCachePathResolver>(), It.IsAny<string>(), It.IsAny<string>()))
-            .Returns((string?)null);
+        cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromWebAsync(
@@ -213,6 +208,7 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
+        cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromPathAsync(
@@ -241,6 +237,7 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
+        cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromCustomApiAsync(
@@ -250,13 +247,6 @@ public class NugetRetrievalTests
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("API Error"));
-
-        retrievalServiceMock
-            .Setup(x => x.ResolvePackagePath(
-                It.IsAny<INuGetCachePathResolver>(),
-                It.IsAny<string>(),
-                It.IsAny<string>()))
-            .Returns("C:\\NugetCache");
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,

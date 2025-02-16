@@ -6,6 +6,7 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// Represents a project reference entity in the Roslyn data source.
 /// </summary>
 /// <param name="reference">The project reference.</param>
+/// <param name="solution">The solution that contains the project reference.</param>
 public class ProjectReferenceEntity(ProjectReference reference, Solution solution)
 {
     private Project? _project;

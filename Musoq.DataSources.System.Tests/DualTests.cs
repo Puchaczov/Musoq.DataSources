@@ -62,10 +62,5 @@ namespace Musoq.DataSources.System.Tests
         {
             return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new SystemSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
         }
-
-        static DualTests()
-        {
-            new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-        }
     }
 }

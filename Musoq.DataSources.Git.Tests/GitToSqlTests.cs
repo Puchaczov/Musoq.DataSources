@@ -589,8 +589,6 @@ public class GitToSqlTests
 
     static GitToSqlTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName,
-            EnvironmentUtils.GetOrCreateEnvironmentVariable());
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 

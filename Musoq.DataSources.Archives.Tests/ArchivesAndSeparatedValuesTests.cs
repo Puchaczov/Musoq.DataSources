@@ -211,25 +211,33 @@ public class ArchivesAndSeparatedValuesTests
         
         Assert.AreEqual(4, table.Count);
         
-        Assert.AreEqual("file1.csv", table[0].Values[0]);
-        Assert.AreEqual("Joanna", table[0].Values[1]);
-        Assert.AreEqual("Doe", table[0].Values[2]);
-        Assert.AreEqual(23, table[0].Values[3]);
-        
-        Assert.AreEqual("file1.csv", table[1].Values[0]);
-        Assert.AreEqual("Joanna", table[1].Values[1]);
-        Assert.AreEqual("Doe", table[1].Values[2]);
-        Assert.AreEqual(11, table[1].Values[3]);
-        
-        Assert.AreEqual("file2.csv", table[2].Values[0]);
-        Assert.AreEqual("John", table[2].Values[1]);
-        Assert.AreEqual("Doe", table[2].Values[2]);
-        Assert.AreEqual(25, table[2].Values[3]);
-        
-        Assert.AreEqual("file2.csv", table[3].Values[0]);
-        Assert.AreEqual("Jane", table[3].Values[1]);
-        Assert.AreEqual("Doe", table[3].Values[2]);
-        Assert.AreEqual(23, table[3].Values[3]);
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == "file1.csv" &&
+            (string)row.Values[1] == "Joanna" &&
+            (string)row.Values[2] == "Doe" &&
+            (int)row.Values[3] == 23),
+            "Expected a row matching file1.csv, Joanna, Doe, 23");
+            
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == "file1.csv" &&
+            (string)row.Values[1] == "Joanna" &&
+            (string)row.Values[2] == "Doe" &&
+            (int)row.Values[3] == 11),
+            "Expected a row matching file1.csv, Joanna, Doe, 11");
+            
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == "file2.csv" &&
+            (string)row.Values[1] == "John" &&
+            (string)row.Values[2] == "Doe" &&
+            (int)row.Values[3] == 25),
+            "Expected a row matching file2.csv, John, Doe, 25");
+            
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == "file2.csv" &&
+            (string)row.Values[1] == "Jane" &&
+            (string)row.Values[2] == "Doe" &&
+            (int)row.Values[3] == 23),
+            "Expected a row matching file2.csv, Jane, Doe, 23");
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
@@ -239,8 +247,6 @@ public class ArchivesAndSeparatedValuesTests
 
     static ArchivesAndSeparatedValuesTests()
     {
-        new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
         Culture.ApplyWithDefaultCulture();
     }
 }

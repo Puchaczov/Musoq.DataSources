@@ -1,14 +1,15 @@
-namespace Musoq.DataSources.Roslyn.Components.NuGet
+using System.Collections.Generic;
+
+namespace Musoq.DataSources.Roslyn.Components.NuGet;
+
+/// <summary>
+/// Resolves the path to the NuGet cache.
+/// </summary>
+public interface INuGetCachePathResolver
 {
     /// <summary>
-    /// Resolves the path to the NuGet cache.
+    /// Resolves all available NuGet cache paths.
     /// </summary>
-    public interface INuGetCachePathResolver
-    {
-        /// <summary>
-        /// Resolves the path to the NuGet cache.
-        /// </summary>
-        /// <returns>Path to the NuGet cache.</returns>
-        string Resolve();
-    }
+    /// <returns>An enumerable of paths to the NuGet caches.</returns>
+    IEnumerable<string> ResolveAll();
 }

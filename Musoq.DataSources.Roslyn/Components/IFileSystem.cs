@@ -1,8 +1,7 @@
-namespace Musoq.DataSources.Roslyn.Components
+namespace Musoq.DataSources.Roslyn.Components;
+
+internal interface IFileSystem
 {
-    internal interface IFileSystem
-    {
-        bool Exists(string path);
-        string ReadAllText(string path);
-    }
+    bool Exists(string path);
+    string ReadAllText(string path);
 }

@@ -780,7 +780,6 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
 
         static CsvTests()
         {
-            new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
             Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
         }
     }

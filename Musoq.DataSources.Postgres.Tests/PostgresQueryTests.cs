@@ -125,8 +125,6 @@ public class PostgresQueryTests
 
     static PostgresQueryTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
         Culture.ApplyWithDefaultCulture();
     }
 

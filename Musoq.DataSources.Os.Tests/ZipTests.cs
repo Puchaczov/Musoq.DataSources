@@ -53,8 +53,6 @@ namespace Musoq.DataSources.Os.Tests
 
         static ZipTests()
         {
-            new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
             Culture.ApplyWithDefaultCulture();
         }
     }

@@ -116,8 +116,6 @@ public class OsAndGitToSqlTests
 
     static OsAndGitToSqlTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName,
-            EnvironmentUtils.GetOrCreateEnvironmentVariable());
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 
