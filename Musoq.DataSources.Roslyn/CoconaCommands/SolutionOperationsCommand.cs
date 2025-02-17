@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -15,12 +16,14 @@ internal class SolutionOperationsCommand
         
         var workspace = MSBuildWorkspace.Create();
         var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
+        var fileSystem = new DefaultFileSystem();
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
-            new NuGetCachePathResolver(solutionFilePath), 
+            new NuGetCachePathResolver(solutionFilePath, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux), 
             null,
             new NuGetRetrievalService(
-                new DefaultFileSystem(),
-                new DefaultHttpClient()));
+                fileSystem,
+                new DefaultHttpClient()),
+            fileSystem);
         var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, cancellationToken);
         
         await Parallel.ForEachAsync(solutionEntity.Projects, cancellationToken, async (project, token) =>

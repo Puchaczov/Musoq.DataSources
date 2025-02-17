@@ -79,7 +79,7 @@ internal class NuspecHelpers(string packagePath, IFileSystem fileSystem)
             
         var licenseFilePath = Path.Combine(packagePath, licenseFileName);
             
-        if (fileSystem.Exists(licenseFilePath))
+        if (fileSystem.IsFileExists(licenseFilePath))
             return fileSystem.ReadAllText(licenseFilePath);
             
         return null;

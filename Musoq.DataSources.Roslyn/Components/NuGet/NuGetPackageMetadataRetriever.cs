@@ -17,7 +17,8 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet;
 internal sealed class NuGetPackageMetadataRetriever(
     INuGetCachePathResolver nuGetCachePathResolver,
     string? customApiEndpoint,
-    INuGetRetrievalService retrievalService)
+    INuGetRetrievalService retrievalService,
+    IFileSystem fileSystem)
     : INuGetPackageMetadataRetriever
 {
     /// <summary>
@@ -62,11 +63,16 @@ internal sealed class NuGetPackageMetadataRetriever(
             var propertyInfo = typeof(CommonResources).GetProperty(propertyName);
             if (propertyInfo == null) continue;
 
-            var localValue = await retrievalService.GetMetadataFromPathAsync(
-                commonResources.PackagePath ?? string.Empty,
-                packageName,
-                propertyName,
-                cancellationToken);
+            string? localValue = null;
+
+            if (commonResources.PackagePath is not null)
+            {
+                localValue = await retrievalService.GetMetadataFromPathAsync(
+                    commonResources.PackagePath,
+                    packageName,
+                    propertyName,
+                    cancellationToken);
+            }
 
             var webValue = localValue ?? await retrievalService.GetMetadataFromWebAsync(
                 "https://www.nuget.org/packages",
@@ -129,21 +135,19 @@ internal sealed class NuGetPackageMetadataRetriever(
         return result;
     }
         
-    private static string GetPackageCachePath(INuGetCachePathResolver resolver, string packageName, string packageVersion)
+    private string? GetPackageCachePath(INuGetCachePathResolver resolver, string packageName, string packageVersion)
     {
-        foreach (var cache in resolver.ResolveAll())
+        var cachedPaths = resolver.ResolveAll();
+        
+        foreach (var cache in cachedPaths)
         {
             var packagePath = Path.Combine(cache, packageName.ToLowerInvariant(), packageVersion);
-            if (Directory.Exists(packagePath))
+            
+            if (fileSystem.IsDirectoryExists(packagePath))
                 return packagePath;
         }
-            
-        var firstCache = resolver.ResolveAll().FirstOrDefault();
-            
-        if (firstCache is null)
-            throw new InvalidOperationException("No cache paths resolved.");
-            
-        return Path.Combine(firstCache, packageName.ToLowerInvariant(), packageVersion);
+
+        return null;
     }
         
     internal static IReadOnlyDictionary<string, TraverseRetrievePair> ResolveHtmlStrategies(IHttpClient client)
@@ -168,7 +172,6 @@ internal sealed class NuGetPackageMetadataRetriever(
         
     internal static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>> ResolveNuspecStrategies(string path, IFileSystem fileSystem)
     {
-        var capturedPath = path;
         return new Dictionary<string, Func<XmlDocument, XmlNamespaceManager, string?>>
         {
             [nameof(CommonResources.LicenseUrl)] = NuspecHelpers.GetLicenseUrlFromNuspec,

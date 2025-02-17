@@ -17,7 +17,7 @@ internal sealed class NuGetRetrievalService(IFileSystem fileSystem, IHttpClient 
         cancellationToken.ThrowIfCancellationRequested();
 
         var nuspecFilePath = Path.Combine(packagePath, $"{packageName}.nuspec");
-        if (!fileSystem.Exists(nuspecFilePath))
+        if (!fileSystem.IsFileExists(nuspecFilePath))
             return Task.FromResult<string?>(null);
 
         try

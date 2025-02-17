@@ -1,5 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
@@ -15,16 +17,18 @@ internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, 
 {
     protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
+        var fileSystem = new DefaultFileSystem();
         chunkedSource.Add(new List<IObjectResolver>
         {
             new EntityResolver<SolutionEntity>(
                 solution.CloneWith(
                     new NuGetPackageMetadataRetriever(
-                        new NuGetCachePathResolver(solution.Path), 
+                        new NuGetCachePathResolver(solution.Path, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux), 
                         nugetPropertiesResolveEndpoint, 
                         new NuGetRetrievalService(
-                            new DefaultFileSystem(),
-                            new DefaultHttpClient())),
+                            fileSystem,
+                            new DefaultHttpClient()), 
+                        fileSystem),
                     cancellationToken
                 ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)
         }, cancellationToken);

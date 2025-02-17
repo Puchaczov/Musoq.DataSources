@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -20,12 +21,14 @@ internal class CSharpSolutionRowsSource(string solutionFilePath, string? nugetPr
     {
         var workspace = MSBuildWorkspace.Create();
         var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
+        var fileSystem = new DefaultFileSystem();
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
-            new NuGetCachePathResolver(solutionFilePath), 
+            new NuGetCachePathResolver(solutionFilePath, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux), 
             nugetPropertiesResolveEndpoint,
             new NuGetRetrievalService(
-                new DefaultFileSystem(),
-                new DefaultHttpClient())
+                fileSystem,
+                new DefaultHttpClient()),
+            fileSystem
         );
         var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, cancellationToken);
         

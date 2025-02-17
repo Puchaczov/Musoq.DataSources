@@ -12,7 +12,6 @@ internal abstract class NuGetMetadataStrategies
         var response = await httpClient.GetAsync(url, cancellationToken);
         if (response is null)
         {
-            // Handle the null response appropriately, e.g., throw an exception or return a default HtmlDocument
             throw new InvalidOperationException($"Failed to retrieve {url}");
         }
         response.EnsureSuccessStatusCode();
@@ -29,7 +28,6 @@ internal abstract class NuGetMetadataStrategies
         var response = await httpClient.GetAsync(url, cancellationToken);
         if (response is null)
         {
-            // Handle the null response appropriately
             throw new InvalidOperationException($"Failed to retrieve {url}");
         }
         response.EnsureSuccessStatusCode();
@@ -46,7 +44,6 @@ internal abstract class NuGetMetadataStrategies
         var response = await httpClient.GetAsync(url, cancellationToken);
         if (response is null)
         {
-            // Handle the null response appropriately
             throw new InvalidOperationException($"Failed to retrieve {url}");
         }
         response.EnsureSuccessStatusCode();
@@ -63,7 +60,6 @@ internal abstract class NuGetMetadataStrategies
             var licenseResponse = await httpClient.GetAsync(licenseUrl, cancellationToken);
             if (licenseResponse is null)
             {
-                // Handle the null response appropriately
                 throw new InvalidOperationException($"Failed to retrieve {licenseUrl}");
             }
             licenseResponse.EnsureSuccessStatusCode();
@@ -84,7 +80,6 @@ internal abstract class NuGetMetadataStrategies
         var response = await httpClient.GetAsync(url, cancellationToken);
         if (response is null)
         {
-            // Handle the null response appropriately
             throw new InvalidOperationException($"Failed to retrieve {url}");
         }
             

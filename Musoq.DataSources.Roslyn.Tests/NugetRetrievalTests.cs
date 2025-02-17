@@ -12,7 +12,8 @@ public class NugetRetrievalTests
     {
         // Arrange
         var fileSystemMock = new Mock<IFileSystem>();
-        fileSystemMock.Setup(x => x.Exists(It.IsAny<string>())).Returns(true);
+        fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
+        fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(true);
         fileSystemMock.Setup(x => x.ReadAllText(It.IsAny<string>())).Returns("Mocked License Content");
 
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
@@ -23,7 +24,8 @@ public class NugetRetrievalTests
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
-            retrievalServiceMock.Object);
+            retrievalServiceMock.Object,
+            fileSystemMock.Object);
 
         // Act
         var result = await retriever.GetMetadataAsync("TestPackage", "1.0.0", CancellationToken.None);
@@ -37,7 +39,8 @@ public class NugetRetrievalTests
     {
         // Arrange
         var fileSystemMock = new Mock<IFileSystem>();
-        fileSystemMock.Setup(x => x.Exists(It.IsAny<string>())).Returns(false);
+        fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
+        fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
 
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         retrievalServiceMock
@@ -56,7 +59,8 @@ public class NugetRetrievalTests
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
-            retrievalServiceMock.Object);
+            retrievalServiceMock.Object,
+            fileSystemMock.Object);
 
         // Act
         var result = await retriever.GetMetadataAsync("TestPackageMissing", "2.0.0", CancellationToken.None);
@@ -71,7 +75,8 @@ public class NugetRetrievalTests
     {
         // Arrange
         var fileSystemMock = new Mock<IFileSystem>();
-        fileSystemMock.Setup(x => x.Exists(It.IsAny<string>())).Returns(false);
+        fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
+        fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
 
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         retrievalServiceMock
@@ -99,7 +104,8 @@ public class NugetRetrievalTests
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             "http://somecustomapi/v1",
-            retrievalServiceMock.Object);
+            retrievalServiceMock.Object,
+            fileSystemMock.Object);
 
         // Act
         var result = await retriever.GetMetadataAsync("PackageNoCacheNoNuGetData", "3.0.0", CancellationToken.None);
@@ -115,13 +121,18 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
+        var fileSystemMock = new Mock<IFileSystem>();
+        
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
+        fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
+        fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
 
         var cts = new CancellationTokenSource();
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
-            retrievalServiceMock.Object);
+            retrievalServiceMock.Object,
+            fileSystemMock.Object);
 
         // Act
         await cts.CancelAsync();
@@ -145,7 +156,12 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
+        var fileSystemMock = new Mock<IFileSystem>();
+        
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
+        fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
+        
         
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromPathAsync(
@@ -159,7 +175,8 @@ public class NugetRetrievalTests
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
-            retrievalServiceMock.Object);
+            retrievalServiceMock.Object,
+            fileSystemMock.Object);
 
         // Act
         var result = await retriever.GetMetadataAsync("TestPackage", "1.0.0", CancellationToken.None);
@@ -177,7 +194,11 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
+        var fileSystemMock = new Mock<IFileSystem>();
+        
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
+        fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
+        fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
 
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromWebAsync(
@@ -192,7 +213,8 @@ public class NugetRetrievalTests
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
-            retrievalServiceMock.Object);
+            retrievalServiceMock.Object,
+            fileSystemMock.Object);
 
         // Act
         var result = await retriever.GetMetadataAsync("InvalidPackage", "1.0.0", CancellationToken.None);
@@ -208,7 +230,11 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
+        var fileSystemMock = new Mock<IFileSystem>();
+        
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
+        fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
 
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromPathAsync(
@@ -221,7 +247,8 @@ public class NugetRetrievalTests
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
-            retrievalServiceMock.Object);
+            retrievalServiceMock.Object,
+            fileSystemMock.Object);
 
         // Act
         var result = await retriever.GetMetadataAsync("TestPackage", "1.0.0", CancellationToken.None);
@@ -237,7 +264,11 @@ public class NugetRetrievalTests
         // Arrange
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
+        var fileSystemMock = new Mock<IFileSystem>();
+        
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
+        fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
+        fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
 
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromCustomApiAsync(
@@ -251,7 +282,8 @@ public class NugetRetrievalTests
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             "http://invalid-api",
-            retrievalServiceMock.Object);
+            retrievalServiceMock.Object,
+            fileSystemMock.Object);
 
         // Act
         var result = await retriever.GetMetadataAsync("TestPackage", "1.0.0", CancellationToken.None);
