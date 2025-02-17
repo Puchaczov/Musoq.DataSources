@@ -83,6 +83,7 @@ internal sealed class NuGetPackageMetadataRetriever(
                 cancellationToken);
 
             var resolvedValue = webValue;
+            
             if (resolvedValue == null && !string.IsNullOrEmpty(customApiEndpoint))
             {
                 try
@@ -138,16 +139,10 @@ internal sealed class NuGetPackageMetadataRetriever(
     private string? GetPackageCachePath(INuGetCachePathResolver resolver, string packageName, string packageVersion)
     {
         var cachedPaths = resolver.ResolveAll();
-        
-        foreach (var cache in cachedPaths)
-        {
-            var packagePath = Path.Combine(cache, packageName.ToLowerInvariant(), packageVersion);
-            
-            if (fileSystem.IsDirectoryExists(packagePath))
-                return packagePath;
-        }
 
-        return null;
+        return cachedPaths
+            .Select(cache => Path.Combine(cache, packageName.ToLowerInvariant(), packageVersion))
+            .FirstOrDefault(fileSystem.IsDirectoryExists);
     }
         
     internal static IReadOnlyDictionary<string, TraverseRetrievePair> ResolveHtmlStrategies(IHttpClient client)

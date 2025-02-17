@@ -14,206 +14,223 @@ public class NugetPackageTests
     [TestMethod]
     public void WhenNugetPackagesQueried_ShouldPass()
     {
-        var query = @"
-        select
-            p.Name,
-            np.Id,
-            np.Version,
-            np.LicenseUrl,
-            np.ProjectUrl,
-            np.Title,
-            np.Authors,
-            np.Owners,
-            np.RequireLicenseAcceptance,
-            np.Description,
-            np.Summary,
-            np.ReleaseNotes,
-            np.Copyright,
-            np.Language,
-            np.Tags
-        from #csharp.solution('{Solution1SolutionPath}') s
-        cross apply s.Projects p
-        cross apply p.NugetPackages np"
-        .Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
-
-        Assert.AreEqual(8, result.Count,
-            $"Expected 8 entries but got {result.Count}. Entries:\n{DumpResult(result)}");
-
-        var expectedPackages = new[]
+        RunWithNugetPackages(() =>
         {
-            new NugetPackageExpectation
-            {
-                ProjectName = "Solution1.ClassLibrary1",
-                Id = "Musoq.Converter",
-                Version = "3.5.0",
-                LicenseUrl = "https://github.com/Puchaczov/Musoq/blob/master/LICENSE",
-                ProjectUrl = "https://github.com/Puchaczov/Musoq",
-                Title = null,
-                Authors = "Jakub Puchała",
-                Owners = null,
-                RequireLicenseAcceptance = false,
-                Description = "Package Description",
-                Summary = null,
-                ReleaseNotes = null,
-                Copyright = null,
-                Language = null,
-                Tags = "sql, dotnet-core"
-            },
-            new NugetPackageExpectation
-            {
-                ProjectName = "Solution1.ClassLibrary1",
-                Id = "Musoq.Evaluator",
-                Version = "7.7.0",
-                LicenseUrl = "https://github.com/Puchaczov/Musoq/blob/master/LICENSE",
-                ProjectUrl = "https://github.com/Puchaczov/Musoq",
-                Title = null,
-                Authors = "Jakub Puchała",
-                Owners = null,
-                RequireLicenseAcceptance = false,
-                Description = "Package Description",
-                Summary = null,
-                ReleaseNotes = null,
-                Copyright = null,
-                Language = null,
-                Tags = "sql, dotnet-core"
-            },
-            new NugetPackageExpectation
-            {
-                ProjectName = "Solution1.ClassLibrary1",
-                Id = "Musoq.Schema",
-                Version = "7.3.5",
-                LicenseUrl = "https://github.com/Puchaczov/Musoq/blob/master/LICENSE",
-                ProjectUrl = "https://github.com/Puchaczov/Musoq",
-                Title = null,
-                Authors = "Jakub Puchała",
-                Owners = null,
-                RequireLicenseAcceptance = false,
-                Description = "Package Description",
-                Summary = null,
-                ReleaseNotes = null,
-                Copyright = null,
-                Language = null,
-                Tags = "sql, dotnet-core"
-            },
-            new NugetPackageExpectation
-            {
-                ProjectName = "Solution1.ClassLibrary1.Tests",
-                Id = "coverlet.collector",
-                Version = "6.0.0",
-                LicenseUrl = "https://licenses.nuget.org/MIT",
-                ProjectUrl = "https://github.com/coverlet-coverage/coverlet",
-                Title = "coverlet.collector",
-                Authors = "tonerdo",
-                Owners = null,
-                RequireLicenseAcceptance = null,
-                Description = "Coverlet is a cross platform code coverage library for .NET, with support for line, branch and method coverage.",
-                Summary = null,
-                ReleaseNotes = null,
-                Copyright = null,
-                Language = null,
-                Tags = "coverage testing unit-test lcov opencover quality"
-            },
-            new NugetPackageExpectation
-            {
-                ProjectName = "Solution1.ClassLibrary1.Tests",
-                Id = "Microsoft.NET.Test.Sdk",
-                Version = "17.8.0",
-                LicenseUrl = "https://aka.ms/deprecateLicenseUrl",
-                ProjectUrl = "https://github.com/microsoft/vstest",
-                Title = null,
-                Authors = "Microsoft",
-                Owners = null,
-                RequireLicenseAcceptance = true,
-                Description = "The MSbuild targets and properties for building .NET test projects.",
-                Summary = null,
-                ReleaseNotes = null,
-                Copyright = "© Microsoft Corporation. All rights reserved.",
-                Language = null,
-                Tags = "vstest visual-studio unittest testplatform mstest microsoft test testing"
-            },
-            new NugetPackageExpectation
-            {
-                ProjectName = "Solution1.ClassLibrary1.Tests",
-                Id = "NUnit",
-                Version = "3.14.0",
-                LicenseUrl = "https://aka.ms/deprecateLicenseUrl",
-                ProjectUrl = "https://nunit.org/",
-                Title = "NUnit",
-                Authors = "Charlie Poole, Rob Prouse",
-                Owners = "Charlie Poole, Rob Prouse",
-                RequireLicenseAcceptance = null,
-                Description = """
-                              NUnit features a fluent assert syntax, parameterized, generic and theory tests and is user-extensible.
-                              
-                              This package includes the NUnit 3 framework assembly, which is referenced by your tests. You will need to install version 3 of the nunit3-console program or a third-party runner that supports NUnit 3 in order to execute tests. Runners intended for use with NUnit 2.x will not run NUnit 3 tests correctly.
-                              
-                              Supported platforms:
-                              - .NET Framework 3.5+
-                              - .NET Standard 2.0+
-                              """,
-                Summary = """
-                NUnit is a unit-testing framework for all .NET languages with a strong TDD focus.
-                """,
-                ReleaseNotes = "This package includes the NUnit 3 framework assembly, which is referenced by your tests. You will need to install version 3 of the nunit3-console program or a third-party runner that supports NUnit 3 in order to execute tests. Runners intended for use with NUnit 2.x will not run NUnit 3 tests correctly.",
-                Copyright = "Copyright (c) 2023 Charlie Poole, Rob Prouse",
-                Language = "en-US",
-                Tags = "nunit test testing tdd framework fluent assert theory plugin addin"
-            },
-            new NugetPackageExpectation
-            {
-                ProjectName = "Solution1.ClassLibrary1.Tests",
-                Id = "NUnit.Analyzers",
-                Version = "3.9.0",
-                LicenseUrl = "https://aka.ms/deprecateLicenseUrl",
-                ProjectUrl = "https://github.com/nunit/nunit.analyzers",
-                Title = "NUnit Analyzers",
-                Authors = "NUnit",
-                Owners = null,
-                RequireLicenseAcceptance = null,
-                Description = 
-                    """
-                    This package includes analyzers and code fixes for test projects using NUnit 3. The analyzers will mark wrong usages when writing tests, and the code fixes can be used to used to correct these usages.
+            var query = @"
+            select
+                p.Name,
+                np.Id,
+                np.Version,
+                np.LicenseUrl,
+                np.ProjectUrl,
+                np.Title,
+                np.Authors,
+                np.Owners,
+                np.RequireLicenseAcceptance,
+                np.Description,
+                np.Summary,
+                np.ReleaseNotes,
+                np.Copyright,
+                np.Language,
+                np.Tags
+            from #csharp.solution('{Solution1SolutionPath}') s
+            cross apply s.Projects p
+            cross apply p.NugetPackages np"
+            .Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
 
-                    Version 3.0 and upwards works in Visual Studio 2019 and also enables supression of compiler errors such as errors arising from nullable reference types. For Visual Studio 2017 one must use versions below 3.0.
+            var vm = CreateAndRunVirtualMachine(query);
+            var result = vm.Run();
+
+            Assert.AreEqual(8, result.Count,
+                $"Expected 8 entries but got {result.Count}. Entries:\n{DumpResult(result)}");
+
+            var expectedPackages = new[]
+            {
+                new NugetPackageExpectation
+                {
+                    ProjectName = "Solution1.ClassLibrary1",
+                    Id = "Musoq.Converter",
+                    Version = "3.5.0",
+                    LicenseUrl = "https://github.com/Puchaczov/Musoq/blob/master/LICENSE",
+                    ProjectUrl = "https://github.com/Puchaczov/Musoq",
+                    Title = null,
+                    Authors = "Jakub Puchała",
+                    Owners = null,
+                    RequireLicenseAcceptance = false,
+                    Description = "Package Description",
+                    Summary = null,
+                    ReleaseNotes = null,
+                    Copyright = null,
+                    Language = null,
+                    Tags = "sql, dotnet-core"
+                },
+                new NugetPackageExpectation
+                {
+                    ProjectName = "Solution1.ClassLibrary1",
+                    Id = "Musoq.Evaluator",
+                    Version = "7.7.0",
+                    LicenseUrl = "https://github.com/Puchaczov/Musoq/blob/master/LICENSE",
+                    ProjectUrl = "https://github.com/Puchaczov/Musoq",
+                    Title = null,
+                    Authors = "Jakub Puchała",
+                    Owners = null,
+                    RequireLicenseAcceptance = false,
+                    Description = "Package Description",
+                    Summary = null,
+                    ReleaseNotes = null,
+                    Copyright = null,
+                    Language = null,
+                    Tags = "sql, dotnet-core"
+                },
+                new NugetPackageExpectation
+                {
+                    ProjectName = "Solution1.ClassLibrary1",
+                    Id = "Musoq.Schema",
+                    Version = "7.3.5",
+                    LicenseUrl = "https://github.com/Puchaczov/Musoq/blob/master/LICENSE",
+                    ProjectUrl = "https://github.com/Puchaczov/Musoq",
+                    Title = null,
+                    Authors = "Jakub Puchała",
+                    Owners = null,
+                    RequireLicenseAcceptance = false,
+                    Description = "Package Description",
+                    Summary = null,
+                    ReleaseNotes = null,
+                    Copyright = null,
+                    Language = null,
+                    Tags = "sql, dotnet-core"
+                },
+                new NugetPackageExpectation
+                {
+                    ProjectName = "Solution1.ClassLibrary1.Tests",
+                    Id = "coverlet.collector",
+                    Version = "6.0.0",
+                    LicenseUrl = "https://licenses.nuget.org/MIT",
+                    ProjectUrl = "https://github.com/coverlet-coverage/coverlet",
+                    Title = "coverlet.collector",
+                    Authors = "tonerdo",
+                    Owners = null,
+                    RequireLicenseAcceptance = null,
+                    Description = "Coverlet is a cross platform code coverage library for .NET, with support for line, branch and method coverage.",
+                    Summary = null,
+                    ReleaseNotes = null,
+                    Copyright = null,
+                    Language = null,
+                    Tags = "coverage testing unit-test lcov opencover quality"
+                },
+                new NugetPackageExpectation
+                {
+                    ProjectName = "Solution1.ClassLibrary1.Tests",
+                    Id = "Microsoft.NET.Test.Sdk",
+                    Version = "17.8.0",
+                    LicenseUrl = "https://aka.ms/deprecateLicenseUrl",
+                    ProjectUrl = "https://github.com/microsoft/vstest",
+                    Title = null,
+                    Authors = "Microsoft",
+                    Owners = null,
+                    RequireLicenseAcceptance = true,
+                    Description = "The MSbuild targets and properties for building .NET test projects.",
+                    Summary = null,
+                    ReleaseNotes = null,
+                    Copyright = "© Microsoft Corporation. All rights reserved.",
+                    Language = null,
+                    Tags = "vstest visual-studio unittest testplatform mstest microsoft test testing"
+                },
+                new NugetPackageExpectation
+                {
+                    ProjectName = "Solution1.ClassLibrary1.Tests",
+                    Id = "NUnit",
+                    Version = "3.14.0",
+                    LicenseUrl = "https://aka.ms/deprecateLicenseUrl",
+                    ProjectUrl = "https://nunit.org/",
+                    Title = "NUnit",
+                    Authors = "Charlie Poole, Rob Prouse",
+                    Owners = "Charlie Poole, Rob Prouse",
+                    RequireLicenseAcceptance = null,
+                    Description = """
+                                  NUnit features a fluent assert syntax, parameterized, generic and theory tests and is user-extensible.
+                                  
+                                  This package includes the NUnit 3 framework assembly, which is referenced by your tests. You will need to install version 3 of the nunit3-console program or a third-party runner that supports NUnit 3 in order to execute tests. Runners intended for use with NUnit 2.x will not run NUnit 3 tests correctly.
+                                  
+                                  Supported platforms:
+                                  - .NET Framework 3.5+
+                                  - .NET Standard 2.0+
+                                  """,
+                    Summary = """
+                    NUnit is a unit-testing framework for all .NET languages with a strong TDD focus.
                     """,
-                Summary = "Code analyzers and fixes for NUnit 3",
-                ReleaseNotes = "See the release notes on https://github.com/nunit/nunit.analyzers/blob/master/CHANGES.txt.",
-                Copyright = "Copyright (c) 2018-2023 NUnit project",
-                Language = null,
-                Tags = "nunit, analyzers, roslyn-analyzers"
-            },
-            new NugetPackageExpectation
-            {
-                ProjectName = "Solution1.ClassLibrary1.Tests",
-                Id = "NUnit3TestAdapter",
-                Version = "4.5.0",
-                LicenseUrl = "https://licenses.nuget.org/MIT",
-                ProjectUrl = "https://docs.nunit.org/articles/vs-test-adapter/Index.html",
-                Title = "NUnit3 Test Adapter for Visual Studio and DotNet",
-                Authors = "Charlie Poole, Terje Sandstrom",
-                Owners = null,
-                RequireLicenseAcceptance = null,
-                Description = 
-                """
-                The NUnit3 TestAdapter for Visual Studio, all versions from 2012 and onwards, and DotNet (incl. .Net core), versions .net framework 4.6.2 or higher, .net core 3.1, .net 5 or higher.
-                
-                      Note that this package ONLY contains the adapter, not the NUnit framework.
-                      For VS 2017 and forward, you should add this package to every test project in your solution. (Earlier versions only require a single adapter package per solution.)
-                """,
-                Summary = "NUnit3 adapter for running tests in Visual Studio and DotNet. Works with NUnit 3.x, use the NUnit 2 adapter for 2.x tests.",
-                ReleaseNotes = "See https://docs.nunit.org/articles/vs-test-adapter/Adapter-Release-Notes.html",
-                Copyright = "Copyright (c) 2011-2021 Charlie Poole, 2014-2023 Terje Sandstrom",
-                Language = "en-US",
-                Tags = "test visualstudio testadapter nunit nunit3 dotnet"
-            }
-        };
+                    ReleaseNotes = "This package includes the NUnit 3 framework assembly, which is referenced by your tests. You will need to install version 3 of the nunit3-console program or a third-party runner that supports NUnit 3 in order to execute tests. Runners intended for use with NUnit 2.x will not run NUnit 3 tests correctly.",
+                    Copyright = "Copyright (c) 2023 Charlie Poole, Rob Prouse",
+                    Language = "en-US",
+                    Tags = "nunit test testing tdd framework fluent assert theory plugin addin"
+                },
+                new NugetPackageExpectation
+                {
+                    ProjectName = "Solution1.ClassLibrary1.Tests",
+                    Id = "NUnit.Analyzers",
+                    Version = "3.9.0",
+                    LicenseUrl = "https://aka.ms/deprecateLicenseUrl",
+                    ProjectUrl = "https://github.com/nunit/nunit.analyzers",
+                    Title = "NUnit Analyzers",
+                    Authors = "NUnit",
+                    Owners = null,
+                    RequireLicenseAcceptance = null,
+                    Description = 
+                        """
+                        This package includes analyzers and code fixes for test projects using NUnit 3. The analyzers will mark wrong usages when writing tests, and the code fixes can be used to used to correct these usages.
 
-        foreach (var expectedPkg in expectedPackages)
+                        Version 3.0 and upwards works in Visual Studio 2019 and also enables supression of compiler errors such as errors arising from nullable reference types. For Visual Studio 2017 one must use versions below 3.0.
+                        """,
+                    Summary = "Code analyzers and fixes for NUnit 3",
+                    ReleaseNotes = "See the release notes on https://github.com/nunit/nunit.analyzers/blob/master/CHANGES.txt.",
+                    Copyright = "Copyright (c) 2018-2023 NUnit project",
+                    Language = null,
+                    Tags = "nunit, analyzers, roslyn-analyzers"
+                },
+                new NugetPackageExpectation
+                {
+                    ProjectName = "Solution1.ClassLibrary1.Tests",
+                    Id = "NUnit3TestAdapter",
+                    Version = "4.5.0",
+                    LicenseUrl = "https://licenses.nuget.org/MIT",
+                    ProjectUrl = "https://docs.nunit.org/articles/vs-test-adapter/Index.html",
+                    Title = "NUnit3 Test Adapter for Visual Studio and DotNet",
+                    Authors = "Charlie Poole, Terje Sandstrom",
+                    Owners = null,
+                    RequireLicenseAcceptance = null,
+                    Description = 
+                    """
+                    The NUnit3 TestAdapter for Visual Studio, all versions from 2012 and onwards, and DotNet (incl. .Net core), versions .net framework 4.6.2 or higher, .net core 3.1, .net 5 or higher.
+                    
+                          Note that this package ONLY contains the adapter, not the NUnit framework.
+                          For VS 2017 and forward, you should add this package to every test project in your solution. (Earlier versions only require a single adapter package per solution.)
+                    """,
+                    Summary = "NUnit3 adapter for running tests in Visual Studio and DotNet. Works with NUnit 3.x, use the NUnit 2 adapter for 2.x tests.",
+                    ReleaseNotes = "See https://docs.nunit.org/articles/vs-test-adapter/Adapter-Release-Notes.html",
+                    Copyright = "Copyright (c) 2011-2021 Charlie Poole, 2014-2023 Terje Sandstrom",
+                    Language = "en-US",
+                    Tags = "test visualstudio testadapter nunit nunit3 dotnet"
+                }
+            };
+
+            foreach (var expectedPkg in expectedPackages)
+            {
+                AssertHasNugetPackage(result, expectedPkg);
+            }            
+        });
+    }
+
+    private static void RunWithNugetPackages(Action action)
+    {
+        try
         {
-            AssertHasNugetPackage(result, expectedPkg);
+            Environment.SetEnvironmentVariable("NUGET_PACKAGES",
+                Path.Combine(StartDirectory, "TestsSolutions", "NugetCache"));
+            action();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NUGET_PACKAGES", null);
         }
     }
 
@@ -315,7 +332,11 @@ public class NugetPackageTests
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new RoslynSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+        return InstanceCreatorHelpers.CompileForExecution(
+            script, 
+            Guid.NewGuid().ToString(), 
+            new RoslynSchemaProvider(), 
+            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
     private static string Solution1SolutionPath => Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");

@@ -39,5 +39,9 @@
         <Content Remove="TestsSolutions\**\obj\**" />
         <Content Remove="TestsSolutions\**\.idea\**" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="TestsSolutions\NugetCache\" />
+    </ItemGroup>
 
 </Project>
