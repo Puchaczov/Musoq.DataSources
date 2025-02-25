@@ -5,4 +5,4 @@ using HtmlAgilityPack;
 
 namespace Musoq.DataSources.Roslyn.Components;
 
-internal sealed record TraverseRetrievePair(Func<string, CancellationToken, Task<HtmlDocument>> TraverseAsync, Func<HtmlDocument, string?> Retrieve);
+internal sealed record TraverseRetrievePair(Func<string, CancellationToken, Task<HtmlDocument>> TraverseAsync, Func<HtmlDocument, Task<string?>> RetrieveAsync);

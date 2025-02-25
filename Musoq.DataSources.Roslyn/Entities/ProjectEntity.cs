@@ -8,7 +8,6 @@ using Musoq.Plugins.Attributes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using System.Xml.Linq;
-using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -242,28 +241,31 @@ public class ProjectEntity
             {
                 var id = packageRef.Attribute("Include")?.Value ?? string.Empty;
                 var version = packageRef.Attribute("Version")?.Value ?? string.Empty;
-                var metadata = await _nuGetPackageMetadataRetriever.GetMetadataAsync(id, version, _cancellationToken);
-
-                var requireLicenseAcceptanceString = metadata.GetValueOrDefault(nameof(NugetPackageEntity.RequireLicenseAcceptance));
-                var requireLicenseAcceptance = string.IsNullOrWhiteSpace(requireLicenseAcceptanceString) ? "false" : requireLicenseAcceptanceString;
                 
-                nugetPackages.Add(new NugetPackageEntity(
-                    id,
-                    version,
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseUrl)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.ProjectUrl)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Title)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Authors)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Owners)),
-                    Convert.ToBoolean(requireLicenseAcceptance),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Description)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Summary)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.ReleaseNotes)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Copyright)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Language)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Tags)),
-                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseContent))
-                ));
+                await foreach (var metadata in _nuGetPackageMetadataRetriever.GetMetadataAsync(id, version,
+                                   _cancellationToken))
+                {
+                    var requireLicenseAcceptanceString = metadata.GetValueOrDefault(nameof(NugetPackageEntity.RequireLicenseAcceptance));
+                    var requireLicenseAcceptance = string.IsNullOrWhiteSpace(requireLicenseAcceptanceString) ? "false" : requireLicenseAcceptanceString;
+                
+                    nugetPackages.Add(new NugetPackageEntity(
+                        id,
+                        version,
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseUrl)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.ProjectUrl)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.Title)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.Authors)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.Owners)),
+                        Convert.ToBoolean(requireLicenseAcceptance),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.Description)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.Summary)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.ReleaseNotes)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.Copyright)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.Language)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.Tags)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseContent))
+                    ));
+                }
             }
         }
         catch (Exception ex)

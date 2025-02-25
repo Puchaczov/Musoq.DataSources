@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.Schema;
@@ -18,6 +19,7 @@ public class OllamaSingleRowSourceTests
     public void WhenRowsCalled_ShouldRetrieveSingle()
     {
         var mockHttpClientFactory = new Mock<IHttpClientFactory>();
+        var mockLogger = new Mock<ILogger>();
         
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(() => new HttpClient());
@@ -27,7 +29,7 @@ public class OllamaSingleRowSourceTests
                 CancellationToken.None,
                 Array.Empty<ISchemaColumn>(),
                 new Dictionary<string, string>(),
-                (null, null, null, false)), new OllamaRequestInfo
+                (null, null, null, false), mockLogger.Object), new OllamaRequestInfo
             {
                 Model = "test-model",
                 Temperature = 0,

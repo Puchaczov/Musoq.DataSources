@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Musoq.DataSources.FlatFile;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 
 namespace Musoq.Schema.FlatFile.Tests
 {
@@ -63,6 +64,7 @@ namespace Musoq.Schema.FlatFile.Tests
         [TestMethod]
         public void FlatFileSource_CancelledLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             var endWorkTokenSource = new CancellationTokenSource();
             endWorkTokenSource.Cancel();
             var schema = new FlatFileSource("./TestMultilineFile.txt", 
@@ -70,7 +72,8 @@ namespace Musoq.Schema.FlatFile.Tests
                     endWorkTokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var fires = schema.Rows.Count();
 
@@ -80,12 +83,14 @@ namespace Musoq.Schema.FlatFile.Tests
         [TestMethod]
         public void FlatFileSource_FullLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             var schema = new FlatFileSource("./TestMultilineFile.txt", 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var fires = schema.Rows.Count();
 

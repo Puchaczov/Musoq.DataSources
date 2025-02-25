@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
@@ -16,5 +15,5 @@ public interface INuGetPackageMetadataRetriever
     /// <param name="packageVersion">The version of the NuGet package.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The metadata of the specified NuGet package.</returns>
-    Task<IReadOnlyDictionary<string, string?>> GetMetadataAsync(string packageName, string packageVersion, CancellationToken cancellationToken);
+    IAsyncEnumerable<IReadOnlyDictionary<string, string?>> GetMetadataAsync(string packageName, string packageVersion, CancellationToken cancellationToken);
 }

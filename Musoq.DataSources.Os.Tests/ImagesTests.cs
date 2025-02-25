@@ -3,10 +3,8 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Os.Tests;
 

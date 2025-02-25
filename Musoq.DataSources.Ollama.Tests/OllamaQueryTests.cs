@@ -6,10 +6,7 @@ using Moq;
 using Musoq.DataSources.Ollama.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
-using OllamaSharp;
 using OllamaSharp.Models.Chat;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Ollama.Tests;
 

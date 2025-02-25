@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Time.Tests
 {
@@ -30,6 +30,7 @@ namespace Musoq.DataSources.Time.Tests
         [TestMethod]
         public void TimeSource_CancelledLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
             var now = DateTimeOffset.Now;
@@ -39,7 +40,8 @@ namespace Musoq.DataSources.Time.Tests
                     tokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(), 
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var fired = source.Rows.Count();
 
@@ -49,6 +51,7 @@ namespace Musoq.DataSources.Time.Tests
         [TestMethod]
         public void TimeSource_FullLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             var now = DateTimeOffset.Parse("01/01/2000");
             var nextHour = now.AddHours(1);
             var source = new TimeSource(now, nextHour, "minutes", 
@@ -56,7 +59,8 @@ namespace Musoq.DataSources.Time.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var fired = source.Rows.Count();
 

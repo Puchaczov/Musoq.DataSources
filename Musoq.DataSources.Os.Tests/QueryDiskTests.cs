@@ -5,7 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Musoq.DataSources.Os.Compare.Directories;
 using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
@@ -13,9 +15,7 @@ using Musoq.DataSources.Os.Files;
 using Musoq.DataSources.Os.Tests.Utils;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Os.Tests
 {
@@ -87,12 +87,14 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void FilesSourceIterateDirectoriesTest()
         {
+            var mockLogger = new Mock<ILogger>();
+            
             var source = new TestFilesSource("./Directories", false, 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false), mockLogger.Object));
 
             var folders = source.GetFiles();
 
@@ -104,12 +106,15 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void FilesSourceIterateWithNestedDirectoriesTest()
         {
+            var mockLogger = new Mock<ILogger>();
+            
             var source = new TestFilesSource("./Directories", true, 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var folders = source.GetFiles();
 
@@ -124,12 +129,15 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesSourceIterateDirectoriesTest()
         {
+            var mockLogger = new Mock<ILogger>();
+            
             var source = new TestDirectoriesSource("./Directories", false, 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var directories = source.GetDirectories();
 
@@ -142,12 +150,15 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void TestDirectoriesSourceIterateWithNestedDirectories()
         {
+            var mockLogger = new Mock<ILogger>();
+            
             var source = new TestDirectoriesSource("./Directories", true, 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var directories = source.GetDirectories();
 
@@ -161,12 +172,15 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void NonExistingDirectoryTest()
         {
+            var mockLogger = new Mock<ILogger>();
+            
             var source = new TestDirectoriesSource("./Some/Non/Existing/Path", true, 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var directories = source.GetDirectories();
 
@@ -176,12 +190,15 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void NonExistingFileTest()
         {
+            var mockLogger = new Mock<ILogger>();
+            
             var source = new TestFilesSource("./Some/Non/Existing/Path.pdf", true, 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var directories = source.GetFiles();
 
@@ -191,13 +208,16 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesSource_CancelledLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
+            
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
             var source = new DirectoriesSource("./Directories", true, new RuntimeContext(
                 tokenSource.Token, 
                 Array.Empty<ISchemaColumn>(), 
                 new Dictionary<string, string>(),
-                (null, null, null, false)));
+                (null, null, null, false),
+                mockLogger.Object));
 
             var fired = source.Rows.Count();
 
@@ -207,12 +227,14 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesSource_FullLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             var source = new DirectoriesSource("./Directories", true, 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var fired = source.Rows.Count();
 
@@ -300,13 +322,15 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void FilesSource_CancelledLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
             var source = new FilesSource("./Directories", true, new RuntimeContext(
                 tokenSource.Token, 
                 Array.Empty<ISchemaColumn>(), 
                 new Dictionary<string, string>(),
-                (null, null, null, false)));
+                (null, null, null, false),
+                mockLogger.Object));
 
             var fired = source.Rows.Count();
 
@@ -316,12 +340,14 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void FilesSource_FullLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             var source = new FilesSource("./Directories", true, 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var fired = source.Rows.Count();
 
@@ -331,12 +357,14 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesCompare_CompareTwoDirectories()
         {
+            var mockLogger = new Mock<ILogger>();
             var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory2", 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var rows = source.Rows.ToArray();
 
@@ -362,12 +390,14 @@ namespace Musoq.DataSources.Os.Tests
         [TestMethod]
         public void DirectoriesCompare_CompareWithItself()
         {
+            var mockLogger = new Mock<ILogger>();
             var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory1", 
                 new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false)));
+                    (null, null, null, false),
+                    mockLogger.Object));
 
             var rows = source.Rows.ToArray();
 

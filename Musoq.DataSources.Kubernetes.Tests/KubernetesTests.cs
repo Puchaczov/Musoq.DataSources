@@ -7,9 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Kubernetes.Tests;
 

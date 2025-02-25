@@ -1,4 +1,3 @@
-using OllamaSharp;
 using OllamaSharp.Models.Chat;
 
 namespace Musoq.DataSources.Ollama;

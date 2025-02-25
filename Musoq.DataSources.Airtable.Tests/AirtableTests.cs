@@ -9,10 +9,8 @@ using Musoq.DataSources.Airtable.Components;
 using Musoq.DataSources.Airtable.Helpers;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
 using AirtableBase = Musoq.DataSources.Airtable.Sources.Bases.AirtableBase;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Airtable.Tests;
 

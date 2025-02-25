@@ -26,7 +26,7 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
         return cache;
     }
 
-    private void AddEnvGlobalPackages(HashSet<string> cache)
+    private static void AddEnvGlobalPackages(HashSet<string> cache)
     {
         var envPackages = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
         if (!string.IsNullOrEmpty(envPackages))
@@ -58,7 +58,7 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
         return configPaths;
     }
 
-    private void ProcessNuGetConfigs(IEnumerable<string> configPaths, HashSet<string> cache)
+    private static void ProcessNuGetConfigs(IEnumerable<string> configPaths, HashSet<string> cache)
     {
         foreach (var configPath in configPaths)
         {
@@ -144,7 +144,7 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
         }
     }
 
-    private void AddDefaultGlobalPackages(HashSet<string> cache)
+    private static void AddDefaultGlobalPackages(HashSet<string> cache)
     {
         cache.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages"));
     }

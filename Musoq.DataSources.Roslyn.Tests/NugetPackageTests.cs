@@ -32,7 +32,8 @@ public class NugetPackageTests
                 np.ReleaseNotes,
                 np.Copyright,
                 np.Language,
-                np.Tags
+                np.Tags,
+                np.LicenseContent
             from #csharp.solution('{Solution1SolutionPath}') s
             cross apply s.Projects p
             cross apply p.NugetPackages np"
@@ -62,7 +63,30 @@ public class NugetPackageTests
                     ReleaseNotes = null,
                     Copyright = null,
                     Language = null,
-                    Tags = "sql, dotnet-core"
+                    Tags = "sql, dotnet-core",
+                    LicenseContent = """
+                                     MIT License
+                                     
+                                     Copyright (c) 2018 Jakub Puchała
+                                     
+                                     Permission is hereby granted, free of charge, to any person obtaining a copy
+                                     of this software and associated documentation files (the "Software"), to deal
+                                     in the Software without restriction, including without limitation the rights
+                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+                                     copies of the Software, and to permit persons to whom the Software is
+                                     furnished to do so, subject to the following conditions:
+                                     
+                                     The above copyright notice and this permission notice shall be included in all
+                                     copies or substantial portions of the Software.
+                                     
+                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+                                     SOFTWARE.
+                                     """
                 },
                 new NugetPackageExpectation
                 {
@@ -80,7 +104,30 @@ public class NugetPackageTests
                     ReleaseNotes = null,
                     Copyright = null,
                     Language = null,
-                    Tags = "sql, dotnet-core"
+                    Tags = "sql, dotnet-core",
+                    LicenseContent = """
+                                     MIT License
+                                     
+                                     Copyright (c) 2018 Jakub Puchała
+                                     
+                                     Permission is hereby granted, free of charge, to any person obtaining a copy
+                                     of this software and associated documentation files (the "Software"), to deal
+                                     in the Software without restriction, including without limitation the rights
+                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+                                     copies of the Software, and to permit persons to whom the Software is
+                                     furnished to do so, subject to the following conditions:
+                                     
+                                     The above copyright notice and this permission notice shall be included in all
+                                     copies or substantial portions of the Software.
+                                     
+                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+                                     SOFTWARE.
+                                     """
                 },
                 new NugetPackageExpectation
                 {
@@ -98,7 +145,30 @@ public class NugetPackageTests
                     ReleaseNotes = null,
                     Copyright = null,
                     Language = null,
-                    Tags = "sql, dotnet-core"
+                    Tags = "sql, dotnet-core",
+                    LicenseContent = """
+                                     MIT License
+                                     
+                                     Copyright (c) 2018 Jakub Puchała
+                                     
+                                     Permission is hereby granted, free of charge, to any person obtaining a copy
+                                     of this software and associated documentation files (the "Software"), to deal
+                                     in the Software without restriction, including without limitation the rights
+                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+                                     copies of the Software, and to permit persons to whom the Software is
+                                     furnished to do so, subject to the following conditions:
+                                     
+                                     The above copyright notice and this permission notice shall be included in all
+                                     copies or substantial portions of the Software.
+                                     
+                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+                                     SOFTWARE.
+                                     """
                 },
                 new NugetPackageExpectation
                 {
@@ -116,7 +186,10 @@ public class NugetPackageTests
                     ReleaseNotes = null,
                     Copyright = null,
                     Language = null,
-                    Tags = "coverage testing unit-test lcov opencover quality"
+                    Tags = "coverage testing unit-test lcov opencover quality",
+                    LicenseContent = """
+                                     MIT
+                                     """
                 },
                 new NugetPackageExpectation
                 {
@@ -134,7 +207,33 @@ public class NugetPackageTests
                     ReleaseNotes = null,
                     Copyright = "© Microsoft Corporation. All rights reserved.",
                     Language = null,
-                    Tags = "vstest visual-studio unittest testplatform mstest microsoft test testing"
+                    Tags = "vstest visual-studio unittest testplatform mstest microsoft test testing",
+                    LicenseContent = """
+                                     The MIT License (MIT)
+                                     
+                                     Copyright (c) Microsoft Corporation
+                                     
+                                     All rights reserved.
+                                     
+                                     Permission is hereby granted, free of charge, to any person obtaining a copy
+                                     of this software and associated documentation files (the "Software"), to deal
+                                     in the Software without restriction, including without limitation the rights
+                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+                                     copies of the Software, and to permit persons to whom the Software is
+                                     furnished to do so, subject to the following conditions:
+                                     
+                                     The above copyright notice and this permission notice shall be included in all
+                                     copies or substantial portions of the Software.
+                                     
+                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+                                     SOFTWARE.
+                                     
+                                     """
                 },
                 new NugetPackageExpectation
                 {
@@ -162,7 +261,29 @@ public class NugetPackageTests
                     ReleaseNotes = "This package includes the NUnit 3 framework assembly, which is referenced by your tests. You will need to install version 3 of the nunit3-console program or a third-party runner that supports NUnit 3 in order to execute tests. Runners intended for use with NUnit 2.x will not run NUnit 3 tests correctly.",
                     Copyright = "Copyright (c) 2023 Charlie Poole, Rob Prouse",
                     Language = "en-US",
-                    Tags = "nunit test testing tdd framework fluent assert theory plugin addin"
+                    Tags = "nunit test testing tdd framework fluent assert theory plugin addin",
+                    LicenseContent = """
+                                     Copyright (c) 2023 Charlie Poole, Rob Prouse
+                                     
+                                     Permission is hereby granted, free of charge, to any person obtaining a copy
+                                     of this software and associated documentation files (the "Software"), to deal
+                                     in the Software without restriction, including without limitation the rights
+                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+                                     copies of the Software, and to permit persons to whom the Software is
+                                     furnished to do so, subject to the following conditions:
+                                     
+                                     The above copyright notice and this permission notice shall be included in
+                                     all copies or substantial portions of the Software.
+                                     
+                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+                                     THE SOFTWARE.
+                                     
+                                     """
                 },
                 new NugetPackageExpectation
                 {
@@ -185,7 +306,26 @@ public class NugetPackageTests
                     ReleaseNotes = "See the release notes on https://github.com/nunit/nunit.analyzers/blob/master/CHANGES.txt.",
                     Copyright = "Copyright (c) 2018-2023 NUnit project",
                     Language = null,
-                    Tags = "nunit, analyzers, roslyn-analyzers"
+                    Tags = "nunit, analyzers, roslyn-analyzers",
+                    LicenseContent = """
+                                     Permission is hereby granted, free of charge, to any person obtaining a copy
+                                     of this software and associated documentation files (the "Software"), to deal
+                                     in the Software without restriction, including without limitation the rights
+                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+                                     copies of the Software, and to permit persons to whom the Software is
+                                     furnished to do so, subject to the following conditions:
+                                     
+                                     The above copyright notice and this permission notice shall be included in
+                                     all copies or substantial portions of the Software.
+                                     
+                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+                                     THE SOFTWARE.
+                                     """
                 },
                 new NugetPackageExpectation
                 {
@@ -209,7 +349,10 @@ public class NugetPackageTests
                     ReleaseNotes = "See https://docs.nunit.org/articles/vs-test-adapter/Adapter-Release-Notes.html",
                     Copyright = "Copyright (c) 2011-2021 Charlie Poole, 2014-2023 Terje Sandstrom",
                     Language = "en-US",
-                    Tags = "test visualstudio testadapter nunit nunit3 dotnet"
+                    Tags = "test visualstudio testadapter nunit nunit3 dotnet",
+                    LicenseContent = """
+                                     MIT
+                                     """
                 }
             };
 
@@ -251,6 +394,8 @@ public class NugetPackageTests
         public string? Copyright { get; init; }
         public string? Language { get; init; }
         public string? Tags { get; init; }
+        
+        public string? LicenseContent { get; init; }
     }
 
     private static void AssertHasNugetPackage(
@@ -272,7 +417,8 @@ public class NugetPackageTests
             r[11]?.ToString() != expectedPkg.ReleaseNotes ||
             r[12]?.ToString() != expectedPkg.Copyright ||
             r[13]?.ToString() != expectedPkg.Language ||
-            r[14]?.ToString() != expectedPkg.Tags));
+            r[14]?.ToString() != expectedPkg.Tags ||
+            r[15]?.ToString() != expectedPkg.LicenseContent));
 
         if (incorrectRow == null)
             return;
@@ -318,6 +464,8 @@ public class NugetPackageTests
             differences.AppendLine($"  Language: Expected = {expectedPkg.Language}, Actual = {row[13]}");
         if (row[14]?.ToString() != expectedPkg.Tags)
             differences.AppendLine($"  Tags: Expected = {expectedPkg.Tags}, Actual = {row[14]}");
+        if (row[15]?.ToString() != expectedPkg.LicenseContent)
+            differences.AppendLine($"  LicenseContent: Expected = {expectedPkg.LicenseContent}, Actual = {row[15]}");
 
         return differences.ToString();
     }

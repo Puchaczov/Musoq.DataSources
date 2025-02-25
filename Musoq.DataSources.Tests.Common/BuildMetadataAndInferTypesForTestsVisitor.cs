@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Musoq.Evaluator.Visitors;
 using Musoq.Parser.Nodes.From;
 using Musoq.Schema;
@@ -8,8 +9,9 @@ namespace Musoq.DataSources.Tests.Common;
 public class BuildMetadataAndInferTypesForTestsVisitor(
     ISchemaProvider provider,
     IReadOnlyDictionary<string, string[]> columns,
-    IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> defaultEnvironmentVariables)
-    : BuildMetadataAndInferTypesVisitor(provider, columns)
+    IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> defaultEnvironmentVariables,
+    ILogger<BuildMetadataAndInferTypesForTestsVisitor> logger)
+    : BuildMetadataAndInferTypesVisitor(provider, columns, logger)
 {
     protected override IReadOnlyDictionary<string, string> RetrieveEnvironmentVariables(uint position, SchemaFromNode node)
     {   

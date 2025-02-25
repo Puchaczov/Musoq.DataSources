@@ -1,5 +1,7 @@
 using HtmlAgilityPack;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Musoq.DataSources.Roslyn.Components;
 
@@ -7,17 +9,18 @@ internal class CommonResources
 {
     private readonly object _syncRoot = new();
     private readonly Dictionary<string, HtmlDocument> _htmlDocuments = new();
+    private readonly string? _packageName;
+    private readonly string? _packageVersion;
     private readonly string? _packagePath;
-    private string? _licenseUrl;
+    
+    private string? _projectUrl;
 
-    private string? _licenseContent;
-
-    private string? _license;
     private string? _authors;
 
-    private string? _projectUrl;
     private string? _title;
     private string? _owners;
+    
+    private ProjectLicense[]? _licenses;
 
     private bool? _requireLicenseAcceptance;
 
@@ -28,7 +31,45 @@ internal class CommonResources
     private string? _copyright;
     private string? _language;
     private string? _tags;
-        
+
+    public string? PackageName
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _packageName;
+            }
+        }
+        init
+        {
+            if (value == null) return;
+            lock (_syncRoot)
+            {
+                _packageName ??= value;
+            }
+        }
+    }
+    
+    public string? PackageVersion
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _packageVersion;
+            }
+        }
+        init
+        {
+            if (value == null) return;
+            lock (_syncRoot)
+            {
+                _packageVersion ??= value;
+            }
+        }
+    }
+
     public string? PackagePath
     {
         get
@@ -48,59 +89,20 @@ internal class CommonResources
         }
     }
 
-    public string? LicenseUrl
+    public ProjectLicense[] Licenses
     {
         get
         {
             lock (_syncRoot)
             {
-                return _licenseUrl;
+                return _licenses ?? [];
             }
         }
         set
         {
-            if (value == null) return;
             lock (_syncRoot)
             {
-                _licenseUrl ??= value;
-            }
-        }
-    }
-
-    public string? License
-    {
-        get
-        {
-            lock (_syncRoot)
-            {
-                return _license;
-            }
-        }
-        set
-        {
-            if (value == null) return;
-            lock (_syncRoot)
-            {
-                _license ??= value;
-            }
-        }
-    }
-
-    public string? LicenseContent
-    {
-        get
-        {
-            lock (_syncRoot)
-            {
-                return _licenseContent;
-            }
-        }
-        set
-        {
-            if (value == null) return;
-            lock (_syncRoot)
-            {
-                _licenseContent ??= value;
+                _licenses = value;
             }
         }
     }
@@ -317,5 +319,28 @@ internal class CommonResources
         {
             _htmlDocuments[url] = doc;
         }
+    }
+
+    public async Task AcceptAsync(ICommonResourcesVisitor visitor, CancellationToken cancellationToken)
+    {
+        await Parallel.ForEachAsync([
+                visitor.VisitLicensesAsync,
+                visitor.VisitProjectUrlAsync,
+                visitor.VisitTitleAsync,
+                visitor.VisitAuthorsAsync,
+                visitor.VisitOwnersAsync,
+                visitor.VisitRequireLicenseAcceptanceAsync,
+                visitor.VisitDescriptionAsync,
+                visitor.VisitSummaryAsync,
+                visitor.VisitReleaseNotesAsync,
+                visitor.VisitCopyrightAsync,
+                visitor.VisitLanguageAsync,
+                visitor.VisitTagsAsync
+            ],
+            cancellationToken,
+            async (method, token) =>
+            {
+                await method(token);
+            });
     }
 }

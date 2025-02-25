@@ -3,7 +3,6 @@ using Musoq.Schema.DataSources;
 using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
-using SharpToken;
 
 namespace Musoq.DataSources.OpenAI;
 

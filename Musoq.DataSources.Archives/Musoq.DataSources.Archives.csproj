@@ -28,8 +28,8 @@
         <PackageReference Include="Musoq.Parser" Version="4.2.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.10.1" />
-        <PackageReference Include="Musoq.Schema" Version="7.3.6">
+        <PackageReference Include="Musoq.Plugins" Version="6.10.3" />
+        <PackageReference Include="Musoq.Schema" Version="8.0.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="SharpCompress" Version="0.37.2" />
