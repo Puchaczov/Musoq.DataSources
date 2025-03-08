@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
@@ -7,97 +8,192 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
 
 internal static class NugetHelpers
 {
-    public static async Task<HtmlDocument> DiscoverLicenseUrlAsync(string url, CommonResources commonResources, IHttpClient httpClient, CancellationToken cancellationToken)
+    public static async Task<Func<Task<string?>>> DiscoverLicensesNamesAsync(string url, CommonResources commonResources, IHttpClient httpClient, IAiBasedPropertiesResolver aiBasedPropertiesResolver, CancellationToken cancellationToken)
     {
-        var response = await httpClient.GetAsync(url, cancellationToken);
-        
-        if (response is null)
+        if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
         {
-            throw new InvalidOperationException($"Failed to retrieve {url}");
-        }
+            var response = await httpClient.GetAsync(url, cancellationToken);
         
-        response.EnsureSuccessStatusCode();
-        var html = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (response is null)
+            {
+                throw new InvalidOperationException($"Failed to retrieve {url}");
+            }
+        
+            response.EnsureSuccessStatusCode();
+            var html = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        var newDoc = new HtmlDocument();
-        newDoc.LoadHtml(html);
-        
-        return newDoc;
-    }
-    
-    public static async Task<HtmlDocument> DiscoverLicenseContentAsync(string url, CommonResources commonResources, IHttpClient httpClient, CancellationToken cancellationToken)
-    {
-        var response = await httpClient.GetAsync(url, cancellationToken);
-        
-        if (response is null)
-        {
-            throw new InvalidOperationException($"Failed to retrieve {url}");
-        }
-        
-        response.EnsureSuccessStatusCode();
-        var html = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        var newDoc = new HtmlDocument();
-        newDoc.LoadHtml(html);
-        
-        var licenseUrl = ExtractUrl(newDoc, "//a[@data-tract='outbound-license-url']", "href");
-        
-        if (licenseUrl is null)
-        {
-            throw new InvalidOperationException("Failed to extract license url");
+            var newDoc = new HtmlDocument();
+            newDoc.LoadHtml(html);
         }
 
-        response = await httpClient.GetAsync(licenseUrl, cancellationToken);
-        
-        if (response is null)
+        if (htmlDocument is null)
         {
-            throw new InvalidOperationException($"Failed to retrieve {licenseUrl}");
+            return () => Task.FromResult<string?>(null);
         }
         
-        response.EnsureSuccessStatusCode();
-        
-        html = await response.Content.ReadAsStringAsync(cancellationToken);
-        newDoc.LoadHtml(html);
-        
-        return newDoc;
-    }
-    
-    public static async Task<HtmlDocument> DiscoverLicensesNamesAsync(string url, CommonResources commonResources, IHttpClient httpClient, CancellationToken cancellationToken)
-    {
-        var response = await httpClient.GetAsync(url, cancellationToken);
-        
-        if (response is null)
+        //License info is available on the page
+        if (TryExtractUrl(htmlDocument, "//a[@data-tract='outbound-license-url']", "href", out var licenseUrl) && licenseUrl is not null)
         {
-            throw new InvalidOperationException($"Failed to retrieve {url}");
+            return async () => System.Text.Json.JsonSerializer.Serialize(await aiBasedPropertiesResolver.GetLicenseNamesByLicenseUrlAsync(licenseUrl, cancellationToken));
         }
         
-        response.EnsureSuccessStatusCode();
-        var html = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        var newDoc = new HtmlDocument();
-        newDoc.LoadHtml(html);
+        //Source repository is available on the page
+        if (TryExtractUrl(htmlDocument, "//a[@data-tract='outbound-repository-url']", "href", out var sourceRepositoryUrl) && sourceRepositoryUrl is not null)
+        {
+            return async () => System.Text.Json.JsonSerializer.Serialize(await aiBasedPropertiesResolver.GetLicenseNamesBySourceRepositoryUrlAsync(sourceRepositoryUrl, cancellationToken));
+        }
             
-        return newDoc;
+        return () => Task.FromResult<string?>(null);
     }
     
-    public static async Task<string?> GetLicensesNamesFromHtmlAsync(HtmlDocument doc)
+    public static async Task<Func<Task<string?>>> DiscoverLicenseUrlAsync(string url, CommonResources commonResources, IHttpClient httpClient, IAiBasedPropertiesResolver aiBasedPropertiesResolver, CancellationToken cancellationToken)
     {
-        return await Task.FromResult(doc.DocumentNode.SelectSingleNode("//div[@id='licenses']")?.InnerText);
+        var response = await httpClient.GetAsync(url, cancellationToken);
+        
+        if (response is null)
+        {
+            throw new InvalidOperationException($"Failed to retrieve {url}");
+        }
+        
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        var newDoc = new HtmlDocument();
+        newDoc.LoadHtml(html);
+        
+        if (TryExtractUrl(newDoc, "//a[@data-tract='outbound-license-url']", "href", out var licenseUrl) && licenseUrl is not null)
+        {
+            return () => Task.FromResult<string?>(licenseUrl);
+        }
+        
+        if (TryExtractUrl(newDoc, "//a[@data-tract='outbound-repository-url']", "href", out var sourceRepositoryUrl) && sourceRepositoryUrl is not null)
+        {
+            var resolvedLicenseUrl = await FindLicenseUrlAsync(sourceRepositoryUrl, httpClient, cancellationToken);
+            return () => Task.FromResult(resolvedLicenseUrl);
+        }
+        
+        return () => Task.FromResult<string?>(null);
     }
     
-    public static async Task<string?> GetLicenseUrlFromHtmlAsync(HtmlDocument doc)
+    public static async Task<Func<Task<string?>>> DiscoverLicenseContentAsync(string url, CommonResources commonResources, IHttpClient httpClient, IAiBasedPropertiesResolver aiBasedPropertiesResolver, CancellationToken cancellationToken)
     {
-        return await Task.FromResult(ExtractUrl(doc, "//a[@id='licenseUrl']", "href"));
+        var response = await httpClient.GetAsync(url, cancellationToken);
+        
+        if (response is null)
+        {
+            throw new InvalidOperationException($"Failed to retrieve {url}");
+        }
+        
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        var newDoc = new HtmlDocument();
+        newDoc.LoadHtml(html);
+        
+        if (TryExtractUrl(newDoc, "//a[@data-tract='outbound-license-url']", "href", out var licenseUrl) && licenseUrl is not null)
+        {
+            return async () =>
+            {
+                var httpResponseMessage = await httpClient.GetAsync(licenseUrl, cancellationToken);
+                
+                return httpResponseMessage is not null ? await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
+            };
+        }
+        
+        if (TryExtractUrl(newDoc, "//a[@data-tract='outbound-repository-url']", "href", out var sourceRepositoryUrl) && sourceRepositoryUrl is not null)
+        {
+            return async () =>
+            {
+                var resolvedLicenseUrl = await FindLicenseUrlAsync(sourceRepositoryUrl, httpClient, cancellationToken);
+                
+                if (resolvedLicenseUrl is null)
+                {
+                    return null;
+                }
+                
+                var httpResponseMessage = await httpClient.GetAsync(resolvedLicenseUrl, cancellationToken);
+                
+                return httpResponseMessage is not null ? await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
+            };
+        }
+        
+        return () => Task.FromResult<string?>(null);
     }
 
-    public static async Task<string?> GetLicenseContentFromHtmlAsync(HtmlDocument doc)
+    private static async Task<string?> FindLicenseUrlAsync(string sourceRepositoryUrl, IHttpClient httpClient, CancellationToken cancellationToken)
     {
-        return await Task.FromResult(doc.DocumentNode.SelectSingleNode("//div[@id='licenseContent']")?.InnerText);
+        sourceRepositoryUrl = sourceRepositoryUrl.TrimEnd('/');
+        
+        var licenseFileNames = new[]
+        {
+            "LICENSE",
+            "LICENSE.md",
+            "LICENSE.txt",
+            "COPYING",
+            "COPYING.md",
+            "COPYING.txt",
+            "LICENSE.MIT",
+            "LICENSE.APACHE",
+            "LICENSE.BSD"
+        };
+        
+        if (sourceRepositoryUrl.Contains("github.com"))
+        {
+            var rawUrl = sourceRepositoryUrl
+                .Replace("github.com", "raw.githubusercontent.com")
+                .Replace("https://raw.githubusercontent.com/", "https://raw.githubusercontent.com/");
+                
+            if (!rawUrl.EndsWith("/"))
+                rawUrl += "/";
+                
+            if (!rawUrl.Contains("/master/") && !rawUrl.Contains("/main/"))
+                rawUrl += "master/";
+                
+            foreach (var fileName in licenseFileNames)
+            {
+                var licenseUrl = rawUrl + fileName;
+                var response = await httpClient.GetAsync(licenseUrl, cancellationToken);
+                
+                if (response is { IsSuccessStatusCode: true })
+                {
+                    return licenseUrl;
+                }
+            }
+        }
+        
+        else if (sourceRepositoryUrl.Contains("gitlab.com"))
+        {
+            var rawUrl = sourceRepositoryUrl;
+            
+            if (!rawUrl.Contains("/-/raw/"))
+                rawUrl += "/-/raw/master/";
+                
+            foreach (var fileName in licenseFileNames)
+            {
+                var licenseUrl = rawUrl + fileName;
+                var response = await httpClient.GetAsync(licenseUrl, cancellationToken);
+                
+                if (response is { IsSuccessStatusCode: true })
+                {
+                    return licenseUrl;
+                }
+            }
+        }
+        
+        return null;
     }
 
-    private static string? ExtractUrl(HtmlDocument doc, string xpath, string attributeName)
+    private static bool TryExtractUrl(HtmlDocument doc, string xpath, string attributeName, out string? url)
     {
         var node = doc.DocumentNode.SelectSingleNode(xpath);
-        return node?.Attributes[attributeName]?.Value;
+        
+        if (node is null)
+        {
+            url = null;
+            return false;
+        }
+        
+        url = node.Attributes[attributeName]?.Value;
+        return true;
     }
 }

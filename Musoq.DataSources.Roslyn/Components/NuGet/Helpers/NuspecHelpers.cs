@@ -2,6 +2,8 @@ using System.Threading.Tasks;
 using System.Xml;
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.IO;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
 
@@ -62,34 +64,64 @@ internal static class NuspecHelpers
         return await Task.FromResult(GetValue(xmlDoc, namespaceManager, "/nu:package/nu:metadata/nu:tags"));
     }
 
-    public static async Task<string?> GetLicensesNamesFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager)
+    public static async Task<string?> GetLicensesNamesFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, CommonResources commonResources, IAiBasedPropertiesResolver aiModelResolver, CancellationToken cancellationToken)
     {
-        var licenseNodes = xmlDoc.SelectSingleNode("/nu:package/nu:metadata/nu:license", namespaceManager);
+        var licenseNode = xmlDoc.SelectSingleNode("/nu:package/nu:metadata/nu:license", namespaceManager);
 
-        if (licenseNodes == null) return "[]";
-       
-        var spdxEvaluator = new SpdxLicenseExpressionEvaluator();
-        var licensesNames = await spdxEvaluator.GetLicenseIdentifiersAsync(licenseNodes.InnerText);
+        if (licenseNode == null) return "[]";
+        
+        var typeAttribute = licenseNode.Attributes?["type"]?.Value;
+        
+        if (string.Equals(typeAttribute, "file", StringComparison.OrdinalIgnoreCase))
+        {
+            var licenseFilePath = licenseNode.InnerText;
+            var fullPath = Path.Combine(Path.GetDirectoryName(commonResources.PackagePath) ?? string.Empty, licenseFilePath);
 
+            if (!File.Exists(fullPath)) return "[]";
+            
+            var licenseContent = await File.ReadAllTextAsync(fullPath, cancellationToken);
+            return System.Text.Json.JsonSerializer.Serialize(await aiModelResolver.GetLicenseNamesAsync(licenseContent, cancellationToken));
+        }
+
+        // type="expression" or not specified
+        var licensesNames = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(licenseNode.InnerText);
         return System.Text.Json.JsonSerializer.Serialize(licensesNames);
     }
     
-    public static async Task<string?> GetLicenseContentFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager)
+    public static async Task<string?> GetLicenseContentFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, CommonResources commonResources, CancellationToken cancellationToken)
     {
-        var licenseNodes = xmlDoc.SelectSingleNode("/nu:package/nu:metadata/nu:license", namespaceManager);
+        var licenseNode = xmlDoc.SelectSingleNode("/nu:package/nu:metadata/nu:license", namespaceManager);
 
-        if (licenseNodes == null) return null;
+        if (licenseNode == null) return null;
         
+        var typeAttribute = licenseNode.Attributes?["type"]?.Value;
+        
+        if (string.Equals(typeAttribute, "file", StringComparison.OrdinalIgnoreCase))
+        {
+            // Handle license with type="file"
+            var licenseFilePath = licenseNode.InnerText;
+            var fullPath = Path.Combine(Path.GetDirectoryName(commonResources.PackagePath) ?? string.Empty, licenseFilePath);
+            
+            if (File.Exists(fullPath))
+            {
+                var licenseContent = await File.ReadAllTextAsync(fullPath, cancellationToken);
+                return System.Text.Json.JsonSerializer.Serialize(new List<string> { licenseContent });
+            }
+            
+            return null;
+        }
+
+        // type="expression" or not specified
         var spdxEvaluator = new SpdxLicenseExpressionEvaluator();
-        var licensesNames = await spdxEvaluator.GetLicenseIdentifiersAsync(licenseNodes.InnerText);
+        var licensesNames = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(licenseNode.InnerText);
         var licensesContent = new List<string>();
-        
+            
         foreach (var license in licensesNames)
         {
             var content = await spdxEvaluator.GetLicenseContentAsync(license);
             licensesContent.Add(content);
         }
-        
+            
         return System.Text.Json.JsonSerializer.Serialize(licensesContent);
     }
 

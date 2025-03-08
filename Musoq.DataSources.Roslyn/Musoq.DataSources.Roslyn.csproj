@@ -67,6 +67,9 @@
       <Compile Update="Components\NuGet\NuGetRetrievalService.cs">
         <DependentUpon>INuGetRetrievalService.cs</DependentUpon>
       </Compile>
+      <Compile Update="Components\NuGet\MusoqServerBasedPropertiesResolver.cs">
+        <DependentUpon>IAiBasedPropertiesResolver.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>

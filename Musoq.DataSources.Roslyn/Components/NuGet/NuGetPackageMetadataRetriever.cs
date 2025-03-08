@@ -3,6 +3,7 @@ using System.Threading;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
@@ -30,9 +31,12 @@ internal sealed class NuGetPackageMetadataRetriever(
         string packageVersion,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        
         var commonResources = new CommonResources
         {
-            PackagePath = GetPackageCachePath(nuGetCachePathResolver, packageName, packageVersion),
+            PackagePath = GetPackageCachePath(nuGetCachePathResolver, packageName, packageVersion) ?? 
+                          await TryDownloadPackageAsync(packageName, packageVersion, cancellationToken),
             PackageName = packageName,
             PackageVersion = packageVersion
         };
@@ -66,11 +70,32 @@ internal sealed class NuGetPackageMetadataRetriever(
         var cachedPaths = resolver.ResolveAll();
 
         return cachedPaths
-            .Select(cache => Path.Combine(cache, packageName.ToLowerInvariant(), packageVersion))
+            .Select(cache => Path.Combine(cache, packageName, packageVersion))
             .FirstOrDefault(fileSystem.IsDirectoryExists);
     }
 
-    private Dictionary<string, string?> BuildMetadata(ProjectLicense? license, CommonResources? commonResources)
+    private async Task<string?> TryDownloadPackageAsync(string packageName, string packageVersion, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
+            return null;
+        
+        var tempPath = Path.GetTempPath();
+        var packagePath = Path.Combine(tempPath, packageName, packageVersion);
+        
+        if (fileSystem.IsDirectoryExists(packagePath))
+            return packagePath;
+        
+        try
+        {
+            return await retrievalService.DownloadPackageAsync(packageName, packageVersion, packagePath, cancellationToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static Dictionary<string, string?> BuildMetadata(ProjectLicense? license, CommonResources? commonResources)
     {
         return new Dictionary<string, string?>
         {

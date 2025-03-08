@@ -337,7 +337,13 @@ internal class CommonResources
                 visitor.VisitLanguageAsync,
                 visitor.VisitTagsAsync
             ],
-            cancellationToken,
+            new ParallelOptions
+            {
+                CancellationToken = cancellationToken,
+#if DEBUG
+                MaxDegreeOfParallelism = 1
+#endif
+            },
             async (method, token) =>
             {
                 await method(token);

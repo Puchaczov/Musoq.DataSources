@@ -238,7 +238,7 @@ public class GitSchema : SchemaBase
         switch (name.ToLowerInvariant())
         {
             case "repository":
-                return new RepositoryRowsSource((string) parameters[0], runtimeContext.EndWorkToken, _createRepository);
+                return new RepositoryRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
         }
 
         return base.GetRowSource(name, runtimeContext, parameters);

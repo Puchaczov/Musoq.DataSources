@@ -17,6 +17,7 @@ internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, 
     protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         var fileSystem = new DefaultFileSystem();
+        var localPropertiesResolver = new MusoqServerBasedPropertiesResolver();
         chunkedSource.Add(new List<IObjectResolver>
         {
             new EntityResolver<SolutionEntity>(
@@ -25,6 +26,7 @@ internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, 
                         new NuGetCachePathResolver(solution.Path, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux), 
                         nugetPropertiesResolveEndpoint, 
                         new NuGetRetrievalService(
+                            localPropertiesResolver,
                             fileSystem,
                             new DefaultHttpClient()), 
                         fileSystem),

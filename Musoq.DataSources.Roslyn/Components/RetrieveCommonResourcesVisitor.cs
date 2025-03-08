@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.Roslyn.Components.NuGet;
@@ -26,11 +27,10 @@ internal class RetrieveCommonResourcesVisitor(
         
         foreach (var license in licensesNames)
         {
-            properties.Enqueue(license);
             properties.Enqueue(nameof(ProjectLicense.LicenseUrl));
             properties.Enqueue(nameof(ProjectLicense.LicenseContent));
         
-            for (var propertyIndex = 1; propertyIndex < properties.Count; propertyIndex++)
+            for (; properties.Count != 0;)
             {
                 property = properties.Dequeue();
                 resolvedValue = await RetrieveMetadataAsync(property, cancellationToken);
@@ -39,7 +39,7 @@ internal class RetrieveCommonResourcesVisitor(
             
             licenses.Add(new ProjectLicense
             {
-                License = mappedProperties[license],
+                License = license,
                 LicenseUrl = mappedProperties[nameof(ProjectLicense.LicenseUrl)],
                 LicenseContent = mappedProperties[nameof(ProjectLicense.LicenseContent)]
             });
@@ -122,7 +122,7 @@ internal class RetrieveCommonResourcesVisitor(
         
         try
         {
-            resolvedValue = await nuGetRetrievalService.GetMetadataFromWebAsync(
+            resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
                 "https://api.nuget.org",
                 commonResources,
                 propertyName,
@@ -169,7 +169,7 @@ internal class RetrieveCommonResourcesVisitor(
         
         try
         {
-            resolvedValue = await nuGetRetrievalService.GetMetadataFromWebAsync(
+            resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
                 "https://nuget.org",
                 commonResources,
                 propertyName,

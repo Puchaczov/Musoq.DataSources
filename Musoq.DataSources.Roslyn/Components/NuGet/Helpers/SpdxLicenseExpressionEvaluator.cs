@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet.Helpers
 {
     internal class SpdxLicenseExpressionEvaluator
     {
-        public async Task<List<string>> GetLicenseIdentifiersAsync(string expression)
+        public static async Task<List<string>> GetLicenseIdentifiersAsync(string expression)
         {
             var licenseIds = new List<string>();
 

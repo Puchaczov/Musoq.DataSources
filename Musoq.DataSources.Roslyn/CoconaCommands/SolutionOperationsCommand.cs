@@ -17,10 +17,12 @@ internal class SolutionOperationsCommand
         var workspace = MSBuildWorkspace.Create();
         var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
         var fileSystem = new DefaultFileSystem();
+        var localResolver = new MusoqServerBasedPropertiesResolver();
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
             new NuGetCachePathResolver(solutionFilePath, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux), 
             null,
             new NuGetRetrievalService(
+                localResolver,
                 fileSystem,
                 new DefaultHttpClient()),
             fileSystem);

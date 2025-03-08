@@ -236,7 +236,7 @@ where c.Name = 'Class1'
         Assert.IsNotNull(attributes);
         Assert.AreEqual(1, attributes.Count);
         
-        Assert.AreEqual("ExcludeFromCodeCoverage", attributes.First().Name);
+        Assert.AreEqual("ExcludeFromCodeCoverageAttribute", attributes.First().Name);
     }
 
     [TestMethod]
@@ -632,7 +632,7 @@ where c.Name = 'Class1'
         
         Assert.AreEqual(1, result.Count);
         
-        Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
+        Assert.AreEqual("ExcludeFromCodeCoverageAttribute", result[0][0].ToString());
         Assert.AreEqual(0, (result[0][1] as IEnumerable<string> ?? []).Count());
     }
 

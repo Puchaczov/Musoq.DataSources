@@ -2,6 +2,9 @@ using Moq;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Newtonsoft.Json;
+using NUnit.Framework;
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using CollectionAssert = Microsoft.VisualStudio.TestTools.UnitTesting.CollectionAssert;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 
@@ -46,17 +49,49 @@ public class NugetRetrievalTests
         fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
 
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
+        
         retrievalServiceMock
-            .Setup(x => x.GetMetadataFromWebAsync(
+            .Setup(x => x.DownloadPackageAsync(
+                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)"/some/example/path");
+        
+        retrievalServiceMock.Setup(x => x.GetMetadataFromPathAsync(It.IsAny<CommonResources>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CommonResources _, string propertyName, CancellationToken _) =>
+            {
+                if (propertyName == "LicensesNames")
+                {
+                    return "[]";
+                }
+
+                return null;
+            });
+        
+        retrievalServiceMock
+            .Setup(x => x.GetMetadataFromNugetOrgAsync(
                 It.IsAny<string>(),
                 It.IsAny<CommonResources>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string baseUrl, CommonResources commonResources, string propertyName, CancellationToken cancellationToken) =>
+            .ReturnsAsync((string _, CommonResources _, string propertyName, CancellationToken _) =>
             {
-                if (propertyName == "Licenses")
-                    return JsonConvert.SerializeObject(new [] {new ProjectLicense { License = "MIT", LicenseContent = "1", LicenseUrl = "2" }});
+                if (propertyName == "LicensesNames")
+                {
+                    return "[\"MIT\"]";
+                }
 
+                if (propertyName == nameof(ProjectLicense.LicenseContent))
+                {
+                    return "1";
+                }
+                
+                if (propertyName == nameof(ProjectLicense.LicenseUrl))
+                {
+                    return "2";
+                }
+                
                 return "MockedNuGetOrgValue";
             });
 
@@ -90,13 +125,44 @@ public class NugetRetrievalTests
         fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
 
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
+
+        retrievalServiceMock.Setup(x =>
+                x.GetMetadataFromPathAsync(It.IsAny<CommonResources>(), It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CommonResources _, string propertyName, CancellationToken _) =>
+            {
+                if (propertyName == "LicensesNames")
+                {
+                    return "[]";
+                }
+
+                return null;
+            });
+        
         retrievalServiceMock
-            .Setup(x => x.GetMetadataFromWebAsync(
+            .Setup(x => x.GetMetadataFromNugetOrgAsync(
                 It.IsAny<string>(),
                 It.IsAny<CommonResources>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
+            .ReturnsAsync((string _, CommonResources _, string propertyName,
+                CancellationToken _) =>
+            {
+                if (propertyName == "LicensesNames")
+                {
+                    return "[]";
+                }
+
+                return null;
+            });
+
+        retrievalServiceMock
+            .Setup(x => x.DownloadPackageAsync(
+                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)"/some/example/path");
 
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromCustomApiAsync(
@@ -104,11 +170,23 @@ public class NugetRetrievalTests
                 It.IsAny<CommonResources>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string baseUrl, CommonResources commonResources, string propertyName, CancellationToken cancellationToken) =>
+            .ReturnsAsync((string _, CommonResources _, string propertyName, CancellationToken _) =>
             {
-                if (propertyName == "Licenses")
-                    return JsonConvert.SerializeObject(new []{ new ProjectLicense { License = "MIT", LicenseContent = "1", LicenseUrl = "2" }});
+                if (propertyName == "LicensesNames")
+                {
+                    return "[\"MIT\"]";
+                }
 
+                if (propertyName == nameof(ProjectLicense.LicenseContent))
+                {
+                    return "1";
+                }
+                
+                if (propertyName == nameof(ProjectLicense.LicenseUrl))
+                {
+                    return "2";
+                }
+                
                 return "MockedCustomApiValue";
             });
 
@@ -170,7 +248,7 @@ public class NugetRetrievalTests
         // Assert
         Assert.IsNotNull(enumerator);
         Assert.IsNull(result);
-        retrievalServiceMock.Verify(x => x.GetMetadataFromWebAsync(
+        retrievalServiceMock.Verify(x => x.GetMetadataFromNugetOrgAsync(
             It.IsAny<string>(),
             It.IsAny<CommonResources>(),
             It.IsAny<string>(),
@@ -189,16 +267,24 @@ public class NugetRetrievalTests
         fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(true);
         fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
         
+        retrievalServiceMock.Setup(f => f.DownloadPackageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)"/some/example/path");
         
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromPathAsync(
                 It.IsAny<CommonResources>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CommonResources commonResources, string property, CancellationToken token) =>
+            .ReturnsAsync((CommonResources _, string property, CancellationToken _) =>
             {
-                if (property == "Licenses")
-                    return JsonConvert.SerializeObject(new[] {new ProjectLicense { License = "MIT", LicenseContent = "1", LicenseUrl = "2" }});
+                if (property == "LicensesNames")
+                    return "[\"MIT\"]";
+                
+                if (property == nameof(ProjectLicense.LicenseContent))
+                    return "1";
+                
+                if (property == nameof(ProjectLicense.LicenseUrl))
+                    return "2";
                 
                 return $"Local_{property}";
             });
@@ -234,17 +320,43 @@ public class NugetRetrievalTests
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
         fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
         fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
+        
+        retrievalServiceMock.Setup(f => f.DownloadPackageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)"/some/example/path");
+        
+        retrievalServiceMock.Setup(f => f.GetMetadataFromPathAsync(It.IsAny<CommonResources>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CommonResources _, string propertyName, CancellationToken _) =>
+            {
+                if (propertyName == "LicensesNames")
+                {
+                    return "[]";
+                }
+                
+                return null;
+            });
 
         retrievalServiceMock
-            .Setup(x => x.GetMetadataFromWebAsync(
+            .Setup(x => x.GetMetadataFromNugetOrgAsync(
                 It.IsAny<string>(),
                 It.IsAny<CommonResources>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string baseUrl, CommonResources commonResources, string propertyName, CancellationToken cancellationToken) =>
+            .ReturnsAsync((string _, CommonResources _, string propertyName, CancellationToken _) =>
             {
-                if (propertyName == "Licenses")
-                    return JsonConvert.SerializeObject(new [] {new ProjectLicense { License = "MIT", LicenseContent = "1", LicenseUrl = "2" }});
+                if (propertyName == "LicensesNames")
+                {
+                    return "[\"MIT\"]";
+                }
+                
+                if (propertyName == nameof(ProjectLicense.LicenseContent))
+                {
+                    return "1";
+                }
+                
+                if (propertyName == nameof(ProjectLicense.LicenseUrl))
+                {
+                    return "2";
+                }
 
                 return "MockedNuGetOrgValue";
             });
