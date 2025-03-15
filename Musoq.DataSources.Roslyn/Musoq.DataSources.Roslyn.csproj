@@ -61,14 +61,14 @@
       <Compile Update="Components\NuGet\NuGetPackageMetadataRetriever.cs">
         <DependentUpon>INuGetPackageMetadataRetriever.cs</DependentUpon>
       </Compile>
-      <Compile Update="Components\RetrieveCommonResourcesVisitor.cs">
-        <DependentUpon>ICommonResourcesVisitor.cs</DependentUpon>
-      </Compile>
       <Compile Update="Components\NuGet\NuGetRetrievalService.cs">
         <DependentUpon>INuGetRetrievalService.cs</DependentUpon>
       </Compile>
-      <Compile Update="Components\NuGet\MusoqServerBasedPropertiesResolver.cs">
-        <DependentUpon>IAiBasedPropertiesResolver.cs</DependentUpon>
+      <Compile Update="Components\NuGet\NuGetPropertiesResolver.cs">
+        <DependentUpon>INuGetPropertiesResolver.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Components\NuGet\NuGetResourceVisitor.cs">
+        <DependentUpon>INuGetResourceVisitor.cs</DependentUpon>
       </Compile>
     </ItemGroup>
 

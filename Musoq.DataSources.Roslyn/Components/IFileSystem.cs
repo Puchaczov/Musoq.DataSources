@@ -10,7 +10,7 @@ internal interface IFileSystem
     
     bool IsDirectoryExists(string path);
     
-    string ReadAllText(string path);
+    Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken);
     
     Task<Stream> CreateFileAsync(string tempFilePath);
     

@@ -7,4 +7,8 @@ namespace Musoq.DataSources.Roslyn.Components;
 internal interface IHttpClient
 {
     Task<HttpResponseMessage?> GetAsync(string requestUrl, CancellationToken cancellationToken);
+
+    Task<TOut?> PostAsync<T, TOut>(string requestUrl, T obj, CancellationToken cancellationToken) 
+        where T : class 
+        where TOut : class;
 }

@@ -18,7 +18,7 @@ public class NugetRetrievalTests
         var fileSystemMock = new Mock<IFileSystem>();
         fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
         fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(true);
-        fileSystemMock.Setup(x => x.ReadAllText(It.IsAny<string>())).Returns("Mocked License Content");
+        fileSystemMock.Setup(x => x.ReadAllTextAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync("Mocked License Content");
 
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
 
@@ -58,8 +58,8 @@ public class NugetRetrievalTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((string?)"/some/example/path");
         
-        retrievalServiceMock.Setup(x => x.GetMetadataFromPathAsync(It.IsAny<CommonResources>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CommonResources _, string propertyName, CancellationToken _) =>
+        retrievalServiceMock.Setup(x => x.GetMetadataFromPathAsync(It.IsAny<NuGetResource>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((NuGetResource _, string propertyName, CancellationToken _) =>
             {
                 if (propertyName == "LicensesNames")
                 {
@@ -72,22 +72,22 @@ public class NugetRetrievalTests
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromNugetOrgAsync(
                 It.IsAny<string>(),
-                It.IsAny<CommonResources>(),
+                It.IsAny<NuGetResource>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, CommonResources _, string propertyName, CancellationToken _) =>
+            .ReturnsAsync((string _, NuGetResource _, string propertyName, CancellationToken _) =>
             {
                 if (propertyName == "LicensesNames")
                 {
                     return "[\"MIT\"]";
                 }
 
-                if (propertyName == nameof(ProjectLicense.LicenseContent))
+                if (propertyName == nameof(NuGetLicense.LicenseContent))
                 {
                     return "1";
                 }
                 
-                if (propertyName == nameof(ProjectLicense.LicenseUrl))
+                if (propertyName == nameof(NuGetLicense.LicenseUrl))
                 {
                     return "2";
                 }
@@ -111,9 +111,9 @@ public class NugetRetrievalTests
 
         // Assert
         Assert.IsNotNull(result);
-        Assert.AreEqual("MIT", result[nameof(ProjectLicense.License)]);
-        Assert.AreEqual("1", result[nameof(ProjectLicense.LicenseContent)]);
-        Assert.AreEqual("2", result[nameof(ProjectLicense.LicenseUrl)]);
+        Assert.AreEqual("MIT", result[nameof(NuGetLicense.License)]);
+        Assert.AreEqual("1", result[nameof(NuGetLicense.LicenseContent)]);
+        Assert.AreEqual("2", result[nameof(NuGetLicense.LicenseUrl)]);
     }
 
     [TestMethod]
@@ -127,9 +127,9 @@ public class NugetRetrievalTests
         var retrievalServiceMock = new Mock<INuGetRetrievalService>();
 
         retrievalServiceMock.Setup(x =>
-                x.GetMetadataFromPathAsync(It.IsAny<CommonResources>(), It.IsAny<string>(),
+                x.GetMetadataFromPathAsync(It.IsAny<NuGetResource>(), It.IsAny<string>(),
                     It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CommonResources _, string propertyName, CancellationToken _) =>
+            .ReturnsAsync((NuGetResource _, string propertyName, CancellationToken _) =>
             {
                 if (propertyName == "LicensesNames")
                 {
@@ -142,10 +142,10 @@ public class NugetRetrievalTests
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromNugetOrgAsync(
                 It.IsAny<string>(),
-                It.IsAny<CommonResources>(),
+                It.IsAny<NuGetResource>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, CommonResources _, string propertyName,
+            .ReturnsAsync((string _, NuGetResource _, string propertyName,
                 CancellationToken _) =>
             {
                 if (propertyName == "LicensesNames")
@@ -167,22 +167,22 @@ public class NugetRetrievalTests
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromCustomApiAsync(
                 It.IsAny<string>(),
-                It.IsAny<CommonResources>(),
+                It.IsAny<NuGetResource>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, CommonResources _, string propertyName, CancellationToken _) =>
+            .ReturnsAsync((string _, NuGetResource _, string propertyName, CancellationToken _) =>
             {
                 if (propertyName == "LicensesNames")
                 {
                     return "[\"MIT\"]";
                 }
 
-                if (propertyName == nameof(ProjectLicense.LicenseContent))
+                if (propertyName == nameof(NuGetLicense.LicenseContent))
                 {
                     return "1";
                 }
                 
-                if (propertyName == nameof(ProjectLicense.LicenseUrl))
+                if (propertyName == nameof(NuGetLicense.LicenseUrl))
                 {
                     return "2";
                 }
@@ -206,9 +206,9 @@ public class NugetRetrievalTests
 
         // Assert
         Assert.IsNotNull(result);
-        Assert.AreEqual("MIT", result[nameof(ProjectLicense.License)]);
-        Assert.AreEqual("1", result[nameof(ProjectLicense.LicenseContent)]);
-        Assert.AreEqual("2", result[nameof(ProjectLicense.LicenseUrl)]);
+        Assert.AreEqual("MIT", result[nameof(NuGetLicense.License)]);
+        Assert.AreEqual("1", result[nameof(NuGetLicense.LicenseContent)]);
+        Assert.AreEqual("2", result[nameof(NuGetLicense.LicenseUrl)]);
     }
 
     [TestMethod]
@@ -250,7 +250,7 @@ public class NugetRetrievalTests
         Assert.IsNull(result);
         retrievalServiceMock.Verify(x => x.GetMetadataFromNugetOrgAsync(
             It.IsAny<string>(),
-            It.IsAny<CommonResources>(),
+            It.IsAny<NuGetResource>(),
             It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -272,18 +272,18 @@ public class NugetRetrievalTests
         
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromPathAsync(
-                It.IsAny<CommonResources>(),
+                It.IsAny<NuGetResource>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CommonResources _, string property, CancellationToken _) =>
+            .ReturnsAsync((NuGetResource _, string property, CancellationToken _) =>
             {
                 if (property == "LicensesNames")
                     return "[\"MIT\"]";
                 
-                if (property == nameof(ProjectLicense.LicenseContent))
+                if (property == nameof(NuGetLicense.LicenseContent))
                     return "1";
                 
-                if (property == nameof(ProjectLicense.LicenseUrl))
+                if (property == nameof(NuGetLicense.LicenseUrl))
                     return "2";
                 
                 return $"Local_{property}";
@@ -302,11 +302,11 @@ public class NugetRetrievalTests
 
         // Assert
         Assert.IsNotNull(result);
-        Assert.AreEqual("MIT", result[nameof(ProjectLicense.License)]);
-        Assert.AreEqual("1", result[nameof(ProjectLicense.LicenseContent)]);
-        Assert.AreEqual("2", result[nameof(ProjectLicense.LicenseUrl)]);
-        Assert.AreEqual("Local_ProjectUrl", result[nameof(CommonResources.ProjectUrl)]);
-        Assert.AreEqual("Local_Description", result[nameof(CommonResources.Description)]);
+        Assert.AreEqual("MIT", result[nameof(NuGetLicense.License)]);
+        Assert.AreEqual("1", result[nameof(NuGetLicense.LicenseContent)]);
+        Assert.AreEqual("2", result[nameof(NuGetLicense.LicenseUrl)]);
+        Assert.AreEqual("Local_ProjectUrl", result[nameof(NuGetResource.ProjectUrl)]);
+        Assert.AreEqual("Local_Description", result[nameof(NuGetResource.Description)]);
     }
 
     [TestMethod]
@@ -324,8 +324,8 @@ public class NugetRetrievalTests
         retrievalServiceMock.Setup(f => f.DownloadPackageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string?)"/some/example/path");
         
-        retrievalServiceMock.Setup(f => f.GetMetadataFromPathAsync(It.IsAny<CommonResources>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CommonResources _, string propertyName, CancellationToken _) =>
+        retrievalServiceMock.Setup(f => f.GetMetadataFromPathAsync(It.IsAny<NuGetResource>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((NuGetResource _, string propertyName, CancellationToken _) =>
             {
                 if (propertyName == "LicensesNames")
                 {
@@ -338,22 +338,22 @@ public class NugetRetrievalTests
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromNugetOrgAsync(
                 It.IsAny<string>(),
-                It.IsAny<CommonResources>(),
+                It.IsAny<NuGetResource>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string _, CommonResources _, string propertyName, CancellationToken _) =>
+            .ReturnsAsync((string _, NuGetResource _, string propertyName, CancellationToken _) =>
             {
                 if (propertyName == "LicensesNames")
                 {
                     return "[\"MIT\"]";
                 }
                 
-                if (propertyName == nameof(ProjectLicense.LicenseContent))
+                if (propertyName == nameof(NuGetLicense.LicenseContent))
                 {
                     return "1";
                 }
                 
-                if (propertyName == nameof(ProjectLicense.LicenseUrl))
+                if (propertyName == nameof(NuGetLicense.LicenseUrl))
                 {
                     return "2";
                 }
@@ -374,9 +374,9 @@ public class NugetRetrievalTests
 
         // Assert
         Assert.IsNotNull(result);
-        Assert.AreEqual("MIT", result[nameof(ProjectLicense.License)]);
-        Assert.AreEqual("1", result[nameof(ProjectLicense.LicenseContent)]);
-        Assert.AreEqual("2", result[nameof(ProjectLicense.LicenseUrl)]);
+        Assert.AreEqual("MIT", result[nameof(NuGetLicense.License)]);
+        Assert.AreEqual("1", result[nameof(NuGetLicense.LicenseContent)]);
+        Assert.AreEqual("2", result[nameof(NuGetLicense.LicenseUrl)]);
     }
 
     [TestMethod]
@@ -393,8 +393,8 @@ public class NugetRetrievalTests
 
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromPathAsync(
-                It.IsAny<CommonResources>(),
-                nameof(CommonResources.RequireLicenseAcceptance),
+                It.IsAny<NuGetResource>(),
+                nameof(NuGetResource.RequireLicenseAcceptance),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync("true");
 
@@ -411,7 +411,7 @@ public class NugetRetrievalTests
 
         // Assert
         Assert.IsNotNull(result);
-        Assert.AreEqual("True", result[nameof(CommonResources.RequireLicenseAcceptance)]);
+        Assert.AreEqual("True", result[nameof(NuGetResource.RequireLicenseAcceptance)]);
     }
 
     [TestMethod]
@@ -429,7 +429,7 @@ public class NugetRetrievalTests
         retrievalServiceMock
             .Setup(x => x.GetMetadataFromCustomApiAsync(
                 It.IsAny<string>(),
-                It.IsAny<CommonResources>(),
+                It.IsAny<NuGetResource>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("API Error"));
@@ -455,7 +455,7 @@ public class NugetRetrievalTests
         retrievalServiceMock.Verify(
             x => x.GetMetadataFromCustomApiAsync(
                 It.IsAny<string>(),
-                It.IsAny<CommonResources>(),
+                It.IsAny<NuGetResource>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()),
             Times.AtLeastOnce,

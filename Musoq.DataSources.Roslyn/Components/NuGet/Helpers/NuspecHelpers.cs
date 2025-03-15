@@ -64,7 +64,7 @@ internal static class NuspecHelpers
         return await Task.FromResult(GetValue(xmlDoc, namespaceManager, "/nu:package/nu:metadata/nu:tags"));
     }
 
-    public static async Task<string?> GetLicensesNamesFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, CommonResources commonResources, IAiBasedPropertiesResolver aiModelResolver, CancellationToken cancellationToken)
+    public static async Task<string?> GetLicensesNamesFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, NuGetResource commonResources, INuGetPropertiesResolver aiModelResolver, CancellationToken cancellationToken)
     {
         var licenseNode = xmlDoc.SelectSingleNode("/nu:package/nu:metadata/nu:license", namespaceManager);
 
@@ -88,7 +88,7 @@ internal static class NuspecHelpers
         return System.Text.Json.JsonSerializer.Serialize(licensesNames);
     }
     
-    public static async Task<string?> GetLicenseContentFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, CommonResources commonResources, CancellationToken cancellationToken)
+    public static async Task<string?> GetLicenseContentFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, NuGetResource commonResources, CancellationToken cancellationToken)
     {
         var licenseNode = xmlDoc.SelectSingleNode("/nu:package/nu:metadata/nu:license", namespaceManager);
 
@@ -101,28 +101,21 @@ internal static class NuspecHelpers
             // Handle license with type="file"
             var licenseFilePath = licenseNode.InnerText;
             var fullPath = Path.Combine(Path.GetDirectoryName(commonResources.PackagePath) ?? string.Empty, licenseFilePath);
+
+            if (!File.Exists(fullPath)) return null;
             
-            if (File.Exists(fullPath))
-            {
-                var licenseContent = await File.ReadAllTextAsync(fullPath, cancellationToken);
-                return System.Text.Json.JsonSerializer.Serialize(new List<string> { licenseContent });
-            }
-            
+            var licenseContent = await File.ReadAllTextAsync(fullPath, cancellationToken);
+            return System.Text.Json.JsonSerializer.Serialize(new List<string> { licenseContent });
+        }
+
+        if (string.Equals(typeAttribute, "expression", StringComparison.OrdinalIgnoreCase))
+        {
+            // I don't want to use SPDX license here, preferably get it from repository later.
             return null;
         }
 
-        // type="expression" or not specified
-        var spdxEvaluator = new SpdxLicenseExpressionEvaluator();
-        var licensesNames = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(licenseNode.InnerText);
-        var licensesContent = new List<string>();
-            
-        foreach (var license in licensesNames)
-        {
-            var content = await spdxEvaluator.GetLicenseContentAsync(license);
-            licensesContent.Add(content);
-        }
-            
-        return System.Text.Json.JsonSerializer.Serialize(licensesContent);
+        // not specified
+        return null;
     }
 
     public static Task<string?> GetLicenseUrlFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager)

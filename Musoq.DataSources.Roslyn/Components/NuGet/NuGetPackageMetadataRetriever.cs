@@ -33,7 +33,7 @@ internal sealed class NuGetPackageMetadataRetriever(
     {
         cancellationToken.ThrowIfCancellationRequested();
         
-        var commonResources = new CommonResources
+        var commonResources = new NuGetResource
         {
             PackagePath = GetPackageCachePath(nuGetCachePathResolver, packageName, packageVersion) ?? 
                           await TryDownloadPackageAsync(packageName, packageVersion, cancellationToken),
@@ -41,7 +41,7 @@ internal sealed class NuGetPackageMetadataRetriever(
             PackageVersion = packageVersion
         };
         
-        var retrieveCommonResourcesVisitor = new RetrieveCommonResourcesVisitor(
+        var retrieveCommonResourcesVisitor = new NuGetResourceVisitor(
             commonResources,
             retrievalService,
             customApiEndpoint);
@@ -95,24 +95,24 @@ internal sealed class NuGetPackageMetadataRetriever(
         }
     }
 
-    private static Dictionary<string, string?> BuildMetadata(ProjectLicense? license, CommonResources? commonResources)
+    private static Dictionary<string, string?> BuildMetadata(NuGetLicense? license, NuGetResource? commonResources)
     {
         return new Dictionary<string, string?>
         {
             ["LicenseUrl"] = license?.LicenseUrl,
             ["LicenseContent"] = license?.LicenseContent,
             ["License"] = license?.License,
-            [nameof(CommonResources.ProjectUrl)] = commonResources?.ProjectUrl,
-            [nameof(CommonResources.Title)] = commonResources?.Title,
-            [nameof(CommonResources.Authors)] = commonResources?.Authors,
-            [nameof(CommonResources.Owners)] = commonResources?.Owners,
-            [nameof(CommonResources.RequireLicenseAcceptance)] = commonResources?.RequireLicenseAcceptance?.ToString(),
-            [nameof(CommonResources.Description)] = commonResources?.Description,
-            [nameof(CommonResources.Summary)] = commonResources?.Summary,
-            [nameof(CommonResources.ReleaseNotes)] = commonResources?.ReleaseNotes,
-            [nameof(CommonResources.Copyright)] = commonResources?.Copyright,
-            [nameof(CommonResources.Language)] = commonResources?.Language,
-            [nameof(CommonResources.Tags)] = commonResources?.Tags
+            [nameof(NuGetResource.ProjectUrl)] = commonResources?.ProjectUrl,
+            [nameof(NuGetResource.Title)] = commonResources?.Title,
+            [nameof(NuGetResource.Authors)] = commonResources?.Authors,
+            [nameof(NuGetResource.Owners)] = commonResources?.Owners,
+            [nameof(NuGetResource.RequireLicenseAcceptance)] = commonResources?.RequireLicenseAcceptance?.ToString(),
+            [nameof(NuGetResource.Description)] = commonResources?.Description,
+            [nameof(NuGetResource.Summary)] = commonResources?.Summary,
+            [nameof(NuGetResource.ReleaseNotes)] = commonResources?.ReleaseNotes,
+            [nameof(NuGetResource.Copyright)] = commonResources?.Copyright,
+            [nameof(NuGetResource.Language)] = commonResources?.Language,
+            [nameof(NuGetResource.Tags)] = commonResources?.Tags
         };
     }
 }

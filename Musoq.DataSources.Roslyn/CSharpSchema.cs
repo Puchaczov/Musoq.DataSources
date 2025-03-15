@@ -1,4 +1,9 @@
+using System;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
+using Microsoft.CodeAnalysis;
+using Musoq.DataSources.Roslyn.Components;
+using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.RowsSources;
 using Musoq.Schema;
@@ -18,7 +23,9 @@ public class CSharpSchema : SchemaBase
 {
     private const string SchemaName = "Csharp";
     
-    internal static readonly ConcurrentDictionary<string, SolutionEntity> Solutions = new();
+    internal static readonly ConcurrentDictionary<string, Solution> Solutions = new();
+
+    private readonly Func<string, IHttpClient, INuGetPropertiesResolver> _createNugetPropertiesResolver;
     
     /// <virtual-constructors>
     /// <virtual-constructor>
@@ -249,6 +256,14 @@ public class CSharpSchema : SchemaBase
     {
         AddSource<CSharpSolutionRowsSource>("file");
         AddTable<CSharpSolutionTable>("file");
+
+        _createNugetPropertiesResolver = (s, client) => new NuGetPropertiesResolver(s, client);
+    }
+
+    internal CSharpSchema(INuGetPropertiesResolver aiBasedPropertiesResolver)
+        : this()
+    {
+        _createNugetPropertiesResolver = (_, _) => aiBasedPropertiesResolver;
     }
 
     /// <summary>
@@ -276,23 +291,55 @@ public class CSharpSchema : SchemaBase
     /// <returns>Data source</returns>
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
-        string? nugetPropertiesResolveEndpoint = null;
+        string? externalNugetPropertiesResolveEndpoint = null;
         
-        if (runtimeContext.EnvironmentVariables.TryGetValue("NUGET_PROPERTIES_RESOLVE_ENDPOINT", out var nugetPropertiesResolveEndpointValue))
+        if (runtimeContext.EnvironmentVariables.TryGetValue("EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", out var nugetPropertiesResolveEndpointValue))
         {
-            nugetPropertiesResolveEndpoint = nugetPropertiesResolveEndpointValue;
+            externalNugetPropertiesResolveEndpoint = nugetPropertiesResolveEndpointValue;
         }
+        
+        string? internalNugetPropertiesResolveEndpoint = null;
+        
+        if (runtimeContext.EnvironmentVariables.TryGetValue("INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", out var internalNugetPropertiesResolveEndpointValue))
+        {
+            internalNugetPropertiesResolveEndpoint = internalNugetPropertiesResolveEndpointValue;
+        }
+        
+        if (internalNugetPropertiesResolveEndpoint == null)
+        {
+            throw new InvalidOperationException("INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT environment variable is not set.");
+        }
+
+        var httpClient = new DefaultHttpClient();
         
         switch (name.ToLowerInvariant())
         {
             case "solution":
             {
-                if (Solutions.TryGetValue((string) parameters[0], out var solutionFilePath))
+                if (Solutions.TryGetValue((string) parameters[0], out var solution))
                 {
-                    return new CSharpInMemorySolutionRowsSource(solutionFilePath, nugetPropertiesResolveEndpoint, runtimeContext.EndWorkToken);
+                    return new CSharpInMemorySolutionRowsSource(
+                        new SolutionEntity(
+                            solution, 
+                            new NuGetPackageMetadataRetriever(
+                                new NuGetCachePathResolver(solution.FilePath, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux),
+                                externalNugetPropertiesResolveEndpoint,
+                                new NuGetRetrievalService(
+                                    _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
+                                    new DefaultFileSystem(),
+                                    httpClient
+                                ),
+                                new DefaultFileSystem()
+                            ),
+                            runtimeContext.EndWorkToken
+                        ), 
+                        externalNugetPropertiesResolveEndpoint, 
+                        _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient), 
+                        runtimeContext.EndWorkToken
+                    );
                 }
                 
-                return new CSharpSolutionRowsSource((string) parameters[0], nugetPropertiesResolveEndpoint, runtimeContext.EndWorkToken);
+                return new CSharpSolutionRowsSource((string) parameters[0], externalNugetPropertiesResolveEndpoint, _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient), runtimeContext.EndWorkToken);
             }
         }
 

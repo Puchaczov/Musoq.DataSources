@@ -1,11 +1,11 @@
-using HtmlAgilityPack;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using HtmlAgilityPack;
 
-namespace Musoq.DataSources.Roslyn.Components;
+namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal class CommonResources
+internal class NuGetResource
 {
     private readonly object _syncRoot = new();
     private readonly Dictionary<string, HtmlDocument> _htmlDocuments = new();
@@ -20,7 +20,7 @@ internal class CommonResources
     private string? _title;
     private string? _owners;
     
-    private ProjectLicense[]? _licenses;
+    private NuGetLicense[]? _licenses;
 
     private bool? _requireLicenseAcceptance;
 
@@ -31,6 +31,7 @@ internal class CommonResources
     private string? _copyright;
     private string? _language;
     private string? _tags;
+    private string? _lookingForLicense;
 
     public string? PackageName
     {
@@ -89,7 +90,7 @@ internal class CommonResources
         }
     }
 
-    public ProjectLicense[] Licenses
+    public NuGetLicense[] Licenses
     {
         get
         {
@@ -305,6 +306,24 @@ internal class CommonResources
         }
     }
 
+    public string? LookingForLicense
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _lookingForLicense;
+            }
+        }
+        set
+        {
+            lock (_syncRoot)
+            {
+                _lookingForLicense = value;
+            }
+        }
+    }
+
     public bool TryGetHtmlDocument(string url, out HtmlDocument? doc)
     {
         lock (_syncRoot)
@@ -321,7 +340,7 @@ internal class CommonResources
         }
     }
 
-    public async Task AcceptAsync(ICommonResourcesVisitor visitor, CancellationToken cancellationToken)
+    public async Task AcceptAsync(INuGetResourceVisitor visitor, CancellationToken cancellationToken)
     {
         await Parallel.ForEachAsync([
                 visitor.VisitLicensesAsync,
@@ -344,9 +363,6 @@ internal class CommonResources
                 MaxDegreeOfParallelism = 1
 #endif
             },
-            async (method, token) =>
-            {
-                await method(token);
-            });
+            async (method, token) => await method(token));
     }
 }

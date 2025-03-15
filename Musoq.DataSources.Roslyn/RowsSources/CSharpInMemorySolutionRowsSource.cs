@@ -11,13 +11,12 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.RowsSources;
 
-internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, string? nugetPropertiesResolveEndpoint, CancellationToken endWorkToken)
-    : AsyncRowsSourceBase<SolutionEntity>(endWorkToken)
+internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, string? nugetPropertiesResolveEndpoint, INuGetPropertiesResolver aiBasedPropertiesResolver, CancellationToken queryCancelledToken)
+    : AsyncRowsSourceBase<SolutionEntity>(queryCancelledToken)
 {
     protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         var fileSystem = new DefaultFileSystem();
-        var localPropertiesResolver = new MusoqServerBasedPropertiesResolver();
         chunkedSource.Add(new List<IObjectResolver>
         {
             new EntityResolver<SolutionEntity>(
@@ -26,11 +25,11 @@ internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, 
                         new NuGetCachePathResolver(solution.Path, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux), 
                         nugetPropertiesResolveEndpoint, 
                         new NuGetRetrievalService(
-                            localPropertiesResolver,
+                            aiBasedPropertiesResolver,
                             fileSystem,
                             new DefaultHttpClient()), 
                         fileSystem),
-                    cancellationToken
+                    queryCancelledToken
                 ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)
         }, cancellationToken);
         return Task.CompletedTask;

@@ -1,19 +1,35 @@
 using System.Globalization;
+using System.Net;
 using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
 using Musoq.Parser.Helpers;
 using System.Text;
+using Moq;
+using Musoq.DataSources.Roslyn.Components.NuGet;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 
 [TestClass]
-public class NugetPackageTests
+public class NugetToSqlTests
 {
     [TestMethod]
     public void WhenNugetPackagesQueried_ShouldPass()
     {
+        var aiBasedPropertiesResolverMock = new Mock<INuGetPropertiesResolver>();
+        
+        aiBasedPropertiesResolverMock.Setup(f => f.GetLicenseNamesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string licenseContent, CancellationToken _) =>
+            {
+                if (licenseContent.Contains("MIT"))
+                {
+                    return ["MIT"];
+                }
+
+                return [];
+            });
+        
         RunWithNugetPackages(() =>
         {
             var query = @"
@@ -39,7 +55,7 @@ public class NugetPackageTests
             cross apply p.NugetPackages np"
             .Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
 
-            var vm = CreateAndRunVirtualMachine(query);
+            var vm = CompileQuery(query, aiBasedPropertiesResolverMock);
             var result = vm.Run();
 
             Assert.AreEqual(8, result.Count,
@@ -64,29 +80,7 @@ public class NugetPackageTests
                     Copyright = null,
                     Language = null,
                     Tags = "sql, dotnet-core",
-                    LicenseContent = """
-                                     MIT License
-                                     
-                                     Copyright (c) 2018 Jakub Puchała
-                                     
-                                     Permission is hereby granted, free of charge, to any person obtaining a copy
-                                     of this software and associated documentation files (the "Software"), to deal
-                                     in the Software without restriction, including without limitation the rights
-                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                                     copies of the Software, and to permit persons to whom the Software is
-                                     furnished to do so, subject to the following conditions:
-                                     
-                                     The above copyright notice and this permission notice shall be included in all
-                                     copies or substantial portions of the Software.
-                                     
-                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                                     SOFTWARE.
-                                     """
+                    LicenseContent = ReadLicenseFile("musoq-mit.txt")
                 },
                 new NugetPackageExpectation
                 {
@@ -105,29 +99,7 @@ public class NugetPackageTests
                     Copyright = null,
                     Language = null,
                     Tags = "sql, dotnet-core",
-                    LicenseContent = """
-                                     MIT License
-                                     
-                                     Copyright (c) 2018 Jakub Puchała
-                                     
-                                     Permission is hereby granted, free of charge, to any person obtaining a copy
-                                     of this software and associated documentation files (the "Software"), to deal
-                                     in the Software without restriction, including without limitation the rights
-                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                                     copies of the Software, and to permit persons to whom the Software is
-                                     furnished to do so, subject to the following conditions:
-                                     
-                                     The above copyright notice and this permission notice shall be included in all
-                                     copies or substantial portions of the Software.
-                                     
-                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                                     SOFTWARE.
-                                     """
+                    LicenseContent = ReadLicenseFile("musoq-mit.txt")
                 },
                 new NugetPackageExpectation
                 {
@@ -146,29 +118,7 @@ public class NugetPackageTests
                     Copyright = null,
                     Language = null,
                     Tags = "sql, dotnet-core",
-                    LicenseContent = """
-                                     MIT License
-                                     
-                                     Copyright (c) 2018 Jakub Puchała
-                                     
-                                     Permission is hereby granted, free of charge, to any person obtaining a copy
-                                     of this software and associated documentation files (the "Software"), to deal
-                                     in the Software without restriction, including without limitation the rights
-                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                                     copies of the Software, and to permit persons to whom the Software is
-                                     furnished to do so, subject to the following conditions:
-                                     
-                                     The above copyright notice and this permission notice shall be included in all
-                                     copies or substantial portions of the Software.
-                                     
-                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                                     SOFTWARE.
-                                     """
+                    LicenseContent = ReadLicenseFile("musoq-mit.txt")
                 },
                 new NugetPackageExpectation
                 {
@@ -187,9 +137,7 @@ public class NugetPackageTests
                     Copyright = null,
                     Language = null,
                     Tags = "coverage testing unit-test lcov opencover quality",
-                    LicenseContent = """
-                                     MIT
-                                     """
+                    LicenseContent = ReadLicenseFile("coverlet-mit.txt")
                 },
                 new NugetPackageExpectation
                 {
@@ -208,32 +156,7 @@ public class NugetPackageTests
                     Copyright = "© Microsoft Corporation. All rights reserved.",
                     Language = null,
                     Tags = "vstest visual-studio unittest testplatform mstest microsoft test testing",
-                    LicenseContent = """
-                                     The MIT License (MIT)
-                                     
-                                     Copyright (c) Microsoft Corporation
-                                     
-                                     All rights reserved.
-                                     
-                                     Permission is hereby granted, free of charge, to any person obtaining a copy
-                                     of this software and associated documentation files (the "Software"), to deal
-                                     in the Software without restriction, including without limitation the rights
-                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                                     copies of the Software, and to permit persons to whom the Software is
-                                     furnished to do so, subject to the following conditions:
-                                     
-                                     The above copyright notice and this permission notice shall be included in all
-                                     copies or substantial portions of the Software.
-                                     
-                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                                     SOFTWARE.
-                                     
-                                     """
+                    LicenseContent = ReadLicenseFile("microsoft-test-mit.txt")
                 },
                 new NugetPackageExpectation
                 {
@@ -262,28 +185,7 @@ public class NugetPackageTests
                     Copyright = "Copyright (c) 2023 Charlie Poole, Rob Prouse",
                     Language = "en-US",
                     Tags = "nunit test testing tdd framework fluent assert theory plugin addin",
-                    LicenseContent = """
-                                     Copyright (c) 2023 Charlie Poole, Rob Prouse
-                                     
-                                     Permission is hereby granted, free of charge, to any person obtaining a copy
-                                     of this software and associated documentation files (the "Software"), to deal
-                                     in the Software without restriction, including without limitation the rights
-                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                                     copies of the Software, and to permit persons to whom the Software is
-                                     furnished to do so, subject to the following conditions:
-                                     
-                                     The above copyright notice and this permission notice shall be included in
-                                     all copies or substantial portions of the Software.
-                                     
-                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-                                     THE SOFTWARE.
-                                     
-                                     """
+                    LicenseContent = ReadLicenseFile("nunit-mit.txt")
                 },
                 new NugetPackageExpectation
                 {
@@ -307,25 +209,7 @@ public class NugetPackageTests
                     Copyright = "Copyright (c) 2018-2023 NUnit project",
                     Language = null,
                     Tags = "nunit, analyzers, roslyn-analyzers",
-                    LicenseContent = """
-                                     Permission is hereby granted, free of charge, to any person obtaining a copy
-                                     of this software and associated documentation files (the "Software"), to deal
-                                     in the Software without restriction, including without limitation the rights
-                                     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                                     copies of the Software, and to permit persons to whom the Software is
-                                     furnished to do so, subject to the following conditions:
-                                     
-                                     The above copyright notice and this permission notice shall be included in
-                                     all copies or substantial portions of the Software.
-                                     
-                                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                                     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                                     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-                                     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-                                     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-                                     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-                                     THE SOFTWARE.
-                                     """
+                    LicenseContent = ReadLicenseFile("nunit-analyzers-mit.txt")
                 },
                 new NugetPackageExpectation
                 {
@@ -350,9 +234,7 @@ public class NugetPackageTests
                     Copyright = "Copyright (c) 2011-2021 Charlie Poole, 2014-2023 Terje Sandstrom",
                     Language = "en-US",
                     Tags = "test visualstudio testadapter nunit nunit3 dotnet",
-                    LicenseContent = """
-                                     MIT
-                                     """
+                    LicenseContent = ReadLicenseFile("nunit3testadapter-mit.txt")
                 }
             };
 
@@ -361,6 +243,18 @@ public class NugetPackageTests
                 AssertHasNugetPackage(result, expectedPkg);
             }            
         });
+    }
+
+    private static string ReadLicenseFile(string fileName)
+    {
+        var licensePath = Path.Combine(StartDirectory, "Files", "Licenses", fileName);
+        
+        // Make sure the directory exists 
+        var directory = Path.GetDirectoryName(licensePath);
+        if (!Directory.Exists(directory))
+            Directory.CreateDirectory(directory!);
+            
+        return File.ReadAllText(licensePath);
     }
 
     private static void RunWithNugetPackages(Action action)
@@ -418,7 +312,7 @@ public class NugetPackageTests
             r[12]?.ToString() != expectedPkg.Copyright ||
             r[13]?.ToString() != expectedPkg.Language ||
             r[14]?.ToString() != expectedPkg.Tags ||
-            r[15]?.ToString() != expectedPkg.LicenseContent));
+            UnescapeHtmlEntities(NormalizeNewlines(r[15]?.ToString())) != UnescapeHtmlEntities(NormalizeNewlines(expectedPkg.LicenseContent))));
 
         if (incorrectRow == null)
             return;
@@ -470,6 +364,32 @@ public class NugetPackageTests
         return differences.ToString();
     }
 
+    private static string? NormalizeNewlines(string? input)
+    {
+        if (input == null)
+            return null;
+        
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        var normalized = input.Replace("\r\n", "\n");
+        
+        normalized = normalized.Replace("\r", "\n");
+        
+        return normalized.Trim();
+    }
+    
+    private static string? UnescapeHtmlEntities(string? input)
+    {
+        if (input == null)
+            return null;
+        
+        if (string.IsNullOrEmpty(input))
+            return input;
+        
+        return WebUtility.HtmlDecode(input);
+    }
+
     private static string DumpResult(Table rows)
     {
         var sb = new StringBuilder();
@@ -478,13 +398,18 @@ public class NugetPackageTests
         return sb.ToString();
     }
 
-    private CompiledQuery CreateAndRunVirtualMachine(string script)
+    private CompiledQuery CompileQuery(string script, Mock<INuGetPropertiesResolver> aiBasedPropertiesResolverMock)
     {
         return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
-            new RoslynSchemaProvider(), 
-            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            new RoslynSchemaProvider(aiBasedPropertiesResolverMock.Object), 
+            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
+                new Dictionary<string, string?>
+                {
+                    {"INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/internal/this-doesnt-exists"},
+                    {"EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", null}
+                }));
     }
 
     private static string Solution1SolutionPath => Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
@@ -503,7 +428,7 @@ public class NugetPackageTests
         }
     }
 
-    static NugetPackageTests()
+    static NugetToSqlTests()
     {
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }

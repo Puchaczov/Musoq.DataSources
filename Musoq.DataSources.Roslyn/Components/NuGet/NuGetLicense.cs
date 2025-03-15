@@ -1,6 +1,6 @@
-namespace Musoq.DataSources.Roslyn.Components;
+namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal class ProjectLicense
+internal class NuGetLicense
 {
     public string? LicenseUrl { get; init; }
     

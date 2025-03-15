@@ -17,6 +17,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class ProjectEntity
 {
+    private IReadOnlyList<NugetPackageEntity>? _nugetPackageEntities;
+    
     /// <summary>
     /// Maps column names to their respective indices.
     /// </summary>
@@ -68,7 +70,7 @@ public class ProjectEntity
         _nuGetPackageMetadataRetriever = nuGetPackageMetadataRetriever;
         _cancellationToken = cancellationToken;
         _documents = [];
-        NugetPackages = GetNugetPackagesAsync(project).Result;
+        _nugetPackageEntities = null;
     }
 
     /// <summary>
@@ -224,7 +226,20 @@ public class ProjectEntity
     /// <summary>
     /// Gets the NuGet packages of the project.
     /// </summary>
-    public IReadOnlyList<NugetPackageEntity> NugetPackages { get; }
+    public IReadOnlyList<NugetPackageEntity> NugetPackages
+    {
+        get
+        {
+            if (_nugetPackageEntities != null)
+                return _nugetPackageEntities;
+            
+            var taskGetNugetPackages = Task.Run(async () => await GetNugetPackagesAsync(_project), _cancellationToken);
+            taskGetNugetPackages.Wait();
+            _nugetPackageEntities = taskGetNugetPackages.Result;
+            
+            return _nugetPackageEntities;
+        }
+    }
 
     private async Task<List<NugetPackageEntity>> GetNugetPackagesAsync(Project project)
     {
@@ -237,17 +252,19 @@ public class ProjectEntity
             var projectXml = XDocument.Load(project.FilePath);
             var packageRefs = projectXml.Descendants("PackageReference");
 
-            foreach (var packageRef in packageRefs)
+            await Parallel.ForEachAsync(packageRefs, _cancellationToken, async (packageRef, token) =>
             {
                 var id = packageRef.Attribute("Include")?.Value ?? string.Empty;
                 var version = packageRef.Attribute("Version")?.Value ?? string.Empty;
-                
-                await foreach (var metadata in _nuGetPackageMetadataRetriever.GetMetadataAsync(id, version,
-                                   _cancellationToken))
+
+                await foreach (var metadata in _nuGetPackageMetadataRetriever.GetMetadataAsync(id, version, token))
                 {
-                    var requireLicenseAcceptanceString = metadata.GetValueOrDefault(nameof(NugetPackageEntity.RequireLicenseAcceptance));
-                    var requireLicenseAcceptance = string.IsNullOrWhiteSpace(requireLicenseAcceptanceString) ? "false" : requireLicenseAcceptanceString;
-                
+                    var requireLicenseAcceptanceString =
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.RequireLicenseAcceptance));
+                    var requireLicenseAcceptance = string.IsNullOrWhiteSpace(requireLicenseAcceptanceString)
+                        ? "false"
+                        : requireLicenseAcceptanceString;
+
                     nugetPackages.Add(new NugetPackageEntity(
                         id,
                         version,
@@ -266,7 +283,7 @@ public class ProjectEntity
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseContent))
                     ));
                 }
-            }
+            });
         }
         catch (Exception ex)
         {

@@ -1,9 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Musoq.DataSources.Roslyn.Components;
+namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal interface ICommonResourcesVisitor
+internal interface INuGetResourceVisitor
 {
     Task VisitLicensesAsync(CancellationToken cancellationToken);
     

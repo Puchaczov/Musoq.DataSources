@@ -10,7 +10,7 @@ internal sealed class DefaultFileSystem : IFileSystem
     
     public bool IsDirectoryExists(string path) => Directory.Exists(path);
 
-    public string ReadAllText(string path) => File.ReadAllText(path);
+    public Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken) => File.ReadAllTextAsync(path, cancellationToken);
     
     public Task<Stream> CreateFileAsync(string tempFilePath)
     {

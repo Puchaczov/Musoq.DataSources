@@ -43,5 +43,26 @@
     <ItemGroup>
       <Folder Include="TestsSolutions\NugetCache\" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <None Update="Files\Licenses\coverlet-mit.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\Licenses\microsoft-test-mit.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\Licenses\musoq-mit.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\Licenses\nunit-analyzers-mit.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\Licenses\nunit-mit.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\Licenses\nunit3testadapter-mit.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
 
 </Project>
