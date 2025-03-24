@@ -32,7 +32,9 @@ public class CSharpSchema : SchemaBase
     /// <examples>
     /// <example>
     /// <from>
-    /// <environmentVariables></environmentVariables>
+    /// <environmentVariables>
+    /// <environmentVariable name="INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT" isRequired="true">Server endpoint to resolve properties</environmentVariable>
+    /// </environmentVariables>
     /// #csharp.solution(string path)
     /// </from>
     /// <description>Allows to perform queries on the given solution file.</description>
@@ -257,7 +259,7 @@ public class CSharpSchema : SchemaBase
         AddSource<CSharpSolutionRowsSource>("file");
         AddTable<CSharpSolutionTable>("file");
 
-        _createNugetPropertiesResolver = (s, client) => new NuGetPropertiesResolver(s, client);
+        _createNugetPropertiesResolver = (baseUrl, client) => new NuGetPropertiesResolver(baseUrl, client);
     }
 
     internal CSharpSchema(INuGetPropertiesResolver aiBasedPropertiesResolver)
@@ -311,6 +313,7 @@ public class CSharpSchema : SchemaBase
         }
 
         var httpClient = new DefaultHttpClient();
+        var defaultFileSystem = new DefaultFileSystem();
         
         switch (name.ToLowerInvariant())
         {
@@ -326,10 +329,10 @@ public class CSharpSchema : SchemaBase
                                 externalNugetPropertiesResolveEndpoint,
                                 new NuGetRetrievalService(
                                     _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
-                                    new DefaultFileSystem(),
+                                    defaultFileSystem,
                                     httpClient
                                 ),
-                                new DefaultFileSystem()
+                                defaultFileSystem
                             ),
                             runtimeContext.EndWorkToken
                         ), 

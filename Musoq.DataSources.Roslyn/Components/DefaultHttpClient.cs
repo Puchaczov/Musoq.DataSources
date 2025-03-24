@@ -25,11 +25,18 @@ internal sealed class DefaultHttpClient : IHttpClient
         if (string.IsNullOrEmpty(result))
             return null;
         
-        var deserialize = JsonSerializer.Deserialize<TOut>(result);
-        
-        if (deserialize is null)
-            return null;
+        return JsonSerializer.Deserialize<TOut>(result);
+    }
 
-        return deserialize;
+    public async Task<TOut?> PostAsync<TOut>(string requestUrl, MultipartFormDataContent multipartFormDataContent,
+        CancellationToken cancellationToken) where TOut : class
+    {
+        var response = await HttpClient.PostAsync(requestUrl, multipartFormDataContent, cancellationToken);
+        var result = await response.Content.ReadAsStringAsync(cancellationToken);
+        
+        if (string.IsNullOrEmpty(result))
+            return null;
+        
+        return JsonSerializer.Deserialize<TOut>(result);
     }
 }

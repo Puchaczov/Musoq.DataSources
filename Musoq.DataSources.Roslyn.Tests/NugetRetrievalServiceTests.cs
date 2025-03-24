@@ -462,12 +462,24 @@ namespace Musoq.DataSources.Roslyn.Tests
             return Task.FromResult(JsonSerializer.Deserialize<TOut>(response.Content));
         }
 
+        public Task<TOut?> PostAsync<TOut>(string requestUrl, MultipartFormDataContent multipartFormDataContent,
+            CancellationToken cancellationToken) where TOut : class
+        {
+            if (!_responses.TryGetValue(requestUrl, out var response))
+                return Task.FromResult(default(TOut));
+            
+            if (response is { ShouldThrow: true, Exception: not null })
+                throw response.Exception;
+            
+            return Task.FromResult(JsonSerializer.Deserialize<TOut>(response.Content));
+        }
+
         private class FakeHttpResponse
         {
-            public string Content { get; set; } = string.Empty;
-            public int StatusCode { get; set; } = 200;
-            public bool ShouldThrow { get; set; }
-            public Exception? Exception { get; set; }
+            public string Content { get; init; } = string.Empty;
+            public int StatusCode { get; init; } = 200;
+            public bool ShouldThrow { get; init; }
+            public Exception? Exception { get; init; }
         }
     }
 

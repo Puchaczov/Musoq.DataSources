@@ -11,9 +11,11 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.RowsSources;
 
-internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, string? nugetPropertiesResolveEndpoint, INuGetPropertiesResolver aiBasedPropertiesResolver, CancellationToken queryCancelledToken)
+internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, string? nugetPropertiesResolveEndpoint, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken queryCancelledToken)
     : AsyncRowsSourceBase<SolutionEntity>(queryCancelledToken)
 {
+    private readonly CancellationToken _queryCancelledToken = queryCancelledToken;
+
     protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         var fileSystem = new DefaultFileSystem();
@@ -25,11 +27,11 @@ internal sealed class CSharpInMemorySolutionRowsSource(SolutionEntity solution, 
                         new NuGetCachePathResolver(solution.Path, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux), 
                         nugetPropertiesResolveEndpoint, 
                         new NuGetRetrievalService(
-                            aiBasedPropertiesResolver,
+                            nuGetPropertiesResolver,
                             fileSystem,
                             new DefaultHttpClient()), 
                         fileSystem),
-                    queryCancelledToken
+                    _queryCancelledToken
                 ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)
         }, cancellationToken);
         return Task.CompletedTask;

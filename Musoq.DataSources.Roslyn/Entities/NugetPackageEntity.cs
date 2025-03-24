@@ -79,6 +79,11 @@ public class NugetPackageEntity
     /// Gets the license content of the NuGet package.
     /// </summary>
     public string? LicenseContent { get; }
+    
+    /// <summary>
+    /// Gets the license of the NuGet package.
+    /// </summary>
+    public string? License { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NugetPackageEntity"/> class.
@@ -98,6 +103,7 @@ public class NugetPackageEntity
     /// <param name="language">The language of the NuGet package.</param>
     /// <param name="tags">The tags of the NuGet package.</param>
     /// <param name="licenseContent">The license content of the NuGet package.</param>
+    /// <param name="license">The license of the NuGet package.</param>
     public NugetPackageEntity(
         string id, 
         string version, 
@@ -113,7 +119,8 @@ public class NugetPackageEntity
         string? copyright, 
         string? language, 
         string? tags,
-        string? licenseContent)
+        string? licenseContent,
+        string? license)
     {
         Id = id;
         Version = version;
@@ -130,5 +137,6 @@ public class NugetPackageEntity
         Language = language;
         Tags = tags;
         LicenseContent = licenseContent;
+        License = license;
     }
 }

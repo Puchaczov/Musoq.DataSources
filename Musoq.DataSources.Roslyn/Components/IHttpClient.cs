@@ -11,4 +11,7 @@ internal interface IHttpClient
     Task<TOut?> PostAsync<T, TOut>(string requestUrl, T obj, CancellationToken cancellationToken) 
         where T : class 
         where TOut : class;
+    
+    Task<TOut?> PostAsync<TOut>(string requestUrl, MultipartFormDataContent multipartFormDataContent, CancellationToken cancellationToken) 
+        where TOut : class;
 }

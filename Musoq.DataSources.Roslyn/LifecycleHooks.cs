@@ -54,7 +54,7 @@ public static class LifecycleHooks
         {
             if (Debugger.IsAttached)
             {
-                Debugger.Break();            
+                Debugger.Break();
             }
 
             return (-1, [e]);
@@ -87,7 +87,7 @@ public static class LifecycleHooks
         {
             if (Debugger.IsAttached)
             {
-                Debugger.Break();            
+                Debugger.Break();
             }
             
             return (-1, [e]);

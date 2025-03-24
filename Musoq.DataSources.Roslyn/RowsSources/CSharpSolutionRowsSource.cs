@@ -15,6 +15,8 @@ namespace Musoq.DataSources.Roslyn.RowsSources;
 internal class CSharpSolutionRowsSource(string solutionFilePath, string? nugetPropertiesResolveEndpoint, INuGetPropertiesResolver aiBasedPropertiesResolver, CancellationToken queryCancelledToken)
     : AsyncRowsSourceBase<SolutionEntity>(queryCancelledToken)
 {
+    private readonly CancellationToken _queryCancelledToken = queryCancelledToken;
+
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         var workspace = MSBuildWorkspace.Create();
@@ -29,7 +31,7 @@ internal class CSharpSolutionRowsSource(string solutionFilePath, string? nugetPr
                 new DefaultHttpClient()),
             fileSystem
         );
-        var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, queryCancelledToken);
+        var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, _queryCancelledToken);
         
         await Parallel.ForEachAsync(solutionEntity.Projects, cancellationToken, async (project, token) =>
         {

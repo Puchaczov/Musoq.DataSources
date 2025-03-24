@@ -280,7 +280,8 @@ public class ProjectEntity
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.Copyright)),
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.Language)),
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.Tags)),
-                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseContent))
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseContent)),
+                        metadata.GetValueOrDefault(nameof(NugetPackageEntity.License))
                     ));
                 }
             });
@@ -296,6 +297,7 @@ public class ProjectEntity
                 null,
                 null,
                 false,
+                null,
                 null,
                 null,
                 null,

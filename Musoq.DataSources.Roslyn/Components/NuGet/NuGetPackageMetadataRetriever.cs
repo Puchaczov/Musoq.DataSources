@@ -99,9 +99,9 @@ internal sealed class NuGetPackageMetadataRetriever(
     {
         return new Dictionary<string, string?>
         {
-            ["LicenseUrl"] = license?.LicenseUrl,
-            ["LicenseContent"] = license?.LicenseContent,
-            ["License"] = license?.License,
+            [nameof(NuGetLicense.LicenseUrl)] = license?.LicenseUrl,
+            [nameof(NuGetLicense.LicenseContent)] = license?.LicenseContent,
+            [nameof(NuGetLicense.License)] = license?.License,
             [nameof(NuGetResource.ProjectUrl)] = commonResources?.ProjectUrl,
             [nameof(NuGetResource.Title)] = commonResources?.Title,
             [nameof(NuGetResource.Authors)] = commonResources?.Authors,
