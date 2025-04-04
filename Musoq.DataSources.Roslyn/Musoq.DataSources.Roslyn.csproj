@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.5.1</Version>
+        <Version>1.5.5</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -34,6 +34,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.7.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
         <PackageReference Include="Musoq.Parser" Version="4.2.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
@@ -41,6 +42,7 @@
         <PackageReference Include="Musoq.Schema" Version="8.0.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
+        <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -70,6 +72,15 @@
       <Compile Update="Components\NuGet\NuGetResourceVisitor.cs">
         <DependentUpon>INuGetResourceVisitor.cs</DependentUpon>
       </Compile>
+      <Compile Update="Components\NuGet\PackageVersionConcurrencyManager.cs">
+        <DependentUpon>IPackageVersionConcurrencyManager.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="RateLimitingOptions.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

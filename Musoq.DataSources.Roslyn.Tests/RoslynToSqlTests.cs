@@ -810,7 +810,7 @@ where c.Name = 'Class1'
         return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
-            new RoslynSchemaProvider(new Mock<INuGetPropertiesResolver>().Object),
+            new RoslynSchemaProvider((_, _) => new Mock<INuGetPropertiesResolver>().Object),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
                 new Dictionary<string, string>
                 {

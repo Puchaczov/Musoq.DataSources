@@ -8,7 +8,7 @@ using Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal sealed class NuGetRetrievalService(INuGetPropertiesResolver aiBasedPropertiesResolver, IFileSystem fileSystem, IHttpClient httpClient) : INuGetRetrievalService
+internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetPropertiesResolver, IFileSystem fileSystem, IHttpClient httpClient) : INuGetRetrievalService
 {
     public async Task<string?> GetMetadataFromPathAsync(
         NuGetResource commonResources,
@@ -31,7 +31,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver aiBasedProp
         {
             var (xmlDoc, namespaceManager) = await CreateXmlDocumentAndNamespaceManager(nuspecFilePath, fileSystem, cancellationToken);
 
-            var strategies = ResolveNuspecStrategies(commonResources, aiBasedPropertiesResolver, cancellationToken);
+            var strategies = ResolveNuspecStrategies(commonResources, nuGetPropertiesResolver, cancellationToken);
 
             if (strategies.TryGetValue(propertyName, out var strategyAsync))
             {
@@ -55,7 +55,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver aiBasedProp
         try
         {
             var url = $"{baseUrl}/packages/{commonResources.PackageName}/{commonResources.PackageVersion}";
-            var strategies = ResolveWebScrapeStrategies(httpClient, commonResources, aiBasedPropertiesResolver, cancellationToken);
+            var strategies = ResolveWebScrapeStrategies(httpClient, commonResources, nuGetPropertiesResolver, cancellationToken);
 
             if (!strategies.TryGetValue(propertyName, out var traverseAsync))
                 return null;
@@ -111,9 +111,10 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver aiBasedProp
         var tempPath = Path.GetTempPath();
         var tempFilePath = Path.Combine(tempPath, $"{packageName}.{packageVersion}.nupkg");
         
-        await using var fileStream = await fileSystem.CreateFileAsync(tempFilePath);
-        
-        await response.Content.CopyToAsync(fileStream, cancellationToken);
+        await using (var fileStream = await fileSystem.CreateFileAsync(tempFilePath))
+        {
+            await response.Content.CopyToAsync(fileStream, cancellationToken);
+        }
         
         await fileSystem.ExtractZipAsync(tempFilePath, packagePath, cancellationToken);
         

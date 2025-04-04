@@ -37,11 +37,8 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
     {
         IEnumerable<string> configPaths = new List<string?>
         {
-            // Solution-level config if solution path is provided
             solutionPath != null ? Path.Combine(new FileInfo(solutionPath).DirectoryName!, "nuget.config") : null,
-            // User-level config
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "NuGet.Config"),
-            // Machine-wide config
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NuGet", "NuGet.Config")
         }
         .Where(p => p is not null)!;

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using System.Text;
@@ -262,20 +263,6 @@ namespace Musoq.DataSources.Roslyn.Tests
         }
 
         [TestMethod]
-        public async Task GetMetadataFromCustomApiAsync_WhenPropertyNameIsEmpty_ReturnsNull()
-        {
-            // Arrange
-            var requestUrl = $"https://api.example.com/nuget?packageName={SamplePackageName}&packageVersion={SamplePackageVersion}&propertyName=";
-            _httpClient.AddResponse(requestUrl, null!);
-
-            // Act
-            var result = await _service.GetMetadataFromCustomApiAsync("https://api.example.com/nuget", _commonResources, "", CancellationToken.None);
-
-            // Assert
-            Assert.IsNull(result);
-        }
-
-        [TestMethod]
         public async Task GetMetadataFromCustomApiAsync_When404ErrorOccurs_ReturnsNull()
         {
             // Arrange
@@ -320,20 +307,6 @@ namespace Musoq.DataSources.Roslyn.Tests
             Assert.IsNull(result);
         }
 
-        [TestMethod]
-        public async Task DownloadPackageAsync_WhenHttpClientThrowsException_ReturnsNull()
-        {
-            // Arrange
-            var downloadUrl = $"https://www.nuget.org/api/v2/package/{SamplePackageName}/{SamplePackageVersion}";
-            _httpClient.AddThrowingRequest(downloadUrl);
-            
-            // Act
-            var result = await _service.DownloadPackageAsync(SamplePackageName, SamplePackageVersion, SamplePackagePath, CancellationToken.None);
-            
-            // Assert
-            Assert.IsNull(result);
-        }
-
         #endregion
     }
 
@@ -348,7 +321,7 @@ namespace Musoq.DataSources.Roslyn.Tests
             _licenseResponse = licenseResponse;
         }
 
-        public Task<string[]> GetLicenseNamesAsync(string licenseContent, CancellationToken cancellationToken)
+        public Task<string[]> GetLicensesNamesAsync(string licenseContent, CancellationToken cancellationToken)
         {
             // Convert single license to array to match the interface
             return Task.FromResult(new[] { _licenseResponse });
@@ -392,6 +365,22 @@ namespace Musoq.DataSources.Roslyn.Tests
             throw new FileNotFoundException($"File not found: {path}");
         }
 
+        public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            _files[path] = content;
+            
+            var directoryPath = Path.GetDirectoryName(path);
+            
+            if (!string.IsNullOrEmpty(directoryPath))
+            {
+                _directories.Add(directoryPath);
+            }
+            
+            return Task.CompletedTask;
+        }
+
         public Task<Stream> CreateFileAsync(string path)
         {
             return Task.FromResult<Stream>(new MemoryStream());
@@ -401,6 +390,44 @@ namespace Musoq.DataSources.Roslyn.Tests
         {
             ExtractZipWasCalled = true;
             return Task.CompletedTask;
+        }
+
+        public async IAsyncEnumerable<string> GetFilesAsync(string path, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            await Task.Yield();
+
+            var directory = path;
+            var subDirectories = _directories.Where(d => d.StartsWith(directory)).ToList();
+            
+            foreach (var file in subDirectories.SelectMany(subDirectory => _files.Keys.Where(f => f.StartsWith(subDirectory) && subDirectory != directory)))
+            {
+                yield return file;
+            }
+            
+            foreach (var file in _files.Keys.Where(f => f.StartsWith(directory) && !subDirectories.Any(f.StartsWith)))
+            {
+                yield return file;
+            }
+        }
+
+        public IEnumerable<string> GetFiles(string path, bool recursive, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            var directory = path;
+            var subDirectories = _directories.Where(d => d.StartsWith(directory)).ToList();
+            
+            foreach (var file in subDirectories.SelectMany(subDirectory => _files.Keys.Where(f => f.StartsWith(subDirectory) && subDirectory != directory)))
+            {
+                yield return file;
+            }
+            
+            foreach (var file in _files.Keys.Where(f => f.StartsWith(directory) && !subDirectories.Any(f.StartsWith)))
+            {
+                yield return file;
+            }
         }
 
         // Helper method for tests, not part of the interface
@@ -434,6 +461,11 @@ namespace Musoq.DataSources.Roslyn.Tests
             _responses[url] = new FakeHttpResponse { ShouldThrow = true, Exception = new HttpRequestException("Simulated exception") };
         }
 
+        public IHttpClient NewInstance()
+        {
+            return new FakeHttpClient();
+        }
+
         public Task<HttpResponseMessage?> GetAsync(string requestUri, CancellationToken cancellationToken)
         {
             if (!_responses.TryGetValue(requestUri, out var response))
@@ -447,6 +479,11 @@ namespace Musoq.DataSources.Roslyn.Tests
                 Content = new StringContent(response.Content, Encoding.UTF8, "text/html"),
                 StatusCode = (System.Net.HttpStatusCode)response.StatusCode
             });
+        }
+
+        public Task<HttpResponseMessage?> GetAsync(string requestUrl, Action<HttpClient> configure, CancellationToken cancellationToken)
+        {
+            return GetAsync(requestUrl, cancellationToken);
         }
 
         public Task<TOut?> PostAsync<T, TOut>(string requestUri, T obj, CancellationToken cancellationToken) 

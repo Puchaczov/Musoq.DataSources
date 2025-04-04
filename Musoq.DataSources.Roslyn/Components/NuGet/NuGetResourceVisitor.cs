@@ -17,38 +17,35 @@ internal class NuGetResourceVisitor(
 
     public async Task VisitLicensesAsync(CancellationToken cancellationToken)
     {
-        var mappedProperties = new Dictionary<string, string?>();
         var property = "LicensesNames";
         var resolvedValue = await RetrieveMetadataJsonArrayAsync(property, cancellationToken);
-        mappedProperties[property] = resolvedValue;
         var licensesNames = JsonConvert.DeserializeObject<string[]>(resolvedValue ?? "[]")!;
-        var properties = new Queue<string>();
-        var licenses = new List<NuGetLicense>();
-        
-        foreach (var licenseName in licensesNames)
+
+        for (var index = 0; index < licensesNames.Length; index++)
         {
+            var licenseName = licensesNames[index];
             commonResources.LookingForLicense = licenseName;
+            commonResources.LookingForLicenseIndex = index;
             
-            properties.Enqueue(nameof(NuGetLicense.LicenseUrl));
-            properties.Enqueue(nameof(NuGetLicense.LicenseContent));
-        
+            commonResources.AddLicense(new NuGetLicense
+            {
+                License = licenseName
+            });
+
+            var properties = new Queue<(string Property, Action<string?, NuGetLicense> ModifyAction)>();
+            properties.Enqueue((nameof(NuGetLicense.LicenseUrl), (value, license) => license.LicenseUrl = value));
+            properties.Enqueue((nameof(NuGetLicense.LicenseContent), (value, license) => license.LicenseContent = value));
+
             for (; properties.Count != 0;)
             {
-                property = properties.Dequeue();
+                (property, var modifyAction) = properties.Dequeue();
                 resolvedValue = await RetrieveMetadataAsync(property, cancellationToken);
-                mappedProperties[property] = resolvedValue;
+                commonResources.ModifyLicenseProperty(resolvedValue, modifyAction);
             }
-            
-            licenses.Add(new NuGetLicense
-            {
-                License = licenseName,
-                LicenseUrl = mappedProperties[nameof(NuGetLicense.LicenseUrl)],
-                LicenseContent = mappedProperties[nameof(NuGetLicense.LicenseContent)]
-            });
         }
 
         commonResources.LookingForLicense = null;
-        commonResources.Licenses = licenses.ToArray();
+        commonResources.LookingForLicenseIndex = null;
     }
 
     public async Task VisitProjectUrlAsync(CancellationToken cancellationToken)
@@ -129,7 +126,7 @@ internal class NuGetResourceVisitor(
                 {
                     calledMethods.Add("GetMetadataFromNugetOrgAsync");
                     resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
-                        "https://nuget.org",
+                        "https://www.nuget.org",
                         commonResources,
                         propertyName,
                         cancellationToken);
@@ -186,13 +183,14 @@ internal class NuGetResourceVisitor(
                     // value found; no further calls
                 }
             }
-            if (resolvedValue is "[]" || resolvedValue is null)
+            
+            if (resolvedValue is "[]" or null)
             {
                 try
                 {
                     calledMethods.Add("GetMetadataFromNugetOrgAsync");
                     resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
-                        "https://nuget.org",
+                        "https://www.nuget.org",
                         commonResources,
                         propertyName,
                         cancellationToken);
@@ -202,6 +200,7 @@ internal class NuGetResourceVisitor(
                     resolvedValue = null;
                 }
             }
+            
             if (resolvedValue is "[]" or null && !string.IsNullOrEmpty(customApiEndpoint))
             {
                 try
@@ -218,6 +217,7 @@ internal class NuGetResourceVisitor(
                     resolvedValue = null;
                 }
             }
+            
             return resolvedValue;
         }
         finally
@@ -245,11 +245,15 @@ internal class NuGetResourceVisitor(
         {
             if (x is null || y is null)
                 return 0;
-            var cmp = y.Duration.CompareTo(x.Duration); // sorted descending by duration
+            
+            var cmp = y.Duration.CompareTo(x.Duration);
+            
             if (cmp == 0)
                 cmp = string.Compare(x.MethodName, y.MethodName, StringComparison.Ordinal);
+            
             if (cmp == 0)
                 cmp = string.Compare(x.PropertyName, y.PropertyName, StringComparison.Ordinal);
+            
             return cmp;
         }
     }

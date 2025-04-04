@@ -9,7 +9,7 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
 
 internal static class NugetHelpers
 {
-    public static async Task<Func<Task<string?>>> DiscoverLicensesNamesAsync(string url, NuGetResource commonResources, IHttpClient httpClient, INuGetPropertiesResolver aiBasedPropertiesResolver, CancellationToken cancellationToken)
+    public static async Task<Func<Task<string?>>> DiscoverLicensesNamesAsync(string url, NuGetResource commonResources, IHttpClient httpClient, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
         {
@@ -46,16 +46,22 @@ internal static class NugetHelpers
                 var pageContent = licenseContentPageHttpResponseMessage is not null ? await licenseContentPageHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
                 var licenseContentHtmlDocument = new HtmlDocument();
                 licenseContentHtmlDocument.LoadHtml(pageContent);
-                
+
                 if (TryExtractContent(licenseContentHtmlDocument, "//pre[@class='license-file-contents custom-license-container']", out var licenseContentFromPage) && licenseContentFromPage is not null)
                 {
-                    return async () => System.Text.Json.JsonSerializer.Serialize(await aiBasedPropertiesResolver.GetLicenseNamesAsync(licenseContentFromPage, cancellationToken));
+                    return async () => System.Text.Json.JsonSerializer.Serialize(await nuGetPropertiesResolver.GetLicensesNamesAsync(licenseContentFromPage, cancellationToken));
+                }
+
+                if (TryExtractContent(licenseContentHtmlDocument, "//div[@class='common-licenses']",
+                        out licenseContentFromPage) && licenseContentFromPage is not null)
+                {
+                    return async () => System.Text.Json.JsonSerializer.Serialize(await nuGetPropertiesResolver.GetLicensesNamesAsync(licenseContentFromPage, cancellationToken));
                 }
                 
                 return () => Task.FromResult<string?>(null);
             }
             
-            var licenseContentHttpResponseMessage = await httpClient.GetAsync(ConvertToRawFileUrl(licenseUrl), cancellationToken);
+            var licenseContentHttpResponseMessage = await httpClient.GetAsync(ConvertToRawFileUrl(licenseUrl, null), cancellationToken);
             var licenseContent = licenseContentHttpResponseMessage is not null ? await licenseContentHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
             
             if (licenseContent is null)
@@ -63,7 +69,7 @@ internal static class NugetHelpers
                 return () => Task.FromResult<string?>(null);
             }
             
-            return async () => System.Text.Json.JsonSerializer.Serialize(await aiBasedPropertiesResolver.GetLicenseNamesAsync(licenseContent, cancellationToken));
+            return async () => System.Text.Json.JsonSerializer.Serialize(await nuGetPropertiesResolver.GetLicensesNamesAsync(licenseContent, cancellationToken));
         }
         
         //Source repository is available on the page
@@ -71,17 +77,9 @@ internal static class NugetHelpers
         {
             List<string> licenseUrls = [];
             
-            await foreach(var repositoryLicenseUrl in FindLicensesUrlsAsync(sourceRepositoryUrl, httpClient, (_, _) => true, cancellationToken))
+            await foreach(var licenseUrlLicenseContentPair in FindLicenseAsync(sourceRepositoryUrl, httpClient, (_, _) => true, cancellationToken))
             {
-                var licenseContentHttpResponseMessage = await httpClient.GetAsync(ConvertToRawFileUrl(repositoryLicenseUrl), cancellationToken);
-                var licenseContent = licenseContentHttpResponseMessage is not null ? await licenseContentHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
-                
-                if (licenseContent is null)
-                {
-                    continue;
-                }
-
-                foreach (var licenseName in await aiBasedPropertiesResolver.GetLicenseNamesAsync(licenseContent, cancellationToken))
+                foreach (var licenseName in await nuGetPropertiesResolver.GetLicensesNamesAsync(licenseUrlLicenseContentPair.LicenseContent, cancellationToken))
                 {
                     licenseUrls.Add(licenseName);
                 }
@@ -176,7 +174,7 @@ internal static class NugetHelpers
         {
             return async () =>
             {
-                var convertedUrl = ConvertToRawFileUrl(licenseUrl);
+                var convertedUrl = ConvertToRawFileUrl(licenseUrl, null);
                 var httpResponseMessage = await httpClient.GetAsync(convertedUrl, cancellationToken);
                 var httpResponseMessageContent = httpResponseMessage is not null ? await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
                 var document = new HtmlDocument();
@@ -214,7 +212,7 @@ internal static class NugetHelpers
                     return null;
                 }
                 
-                var httpResponseMessage = await httpClient.GetAsync(ConvertToRawFileUrl(firstLicense), cancellationToken);
+                var httpResponseMessage = await httpClient.GetAsync(ConvertToRawFileUrl(firstLicense, null), cancellationToken);
                 
                 return httpResponseMessage is not null ? await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
             };
@@ -225,15 +223,15 @@ internal static class NugetHelpers
 
     private static async Task<string?> FindFirstLicenseUrlAsync(string sourceRepositoryUrl, IHttpClient httpClient, Func<string, string, bool> filterBasedOnFileNameAndContent, CancellationToken cancellationToken)
     {
-        await foreach (var licenseUrl in FindLicensesUrlsAsync(sourceRepositoryUrl, httpClient, filterBasedOnFileNameAndContent, cancellationToken))
+        await foreach (var licenseUrlLicenseContentPair in FindLicenseAsync(sourceRepositoryUrl, httpClient, filterBasedOnFileNameAndContent, cancellationToken))
         {
-            return licenseUrl;
+            return licenseUrlLicenseContentPair.LicenseUrl;
         }
         
         return null;
     }
 
-    private static async IAsyncEnumerable<string> FindLicensesUrlsAsync(string sourceRepositoryUrl, IHttpClient httpClient, Func<string, string, bool> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
+    private static async IAsyncEnumerable<(string LicenseUrl, string LicenseContent)> FindLicenseAsync(string sourceRepositoryUrl, IHttpClient httpClient, Func<string, string, bool> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         sourceRepositoryUrl = sourceRepositoryUrl.TrimEnd('/');
         
@@ -242,6 +240,7 @@ internal static class NugetHelpers
             "LICENSE",
             "LICENSE.md",
             "LICENSE.txt",
+            "License.txt",
             "COPYING",
             "COPYING.md",
             "COPYING.txt",
@@ -252,33 +251,124 @@ internal static class NugetHelpers
         
         if (sourceRepositoryUrl.Contains("github.com") || sourceRepositoryUrl.Contains("gitlab.com"))
         {
+            sourceRepositoryUrl = sourceRepositoryUrl
+                .TrimEnd('/')
+                .Replace(".git", string.Empty);
+
+            string branch;
+                
+            if (sourceRepositoryUrl.Contains("github.com"))
+            {
+                branch = await GetDefaultGithubBranchAsync(sourceRepositoryUrl, httpClient, cancellationToken);
+                
+                sourceRepositoryUrl += $"/blob/{branch}";
+            }
+            else if (sourceRepositoryUrl.Contains("gitlab.com"))
+            {
+                branch = await GetDefaultGitlabBranchAsync(sourceRepositoryUrl, httpClient, cancellationToken);
+                
+                sourceRepositoryUrl += $"/-/blob/{branch}";
+            }
+            else
+            {
+                throw new NotSupportedException($"Unsupported repository URL: {sourceRepositoryUrl}");
+            }
+            
             foreach (var fileName in licenseFileNames)
             {
-                sourceRepositoryUrl = sourceRepositoryUrl
-                    .TrimEnd('/')
-                    .Replace(".git", string.Empty);
-                
-                if (sourceRepositoryUrl.Contains("github.com"))
-                {
-                    sourceRepositoryUrl += "/blob/master";
-                }
-                else if (sourceRepositoryUrl.Contains("gitlab.com"))
-                {
-                    sourceRepositoryUrl += "/-/blob/master";
-                }
-                
                 var licenseUrl = sourceRepositoryUrl + "/" + fileName;
-                var response = await httpClient.GetAsync(ConvertToRawFileUrl(licenseUrl), cancellationToken);
+                var response = await httpClient.GetAsync(ConvertToRawFileUrl(licenseUrl, branch), cancellationToken);
                 
-                if (response is { IsSuccessStatusCode: true } && filter(fileName, await response.Content.ReadAsStringAsync(cancellationToken)))
+                if (response is not { IsSuccessStatusCode: true })
                 {
-                    yield return licenseUrl;
+                    continue;
+                }
+
+                var licenseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                
+                if (filter(fileName, licenseContent))
+                {
+                    yield return (licenseUrl, licenseContent);
                 }
             }
         }
     }
+
+    private static async Task<string> GetDefaultGithubBranchAsync(string sourceRepositoryUrl, IHttpClient httpClient, CancellationToken cancellationToken)
+    {
+        httpClient = httpClient.NewInstance();
+        
+        sourceRepositoryUrl = sourceRepositoryUrl.TrimEnd('/');
+
+        var parts = sourceRepositoryUrl.Split('/');
+        var owner = parts[3];
+        var repo = parts[4];
+        
+        var url = $"https://api.github.com/repos/{owner}/{repo}";
+        
+        var response = await httpClient.GetAsync(url, configure =>
+        {
+            configure.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
+        }, cancellationToken);
+        
+        if (response is null)
+        {
+            throw new InvalidOperationException($"Failed to retrieve {url}");
+        }
+        
+        response.EnsureSuccessStatusCode();
+        
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var jsonDocument = System.Text.Json.JsonDocument.Parse(json);
+        
+        var defaultBranch = jsonDocument.RootElement.GetProperty("default_branch").GetString();
+        
+        if (string.IsNullOrEmpty(defaultBranch))
+        {
+            throw new InvalidOperationException($"Failed to retrieve default branch for {sourceRepositoryUrl}");
+        }
+        
+        return defaultBranch;
+    }
     
-    private static string ConvertToRawFileUrl(string repositoryUrl)
+    private static async Task<string> GetDefaultGitlabBranchAsync(string sourceRepositoryUrl, IHttpClient httpClient, CancellationToken cancellationToken)
+    {
+        httpClient = httpClient.NewInstance();
+        
+        sourceRepositoryUrl = sourceRepositoryUrl.TrimEnd('/');
+
+        var parts = sourceRepositoryUrl.Split('/');
+        var owner = parts[3];
+        var repo = parts[4];
+        
+        var url = $"https://gitlab.com/api/v4/projects/{owner}%2F{repo}";
+        
+        var response = await httpClient.GetAsync(url, configure =>
+        {
+            configure.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
+        }, cancellationToken);
+        
+        if (response is null)
+        {
+            throw new InvalidOperationException($"Failed to retrieve {url}");
+        }
+        
+        response.EnsureSuccessStatusCode();
+        
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var jsonDocument = System.Text.Json.JsonDocument.Parse(json);
+        
+        var defaultBranch = jsonDocument.RootElement.GetProperty("default_branch").GetString();
+        
+        if (string.IsNullOrEmpty(defaultBranch))
+        {
+            throw new InvalidOperationException($"Failed to retrieve default branch for {sourceRepositoryUrl}");
+        }
+        
+        return defaultBranch;
+    }
+
+    private static string ConvertToRawFileUrl(string repositoryUrl, string? branch)
     {
         repositoryUrl = repositoryUrl.TrimEnd('/');
         
@@ -289,7 +379,6 @@ internal static class NugetHelpers
             
             var owner = segments[0];
             var repo = segments[1];
-            var branch = "master"; // Default branch
             
             if (segments.Length > 3 && segments[2] == "blob")
             {
@@ -308,8 +397,6 @@ internal static class NugetHelpers
                 
             var parts = repositoryUrl.Split(["gitlab.com/"], StringSplitOptions.None)[1];
             var segments = parts.Split('/');
-
-            var branch = "master"; // Default branch
             
             if (segments.Length > 3 && segments[2] == "-" && segments[3] == "blob")
             {

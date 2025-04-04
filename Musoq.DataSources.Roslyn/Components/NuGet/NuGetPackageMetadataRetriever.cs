@@ -1,24 +1,26 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-/// <summary>
-/// Represents a NuGet package metadata retriever that retrieves metadata
-/// </summary>
-/// <param name="nuGetCachePathResolver">Resolves the path to the NuGet cache.</param>
-/// <param name="customApiEndpoint">The custom API endpoint to use for last resort metadata retrieval.</param>
 internal sealed class NuGetPackageMetadataRetriever(
     INuGetCachePathResolver nuGetCachePathResolver,
     string? customApiEndpoint,
     INuGetRetrievalService retrievalService,
-    IFileSystem fileSystem)
+    IFileSystem fileSystem,
+    IPackageVersionConcurrencyManager packageVersionConcurrencyManager, 
+    ILogger logger)
     : INuGetPackageMetadataRetriever
 {
+    private readonly ConcurrentDictionary<(string, string), List<Dictionary<string, string?>>> _packageMetadataCache = new();
+    
     /// <summary>
     /// Gets the metadata of the specified NuGet package.
     /// </summary>
@@ -32,6 +34,57 @@ internal sealed class NuGetPackageMetadataRetriever(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        
+        logger.LogTrace($"Retrieving metadata for {packageName} {packageVersion}");
+        
+        if (packageVersion.Length == 0)
+        {
+            logger.LogTrace($"Package version is empty for {packageName}");
+            yield break;
+        }
+        
+        if (packageVersion[0] == '[' && packageVersion[^1] == ']')
+        {
+            packageVersion = packageVersion[1..^1];
+        }
+        
+        if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
+        {
+            logger.LogTrace($"Package name or version is empty for {packageName} {packageVersion}");
+            yield break;
+        }
+        
+        if (!Version.TryParse(packageVersion, out _))
+        {
+            logger.LogTrace($"Package version is not valid for {packageName} {packageVersion}");
+            yield break;
+        }
+        
+        if (_packageMetadataCache.TryGetValue((packageName, packageVersion), out var cachedMetadata))
+        {
+            logger.LogTrace($"Using cached metadata for {packageName} {packageVersion}");
+            
+            foreach (var cachedRow in cachedMetadata)
+            {
+                yield return cachedRow;
+            }
+            
+            yield break;
+        }
+
+        using var @lock = await packageVersionConcurrencyManager.AcquireLockAsync(packageName, packageVersion, cancellationToken);
+        
+        if (_packageMetadataCache.TryGetValue((packageName, packageVersion), out cachedMetadata))
+        {
+            logger.LogTrace($"Using cached metadata for {packageName} {packageVersion}");
+            
+            foreach (var cachedRow in cachedMetadata)
+            {
+                yield return cachedRow;
+            }
+            
+            yield break;
+        }
         
         var commonResources = new NuGetResource
         {
@@ -49,29 +102,56 @@ internal sealed class NuGetPackageMetadataRetriever(
         await commonResources.AcceptAsync(retrieveCommonResourcesVisitor, cancellationToken);
         
         var licenses = commonResources.Licenses;
+        var metadata = new List<Dictionary<string, string?>>();
+        
+        Dictionary<string, string?> row;
 
         if (licenses.Length == 0)
         {
-            yield return BuildMetadata(null, commonResources);
+            logger.LogTrace($"No licenses found for {packageName} {packageVersion}");
+
+            row = BuildMetadata(null, commonResources);
+            
+            metadata.Add(row);
+            
+            yield return row;
         }
         else
         {
-            yield return BuildMetadata(licenses[0], commonResources);
+            logger.LogTrace($"Found {licenses.Length} licenses for {packageName} {packageVersion}");
+
+            row = BuildMetadata(licenses[0], commonResources);
+            
+            metadata.Add(row);
+            
+            yield return row;
             
             for (var i = 1; i < licenses.Length; i++)
             {
-                yield return BuildMetadata(licenses[i], commonResources);
+                row = BuildMetadata(licenses[i], commonResources);
+                
+                metadata.Add(row);
+                
+                yield return row;
             }
         }
+        
+        _packageMetadataCache.AddOrUpdate((packageName, packageVersion),
+            metadata,
+            (_, _) => metadata);
     }
 
     private string? GetPackageCachePath(INuGetCachePathResolver resolver, string packageName, string packageVersion)
     {
         var cachedPaths = resolver.ResolveAll();
 
-        return cachedPaths
+        var packagePath = cachedPaths
             .Select(cache => Path.Combine(cache, packageName, packageVersion))
             .FirstOrDefault(fileSystem.IsDirectoryExists);
+        
+        logger.LogTrace($"Package cache used: {packagePath} for {packageName} {packageVersion}");
+        
+        return packagePath;
     }
 
     private async Task<string?> TryDownloadPackageAsync(string packageName, string packageVersion, CancellationToken cancellationToken)
@@ -87,6 +167,8 @@ internal sealed class NuGetPackageMetadataRetriever(
         
         try
         {
+            logger.LogTrace($"Package downloader used: {packagePath} for {packageName} {packageVersion}");
+            
             return await retrievalService.DownloadPackageAsync(packageName, packageVersion, packagePath, cancellationToken);
         }
         catch

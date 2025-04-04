@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,10 +9,12 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet;
 internal class NuGetResource
 {
     private readonly object _syncRoot = new();
+    
     private readonly Dictionary<string, HtmlDocument> _htmlDocuments = new();
     private readonly string? _packageName;
     private readonly string? _packageVersion;
     private readonly string? _packagePath;
+    private readonly List<NuGetLicense> _licenses = [];
     
     private string? _projectUrl;
 
@@ -19,8 +22,6 @@ internal class NuGetResource
 
     private string? _title;
     private string? _owners;
-    
-    private NuGetLicense[]? _licenses;
 
     private bool? _requireLicenseAcceptance;
 
@@ -32,6 +33,7 @@ internal class NuGetResource
     private string? _language;
     private string? _tags;
     private string? _lookingForLicense;
+    private int? _lookingForLicenseIndex;
 
     public string? PackageName
     {
@@ -96,14 +98,7 @@ internal class NuGetResource
         {
             lock (_syncRoot)
             {
-                return _licenses ?? [];
-            }
-        }
-        set
-        {
-            lock (_syncRoot)
-            {
-                _licenses = value;
+                return _licenses.ToArray();
             }
         }
     }
@@ -324,6 +319,24 @@ internal class NuGetResource
         }
     }
 
+    public int? LookingForLicenseIndex
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _lookingForLicenseIndex;
+            }
+        }
+        set
+        {
+            lock (_syncRoot)
+            {
+                _lookingForLicenseIndex = value;
+            }
+        }
+    }
+
     public bool TryGetHtmlDocument(string url, out HtmlDocument? doc)
     {
         lock (_syncRoot)
@@ -337,6 +350,25 @@ internal class NuGetResource
         lock (_syncRoot)
         {
             _htmlDocuments[url] = doc;
+        }
+    }
+
+    public void AddLicense(NuGetLicense license)
+    {
+        lock (_syncRoot)
+        {
+            _licenses.Add(license);
+        }
+    }
+
+    public void ModifyLicenseProperty(string? resolvedValue, Action<string?, NuGetLicense> modifyAction)
+    {
+        lock (_syncRoot)
+        {
+            if (_lookingForLicenseIndex == null)
+                throw new InvalidOperationException("LookingForLicenseIndex is not set.");
+
+            modifyAction(resolvedValue, _licenses[_lookingForLicenseIndex.Value]);
         }
     }
 

@@ -6,6 +6,7 @@ using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
 using Musoq.Parser.Helpers;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 
@@ -19,7 +20,7 @@ public class NugetToSqlTests
     {
         var aiBasedPropertiesResolverMock = new Mock<INuGetPropertiesResolver>();
         
-        aiBasedPropertiesResolverMock.Setup(f => f.GetLicenseNamesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        aiBasedPropertiesResolverMock.Setup(f => f.GetLicensesNamesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string licenseContent, CancellationToken _) =>
             {
                 if (licenseContent.Contains("MIT"))
@@ -56,6 +57,7 @@ public class NugetToSqlTests
             .Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
 
             var vm = CompileQuery(query, aiBasedPropertiesResolverMock);
+            
             var result = vm.Run();
 
             Assert.AreEqual(8, result.Count,
@@ -241,7 +243,7 @@ public class NugetToSqlTests
             foreach (var expectedPkg in expectedPackages)
             {
                 AssertHasNugetPackage(result, expectedPkg);
-            }            
+            }
         });
     }
 
@@ -249,7 +251,6 @@ public class NugetToSqlTests
     {
         var licensePath = Path.Combine(StartDirectory, "Files", "Licenses", fileName);
         
-        // Make sure the directory exists 
         var directory = Path.GetDirectoryName(licensePath);
         if (!Directory.Exists(directory))
             Directory.CreateDirectory(directory!);
@@ -403,7 +404,7 @@ public class NugetToSqlTests
         return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 
-            new RoslynSchemaProvider(aiBasedPropertiesResolverMock.Object), 
+            new RoslynSchemaProvider((_, _) => aiBasedPropertiesResolverMock.Object), 
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
                 new Dictionary<string, string?>
                 {

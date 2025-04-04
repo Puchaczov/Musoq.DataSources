@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
+using Musoq.DataSources.Roslyn.CoconaCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
+using Musoq.DataSources.Roslyn.Components.NuGet.Http;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.RowsSources;
 using Musoq.Schema;
@@ -22,10 +27,21 @@ namespace Musoq.DataSources.Roslyn;
 public class CSharpSchema : SchemaBase
 {
     private const string SchemaName = "Csharp";
+
+    private static readonly IFileSystem FileSystem = new DefaultFileSystem();
+    private static readonly IHttpClient HttpClient;
     
-    internal static readonly ConcurrentDictionary<string, Solution> Solutions = new();
+    private static ConcurrentDictionary<string, Solution> Solutions => SolutionOperationsCommand.Solutions;
+    
 
     private readonly Func<string, IHttpClient, INuGetPropertiesResolver> _createNugetPropertiesResolver;
+
+    static CSharpSchema()
+    {
+        SolutionOperationsCommand.Initialize();
+        HttpClient = WithCacheDirectory(Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn", "NuGet"), out var returnCachedResponseHandler);
+        returnCachedResponseHandler.Initialize();
+    }
     
     /// <virtual-constructors>
     /// <virtual-constructor>
@@ -256,16 +272,16 @@ public class CSharpSchema : SchemaBase
     public CSharpSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
-        AddSource<CSharpSolutionRowsSource>("file");
+        AddSource<CSharpImmediateLoadSolutionRowsSource>("file");
         AddTable<CSharpSolutionTable>("file");
 
         _createNugetPropertiesResolver = (baseUrl, client) => new NuGetPropertiesResolver(baseUrl, client);
     }
 
-    internal CSharpSchema(INuGetPropertiesResolver aiBasedPropertiesResolver)
+    internal CSharpSchema(Func<string, IHttpClient, INuGetPropertiesResolver> createNuGetPropertiesResolver)
         : this()
     {
-        _createNugetPropertiesResolver = (_, _) => aiBasedPropertiesResolver;
+        _createNugetPropertiesResolver = createNuGetPropertiesResolver;
     }
 
     /// <summary>
@@ -311,9 +327,24 @@ public class CSharpSchema : SchemaBase
         {
             throw new InvalidOperationException("INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT environment variable is not set.");
         }
-
-        var httpClient = new DefaultHttpClient();
-        var defaultFileSystem = new DefaultFileSystem();
+        
+        var httpClient = HttpClient;
+        
+        if (runtimeContext.EnvironmentVariables.TryGetValue("CACHE_DIRECTORY", out var cacheDirectory) && cacheDirectory is not null)
+        {
+            cacheDirectory = Path.Combine(cacheDirectory, "Musoq.DataSources.Roslyn");
+        
+            if (!Directory.Exists(cacheDirectory))
+            {
+                Directory.CreateDirectory(cacheDirectory);
+            }
+            
+            httpClient = WithCacheDirectory(cacheDirectory, out var returnCachedResponseHandler);
+            
+            returnCachedResponseHandler.Initialize();
+        }
+        
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
         
         switch (name.ToLowerInvariant())
         {
@@ -321,34 +352,71 @@ public class CSharpSchema : SchemaBase
             {
                 if (Solutions.TryGetValue((string) parameters[0], out var solution))
                 {
-                    return new CSharpInMemorySolutionRowsSource(
-                        new SolutionEntity(
-                            solution, 
-                            new NuGetPackageMetadataRetriever(
-                                new NuGetCachePathResolver(solution.FilePath, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux),
-                                externalNugetPropertiesResolveEndpoint,
-                                new NuGetRetrievalService(
-                                    _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
-                                    defaultFileSystem,
-                                    httpClient
-                                ),
-                                defaultFileSystem
+                    var solutionEntity = new SolutionEntity(
+                        solution,
+                        new NuGetPackageMetadataRetriever(
+                            new NuGetCachePathResolver(
+                                solution.FilePath,
+                                RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                    ? OSPlatform.Windows
+                                    : OSPlatform.Linux
                             ),
-                            runtimeContext.EndWorkToken
-                        ), 
-                        externalNugetPropertiesResolveEndpoint, 
-                        _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient), 
+                            externalNugetPropertiesResolveEndpoint,
+                            new NuGetRetrievalService(
+                                _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
+                                FileSystem,
+                                httpClient
+                            ),
+                            FileSystem,
+                            packageVersionConcurrencyManager,
+                            runtimeContext.Logger
+                        ),
+                        runtimeContext.EndWorkToken
+                    );
+                    
+                    return new CSharpInMemorySolutionRowsSource(
+                        solutionEntity,
+                        httpClient,
+                        FileSystem,
+                        externalNugetPropertiesResolveEndpoint,
+                        _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
+                        runtimeContext.Logger,
                         runtimeContext.EndWorkToken
                     );
                 }
                 
-                return new CSharpSolutionRowsSource((string) parameters[0], externalNugetPropertiesResolveEndpoint, _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient), runtimeContext.EndWorkToken);
+                return new CSharpImmediateLoadSolutionRowsSource(
+                    (string) parameters[0],
+                    httpClient,
+                    FileSystem,
+                    externalNugetPropertiesResolveEndpoint,
+                    _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
+                    runtimeContext.Logger,
+                    runtimeContext.EndWorkToken
+                );
             }
         }
 
         return base.GetRowSource(name, runtimeContext, parameters);
     }
-    
+
+    private static IHttpClient WithCacheDirectory(string cacheDirectory, out ReturnCachedResponseHandler returnCachedResponseHandler)
+    {
+        var cacheHandlerInstance = new ReturnCachedResponseHandler(
+            FileSystem,
+            cacheDirectory,
+            new DomainRateLimitingHandler(
+                SolutionOperationsCommand.RateLimitingOptions ??
+                new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
+                new DomainRateLimitingHandler.DomainRateLimitConfig(
+                    10,
+                    TimeSpan.FromSeconds(1),
+                    100)));
+        returnCachedResponseHandler = cacheHandlerInstance;
+        
+        return new DefaultHttpClient(() => new HttpClient(cacheHandlerInstance));
+    }
+
     private static MethodsAggregator CreateLibrary()
     {
         var methodsManager = new MethodsManager();

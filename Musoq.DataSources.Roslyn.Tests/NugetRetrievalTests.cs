@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
@@ -25,11 +26,16 @@ public class NugetRetrievalTests
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var logger = new Mock<ILogger>();
+
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
             retrievalServiceMock.Object,
-            fileSystemMock.Object);
+            fileSystemMock.Object,
+            packageVersionConcurrencyManager,
+            logger.Object);
 
         // Act
         var enumerator = retriever.GetMetadataAsync("TestPackage", "1.0.0", CancellationToken.None).GetAsyncEnumerator();
@@ -97,12 +103,17 @@ public class NugetRetrievalTests
 
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
+        
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
             retrievalServiceMock.Object,
-            fileSystemMock.Object);
+            fileSystemMock.Object,
+            packageVersionConcurrencyManager,
+            logger.Object);
 
         // Act
         var enumerator = retriever.GetMetadataAsync("TestPackageMissing", "2.0.0", CancellationToken.None).GetAsyncEnumerator();
@@ -192,12 +203,17 @@ public class NugetRetrievalTests
 
         var cachePathResolverMock = new Mock<INuGetCachePathResolver>();
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
+        
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             "http://somecustomapi/v1",
             retrievalServiceMock.Object,
-            fileSystemMock.Object);
+            fileSystemMock.Object,
+            packageVersionConcurrencyManager,
+            logger.Object);
 
         // Act
         var enumerator = retriever.GetMetadataAsync("PackageNoCacheNoNuGetData", "3.0.0", CancellationToken.None).GetAsyncEnumerator();
@@ -222,13 +238,18 @@ public class NugetRetrievalTests
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
         fileSystemMock.Setup(x => x.IsFileExists(It.IsAny<string>())).Returns(false);
         fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
+        
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var logger = new Mock<ILogger>();
 
         var cts = new CancellationTokenSource();
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
             retrievalServiceMock.Object,
-            fileSystemMock.Object);
+            fileSystemMock.Object,
+            packageVersionConcurrencyManager,
+            logger.Object);
 
         // Act
         IAsyncEnumerator<IReadOnlyDictionary<string, string?>>? enumerator = null;
@@ -288,12 +309,17 @@ public class NugetRetrievalTests
                 
                 return $"Local_{property}";
             });
+        
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
             retrievalServiceMock.Object,
-            fileSystemMock.Object);
+            fileSystemMock.Object,
+            packageVersionConcurrencyManager,
+            logger.Object);
 
         // Act
         var enumerator = retriever.GetMetadataAsync("TestPackage", "1.0.0", CancellationToken.None).GetAsyncEnumerator();
@@ -360,12 +386,17 @@ public class NugetRetrievalTests
 
                 return "MockedNuGetOrgValue";
             });
+        
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
             retrievalServiceMock.Object,
-            fileSystemMock.Object);
+            fileSystemMock.Object,
+            packageVersionConcurrencyManager,
+            logger.Object);
 
         // Act
         var enumerator = retriever.GetMetadataAsync("InvalidPackage", "1.0.0", CancellationToken.None).GetAsyncEnumerator();
@@ -397,12 +428,17 @@ public class NugetRetrievalTests
                 nameof(NuGetResource.RequireLicenseAcceptance),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync("true");
+        
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             null,
             retrievalServiceMock.Object,
-            fileSystemMock.Object);
+            fileSystemMock.Object,
+            packageVersionConcurrencyManager,
+            logger.Object);
 
         // Act
         var enumerator = retriever.GetMetadataAsync("TestPackage", "1.0.0", CancellationToken.None).GetAsyncEnumerator();
@@ -433,12 +469,17 @@ public class NugetRetrievalTests
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("API Error"));
+        
+        var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
             cachePathResolverMock.Object,
             "http://invalid-api",
             retrievalServiceMock.Object,
-            fileSystemMock.Object);
+            fileSystemMock.Object,
+            packageVersionConcurrencyManager,
+            logger.Object);
 
         // Act
         var enumerator = retriever.GetMetadataAsync("TestPackage", "1.0.0", CancellationToken.None).GetAsyncEnumerator();

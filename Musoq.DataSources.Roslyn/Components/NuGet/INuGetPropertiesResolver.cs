@@ -11,8 +11,8 @@ public interface INuGetPropertiesResolver
     /// <summary>
     /// Gets the license names from the license content
     /// </summary>
-    /// <param name="licenseContent">The license content</param>
+    /// <param name="licensesContent">The license content</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>The license names</returns>
-    Task<string[]> GetLicenseNamesAsync(string licenseContent, CancellationToken cancellationToken);
+    /// <returns>The licenses names</returns>
+    Task<string[]> GetLicensesNamesAsync(string licensesContent, CancellationToken cancellationToken);
 }

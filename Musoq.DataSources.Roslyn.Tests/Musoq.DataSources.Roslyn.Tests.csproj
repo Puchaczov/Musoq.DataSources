@@ -41,6 +41,8 @@
     </ItemGroup>
     
     <ItemGroup>
+      <Folder Include="Files\HtmlPages\" />
+      <Folder Include="Helpers\" />
       <Folder Include="TestsSolutions\NugetCache\" />
     </ItemGroup>
     
@@ -61,6 +63,21 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Files\Licenses\nunit3testadapter-mit.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\NugetPackages\newtonsoft.json.13.0.1.nupkg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\HtmlPages\newtonsoft.json.13.0.1.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\Licenses\newtonsoft.json-mit.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\NugetPackages\musoq.schema.8.0.1.nupkg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Files\HtmlPages\musoq.schema.8.0.1.html">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

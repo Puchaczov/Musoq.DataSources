@@ -29,7 +29,7 @@ public class PostgresPlayground
             {
                 {0, new Dictionary<string, string>
                 {
-                    { "NPGSQL_CONNECTION_STRING", System.Environment.GetEnvironmentVariable("PLAYGROUND_POSTGRES_CONNECTION_STRING") ?? throw new InvalidOperationException("No connection string provided.") }
+                    { "NPGSQL_CONNECTION_STRING", Environment.GetEnvironmentVariable("PLAYGROUND_POSTGRES_CONNECTION_STRING") ?? throw new InvalidOperationException("No connection string provided.") }
                 }}
             });
     }

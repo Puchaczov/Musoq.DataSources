@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Musoq.Converter;
@@ -21,7 +23,7 @@ public static class InstanceCreatorHelpers
     {
         loggerResolver ??= DefaultLoggerResolver;
 
-        return InstanceCreator.CompileForExecution(
+        var compiledQuery = InstanceCreator.CompileForExecution(
             script,
             assemblyName,
             schemaProvider,
@@ -35,6 +37,13 @@ public static class InstanceCreatorHelpers
                     items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns) =>
                         new BuildMetadataAndInferTypesForTestsVisitor(provider, columns, environmentVariables, loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>());
                 });
+        
+        var runnableField = compiledQuery.GetType().GetRuntimeFields().FirstOrDefault(f => f.Name.Contains("runnable"));
+
+        var runnable = (IRunnable)runnableField?.GetValue(compiledQuery);
+        runnable.Logger = loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>();
+
+        return compiledQuery;
     }
 
     private class VoidLoggerResolver : ILoggerResolver

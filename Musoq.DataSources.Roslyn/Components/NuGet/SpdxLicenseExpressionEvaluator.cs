@@ -17,7 +17,6 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet
             
             var parser = new SpdxParser(tokens);
             var licenseIds = parser.ExtractLicenseIdentifiers();
-            
             var allIdentifiers = new HashSet<string>(licenseIds);
             
             foreach (var token in tokens.Where(token => token.Type == TokenType.Identifier))

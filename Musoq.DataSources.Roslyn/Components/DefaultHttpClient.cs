@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -5,13 +7,25 @@ using System.Threading.Tasks;
 
 namespace Musoq.DataSources.Roslyn.Components;
 
-internal sealed class DefaultHttpClient : IHttpClient
+internal sealed class DefaultHttpClient(Func<HttpClient> createHttpClient) : IHttpClient
 {
-    private static readonly HttpClient HttpClient = new();
+    private readonly HttpClient _httpClient = createHttpClient();
+
+    public IHttpClient NewInstance()
+    {
+        return new DefaultHttpClient(createHttpClient);
+    }
 
     public async Task<HttpResponseMessage?> GetAsync(string requestUrl, CancellationToken cancellationToken)
     {
-        return await HttpClient.GetAsync(requestUrl, cancellationToken);
+        return await _httpClient.GetAsync(requestUrl, cancellationToken);
+    }
+
+    public Task<HttpResponseMessage?> GetAsync(string requestUrl, Action<HttpClient> configure, CancellationToken cancellationToken)
+    {
+        configure(_httpClient);
+        
+        return GetAsync(requestUrl, cancellationToken);
     }
 
     public async Task<TOut?> PostAsync<T, TOut>(string requestUrl, T obj, CancellationToken cancellationToken) 
@@ -19,7 +33,7 @@ internal sealed class DefaultHttpClient : IHttpClient
         where TOut : class
     {
         var content = new StringContent(JsonSerializer.Serialize(obj));
-        var response = await HttpClient.PostAsync(requestUrl, content, cancellationToken);
+        var response = await _httpClient.PostAsync(requestUrl, content, cancellationToken);
         var result = await response.Content.ReadAsStringAsync(cancellationToken);
         
         if (string.IsNullOrEmpty(result))
@@ -31,11 +45,13 @@ internal sealed class DefaultHttpClient : IHttpClient
     public async Task<TOut?> PostAsync<TOut>(string requestUrl, MultipartFormDataContent multipartFormDataContent,
         CancellationToken cancellationToken) where TOut : class
     {
-        var response = await HttpClient.PostAsync(requestUrl, multipartFormDataContent, cancellationToken);
+        var response = await _httpClient.PostAsync(requestUrl, multipartFormDataContent, cancellationToken);
         var result = await response.Content.ReadAsStringAsync(cancellationToken);
         
         if (string.IsNullOrEmpty(result))
             return null;
+
+        Debug.WriteLine(result);
         
         return JsonSerializer.Deserialize<TOut>(result);
     }

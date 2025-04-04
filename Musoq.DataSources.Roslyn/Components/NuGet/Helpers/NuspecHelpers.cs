@@ -80,7 +80,7 @@ internal static class NuspecHelpers
             if (!File.Exists(fullPath)) return "[]";
             
             var licenseContent = await File.ReadAllTextAsync(fullPath, cancellationToken);
-            return System.Text.Json.JsonSerializer.Serialize(await aiModelResolver.GetLicenseNamesAsync(licenseContent, cancellationToken));
+            return System.Text.Json.JsonSerializer.Serialize(await aiModelResolver.GetLicensesNamesAsync(licenseContent, cancellationToken));
         }
 
         // type="expression" or not specified
