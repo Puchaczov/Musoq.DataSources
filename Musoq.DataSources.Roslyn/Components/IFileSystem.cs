@@ -27,6 +27,8 @@ internal interface IFileSystem
     
     static string GetFileName(string path) => Path.GetFileName(path);
     
+    static string? GetDirectoryName(string path) => Path.GetDirectoryName(path);
+    
     static bool DirectoryExists(string directory) => Directory.Exists(directory);
     
     static void CreateDirectory(string directory) => Directory.CreateDirectory(directory);

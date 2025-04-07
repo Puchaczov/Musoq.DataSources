@@ -17,6 +17,13 @@ public interface IHttpClient
     IHttpClient NewInstance();
     
     /// <summary>
+    /// Creates a new instance of the HTTP client with the specified configuration.
+    /// </summary>
+    /// <param name="configure">Configuration action to customize the HTTP client.</param>
+    /// <returns>An instance of <see cref="IHttpClient"/>.</returns>
+    IHttpClient NewInstance(Action<HttpClient> configure);
+    
+    /// <summary>
     /// Sends a GET request to the specified URL and returns the response.
     /// </summary>
     /// <param name="requestUrl">The URL to send the request to.</param>

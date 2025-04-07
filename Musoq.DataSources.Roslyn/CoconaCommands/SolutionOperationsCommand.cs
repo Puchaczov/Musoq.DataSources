@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,10 +15,12 @@ namespace Musoq.DataSources.Roslyn.CoconaCommands;
 
 internal class SolutionOperationsCommand
 {
-    private static readonly string RateLimitingOptionsFilePath = IFileSystem.Combine(AppContext.BaseDirectory, "RateLimitingOptions.json");
+    // This cannot be AppContext.BaseDirectory as it must point the plugin directory
+    private static readonly string RateLimitingOptionsFilePath = IFileSystem.Combine(new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "RateLimitingOptions.json");
     
     internal static readonly ConcurrentDictionary<string, Solution> Solutions = new();
-    internal static IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>? RateLimitingOptions;
+    internal static IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>? RateLimitingOptions;
+    internal static string DefaultHttpClientCacheDirectoryPath { get; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn", "NuGet");
     
     public async Task LoadAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
@@ -36,7 +39,7 @@ internal class SolutionOperationsCommand
         });
 
         Solutions.TryAdd(solutionFilePath, solution);
-        RateLimitingOptions ??= await ReadDomainRateLimitingOptionsAsync(new Dictionary<string, string>(), cancellationToken);
+        RateLimitingOptions ??= await ReadDomainRateLimitingOptionsAsync(cancellationToken);
     }
     
     public Task UnloadAsync(string solutionFilePath, CancellationToken cancellationToken)
@@ -52,11 +55,10 @@ internal class SolutionOperationsCommand
     {
         using CancellationTokenSource cts = new();
         cts.CancelAfter(TimeSpan.FromMinutes(1));
-        RateLimitingOptions ??= ReadDomainRateLimitingOptionsAsync(
-            new Dictionary<string, string>(), cts.Token).GetAwaiter().GetResult();
+        RateLimitingOptions ??= ReadDomainRateLimitingOptionsAsync(cts.Token).GetAwaiter().GetResult();
     }
 
-    private static Task<IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>> ReadDomainRateLimitingOptionsAsync(IReadOnlyDictionary<string, string> environmentVariables, CancellationToken cancellationToken)
+    private static Task<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>> ReadDomainRateLimitingOptionsAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
@@ -67,65 +69,40 @@ internal class SolutionOperationsCommand
         var unauthorizedSection = rateLimitingOptions.GetSection("Unauthorized");
         var authorizedSection = rateLimitingOptions.GetSection("Authorized");
         
-        var domains = 
-            unauthorizedSection.GetChildren().Select(f => f.Key)
-                .Concat(authorizedSection.GetChildren().Select(f => f.Key)).ToArray();
+        (string Name, bool WhenApiKeyPresent)[] domains = 
+            unauthorizedSection.GetChildren().Select(f => (f.Key, false))
+                .Concat(authorizedSection.GetChildren().Select(f => (f.Key, true))).ToArray();
         
-        var domainRateLimitingOptions = new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>();
-
-        environmentVariables = ExtractAccessTokens(environmentVariables);
+        var domainRateLimitingOptions = new Dictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>();
         
         foreach (var domain in domains)
         {
-            if (environmentVariables.TryGetValue(domain, out _))
+            var domainRateLimitConfig = domain.WhenApiKeyPresent 
+                ? ReadDomainRateLimitConfig("Authorized") 
+                : ReadDomainRateLimitConfig("Unauthorized");
+
+            if (domainRateLimitConfig != null)
             {
-                var domainRateLimitingOptionsSection = rateLimitingOptions.GetSection($"Authorized:{domain}");
+                domainRateLimitingOptions[new DomainRateLimitingHandler.DomainRateLimitingConfigKey(domain.Name, domain.WhenApiKeyPresent)] = domainRateLimitConfig;
+            }
+
+            continue;
+
+            DomainRateLimitingHandler.DomainRateLimitConfig? ReadDomainRateLimitConfig(string sectionName)
+            {
+                var domainRateLimitingOptionsSection = rateLimitingOptions.GetSection($"{sectionName}:{domain.Name}");
+
+                if (!domainRateLimitingOptionsSection.Exists()) 
+                    return null;
                 
                 var permitsPerPeriod = domainRateLimitingOptionsSection.GetValue<int>("PermitsPerPeriod");
                 var replenishmentPeriod = domainRateLimitingOptionsSection.GetValue<TimeSpan>("ReplenishmentPeriod");
                 var queueLimit = domainRateLimitingOptionsSection.GetValue<int>("QueueLimit");
- 
-                var domainRateLimitConfig = new DomainRateLimitingHandler.DomainRateLimitConfig(permitsPerPeriod, replenishmentPeriod, queueLimit);
-                
-                domainRateLimitingOptions[domain] = domainRateLimitConfig;
-            }
-            else
-            {
-                var section = $"Unauthorized:{domain}";
-                var domainRateLimitingOptionsSection = rateLimitingOptions.GetSection(section);
-                
-                if (domainRateLimitingOptionsSection.Exists())
-                {
-                    var permitsPerPeriod = domainRateLimitingOptionsSection.GetValue<int>("PermitsPerPeriod");
-                    var replenishmentPeriod = domainRateLimitingOptionsSection.GetValue<TimeSpan>("ReplenishmentPeriod");
-                    var queueLimit = domainRateLimitingOptionsSection.GetValue<int>("QueueLimit");
-                    
-                    var domainRateLimitConfig = new DomainRateLimitingHandler.DomainRateLimitConfig(permitsPerPeriod, replenishmentPeriod, queueLimit);
-                    
-                    domainRateLimitingOptions[domain] = domainRateLimitConfig;
-                }
+
+                return new DomainRateLimitingHandler.DomainRateLimitConfig(permitsPerPeriod, replenishmentPeriod, queueLimit);
             }
         }
         
-        return Task.FromResult<IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>>(domainRateLimitingOptions);
-    }
-
-    private static IReadOnlyDictionary<string, string> ExtractAccessTokens(IReadOnlyDictionary<string, string> environmentVariables)
-    {
-        var accessTokens = new Dictionary<string, string>();
-
-        foreach (var environmentVariable in environmentVariables)
-        {
-            if (environmentVariable.Key == "GITHUB_API_KEY") 
-                accessTokens.Add("github", environmentVariable.Value);
-
-            if (environmentVariable.Key == "GITLAB_API_KEY")
-                accessTokens.Add("gitlab", environmentVariable.Value);
-            
-            if (environmentVariable.Key == "NUGET_ORG_API_KEY")
-                accessTokens.Add("nuget", environmentVariable.Value);
-        }
-
-        return accessTokens;
+        return Task.FromResult<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>>(domainRateLimitingOptions);
     }
 }

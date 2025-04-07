@@ -160,7 +160,7 @@ internal sealed class NuGetPackageMetadataRetriever(
             return null;
         
         var tempPath = Path.GetTempPath();
-        var packagePath = Path.Combine(tempPath, packageName, packageVersion);
+        var packagePath = Path.Combine(tempPath, "NuGetPackages", packageName, packageVersion);
         
         if (fileSystem.IsDirectoryExists(packagePath))
             return packagePath;

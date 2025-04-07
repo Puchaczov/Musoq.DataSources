@@ -389,6 +389,13 @@ public class ExtractFromProjectMetadataTests
             return new HttpClientWrapper(createHttpClient);
         }
 
+        public IHttpClient NewInstance(Action<HttpClient> configure)
+        {
+            configure(_httpClient);
+            
+            return new HttpClientWrapper(createHttpClient);
+        }
+
         public async Task<HttpResponseMessage?> GetAsync(string requestUri, CancellationToken cancellationToken)
         {
             return await _httpClient.GetAsync(requestUri, cancellationToken);

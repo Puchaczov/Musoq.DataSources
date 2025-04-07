@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +7,6 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
-using Musoq.DataSources.Roslyn.Components.NuGet.Http;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.Schema.DataSources;
 

@@ -16,6 +16,15 @@ internal sealed class DefaultHttpClient(Func<HttpClient> createHttpClient) : IHt
         return new DefaultHttpClient(createHttpClient);
     }
 
+    public IHttpClient NewInstance(Action<HttpClient> configure)
+    {
+        var httpClient = createHttpClient();
+        
+        configure(httpClient);
+        
+        return new DefaultHttpClient(() => httpClient);
+    }
+
     public async Task<HttpResponseMessage?> GetAsync(string requestUrl, CancellationToken cancellationToken)
     {
         return await _httpClient.GetAsync(requestUrl, cancellationToken);

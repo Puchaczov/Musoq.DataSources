@@ -29,18 +29,16 @@ public class CSharpSchema : SchemaBase
     private const string SchemaName = "Csharp";
 
     private static readonly IFileSystem FileSystem = new DefaultFileSystem();
-    private static readonly IHttpClient HttpClient;
-    
     private static ConcurrentDictionary<string, Solution> Solutions => SolutionOperationsCommand.Solutions;
-    
+    private static string DefaultCacheDirectory => SolutionOperationsCommand.DefaultHttpClientCacheDirectoryPath;
+
+    private static readonly ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache = new();
 
     private readonly Func<string, IHttpClient, INuGetPropertiesResolver> _createNugetPropertiesResolver;
-
+    
     static CSharpSchema()
     {
         SolutionOperationsCommand.Initialize();
-        HttpClient = WithCacheDirectory(Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn", "NuGet"), out var returnCachedResponseHandler);
-        returnCachedResponseHandler.Initialize();
     }
     
     /// <virtual-constructors>
@@ -49,7 +47,7 @@ public class CSharpSchema : SchemaBase
     /// <example>
     /// <from>
     /// <environmentVariables>
-    /// <environmentVariable name="INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT" isRequired="true">Server endpoint to resolve properties</environmentVariable>
+    /// <environmentVariable name="EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT" isRequired="false">External server endpoint to resolve properties</environmentVariable>
     /// </environmentVariables>
     /// #csharp.solution(string path)
     /// </from>
@@ -318,31 +316,29 @@ public class CSharpSchema : SchemaBase
         
         string? internalNugetPropertiesResolveEndpoint = null;
         
-        if (runtimeContext.EnvironmentVariables.TryGetValue("INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", out var internalNugetPropertiesResolveEndpointValue))
+        if (runtimeContext.EnvironmentVariables.TryGetValue("MUSOQ_SERVER_HTTP_ENDPOINT", out var internalNugetPropertiesResolveEndpointValue))
         {
             internalNugetPropertiesResolveEndpoint = internalNugetPropertiesResolveEndpointValue;
         }
         
         if (internalNugetPropertiesResolveEndpoint == null)
         {
-            throw new InvalidOperationException("INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT environment variable is not set.");
+            throw new InvalidOperationException("MUSOQ_SERVER_HTTP_ENDPOINT environment variable is not set.");
         }
-        
-        var httpClient = HttpClient;
-        
-        if (runtimeContext.EnvironmentVariables.TryGetValue("CACHE_DIRECTORY", out var cacheDirectory) && cacheDirectory is not null)
+
+        var cacheDirectory = DefaultCacheDirectory;
+
+        if (runtimeContext.EnvironmentVariables.TryGetValue("CACHE_DIRECTORY", out var incommingCacheDirectory) && incommingCacheDirectory is not null)
         {
-            cacheDirectory = Path.Combine(cacheDirectory, "Musoq.DataSources.Roslyn");
-        
-            if (!Directory.Exists(cacheDirectory))
+            if (!Directory.Exists(incommingCacheDirectory))
             {
-                Directory.CreateDirectory(cacheDirectory);
+                throw new DirectoryNotFoundException($"Cache directory '{incommingCacheDirectory}' does not exist.");
             }
             
-            httpClient = WithCacheDirectory(cacheDirectory, out var returnCachedResponseHandler);
-            
-            returnCachedResponseHandler.Initialize();
+            cacheDirectory = incommingCacheDirectory;
         }
+
+        var httpClient = WithCacheDirectory(cacheDirectory, configs => GetDomains(configs, runtimeContext.EnvironmentVariables));
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
         
@@ -400,21 +396,69 @@ public class CSharpSchema : SchemaBase
         return base.GetRowSource(name, runtimeContext, parameters);
     }
 
-    private static IHttpClient WithCacheDirectory(string cacheDirectory, out ReturnCachedResponseHandler returnCachedResponseHandler)
+    private static IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig> GetDomains(IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig> configs, IReadOnlyDictionary<string, string> environmentVariables)
     {
-        var cacheHandlerInstance = new ReturnCachedResponseHandler(
-            FileSystem,
-            cacheDirectory,
-            new DomainRateLimitingHandler(
-                SolutionOperationsCommand.RateLimitingOptions ??
-                new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
+        var accessTokens = ExtractAccessTokens(environmentVariables);
+        var domains = new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>();
+
+        foreach (var config in configs)
+        {
+            if (accessTokens.TryGetValue(config.Key.Domain, out var token))
+            {
+                domains.Add(config.Key.Domain, new DomainRateLimitingHandler.DomainRateLimitConfig(
+                    config.Value.PermitsPerPeriod,
+                    config.Value.ReplenishmentPeriod,
+                    config.Value.QueueLimit));
+            }
+        }
+
+        return domains;
+    }
+
+    private static IHttpClient WithCacheDirectory(string cacheDirectory, Func<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>, IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>> getDomains)
+    {
+        var cachedResponseHandler = HttpResponseCache.AddOrUpdate(cacheDirectory,
+            _ => new ReturnCachedResponseHandler(cacheDirectory, new DomainRateLimitingHandler(
+                getDomains(SolutionOperationsCommand.RateLimitingOptions ?? throw new InvalidOperationException("Rate limiting options are not set.")),
                 new DomainRateLimitingHandler.DomainRateLimitConfig(
                     10,
                     TimeSpan.FromSeconds(1),
-                    100)));
-        returnCachedResponseHandler = cacheHandlerInstance;
+                    100))),
+            (key, handler) =>
+            {
+                if (key == DefaultCacheDirectory && handler.InnerHandler is HttpClientHandler)
+                {
+                    handler.InnerHandler = new DomainRateLimitingHandler(
+                        getDomains(SolutionOperationsCommand.RateLimitingOptions ?? throw new InvalidOperationException("Rate limiting options are not set.")),
+                        new DomainRateLimitingHandler.DomainRateLimitConfig(
+                            10,
+                            TimeSpan.FromSeconds(1),
+                            100));
+                }
+                
+                return handler;
+            });
         
-        return new DefaultHttpClient(() => new HttpClient(cacheHandlerInstance));
+        return new DefaultHttpClient(() => new HttpClient(cachedResponseHandler));
+    }
+    
+    private static IReadOnlyDictionary<string, string> ExtractAccessTokens(IReadOnlyDictionary<string, string> environmentVariables)
+    {
+        var accessTokens = new Dictionary<string, string>();
+
+        foreach (var environmentVariable in environmentVariables)
+        {
+            if (environmentVariable.Key == "GITHUB_API_KEY") 
+                accessTokens.Add("github", environmentVariable.Value);
+
+            if (environmentVariable.Key == "GITLAB_API_KEY")
+                accessTokens.Add("gitlab", environmentVariable.Value);
+            
+            if (environmentVariable.Key == "NUGET_ORG_API_KEY")
+                accessTokens.Add("nuget", environmentVariable.Value);
+        }
+
+        return accessTokens;
     }
 
     private static MethodsAggregator CreateLibrary()

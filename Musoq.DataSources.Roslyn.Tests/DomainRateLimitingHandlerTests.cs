@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http;
 
 namespace Musoq.DataSources.Roslyn.Tests;

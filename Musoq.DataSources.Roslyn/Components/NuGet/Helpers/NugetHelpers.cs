@@ -91,7 +91,7 @@ internal static class NugetHelpers
         return () => Task.FromResult<string?>(null);
     }
     
-    public static async Task<Func<Task<string?>>> DiscoverLicenseUrlAsync(string url, NuGetResource commonResources, IHttpClient httpClient, INuGetPropertiesResolver aiBasedPropertiesResolver, CancellationToken cancellationToken)
+    public static async Task<Func<Task<string?>>> DiscoverLicenseUrlAsync(string url, NuGetResource commonResources, IHttpClient httpClient, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
         {
@@ -248,48 +248,52 @@ internal static class NugetHelpers
             "LICENSE.APACHE",
             "LICENSE.BSD"
         };
+
+        if (!sourceRepositoryUrl.Contains("github.com") && !sourceRepositoryUrl.Contains("gitlab.com")) yield break;
         
-        if (sourceRepositoryUrl.Contains("github.com") || sourceRepositoryUrl.Contains("gitlab.com"))
+        sourceRepositoryUrl = sourceRepositoryUrl
+            .TrimEnd('/')
+            .Replace(".git", string.Empty);
+
+        string branch;
+                
+        if (sourceRepositoryUrl.Contains("github.com"))
         {
-            sourceRepositoryUrl = sourceRepositoryUrl
-                .TrimEnd('/')
-                .Replace(".git", string.Empty);
+            branch = await GetDefaultGithubBranchAsync(sourceRepositoryUrl, httpClient, cancellationToken);
+                
+            sourceRepositoryUrl += $"/blob/{branch}";
+        }
+        else if (sourceRepositoryUrl.Contains("gitlab.com"))
+        {
+            branch = await GetDefaultGitlabBranchAsync(sourceRepositoryUrl, httpClient, cancellationToken);
+                
+            sourceRepositoryUrl += $"/-/blob/{branch}";
+        }
+        else
+        {
+            throw new NotSupportedException($"Unsupported repository URL: {sourceRepositoryUrl}");
+        }
 
-            string branch;
-                
-            if (sourceRepositoryUrl.Contains("github.com"))
-            {
-                branch = await GetDefaultGithubBranchAsync(sourceRepositoryUrl, httpClient, cancellationToken);
-                
-                sourceRepositoryUrl += $"/blob/{branch}";
-            }
-            else if (sourceRepositoryUrl.Contains("gitlab.com"))
-            {
-                branch = await GetDefaultGitlabBranchAsync(sourceRepositoryUrl, httpClient, cancellationToken);
-                
-                sourceRepositoryUrl += $"/-/blob/{branch}";
-            }
-            else
-            {
-                throw new NotSupportedException($"Unsupported repository URL: {sourceRepositoryUrl}");
-            }
+        httpClient = httpClient.NewInstance(client =>
+        {
+            client.DefaultRequestHeaders.Add("Musoq-Cache-Failed-Response", "true");
+        });
             
-            foreach (var fileName in licenseFileNames)
+        foreach (var fileName in licenseFileNames)
+        {
+            var licenseUrl = sourceRepositoryUrl + "/" + fileName;
+            var response = await httpClient.GetAsync(ConvertToRawFileUrl(licenseUrl, branch), cancellationToken);
+                
+            if (response is not { IsSuccessStatusCode: true })
             {
-                var licenseUrl = sourceRepositoryUrl + "/" + fileName;
-                var response = await httpClient.GetAsync(ConvertToRawFileUrl(licenseUrl, branch), cancellationToken);
-                
-                if (response is not { IsSuccessStatusCode: true })
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                var licenseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            var licenseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 
-                if (filter(fileName, licenseContent))
-                {
-                    yield return (licenseUrl, licenseContent);
-                }
+            if (filter(fileName, licenseContent))
+            {
+                yield return (licenseUrl, licenseContent);
             }
         }
     }

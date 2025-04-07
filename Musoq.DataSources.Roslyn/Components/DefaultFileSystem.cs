@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
@@ -15,12 +14,7 @@ internal sealed class DefaultFileSystem : IFileSystem
 
     public Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken) => File.ReadAllTextAsync(path, cancellationToken);
     
-    public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        
-        return File.WriteAllTextAsync(path, content, cancellationToken);
-    }
+    public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken) => File.WriteAllTextAsync(path, content, cancellationToken);
 
     public Task<Stream> CreateFileAsync(string tempFilePath)
     {

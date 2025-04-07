@@ -456,12 +456,12 @@ namespace Musoq.DataSources.Roslyn.Tests
             _responses[url] = new FakeHttpResponse { Content = errorMessage, StatusCode = statusCode, ShouldThrow = true };
         }
 
-        public void AddThrowingRequest(string url)
+        public IHttpClient NewInstance()
         {
-            _responses[url] = new FakeHttpResponse { ShouldThrow = true, Exception = new HttpRequestException("Simulated exception") };
+            return new FakeHttpClient();
         }
 
-        public IHttpClient NewInstance()
+        public IHttpClient NewInstance(Action<HttpClient> configure)
         {
             return new FakeHttpClient();
         }

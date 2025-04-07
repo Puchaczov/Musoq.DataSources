@@ -2,9 +2,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Musoq.Converter;
-using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
-using Musoq.DataSources.Roslyn.Components.NuGet.Http;
 using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -14,7 +12,7 @@ namespace Musoq.DataSources.Roslyn.Tests;
 [TestClass]
 public class NugetToSqlPlaygroundTests
 {
-    //[Ignore]
+    [Ignore]
     [TestMethod]
     public void Playground()
     {
@@ -36,7 +34,7 @@ public class NugetToSqlPlaygroundTests
                     0, 
                     new Dictionary<string, string>
                     {
-                        {"INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost:7137"}
+                        {"MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost:7137"}
                     }
                 }
             },

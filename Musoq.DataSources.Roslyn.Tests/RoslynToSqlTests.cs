@@ -814,7 +814,7 @@ where c.Name = 'Class1'
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
                 new Dictionary<string, string>
                 {
-                    {"INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/internal/this-doesnt-exists"},
+                    {"MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists"},
                     {"EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists"}
                 }));
     }

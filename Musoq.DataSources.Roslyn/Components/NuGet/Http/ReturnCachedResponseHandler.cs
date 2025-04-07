@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -10,118 +9,99 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet.Http;
 
 internal class ReturnCachedResponseHandler : DelegatingHandler
 {
-    private readonly ConcurrentDictionary<string, (HttpResponseMessage? HttpResponseMessage, SemaphoreSlim Guard)> _cachedItems = new();
-    private readonly IFileSystem _fileSystem;
-    private readonly string _cacheDirectory;
+    private readonly AlwaysUpdateDirectoryView<Url, HttpResponseMessage> _monitoredDirectory;
 
-    public ReturnCachedResponseHandler(IFileSystem fileSystem, string cacheDirectory, HttpMessageHandler handler)
+    public ReturnCachedResponseHandler(string cacheDirectory, HttpMessageHandler handler)
     {
-        _fileSystem = fileSystem;
-        _cacheDirectory = cacheDirectory;
-        
+        _monitoredDirectory = new AlwaysUpdateDirectoryView<Url, HttpResponseMessage>(cacheDirectory,
+            GetDestinationValueAsync, ConvertKeyToPath, UpdateDirectoryAsync);
         InnerHandler = handler;
     }
 
-    public async Task InitializeAsync(CancellationToken cancellationToken)
-    {
-        if (!IFileSystem.DirectoryExists(_cacheDirectory))
-        {
-            IFileSystem.CreateDirectory(_cacheDirectory);
-        }
-        
-        await foreach (var cachedItemPath in _fileSystem.GetFilesAsync(_cacheDirectory, false, cancellationToken))
-        {
-            if (IFileSystem.GetExtension(cachedItemPath) != ".json")
-            {
-                continue;
-            }
-            
-            HttpResponseMessageCacheItem? cacheItem;
-            try
-            {
-                var fileContent = await _fileSystem.ReadAllTextAsync(cachedItemPath, cancellationToken);
-                cacheItem = System.Text.Json.JsonSerializer.Deserialize<HttpResponseMessageCacheItem>(fileContent);
-            }
-            catch (Exception)
-            {
-                continue;
-            }
-
-            if (cacheItem == null) continue;
-            
-            var responseMessage = new HttpResponseMessage(cacheItem.StatusCode)
-            {
-                Content = new ByteArrayContent(cacheItem.Content ?? [])
-            };
-                
-            foreach (var header in cacheItem.Headers)
-            {
-                responseMessage.Headers.TryAddWithoutValidation(header.Key, header.Value);
-            }
-                
-            _cachedItems.TryAdd(
-                cacheItem.Url.Value, 
-                (responseMessage, new SemaphoreSlim(1, 1))
-            );
-        }
-    }
-
-    public void Initialize()
-    {
-        Task.Run(async () => await InitializeAsync(CancellationToken.None)).Wait();
-    }
-    
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var url = request.RequestUri?.ToString();
+        var requestUri = request.RequestUri;
         
-        if (url == null)
+        if (requestUri is null)
             throw new InvalidOperationException("Request URL is null");
+
+        var url = new Url(requestUri.ToString());
         
-        if (_cachedItems.TryGetValue(url, out var cachedItems))
-            return cachedItems.HttpResponseMessage ?? throw new InvalidOperationException($"Cached response for {url} is null");
+        if (_monitoredDirectory.TryGetValue(url, out var responseMessage) && responseMessage is not null)
+        {
+            return responseMessage;
+        }
         
         var response = await base.SendAsync(request, cancellationToken);
 
-        if (!response.IsSuccessStatusCode) 
+        var cacheFiledResponseHeader = request.Headers
+            .FirstOrDefault(h => h.Key.Equals("Musoq-Cache-Failed-Response", StringComparison.OrdinalIgnoreCase));
+
+        var cacheFailedResponseString = cacheFiledResponseHeader.Value.FirstOrDefault() ?? "false";
+        var cacheFailedResponse = bool.TryParse(cacheFailedResponseString, out var result) && result;
+        
+        if (!response.IsSuccessStatusCode && !cacheFailedResponse) 
             return response;
 
-        try
+        _monitoredDirectory.Add(url, response);
+            
+        return response;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
         {
-            _cachedItems.TryAdd(url, (response, new SemaphoreSlim(1, 1)));
-
-            if (!_cachedItems.TryGetValue(url, out cachedItems))
-            {
-                throw new InvalidOperationException($"Failed to retrieve cached response for {url}");
-            }
-
-            await cachedItems.Guard.WaitAsync(cancellationToken);
-
-            var cacheItem = new HttpResponseMessageCacheItem
-            {
-                Url = new Url(url),
-                Content = await response.Content.ReadAsByteArrayAsync(cancellationToken),
-                StatusCode = response.StatusCode,
-                Headers = response.Headers.ToDictionary(h => h.Key, h => h.Value)
-            };
-
-            var fileName = IFileSystem.Combine(_cacheDirectory, $"{UrlToFileName(cacheItem.Url)}.json");
-            var fileContent = System.Text.Json.JsonSerializer.Serialize(cacheItem);
-            await _fileSystem.WriteAllTextAsync(fileName, fileContent, cancellationToken);
-
-            return response;
+            _monitoredDirectory.Dispose();
         }
-        catch
+        
+        base.Dispose(disposing);
+    }
+
+    private static async Task<HttpResponseMessage> GetDestinationValueAsync(string filePath, IFileSystem fileSystem, CancellationToken cancellationToken)
+    {
+        var content = await fileSystem.ReadAllTextAsync(filePath, cancellationToken);
+        var item = System.Text.Json.JsonSerializer.Deserialize<HttpResponseMessageCacheItem>(content);
+        
+        if (item == null)
         {
-            if (response.IsSuccessStatusCode)
-                return response;
-
-            throw;
+            throw new InvalidOperationException($"Failed to deserialize cached item from {filePath}");
         }
-        finally
+        
+        var responseMessage = new HttpResponseMessage(item.StatusCode)
         {
-            cachedItems.Guard.Release();
+            Content = new ByteArrayContent(item.Content ?? [])
+        };
+        
+        foreach (var header in item.Headers)
+        {
+            responseMessage.Headers.TryAddWithoutValidation(header.Key, header.Value);
         }
+        
+        return responseMessage;
+    }
+
+    private static string ConvertKeyToPath(Url arg)
+    {
+        var fileName = UrlToFileName(arg);
+        return $"{fileName}.json";
+    }
+
+    private static async Task UpdateDirectoryAsync(string filePath, HttpResponseMessage responseMessage, IFileSystem fileSystem, CancellationToken token)
+    {
+        if (fileSystem.IsFileExists(filePath))
+            return;
+        
+        var cacheItem = new HttpResponseMessageCacheItem
+        {
+            Url = new Url(filePath),
+            Content = await responseMessage.Content.ReadAsByteArrayAsync(token),
+            StatusCode = responseMessage.StatusCode,
+            Headers = responseMessage.Headers.ToDictionary(h => h.Key, h => h.Value)
+        };
+
+        var fileContent = System.Text.Json.JsonSerializer.Serialize(cacheItem);
+        await fileSystem.WriteAllTextAsync(filePath, fileContent, token);
     }
 
     private static string UrlToFileName(Url url)

@@ -6,7 +6,6 @@ using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
 using Musoq.Parser.Helpers;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 
@@ -408,7 +407,7 @@ public class NugetToSqlTests
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
                 new Dictionary<string, string?>
                 {
-                    {"INTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/internal/this-doesnt-exists"},
+                    {"MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists"},
                     {"EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", null}
                 }));
     }
