@@ -54,7 +54,7 @@ public class NugetToSqlPlaygroundTests
             var logger = new Mock<ILogger>();
             
             logger.Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<object>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception?, string>>()))
-                .Callback((LogLevel logLevel, EventId eventId, object state, Exception? exception, Func<object, Exception?, string> formatter) =>
+                .Callback((LogLevel _, EventId _, object state, Exception? exception, Func<object, Exception?, string> formatter) =>
                 {
                     var message = formatter(state, exception);
                     Debug.WriteLine(message);
@@ -68,7 +68,7 @@ public class NugetToSqlPlaygroundTests
             var logger = new Mock<ILogger<T>>();
             
             logger.Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<object>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception?, string>>()))
-                .Callback((LogLevel logLevel, EventId eventId, object state, Exception? exception, Func<object, Exception?, string> formatter) =>
+                .Callback((LogLevel _, EventId _, object state, Exception? exception, Func<object, Exception?, string> formatter) =>
                 {
                     var message = formatter(state, exception);
                     Debug.WriteLine(message);

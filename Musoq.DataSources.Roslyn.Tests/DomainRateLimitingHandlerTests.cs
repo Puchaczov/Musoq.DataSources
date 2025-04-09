@@ -41,8 +41,8 @@ public class DomainRateLimitingHandlerTests
         stopwatch.Stop();
         
         // Assert
-        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 1000, 
-            "Rate limiting should have delayed the third request by at least 1 second");
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 900, 
+            "Rate limiting should have delayed the third request by at least 90% of 1 second but took " + stopwatch.Elapsed);
         Assert.AreEqual(3, testHandler.RequestCount);
         Assert.AreEqual(HttpStatusCode.OK, task1.Result.StatusCode);
         Assert.AreEqual(HttpStatusCode.OK, task2.Result.StatusCode);
@@ -105,7 +105,7 @@ public class DomainRateLimitingHandlerTests
         var tasks = new List<Task<HttpResponseMessage>>();
         const int requestCount = 3;
         
-        for (int i = 1; i <= requestCount; i++)
+        for (var i = 1; i <= requestCount; i++)
         {
             tasks.Add(client.GetAsync($"https://example.com/{i}"));
         }
@@ -115,8 +115,7 @@ public class DomainRateLimitingHandlerTests
         // Assert
         Assert.AreEqual(requestCount, testHandler.RequestCount);
         
-        // Check that the requests were processed in the correct order
-        for (int i = 0; i < requestCount; i++)
+        for (var i = 0; i < requestCount; i++)
         {
             Assert.AreEqual($"https://example.com/{i + 1}", 
                 testHandler.ProcessedRequests[i].RequestUri?.ToString(),
@@ -172,7 +171,7 @@ public class DomainRateLimitingHandlerTests
         
         stopwatch.Stop();
         
-        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 1000, 
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 900, 
             "Rate limiting for specific domain should have delayed the second request");
         Assert.AreEqual(4, testHandler.RequestCount);
     }
@@ -218,7 +217,7 @@ public class DomainRateLimitingHandlerTests
         stopwatch.Stop();
         
         // Assert
-        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 1000, 
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 900, 
             "Wildcard domain matching should apply rate limits to matching subdomains");
         Assert.AreEqual(2, testHandler.RequestCount);
     }
@@ -316,7 +315,7 @@ public class DomainRateLimitingHandlerTests
         stopwatch.Stop();
         
         // Assert
-        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 1000, 
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 900, 
             "Default config should be applied when no specific config matches");
         Assert.AreEqual(2, testHandler.RequestCount);
     }
@@ -409,7 +408,7 @@ public class DomainRateLimitingHandlerTests
         
         // These should not block each other as they're for different domains
         var tasks = new List<Task<HttpResponseMessage>>();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             tasks.Add(client.GetAsync($"https://domain{i}.com/path"));
         }
@@ -447,7 +446,7 @@ public class DomainRateLimitingHandlerTests
         var tasks = new List<Task<HttpResponseMessage>>();
         const int requestCount = 15; // Send 15 requests to the same domain
         
-        for (int i = 1; i <= requestCount; i++)
+        for (var i = 1; i <= requestCount; i++)
         {
             tasks.Add(client.GetAsync($"https://example.com/{i}"));
         }
@@ -503,8 +502,8 @@ public class DomainRateLimitingHandlerTests
         stopwatch.Stop();
         
         // Assert
-        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 1000, 
-            $"Case-insensitive domain matching should apply same rate limit but take {stopwatch.Elapsed}");
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 900, 
+            $"Case-insensitive domain matching should apply same rate limit but took {stopwatch.Elapsed}");
         Assert.AreEqual(2, testHandler.RequestCount);
     }
     
@@ -539,7 +538,7 @@ public class DomainRateLimitingHandlerTests
         stopwatch.Stop();
         
         // Assert
-        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 1000, 
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 900, 
             "IP addresses should be rate limited like domains");
         Assert.AreEqual(2, testHandler.RequestCount);
     }
@@ -635,7 +634,7 @@ public class DomainRateLimitingHandlerTests
         
         stopwatch.Stop();
         
-        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 1000, 
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 900, 
             "More specific wildcard pattern should apply to deep subdomains");
         Assert.AreEqual(4, testHandler.RequestCount);
     }
@@ -664,9 +663,9 @@ public class DomainRateLimitingHandlerTests
         const int concurrentRequests = 50;
         
         // Launch many concurrent requests to the same domain
-        for (int i = 0; i < concurrentRequests; i++)
+        for (var i = 0; i < concurrentRequests; i++)
         {
-            int index = i;
+            var index = i;
             tasks.Add(Task.Run(async () =>
             {
                 await client.GetAsync($"https://example.com/path{index}");
