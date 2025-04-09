@@ -25,9 +25,9 @@ public class AlwaysUpdateDirectoryViewTests
         // Arrange
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -59,9 +59,9 @@ public class AlwaysUpdateDirectoryViewTests
         // Arrange
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -103,9 +103,9 @@ public class AlwaysUpdateDirectoryViewTests
         // Arrange
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -143,9 +143,9 @@ public class AlwaysUpdateDirectoryViewTests
         var tcs = new TaskCompletionSource<bool>();
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -221,9 +221,9 @@ public class AlwaysUpdateDirectoryViewTests
         // Arrange
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -260,9 +260,9 @@ public class AlwaysUpdateDirectoryViewTests
         var tcs = new TaskCompletionSource<bool>();
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -319,9 +319,9 @@ public class AlwaysUpdateDirectoryViewTests
         // Arrange
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -376,9 +376,9 @@ public class AlwaysUpdateDirectoryViewTests
         // Arrange
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -395,9 +395,9 @@ public class AlwaysUpdateDirectoryViewTests
         // Arrange
         var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
-            GetDestinationValueAsync,
+            GetDestinationValue,
             ConvertKeyToPath,
-            UpdateDirectoryAsync,
+            UpdateDirectory,
             _mockFileSystem,
             _mockFileWatcher
         );
@@ -449,9 +449,9 @@ public class AlwaysUpdateDirectoryViewTests
     }
 
     // Helper methods for AlwaysUpdateDirectoryView - update to use provided file system
-    private static async Task<TestItem> GetDestinationValueAsync(string path, IFileSystem fileSystem, CancellationToken cancellationToken)
+    private static TestItem GetDestinationValue(string path, IFileSystem fileSystem, CancellationToken cancellationToken)
     {
-        var json = await fileSystem.ReadAllTextAsync(path, cancellationToken);
+        var json = fileSystem.ReadAllText(path, cancellationToken);
         var item = JsonSerializer.Deserialize<TestItem>(json);
         
         return item ?? throw new InvalidOperationException($"Failed to deserialize item from path: {path}");
@@ -462,10 +462,10 @@ public class AlwaysUpdateDirectoryViewTests
         return $"{key}.json";
     }
 
-    private static async Task UpdateDirectoryAsync(string path, TestItem value, IFileSystem fileSystem, CancellationToken cancellationToken)
+    private static void UpdateDirectory(string path, TestItem value, IFileSystem fileSystem, CancellationToken cancellationToken)
     {
         IFileSystem.CreateDirectory(Path.GetDirectoryName(path)!);
         var json = JsonSerializer.Serialize(value);
-        await fileSystem.WriteAllTextAsync(path, json, cancellationToken);
+        fileSystem.WriteAllText(path, json, cancellationToken);
     }
 }

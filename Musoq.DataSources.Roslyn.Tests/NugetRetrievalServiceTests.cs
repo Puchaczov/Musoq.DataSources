@@ -365,6 +365,16 @@ namespace Musoq.DataSources.Roslyn.Tests
             throw new FileNotFoundException($"File not found: {path}");
         }
 
+        public string ReadAllText(string path, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            if (_files.TryGetValue(path, out var content))
+                return content;
+                
+            throw new FileNotFoundException($"File not found: {path}");
+        }
+
         public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -379,6 +389,20 @@ namespace Musoq.DataSources.Roslyn.Tests
             }
             
             return Task.CompletedTask;
+        }
+
+        public void WriteAllText(string path, string content, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            _files[path] = content;
+            
+            var directoryPath = Path.GetDirectoryName(path);
+            
+            if (!string.IsNullOrEmpty(directoryPath))
+            {
+                _directories.Add(directoryPath);
+            }
         }
 
         public Task<Stream> CreateFileAsync(string path)

@@ -462,11 +462,27 @@ public class ExtractFromProjectMetadataTests
             throw new FileNotFoundException($"File not found: {path}");
         }
 
+        public string ReadAllText(string path, CancellationToken cancellationToken)
+        {
+            if (_files.TryGetValue(path, out var content))
+                return content;
+            
+            if (_externalFiles.Contains(path) || File.Exists(path))
+                return File.ReadAllText(path);
+                
+            throw new FileNotFoundException($"File not found: {path}");
+        }
+
         public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken)
         {
             _files[path] = content;
 
             return Task.CompletedTask;
+        }
+
+        public void WriteAllText(string path, string content, CancellationToken cancellationToken)
+        {
+            _files[path] = content;
         }
 
         public Task<Stream> CreateFileAsync(string path)

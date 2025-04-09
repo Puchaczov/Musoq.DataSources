@@ -33,7 +33,7 @@ public class NuGetPropertiesResolver(string baseUrl, IHttpClient httpClient) : I
         using var formData = new MultipartFormDataContent();
         
         const string jsonSchema = 
-            """{"$schema": "http://json-schema.org/draft-04/schema#","type": "array","items": [{"type": "object","properties": {"licenseName": {"type": "string"}},"required": ["licenseName"]},{"type": "object","properties": {"licenseName": {"type":"string"}},"required": ["licenseName"]}]}""";
+            """{"$schema": "http://json-schema.org/draft-04/schema#","type": "array","items": [{"type": "object","properties": {"licenseName": {"type": "string"}},"required": ["licenseName"]}]}""";
 
         var chat = new
         {

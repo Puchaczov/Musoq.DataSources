@@ -178,10 +178,6 @@ internal class NuGetResourceVisitor(
                     commonResources,
                     propertyName,
                     cancellationToken);
-                if (resolvedValue is not "[]")
-                {
-                    // value found; no further calls
-                }
             }
             
             if (resolvedValue is "[]" or null)

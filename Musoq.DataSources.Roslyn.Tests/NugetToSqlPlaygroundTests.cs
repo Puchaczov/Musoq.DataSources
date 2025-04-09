@@ -24,6 +24,7 @@ public class NugetToSqlPlaygroundTests
     
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
+        LifecycleHooks.Initialize();
         return InstanceCreatorHelpers.CompileForExecution(
             script, 
             Guid.NewGuid().ToString(), 

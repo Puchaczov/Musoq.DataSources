@@ -114,7 +114,6 @@ internal static class NuspecHelpers
             return null;
         }
 
-        // not specified
         return null;
     }
 
@@ -132,7 +131,6 @@ internal static class NuspecHelpers
         }
         catch (Exception)
         {
-            // Consider logging the exception here if needed
             return null;
         }
     }

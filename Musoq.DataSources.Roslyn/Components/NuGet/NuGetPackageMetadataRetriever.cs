@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Semver;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
@@ -39,7 +40,7 @@ internal sealed class NuGetPackageMetadataRetriever(
         
         if (packageVersion.Length == 0)
         {
-            logger.LogTrace($"Package version is empty for {packageName}");
+            logger.LogError($"Package version is empty for {packageName}");
             yield break;
         }
         
@@ -50,13 +51,13 @@ internal sealed class NuGetPackageMetadataRetriever(
         
         if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
         {
-            logger.LogTrace($"Package name or version is empty for {packageName} {packageVersion}");
+            logger.LogError($"Package name or version is empty for {packageName} {packageVersion}");
             yield break;
         }
         
-        if (!Version.TryParse(packageVersion, out _))
+        if (!SemVersion.TryParse(packageVersion, out _))
         {
-            logger.LogTrace($"Package version is not valid for {packageName} {packageVersion}");
+            logger.LogError($"Package version is not valid for {packageName} {packageVersion}");
             yield break;
         }
         

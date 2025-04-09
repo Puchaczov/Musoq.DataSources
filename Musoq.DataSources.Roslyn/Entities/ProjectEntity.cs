@@ -177,7 +177,8 @@ public class ProjectEntity
         }
         catch (Exception ex)
         {
-            return [new NugetPackageEntity(
+            return [
+                new NugetPackageEntity(
                 "error",
                 "error",
                 $"error: {ex.Message}",
@@ -193,7 +194,8 @@ public class ProjectEntity
                 null,
                 null,
                 null,
-                null)];
+                null)
+            ];
         }
     }
 

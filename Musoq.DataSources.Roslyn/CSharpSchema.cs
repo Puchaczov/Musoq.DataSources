@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.CoconaCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
@@ -31,8 +32,8 @@ public class CSharpSchema : SchemaBase
     private static readonly IFileSystem FileSystem = new DefaultFileSystem();
     private static ConcurrentDictionary<string, Solution> Solutions => SolutionOperationsCommand.Solutions;
     private static string DefaultCacheDirectory => SolutionOperationsCommand.DefaultHttpClientCacheDirectoryPath;
-
-    private static readonly ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache = new();
+    
+    private static ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache => SolutionOperationsCommand.HttpResponseCache;
 
     private readonly Func<string, IHttpClient, INuGetPropertiesResolver> _createNugetPropertiesResolver;
     
@@ -328,6 +329,11 @@ public class CSharpSchema : SchemaBase
 
         var cacheDirectory = DefaultCacheDirectory;
 
+        if (!IFileSystem.DirectoryExists(cacheDirectory))
+        {
+            IFileSystem.CreateDirectory(cacheDirectory);
+        }
+
         if (runtimeContext.EnvironmentVariables.TryGetValue("CACHE_DIRECTORY", out var incommingCacheDirectory) && incommingCacheDirectory is not null)
         {
             if (!Directory.Exists(incommingCacheDirectory))
@@ -337,8 +343,14 @@ public class CSharpSchema : SchemaBase
             
             cacheDirectory = incommingCacheDirectory;
         }
+        
+        runtimeContext.Logger.LogTrace("Using cache directory: {CacheDirectory}", cacheDirectory);
 
-        var httpClient = WithCacheDirectory(cacheDirectory, configs => GetDomains(configs, runtimeContext.EnvironmentVariables));
+        var httpClient = WithCacheDirectory(
+            cacheDirectory, 
+            configs => GetDomains(configs, runtimeContext.EnvironmentVariables),
+            runtimeContext.Logger
+        );
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
         
@@ -415,7 +427,11 @@ public class CSharpSchema : SchemaBase
         return domains;
     }
 
-    private static IHttpClient WithCacheDirectory(string cacheDirectory, Func<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>, IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>> getDomains)
+    private static IHttpClient WithCacheDirectory(
+        string cacheDirectory, 
+        Func<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>, IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>> getDomains,
+        ILogger logger
+    )
     {
         var cachedResponseHandler = HttpResponseCache.AddOrUpdate(cacheDirectory,
             _ => new ReturnCachedResponseHandler(cacheDirectory, new DomainRateLimitingHandler(
@@ -423,7 +439,8 @@ public class CSharpSchema : SchemaBase
                 new DomainRateLimitingHandler.DomainRateLimitConfig(
                     10,
                     TimeSpan.FromSeconds(1),
-                    100))),
+                    100)), 
+                logger),
             (key, handler) =>
             {
                 if (key == DefaultCacheDirectory && handler.InnerHandler is HttpClientHandler)

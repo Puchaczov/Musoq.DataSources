@@ -83,10 +83,12 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
                     .FirstOrDefault(e => e.Attribute("key")?.Value == "globalPackagesFolder")
                     ?.Attribute("value")?.Value;
 
-                if (string.IsNullOrEmpty(globalPackagesFolder)) continue;
+                if (string.IsNullOrEmpty(globalPackagesFolder)) 
+                    continue;
                 
                 if (!Path.IsPathRooted(globalPackagesFolder))
                     globalPackagesFolder = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(configPath)!, globalPackagesFolder));
+                
                 cache.Add(globalPackagesFolder);
             }
             catch { /* Ignore any parsing errors */ }

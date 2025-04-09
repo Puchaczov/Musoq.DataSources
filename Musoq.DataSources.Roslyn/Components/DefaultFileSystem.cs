@@ -14,7 +14,21 @@ internal sealed class DefaultFileSystem : IFileSystem
 
     public Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken) => File.ReadAllTextAsync(path, cancellationToken);
     
+    public string ReadAllText(string path, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        return File.ReadAllText(path);
+    }
+
     public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken) => File.WriteAllTextAsync(path, content, cancellationToken);
+    
+    public void WriteAllText(string path, string content, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        File.WriteAllText(path, content);
+    }
 
     public Task<Stream> CreateFileAsync(string tempFilePath)
     {

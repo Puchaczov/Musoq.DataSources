@@ -27,6 +27,8 @@ internal class CSharpImmediateLoadSolutionRowsSource(
 
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        
         logger.LogTrace("Loading solution file: {solutionFilePath}", solutionFilePath);
         
         var workspace = MSBuildWorkspace.Create();

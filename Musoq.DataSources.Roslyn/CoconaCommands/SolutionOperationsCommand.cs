@@ -8,26 +8,32 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http;
 
 namespace Musoq.DataSources.Roslyn.CoconaCommands;
 
-internal class SolutionOperationsCommand
+internal class SolutionOperationsCommand(ILogger logger)
 {
     // This cannot be AppContext.BaseDirectory as it must point the plugin directory
     private static readonly string RateLimitingOptionsFilePath = IFileSystem.Combine(new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "RateLimitingOptions.json");
     
     internal static readonly ConcurrentDictionary<string, Solution> Solutions = new();
     internal static IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>? RateLimitingOptions;
-    internal static string DefaultHttpClientCacheDirectoryPath { get; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn", "NuGet");
+    internal static string DefaultHttpClientCacheDirectoryPath { get; set; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn", "NuGet");
+    internal static readonly ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache = new();
     
     public async Task LoadAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
+        logger.LogTrace("Loading solution file: {solutionFilePath}", solutionFilePath);
+        
         var workspace = MSBuildWorkspace.Create();
         var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
+        
+        logger.LogTrace("Initializing solution");
         
         await Parallel.ForEachAsync(solution.Projects, cancellationToken, async (project, outerToken) =>
         {
@@ -40,14 +46,53 @@ internal class SolutionOperationsCommand
 
         Solutions.TryAdd(solutionFilePath, solution);
         RateLimitingOptions ??= await ReadDomainRateLimitingOptionsAsync(cancellationToken);
+
+        logger.LogTrace("Solution initialized.");
     }
     
     public Task UnloadAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
+        logger.LogTrace("Unloading solution file: {solutionFilePath}", solutionFilePath);
+        
         Solutions.TryRemove(solutionFilePath, out _);
+        
+        logger.LogTrace("Solution unloaded.");
             
+        return Task.CompletedTask;
+    }
+
+    public Task ClearCacheAsync(string cacheDirectoryPath, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        foreach (var file in Directory.EnumerateFiles(cacheDirectoryPath, "*", SearchOption.AllDirectories))
+        {
+            try
+            {
+                File.Delete(file);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to delete cache file: {file}", file);
+            }
+        }
+        
+        foreach (var directory in Directory.EnumerateDirectories(cacheDirectoryPath, "*", SearchOption.AllDirectories))
+        {
+            try
+            {
+                Directory.Delete(directory, true);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to delete cache directory: {directory}", directory);
+            }
+        }
+        
+        HttpResponseCache.Clear();
+        
         return Task.CompletedTask;
     }
 

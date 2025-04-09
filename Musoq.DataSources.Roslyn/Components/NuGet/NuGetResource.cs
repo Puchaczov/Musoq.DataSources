@@ -85,6 +85,7 @@ internal class NuGetResource
         init
         {
             if (value == null) return;
+            
             lock (_syncRoot)
             {
                 _packagePath ??= value;

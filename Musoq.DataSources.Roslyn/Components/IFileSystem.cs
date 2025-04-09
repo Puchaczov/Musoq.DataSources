@@ -13,7 +13,11 @@ internal interface IFileSystem
     
     Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken);
     
+    string ReadAllText(string path, CancellationToken cancellationToken);
+    
     Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken);
+    
+    void WriteAllText(string path, string content, CancellationToken cancellationToken);
     
     Task<Stream> CreateFileAsync(string tempFilePath);
     

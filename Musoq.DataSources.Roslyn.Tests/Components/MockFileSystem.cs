@@ -48,6 +48,17 @@ public class MockFileSystem : IFileSystem
         throw new FileNotFoundException($"File not found: {path}", path);
     }
 
+    public string ReadAllText(string path, CancellationToken cancellationToken)
+    {
+        var normalizedPath = NormalizePath(path);
+        if (_files.TryGetValue(normalizedPath, out var bytes))
+        {
+            return Encoding.UTF8.GetString(bytes);
+        }
+        
+        throw new FileNotFoundException($"File not found: {path}", path);
+    }
+
     public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken)
     {
         var normalizedPath = NormalizePath(path);
@@ -71,6 +82,27 @@ public class MockFileSystem : IFileSystem
         }
         
         return Task.CompletedTask;
+    }
+
+    public void WriteAllText(string path, string content, CancellationToken cancellationToken)
+    {
+        var normalizedPath = NormalizePath(path);
+        var bytes = Encoding.UTF8.GetBytes(content);
+        _files[normalizedPath] = bytes;
+        
+        var directory = Path.GetDirectoryName(normalizedPath);
+        if (directory != null)
+        {
+            _directories.Add(directory);
+        }
+        
+        if (_fileWatchers.TryGetValue(normalizedPath, out var subscribers))
+        {
+            foreach (var subscriber in subscribers)
+            {
+                subscriber(normalizedPath);
+            }
+        }
     }
 
     public Task<Stream> CreateFileAsync(string tempFilePath)

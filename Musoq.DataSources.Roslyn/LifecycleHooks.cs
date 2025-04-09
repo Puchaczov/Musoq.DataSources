@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ConsoleAppFramework;
 using Microsoft.Build.Locator;
+using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.CoconaCommands;
 
 namespace Musoq.DataSources.Roslyn;
@@ -14,6 +15,12 @@ namespace Musoq.DataSources.Roslyn;
 /// </summary>
 public static class LifecycleHooks
 {
+    /// <summary>
+    /// Logger for C# data source.
+    /// </summary>
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
+    public static ILogger? Logger { get; set; }
+    
 #pragma warning disable CA2255
     /// <summary>
     /// Initializes C# data source.
@@ -26,6 +33,21 @@ public static class LifecycleHooks
         {
             MSBuildLocator.RegisterDefaults();
         }
+        
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception exception)
+            {
+                Logger?.LogError(exception, "Unhandled exception in AppDomain");
+            }
+        };
+        
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Logger?.LogError(args.Exception, "Unobserved task exception");
+            
+            args.SetObserved();
+        };
     }
     
     /// <summary>
@@ -40,10 +62,25 @@ public static class LifecycleHooks
         {
             var app = ConsoleApp.Create();
         
-            app.Add("solution load", async (string solutionFilePath) =>
+            app.Add("solution load", async (string solutionFilePath, string? cacheDirectoryPath) =>
             {
-                var command = new SolutionOperationsCommand();
+                if (cacheDirectoryPath is not null)
+                {
+                    SolutionOperationsCommand.DefaultHttpClientCacheDirectoryPath = cacheDirectoryPath;
+                }
+                
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
                 await command.LoadAsync(solutionFilePath, cancellationToken);
+            });
+            
+            app.Add("solution cache clear", async (string? cacheDirectoryPath) =>
+            {
+                var finalCacheDirectoryPath = cacheDirectoryPath ?? SolutionOperationsCommand.DefaultHttpClientCacheDirectoryPath;
+                
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
+                await command.ClearCacheAsync(
+                    finalCacheDirectoryPath, 
+                    cancellationToken);
             });
 
             await app.RunAsync(args);
@@ -75,7 +112,7 @@ public static class LifecycleHooks
         
             app.Add("solution unload", async (string solutionFilePath) =>
             {
-                var command = new SolutionOperationsCommand();
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
                 await command.LoadAsync(solutionFilePath, cancellationToken);
             });
 

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Musoq.DataSources.Roslyn.Components;
 
@@ -18,13 +19,14 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
     private readonly BlockingCollection<FileInfo> _synchronizationQueue = new();
     private readonly BlockingCollection<(TKey key, TDestinationValue Value)> _itemsToStore = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly Func<string, IFileSystem, CancellationToken, Task<TDestinationValue>> _getDestinationValueAsync;
+    private readonly Func<string, IFileSystem, CancellationToken, TDestinationValue> _getDestinationValue;
     private readonly Func<TKey, string> _convertKeyToPath;
-    private readonly Func<string, TDestinationValue, IFileSystem, CancellationToken, Task> _updateDirectoryAsync;
+    private readonly Action<string, TDestinationValue, IFileSystem, CancellationToken> _updateDirectory;
     private readonly ManualResetEventSlim _synchronizeStarted = new(false);
     private readonly ManualResetEventSlim _storeStarted = new(false);
     private readonly Timer _backupPollingTimer;
     private readonly string _mutexNamePrefix;
+    private readonly ILogger? _logger;
 
     private bool _isDisposed;
 
@@ -34,11 +36,12 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
     
     public AlwaysUpdateDirectoryView(
         string directoryPath, 
-        Func<string, IFileSystem, CancellationToken, Task<TDestinationValue>> getDestinationValueAsync, 
+        Func<string, IFileSystem, CancellationToken, TDestinationValue> getDestinationValue, 
         Func<TKey, string> convertKeyToPath, 
-        Func<string, TDestinationValue, IFileSystem, CancellationToken, Task> updateDirectoryAsync,
+        Action<string, TDestinationValue, IFileSystem, CancellationToken> updateDirectory,
         IFileSystem? fileSystem = null,
-        IFileWatcher? fileWatcher = null)
+        IFileWatcher? fileWatcher = null,
+        ILogger? logger = null)
     {
         _directoryPath = directoryPath;
         _fileWatcher = fileWatcher ?? new DefaultFileWatcher(directoryPath, "*.json", true);
@@ -48,9 +51,10 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
         _fileWatcher.Renamed += OnRenamed;
         _cachedItems = new ConcurrentDictionary<string, TDestinationValue>();
         _fileSystem = fileSystem ?? new DefaultFileSystem();
-        _getDestinationValueAsync = getDestinationValueAsync;
+        _getDestinationValue = getDestinationValue;
         _convertKeyToPath = convertKeyToPath;
-        _updateDirectoryAsync = updateDirectoryAsync;
+        _updateDirectory = updateDirectory;
+        _logger = logger;
         
         _mutexNamePrefix = "Musoq_AUDV_";
         
@@ -189,15 +193,16 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
                 var filePath = fileInfo.FullName;
                 var mutexName = _mutexNamePrefix + TurnPathIntoMutexName(filePath);
 
-                await ExecuteWithMutexAsync(mutexName, token, async () =>
+                ExecuteWithMutex(mutexName, () =>
                 {
-                    var item = await _getDestinationValueAsync(filePath, _fileSystem, token);
+                    var item = _getDestinationValue(filePath, _fileSystem, token);
+                    
                     _cachedItems.AddOrUpdate(fileInfo.Name,
                         _ => item,
                         (_, destinationValue) => destinationValue);
                     
                     ItemLoaded?.Invoke(this, fileInfo.Name);
-                }, () => _cachedItems.TryRemove(fileInfo.FullName, out _));
+                }, () => _cachedItems.TryRemove(fileInfo.FullName, out _), _logger, token);
             });
         }
     }
@@ -214,16 +219,17 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
                 var filePath = IFileSystem.Combine(_directoryPath, keyPath);
                 var mutexName = _mutexNamePrefix + TurnPathIntoMutexName(filePath);
 
-                await ExecuteWithMutexAsync(mutexName, token, async () =>
+                ExecuteWithMutex(mutexName, () =>
                 {
-                    await _updateDirectoryAsync(filePath, item.Value, _fileSystem, token);
+                    var value = item.Value;
+                    _updateDirectory(filePath, value, _fileSystem, token);
                     
                     _cachedItems.AddOrUpdate(keyPath,
-                        _ => item.Value,
-                        (_, _) => item.Value);
+                        _ => value,
+                        (_, _) => value);
                     
                     ItemStored?.Invoke(this, _convertKeyToPath(item.key));
-                }, null);
+                }, null, _logger, token);
             });
         }
     }
@@ -247,19 +253,14 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
                 }
             }
         
-            foreach (var cachedKey in cachedKeys)
+            foreach (var path in cachedKeys.Select(cachedKey => Path.Combine(_directoryPath, cachedKey)).Where(path => !_fileSystem.IsFileExists(path)))
             {
-                var path = Path.Combine(_directoryPath, cachedKey);
-                if (!_fileSystem.IsFileExists(path))
-                {
-                    _synchronizationQueue.Add(new FileInfo(path));
-                }
+                _synchronizationQueue.Add(new FileInfo(path));
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Log the specific exception during backup polling
-            // Consider implementing a retry mechanism or adaptive polling interval
+            _logger?.LogError(ex, "Error while scanning directory: {DirectoryPath}", _directoryPath);
         }
     }
 
@@ -272,70 +273,65 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
         return path;
     }
 
-    private static async Task ExecuteWithMutexAsync(string mutexName, CancellationToken token, Func<Task> operation, Action? onIoException)
+    private static void ExecuteWithMutex(string mutexName, Action operation, Action? onIoException, ILogger? logger, CancellationToken token)
     {
-        Mutex? mutex = null;
+        using var mutex = new Mutex(false, mutexName);
         var mutexAcquired = false;
-        
+    
         try
         {
-            mutex = new Mutex(false, mutexName);
+            var totalWaitMs = 0;
+            var maxWaitMs = 120000;
+            var waitIntervalMs = 1000;
+        
+            while (true)
+            {
+                token.ThrowIfCancellationRequested();
             
-            try
-            {
-                while (!(mutexAcquired = mutex.WaitOne(1000)))
-                {
-                    token.ThrowIfCancellationRequested();
-                }
-                
-                await operation();
-            }
-            catch (AbandonedMutexException)
-            {
-                mutexAcquired = true;
-                
                 try
                 {
-                    await operation();
+                    mutexAcquired = mutex.WaitOne(waitIntervalMs);
+                    if (mutexAcquired)
+                        break;
+                    
+                    totalWaitMs += waitIntervalMs;
+                    if (totalWaitMs >= maxWaitMs)
+                    {
+                        throw new TimeoutException($"Could not acquire mutex '{mutexName}' within {maxWaitMs/1000} seconds.");
+                    }
                 }
-                catch (IOException)
+                catch (AbandonedMutexException)
                 {
-                    onIoException?.Invoke();
+                    mutexAcquired = true;
+                    break;
                 }
-                catch (Exception)
-                {
-                    // Log the specific exception
-                    // Consider retrying the operation or adding the item back to the queue
-                }
+            }
+        
+            using var operationCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            operationCts.CancelAfter(TimeSpan.FromMinutes(5));
+        
+            try
+            {
+                operation();
             }
             catch (IOException)
             {
                 onIoException?.Invoke();
             }
-            catch (Exception)
-            {
-                // Log the specific exception
-                // Consider retrying the operation or adding the item back to the queue
-            }
-            finally
-            {
-                if (mutexAcquired)
-                {
-                    try
-                    {
-                        mutex.ReleaseMutex();
-                    }
-                    catch (ApplicationException)
-                    {
-                        // Log that we couldn't release the mutex
-                        // This can happen if the mutex was released elsewhere or the thread ownership changed
-                    }
-                }
-            }
         }
         finally
         {
-            mutex?.Dispose();
+            if (mutexAcquired)
+            {
+                try
+                {
+                    mutex.ReleaseMutex();
+                }
+                catch (ApplicationException)
+                {
+                    logger?.LogWarning($"Failed to release mutex '{mutexName}'. It may be held by another process.");
+                }
+            }
         }
     }
 }

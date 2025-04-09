@@ -2,21 +2,17 @@ using System.IO;
 
 namespace Musoq.DataSources.Roslyn.Components;
 
-internal class DefaultFileWatcher : IFileWatcher
+internal class DefaultFileWatcher(string path, string filter = "*.*", bool includeSubdirectories = false)
+    : IFileWatcher
 {
-    private readonly FileSystemWatcher _fileSystemWatcher;
-
-    public DefaultFileWatcher(string path, string filter = "*.*", bool includeSubdirectories = false)
+    private readonly FileSystemWatcher _fileSystemWatcher = new(path)
     {
-        _fileSystemWatcher = new FileSystemWatcher(path)
-        {
-            Filter = filter,
-            IncludeSubdirectories = includeSubdirectories,
-            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-            InternalBufferSize = 65536
-        };
-    }
-    
+        Filter = filter,
+        IncludeSubdirectories = includeSubdirectories,
+        NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
+        InternalBufferSize = 65536
+    };
+
     public bool EnableRaisingEvents 
     {
         get => _fileSystemWatcher.EnableRaisingEvents;
