@@ -504,7 +504,7 @@ public class DomainRateLimitingHandlerTests
         
         // Assert
         Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 1000, 
-            "Case-insensitive domain matching should apply same rate limit");
+            $"Case-insensitive domain matching should apply same rate limit but take {stopwatch.Elapsed}");
         Assert.AreEqual(2, testHandler.RequestCount);
     }
     
