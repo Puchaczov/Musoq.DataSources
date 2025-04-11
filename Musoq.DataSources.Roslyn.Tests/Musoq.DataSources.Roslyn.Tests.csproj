@@ -37,50 +37,22 @@
         <Content Include="TestsSolutions\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <Content Include="Files\Licenses\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Files\NugetPackages\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Files\HtmlPages\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <Content Remove="TestsSolutions\**\obj\**" />
         <Content Remove="TestsSolutions\**\.idea\**" />
     </ItemGroup>
     
     <ItemGroup>
       <Folder Include="Files\HtmlPages\" />
-      <Folder Include="Helpers\" />
       <Folder Include="TestsSolutions\NugetCache\" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <None Update="Files\Licenses\coverlet-mit.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\Licenses\microsoft-test-mit.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\Licenses\musoq-mit.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\Licenses\nunit-analyzers-mit.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\Licenses\nunit-mit.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\Licenses\nunit3testadapter-mit.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\NugetPackages\newtonsoft.json.13.0.1.nupkg">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\HtmlPages\newtonsoft.json.13.0.1.html">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\Licenses\newtonsoft.json-mit.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\NugetPackages\musoq.schema.8.0.1.nupkg">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Files\HtmlPages\musoq.schema.8.0.1.html">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
     </ItemGroup>
 
 </Project>

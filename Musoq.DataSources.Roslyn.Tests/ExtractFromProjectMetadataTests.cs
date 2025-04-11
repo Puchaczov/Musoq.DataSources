@@ -133,7 +133,7 @@ public class ExtractFromProjectMetadataTests
         {
             TestDir = Path.Combine(
                 Path.GetTempPath(),
-                $"NuGetTest_{testName}_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid():N}");
+                $"NuGetTest_{testName}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}");
             
             CacheDir = Path.Combine(TestDir, "Cache");
             
@@ -210,7 +210,7 @@ public class ExtractFromProjectMetadataTests
 
             return new NuGetPackageMetadataRetriever(
                 cachePathResolver.Object,
-                "https://api.nuget.org/v3/index.json",
+                null,
                 retrievalService,
                 _fileSystem,
                 packageVersionConcurrencyManager,
@@ -234,6 +234,10 @@ public class ExtractFromProjectMetadataTests
                             "text/html")
                     });
             }
+            else
+            {
+                throw new FileNotFoundException($"HTML file not found: {htmlFilePath}");
+            }
 
             var packageFileName = $"{packageId}.{packageVersion}.nupkg".ToLowerInvariant();
             var localPackageFilePath = Path.Combine(_packagesDir, packageFileName);
@@ -250,16 +254,16 @@ public class ExtractFromProjectMetadataTests
         public void SetupLicenseFile(string url, string licenseFileName)
         {
             var licenseFilePath = Path.Combine(_licensesDir, licenseFileName);
+
+            if (!File.Exists(licenseFilePath))
+                throw new FileNotFoundException($"License file not found: {licenseFilePath}");
             
-            if (File.Exists(licenseFilePath))
-            {
-                _httpHandler.Register(
-                    url,
-                    new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(File.ReadAllText(licenseFilePath))
-                    });
-            }
+            _httpHandler.Register(
+                url,
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(File.ReadAllText(licenseFilePath))
+                });
         }
 
         private void InitializeLocalPackages()

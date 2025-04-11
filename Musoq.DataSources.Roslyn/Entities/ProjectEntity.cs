@@ -214,6 +214,8 @@ public class ProjectEntity
             CancellationToken = cancellationToken
         }, async (packageRef, token) =>
         {
+            token.ThrowIfCancellationRequested();
+            
             var id = packageRef.Attribute("Include")?.Value ?? string.Empty;
             var version = packageRef.Attribute("Version")?.Value ?? string.Empty;
 
