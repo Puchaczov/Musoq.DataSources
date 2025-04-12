@@ -48,6 +48,8 @@ public class CSharpSchema : SchemaBase
     /// <example>
     /// <from>
     /// <environmentVariables>
+    /// <environmentVariable name="GITHUB_API_KEY" isRequired="false">GitHub API key</environmentVariable>
+    /// <environmentVariable name="GITLAB_API_KEY" isRequired="false">GitLab API key</environmentVariable>
     /// <environmentVariable name="EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT" isRequired="false">External server endpoint to resolve properties</environmentVariable>
     /// </environmentVariables>
     /// #csharp.solution(string path)
@@ -377,6 +379,7 @@ public class CSharpSchema : SchemaBase
                             ),
                             FileSystem,
                             packageVersionConcurrencyManager,
+                            SolutionOperationsCommand.BannedPropertiesValues,
                             runtimeContext.Logger
                         ),
                         runtimeContext.EndWorkToken
@@ -470,9 +473,6 @@ public class CSharpSchema : SchemaBase
 
             if (environmentVariable.Key == "GITLAB_API_KEY")
                 accessTokens.Add("gitlab", environmentVariable.Value);
-            
-            if (environmentVariable.Key == "NUGET_ORG_API_KEY")
-                accessTokens.Add("nuget", environmentVariable.Value);
         }
 
         return accessTokens;

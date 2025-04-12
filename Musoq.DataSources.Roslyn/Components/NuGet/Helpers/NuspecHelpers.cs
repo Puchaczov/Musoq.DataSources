@@ -64,7 +64,7 @@ internal static class NuspecHelpers
         return await Task.FromResult(GetValue(xmlDoc, namespaceManager, "/nu:package/nu:metadata/nu:tags"));
     }
 
-    public static async Task<string?> GetLicensesNamesFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, NuGetResource commonResources, INuGetPropertiesResolver aiModelResolver, CancellationToken cancellationToken)
+    public static async Task<string?> GetLicensesNamesFromNuspecAsync(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, NuGetResource commonResources, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         var licenseNode = xmlDoc.SelectSingleNode("/nu:package/nu:metadata/nu:license", namespaceManager);
 
@@ -80,7 +80,7 @@ internal static class NuspecHelpers
             if (!File.Exists(fullPath)) return "[]";
             
             var licenseContent = await File.ReadAllTextAsync(fullPath, cancellationToken);
-            return System.Text.Json.JsonSerializer.Serialize(await aiModelResolver.GetLicensesNamesAsync(licenseContent, cancellationToken));
+            return System.Text.Json.JsonSerializer.Serialize(await nuGetPropertiesResolver.GetLicensesNamesAsync(licenseContent, cancellationToken));
         }
 
         // type="expression" or not specified

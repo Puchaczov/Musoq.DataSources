@@ -120,6 +120,14 @@ internal static class NugetHelpers
         
         if (TryExtractUrl(htmlDocument, "//a[@data-track='outbound-license-url']", "href", out var licenseUrl) && licenseUrl is not null)
         {
+            if (licenseUrl.StartsWith('/'))
+            {
+                return () =>
+                {
+                    var host = new Uri(url);
+                    return Task.FromResult<string?>(CombineUrl(host.Scheme + "://" + host.Host, licenseUrl));
+                };
+            }
             return () => Task.FromResult<string?>(licenseUrl);
         }
         
@@ -181,6 +189,11 @@ internal static class NugetHelpers
                 document.LoadHtml(httpResponseMessageContent);
                 
                 if (TryExtractContent(document, "//pre[@class='license-file-contents custom-license-container']", out var licenseContent) && licenseContent is not null)
+                {
+                    return licenseContent;
+                }
+                
+                if (TryExtractContent(document, "//div[@class='common-licenses']", out licenseContent) && licenseContent is not null)
                 {
                     return licenseContent;
                 }
@@ -278,6 +291,10 @@ internal static class NugetHelpers
         {
             client.DefaultRequestHeaders.Add("Musoq-Cache-Failed-Response", "true");
         });
+        
+        string? theOnlyLicenseContentFound = null;
+        string? theOnlyLicenseUrlFound = null;
+        var returnedBasedOnFilter = false;
             
         foreach (var fileName in licenseFileNames)
         {
@@ -290,11 +307,23 @@ internal static class NugetHelpers
             }
 
             var licenseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            
+            theOnlyLicenseContentFound = licenseContent;
+            theOnlyLicenseUrlFound = licenseUrl;
                 
             if (filter(fileName, licenseContent))
             {
+                if (!returnedBasedOnFilter)
+                {
+                    returnedBasedOnFilter = true;
+                }
                 yield return (licenseUrl, licenseContent);
             }
+        }
+        
+        if (theOnlyLicenseContentFound is not null && theOnlyLicenseUrlFound is not null && !returnedBasedOnFilter)
+        {
+            yield return (theOnlyLicenseUrlFound, theOnlyLicenseContentFound);
         }
     }
 

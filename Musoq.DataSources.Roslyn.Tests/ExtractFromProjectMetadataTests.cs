@@ -20,36 +20,43 @@ public class ExtractFromProjectMetadataTests
     [TestMethod]
     public async Task ExtractFromProjectMetadata_EmptyProject_ReturnsEmptyList()
     {
-        using var testContext = new TestContext("EmptyProject");
+        using var scenario = new TestScenario();
         
-        var projectXml = CreateProjectXml();
-        var retriever = testContext.Environment.CreateMetadataRetriever([]);
+        scenario.WhenRequestingLicensesNames()
+            .ThenReturnLicensesNames([]);
 
         var result = await ProjectEntity.ExtractFromProjectMetadataAsync(
-            projectXml, 
-            retriever, 
+            scenario.GetProjectXml(), 
+            scenario.GetNugetPackageMetadataRetriever(),
             CancellationToken.None);
         
         Assert.AreEqual(0, result.Count);
     }
     
     [TestMethod]
-    public async Task ExtractFromProjectMetadata_SinglePackageReference_ReturnsSinglePackage()
+    public async Task ExtractFromProjectMetadata_NewtonsoftJson_ReturnsSinglePackage()
     {
-        using var testContext = new TestContext("SinglePackage");
+        using var scenario = new TestScenario(("Newtonsoft.Json", "13.0.1"));
+
+        scenario
+            .WhenLookingForPhysicalNuget()
+            .ThenReturnFromFilePath("./Files/NugetPackages/Newtonsoft.Json.13.0.1.nupkg");
         
-        var projectXml = CreateProjectXml(("Newtonsoft.Json", "13.0.1"));
+        scenario
+            .WhenRequesting("https://raw.githubusercontent.com/JamesNK/Newtonsoft.Json/refs/heads/master/LICENSE.md")
+            .ThenReturnRequestContentFromFile("./Files/Licenses/newtonsoft.json-mit.txt");
         
-        testContext.Environment.SetupPackageMetadata("Newtonsoft.Json", "13.0.1");
-        testContext.Environment.SetupLicenseFile(
-            "https://raw.githubusercontent.com/JamesNK/Newtonsoft.Json/refs/heads/master/LICENSE.md",
-            "newtonsoft.json-mit.txt");
-            
-        var retriever = testContext.Environment.CreateMetadataRetriever(["MIT"]);
+        scenario
+            .WhenRequesting("https://www.nuget.org/packages/Newtonsoft.Json/13.0.1")
+            .ThenReturnRequestContentFromFile("./Files/HtmlPages/Newtonsoft.Json.13.0.1.html");
+        
+        scenario
+            .WhenRequestingLicensesNames()
+            .ThenReturnLicensesNames(["MIT"]);
 
         var result = await ProjectEntity.ExtractFromProjectMetadataAsync(
-            projectXml, 
-            retriever, 
+            scenario.GetProjectXml(), 
+            scenario.GetNugetPackageMetadataRetriever(),
             CancellationToken.None);
         
         Assert.AreEqual(1, result.Count);
@@ -66,20 +73,28 @@ public class ExtractFromProjectMetadataTests
     [TestMethod]
     public async Task ExtractFromProjectMetadata_MusoqSchemaCase_ShouldPass()
     {
-        using var testContext = new TestContext("SinglePackage");
+        using var scenario = new TestScenario(("Musoq.Schema", "8.0.1"));
+
+        scenario
+            .WhenLookingForPhysicalNuget()
+            .ThenReturnFromFilePath("./Files/NugetPackages/musoq.schema.8.0.1.nupkg");
         
-        var projectXml = CreateProjectXml(("Musoq.Schema", "8.0.1"));
+        scenario
+            .WhenRequesting("https://raw.githubusercontent.com/Puchaczov/Musoq/refs/heads/master/LICENSE")
+            .ThenReturnRequestContentFromFile("./Files/Licenses/musoq-mit.txt");
         
-        testContext.Environment.SetupPackageMetadata("Musoq.Schema", "8.0.1");
-        testContext.Environment.SetupLicenseFile(
-            "https://raw.githubusercontent.com/Puchaczov/Musoq/refs/heads/master/LICENSE",
-            "musoq-mit.txt");
-            
-        var retriever = testContext.Environment.CreateMetadataRetriever(["MIT"]);
+        scenario
+            .WhenRequesting("https://www.nuget.org/packages/Musoq.Schema/8.0.1")
+            .ThenReturnRequestContentFromFile("./Files/HtmlPages/musoq.schema.8.0.1.html");
+        
+        scenario
+            .WhenRequestingLicensesNames()
+            .ThenReturnLicensesNames(["MIT"]);
+        
 
         var result = await ProjectEntity.ExtractFromProjectMetadataAsync(
-            projectXml, 
-            retriever, 
+            scenario.GetProjectXml(), 
+            scenario.GetNugetPackageMetadataRetriever(),
             CancellationToken.None);
         
         Assert.AreEqual(1, result.Count);
@@ -121,331 +136,59 @@ public class ExtractFromProjectMetadataTests
               </ItemGroup>
             </Project>");
     }
-    
-    private class TestContext : IDisposable
-    {
-        public string TestDir { get; }
-        public string CacheDir { get; }
-        
-        public TestEnvironment Environment { get; }
-        
-        public TestContext(string testName)
-        {
-            TestDir = Path.Combine(
-                Path.GetTempPath(),
-                $"NuGetTest_{testName}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}");
-            
-            CacheDir = Path.Combine(TestDir, "Cache");
-            
-            Directory.CreateDirectory(TestDir);
-            Directory.CreateDirectory(CacheDir);
-            
-            Environment = new TestEnvironment(SourcePackagesDir, 
-                SourceHtmlPagesDir, 
-                SourceLicensesDir, 
-                CacheDir);
-        }
-        
-        public void Dispose()
-        {
-            try
-            {
-                if (Directory.Exists(TestDir))
-                {
-                    Directory.Delete(TestDir, recursive: true);
-                }
-            }
-            catch
-            {
-                // ignored
-            }
-        }
-    }
-    
+
     #endregion
-    
-    private class TestEnvironment
-    {
-        private readonly string _packagesDir;
-        private readonly string _htmlPagesDir;
-        private readonly string _licensesDir;
-        private readonly string _cacheDir;
-        private readonly TestFileSystem _fileSystem;
-        private readonly MockHttpMessageHandler _httpHandler;
-        private readonly IHttpClient _httpClientWrapper;
-        
-        public TestEnvironment(string packagesDir, string htmlPagesDir, string licensesDir, string cacheDir)
-        {
-            _packagesDir = packagesDir;
-            _htmlPagesDir = htmlPagesDir;
-            _licensesDir = licensesDir;
-            _cacheDir = cacheDir;
-            
-            _fileSystem = new TestFileSystem();
-            _httpHandler = new MockHttpMessageHandler();
-            _httpClientWrapper = new HttpClientWrapper(() => new HttpClient(_httpHandler));
-            
-            InitializeLocalPackages();
-        }
-        
-        public INuGetPackageMetadataRetriever CreateMetadataRetriever(string[] licenses)
-        {
-            var cachePathResolver = new Mock<INuGetCachePathResolver>();
-            
-            cachePathResolver.Setup(r => r.ResolveAll())
-                .Returns([]);
 
-            var propertiesResolver = new Mock<INuGetPropertiesResolver>();
-            propertiesResolver.Setup(r => r.GetLicensesNamesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(licenses);
-            
-            var retrievalService = new NuGetRetrievalService(
-                propertiesResolver.Object,
-                _fileSystem,
-                _httpClientWrapper);
-            
-            var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
-            
-            var loggerMock = new Mock<ILogger>();
-
-            return new NuGetPackageMetadataRetriever(
-                cachePathResolver.Object,
-                null,
-                retrievalService,
-                _fileSystem,
-                packageVersionConcurrencyManager,
-                loggerMock.Object);
-        }
-        
-        public void SetupPackageMetadata(string packageId, string packageVersion)
-        {
-            var htmlFileName = $"{packageId}.{packageVersion}.html";
-            var htmlFilePath = Path.Combine(_htmlPagesDir, htmlFileName);
-
-            if (File.Exists(htmlFilePath))
-            {
-                _httpHandler.Register(
-                    $"https://www.nuget.org/packages/{packageId}/{packageVersion}",
-                    new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(
-                            File.ReadAllText(htmlFilePath), 
-                            System.Text.Encoding.UTF8, 
-                            "text/html")
-                    });
-            }
-            else
-            {
-                throw new FileNotFoundException($"HTML file not found: {htmlFilePath}");
-            }
-
-            var packageFileName = $"{packageId}.{packageVersion}.nupkg".ToLowerInvariant();
-            var localPackageFilePath = Path.Combine(_packagesDir, packageFileName);
-
-            var packageContent = File.Exists(localPackageFilePath) 
-                ? new ByteArrayContent(File.ReadAllBytes(localPackageFilePath)) 
-                : new ByteArrayContent([]);
-                
-            _httpHandler.Register(
-                $"https://www.nuget.org/api/v2/package/{packageId}/{packageVersion}",
-                new HttpResponseMessage(HttpStatusCode.OK) { Content = packageContent });
-        }
-        
-        public void SetupLicenseFile(string url, string licenseFileName)
-        {
-            var licenseFilePath = Path.Combine(_licensesDir, licenseFileName);
-
-            if (!File.Exists(licenseFilePath))
-                throw new FileNotFoundException($"License file not found: {licenseFilePath}");
-            
-            _httpHandler.Register(
-                url,
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(File.ReadAllText(licenseFilePath))
-                });
-        }
-
-        private void InitializeLocalPackages()
-        {
-            if (!Directory.Exists(_packagesDir))
-                return;
-            
-            foreach (var packageFile in Directory.GetFiles(_packagesDir, "*.nupkg"))
-            {
-                ProcessLocalPackage(packageFile);
-            }
-        }
-        
-        private void ProcessLocalPackage(string packageFile)
-        {
-            var fileName = Path.GetFileName(packageFile);
-            var parts = Path.GetFileNameWithoutExtension(fileName).Split('.');
-            
-            if (parts.Length < 2)
-                return;
-            
-            string packageId, packageVersion;
-            
-            if (parts.Length == 2)
-            {
-                packageId = parts[0];
-                packageVersion = parts[1];
-            }
-            else
-            {
-                var versionStartIndex = parts.Length - 3;
-                packageId = string.Join(".", parts.Take(versionStartIndex));
-                packageVersion = string.Join(".", parts.Skip(versionStartIndex));
-            }
-            
-            var extractPath = Path.Combine(_cacheDir, packageId, packageVersion);
-            
-            _fileSystem.AddDirectory(extractPath);
-            _fileSystem.AddFile(
-                Path.Combine(extractPath, $"{packageId}.nuspec"), 
-                CreateNuspecContent(packageId, packageVersion));
-            
-            _fileSystem.RegisterExternalFile(packageFile);
-        }
-        
-        private static string CreateNuspecContent(string packageId, string packageVersion) => 
-            $"""
-            <?xml version="1.0" encoding="utf-8"?>
-            <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
-              <metadata>
-                <id>{packageId}</id>
-                <version>{packageVersion}</version>
-                <authors>Test Author</authors>
-                <description>Test package from local files</description>
-                <title>{packageId}</title>
-                <projectUrl>https://example.com/project</projectUrl>
-                <license type="expression">MIT</license>
-              </metadata>
-            </package>
-            """;
-    }
-    
     #region Test Infrastructure
     
-    private class MockHttpMessageHandler : HttpMessageHandler
+    private class HttpClientWrapper : IHttpClient
     {
-        private readonly Dictionary<string, HttpResponseMessage> _responses = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _licenseUrls = new(StringComparer.OrdinalIgnoreCase);
         
-        public void Register(string url, HttpResponseMessage response)
+        public void RegisterLicenseUrl(string url, string content)
         {
-            _responses[url] = response;
+            _licenseUrls[url] = content;
         }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            var requestUrl = request.RequestUri?.ToString();
-            
-            if (requestUrl is null)
-                return Task.FromResult(CreateNotFoundResponse(request));
-            
-            if (_responses.TryGetValue(requestUrl, out var response))
-                return Task.FromResult(response);
-            
-            if (requestUrl.StartsWith("https://www.nuget.org/packages/"))
-            {
-                var dynamicResponse = TryGetDynamicHtmlResponse(requestUrl);
-                if (dynamicResponse is not null)
-                    return Task.FromResult(dynamicResponse);
-            }
-            
-            return Task.FromResult(CreateNotFoundResponse(request));
-        }
-        
-        private static HttpResponseMessage CreateNotFoundResponse(HttpRequestMessage request) =>
-            new(HttpStatusCode.NotFound) { RequestMessage = request };
-            
-        private static HttpResponseMessage? TryGetDynamicHtmlResponse(string url)
-        {
-            var parts = url.Replace("https://www.nuget.org/packages/", "").Split('/');
-            
-            if (parts.Length < 2)
-                return null;
-                
-            var packageId = parts[0];
-            var packageVersion = parts[1];
-            var htmlFilePath = Path.Combine(SourceHtmlPagesDir, $"{packageId}.{packageVersion}.html".ToLowerInvariant());
-            
-            if (!File.Exists(htmlFilePath))
-                return null;
-                
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(
-                    File.ReadAllText(htmlFilePath),
-                    System.Text.Encoding.UTF8,
-                    "text/html")
-            };
-        }
-    }
-    
-    private class HttpClientWrapper(Func<HttpClient> createHttpClient) : IHttpClient
-    {
-        private readonly HttpClient _httpClient = createHttpClient();
         
         public IHttpClient NewInstance()
         {
-            return new HttpClientWrapper(createHttpClient);
+            return this;
         }
 
         public IHttpClient NewInstance(Action<HttpClient> configure)
         {
-            configure(_httpClient);
-            
-            return new HttpClientWrapper(createHttpClient);
+            return this;
         }
 
-        public async Task<HttpResponseMessage?> GetAsync(string requestUri, CancellationToken cancellationToken)
+        public Task<HttpResponseMessage?> GetAsync(string requestUri, CancellationToken cancellationToken)
         {
-            return await _httpClient.GetAsync(requestUri, cancellationToken);
-        }
-
-        public async Task<HttpResponseMessage?> GetAsync(string requestUrl, Action<HttpClient> configure, CancellationToken cancellationToken)
-        {
-            configure(_httpClient);
+            if (_licenseUrls.TryGetValue(requestUri, out var content))
+            {
+                return Task.FromResult<HttpResponseMessage?>(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(content)
+                });
+            }
             
-            return await _httpClient.GetAsync(requestUrl, cancellationToken);
+            return Task.FromResult<HttpResponseMessage?>(new HttpResponseMessage(HttpStatusCode.NotFound));
         }
 
-        public async Task<TOut?> PostAsync<T, TOut>(string requestUrl, T obj, CancellationToken cancellationToken)
+        public Task<HttpResponseMessage?> GetAsync(string requestUrl, Action<HttpClient> configure, CancellationToken cancellationToken)
+        {
+            return GetAsync(requestUrl, cancellationToken);
+        }
+
+        public Task<TOut?> PostAsync<T, TOut>(string requestUrl, T obj, CancellationToken cancellationToken)
             where T : class
             where TOut : class
         {
-            var jsonContent = new StringContent(
-                System.Text.Json.JsonSerializer.Serialize(obj),
-                System.Text.Encoding.UTF8,
-                "application/json");
-                
-            var response = await _httpClient.PostAsync(requestUrl, jsonContent, cancellationToken);
-            
-            if (!response.IsSuccessStatusCode)
-                return null;
-                
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            
-            return string.IsNullOrEmpty(content) 
-                ? null 
-                : System.Text.Json.JsonSerializer.Deserialize<TOut>(content);
+            return Task.FromResult<TOut?>(null);
         }
         
-        public async Task<TOut?> PostAsync<TOut>(string requestUrl, MultipartFormDataContent multipartFormDataContent,
+        public Task<TOut?> PostAsync<TOut>(string requestUrl, MultipartFormDataContent multipartFormDataContent,
             CancellationToken cancellationToken) where TOut : class
         {
-            var response = await _httpClient.PostAsync(requestUrl, multipartFormDataContent, cancellationToken);
-            
-            if (!response.IsSuccessStatusCode)
-                return null;
-                
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            
-            return string.IsNullOrEmpty(content) 
-                ? null 
-                : System.Text.Json.JsonSerializer.Deserialize<TOut>(content);
+            return Task.FromResult<TOut?>(null);
         }
     }
     
@@ -495,9 +238,7 @@ public class ExtractFromProjectMetadataTests
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            return Task.FromResult<Stream>(File.Exists(path)
-                ? File.Open(path, FileMode.Create)
-                : File.OpenWrite(path));
+            return Task.FromResult<Stream>(File.Create(path));
         }
         
         public Task ExtractZipAsync(string zipFilePath, string extractPath, CancellationToken cancellationToken)
@@ -507,23 +248,61 @@ public class ExtractFromProjectMetadataTests
                 
             _directories.Add(extractPath);
             
+            Directory.CreateDirectory(extractPath);
             using var archive = ZipFile.OpenRead(zipFilePath);
             
             var supportedExtensions = new[] { ".nuspec", ".xml", ".json", ".md" };
             
-            foreach (var entry in archive.Entries
-                .Where(f => supportedExtensions.Contains(Path.GetExtension(f.Name), StringComparer.OrdinalIgnoreCase)))
+            var nuspecEntry = archive.Entries.FirstOrDefault(e => 
+                e.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+                
+            if (nuspecEntry != null)
             {
+                var entryPath = Path.Combine(extractPath, nuspecEntry.Name);
+                if (!Path.EndsInDirectorySeparator(entryPath))
+                {
+                    var entryDir = Path.GetDirectoryName(entryPath);
+                    if (!string.IsNullOrEmpty(entryDir))
+                        Directory.CreateDirectory(entryDir);
+                        
+                    nuspecEntry.ExtractToFile(entryPath, true);
+                    _files[entryPath] = File.ReadAllText(entryPath);
+                    
+                    var packageId = Path.GetFileNameWithoutExtension(zipFilePath).Split('.')[0];
+                    var packageNuspecPath = Path.Combine(extractPath, $"{packageId}.nuspec");
+                    if (!string.Equals(entryPath, packageNuspecPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.Copy(entryPath, packageNuspecPath, true);
+                        _files[packageNuspecPath] = _files[entryPath];
+                    }
+                }
+            }
+            
+            foreach (var entry in archive.Entries)
+            {
+                if (entry.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                    
+                if (!supportedExtensions.Contains(Path.GetExtension(entry.Name), StringComparer.OrdinalIgnoreCase))
+                    continue;
+                    
                 var entryPath = Path.Combine(extractPath, entry.FullName);
                 if (Path.EndsInDirectorySeparator(entryPath))
                     continue;
                     
                 var entryDir = Path.GetDirectoryName(entryPath);
-                if (!string.IsNullOrEmpty(entryDir) && !Directory.Exists(entryDir))
+                if (!string.IsNullOrEmpty(entryDir))
                     Directory.CreateDirectory(entryDir);
-                    
-                entry.ExtractToFile(entryPath, true);
-                _files[entryPath] = File.ReadAllText(entryPath);
+                
+                try
+                {
+                    entry.ExtractToFile(entryPath, true);
+                    _files[entryPath] = File.ReadAllText(entryPath);
+                }
+                catch
+                {
+                    // ignored
+                }
             }
             
             return Task.CompletedTask;
@@ -583,6 +362,158 @@ public class ExtractFromProjectMetadataTests
             
         public void RegisterExternalFile(string path) => 
             _externalFiles.Add(path);
+    }
+    
+    #endregion
+
+    #region TestScenario Implementation
+    
+    private class TestScenario : IDisposable
+    {
+        private readonly (string id, string version)[] _packages;
+        private readonly string _testDir;
+        private readonly string _cacheDir;
+        private readonly TestFileSystem _fileSystem;
+        private readonly HttpClientWrapper _httpClient;
+        private string[] _licenseNames = [];
+        private readonly Mock<INuGetCachePathResolver> _cachePathResolver;
+        private readonly Mock<INuGetPropertiesResolver> _propertiesResolver;
+        private string? _lastRequestUrl;
+        
+        public TestScenario(params (string id, string version)[] packages)
+        {
+            _packages = packages;
+            
+            _testDir = Path.Combine(
+                Path.GetTempPath(),
+                $"NuGetScenario_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}");
+            
+            _cacheDir = Path.Combine(_testDir, "Cache");
+            
+            Directory.CreateDirectory(_testDir);
+            Directory.CreateDirectory(_cacheDir);
+            
+            _fileSystem = new TestFileSystem();
+            _httpClient = new HttpClientWrapper();
+            
+            _cachePathResolver = new Mock<INuGetCachePathResolver>();
+            _cachePathResolver.Setup(r => r.ResolveAll())
+                .Returns([_cacheDir]);
+                
+            _propertiesResolver = new Mock<INuGetPropertiesResolver>();
+        }
+        
+        public TestScenario WhenLookingForPhysicalNuget()
+        {
+            return this;
+        }
+        
+        public TestScenario ThenReturnFromFilePath(string filePath)
+        {
+            foreach (var package in _packages)
+            {
+                var extractPath = Path.Combine(_cacheDir, package.id, package.version);
+                _fileSystem.AddDirectory(extractPath);
+                
+                var nuspecPath = Path.Combine(extractPath, $"{package.id}.nuspec");
+                
+                if (File.Exists(filePath))
+                {
+                    _fileSystem.RegisterExternalFile(filePath);
+                    
+                    if (filePath.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase))
+                    {
+                        using var archive = ZipFile.OpenRead(filePath);
+                        var nuspecEntry = archive.Entries.FirstOrDefault(e => 
+                            e.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+                            
+                        if (nuspecEntry != null)
+                        {
+                            using var stream = nuspecEntry.Open();
+                            using var reader = new StreamReader(stream);
+                            var content = reader.ReadToEnd();
+                            _fileSystem.WriteAllText(nuspecPath, content, CancellationToken.None);
+                        }
+                    }
+                }
+            }
+            return this;
+        }
+        
+        public TestScenario WhenRequesting(string url)
+        {
+            _lastRequestUrl = url;
+            return this;
+        }
+        
+        public TestScenario ThenReturnRequestContentFromFile(string filePath)
+        {
+            if (_lastRequestUrl == null)
+                throw new InvalidOperationException("WhenRequesting must be called before ThenReturnRequestContentFromFile");
+
+            if (!File.Exists(filePath)) return this;
+            
+            var content = File.ReadAllText(filePath);
+            _httpClient.RegisterLicenseUrl(_lastRequestUrl, content);
+            return this;
+        }
+        
+        public TestScenario WhenRequestingLicensesNames()
+        {
+            return this;
+        }
+        
+        public TestScenario ThenReturnLicensesNames(string[] licenseNames)
+        {
+            _licenseNames = licenseNames;
+            
+            _propertiesResolver.Setup(r => r.GetLicensesNamesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_licenseNames);
+                
+            return this;
+        }
+        
+        public XDocument GetProjectXml()
+        {
+            return CreateProjectXml(_packages);
+        }
+        
+        public INuGetPackageMetadataRetriever GetNugetPackageMetadataRetriever()
+        {
+            var retrievalService = new NuGetRetrievalService(
+                _propertiesResolver.Object,
+                _fileSystem,
+                _httpClient);
+            
+            var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+            var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
+            
+            var loggerMock = new Mock<ILogger>();
+
+            return new NuGetPackageMetadataRetriever(
+                _cachePathResolver.Object,
+                null,
+                retrievalService,
+                _fileSystem,
+                packageVersionConcurrencyManager,
+                bannedPropertiesValues,
+                loggerMock.Object);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (Directory.Exists(_testDir))
+                {
+                    Directory.Delete(_testDir, recursive: true);
+                }
+            }
+            catch
+            {
+                // ignored
+            }
+        }
     }
     
     #endregion

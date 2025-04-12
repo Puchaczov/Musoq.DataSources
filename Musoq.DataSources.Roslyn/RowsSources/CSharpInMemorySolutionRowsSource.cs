@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.Roslyn.CoconaCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
@@ -46,6 +47,7 @@ internal sealed class CSharpInMemorySolutionRowsSource(
                             httpClient), 
                         fileSystem,
                         packageVersionConcurrencyManager,
+                        SolutionOperationsCommand.BannedPropertiesValues,
                         logger),
                     _queryCancelledToken
                 ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)

@@ -16,7 +16,8 @@ internal sealed class NuGetPackageMetadataRetriever(
     string? customApiEndpoint,
     INuGetRetrievalService retrievalService,
     IFileSystem fileSystem,
-    IPackageVersionConcurrencyManager packageVersionConcurrencyManager, 
+    IPackageVersionConcurrencyManager packageVersionConcurrencyManager,
+    IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues,
     ILogger logger)
     : INuGetPackageMetadataRetriever
 {
@@ -98,7 +99,8 @@ internal sealed class NuGetPackageMetadataRetriever(
         var retrieveCommonResourcesVisitor = new NuGetResourceVisitor(
             commonResources,
             retrievalService,
-            customApiEndpoint);
+            customApiEndpoint,
+            bannedPropertiesValues);
         
         await commonResources.AcceptAsync(retrieveCommonResourcesVisitor, cancellationToken);
         

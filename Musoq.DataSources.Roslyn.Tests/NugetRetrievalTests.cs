@@ -25,6 +25,7 @@ public class NugetRetrievalTests
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
 
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
         var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
@@ -33,6 +34,7 @@ public class NugetRetrievalTests
             retrievalServiceMock.Object,
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
+            bannedPropertiesValues,
             logger.Object);
 
         // Act
@@ -103,6 +105,7 @@ public class NugetRetrievalTests
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
         var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
@@ -111,6 +114,7 @@ public class NugetRetrievalTests
             retrievalServiceMock.Object,
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
+            bannedPropertiesValues,
             logger.Object);
 
         // Act
@@ -203,6 +207,7 @@ public class NugetRetrievalTests
         cachePathResolverMock.Setup(x => x.ResolveAll()).Returns(["C:\\NugetCache"]);
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
         var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
@@ -211,6 +216,7 @@ public class NugetRetrievalTests
             retrievalServiceMock.Object,
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
+            bannedPropertiesValues,
             logger.Object);
 
         // Act
@@ -238,6 +244,7 @@ public class NugetRetrievalTests
         fileSystemMock.Setup(x => x.IsDirectoryExists(It.IsAny<string>())).Returns(false);
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
         var logger = new Mock<ILogger>();
 
         var cts = new CancellationTokenSource();
@@ -247,6 +254,7 @@ public class NugetRetrievalTests
             retrievalServiceMock.Object,
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
+            bannedPropertiesValues,
             logger.Object);
 
         // Act
@@ -309,6 +317,7 @@ public class NugetRetrievalTests
             });
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
         var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
@@ -317,6 +326,7 @@ public class NugetRetrievalTests
             retrievalServiceMock.Object,
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
+            bannedPropertiesValues,
             logger.Object);
 
         // Act
@@ -386,6 +396,7 @@ public class NugetRetrievalTests
             });
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
         var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
@@ -394,6 +405,7 @@ public class NugetRetrievalTests
             retrievalServiceMock.Object,
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
+            bannedPropertiesValues,
             logger.Object);
 
         // Act
@@ -428,6 +440,7 @@ public class NugetRetrievalTests
             .ReturnsAsync("true");
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
         var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
@@ -436,6 +449,7 @@ public class NugetRetrievalTests
             retrievalServiceMock.Object,
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
+            bannedPropertiesValues,
             logger.Object);
 
         // Act
@@ -469,6 +483,7 @@ public class NugetRetrievalTests
             .ThrowsAsync(new HttpRequestException("API Error"));
         
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var bannedPropertiesValues = new Dictionary<string, HashSet<string>>();
         var logger = new Mock<ILogger>();
 
         var retriever = new NuGetPackageMetadataRetriever(
@@ -477,6 +492,7 @@ public class NugetRetrievalTests
             retrievalServiceMock.Object,
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
+            bannedPropertiesValues,
             logger.Object);
 
         // Act

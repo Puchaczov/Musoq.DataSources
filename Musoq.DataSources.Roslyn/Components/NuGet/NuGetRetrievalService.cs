@@ -121,7 +121,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
         return packagePath;
     }
 
-    private static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>> ResolveNuspecStrategies(NuGetResource commonResources, INuGetPropertiesResolver aiBasedPropertiesResolver, CancellationToken cancellationToken)
+    private static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>> ResolveNuspecStrategies(NuGetResource commonResources, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         return new Dictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>>
         {
@@ -136,20 +136,20 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
             [nameof(NuGetResource.Copyright)] = NuspecHelpers.GetCopyrightFromNuspecAsync,
             [nameof(NuGetResource.Language)] = NuspecHelpers.GetLanguageFromNuspecAsync,
             [nameof(NuGetResource.Tags)] = NuspecHelpers.GetTagsFromNuspecAsync,
-            ["LicensesNames"] = (doc, manager) => NuspecHelpers.GetLicensesNamesFromNuspecAsync(doc, manager, commonResources, aiBasedPropertiesResolver, cancellationToken),
+            ["LicensesNames"] = (doc, manager) => NuspecHelpers.GetLicensesNamesFromNuspecAsync(doc, manager, commonResources, nuGetPropertiesResolver, cancellationToken),
             [nameof(NuGetLicense.LicenseUrl)] = NuspecHelpers.GetLicenseUrlFromNuspecAsync,
             [nameof(NuGetLicense.LicenseContent)] = (doc, manager) => NuspecHelpers.GetLicenseContentFromNuspecAsync(doc, manager, commonResources, cancellationToken)
         };
     }
         
-    private static IReadOnlyDictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>> ResolveWebScrapeStrategies(IHttpClient client, NuGetResource commonResources, INuGetPropertiesResolver aiBasedPropertiesResolver, CancellationToken cancellationToken)
+    private static IReadOnlyDictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>> ResolveWebScrapeStrategies(IHttpClient client, NuGetResource commonResources, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         var capturedClient = client;
         return new Dictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>>
         {
-            ["LicensesNames"] = async (url, token) => await NugetHelpers.DiscoverLicensesNamesAsync(url, commonResources, capturedClient, aiBasedPropertiesResolver, token),
-            [nameof(NuGetLicense.LicenseUrl)] = async (url, token) => await NugetHelpers.DiscoverLicenseUrlAsync(url, commonResources, capturedClient, aiBasedPropertiesResolver, token),
-            [nameof(NuGetLicense.LicenseContent)] = async (url, _) => await NugetHelpers.DiscoverLicenseContentAsync(url, commonResources, capturedClient, aiBasedPropertiesResolver, cancellationToken)
+            ["LicensesNames"] = async (url, token) => await NugetHelpers.DiscoverLicensesNamesAsync(url, commonResources, capturedClient, nuGetPropertiesResolver, token),
+            [nameof(NuGetLicense.LicenseUrl)] = async (url, token) => await NugetHelpers.DiscoverLicenseUrlAsync(url, commonResources, capturedClient, nuGetPropertiesResolver, token),
+            [nameof(NuGetLicense.LicenseContent)] = async (url, _) => await NugetHelpers.DiscoverLicenseContentAsync(url, commonResources, capturedClient, nuGetPropertiesResolver, cancellationToken)
         };
     }
 

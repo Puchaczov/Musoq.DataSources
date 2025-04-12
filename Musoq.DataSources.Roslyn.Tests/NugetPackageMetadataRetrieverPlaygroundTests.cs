@@ -27,10 +27,14 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
             ),
             fileSystem,
             new PackageVersionConcurrencyManager(),
+            new Dictionary<string, HashSet<string>>
+            {
+                { "LicenseUrl", ["https://aka.ms/deprecateLicenseUrl"] }
+            },
             NullLogger.Instance
         );
-        var packageName = "Microsoft.NET.Test.Sdk";
-        var version = "17.9.0";
+        var packageName = "CsvHelper";
+        var version = "33.0.1";
 
         // Act
         await foreach (var metadata in retriever.GetMetadataAsync(packageName, version, CancellationToken.None))

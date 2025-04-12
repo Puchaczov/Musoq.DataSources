@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -10,11 +9,12 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet;
 internal class NuGetResourceVisitor(
     NuGetResource commonResources, 
     INuGetRetrievalService nuGetRetrievalService,
-    string? customApiEndpoint
+    string? customApiEndpoint,
+    IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues
 ) : INuGetResourceVisitor
 {
-    private readonly SortedSet<TimingRecord> _timingRecords = new(new TimingRecordComparer());
-
+    private static readonly HashSet<string> EmptyBannedPropertiesValues = new();
+    
     public async Task VisitLicensesAsync(CancellationToken cancellationToken)
     {
         var property = "LicensesNames";
@@ -107,150 +107,124 @@ internal class NuGetResourceVisitor(
     
     private async Task<string?> RetrieveMetadataAsync(string propertyName, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
+        var bannedPropertyValues = bannedPropertiesValues.GetValueOrDefault(propertyName, EmptyBannedPropertiesValues);
+        
         string? resolvedValue = null;
-        var calledMethods = new List<string>();
-        try
+        if (commonResources.PackagePath is not null)
         {
-            if (commonResources.PackagePath is not null)
+            resolvedValue = await nuGetRetrievalService.GetMetadataFromPathAsync(
+                commonResources,
+                propertyName,
+                cancellationToken);
+
+            if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
             {
-                calledMethods.Add("GetMetadataFromPathAsync");
-                resolvedValue = await nuGetRetrievalService.GetMetadataFromPathAsync(
+                resolvedValue = null;
+            }
+        }
+        if (resolvedValue is null)
+        {
+            try
+            {
+                resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
+                    "https://www.nuget.org",
                     commonResources,
                     propertyName,
                     cancellationToken);
-            }
-            if (resolvedValue is null)
-            {
-                try
-                {
-                    calledMethods.Add("GetMetadataFromNugetOrgAsync");
-                    resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
-                        "https://www.nuget.org",
-                        commonResources,
-                        propertyName,
-                        cancellationToken);
-                }
-                catch
+
+                if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
                 {
                     resolvedValue = null;
                 }
             }
-            if (resolvedValue is null && !string.IsNullOrEmpty(customApiEndpoint))
+            catch
             {
-                try
-                {
-                    calledMethods.Add("GetMetadataFromCustomApiAsync");
-                    resolvedValue = await nuGetRetrievalService.GetMetadataFromCustomApiAsync(
-                        customApiEndpoint,
-                        commonResources,
-                        propertyName,
-                        cancellationToken);
-                }
-                catch (Exception)
-                {
-                    resolvedValue = null;
-                }
+                resolvedValue = null;
             }
-            return resolvedValue;
         }
-        finally
+        if (resolvedValue is null && !string.IsNullOrEmpty(customApiEndpoint))
         {
-            sw.Stop();
-            lock (_timingRecords)
+            try
             {
-                _timingRecords.Add(new TimingRecord("RetrieveMetadataAsync", propertyName, sw.Elapsed, string.Join(", ", calledMethods)));
+                resolvedValue = await nuGetRetrievalService.GetMetadataFromCustomApiAsync(
+                    customApiEndpoint,
+                    commonResources,
+                    propertyName,
+                    cancellationToken);
+
+                if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
+                {
+                    resolvedValue = null;
+                }
+            }
+            catch (Exception)
+            {
+                resolvedValue = null;
             }
         }
+        return resolvedValue;
     }
     
     private async Task<string?> RetrieveMetadataJsonArrayAsync(string propertyName, CancellationToken cancellationToken)
     {
-        var sw = Stopwatch.StartNew();
+        var bannedPropertyValues = bannedPropertiesValues.GetValueOrDefault(propertyName, EmptyBannedPropertiesValues);
+
         string? resolvedValue = null;
-        var calledMethods = new List<string>();
-        try
+        if (commonResources.PackagePath is not null)
         {
-            if (commonResources.PackagePath is not null)
+            resolvedValue = await nuGetRetrievalService.GetMetadataFromPathAsync(
+                commonResources,
+                propertyName,
+                cancellationToken);
+
+            if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
             {
-                calledMethods.Add("GetMetadataFromPathAsync");
-                resolvedValue = await nuGetRetrievalService.GetMetadataFromPathAsync(
+                resolvedValue = null;
+            }
+        }
+            
+        if (resolvedValue is "[]" or null)
+        {
+            try
+            {
+                resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
+                    "https://www.nuget.org",
                     commonResources,
                     propertyName,
                     cancellationToken);
-            }
-            
-            if (resolvedValue is "[]" or null)
-            {
-                try
-                {
-                    calledMethods.Add("GetMetadataFromNugetOrgAsync");
-                    resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
-                        "https://www.nuget.org",
-                        commonResources,
-                        propertyName,
-                        cancellationToken);
-                }
-                catch
+
+                if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
                 {
                     resolvedValue = null;
                 }
             }
-            
-            if (resolvedValue is "[]" or null && !string.IsNullOrEmpty(customApiEndpoint))
+            catch
             {
-                try
-                {
-                    calledMethods.Add("GetMetadataFromCustomApiAsync");
-                    resolvedValue = await nuGetRetrievalService.GetMetadataFromCustomApiAsync(
-                        customApiEndpoint,
-                        commonResources,
-                        propertyName,
-                        cancellationToken);
-                }
-                catch (Exception)
+                resolvedValue = null;
+            }
+        }
+            
+        if (resolvedValue is "[]" or null && !string.IsNullOrEmpty(customApiEndpoint))
+        {
+            try
+            {
+                resolvedValue = await nuGetRetrievalService.GetMetadataFromCustomApiAsync(
+                    customApiEndpoint,
+                    commonResources,
+                    propertyName,
+                    cancellationToken);
+                
+                if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
                 {
                     resolvedValue = null;
                 }
             }
-            
-            return resolvedValue;
-        }
-        finally
-        {
-            sw.Stop();
-            lock (_timingRecords)
+            catch (Exception)
             {
-                _timingRecords.Add(new TimingRecord("RetrieveMetadataJsonArrayAsync", propertyName, sw.Elapsed, string.Join(", ", calledMethods)));
+                resolvedValue = null;
             }
         }
-    }
-
-    [DebuggerDisplay("{MethodName} {PropertyName} {Duration} {MethodCalls}")]
-    private class TimingRecord(string methodName, string propertyName, TimeSpan duration, string methodCalls)
-    {
-        public string MethodName { get; } = methodName;
-        public string PropertyName { get; } = propertyName;
-        public TimeSpan Duration { get; } = duration;
-        public string MethodCalls { get; } = methodCalls;
-    }
-
-    private class TimingRecordComparer : IComparer<TimingRecord>
-    {
-        public int Compare(TimingRecord? x, TimingRecord? y)
-        {
-            if (x is null || y is null)
-                return 0;
             
-            var cmp = y.Duration.CompareTo(x.Duration);
-            
-            if (cmp == 0)
-                cmp = string.Compare(x.MethodName, y.MethodName, StringComparison.Ordinal);
-            
-            if (cmp == 0)
-                cmp = string.Compare(x.PropertyName, y.PropertyName, StringComparison.Ordinal);
-            
-            return cmp;
-        }
+        return resolvedValue;
     }
 }

@@ -16,11 +16,13 @@ namespace Musoq.DataSources.Roslyn.CoconaCommands;
 
 internal class SolutionOperationsCommand(ILogger logger)
 {
-    // This cannot be AppContext.BaseDirectory as it must point the plugin directory
+    // This cannot be AppContext.BaseDirectory as it must point to the plugin directory
     private static readonly string RateLimitingOptionsFilePath = IFileSystem.Combine(new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "RateLimitingOptions.json");
+    private static readonly string BannedPropertiesValuesFilePath = IFileSystem.Combine(new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "BannedPropertiesValues.json");
     
     internal static readonly ConcurrentDictionary<string, Solution> Solutions = new();
     internal static IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>? RateLimitingOptions;
+    internal static readonly IReadOnlyDictionary<string, HashSet<string>> BannedPropertiesValues = ReadBannedPropertiesValues();
     internal static string DefaultHttpClientCacheDirectoryPath { get; set; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn", "NuGet");
     internal static readonly ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache = new();
     
@@ -149,5 +151,34 @@ internal class SolutionOperationsCommand(ILogger logger)
         }
         
         return Task.FromResult<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>>(domainRateLimitingOptions);
+    }
+    
+    private static IReadOnlyDictionary<string, HashSet<string>> ReadBannedPropertiesValues()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile(BannedPropertiesValuesFilePath);
+        
+        var bannedPropertiesValues = configuration.Build();
+        var propertiesArray = bannedPropertiesValues.GetSection("BannedPropertiesValues").GetChildren();
+        var result = new Dictionary<string, HashSet<string>>();
+    
+        foreach (var property in propertiesArray)
+        {
+            var propertyName = property.GetValue<string>("propertyName");
+            var propertyValue = property.GetValue<string>("propertyValue");
+
+            if (string.IsNullOrEmpty(propertyName) || string.IsNullOrEmpty(propertyValue)) 
+                continue;
+            
+            if (!result.TryGetValue(propertyName, out var value))
+            {
+                value = [];
+                result[propertyName] = value;
+            }
+
+            value.Add(propertyValue);
+        }
+        
+        return result;
     }
 }
