@@ -237,7 +237,8 @@ public class AlwaysUpdateDirectoryViewTests
     public async Task FileRenamedExternally_ShouldUpdateCache()
     {
         // Arrange
-        var tcs = new TaskCompletionSource<bool>();
+        var newKeyAddedCompletionSource = new TaskCompletionSource<bool>();
+        var oldKeyRemovedCompletionSource = new TaskCompletionSource<bool>();
         using var directoryView = new AlwaysUpdateDirectoryView<string, TestItem>(
             _testDirectory,
             GetDestinationValue,
@@ -255,7 +256,13 @@ public class AlwaysUpdateDirectoryViewTests
         directoryView.ItemLoaded += (_, key) => 
         {
             if (key == "newKey.json")
-                tcs.TrySetResult(true);
+                newKeyAddedCompletionSource.TrySetResult(true);
+        };
+        
+        directoryView.ItemRemoved += (_, key) => 
+        {
+            if (key == "oldKey.json")
+                oldKeyRemovedCompletionSource.TrySetResult(true);
         };
 
         var newTestItem = new TestItem("Renamed", 301);
@@ -268,7 +275,7 @@ public class AlwaysUpdateDirectoryViewTests
         
         _mockFileWatcher.SimulateFileRenamed(oldFilePath, newFilePath);
 
-        await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+        await Task.WhenAny(Task.WhenAll(newKeyAddedCompletionSource.Task, oldKeyRemovedCompletionSource.Task), Task.Delay(TimeSpan.FromSeconds(5)));
 
         Assert.IsFalse(_mockFileSystem.IsFileExists(oldFilePath), "Old file should not exist");
         Assert.IsTrue(_mockFileSystem.IsFileExists(newFilePath), "New file should exist");
