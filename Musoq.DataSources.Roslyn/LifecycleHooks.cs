@@ -66,7 +66,7 @@ public static class LifecycleHooks
             {
                 if (cacheDirectoryPath is not null)
                 {
-                    SolutionOperationsCommand.DefaultHttpClientCacheDirectoryPath = cacheDirectoryPath;
+                    SolutionOperationsCommand.DefaultCacheDirectoryPath = cacheDirectoryPath;
                 }
                 
                 var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
@@ -75,7 +75,7 @@ public static class LifecycleHooks
             
             app.Add("solution cache clear", async (string? cacheDirectoryPath) =>
             {
-                var finalCacheDirectoryPath = cacheDirectoryPath ?? SolutionOperationsCommand.DefaultHttpClientCacheDirectoryPath;
+                var finalCacheDirectoryPath = cacheDirectoryPath ?? SolutionOperationsCommand.DefaultCacheDirectoryPath;
                 
                 var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
                 await command.ClearCacheAsync(

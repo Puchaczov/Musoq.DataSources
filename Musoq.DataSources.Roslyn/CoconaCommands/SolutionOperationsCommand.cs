@@ -23,7 +23,7 @@ internal class SolutionOperationsCommand(ILogger logger)
     internal static readonly ConcurrentDictionary<string, Solution> Solutions = new();
     internal static IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>? RateLimitingOptions;
     internal static readonly IReadOnlyDictionary<string, HashSet<string>> BannedPropertiesValues = ReadBannedPropertiesValues();
-    internal static string DefaultHttpClientCacheDirectoryPath { get; set; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn", "NuGet");
+    internal static string DefaultCacheDirectoryPath { get; set; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn");
     internal static readonly ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache = new();
     
     public async Task LoadAsync(string solutionFilePath, CancellationToken cancellationToken)

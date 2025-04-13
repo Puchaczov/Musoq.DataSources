@@ -31,7 +31,7 @@ public class CSharpSchema : SchemaBase
 
     private static readonly IFileSystem FileSystem = new DefaultFileSystem();
     private static ConcurrentDictionary<string, Solution> Solutions => SolutionOperationsCommand.Solutions;
-    private static string DefaultCacheDirectory => SolutionOperationsCommand.DefaultHttpClientCacheDirectoryPath;
+    private static string DefaultNugetCacheDirectoryPath { get; } = IFileSystem.Combine(SolutionOperationsCommand.DefaultCacheDirectoryPath, "NuGet");
     
     private static ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache => SolutionOperationsCommand.HttpResponseCache;
 
@@ -329,7 +329,7 @@ public class CSharpSchema : SchemaBase
             throw new InvalidOperationException("MUSOQ_SERVER_HTTP_ENDPOINT environment variable is not set.");
         }
 
-        var cacheDirectory = DefaultCacheDirectory;
+        var cacheDirectory = DefaultNugetCacheDirectoryPath;
 
         if (!IFileSystem.DirectoryExists(cacheDirectory))
         {
@@ -446,7 +446,7 @@ public class CSharpSchema : SchemaBase
                 logger),
             (key, handler) =>
             {
-                if (key == DefaultCacheDirectory && handler.InnerHandler is HttpClientHandler)
+                if (key == DefaultNugetCacheDirectoryPath && handler.InnerHandler is HttpClientHandler)
                 {
                     handler.InnerHandler = new DomainRateLimitingHandler(
                         getDomains(SolutionOperationsCommand.RateLimitingOptions ?? throw new InvalidOperationException("Rate limiting options are not set.")),
