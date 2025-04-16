@@ -7,7 +7,7 @@
     <Authors>Jakub Puchała</Authors>
     <Product>Musoq</Product>
     <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageTags>sql, time, dotnet-core</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
@@ -15,6 +15,10 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+  </ItemGroup>
 
   <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
     <ItemGroup>

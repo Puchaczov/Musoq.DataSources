@@ -17,9 +17,9 @@ public class NugetToSqlTests
     [TestMethod]
     public void WhenNugetPackagesQueried_ShouldPass()
     {
-        var aiBasedPropertiesResolverMock = new Mock<INuGetPropertiesResolver>();
+        var nugetPropertiesResolverMock = new Mock<INuGetPropertiesResolver>();
         
-        aiBasedPropertiesResolverMock.Setup(f => f.GetLicensesNamesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        nugetPropertiesResolverMock.Setup(f => f.GetLicensesNamesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string licenseContent, CancellationToken _) =>
             {
                 if (licenseContent.Contains("MIT"))
@@ -55,7 +55,7 @@ public class NugetToSqlTests
             cross apply p.NugetPackages np"
             .Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
 
-            var vm = CompileQuery(query, aiBasedPropertiesResolverMock);
+            var vm = CompileQuery(query, nugetPropertiesResolverMock);
             
             var result = vm.Run();
 

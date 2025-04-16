@@ -33,7 +33,7 @@ public class NuGetPropertiesResolver(string baseUrl, IHttpClient httpClient) : I
         using var formData = new MultipartFormDataContent();
         
         const string jsonSchema = 
-            """{"$schema": "http://json-schema.org/draft-04/schema#","type": "array","items": [{"type": "object","properties": {"licenseName": {"type": "string"}},"required": ["licenseName"]}]}""";
+            """{"type": "array","items": [{"type": "object","properties": {"licenseName": {"type": "string"}},"required": ["licenseName"]}]}""";
 
         var chat = new
         {
@@ -52,7 +52,9 @@ public class NuGetPropertiesResolver(string baseUrl, IHttpClient httpClient) : I
         using var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(chat)));
         fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/text");
         
-        formData.Add(new StringContent(jsonSchema), "ResponseFormat");
+        using var stringContent = new StringContent(jsonSchema);
+        
+        formData.Add(stringContent, "ResponseFormat");
         formData.Add(fileContent, "file", "chat.json");
         
         var response = await httpClient.PostAsync<LicensesResult>($"{baseUrl}/model/what-licenses-are-here", formData, cancellationToken);

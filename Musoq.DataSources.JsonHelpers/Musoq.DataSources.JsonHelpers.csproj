@@ -7,7 +7,7 @@
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>sql, json, dotnet-core</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
@@ -17,6 +17,10 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Musoq.Parser" Version="4.2.0">
