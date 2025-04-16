@@ -2,7 +2,6 @@ using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 
 namespace Musoq.DataSources.System.Tests
 {
@@ -61,11 +60,6 @@ namespace Musoq.DataSources.System.Tests
         private CompiledQuery CreateAndRunVirtualMachine(string script)
         {
             return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new SystemSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-        }
-
-        static DualTests()
-        {
-            new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
         }
     }
 }

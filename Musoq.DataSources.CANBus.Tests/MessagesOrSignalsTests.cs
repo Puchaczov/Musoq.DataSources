@@ -3,7 +3,6 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 
 namespace Musoq.DataSources.CANBus.Tests;
 
@@ -431,8 +430,6 @@ where Name = 'Oil_Temperature'";
 
     static MessagesOrSignalsTests()
     {
-        new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
         Culture.ApplyWithDefaultCulture();
     }
 }

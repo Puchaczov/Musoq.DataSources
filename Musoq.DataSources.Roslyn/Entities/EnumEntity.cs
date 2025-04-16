@@ -15,7 +15,7 @@ public class EnumEntity : TypeEntity
 
     internal readonly Solution Solution;
     
-    internal new readonly INamedTypeSymbol Symbol;
+    internal readonly INamedTypeSymbol Symbol;
 
     internal EnumDeclarationSyntax Syntax { get; }
 

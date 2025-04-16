@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.AsyncRowsSource;
@@ -6,9 +7,9 @@ namespace Musoq.DataSources.AsyncRowsSource;
 /// <summary>
 /// Read rows asynchronously in chunks.
 /// </summary>
-/// <param name="endWorkToken">Token that signals the end of the work.</param>
+/// <param name="queryCancelledToken">Token that signals the end of the work.</param>
 /// <typeparam name="T">Type of the entity.</typeparam>
-public abstract class AsyncRowsSourceBase<T>(CancellationToken endWorkToken) : RowSource
+public abstract class AsyncRowsSourceBase<T>(CancellationToken queryCancelledToken) : RowSource
 {
     private readonly TaskCompletionSource<Exception?> _exception = new();
 
@@ -22,8 +23,7 @@ public abstract class AsyncRowsSourceBase<T>(CancellationToken endWorkToken) : R
             var chunkedSourceBlockingCollection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
             var workFinishedCancellationTokenSource = new CancellationTokenSource();
             var workFinishedToken = workFinishedCancellationTokenSource.Token;
-            var errorCancellationTokenSource = new CancellationTokenSource();
-            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(workFinishedToken, errorCancellationTokenSource.Token, endWorkToken);
+            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(workFinishedToken, queryCancelledToken);
             var linkedToken = linkedTokenSource.Token;
 
             Task.Run(async () =>
@@ -44,6 +44,25 @@ public abstract class AsyncRowsSourceBase<T>(CancellationToken endWorkToken) : R
                 {
                     chunkedSourceBlockingCollection.Add(new List<EntityResolver<T>>());
                     workFinishedCancellationTokenSource.Cancel();
+                }
+            });
+            Task.Run(async () =>
+            {
+                while (!queryCancelledToken.IsCancellationRequested)
+                {
+                    ThreadPool.GetAvailableThreads(out int workerThreads, out int completionPortThreads);
+                    ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int maxCompletionPortThreads);
+            
+                    int usedWorkerThreads = maxWorkerThreads - workerThreads;
+                    int percentUsed = (int)(((double)usedWorkerThreads / maxWorkerThreads) * 100);
+            
+                    if (percentUsed > 80)
+                    {
+                        Debug.WriteLine("High thread pool usage: {0}% ({1}/{2})",
+                            percentUsed, usedWorkerThreads, maxWorkerThreads);
+                    }
+            
+                    await Task.Delay(TimeSpan.FromMilliseconds(50), queryCancelledToken);
                 }
             });
 

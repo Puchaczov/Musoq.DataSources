@@ -3,7 +3,6 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 
 namespace Musoq.DataSources.Archives.Tests;
 
@@ -89,8 +88,6 @@ public class ArchivesTests
 
     static ArchivesTests()
     {
-        new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
         Culture.ApplyWithDefaultCulture();
     }
 }

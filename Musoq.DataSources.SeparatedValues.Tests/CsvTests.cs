@@ -4,13 +4,13 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
-using Musoq.Plugins;
 using Musoq.Schema;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.SeparatedValues.Tests
 {
@@ -656,6 +656,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         [TestMethod]
         public void CsvSource_CancelledLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
             var source = new SeparatedValuesFromFileRowsSource(
@@ -669,7 +670,8 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                     tokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false))
+                    (null, null, null, false),
+                    mockLogger.Object)
             };
 
             var fired = source.Rows.Count();
@@ -680,6 +682,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         [TestMethod]
         public void CsvSource_AllTypesSupportedTest()
         {
+            var mockLogger = new Mock<ILogger>();
             using var tokenSource = new CancellationTokenSource();
             var columns = new List<ISchemaColumn>
             {
@@ -704,7 +707,8 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                 tokenSource.Token, 
                 columns, 
                 new Dictionary<string, string>(),
-                (null, null, null, false));
+                (null, null, null, false),
+                mockLogger.Object);
 
             var source = new SeparatedValuesFromFileRowsSource("./Files/AllTypes.csv", ",", true, 0, tokenSource.Token)
             {
@@ -759,13 +763,15 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
         [TestMethod]
         public void CsvSource_FullLoadTest()
         {
+            var mockLogger = new Mock<ILogger>();
             var source = new SeparatedValuesFromFileRowsSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, CancellationToken.None)
             {
                 RuntimeContext = new RuntimeContext(
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false))
+                    (null, null, null, false),
+                    mockLogger.Object)
             };
 
             var fired = source.Rows.Count();
@@ -780,7 +786,6 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
 
         static CsvTests()
         {
-            new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
             Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
         }
     }

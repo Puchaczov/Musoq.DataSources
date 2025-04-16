@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Musoq.Plugins.Attributes;
-using Musoq.Schema;
-using Musoq.Schema.DataSources;
+using System.Xml.Linq;
+using Musoq.DataSources.Roslyn.Components.NuGet;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -13,37 +15,11 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class ProjectEntity
 {
-    /// <summary>
-    /// Maps column names to their respective indices.
-    /// </summary>
-    public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-
-    /// <summary>
-    /// Maps column indices to functions that access the corresponding properties of a <see cref="ProjectEntity"/>.
-    /// </summary>
-    public static readonly IReadOnlyDictionary<int, Func<ProjectEntity, object?>> IndexToObjectAccessMap;
-
-    /// <summary>
-    /// Defines the schema columns for the <see cref="ProjectEntity"/>.
-    /// </summary>
-    public static readonly ISchemaColumn[] Columns =
-    [
-        new SchemaColumn(nameof(Id), 0, typeof(string)),
-        new SchemaColumn(nameof(FilePath), 1, typeof(string)),
-        new SchemaColumn(nameof(OutputFilePath), 2, typeof(string)),
-        new SchemaColumn(nameof(OutputRefFilePath), 3, typeof(string)),
-        new SchemaColumn(nameof(DefaultNamespace), 4, typeof(string)),
-        new SchemaColumn(nameof(Language), 5, typeof(string)),
-        new SchemaColumn(nameof(AssemblyName), 6, typeof(string)),
-        new SchemaColumn(nameof(Name), 7, typeof(string)),
-        new SchemaColumn(nameof(IsSubmission), 8, typeof(bool)),
-        new SchemaColumn(nameof(Version), 9, typeof(string)),
-        new SchemaColumn(nameof(Documents), 10, typeof(DocumentEntity[])),
-        new SchemaColumn(nameof(ProjectReferences), 11, typeof(ProjectReferenceEntity[])),
-        new SchemaColumn(nameof(LibraryReferences), 12, typeof(LibraryReferenceEntity[]))
-    ];
+    private IReadOnlyList<NugetPackageEntity>? _nugetPackageEntities;
 
     private readonly Project _project;
+    private readonly INuGetPackageMetadataRetriever _nuGetPackageMetadataRetriever;
+    private readonly CancellationToken _cancellationToken;
 
     private DocumentEntity[] _documents;
     private bool _wasLoaded;
@@ -52,50 +28,15 @@ public class ProjectEntity
     /// Initializes a new instance of the <see cref="ProjectEntity"/> class.
     /// </summary>
     /// <param name="project">The project.</param>
-    public ProjectEntity(Project project)
+    /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public ProjectEntity(Project project, INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
     {
         _project = project;
+        _nuGetPackageMetadataRetriever = nuGetPackageMetadataRetriever;
+        _cancellationToken = cancellationToken;
         _documents = [];
-    }
-
-    /// <summary>
-    /// Initializes static members of the <see cref="ProjectEntity"/> class.
-    /// </summary>
-    static ProjectEntity()
-    {
-        NameToIndexMap = new Dictionary<string, int>
-        {
-            {nameof(Id), 0},
-            {nameof(FilePath), 1},
-            {nameof(OutputFilePath), 2},
-            {nameof(OutputRefFilePath), 3},
-            {nameof(DefaultNamespace), 4},
-            {nameof(Language), 5},
-            {nameof(AssemblyName), 6},
-            {nameof(Name), 7},
-            {nameof(IsSubmission), 8},
-            {nameof(Version), 9},
-            {nameof(Documents), 10},
-            {nameof(ProjectReferences), 11},
-            {nameof(LibraryReferences), 12}
-        };
-
-        IndexToObjectAccessMap = new Dictionary<int, Func<ProjectEntity, object?>>
-        {
-            {0, entity => entity.Id},
-            {1, entity => entity.FilePath},
-            {2, entity => entity.OutputFilePath},
-            {3, entity => entity.OutputRefFilePath},
-            {4, entity => entity.DefaultNamespace},
-            {5, entity => entity.Language},
-            {6, entity => entity.AssemblyName},
-            {7, entity => entity.Name},
-            {8, entity => entity.IsSubmission},
-            {9, entity => entity.Version},
-            {10, entity => entity.Documents},
-            {11, entity => entity.ProjectReferences},
-            {12, entity => entity.LibraryReferences}
-        };
+        _nugetPackageEntities = null;
     }
 
     /// <summary>
@@ -182,4 +123,131 @@ public class ProjectEntity
             .OfType<PortableExecutableReference>()
             .Where(f => f.Properties.Kind == MetadataImageKind.Assembly)
             .Select(reference => new LibraryReferenceEntity(reference));
+
+    /// <summary>
+    /// Gets the Project types.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<TypeEntity> Types
+    {
+        get
+        {
+            var types = new List<TypeEntity>();
+
+            foreach (var document in Documents)
+            {
+                types.AddRange(document.Classes);
+                types.AddRange(document.Interfaces);
+                types.AddRange(document.Enums);
+            }
+
+            return types;
+        }
+    }
+    
+    /// <summary>
+    /// Gets the NuGet packages of the project.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IReadOnlyList<NugetPackageEntity> NugetPackages
+    {
+        get
+        {
+            if (_nugetPackageEntities != null)
+                return _nugetPackageEntities;
+            
+            var taskGetNugetPackages = Task.Run(async () => await GetNugetPackagesAsync(_project), _cancellationToken);
+            taskGetNugetPackages.Wait();
+            _nugetPackageEntities = taskGetNugetPackages.Result;
+            
+            return _nugetPackageEntities;
+        }
+    }
+
+    private async Task<List<NugetPackageEntity>> GetNugetPackagesAsync(Project project)
+    {   
+        if (string.IsNullOrEmpty(project.FilePath))
+            return [];
+
+        try
+        {
+            var projectXml = XDocument.Load(project.FilePath);
+            
+            return await ExtractFromProjectMetadataAsync(projectXml, _nuGetPackageMetadataRetriever, _cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return [
+                new NugetPackageEntity(
+                "error",
+                "error",
+                $"error: {ex.Message}",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null)
+            ];
+        }
+    }
+
+    internal static async Task<List<NugetPackageEntity>> ExtractFromProjectMetadataAsync(XDocument projectXml, INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        var nugetPackages = new List<NugetPackageEntity>();
+        var packageRefs = projectXml.Descendants("PackageReference");
+
+        await Parallel.ForEachAsync(packageRefs, new ParallelOptions
+        {
+#if DEBUG
+            MaxDegreeOfParallelism = 1,
+#endif
+            CancellationToken = cancellationToken
+        }, async (packageRef, token) =>
+        {
+            token.ThrowIfCancellationRequested();
+            
+            var id = packageRef.Attribute("Include")?.Value ?? string.Empty;
+            var version = packageRef.Attribute("Version")?.Value ?? string.Empty;
+
+            await foreach (var metadata in nuGetPackageMetadataRetriever.GetMetadataAsync(id, version, token))
+            {
+                var requireLicenseAcceptanceString =
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.RequireLicenseAcceptance));
+                var requireLicenseAcceptance = string.IsNullOrWhiteSpace(requireLicenseAcceptanceString)
+                    ? "false"
+                    : requireLicenseAcceptanceString;
+
+                nugetPackages.Add(new NugetPackageEntity(
+                    id,
+                    version,
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseUrl)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.ProjectUrl)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Title)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Authors)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Owners)),
+                    Convert.ToBoolean(requireLicenseAcceptance),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Description)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Summary)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.ReleaseNotes)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Copyright)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Language)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.Tags)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseContent)),
+                    metadata.GetValueOrDefault(nameof(NugetPackageEntity.License))
+                ));
+            }
+        });
+        
+        return nugetPackages;
+    }
 }

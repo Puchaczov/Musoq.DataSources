@@ -5,8 +5,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Postgres.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Postgres.Tests;
 
@@ -125,8 +123,6 @@ public class PostgresQueryTests
 
     static PostgresQueryTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
         Culture.ApplyWithDefaultCulture();
     }
 

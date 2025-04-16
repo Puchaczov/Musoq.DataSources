@@ -17,7 +17,7 @@ public class ClassEntity : TypeEntity
 
     internal readonly Solution Solution;
     
-    internal new readonly INamedTypeSymbol Symbol;
+    internal readonly INamedTypeSymbol Symbol;
     
     internal ClassDeclarationSyntax Syntax { get; }
 

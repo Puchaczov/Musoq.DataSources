@@ -6,9 +6,7 @@ using Moq;
 using Musoq.DataSources.OpenAI.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using OpenAI.Chat;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.OpenAI.Tests;
 
@@ -230,8 +228,6 @@ public class OpenAiQueryTests
 
     static OpenAiQueryTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
         Culture.ApplyWithDefaultCulture();
     }
 }

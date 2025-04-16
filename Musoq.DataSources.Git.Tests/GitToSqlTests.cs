@@ -6,8 +6,6 @@ using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Parser.Helpers;
-using Musoq.Plugins;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Git.Tests;
 
@@ -589,8 +587,6 @@ public class GitToSqlTests
 
     static GitToSqlTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName,
-            EnvironmentUtils.GetOrCreateEnvironmentVariable());
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 

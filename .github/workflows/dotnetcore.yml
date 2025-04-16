@@ -9,6 +9,7 @@ jobs:
         runs-on: [windows-latest]
 
     runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 30
     name: Running tests on ${{ matrix.runs-on }}. 
     steps:
     - uses: actions/checkout@master

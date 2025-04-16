@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Postgres.Tests;
 
@@ -31,15 +29,13 @@ public class PostgresPlayground
             {
                 {0, new Dictionary<string, string>
                 {
-                    { "NPGSQL_CONNECTION_STRING", System.Environment.GetEnvironmentVariable("PLAYGROUND_POSTGRES_CONNECTION_STRING") ?? throw new InvalidOperationException("No connection string provided.") }
+                    { "NPGSQL_CONNECTION_STRING", Environment.GetEnvironmentVariable("PLAYGROUND_POSTGRES_CONNECTION_STRING") ?? throw new InvalidOperationException("No connection string provided.") }
                 }}
             });
     }
 
     static PostgresPlayground()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
         Culture.ApplyWithDefaultCulture();
     }
 }

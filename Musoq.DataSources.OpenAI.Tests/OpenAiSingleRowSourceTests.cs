@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.Schema;
 using OpenAI.Chat;
-using SharpToken;
 
 namespace Musoq.DataSources.OpenAI.Tests;
 
@@ -19,6 +19,8 @@ public class OpenAiSingleRowSourceTests
     [TestMethod]
     public void WhenRowsCalled_ShouldRetrieveSingle()
     {
+        var mockLogger = new Mock<ILogger>();
+        
         var source = new OpenAiSingleRowSource(
             new RuntimeContext(
                 CancellationToken.None,
@@ -27,7 +29,8 @@ public class OpenAiSingleRowSourceTests
                 {
                     {"OPENAI_API_KEY", "OPENAI_API_KEY"}
                 },
-                (null, null, null, false)), new OpenAiRequestInfo()
+                (null, null, null, false),
+                mockLogger.Object), new OpenAiRequestInfo()
             {
                 Model = ModelName
             });

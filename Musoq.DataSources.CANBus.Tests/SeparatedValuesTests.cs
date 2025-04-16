@@ -3,7 +3,6 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 
 namespace Musoq.DataSources.CANBus.Tests;
 
@@ -359,8 +358,6 @@ inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.Id";
 
     static SeparatedValuesTests()
     {
-        new Plugins.Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
         Culture.ApplyWithDefaultCulture();
     }
 }

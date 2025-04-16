@@ -4,8 +4,6 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.Json.Tests
 {
@@ -128,8 +126,6 @@ namespace Musoq.DataSources.Json.Tests
 
         static JsonTests()
         {
-            new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName, EnvironmentUtils.GetOrCreateEnvironmentVariable());
-
             Culture.ApplyWithDefaultCulture();
         }
     }

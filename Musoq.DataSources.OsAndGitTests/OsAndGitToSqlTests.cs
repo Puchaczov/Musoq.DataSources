@@ -6,8 +6,6 @@ using Musoq.DataSources.OsAndGitTests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Parser.Helpers;
-using Musoq.Plugins;
-using Environment = Musoq.Plugins.Environment;
 
 namespace Musoq.DataSources.OsAndGitTests;
 
@@ -116,8 +114,6 @@ public class OsAndGitToSqlTests
 
     static OsAndGitToSqlTests()
     {
-        new Environment().SetValue(Constants.NetStandardDllEnvironmentVariableName,
-            EnvironmentUtils.GetOrCreateEnvironmentVariable());
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 

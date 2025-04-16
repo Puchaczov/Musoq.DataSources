@@ -11,12 +11,17 @@
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
-        <PackageReference Include="MSTest.TestAdapter" Version="3.1.1"/>
-        <PackageReference Include="MSTest.TestFramework" Version="3.1.1"/>
-        <PackageReference Include="Musoq.Converter" Version="3.5.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="7.7.0" />
-        <PackageReference Include="Musoq.Schema" Version="7.3.5" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
+        <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
+        <PackageReference Include="Musoq.Converter" Version="4.0.2" />
+        <PackageReference Include="Musoq.Evaluator" Version="8.0.1" />
+        <PackageReference Include="Musoq.Schema" Version="8.0.1" />
+        <!-- pin required for tests nuget packages, at least for now -->
+        <PackageReference Include="NUnit" Version="3.14.0" />
+        <PackageReference Include="NUnit.Analyzers" Version="3.9.0"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -32,8 +37,22 @@
         <Content Include="TestsSolutions\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <Content Include="Files\Licenses\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Files\NugetPackages\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Files\HtmlPages\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <Content Remove="TestsSolutions\**\obj\**" />
         <Content Remove="TestsSolutions\**\.idea\**" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Files\HtmlPages\" />
+      <Folder Include="TestsSolutions\NugetCache\" />
     </ItemGroup>
 
 </Project>

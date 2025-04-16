@@ -1,0 +1,8 @@
+{
+  "BannedPropertiesValues": [
+    {
+      "propertyName": "LicenseUrl",
+      "propertyValue": "https://aka.ms/deprecateLicenseUrl"
+    }
+  ]
+}

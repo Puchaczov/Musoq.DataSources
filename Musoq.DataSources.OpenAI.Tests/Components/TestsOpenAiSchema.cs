@@ -1,7 +1,6 @@
 ﻿using System;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using SharpToken;
 
 namespace Musoq.DataSources.OpenAI.Tests.Components;
 
