@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.Plugins;
@@ -64,7 +65,7 @@ public class CSharpLibrary : LibraryBase
     /// <param name="entity">The class entity to find references for.</param>
     /// <returns>References of the specified class entity.</returns>
     [BindableMethod]
-    public IEnumerable<ReferencedDocumentEntity> FindReferences(ClassEntity entity)
+    public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(ClassEntity))] ClassEntity entity)
     {
         var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
         
@@ -87,7 +88,7 @@ public class CSharpLibrary : LibraryBase
     /// <param name="entity">The class entity to find references for.</param>
     /// <returns>References of the specified class entity.</returns>
     [BindableMethod]
-    public IEnumerable<ReferencedDocumentEntity> FindReferences(InterfaceEntity entity)
+    public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(InterfaceEntity))] InterfaceEntity entity)
     {
         var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
         
@@ -110,7 +111,7 @@ public class CSharpLibrary : LibraryBase
     /// <param name="entity">The class entity to find references for.</param>
     /// <returns>References of the specified class entity.</returns>
     [BindableMethod]
-    public IEnumerable<ReferencedDocumentEntity> FindReferences(EnumEntity entity)
+    public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(EnumEntity))] EnumEntity entity)
     {
         var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
         
@@ -125,5 +126,26 @@ public class CSharpLibrary : LibraryBase
                     yield return new ReferencedDocumentEntity(location.Document, entity.Solution, tree, model, location);
             }
         }
+    }
+    
+    /// <summary>
+    /// Gets the NuGet packages for the specified project entity.
+    /// </summary>
+    /// <param name="project">The project entity to get NuGet packages for.</param>
+    /// <param name="withTransitivePackages"> <c>true</c> to include transitive packages; otherwise, <c>false</c>.</param>
+    /// <returns>NuGet packages for the specified project entity.</returns>
+    [BindableMethod]
+    public IEnumerable<NugetPackageEntity> GetNugetPackages([InjectSpecificSource(typeof(ProjectEntity))] ProjectEntity project, bool withTransitivePackages)
+    {
+        var nugetPackageEntities = project.NugetPackageEntities;
+        
+        if (nugetPackageEntities != null)
+            return nugetPackageEntities;
+            
+        var taskGetNugetPackages = Task.Run(async () => await project.GetNugetPackagesAsync(project.Project, withTransitivePackages), project.CancellationToken);
+        taskGetNugetPackages.Wait();
+        project.NugetPackageEntities = taskGetNugetPackages.Result;
+        
+        return project.NugetPackageEntities;
     }
 }

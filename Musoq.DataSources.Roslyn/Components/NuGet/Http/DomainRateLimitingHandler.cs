@@ -6,22 +6,41 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet.Http;
 
-internal class DomainRateLimitingHandler : DelegatingHandler
+internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
 {
-    private readonly ConcurrentDictionary<string, RateLimiter> _limiters = new();
+    private readonly ConcurrentDictionary<string, TokenBucketRateLimiter> _limiters = new();
     private readonly IReadOnlyDictionary<string, DomainRateLimitConfig> _domainConfigs;
     private readonly DomainRateLimitConfig _defaultConfig;
+    private readonly TimeSpan _millisecondsTimeout;
+    private readonly ILogger _logger;
+    private readonly bool _rejectWhenNotAcquired;
+    private int _concurrentRequests;
 
-    public DomainRateLimitingHandler(IReadOnlyDictionary<string, DomainRateLimitConfig> domainConfigs,
-        DomainRateLimitConfig defaultConfig)
+    public DomainRateLimitingHandler(
+        IReadOnlyDictionary<string, DomainRateLimitConfig> domainConfigs,
+        DomainRateLimitConfig defaultConfig,
+        bool rejectWhenNotAcquired = true,
+        ILogger? logger = null
+    )
     {
         _domainConfigs = domainConfigs;
         _defaultConfig = defaultConfig;
+        _millisecondsTimeout = TimeSpan.FromMilliseconds(50);
+        _rejectWhenNotAcquired = rejectWhenNotAcquired;
+        _logger = logger ?? NullLogger.Instance;
         
         InnerHandler = new HttpClientHandler();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsyncCore();
+        GC.SuppressFinalize(this);
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
@@ -34,20 +53,26 @@ internal class DomainRateLimitingHandler : DelegatingHandler
         }
 
         var domain = request.RequestUri.Host;
-        
+
         var limiter = _limiters.GetOrAdd(domain, _ => CreateRateLimiter(domain));
         
-        using var lease = await limiter.AcquireAsync(1, cancellationToken);
+        await AcquireAsync(limiter, domain, cancellationToken);
         
-        if (!lease.IsAcquired)
+        Interlocked.Increment(ref _concurrentRequests);
+
+        var sendResult = await RetryWhenRateLimitingOccured(request, domain, cancellationToken);
+        
+        Interlocked.Decrement(ref _concurrentRequests);
+
+        if (sendResult is null)
         {
-            throw new HttpRequestException("Request rejected due to rate limit.");
+            throw new HttpRequestException("Response is null.");
         }
         
-        return await base.SendAsync(request, cancellationToken);
+        return sendResult;
     }
 
-    private RateLimiter CreateRateLimiter(string domain)
+    private TokenBucketRateLimiter CreateRateLimiter(string domain)
     {
         var config = GetConfigForDomain(domain);
         
@@ -79,17 +104,72 @@ internal class DomainRateLimitingHandler : DelegatingHandler
             .OrderByDescending(key => key.Length)
             .ToList();
             
-        if (wildcardMatches.Count > 0)
-        {
-            return _domainConfigs[wildcardMatches[0]];
-        }
-        
-        return _defaultConfig;
+        return wildcardMatches.Count > 0 ? _domainConfigs[wildcardMatches[0]] : _defaultConfig;
     }
 
-    internal record DomainRateLimitingConfigKey(string Domain, bool HasApiKey)
+    private async Task AcquireAsync(TokenBucketRateLimiter limiter, string domain, CancellationToken cancellationToken)
     {
+        if (_rejectWhenNotAcquired)
+        {
+            using var lease = await limiter.AcquireAsync(1, cancellationToken);
+            
+            if (!lease.IsAcquired)
+            {
+                _logger.LogWarning("Rate limit exceeded for domain {Domain}.", domain);
+                throw new HttpRequestException($"Rate limit exceeded for domain {domain}.");
+            }
+        }
+        else
+        {
+            var hasSuccessfullyLease = false;
+            while (!hasSuccessfullyLease)
+            {
+                using var lease = await limiter.AcquireAsync(1, cancellationToken);
+                hasSuccessfullyLease = lease.IsAcquired;
+            
+                if (!hasSuccessfullyLease)
+                    await Task.Delay(_millisecondsTimeout, cancellationToken);
+            }
+        }
     }
+
+    private async Task<HttpResponseMessage?> RetryWhenRateLimitingOccured(HttpRequestMessage request, string domain, CancellationToken cancellationToken)
+    {
+        HttpResponseMessage? sendResult = null;
+        var isSuccess = false;
+        
+        while (!isSuccess)
+        {
+            sendResult = await base.SendAsync(request, cancellationToken);
+            
+            if (sendResult.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                _logger.LogWarning("Rate limit exceeded for domain {Domain}.", domain);
+                
+                var waitTime = sendResult.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(1);
+                
+                await Task.Delay(waitTime, cancellationToken);
+                isSuccess = false;
+                continue;
+            }
+
+            isSuccess = true;
+        }
+        
+        return sendResult;
+    }
+
+    private async ValueTask DisposeAsyncCore()
+    {
+        foreach (var limiter in _limiters.Values)
+        {
+            await limiter.DisposeAsync();
+        }
+
+        _limiters.Clear();
+    }
+
+    internal record DomainRateLimitingConfigKey(string Domain, bool HasApiKey);
 
     internal class DomainRateLimitConfig(
         int permitsPerPeriod,

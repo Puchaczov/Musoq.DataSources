@@ -176,18 +176,18 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
         
         while (!cancellationToken.IsCancellationRequested)
         {
-            await Parallel.ForEachAsync(_synchronizationQueue.GetConsumingEnumerable(cancellationToken), cancellationToken, async (fileInfo, token) =>
+            await Parallel.ForEachAsync(_synchronizationQueue.GetConsumingEnumerable(cancellationToken), cancellationToken, (fileInfo, token) =>
             {
                 if (!_fileSystem.IsFileExists(fileInfo.FullName))
                 {
                     _cachedItems.TryRemove(fileInfo.Name, out _);
                     ItemRemoved?.Invoke(this, fileInfo.Name);
-                    return;
+                    return ValueTask.CompletedTask;
                 }
                 
                 if (_cachedItems.TryGetValue(fileInfo.Name, out _))
                 {
-                    return;
+                    return ValueTask.CompletedTask;
                 }
 
                 var filePath = fileInfo.FullName;
@@ -203,6 +203,7 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
                     
                     ItemLoaded?.Invoke(this, fileInfo.Name);
                 }, () => _cachedItems.TryRemove(fileInfo.FullName, out _), _logger, token);
+                return ValueTask.CompletedTask;
             });
         }
     }
@@ -213,7 +214,7 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
         
         while (!cancellationToken.IsCancellationRequested)
         {
-            await Parallel.ForEachAsync(_itemsToStore.GetConsumingEnumerable(cancellationToken), cancellationToken, async (item, token) =>
+            await Parallel.ForEachAsync(_itemsToStore.GetConsumingEnumerable(cancellationToken), cancellationToken, (item, token) =>
             {
                 var keyPath = _convertKeyToPath(item.key);
                 var filePath = IFileSystem.Combine(_directoryPath, keyPath);
@@ -230,6 +231,7 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
                     
                     ItemStored?.Invoke(this, _convertKeyToPath(item.key));
                 }, null, _logger, token);
+                return ValueTask.CompletedTask;
             });
         }
     }
@@ -253,7 +255,7 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
                 }
             }
         
-            foreach (var path in cachedKeys.Select(cachedKey => Path.Combine(_directoryPath, cachedKey)).Where(path => !_fileSystem.IsFileExists(path)))
+            foreach (var path in cachedKeys.Select(cachedKey => IFileSystem.Combine(_directoryPath, cachedKey)).Where(path => !_fileSystem.IsFileExists(path)))
             {
                 _synchronizationQueue.Add(new FileInfo(path));
             }
@@ -281,8 +283,8 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
         try
         {
             var totalWaitMs = 0;
-            var maxWaitMs = 120000;
-            var waitIntervalMs = 1000;
+            const int maxWaitMs = 120000;
+            const int waitIntervalMs = 1000;
         
             while (true)
             {
@@ -329,7 +331,7 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
                 }
                 catch (ApplicationException)
                 {
-                    logger?.LogWarning($"Failed to release mutex '{mutexName}'. It may be held by another process.");
+                    logger?.LogWarning("Failed to release mutex '{MutexName}'. It may be held by another process.", mutexName);
                 }
             }
         }

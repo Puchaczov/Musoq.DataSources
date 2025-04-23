@@ -375,6 +375,14 @@ namespace Musoq.DataSources.Roslyn.Tests
             throw new FileNotFoundException($"File not found: {path}");
         }
 
+        public Stream OpenRead(string path)
+        {
+            if (_files.TryGetValue(path, out var content))
+                return new MemoryStream(Encoding.UTF8.GetBytes(content));
+                
+            throw new FileNotFoundException($"File not found: {path}");
+        }
+
         public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

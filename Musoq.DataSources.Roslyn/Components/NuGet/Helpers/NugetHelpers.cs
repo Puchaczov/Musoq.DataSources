@@ -60,9 +60,38 @@ internal static class NugetHelpers
                 
                 return () => Task.FromResult<string?>(null);
             }
+
+            string? licenseContent;
+            if (licenseUrl.Contains("raw.github.com") || (licenseUrl.Contains("gitlab.com") && licenseUrl.Contains("/-/raw/")))
+            {
+                var licenseContentResponse = await httpClient.GetAsync(licenseUrl, cancellationToken);
+                licenseContent = licenseContentResponse is not null ? await licenseContentResponse.Content.ReadAsStringAsync(cancellationToken) : null;
+                
+                if (licenseContent is null)
+                {
+                    return () => Task.FromResult<string?>(null);
+                }
+                
+                return async () => System.Text.Json.JsonSerializer.Serialize(await nuGetPropertiesResolver.GetLicensesNamesAsync(licenseContent, cancellationToken));
+            }
+
+            string? rawFileUrl = null;
+            var alreadyRawFileUrl = false;
+            var licenseContentHttpResponseMessage = await httpClient.GetAsync(licenseUrl, cancellationToken);
+            if (licenseContentHttpResponseMessage is not null && licenseContentHttpResponseMessage.IsSuccessStatusCode)
+            {
+                var licenseContentPage = await licenseContentHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken);
+                htmlDocument = new HtmlDocument();
+                htmlDocument.LoadHtml(licenseContentPage);
+                if (TryExtractRawLicenseUrl(htmlDocument, out rawFileUrl) && rawFileUrl is not null)
+                {
+                    alreadyRawFileUrl = true;
+                }
+            }
             
-            var licenseContentHttpResponseMessage = await httpClient.GetAsync(ConvertToRawFileUrl(licenseUrl, null), cancellationToken);
-            var licenseContent = licenseContentHttpResponseMessage is not null ? await licenseContentHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
+            rawFileUrl = alreadyRawFileUrl ? rawFileUrl! : ConvertToRawFileUrl(licenseUrl, null);
+            licenseContentHttpResponseMessage = await httpClient.GetAsync(rawFileUrl, cancellationToken);
+            licenseContent = licenseContentHttpResponseMessage is not null ? await licenseContentHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
             
             if (licenseContent is null)
             {
@@ -90,7 +119,17 @@ internal static class NugetHelpers
             
         return () => Task.FromResult<string?>(null);
     }
-    
+
+    private static bool TryExtractRawLicenseUrl(HtmlDocument document, out string? licenseUrl)
+    {
+        if (TryExtractUrl(document, "//a[@data-testid='raw-button']", "href", out licenseUrl) && licenseUrl is not null)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public static async Task<Func<Task<string?>>> DiscoverLicenseUrlAsync(string url, NuGetResource commonResources, IHttpClient httpClient, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
@@ -182,13 +221,36 @@ internal static class NugetHelpers
         {
             return async () =>
             {
-                var convertedUrl = ConvertToRawFileUrl(licenseUrl, null);
-                var httpResponseMessage = await httpClient.GetAsync(convertedUrl, cancellationToken);
+                string? licenseContent;
+                if (licenseUrl.Contains("raw.github.com") || (licenseUrl.Contains("gitlab.com") && licenseUrl.Contains("/-/raw/")))
+                {
+                    var licenseContentResponse = await httpClient.GetAsync(licenseUrl, cancellationToken);
+                    licenseContent = licenseContentResponse is not null ? await licenseContentResponse.Content.ReadAsStringAsync(cancellationToken) : null;
+
+                    return licenseContent;
+                }
+                
+                string? rawFileUrl = null;
+                var alreadyRawFileUrl = false;
+                var licenseContentHttpResponseMessage = await httpClient.GetAsync(licenseUrl, cancellationToken);
+                if (licenseContentHttpResponseMessage is not null && licenseContentHttpResponseMessage.IsSuccessStatusCode)
+                {
+                    var licenseContentPage = await licenseContentHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken);
+                    htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(licenseContentPage);
+                    if (TryExtractRawLicenseUrl(htmlDocument, out rawFileUrl) && rawFileUrl is not null)
+                    {
+                        alreadyRawFileUrl = true;
+                    }
+                }
+            
+                rawFileUrl = alreadyRawFileUrl ? rawFileUrl! : ConvertToRawFileUrl(licenseUrl, null);
+                var httpResponseMessage = await httpClient.GetAsync(rawFileUrl, cancellationToken);
                 var httpResponseMessageContent = httpResponseMessage is not null ? await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
                 var document = new HtmlDocument();
                 document.LoadHtml(httpResponseMessageContent);
                 
-                if (TryExtractContent(document, "//pre[@class='license-file-contents custom-license-container']", out var licenseContent) && licenseContent is not null)
+                if (TryExtractContent(document, "//pre[@class='license-file-contents custom-license-container']", out licenseContent) && licenseContent is not null)
                 {
                     return licenseContent;
                 }

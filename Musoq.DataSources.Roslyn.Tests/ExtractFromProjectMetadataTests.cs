@@ -28,6 +28,7 @@ public class ExtractFromProjectMetadataTests
         var result = await ProjectEntity.ExtractFromProjectMetadataAsync(
             scenario.GetProjectXml(), 
             scenario.GetNugetPackageMetadataRetriever(),
+            false,
             CancellationToken.None);
         
         Assert.AreEqual(0, result.Count);
@@ -57,6 +58,7 @@ public class ExtractFromProjectMetadataTests
         var result = await ProjectEntity.ExtractFromProjectMetadataAsync(
             scenario.GetProjectXml(), 
             scenario.GetNugetPackageMetadataRetriever(),
+            false,
             CancellationToken.None);
         
         Assert.AreEqual(1, result.Count);
@@ -95,6 +97,7 @@ public class ExtractFromProjectMetadataTests
         var result = await ProjectEntity.ExtractFromProjectMetadataAsync(
             scenario.GetProjectXml(), 
             scenario.GetNugetPackageMetadataRetriever(),
+            false,
             CancellationToken.None);
         
         Assert.AreEqual(1, result.Count);
@@ -216,6 +219,17 @@ public class ExtractFromProjectMetadataTests
             
             if (_externalFiles.Contains(path) || File.Exists(path))
                 return File.ReadAllText(path);
+                
+            throw new FileNotFoundException($"File not found: {path}");
+        }
+
+        public Stream OpenRead(string path)
+        {
+            if (_files.TryGetValue(path, out var content))
+                return new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+            
+            if (_externalFiles.Contains(path) || File.Exists(path))
+                return File.OpenRead(path);
                 
             throw new FileNotFoundException($"File not found: {path}");
         }

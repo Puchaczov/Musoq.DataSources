@@ -10,8 +10,8 @@
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="Musoq.Converter" Version="4.0.2" />
-        <PackageReference Include="Musoq.Evaluator" Version="8.0.1" />
+        <PackageReference Include="Musoq.Converter" Version="4.0.3" />
+        <PackageReference Include="Musoq.Evaluator" Version="8.0.2" />
         <PackageReference Include="Musoq.Parser" Version="4.2.0" />
         <PackageReference Include="Musoq.Plugins" Version="6.10.3" />
         <PackageReference Include="Musoq.Schema" Version="8.0.1" />

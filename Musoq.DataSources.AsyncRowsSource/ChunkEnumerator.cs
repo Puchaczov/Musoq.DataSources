@@ -10,87 +10,62 @@ namespace Musoq.DataSources.AsyncRowsSource
         CancellationToken token)
         : IEnumerator<IObjectResolver>
     {
-        private readonly BlockingCollection<IReadOnlyList<IObjectResolver>> _readRows = readRows ?? throw new ArgumentNullException(nameof(readRows));
-        private IReadOnlyList<IObjectResolver>? _currentChunk;
-        private int _currentIndex = -1;
-        private const int MaxTakeAttempts = 10;
+        private IEnumerator<IObjectResolver>? _currentChunkEnumerator;
 
         public bool MoveNext()
         {
-            ThrowWhenException();
+            getException()?.Let(exc => throw exc);
             
-            if (_currentChunk != null && ++_currentIndex < _currentChunk.Count)
-                return true;
-
-            return TryGetNextChunk();
-        }
-
-        private bool TryGetNextChunk()
-        {
-            for (var i = 0; i < MaxTakeAttempts; i++)
+            while (true)
             {
-                if (!TryTakeValidChunk(out _currentChunk)) continue;
-                
-                ThrowWhenException();
-                
-                _currentIndex = 0;
-                return true;
-            }
-
-            try
-            {
-                ThrowWhenException();
-                
-                _currentChunk = _readRows.Take(token);
-                
-                ThrowWhenException();
-                
-                _currentIndex = 0;
-                
-                return _currentChunk.Count > 0;
-            }
-            catch (OperationCanceledException)
-            {
-                return TryTakeRemainingItems();
-            }
-        }
-
-        private bool TryTakeValidChunk(out IReadOnlyList<IObjectResolver>? chunk)
-        {
-            return _readRows.TryTake(out chunk) && chunk is {Count: > 0};
-        }
-
-        private bool TryTakeRemainingItems()
-        {
-            while (_readRows.Count > 0)
-            {
-                if (!TryTakeValidChunk(out _currentChunk))
+                if (_currentChunkEnumerator != null)
                 {
-                    ThrowWhenException();
-                    
-                    continue;
+                    if (_currentChunkEnumerator.MoveNext())
+                        return true;
                 }
 
-                _currentIndex = 0;
-                return true;
+                if (readRows.TryTake(out var chunk, 100))
+                {
+                    if (chunk.Count == 0)
+                        continue;
+                    _currentChunkEnumerator = chunk.GetEnumerator();
+                }
+                else if (readRows.IsCompleted || readRows.Count == 0)
+                {
+                    if (token.IsCancellationRequested)
+                        return false;
+                    if (readRows.IsCompleted)
+                        return false;
+                }
             }
-            return false;
         }
 
-        public void Reset() => throw new NotSupportedException("Chunk enumerator does not support reset.");
-
-        public IObjectResolver Current => _currentChunk![_currentIndex];
+        public IObjectResolver Current
+        {
+            get
+            {
+                if (_currentChunkEnumerator == null)
+                    throw new InvalidOperationException("Enumeration has not started.");
+                return _currentChunkEnumerator.Current;
+            }
+        }
 
         object IEnumerator.Current => Current;
 
-        public void Dispose() { }
+        public void Reset() => throw new NotSupportedException("Chunk enumerator does not support reset.");
 
-        private void ThrowWhenException()
+        public void Dispose()
         {
-            var exception = getException();
-            
-            if (exception is not null)
-                throw exception;
+            _currentChunkEnumerator?.Dispose();
+        }
+    }
+
+    internal static class Extensions
+    {
+        public static void Let<T>(this T? value, Action<T> action)
+        {
+            if (value is not null)
+                action(value);
         }
     }
 }

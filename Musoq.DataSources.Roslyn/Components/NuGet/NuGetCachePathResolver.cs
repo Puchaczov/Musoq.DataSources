@@ -9,6 +9,12 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
 internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatform) : INuGetCachePathResolver
 {
+    private static readonly string UserProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    
+    private static readonly string CommonApplicationDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+    private static readonly string LocalApplicationDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    
     public IEnumerable<string> ResolveAll()
     {
         var cache = new HashSet<string>();
@@ -38,8 +44,8 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
         IEnumerable<string> configPaths = new List<string?>
         {
             solutionPath != null ? Path.Combine(new FileInfo(solutionPath).DirectoryName!, "nuget.config") : null,
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "NuGet.Config"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NuGet", "NuGet.Config")
+            Path.Combine(UserProfileFolder, ".nuget", "NuGet.Config"),
+            Path.Combine(CommonApplicationDataFolder, "NuGet", "NuGet.Config")
         }
         .Where(p => p is not null)!;
 
@@ -61,6 +67,9 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
         {
             try
             {
+                if (!IFileSystem.FileExists(configPath))
+                    continue;
+                
                 var doc = XDocument.Load(configPath);
                 var config = doc.Root;
 
@@ -131,7 +140,7 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
         {
             if (osPlatform.Equals(OSPlatform.Windows))
             {
-                var winPlugins = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NuGet", "plugins-cache");
+                var winPlugins = Path.Combine(LocalApplicationDataFolder, "NuGet", "plugins-cache");
                 cache.Add(winPlugins);
             }
             else
@@ -145,6 +154,6 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
 
     private static void AddDefaultGlobalPackages(HashSet<string> cache)
     {
-        cache.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages"));
+        cache.Add(Path.Combine(UserProfileFolder, ".nuget", "packages"));
     }
 }
