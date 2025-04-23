@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -5,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Semver;
 
@@ -21,7 +23,192 @@ internal sealed class NuGetPackageMetadataRetriever(
     : INuGetPackageMetadataRetriever
 {
     private readonly ConcurrentDictionary<(string, string), List<Dictionary<string, string?>>> _packageMetadataCache = new();
-    
+    private readonly ConcurrentDictionary<(string, string), List<DependencyInfo>> _packageDependenciesCache = new();
+
+    private IEnumerable<string>? _resolvedPaths;
+
+    public async IAsyncEnumerable<DependencyInfo> GetDependenciesAsync(string packageName, string packageVersion, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
+            yield break;
+        
+        if (!SemVersion.TryParse(packageVersion, out _))
+        {
+            logger.LogError("Package version is not valid for {PackageName} {PackageVersion}", packageName, packageVersion);
+            yield break;
+        }
+        
+        if (_packageDependenciesCache.TryGetValue((packageName, packageVersion), out var cachedDependencies))
+        {
+            logger.LogTrace("Using cached dependencies for {PackageName} {PackageVersion}", packageName, packageVersion);
+            
+            foreach (var cachedRow in cachedDependencies)
+            {
+                yield return cachedRow;
+            }
+            
+            yield break;
+        }
+        
+        Queue<(string PackageName, string Version, uint Level)> packagesToProcess = new();
+        var processedPackages = new HashSet<(string, string)>();
+        
+        packagesToProcess.Enqueue((packageName, packageVersion, 1));
+        processedPackages.Add((packageName, packageVersion));
+        
+        do
+        {
+            var currentPackage = packagesToProcess.Dequeue();
+            
+            await foreach (var dependency in InternalGetDependenciesAsync(currentPackage.PackageName, currentPackage.Version, currentPackage.Level, cancellationToken))
+            {
+                if (string.IsNullOrEmpty(dependency.PackageId) || string.IsNullOrEmpty(dependency.VersionRange))
+                {
+                    logger.LogError("Dependency name or version is empty for {CurrentPackagePackageName} {CurrentPackageVersion}", currentPackage.PackageName, currentPackage.Version);
+                    continue;
+                }
+                
+                if (!processedPackages.Add((dependency.PackageId, dependency.VersionRange)))
+                    continue;
+                
+                packagesToProcess.Enqueue((dependency.PackageId, dependency.VersionRange, dependency.Level + 1));
+                
+                yield return dependency;
+            }
+        }
+        while (!cancellationToken.IsCancellationRequested && packagesToProcess.Count > 0);
+    }
+
+    private async IAsyncEnumerable<DependencyInfo> InternalGetDependenciesAsync(string packageName, string packageVersion, uint level, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        logger.LogTrace("Retrieving metadata for {PackageName} {PackageVersion}", packageName, packageVersion);
+        
+        if (packageVersion.Length == 0)
+        {
+            logger.LogError("Package version is empty for {PackageName}", packageName);
+            yield break;
+        }
+        
+        if (packageVersion[0] == '[' && packageVersion[^1] == ']')
+        {
+            packageVersion = packageVersion[1..^1];
+        }
+        
+        if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
+        {
+            logger.LogError("Package name or version is empty for {PackageName} {PackageVersion}", packageName, packageVersion);
+            yield break;
+        }
+        
+        if (!SemVersion.TryParse(packageVersion, out _))
+        {
+            logger.LogError("Package version is not valid for {PackageName} {PackageVersion}", packageName, packageVersion);
+            yield break;
+        }
+        
+        if (_packageDependenciesCache.TryGetValue((packageName, packageVersion), out var cachedDependencies))
+        {
+            logger.LogTrace("Using cached dependencies for {PackageName} {PackageVersion}", packageName, packageVersion);
+            
+            foreach (var cachedRow in cachedDependencies)
+            {
+                yield return cachedRow;
+            }
+            
+            yield break;
+        }
+
+        using var @lock = await packageVersionConcurrencyManager.AcquireLockAsync(packageName, packageVersion, cancellationToken);
+        
+        if (_packageDependenciesCache.TryGetValue((packageName, packageVersion), out cachedDependencies))
+        {
+            logger.LogTrace("Using cached dependencies for {PackageName} {PackageVersion}", packageName, packageVersion);
+            
+            foreach (var cachedRow in cachedDependencies)
+            {
+                yield return cachedRow;
+            }
+            
+            yield break;
+        }
+        
+        var packagePath = GetPackageCachePath(nuGetCachePathResolver, packageName, packageVersion) ?? 
+                          await TryDownloadPackageAsync(packageName, packageVersion, cancellationToken);
+        
+        if (string.IsNullOrWhiteSpace(packagePath))
+        {
+            logger.LogError("Package path is empty for {PackageName} {PackageVersion}", packageName, packageVersion);
+            yield break;
+        }
+        
+        var nuspecPath = IFileSystem.Combine(packagePath, $"{packageName}.nuspec");
+        
+        if (!fileSystem.IsFileExists(nuspecPath))
+        {
+            logger.LogError("Nuspec file not found for {PackageName} {PackageVersion}", packageName, packageVersion);
+            yield break;
+        }
+
+        await using var file = fileSystem.OpenRead(nuspecPath);
+        
+        var xml = XDocument.Load(file);
+        var ns = xml.Root?.GetDefaultNamespace() ?? XNamespace.None;
+
+        var ungroupedDependencies = xml.Root
+            ?.Element(ns + "metadata")
+            ?.Element(ns + "dependencies")
+            ?.Elements(ns + "dependency")
+            .Select(x => new DependencyInfo(
+                x.Attribute("id")?.Value ?? string.Empty,
+                x.Attribute("version")?.Value ?? string.Empty,
+                string.Empty,
+                level));
+            
+        if (ungroupedDependencies == null)
+        {
+            logger.LogError("Unknown error while retrieving dependencies for {PackageName} {PackageVersion}", packageName, packageVersion);
+            yield break;
+        }
+            
+        var groupedDependencies = xml.Root
+            ?.Element(ns + "metadata")
+            ?.Element(ns + "dependencies")
+            ?.Elements(ns + "group")
+            .SelectMany(g => g.Elements(ns + "dependency")
+                .Select(x => new DependencyInfo(
+                    x.Attribute("id")?.Value ?? string.Empty,
+                    x.Attribute("version")?.Value ?? string.Empty,
+                    g.Attribute("targetFramework")?.Value ?? string.Empty,
+                    level)));
+            
+        if (groupedDependencies == null)
+        {
+            logger.LogError("Unknown error while retrieving dependencies for {PackageName} {PackageVersion}", packageName, packageVersion);
+            yield break;
+        }
+        
+        var dependencies = new List<DependencyInfo>();
+        
+        _packageDependenciesCache.AddOrUpdate((packageName, packageVersion),
+            dependencies,
+            (_, _) => dependencies);
+
+        foreach (var dependency in ungroupedDependencies.Concat(groupedDependencies))
+        {
+            if (string.IsNullOrEmpty(dependency.PackageId) || string.IsNullOrEmpty(dependency.VersionRange))
+            {
+                logger.LogError("Dependency name or version is empty for {PackageName} {PackageVersion}", packageName, packageVersion);
+                continue;
+            }
+            
+            dependencies.Add(dependency);
+            
+            yield return dependency;
+        }
+    }
+
     /// <summary>
     /// Gets the metadata of the specified NuGet package.
     /// </summary>
@@ -36,11 +223,11 @@ internal sealed class NuGetPackageMetadataRetriever(
     {
         cancellationToken.ThrowIfCancellationRequested();
         
-        logger.LogTrace($"Retrieving metadata for {packageName} {packageVersion}");
+        logger.LogTrace("Retrieving metadata for {PackageName} {PackageVersion}", packageName, packageVersion);
         
         if (packageVersion.Length == 0)
         {
-            logger.LogError($"Package version is empty for {packageName}");
+            logger.LogError("Package version is empty for {PackageName}", packageName);
             yield break;
         }
         
@@ -51,19 +238,19 @@ internal sealed class NuGetPackageMetadataRetriever(
         
         if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
         {
-            logger.LogError($"Package name or version is empty for {packageName} {packageVersion}");
+            logger.LogError("Package name or version is empty for {PackageName} {PackageVersion}", packageName, packageVersion);
             yield break;
         }
         
         if (!SemVersion.TryParse(packageVersion, out _))
         {
-            logger.LogError($"Package version is not valid for {packageName} {packageVersion}");
+            logger.LogError("Package version is not valid for {PackageName} {PackageVersion}", packageName, packageVersion);
             yield break;
         }
         
         if (_packageMetadataCache.TryGetValue((packageName, packageVersion), out var cachedMetadata))
         {
-            logger.LogTrace($"Using cached metadata for {packageName} {packageVersion}");
+            logger.LogTrace("Using cached metadata for {PackageName} {PackageVersion}", packageName, packageVersion);
             
             foreach (var cachedRow in cachedMetadata)
             {
@@ -77,7 +264,7 @@ internal sealed class NuGetPackageMetadataRetriever(
         
         if (_packageMetadataCache.TryGetValue((packageName, packageVersion), out cachedMetadata))
         {
-            logger.LogTrace($"Using cached metadata for {packageName} {packageVersion}");
+            logger.LogTrace("Using cached metadata for {PackageName} {PackageVersion}", packageName, packageVersion);
             
             foreach (var cachedRow in cachedMetadata)
             {
@@ -110,7 +297,7 @@ internal sealed class NuGetPackageMetadataRetriever(
 
         if (licenses.Length == 0)
         {
-            logger.LogTrace($"No licenses found for {packageName} {packageVersion}");
+            logger.LogTrace("No licenses found for {PackageName} {PackageVersion}", packageName, packageVersion);
 
             row = BuildMetadata(null, commonResources);
             
@@ -120,7 +307,7 @@ internal sealed class NuGetPackageMetadataRetriever(
         }
         else
         {
-            logger.LogTrace($"Found {licenses.Length} licenses for {packageName} {packageVersion}");
+            logger.LogTrace("Found {LicensesLength} licenses for {PackageName} {PackageVersion}", licenses.Length, packageName, packageVersion);
 
             row = BuildMetadata(licenses[0], commonResources);
             
@@ -145,13 +332,13 @@ internal sealed class NuGetPackageMetadataRetriever(
 
     private string? GetPackageCachePath(INuGetCachePathResolver resolver, string packageName, string packageVersion)
     {
-        var cachedPaths = resolver.ResolveAll();
+        _resolvedPaths ??= resolver.ResolveAll();
 
-        var packagePath = cachedPaths
+        var packagePath = _resolvedPaths
             .Select(cache => Path.Combine(cache, packageName, packageVersion))
             .FirstOrDefault(fileSystem.IsDirectoryExists);
         
-        logger.LogTrace($"Package cache used: {packagePath} for {packageName} {packageVersion}");
+        logger.LogTrace("Package cache used: {PackagePath} for {PackageName} {PackageVersion}", packagePath, packageName, packageVersion);
         
         return packagePath;
     }
@@ -169,7 +356,7 @@ internal sealed class NuGetPackageMetadataRetriever(
         
         try
         {
-            logger.LogTrace($"Package downloader used: {packagePath} for {packageName} {packageVersion}");
+            logger.LogTrace("Package downloader used: {PackagePath} for {PackageName} {PackageVersion}", packagePath, packageName, packageVersion);
             
             return await retrievalService.DownloadPackageAsync(packageName, packageVersion, packagePath, cancellationToken);
         }

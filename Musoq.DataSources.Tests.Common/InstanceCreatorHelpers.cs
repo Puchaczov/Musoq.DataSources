@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -41,6 +42,10 @@ public static class InstanceCreatorHelpers
         var runnableField = compiledQuery.GetType().GetRuntimeFields().FirstOrDefault(f => f.Name.Contains("runnable"));
 
         var runnable = (IRunnable)runnableField?.GetValue(compiledQuery);
+        
+        if (runnable == null)
+            throw new InvalidOperationException("Runnable is null.");
+        
         runnable.Logger = loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>();
 
         return compiledQuery;

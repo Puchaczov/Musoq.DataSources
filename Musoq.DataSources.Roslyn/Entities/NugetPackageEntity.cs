@@ -84,6 +84,16 @@ public class NugetPackageEntity
     /// Gets the license of the NuGet package.
     /// </summary>
     public string? License { get; }
+    
+    /// <summary>
+    /// Determines whether the NuGet package is transitive.
+    /// </summary>
+    public bool? IsTransitive { get; }
+    
+    /// <summary>
+    /// Gets the level of transitivity in the dependency graph.
+    /// </summary>
+    public uint? TransitivityLevel { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NugetPackageEntity"/> class.
@@ -104,6 +114,8 @@ public class NugetPackageEntity
     /// <param name="tags">The tags of the NuGet package.</param>
     /// <param name="licenseContent">The license content of the NuGet package.</param>
     /// <param name="license">The license of the NuGet package.</param>
+    /// <param name="isTransitive">A value indicating whether the NuGet package is transitive.</param>
+    /// <param name="level">The level of transitivity in the dependency graph.</param>
     public NugetPackageEntity(
         string id, 
         string version, 
@@ -120,7 +132,9 @@ public class NugetPackageEntity
         string? language, 
         string? tags,
         string? licenseContent,
-        string? license)
+        string? license,
+        bool? isTransitive,
+        uint? level)
     {
         Id = id;
         Version = version;
@@ -138,5 +152,7 @@ public class NugetPackageEntity
         Tags = tags;
         LicenseContent = licenseContent;
         License = license;
+        IsTransitive = isTransitive;
+        TransitivityLevel = level;
     }
 }

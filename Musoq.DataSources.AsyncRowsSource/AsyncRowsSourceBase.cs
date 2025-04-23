@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.AsyncRowsSource;
@@ -42,27 +41,8 @@ public abstract class AsyncRowsSourceBase<T>(CancellationToken queryCancelledTok
                 }
                 finally
                 {
-                    chunkedSourceBlockingCollection.Add(new List<EntityResolver<T>>());
+                    chunkedSourceBlockingCollection.CompleteAdding();
                     workFinishedCancellationTokenSource.Cancel();
-                }
-            });
-            Task.Run(async () =>
-            {
-                while (!queryCancelledToken.IsCancellationRequested)
-                {
-                    ThreadPool.GetAvailableThreads(out int workerThreads, out int completionPortThreads);
-                    ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int maxCompletionPortThreads);
-            
-                    int usedWorkerThreads = maxWorkerThreads - workerThreads;
-                    int percentUsed = (int)(((double)usedWorkerThreads / maxWorkerThreads) * 100);
-            
-                    if (percentUsed > 80)
-                    {
-                        Debug.WriteLine("High thread pool usage: {0}% ({1}/{2})",
-                            percentUsed, usedWorkerThreads, maxWorkerThreads);
-                    }
-            
-                    await Task.Delay(TimeSpan.FromMilliseconds(50), queryCancelledToken);
                 }
             });
 

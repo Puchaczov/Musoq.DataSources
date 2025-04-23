@@ -59,6 +59,17 @@ public class MockFileSystem : IFileSystem
         throw new FileNotFoundException($"File not found: {path}", path);
     }
 
+    public Stream OpenRead(string path)
+    {
+        var normalizedPath = NormalizePath(path);
+        if (_files.TryGetValue(normalizedPath, out var bytes))
+        {
+            return new MemoryStream(bytes);
+        }
+        
+        throw new FileNotFoundException($"File not found: {path}", path);
+    }
+
     public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken)
     {
         var normalizedPath = NormalizePath(path);

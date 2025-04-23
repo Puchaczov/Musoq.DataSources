@@ -19,22 +19,22 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 5);
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
+            rejectWhenNotAcquired: false,
+            defaultConfig: defaultConfig);
         
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
         var stopwatch = Stopwatch.StartNew();
         
         // Send 3 requests - first 2 should go through immediately, 3rd should be delayed by rate limiting
-        var task1 = client.GetAsync("https://example.com/1");
-        var task2 = client.GetAsync("https://example.com/2");
-        var task3 = client.GetAsync("https://example.com/3");
+        var task1 = Task.Run(() => client.GetAsync("https://example.com/1"));
+        var task2 = Task.Run(() => client.GetAsync("https://example.com/2"));
+        var task3 = Task.Run(() => client.GetAsync("https://example.com/3"));
         
         await Task.WhenAll(task1, task2, task3);
         
@@ -59,13 +59,12 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 0); // No queueing allowed
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig,
+            rejectWhenNotAcquired: true);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // First request should acquire the only permit
@@ -73,13 +72,50 @@ public class DomainRateLimitingHandlerTests
         
         // Second request should fail immediately because queue limit is 0
         // and we're already at the rate limit
-        await Assert.ThrowsExceptionAsync<HttpRequestException>(async () => 
+        await Assert.ThrowsExactlyAsync<HttpRequestException>(async () => 
         {
             await client.GetAsync("https://example.com/2");
         });
         
         // Assert
         Assert.AreEqual(1, testHandler.RequestCount);
+    }
+
+    [TestMethod]
+    public async Task ZeroQueueLimit_ShouldAwaitForReplenishment()
+    {
+        // Arrange
+        var defaultConfig = new DomainRateLimitingHandler.DomainRateLimitConfig(
+            permitsPerPeriod: 1,
+            replenishmentPeriod: TimeSpan.FromSeconds(1),
+            queueLimit: 0); // No queueing allowed
+        
+        var testHandler = new TestHttpMessageHandler();
+        await using var handler = new DomainRateLimitingHandler(
+            domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
+            rejectWhenNotAcquired: false,
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
+        var client = new HttpClient(handler);
+        
+        // Act
+        var stopwatch = Stopwatch.StartNew();
+        
+        // First request should acquire the only permit
+        await client.GetAsync("https://example.com/1");
+        
+        // Second request should wait for the permit to be replenished
+        var task2 = client.GetAsync("https://example.com/2");
+        
+        await task2;
+        
+        stopwatch.Stop();
+        
+        // Assert
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 990, 
+            "Second request should have waited for the replenishment period but took " + stopwatch.Elapsed);
+        Assert.AreEqual(2, testHandler.RequestCount);
     }
 
     [TestMethod]
@@ -92,13 +128,11 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 5);
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -145,13 +179,11 @@ public class DomainRateLimitingHandlerTests
         };
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: domainConfigs,
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act & Assert
@@ -196,13 +228,11 @@ public class DomainRateLimitingHandlerTests
         };
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: domainConfigs,
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -248,13 +278,11 @@ public class DomainRateLimitingHandlerTests
         };
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: domainConfigs,
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -294,13 +322,11 @@ public class DomainRateLimitingHandlerTests
         };
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: domainConfigs,
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -332,13 +358,11 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 5);
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandlerForTests(
+        await using var handler = new DomainRateLimitingHandlerForTests(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var request1 = new HttpRequestMessage();
         
         await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () => await handler.SendAsync(request1, CancellationToken.None));
@@ -354,13 +378,11 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 5);
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -377,7 +399,7 @@ public class DomainRateLimitingHandlerTests
         // Assert
         await task1; // First request should complete
         
-        await Assert.ThrowsExceptionAsync<TaskCanceledException>(() => task2);
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(() => task2);
         
         Assert.AreEqual(1, testHandler.RequestCount, "Only the first request should be processed");
     }
@@ -394,13 +416,11 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 5);
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -433,13 +453,11 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 20); // High queue limit
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -481,13 +499,11 @@ public class DomainRateLimitingHandlerTests
         };
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: domainConfigs,
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -517,13 +533,11 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 5);
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -553,13 +567,11 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 5);
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -608,13 +620,11 @@ public class DomainRateLimitingHandlerTests
         };
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: domainConfigs,
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act & Assert
@@ -649,13 +659,11 @@ public class DomainRateLimitingHandlerTests
             queueLimit: 100);
         
         var testHandler = new TestHttpMessageHandler();
-        var handler = new DomainRateLimitingHandler(
+        await using var handler = new DomainRateLimitingHandler(
             domainConfigs: new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>(),
-            defaultConfig: defaultConfig)
-        {
-            InnerHandler = testHandler
-        };
-        
+            defaultConfig: defaultConfig);
+        handler.InnerHandler = testHandler;
+
         var client = new HttpClient(handler);
         
         // Act
@@ -714,11 +722,10 @@ public class DomainRateLimitingHandlerTests
         DomainRateLimitingHandler.DomainRateLimitConfig defaultConfig)
         : DomainRateLimitingHandler(domainConfigs, defaultConfig)
     {
-        public new async Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
+        public new async Task SendAsync(HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            return await base.SendAsync(request, cancellationToken);
+            await base.SendAsync(request, cancellationToken);
         }
     }
 }
