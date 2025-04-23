@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
@@ -21,6 +22,11 @@ internal sealed class DefaultFileSystem : IFileSystem
         return File.ReadAllText(path);
     }
 
+    public Stream OpenRead(string path)
+    {
+        return File.OpenRead(path);
+    }
+
     public Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken) => File.WriteAllTextAsync(path, content, cancellationToken);
     
     public void WriteAllText(string path, string content, CancellationToken cancellationToken)
@@ -35,18 +41,18 @@ internal sealed class DefaultFileSystem : IFileSystem
         return Task.FromResult<Stream>(new FileStream(tempFilePath, FileMode.Create, FileAccess.Write));
     }
 
-    public Task ExtractZipAsync(string tempFilePath, string packagePath, CancellationToken cancellationToken)
+    public Task ExtractZipAsync(string tempFilePath, string directoryPath, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
         var tempDirectory = Path.GetDirectoryName(tempFilePath);
-        var packageDirectory = Path.GetDirectoryName(packagePath);
         
-        if (tempDirectory is null || packageDirectory is null)
+        if (tempDirectory is null)
             return Task.CompletedTask;
         
-        Directory.CreateDirectory(packageDirectory);
-        File.Move(tempFilePath, packagePath);
+        Directory.CreateDirectory(directoryPath);
+        
+        ZipFile.ExtractToDirectory(tempFilePath, directoryPath);
         
         return Task.CompletedTask;
     }

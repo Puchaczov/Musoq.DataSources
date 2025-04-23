@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
@@ -416,14 +417,16 @@ public class CSharpSchema : SchemaBase
         var accessTokens = ExtractAccessTokens(environmentVariables);
         var domains = new Dictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig>();
 
-        foreach (var config in configs)
+        foreach (var unauthenticatedConfigs in configs.Where(f => f.Key.HasApiKey == false))
         {
-            if (accessTokens.TryGetValue(config.Key.Domain, out var token))
+            domains[unauthenticatedConfigs.Key.Domain] = unauthenticatedConfigs.Value;
+        }
+
+        foreach (var authenticatedConfigs in configs.Where(f => f.Key.HasApiKey))
+        {
+            if (accessTokens.ContainsKey(authenticatedConfigs.Key.Domain))
             {
-                domains.Add(config.Key.Domain, new DomainRateLimitingHandler.DomainRateLimitConfig(
-                    config.Value.PermitsPerPeriod,
-                    config.Value.ReplenishmentPeriod,
-                    config.Value.QueueLimit));
+                domains[authenticatedConfigs.Key.Domain] = authenticatedConfigs.Value;
             }
         }
 
@@ -442,7 +445,7 @@ public class CSharpSchema : SchemaBase
                 new DomainRateLimitingHandler.DomainRateLimitConfig(
                     10,
                     TimeSpan.FromSeconds(1),
-                    100)), 
+                    100), false, logger), 
                 logger),
             (key, handler) =>
             {
@@ -453,7 +456,7 @@ public class CSharpSchema : SchemaBase
                         new DomainRateLimitingHandler.DomainRateLimitConfig(
                             10,
                             TimeSpan.FromSeconds(1),
-                            100));
+                            100), false, logger);
                 }
                 
                 return handler;

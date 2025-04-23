@@ -15,6 +15,8 @@ internal interface IFileSystem
     
     string ReadAllText(string path, CancellationToken cancellationToken);
     
+    Stream OpenRead(string path);
+    
     Task WriteAllTextAsync(string path, string content, CancellationToken cancellationToken);
     
     void WriteAllText(string path, string content, CancellationToken cancellationToken);
@@ -38,4 +40,6 @@ internal interface IFileSystem
     static void CreateDirectory(string directory) => Directory.CreateDirectory(directory);
     
     static string GetExtension(string filePath) => Path.GetExtension(filePath);
+    
+    static bool FileExists(string configPath) => File.Exists(configPath);
 }

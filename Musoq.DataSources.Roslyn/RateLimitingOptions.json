@@ -3,34 +3,39 @@
     "api.github.com": {
       "PermitsPerPeriod": 60,
       "ReplenishmentPeriod": "01:00:00",
-      "QueueLimit": 100
+      "QueueLimit": 0
     },
     "api.gitlab.com": {
         "PermitsPerPeriod": 60,
         "ReplenishmentPeriod": "01:00:00",
-        "QueueLimit": 100
+        "QueueLimit": 0
     },
     "api.nuget.org": {
       "PermitsPerPeriod": 60,
       "ReplenishmentPeriod": "01:00:00",
-      "QueueLimit": 100
+      "QueueLimit": 0
+    },
+    "www.nuget.org": {
+      "PermitsPerPeriod": 45,
+      "ReplenishmentPeriod": "00:01:00",
+      "QueueLimit": 0
     }
   },
   "Authorized": {
     "api.github.com": {
       "PermitsPerPeriod": 15000,
       "ReplenishmentPeriod": "01:00:00",
-      "QueueLimit": 100
+      "QueueLimit": 0
     },
     "api.gitlab.com": {
         "PermitsPerPeriod": 15000,
         "ReplenishmentPeriod": "01:00:00",
-        "QueueLimit": 100
+        "QueueLimit": 0
     },
     "api.nuget.org": {
       "PermitsPerPeriod": 15000,
       "ReplenishmentPeriod": "01:00:00",
-      "QueueLimit": 100
+      "QueueLimit": 0
     }
   }
 }
