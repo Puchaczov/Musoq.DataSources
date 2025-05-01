@@ -33,14 +33,17 @@ internal class CSharpImmediateLoadSolutionRowsSource(
         logger.LogTrace("Loading solution file: {solutionFilePath}", solutionFilePath);
         
         var workspace = MSBuildWorkspace.Create();
-        var solution = await workspace.OpenSolutionAsync(solutionFilePath, null, null, cancellationToken);
+        var solutionLoadLogger = new SolutionLoadLogger(logger);
+        var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
+        var solution = await workspace.OpenSolutionAsync(solutionFilePath, solutionLoadLogger, projectLoadProgressLogger, cancellationToken);
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
             new NuGetCachePathResolver(
                 solutionFilePath, 
                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 
                     OSPlatform.Windows : 
-                    OSPlatform.Linux
+                    OSPlatform.Linux,
+                logger
             ), 
             nugetPropertiesResolveEndpoint,
             new NuGetRetrievalService(

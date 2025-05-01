@@ -201,7 +201,7 @@ public class ProjectEntity
             
             var id = packageRef.Attribute("Include")?.Value ?? string.Empty;
             var version = packageRef.Attribute("Version")?.Value ?? string.Empty;
-            var packagesToResolve = new BlockingCollection<(string PackageId, string Version, bool IsTransistive, uint Level)>();
+            var packagesToResolve = new BlockingCollection<(string PackageId, string VersionRange, bool IsTransistive, uint Level)>();
 
             packagesToResolve.Add((id, version, false, 0), token);
 
@@ -225,7 +225,7 @@ public class ProjectEntity
 
     private static async Task ProcessPackagesExtractionAsync(
         INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever,
-        BlockingCollection<(string PackageId, string Version, bool IsTransistive, uint Level)> packagesToResolve, 
+        BlockingCollection<(string PackageId, string VersionRange, bool IsTransistive, uint Level)> packagesToResolve, 
         ConcurrentQueue<NugetPackageEntity> nugetPackages,
         CancellationToken token
     )
@@ -237,7 +237,7 @@ public class ProjectEntity
                 if (!packagesToResolve.TryTake(out var packageIdVersionPair, Timeout.Infinite, token)) 
                     continue;
                 
-                await foreach (var metadata in nuGetPackageMetadataRetriever.GetMetadataAsync(packageIdVersionPair.PackageId, packageIdVersionPair.Version, token))
+                await foreach (var metadata in nuGetPackageMetadataRetriever.GetMetadataAsync(packageIdVersionPair.PackageId, packageIdVersionPair.VersionRange, token))
                 {
                     var requireLicenseAcceptanceString =
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.RequireLicenseAcceptance));
@@ -247,7 +247,7 @@ public class ProjectEntity
 
                     nugetPackages.Enqueue(new NugetPackageEntity(
                         packageIdVersionPair.PackageId, 
-                        packageIdVersionPair.Version,
+                        packageIdVersionPair.VersionRange,
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseUrl)),
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.ProjectUrl)),
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.Title)),

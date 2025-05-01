@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -59,8 +58,17 @@ internal sealed class DefaultHttpClient(Func<HttpClient> createHttpClient) : IHt
         
         if (string.IsNullOrEmpty(result))
             return null;
+        
+        return JsonSerializer.Deserialize<TOut>(result);
+    }
 
-        Debug.WriteLine(result);
+    public async Task<TOut?> PostAsync<TOut>(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        var result = await response.Content.ReadAsStringAsync(cancellationToken);
+        
+        if (string.IsNullOrEmpty(result))
+            return default;
         
         return JsonSerializer.Deserialize<TOut>(result);
     }

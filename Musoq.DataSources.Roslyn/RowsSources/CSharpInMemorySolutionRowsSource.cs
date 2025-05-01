@@ -38,7 +38,8 @@ internal sealed class CSharpInMemorySolutionRowsSource(
                             solution.Path, 
                             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 
                                 OSPlatform.Windows : 
-                                OSPlatform.Linux
+                                OSPlatform.Linux,
+                            logger
                         ), 
                         nugetPropertiesResolveEndpoint,
                         new NuGetRetrievalService(

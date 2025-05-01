@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
@@ -10,10 +11,11 @@ internal class NuGetResourceVisitor(
     NuGetResource commonResources, 
     INuGetRetrievalService nuGetRetrievalService,
     string? customApiEndpoint,
-    IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues
+    IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues,
+    ILogger logger
 ) : INuGetResourceVisitor
 {
-    private static readonly HashSet<string> EmptyBannedPropertiesValues = new();
+    private static readonly HashSet<string> EmptyBannedPropertiesValues = [];
     
     public async Task VisitLicensesAsync(CancellationToken cancellationToken)
     {
@@ -137,8 +139,10 @@ internal class NuGetResourceVisitor(
                     resolvedValue = null;
                 }
             }
-            catch
+            catch(Exception exc)
             {
+                logger.LogError(exc, "Failed to retrieve metadata from NuGet.org for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
                 resolvedValue = null;
             }
         }
@@ -157,8 +161,10 @@ internal class NuGetResourceVisitor(
                     resolvedValue = null;
                 }
             }
-            catch (Exception)
+            catch (Exception exc)
             {
+                logger.LogError(exc, "Failed to retrieve metadata from custom API for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
                 resolvedValue = null;
             }
         }
@@ -198,8 +204,10 @@ internal class NuGetResourceVisitor(
                     resolvedValue = null;
                 }
             }
-            catch
+            catch (Exception exc)
             {
+                logger.LogError(exc, "Failed to retrieve metadata from NuGet.org for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
                 resolvedValue = null;
             }
         }
@@ -219,8 +227,10 @@ internal class NuGetResourceVisitor(
                     resolvedValue = null;
                 }
             }
-            catch (Exception)
+            catch (Exception exc)
             {
+                logger.LogError(exc, "Failed to retrieve metadata from custom API for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
                 resolvedValue = null;
             }
         }

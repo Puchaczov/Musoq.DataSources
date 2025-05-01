@@ -11,5 +11,7 @@ internal interface INuGetRetrievalService
         
     Task<string?> GetMetadataFromCustomApiAsync(string apiEndpoint, NuGetResource commonResources, string propertyName, CancellationToken cancellationToken);
     
+    Task<string[]> GetPackageVersionsAsync(string packageName, CancellationToken cancellationToken);
+    
     Task<string?> DownloadPackageAsync(string packageName, string packageVersion, string packagePath, CancellationToken cancellationToken);
 }

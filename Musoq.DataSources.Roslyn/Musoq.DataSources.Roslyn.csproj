@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.7.0</Version>
+        <Version>1.8.5</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -34,6 +34,12 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
+        <PackageReference Include="Microsoft.Build" Version="16.10.0">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Build.Framework" Version="16.10.0">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.Build.Locator" Version="1.6.10" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
@@ -49,7 +55,6 @@
         <PackageReference Include="Musoq.Schema" Version="8.0.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Semver" Version="3.0.0" />
         <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
     </ItemGroup>
 

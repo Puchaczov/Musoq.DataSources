@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http;
+using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 

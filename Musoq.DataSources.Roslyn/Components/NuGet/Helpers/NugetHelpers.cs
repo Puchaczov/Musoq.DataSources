@@ -46,6 +46,7 @@ internal static class NugetHelpers
                 var pageContent = licenseContentPageHttpResponseMessage is not null ? await licenseContentPageHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
                 var licenseContentHtmlDocument = new HtmlDocument();
                 licenseContentHtmlDocument.LoadHtml(pageContent);
+                commonResources.AddHtmlDocument(nugetOrgLicenseUrl, licenseContentHtmlDocument);
 
                 if (TryExtractContent(licenseContentHtmlDocument, "//pre[@class='license-file-contents custom-license-container']", out var licenseContentFromPage) && licenseContentFromPage is not null)
                 {
@@ -72,6 +73,10 @@ internal static class NugetHelpers
                     return () => Task.FromResult<string?>(null);
                 }
                 
+                var document = new HtmlDocument();
+                document.LoadHtml(licenseContent);
+                commonResources.AddHtmlDocument(licenseUrl, document);
+                
                 return async () => System.Text.Json.JsonSerializer.Serialize(await nuGetPropertiesResolver.GetLicensesNamesAsync(licenseContent, cancellationToken));
             }
 
@@ -83,6 +88,7 @@ internal static class NugetHelpers
                 var licenseContentPage = await licenseContentHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken);
                 htmlDocument = new HtmlDocument();
                 htmlDocument.LoadHtml(licenseContentPage);
+                commonResources.AddHtmlDocument(licenseUrl, htmlDocument);
                 if (TryExtractRawLicenseUrl(htmlDocument, out rawFileUrl) && rawFileUrl is not null)
                 {
                     alreadyRawFileUrl = true;
@@ -120,17 +126,7 @@ internal static class NugetHelpers
         return () => Task.FromResult<string?>(null);
     }
 
-    private static bool TryExtractRawLicenseUrl(HtmlDocument document, out string? licenseUrl)
-    {
-        if (TryExtractUrl(document, "//a[@data-testid='raw-button']", "href", out licenseUrl) && licenseUrl is not null)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    public static async Task<Func<Task<string?>>> DiscoverLicenseUrlAsync(string url, NuGetResource commonResources, IHttpClient httpClient, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
+    public static async Task<Func<Task<string?>>> DiscoverLicenseUrlAsync(string url, NuGetResource commonResources, IHttpClient httpClient, CancellationToken cancellationToken)
     {
         if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
         {
@@ -190,7 +186,7 @@ internal static class NugetHelpers
         return () => Task.FromResult<string?>(null);
     }
     
-    public static async Task<Func<Task<string?>>> DiscoverLicenseContentAsync(string url, NuGetResource commonResources, IHttpClient httpClient, INuGetPropertiesResolver aiBasedPropertiesResolver, CancellationToken cancellationToken)
+    public static async Task<Func<Task<string?>>> DiscoverLicenseContentAsync(string url, NuGetResource commonResources, IHttpClient httpClient, CancellationToken cancellationToken)
     {
         if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
         {
@@ -219,6 +215,38 @@ internal static class NugetHelpers
         
         if (TryExtractUrl(htmlDocument, "//a[@data-track='outbound-license-url']", "href", out var licenseUrl) && licenseUrl is not null)
         {
+            if (licenseUrl.StartsWith('/'))
+            {
+                var nugetOrgLicenseUrl = CombineUrl("https://www.nuget.org", licenseUrl);
+                
+                if (!commonResources.TryGetHtmlDocument(nugetOrgLicenseUrl, out var licenseContentHtmlDocument))
+                {
+                    var licenseContentPageHttpResponseMessage = await httpClient.GetAsync(nugetOrgLicenseUrl, cancellationToken);
+                    var pageContent = licenseContentPageHttpResponseMessage is not null ? await licenseContentPageHttpResponseMessage.Content.ReadAsStringAsync(cancellationToken) : null;
+                    licenseContentHtmlDocument = new HtmlDocument();
+                    licenseContentHtmlDocument.LoadHtml(pageContent);
+                    commonResources.AddHtmlDocument(nugetOrgLicenseUrl, licenseContentHtmlDocument);
+                }
+
+                if (licenseContentHtmlDocument is null)
+                {
+                    return () => Task.FromResult<string?>(null);
+                }
+
+                if (TryExtractContent(licenseContentHtmlDocument, "//pre[@class='license-file-contents custom-license-container']", out var licenseContentFromPage) && licenseContentFromPage is not null)
+                {
+                    return () => Task.FromResult<string?>(licenseContentFromPage);
+                }
+
+                if (TryExtractContent(licenseContentHtmlDocument, "//div[@class='common-licenses']",
+                        out licenseContentFromPage) && licenseContentFromPage is not null)
+                {
+                    return () => Task.FromResult<string?>(licenseContentFromPage);
+                }
+                
+                return () => Task.FromResult<string?>(null);
+            }
+            
             return async () =>
             {
                 string? licenseContent;
@@ -296,6 +324,16 @@ internal static class NugetHelpers
         return () => Task.FromResult<string?>(null);
     }
 
+    private static bool TryExtractRawLicenseUrl(HtmlDocument document, out string? licenseUrl)
+    {
+        if (TryExtractUrl(document, "//a[@data-testid='raw-button']", "href", out licenseUrl) && licenseUrl is not null)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private static async Task<string?> FindFirstLicenseUrlAsync(string sourceRepositoryUrl, IHttpClient httpClient, Func<string, string, bool> filterBasedOnFileNameAndContent, CancellationToken cancellationToken)
     {
         await foreach (var licenseUrlLicenseContentPair in FindLicenseAsync(sourceRepositoryUrl, httpClient, filterBasedOnFileNameAndContent, cancellationToken))
@@ -315,6 +353,7 @@ internal static class NugetHelpers
             "LICENSE",
             "LICENSE.md",
             "LICENSE.txt",
+            "LICENSE.TXT",
             "License.txt",
             "COPYING",
             "COPYING.md",
@@ -361,8 +400,9 @@ internal static class NugetHelpers
         foreach (var fileName in licenseFileNames)
         {
             var licenseUrl = sourceRepositoryUrl + "/" + fileName;
-            var response = await httpClient.GetAsync(ConvertToRawFileUrl(licenseUrl, branch), cancellationToken);
-                
+            var rawFileUrl = ConvertToRawFileUrl(licenseUrl, branch);
+            var response = await httpClient.GetAsync(rawFileUrl, cancellationToken);
+
             if (response is not { IsSuccessStatusCode: true })
             {
                 continue;
@@ -372,15 +412,15 @@ internal static class NugetHelpers
             
             theOnlyLicenseContentFound = licenseContent;
             theOnlyLicenseUrlFound = licenseUrl;
-                
-            if (filter(fileName, licenseContent))
+
+            if (!filter(fileName, licenseContent)) continue;
+            
+            if (!returnedBasedOnFilter)
             {
-                if (!returnedBasedOnFilter)
-                {
-                    returnedBasedOnFilter = true;
-                }
-                yield return (licenseUrl, licenseContent);
+                returnedBasedOnFilter = true;
             }
+            
+            yield return (licenseUrl, licenseContent);
         }
         
         if (theOnlyLicenseContentFound is not null && theOnlyLicenseUrlFound is not null && !returnedBasedOnFilter)

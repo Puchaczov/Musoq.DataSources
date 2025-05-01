@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -45,7 +45,7 @@ public class NuGetPropertiesResolver(string baseUrl, IHttpClient httpClient) : I
                         value = licenseContent,
                         type = 0
                     }, 
-                    role = "user" 
+                    role = "user"
                 }
             }
         };
@@ -57,21 +57,31 @@ public class NuGetPropertiesResolver(string baseUrl, IHttpClient httpClient) : I
         formData.Add(stringContent, "ResponseFormat");
         formData.Add(fileContent, "file", "chat.json");
         
-        var response = await httpClient.PostAsync<LicensesResult>($"{baseUrl}/model/what-licenses-are-here", formData, cancellationToken);
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/model/what-licenses-are-here");
+        httpRequestMessage.Headers.Add("Musoq-Append-Url-Part-To-Persistent-Cache-Key", ComputeLicenseContentMd5(licenseContent));
+        httpRequestMessage.Content = formData;
+        
+        var response = await httpClient.PostAsync<LicensesResult>(httpRequestMessage, cancellationToken);
         
         if (response is not null)
             _cachedLicenseContentResponses.TryAdd(licenseContent, response);
         
-        if (response is null)
-            Debugger.Break();
-        
         return response is null ? [] : response.Response.Select(f => f.LicenseName).ToArray();
     }
     
+    private static string ComputeLicenseContentMd5(string licenseContent)
+    {
+        var hash = System.Security.Cryptography.MD5.HashData(Encoding.UTF8.GetBytes(licenseContent));
+        return Convert.ToBase64String(hash)
+            .Replace("=", "~")
+            .Replace("+", "-")
+            .Replace("/", "_");
+    }
+
     private class LicensesResult
     {
         [JsonPropertyName("response")]
-        public Licenses[] Response { get; init; }
+        public required Licenses[] Response { get; init; }
     }
     
     private class Licenses

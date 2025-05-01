@@ -193,6 +193,11 @@ public class ExtractFromProjectMetadataTests
         {
             return Task.FromResult<TOut?>(null);
         }
+
+        public Task<TOut?> PostAsync<TOut>(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<TOut?>(default);
+        }
     }
     
     private class TestFileSystem : IFileSystem

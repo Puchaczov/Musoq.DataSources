@@ -72,6 +72,34 @@ public static class LifecycleHooks
                 var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
                 await command.LoadAsync(solutionFilePath, cancellationToken);
             });
+
+            await app.RunAsync(args);
+            
+            return (0, []);
+        }
+        catch (Exception e)
+        {
+            if (Debugger.IsAttached)
+            {
+                Debugger.Break();
+            }
+
+            return (-1, [e]);
+        }
+    }
+    
+    /// <summary>
+    /// Sets the value of the specified property.
+    /// </summary>
+    /// <param name="args">Arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>0 if succeeded, otherwise error code</returns>
+    /// <exception cref="NullReferenceException">Thrown when the logger is null.</exception>
+    public static async Task<(int ReturnValue, Exception[] Exceptions)> SetAsync(string[] args, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var app = ConsoleApp.Create();
             
             app.Add("solution cache clear", async (string? cacheDirectoryPath) =>
             {
@@ -81,6 +109,12 @@ public static class LifecycleHooks
                 await command.ClearCacheAsync(
                     finalCacheDirectoryPath, 
                     cancellationToken);
+            });
+            
+            app.Add("solution cache set",(string cacheDirectoryPath) =>
+            {
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
+                command.SetCacheDirectoryPath(cacheDirectoryPath);
             });
 
             await app.RunAsync(args);
@@ -95,6 +129,44 @@ public static class LifecycleHooks
             }
 
             return (-1, [e]);
+        }
+    }
+    
+    /// <summary>
+    /// Sets the value of the specified property.
+    /// </summary>
+    /// <param name="args">Arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>0 if succeeded, otherwise error code</returns>
+    /// <exception cref="NullReferenceException">Thrown when the logger is null.</exception>
+    public static async Task<(int ReturnValue, Exception[] Exceptions, string? Value)> GetAsync(string[] args, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        try
+        {
+            var app = ConsoleApp.Create();
+            string? value = null;
+            
+            app.Add("solution cache get", () =>
+            {
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
+
+                value = command.GetCacheDirectoryPath();
+            });
+
+            await app.RunAsync(args);
+            
+            return (0, [], value);
+        }
+        catch (Exception e)
+        {
+            if (Debugger.IsAttached)
+            {
+                Debugger.Break();
+            }
+
+            return (-1, [e], null);
         }
     }
 
@@ -113,7 +185,7 @@ public static class LifecycleHooks
             app.Add("solution unload", async (string solutionFilePath) =>
             {
                 var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
-                await command.LoadAsync(solutionFilePath, cancellationToken);
+                await command.UnloadAsync(solutionFilePath, cancellationToken);
             });
 
             await app.RunAsync(args);

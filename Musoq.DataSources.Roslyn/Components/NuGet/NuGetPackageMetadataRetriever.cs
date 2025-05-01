@@ -8,7 +8,8 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
-using Semver;
+using Musoq.DataSources.Roslyn.Components.NuGet.Version;
+using Musoq.DataSources.Roslyn.Components.NuGet.Version.Ranges;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
@@ -31,13 +32,33 @@ internal sealed class NuGetPackageMetadataRetriever(
     {
         if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
             yield break;
-        
-        if (!SemVersion.TryParse(packageVersion, out _))
+
+        packageName = packageName.Trim();
+        packageVersion = packageVersion.Trim();
+
+        var lexer = new VersionRangeLexer(packageVersion);
+        var parser = new VersionRangeParser(lexer.Tokenize());
+        var range = parser.Parse();
+
+        if (range is ExactVersionRange) //the most common case
         {
-            logger.LogError("Package version is not valid for {PackageName} {PackageVersion}", packageName, packageVersion);
+            await foreach (var dependencyInfo in InternalProcessPackageVersionAsync(packageName, packageVersion, cancellationToken)) 
+                yield return dependencyInfo;
+            
             yield break;
         }
-        
+
+        var allVersions = await retrievalService.GetPackageVersionsAsync(packageName, cancellationToken);
+
+        foreach (var version in range.ResolveVersions(allVersions))
+        {
+            await foreach (var dependencyInfo in GetDependenciesAsync(packageName, version, cancellationToken))
+                yield return dependencyInfo;
+        }
+    }
+
+    private async IAsyncEnumerable<DependencyInfo> InternalProcessPackageVersionAsync(string packageName, string packageVersion, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
         if (_packageDependenciesCache.TryGetValue((packageName, packageVersion), out var cachedDependencies))
         {
             logger.LogTrace("Using cached dependencies for {PackageName} {PackageVersion}", packageName, packageVersion);
@@ -60,7 +81,7 @@ internal sealed class NuGetPackageMetadataRetriever(
         {
             var currentPackage = packagesToProcess.Dequeue();
             
-            await foreach (var dependency in InternalGetDependenciesAsync(currentPackage.PackageName, currentPackage.Version, currentPackage.Level, cancellationToken))
+            await foreach (var dependency in InternalProcessXmlDependenciesAsync(currentPackage.PackageName, currentPackage.Version, currentPackage.Level, cancellationToken))
             {
                 if (string.IsNullOrEmpty(dependency.PackageId) || string.IsNullOrEmpty(dependency.VersionRange))
                 {
@@ -68,18 +89,40 @@ internal sealed class NuGetPackageMetadataRetriever(
                     continue;
                 }
                 
-                if (!processedPackages.Add((dependency.PackageId, dependency.VersionRange)))
+                var newPackage = dependency.PackageId.Trim();
+                var newVersion = dependency.VersionRange.Trim();
+                var lexer = new VersionRangeLexer(newVersion);
+                var parser = new VersionRangeParser(lexer.Tokenize());
+                var range = parser.Parse();
+
+                if (range is ExactVersionRange) //the most common case
+                {
+                    if (!processedPackages.Add((newPackage, newVersion)))
+                        continue;
+                
+                    packagesToProcess.Enqueue((newPackage, newVersion, dependency.Level + 1));
+                
+                    yield return dependency;
                     continue;
-                
-                packagesToProcess.Enqueue((dependency.PackageId, dependency.VersionRange, dependency.Level + 1));
-                
-                yield return dependency;
+                }
+
+                var allVersions = await retrievalService.GetPackageVersionsAsync(newPackage, cancellationToken);
+
+                foreach (var version in range.ResolveVersions(allVersions))
+                {
+                    if (!processedPackages.Add((newPackage, version)))
+                        continue;
+                    
+                    packagesToProcess.Enqueue((newPackage, version, dependency.Level + 1));
+                    
+                    yield return new DependencyInfo(newPackage, version, dependency.TargetFramework, dependency.Level + 1);
+                }
             }
         }
         while (!cancellationToken.IsCancellationRequested && packagesToProcess.Count > 0);
     }
 
-    private async IAsyncEnumerable<DependencyInfo> InternalGetDependenciesAsync(string packageName, string packageVersion, uint level, [EnumeratorCancellation] CancellationToken cancellationToken)
+    private async IAsyncEnumerable<DependencyInfo> InternalProcessXmlDependenciesAsync(string packageName, string packageVersion, uint level, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
@@ -99,12 +142,6 @@ internal sealed class NuGetPackageMetadataRetriever(
         if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
         {
             logger.LogError("Package name or version is empty for {PackageName} {PackageVersion}", packageName, packageVersion);
-            yield break;
-        }
-        
-        if (!SemVersion.TryParse(packageVersion, out _))
-        {
-            logger.LogError("Package version is not valid for {PackageName} {PackageVersion}", packageName, packageVersion);
             yield break;
         }
         
@@ -164,14 +201,8 @@ internal sealed class NuGetPackageMetadataRetriever(
                 x.Attribute("id")?.Value ?? string.Empty,
                 x.Attribute("version")?.Value ?? string.Empty,
                 string.Empty,
-                level));
-            
-        if (ungroupedDependencies == null)
-        {
-            logger.LogError("Unknown error while retrieving dependencies for {PackageName} {PackageVersion}", packageName, packageVersion);
-            yield break;
-        }
-            
+                level)) ?? [];
+
         var groupedDependencies = xml.Root
             ?.Element(ns + "metadata")
             ?.Element(ns + "dependencies")
@@ -181,14 +212,8 @@ internal sealed class NuGetPackageMetadataRetriever(
                     x.Attribute("id")?.Value ?? string.Empty,
                     x.Attribute("version")?.Value ?? string.Empty,
                     g.Attribute("targetFramework")?.Value ?? string.Empty,
-                    level)));
-            
-        if (groupedDependencies == null)
-        {
-            logger.LogError("Unknown error while retrieving dependencies for {PackageName} {PackageVersion}", packageName, packageVersion);
-            yield break;
-        }
-        
+                    level))) ?? [];
+
         var dependencies = new List<DependencyInfo>();
         
         _packageDependenciesCache.AddOrUpdate((packageName, packageVersion),
@@ -224,17 +249,9 @@ internal sealed class NuGetPackageMetadataRetriever(
         cancellationToken.ThrowIfCancellationRequested();
         
         logger.LogTrace("Retrieving metadata for {PackageName} {PackageVersion}", packageName, packageVersion);
-        
-        if (packageVersion.Length == 0)
-        {
-            logger.LogError("Package version is empty for {PackageName}", packageName);
-            yield break;
-        }
-        
-        if (packageVersion[0] == '[' && packageVersion[^1] == ']')
-        {
-            packageVersion = packageVersion[1..^1];
-        }
+
+        packageName = packageName.Trim();
+        packageVersion = packageVersion.Trim();
         
         if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
         {
@@ -242,11 +259,30 @@ internal sealed class NuGetPackageMetadataRetriever(
             yield break;
         }
         
-        if (!SemVersion.TryParse(packageVersion, out _))
+        var lexer = new VersionRangeLexer(packageVersion);
+        var parser = new VersionRangeParser(lexer.Tokenize());
+        var range = parser.Parse();
+        
+        if (range is ExactVersionRange) //the most common case
         {
-            logger.LogError("Package version is not valid for {PackageName} {PackageVersion}", packageName, packageVersion);
+            await foreach (var metadata in InternalGetMetadataAsync(packageName, packageVersion, cancellationToken)) 
+                yield return metadata;
+            
             yield break;
         }
+        
+        var allVersions = await retrievalService.GetPackageVersionsAsync(packageName, cancellationToken);
+        
+        foreach (var version in range.ResolveVersions(allVersions))
+        {
+            await foreach (var metadata in InternalGetMetadataAsync(packageName, version, cancellationToken))
+                yield return metadata;
+        }
+    }
+
+    private async IAsyncEnumerable<IReadOnlyDictionary<string, string?>> InternalGetMetadataAsync(string packageName, string packageVersion, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        packageName = packageName.Trim();
         
         if (_packageMetadataCache.TryGetValue((packageName, packageVersion), out var cachedMetadata))
         {
@@ -286,7 +322,8 @@ internal sealed class NuGetPackageMetadataRetriever(
             commonResources,
             retrievalService,
             customApiEndpoint,
-            bannedPropertiesValues);
+            bannedPropertiesValues,
+            logger);
         
         await commonResources.AcceptAsync(retrieveCommonResourcesVisitor, cancellationToken);
         
@@ -346,7 +383,11 @@ internal sealed class NuGetPackageMetadataRetriever(
     private async Task<string?> TryDownloadPackageAsync(string packageName, string packageVersion, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(packageVersion))
+        {
+            logger.LogError("Package name or version is empty for {PackageName} {PackageVersion}", packageName, packageVersion);
+            
             return null;
+        }
         
         var tempPath = Path.GetTempPath();
         var packagePath = Path.Combine(tempPath, "NuGetPackages", packageName, packageVersion);
@@ -360,8 +401,10 @@ internal sealed class NuGetPackageMetadataRetriever(
             
             return await retrievalService.DownloadPackageAsync(packageName, packageVersion, packagePath, cancellationToken);
         }
-        catch
+        catch (Exception exc)
         {
+            logger.LogError(exc, "Failed to download package {PackageName} {PackageVersion}", packageName, packageVersion);
+            
             return null;
         }
     }

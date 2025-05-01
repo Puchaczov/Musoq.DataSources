@@ -10,12 +10,14 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.Components;
-using Musoq.DataSources.Roslyn.Components.NuGet.Http;
+using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 
 namespace Musoq.DataSources.Roslyn.CoconaCommands;
 
 internal class SolutionOperationsCommand(ILogger logger)
 {
+    private static readonly object Locker = new();
+    
     // This cannot be AppContext.BaseDirectory as it must point to the plugin directory
     private static readonly string RateLimitingOptionsFilePath = IFileSystem.Combine(new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "RateLimitingOptions.json");
     private static readonly string BannedPropertiesValuesFilePath = IFileSystem.Combine(new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "BannedPropertiesValues.json");
@@ -24,16 +26,24 @@ internal class SolutionOperationsCommand(ILogger logger)
     internal static IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>? RateLimitingOptions;
     internal static readonly IReadOnlyDictionary<string, HashSet<string>> BannedPropertiesValues = ReadBannedPropertiesValues();
     internal static string DefaultCacheDirectoryPath { get; set; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn");
-    internal static readonly ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache = new();
+    internal static readonly ConcurrentDictionary<string, PersistentCacheResponseHandler> HttpResponseCache = new();
     
     public async Task LoadAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
         logger.LogTrace("Loading solution file: {solutionFilePath}", solutionFilePath);
+     
+        if (Solutions.ContainsKey(solutionFilePath))
+        {
+            logger.LogTrace("Solution already loaded: {solutionFilePath}", solutionFilePath);
+            return;
+        }
         
         var workspace = MSBuildWorkspace.Create();
-        var solution = await workspace.OpenSolutionAsync(solutionFilePath, cancellationToken: cancellationToken);
+        var solutionLoadLogger = new SolutionLoadLogger(logger);
+        var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
+        var solution = await workspace.OpenSolutionAsync(solutionFilePath, solutionLoadLogger, projectLoadProgressLogger, cancellationToken: cancellationToken);
         
         logger.LogTrace("Initializing solution");
         
@@ -96,6 +106,31 @@ internal class SolutionOperationsCommand(ILogger logger)
         HttpResponseCache.Clear();
         
         return Task.CompletedTask;
+    }
+    
+    public void SetCacheDirectoryPath(string cacheDirectoryPath)
+    {
+        lock (Locker)
+        {
+            if (string.IsNullOrEmpty(cacheDirectoryPath))
+                throw new ArgumentException("Cache directory path cannot be null or empty.", nameof(cacheDirectoryPath));
+        
+            DefaultCacheDirectoryPath = cacheDirectoryPath;
+        
+            if (!Directory.Exists(DefaultCacheDirectoryPath))
+                Directory.CreateDirectory(DefaultCacheDirectoryPath);
+        }
+    }
+    
+    public string GetCacheDirectoryPath()
+    {
+        lock (Locker)
+        {
+            if (string.IsNullOrEmpty(DefaultCacheDirectoryPath))
+                throw new InvalidOperationException("Cache directory path is not set.");
+            
+            return DefaultCacheDirectoryPath;
+        }
     }
 
     public static void Initialize()

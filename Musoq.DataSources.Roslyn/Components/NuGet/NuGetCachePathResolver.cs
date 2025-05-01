@@ -4,10 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatform) : INuGetCachePathResolver
+internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatform, ILogger logger) : INuGetCachePathResolver
 {
     private static readonly string UserProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     
@@ -61,7 +62,7 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
         return configPaths;
     }
 
-    private static void ProcessNuGetConfigs(IEnumerable<string> configPaths, HashSet<string> cache)
+    private void ProcessNuGetConfigs(IEnumerable<string> configPaths, HashSet<string> cache)
     {
         foreach (var configPath in configPaths)
         {
@@ -69,7 +70,7 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
             {
                 if (!IFileSystem.FileExists(configPath))
                     continue;
-                
+
                 var doc = XDocument.Load(configPath);
                 var config = doc.Root;
 
@@ -82,7 +83,8 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
                 if (!string.IsNullOrEmpty(repositoryPath))
                 {
                     if (!Path.IsPathRooted(repositoryPath))
-                        repositoryPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(configPath)!, repositoryPath));
+                        repositoryPath =
+                            Path.GetFullPath(Path.Combine(Path.GetDirectoryName(configPath)!, repositoryPath));
                     cache.Add(repositoryPath);
                 }
 
@@ -92,15 +94,19 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
                     .FirstOrDefault(e => e.Attribute("key")?.Value == "globalPackagesFolder")
                     ?.Attribute("value")?.Value;
 
-                if (string.IsNullOrEmpty(globalPackagesFolder)) 
+                if (string.IsNullOrEmpty(globalPackagesFolder))
                     continue;
-                
+
                 if (!Path.IsPathRooted(globalPackagesFolder))
-                    globalPackagesFolder = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(configPath)!, globalPackagesFolder));
-                
+                    globalPackagesFolder =
+                        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(configPath)!, globalPackagesFolder));
+
                 cache.Add(globalPackagesFolder);
             }
-            catch { /* Ignore any parsing errors */ }
+            catch (Exception exc)
+            {
+                logger.LogError(exc, "Failed to process nuget config file");
+            }
         }
     }
 
@@ -113,8 +119,11 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
     private void AddHttpCache(HashSet<string> cache)
     {
         var envHttpCache = Environment.GetEnvironmentVariable("NUGET_HTTP_CACHE_PATH");
+        
         if (!string.IsNullOrEmpty(envHttpCache))
+        {
             cache.Add(Path.GetFullPath(envHttpCache));
+        }
         else
         {
             if (osPlatform.Equals(OSPlatform.Windows))
