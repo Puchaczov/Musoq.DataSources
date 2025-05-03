@@ -142,9 +142,20 @@ public class CSharpLibrary : LibraryBase
         if (nugetPackageEntities != null)
             return nugetPackageEntities;
             
-        var taskGetNugetPackages = Task.Run(async () => await project.GetNugetPackagesAsync(project.Project, withTransitivePackages), project.CancellationToken);
+        var taskGetNugetPackages = Task.Run(async () => await GetNugetPackagesAsync(project, withTransitivePackages), project.CancellationToken);
         taskGetNugetPackages.Wait();
-        project.NugetPackageEntities = taskGetNugetPackages.Result;
+        
+        return taskGetNugetPackages.Result;
+    }
+    
+    internal async Task<IEnumerable<NugetPackageEntity>> GetNugetPackagesAsync(ProjectEntity project, bool withTransitivePackages)
+    {
+        var nugetPackageEntities = project.NugetPackageEntities;
+        
+        if (nugetPackageEntities != null)
+            return nugetPackageEntities;
+            
+        project.NugetPackageEntities = await project.GetNugetPackagesAsync(project.Project, withTransitivePackages);
         
         return project.NugetPackageEntities;
     }

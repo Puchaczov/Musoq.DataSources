@@ -53,6 +53,7 @@ internal class CSharpImmediateLoadSolutionRowsSource(
             fileSystem,
             packageVersionConcurrencyManager,
             SolutionOperationsCommand.BannedPropertiesValues,
+            SolutionOperationsCommand.ResolveValueStrategy,
             logger
         );
         var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, _queryCancelledToken);

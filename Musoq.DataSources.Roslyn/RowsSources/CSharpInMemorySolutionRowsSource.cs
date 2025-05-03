@@ -49,6 +49,7 @@ internal sealed class CSharpInMemorySolutionRowsSource(
                         fileSystem,
                         packageVersionConcurrencyManager,
                         SolutionOperationsCommand.BannedPropertiesValues,
+                        SolutionOperationsCommand.ResolveValueStrategy,
                         logger),
                     _queryCancelledToken
                 ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)

@@ -36,6 +36,7 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
             {
                 { "LicenseUrl", ["https://aka.ms/deprecateLicenseUrl"] }
             },
+            ResolveValueStrategy.UseNugetOrgApiOnly,
             NullLogger.Instance
         );
         var packageName = "Microsoft.EntityFrameworkCore.Design";
@@ -80,6 +81,7 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
             {
                 { "LicenseUrl", ["https://aka.ms/deprecateLicenseUrl"] }
             },
+            ResolveValueStrategy.UseNugetOrgApiOnly,
             NullLogger.Instance
         );
         var packageName = "SQLitePCLRaw.bundle_e_sqlite3";

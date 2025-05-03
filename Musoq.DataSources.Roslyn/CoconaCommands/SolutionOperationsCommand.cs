@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.Components;
+using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 
 namespace Musoq.DataSources.Roslyn.CoconaCommands;
@@ -27,6 +28,7 @@ internal class SolutionOperationsCommand(ILogger logger)
     internal static readonly IReadOnlyDictionary<string, HashSet<string>> BannedPropertiesValues = ReadBannedPropertiesValues();
     internal static string DefaultCacheDirectoryPath { get; set; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn");
     internal static readonly ConcurrentDictionary<string, PersistentCacheResponseHandler> HttpResponseCache = new();
+    internal static ResolveValueStrategy ResolveValueStrategy { get; set; } = ResolveValueStrategy.UseNugetOrgApiOnly;
     
     public async Task LoadAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
@@ -131,6 +133,22 @@ internal class SolutionOperationsCommand(ILogger logger)
             
             return DefaultCacheDirectoryPath;
         }
+    }
+    
+    public void SetResolveValueStrategy(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            throw new ArgumentException("Resolve value strategy cannot be null or empty.", nameof(value));
+        
+        ResolveValueStrategy = Enum.Parse<ResolveValueStrategy>(value, true);
+    }
+
+    public string GetResolveValueStrategy()
+    {
+        if (string.IsNullOrEmpty(ResolveValueStrategy.ToString()))
+            throw new InvalidOperationException("Resolve value strategy is not set.");
+        
+        return ResolveValueStrategy.ToString();
     }
 
     public static void Initialize()

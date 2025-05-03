@@ -516,6 +516,7 @@ public class ExtractFromProjectMetadataTests
                 _fileSystem,
                 packageVersionConcurrencyManager,
                 bannedPropertiesValues,
+                ResolveValueStrategy.UseNugetOrgApiOnly,
                 loggerMock.Object);
         }
 

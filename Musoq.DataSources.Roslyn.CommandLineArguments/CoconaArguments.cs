@@ -31,6 +31,17 @@ public static class CoconaArguments
                     cacheCommandsBuilder.AddCommand("get", getCache).WithDescription("Gets cache directory path");
                     cacheCommandsBuilder.AddCommand("set", setCache).WithAliases("Sets cache directory path");
                 });
+
+                commandsBuilder.AddSubCommand("resolve-value-strategy", cacheCommandsBuilder =>
+                {
+                    Delegate getResolveValueStrategy = async (string bucket) =>
+                        await invokeAsync("get", ["csharp", "solution", "resolve", "value", "strategy", "get", "--bucket", bucket]);
+                    Delegate setResolveValueStrategy = async (string bucket, string? strategy) =>
+                        await invokeAsync("set", ["csharp", "solution", "resolve", "value", "strategy", "set", "--bucket", bucket, "--value", strategy]);
+                    
+                    cacheCommandsBuilder.AddCommand("get", getResolveValueStrategy).WithDescription("Gets resolve value strategy. Will be equal to UseNugetOrgApiOnly | UseCustomApiOnly | UseNugetOrgApiAndCustomApi");
+                    cacheCommandsBuilder.AddCommand("set", setResolveValueStrategy).WithDescription("Sets resolve value strategy. Must be equal to UseNugetOrgApiOnly | UseCustomApiOnly | UseNugetOrgApiAndCustomApi");
+                });
             });
         });
     }

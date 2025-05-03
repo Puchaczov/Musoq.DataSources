@@ -2,17 +2,17 @@
   "Unauthorized": {
     "api.github.com": {
       "PermitsPerPeriod": 60,
-      "ReplenishmentPeriod": "01:00:00",
+      "ReplenishmentPeriod": "00:01:00",
       "QueueLimit": 0
     },
     "api.gitlab.com": {
         "PermitsPerPeriod": 60,
-        "ReplenishmentPeriod": "01:00:00",
+        "ReplenishmentPeriod": "00:01:00",
         "QueueLimit": 0
     },
     "api.nuget.org": {
       "PermitsPerPeriod": 60,
-      "ReplenishmentPeriod": "01:00:00",
+      "ReplenishmentPeriod": "00:01:00",
       "QueueLimit": 0
     },
     "www.nuget.org": {

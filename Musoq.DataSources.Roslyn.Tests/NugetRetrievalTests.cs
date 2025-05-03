@@ -35,6 +35,7 @@ public class NugetRetrievalTests
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
             bannedPropertiesValues,
+            ResolveValueStrategy.UseNugetOrgApiOnly,
             logger.Object);
 
         // Act
@@ -115,6 +116,7 @@ public class NugetRetrievalTests
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
             bannedPropertiesValues,
+            ResolveValueStrategy.UseNugetOrgApiOnly,
             logger.Object);
 
         // Act
@@ -217,6 +219,7 @@ public class NugetRetrievalTests
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
             bannedPropertiesValues,
+            ResolveValueStrategy.UseNugetOrgApiAndCustomApi,
             logger.Object);
 
         // Act
@@ -255,6 +258,7 @@ public class NugetRetrievalTests
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
             bannedPropertiesValues,
+            ResolveValueStrategy.UseNugetOrgApiOnly,
             logger.Object);
 
         // Act
@@ -327,6 +331,7 @@ public class NugetRetrievalTests
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
             bannedPropertiesValues,
+            ResolveValueStrategy.UseNugetOrgApiOnly,
             logger.Object);
 
         // Act
@@ -406,6 +411,7 @@ public class NugetRetrievalTests
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
             bannedPropertiesValues,
+            ResolveValueStrategy.UseNugetOrgApiOnly,
             logger.Object);
 
         // Act
@@ -450,6 +456,7 @@ public class NugetRetrievalTests
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
             bannedPropertiesValues,
+            ResolveValueStrategy.UseNugetOrgApiOnly,
             logger.Object);
 
         // Act
@@ -493,6 +500,7 @@ public class NugetRetrievalTests
             fileSystemMock.Object,
             packageVersionConcurrencyManager,
             bannedPropertiesValues,
+            ResolveValueStrategy.UseNugetOrgApiAndCustomApi,
             logger.Object);
 
         // Act

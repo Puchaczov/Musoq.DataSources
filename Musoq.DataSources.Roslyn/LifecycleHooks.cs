@@ -116,6 +116,13 @@ public static class LifecycleHooks
                 var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
                 command.SetCacheDirectoryPath(cacheDirectoryPath);
             });
+            
+            app.Add("solution resolve value strategy set", (string value) =>
+            {
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
+
+                command.SetResolveValueStrategy(value);
+            });
 
             await app.RunAsync(args);
             
@@ -153,6 +160,13 @@ public static class LifecycleHooks
                 var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
 
                 value = command.GetCacheDirectoryPath();
+            });
+            
+            app.Add("solution resolve value strategy get", () =>
+            {
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
+
+                value = command.GetResolveValueStrategy();
             });
 
             await app.RunAsync(args);

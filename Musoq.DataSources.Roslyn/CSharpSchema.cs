@@ -28,15 +28,18 @@ namespace Musoq.DataSources.Roslyn;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class CSharpSchema : SchemaBase
 {
+    private static ConcurrentDictionary<string, Solution> Solutions => SolutionOperationsCommand.Solutions;
+    
     private const string SchemaName = "Csharp";
 
     private static readonly IFileSystem FileSystem = new DefaultFileSystem();
-    private static ConcurrentDictionary<string, Solution> Solutions => SolutionOperationsCommand.Solutions;
-    private static string DefaultNugetCacheDirectoryPath { get; } = IFileSystem.Combine(SolutionOperationsCommand.DefaultCacheDirectoryPath, "NuGet");
+    internal static string DefaultNugetCacheDirectoryPath { get; } = IFileSystem.Combine(SolutionOperationsCommand.DefaultCacheDirectoryPath, "NuGet");
     
     private static ConcurrentDictionary<string, PersistentCacheResponseHandler> HttpResponseCache => SolutionOperationsCommand.HttpResponseCache;
 
     private readonly Func<string, IHttpClient, INuGetPropertiesResolver> _createNugetPropertiesResolver;
+    
+    private static ResolveValueStrategy ResolveValueStrategy => SolutionOperationsCommand.ResolveValueStrategy;
     
     static CSharpSchema()
     {
@@ -382,6 +385,7 @@ public class CSharpSchema : SchemaBase
                             FileSystem,
                             packageVersionConcurrencyManager,
                             SolutionOperationsCommand.BannedPropertiesValues,
+                            ResolveValueStrategy,
                             runtimeContext.Logger
                         ),
                         runtimeContext.EndWorkToken

@@ -20,6 +20,7 @@ internal sealed class NuGetPackageMetadataRetriever(
     IFileSystem fileSystem,
     IPackageVersionConcurrencyManager packageVersionConcurrencyManager,
     IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues,
+    ResolveValueStrategy resolveValueStrategy,
     ILogger logger)
     : INuGetPackageMetadataRetriever
 {
@@ -215,10 +216,6 @@ internal sealed class NuGetPackageMetadataRetriever(
                     level))) ?? [];
 
         var dependencies = new List<DependencyInfo>();
-        
-        _packageDependenciesCache.AddOrUpdate((packageName, packageVersion),
-            dependencies,
-            (_, _) => dependencies);
 
         foreach (var dependency in ungroupedDependencies.Concat(groupedDependencies))
         {
@@ -232,6 +229,10 @@ internal sealed class NuGetPackageMetadataRetriever(
             
             yield return dependency;
         }
+        
+        _packageDependenciesCache.AddOrUpdate((packageName, packageVersion),
+            dependencies,
+            (_, _) => dependencies);
     }
 
     /// <summary>
@@ -323,6 +324,7 @@ internal sealed class NuGetPackageMetadataRetriever(
             retrievalService,
             customApiEndpoint,
             bannedPropertiesValues,
+            resolveValueStrategy,
             logger);
         
         await commonResources.AcceptAsync(retrieveCommonResourcesVisitor, cancellationToken);
