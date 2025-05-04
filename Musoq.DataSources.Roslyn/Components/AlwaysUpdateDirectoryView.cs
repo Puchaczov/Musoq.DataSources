@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -71,7 +72,7 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
         
         _fileWatcher.EnableRaisingEvents = true;
 
-        _backupPollingTimer = new Timer(ScanDirectory, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3));
+        _backupPollingTimer = new Timer(ScanDirectory, null, TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(10));
     }
 
     public bool TryGetValue(TKey key, out TDestinationValue? value)
@@ -244,18 +245,18 @@ internal class AlwaysUpdateDirectoryView<TKey, TDestinationValue> : IDisposable
         try
         {
             var existingFiles = _fileSystem.GetFiles(_directoryPath, false, _cancellationTokenSource.Token);
-            var cachedKeys = _cachedItems.Keys.ToList();
+            var cachedKeys = _cachedItems;
         
             foreach (var file in existingFiles)
             {
                 var fileInfo = new FileInfo(file);
-                if (!cachedKeys.Contains(fileInfo.Name) && _fileSystem.IsFileExists(fileInfo.FullName))
+                if (!cachedKeys.ContainsKey(fileInfo.Name) && _fileSystem.IsFileExists(fileInfo.FullName))
                 {
                     _synchronizationQueue.Add(fileInfo);
                 }
             }
         
-            foreach (var path in cachedKeys.Select(cachedKey => IFileSystem.Combine(_directoryPath, cachedKey)).Where(path => !_fileSystem.IsFileExists(path)))
+            foreach (var path in cachedKeys.Keys.Select(cachedKey => IFileSystem.Combine(_directoryPath, cachedKey)).Where(path => !_fileSystem.IsFileExists(path)))
             {
                 _synchronizationQueue.Add(new FileInfo(path));
             }

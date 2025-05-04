@@ -36,11 +36,11 @@ namespace Musoq.DataSources.Roslyn.Tests
   </metadata>
 </package>";
 
-        private FakeAiBasedPropertiesResolver _aiResolver;
-        private FakeFileSystem _fileSystem;
-        private FakeHttpClient _httpClient;
-        private NuGetRetrievalService _service;
-        private NuGetResource _commonResources;
+        private FakeAiBasedPropertiesResolver _aiResolver = null!;
+        private FakeFileSystem _fileSystem = null!;
+        private FakeHttpClient _httpClient = null!;
+        private NuGetRetrievalService _service = null!;
+        private NuGetResource _commonResources = null!;
 
         [TestInitialize]
         public void Setup()
@@ -238,14 +238,13 @@ namespace Musoq.DataSources.Roslyn.Tests
             const string apiEndpoint = "https://api.example.com/nuget";
             const string propertyName = "ProjectUrl";
             
-            var requestUrl = $"{apiEndpoint}?packageName={SamplePackageName}&packageVersion={SamplePackageVersion}&propertyName={propertyName}";
+            const string requestUrl = $"{apiEndpoint}?packageName={SamplePackageName}&packageVersion={SamplePackageVersion}&propertyName={propertyName}";
             _httpClient.AddErrorResponse(requestUrl, 500, "Internal Server Error");
             
-            // Act
-            var result = await _service.GetMetadataFromCustomApiAsync(apiEndpoint, _commonResources, propertyName, CancellationToken.None);
-            
-            // Assert
-            Assert.IsNull(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<HttpRequestException>(async () =>
+                await _service.GetMetadataFromCustomApiAsync(apiEndpoint, _commonResources, propertyName,
+                    CancellationToken.None));
         }
 
         [TestMethod]
@@ -263,17 +262,16 @@ namespace Musoq.DataSources.Roslyn.Tests
         }
 
         [TestMethod]
-        public async Task GetMetadataFromCustomApiAsync_When404ErrorOccurs_ReturnsNull()
+        public async Task GetMetadataFromCustomApiAsync_When404ErrorOccurs_ThrowsHttpRequestException()
         {
             // Arrange
             var requestUrl = $"https://api.example.com/nuget?packageName={SamplePackageName}&packageVersion={SamplePackageVersion}&propertyName=ProjectUrl";
             _httpClient.AddErrorResponse(requestUrl, 404, "Not Found");
 
-            // Act
-            var result = await _service.GetMetadataFromCustomApiAsync("https://api.example.com/nuget", _commonResources, "ProjectUrl", CancellationToken.None);
-
-            // Assert
-            Assert.IsNull(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<HttpRequestException>(async () =>
+                await _service.GetMetadataFromCustomApiAsync("https://api.example.com/nuget", _commonResources,
+                    "ProjectUrl", CancellationToken.None));
         }
 
         #endregion
@@ -488,12 +486,12 @@ namespace Musoq.DataSources.Roslyn.Tests
             _responses[url] = new FakeHttpResponse { Content = errorMessage, StatusCode = statusCode, ShouldThrow = true };
         }
 
-        public IHttpClient NewInstance()
+        public IHttpClient? NewInstance()
         {
             return new FakeHttpClient();
         }
 
-        public IHttpClient NewInstance(Action<HttpClient> configure)
+        public IHttpClient? NewInstance(Action<HttpClient> configure)
         {
             return new FakeHttpClient();
         }
@@ -535,6 +533,17 @@ namespace Musoq.DataSources.Roslyn.Tests
             CancellationToken cancellationToken) where TOut : class
         {
             if (!_responses.TryGetValue(requestUrl, out var response))
+                return Task.FromResult(default(TOut));
+            
+            if (response is { ShouldThrow: true, Exception: not null })
+                throw response.Exception;
+            
+            return Task.FromResult(JsonSerializer.Deserialize<TOut>(response.Content));
+        }
+
+        public Task<TOut?> PostAsync<TOut>(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (!_responses.TryGetValue(request.RequestUri?.ToString() ?? throw new InvalidOperationException("Request URI is null"), out var response))
                 return Task.FromResult(default(TOut));
             
             if (response is { ShouldThrow: true, Exception: not null })

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -8,10 +10,10 @@ using Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetPropertiesResolver, IFileSystem fileSystem, IHttpClient httpClient) : INuGetRetrievalService
+internal sealed class NuGetRetrievalService(INuGetPropertiesResolver? nuGetPropertiesResolver, IFileSystem? fileSystem, IHttpClient? httpClient) : INuGetRetrievalService
 {
     public async Task<string?> GetMetadataFromPathAsync(
-        NuGetResource commonResources,
+        NuGetResource? commonResources,
         string propertyName,
         CancellationToken cancellationToken)
     {
@@ -48,7 +50,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
 
     public async Task<string?> GetMetadataFromNugetOrgAsync(
         string baseUrl,
-        NuGetResource commonResources,
+        NuGetResource? commonResources,
         string propertyName,
         CancellationToken cancellationToken)
     {
@@ -72,26 +74,55 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
 
     public async Task<string?> GetMetadataFromCustomApiAsync(
         string apiEndpoint,
-        NuGetResource commonResources,
+        NuGetResource? commonResources,
         string propertyName,
         CancellationToken cancellationToken)
     {
         var requestUrlBase = $"{apiEndpoint}?packageName={commonResources.PackageName}&packageVersion={commonResources.PackageVersion}&propertyName={propertyName}";
         var response = await httpClient.GetAsync(requestUrlBase, cancellationToken);
-                
+
         if (response is null)
         {
             return null;
         }
-                
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
-                
+
+        response.EnsureSuccessStatusCode();
+
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
         return string.IsNullOrWhiteSpace(content) ? null : content;
+    }
+
+    public async Task<string[]> GetPackageVersionsAsync(string packageName, CancellationToken cancellationToken)
+    {
+        var requestUrlBase = $"https://api.nuget.org/v3-flatcontainer/{packageName.ToLowerInvariant()}/index.json";
+        var response = await httpClient.GetAsync(requestUrlBase, cancellationToken);
+        
+        if (response is null)
+        {
+            return [];
+        }
+
+        response.EnsureSuccessStatusCode();
+        
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return [];
+        }
+        
+        var versionsResponse = JsonSerializer.Deserialize<VersionsResponse>(content);
+        if (versionsResponse is null)
+        {
+            return [];
+        }
+        
+        if (versionsResponse.Versions is null)
+        {
+            return [];
+        }
+        
+        return versionsResponse.Versions;
     }
 
     public async Task<string?> DownloadPackageAsync(string packageName, string packageVersion, string packagePath, CancellationToken cancellationToken)
@@ -103,10 +134,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
             return null;
         }
 
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
+        response.EnsureSuccessStatusCode();
         
         var tempPath = Path.GetTempPath();
         var tempFilePath = Path.Combine(tempPath, $"{packageName}.{packageVersion}.nupkg");
@@ -121,7 +149,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
         return packagePath;
     }
 
-    private static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>> ResolveNuspecStrategies(NuGetResource commonResources, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
+    private static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>> ResolveNuspecStrategies(NuGetResource? commonResources, INuGetPropertiesResolver? nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         return new Dictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>>
         {
@@ -142,18 +170,29 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
         };
     }
         
-    private static IReadOnlyDictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>> ResolveWebScrapeStrategies(IHttpClient client, NuGetResource commonResources, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
+    private static IReadOnlyDictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>> ResolveWebScrapeStrategies(IHttpClient? client, NuGetResource? commonResources, INuGetPropertiesResolver? nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         var capturedClient = client;
         return new Dictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>>
         {
+            [nameof(NuGetResource.ProjectUrl)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.Title)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.Authors)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.Owners)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.RequireLicenseAcceptance)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.Description)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.Summary)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.ReleaseNotes)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.Copyright)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.Language)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+            [nameof(NuGetResource.Tags)] = (_, _) => Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
             ["LicensesNames"] = async (url, token) => await NugetHelpers.DiscoverLicensesNamesAsync(url, commonResources, capturedClient, nuGetPropertiesResolver, token),
-            [nameof(NuGetLicense.LicenseUrl)] = async (url, token) => await NugetHelpers.DiscoverLicenseUrlAsync(url, commonResources, capturedClient, nuGetPropertiesResolver, token),
-            [nameof(NuGetLicense.LicenseContent)] = async (url, _) => await NugetHelpers.DiscoverLicenseContentAsync(url, commonResources, capturedClient, nuGetPropertiesResolver, cancellationToken)
+            [nameof(NuGetLicense.LicenseUrl)] = async (url, token) => await NugetHelpers.DiscoverLicenseUrlAsync(url, commonResources, capturedClient, token),
+            [nameof(NuGetLicense.LicenseContent)] = async (url, _) => await NugetHelpers.DiscoverLicenseContentAsync(url, commonResources, capturedClient, cancellationToken)
         };
     }
 
-    private static async Task<(XmlDocument, XmlNamespaceManager)> CreateXmlDocumentAndNamespaceManager(string nuspecFilePath, IFileSystem fileSystem, CancellationToken cancellationToken)
+    private static async Task<(XmlDocument, XmlNamespaceManager)> CreateXmlDocumentAndNamespaceManager(string nuspecFilePath, IFileSystem? fileSystem, CancellationToken cancellationToken)
     {
         var fileContent = await fileSystem.ReadAllTextAsync(nuspecFilePath, cancellationToken);
         var xmlDoc = new XmlDocument();
@@ -167,5 +206,11 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
         }
 
         return (xmlDoc, namespaceManager);
+    }
+    
+    private class VersionsResponse
+    {
+        [JsonPropertyName("versions")]
+        public required string[]? Versions { get; init; }
     }
 }

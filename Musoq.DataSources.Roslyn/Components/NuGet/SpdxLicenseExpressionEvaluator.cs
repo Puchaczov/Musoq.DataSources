@@ -7,7 +7,7 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet
 {
     internal sealed class SpdxLicenseExpressionEvaluator
     {
-        public static Task<List<string>> GetLicenseIdentifiersAsync(string expression)
+        public static Task<List<string>> GetLicenseIdentifiersAsync(string? expression)
         {
             if (string.IsNullOrWhiteSpace(expression))
                 return Task.FromResult(new List<string>());

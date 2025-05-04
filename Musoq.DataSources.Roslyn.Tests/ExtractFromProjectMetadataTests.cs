@@ -153,12 +153,12 @@ public class ExtractFromProjectMetadataTests
             _licenseUrls[url] = content;
         }
         
-        public IHttpClient NewInstance()
+        public IHttpClient? NewInstance()
         {
             return this;
         }
 
-        public IHttpClient NewInstance(Action<HttpClient> configure)
+        public IHttpClient? NewInstance(Action<HttpClient> configure)
         {
             return this;
         }
@@ -192,6 +192,11 @@ public class ExtractFromProjectMetadataTests
             CancellationToken cancellationToken) where TOut : class
         {
             return Task.FromResult<TOut?>(null);
+        }
+
+        public Task<TOut?> PostAsync<TOut>(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<TOut?>(default);
         }
     }
     
@@ -387,8 +392,8 @@ public class ExtractFromProjectMetadataTests
         private readonly (string id, string version)[] _packages;
         private readonly string _testDir;
         private readonly string _cacheDir;
-        private readonly TestFileSystem _fileSystem;
-        private readonly HttpClientWrapper _httpClient;
+        private readonly TestFileSystem? _fileSystem;
+        private readonly HttpClientWrapper? _httpClient;
         private string[] _licenseNames = [];
         private readonly Mock<INuGetCachePathResolver> _cachePathResolver;
         private readonly Mock<INuGetPropertiesResolver> _propertiesResolver;
@@ -511,6 +516,7 @@ public class ExtractFromProjectMetadataTests
                 _fileSystem,
                 packageVersionConcurrencyManager,
                 bannedPropertiesValues,
+                ResolveValueStrategy.UseNugetOrgApiOnly,
                 loggerMock.Object);
         }
 

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Musoq.DataSources.Roslyn.Components.NuGet.Http;
+namespace Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 
 internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
 {
@@ -115,7 +115,7 @@ internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
             
             if (!lease.IsAcquired)
             {
-                _logger.LogWarning("Rate limit exceeded for domain {Domain}.", domain);
+                _logger.LogWarning("Rate limit exceeded for domain {Domain}. Won't retry.", domain);
                 throw new HttpRequestException($"Rate limit exceeded for domain {domain}.");
             }
         }
@@ -144,9 +144,9 @@ internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
             
             if (sendResult.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
             {
-                _logger.LogWarning("Rate limit exceeded for domain {Domain}.", domain);
-                
                 var waitTime = sendResult.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(1);
+                
+                _logger.LogWarning("Rate limit exceeded for domain {Domain}, retrying in {WaitTime}s.", domain, waitTime.TotalSeconds);
                 
                 await Task.Delay(waitTime, cancellationToken);
                 isSuccess = false;

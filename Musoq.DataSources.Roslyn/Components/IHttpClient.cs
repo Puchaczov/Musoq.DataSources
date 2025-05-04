@@ -14,14 +14,14 @@ public interface IHttpClient
     /// Creates a new instance of the HTTP client.
     /// </summary>
     /// <returns>An instance of <see cref="IHttpClient"/>.</returns>
-    IHttpClient NewInstance();
+    IHttpClient? NewInstance();
     
     /// <summary>
     /// Creates a new instance of the HTTP client with the specified configuration.
     /// </summary>
     /// <param name="configure">Configuration action to customize the HTTP client.</param>
     /// <returns>An instance of <see cref="IHttpClient"/>.</returns>
-    IHttpClient NewInstance(Action<HttpClient> configure);
+    IHttpClient? NewInstance(Action<HttpClient> configure);
     
     /// <summary>
     /// Sends a GET request to the specified URL and returns the response.
@@ -64,4 +64,13 @@ public interface IHttpClient
     /// <returns>A task that represents the asynchronous operation. The task result contains the response object.</returns>
     Task<TOut?> PostAsync<TOut>(string requestUrl, MultipartFormDataContent multipartFormDataContent, CancellationToken cancellationToken) 
         where TOut : class;
+
+    /// <summary>
+    /// Sends a POST request with the specified HTTP request message and returns the response.
+    /// </summary>
+    /// <param name="request">The HTTP request message to send.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the request.</param>
+    /// <typeparam name="TOut">Type of the object to receive in the response.</typeparam>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the response object.</returns>
+    Task<TOut?> PostAsync<TOut>(HttpRequestMessage request, CancellationToken cancellationToken);
 }

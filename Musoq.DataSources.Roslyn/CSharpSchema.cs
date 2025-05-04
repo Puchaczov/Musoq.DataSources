@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.CoconaCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
-using Musoq.DataSources.Roslyn.Components.NuGet.Http;
+using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.RowsSources;
 using Musoq.Schema;
@@ -28,15 +28,18 @@ namespace Musoq.DataSources.Roslyn;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class CSharpSchema : SchemaBase
 {
+    private static ConcurrentDictionary<string, Solution> Solutions => SolutionOperationsCommand.Solutions;
+    
     private const string SchemaName = "Csharp";
 
-    private static readonly IFileSystem FileSystem = new DefaultFileSystem();
-    private static ConcurrentDictionary<string, Solution> Solutions => SolutionOperationsCommand.Solutions;
-    private static string DefaultNugetCacheDirectoryPath { get; } = IFileSystem.Combine(SolutionOperationsCommand.DefaultCacheDirectoryPath, "NuGet");
+    private static readonly IFileSystem? FileSystem = new DefaultFileSystem();
+    internal static string DefaultNugetCacheDirectoryPath { get; } = IFileSystem.Combine(SolutionOperationsCommand.DefaultCacheDirectoryPath, "NuGet");
     
-    private static ConcurrentDictionary<string, ReturnCachedResponseHandler> HttpResponseCache => SolutionOperationsCommand.HttpResponseCache;
+    private static ConcurrentDictionary<string, PersistentCacheResponseHandler> HttpResponseCache => SolutionOperationsCommand.HttpResponseCache;
 
-    private readonly Func<string, IHttpClient, INuGetPropertiesResolver> _createNugetPropertiesResolver;
+    private readonly Func<string, IHttpClient?, INuGetPropertiesResolver> _createNugetPropertiesResolver;
+    
+    private static ResolveValueStrategy ResolveValueStrategy => SolutionOperationsCommand.ResolveValueStrategy;
     
     static CSharpSchema()
     {
@@ -280,7 +283,7 @@ public class CSharpSchema : SchemaBase
         _createNugetPropertiesResolver = (baseUrl, client) => new NuGetPropertiesResolver(baseUrl, client);
     }
 
-    internal CSharpSchema(Func<string, IHttpClient, INuGetPropertiesResolver> createNuGetPropertiesResolver)
+    internal CSharpSchema(Func<string, IHttpClient?, INuGetPropertiesResolver> createNuGetPropertiesResolver)
         : this()
     {
         _createNugetPropertiesResolver = createNuGetPropertiesResolver;
@@ -370,7 +373,8 @@ public class CSharpSchema : SchemaBase
                                 solution.FilePath,
                                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                                     ? OSPlatform.Windows
-                                    : OSPlatform.Linux
+                                    : OSPlatform.Linux,
+                                runtimeContext.Logger
                             ),
                             externalNugetPropertiesResolveEndpoint,
                             new NuGetRetrievalService(
@@ -381,6 +385,7 @@ public class CSharpSchema : SchemaBase
                             FileSystem,
                             packageVersionConcurrencyManager,
                             SolutionOperationsCommand.BannedPropertiesValues,
+                            ResolveValueStrategy,
                             runtimeContext.Logger
                         ),
                         runtimeContext.EndWorkToken
@@ -440,23 +445,25 @@ public class CSharpSchema : SchemaBase
     )
     {
         var cachedResponseHandler = HttpResponseCache.AddOrUpdate(cacheDirectory,
-            _ => new ReturnCachedResponseHandler(cacheDirectory, new DomainRateLimitingHandler(
-                getDomains(SolutionOperationsCommand.RateLimitingOptions ?? throw new InvalidOperationException("Rate limiting options are not set.")),
-                new DomainRateLimitingHandler.DomainRateLimitConfig(
-                    10,
-                    TimeSpan.FromSeconds(1),
-                    100), false, logger), 
+            _ => new PersistentCacheResponseHandler(cacheDirectory, new SingleQueryCacheResponseHandler(
+                    new DomainRateLimitingHandler(
+                        getDomains(SolutionOperationsCommand.RateLimitingOptions ?? throw new InvalidOperationException("Rate limiting options are not set.")),
+                        new DomainRateLimitingHandler.DomainRateLimitConfig(
+                            10,
+                            TimeSpan.FromSeconds(1),
+                            100), false, logger)), 
                 logger),
             (key, handler) =>
             {
                 if (key == DefaultNugetCacheDirectoryPath && handler.InnerHandler is HttpClientHandler)
                 {
-                    handler.InnerHandler = new DomainRateLimitingHandler(
-                        getDomains(SolutionOperationsCommand.RateLimitingOptions ?? throw new InvalidOperationException("Rate limiting options are not set.")),
-                        new DomainRateLimitingHandler.DomainRateLimitConfig(
-                            10,
-                            TimeSpan.FromSeconds(1),
-                            100), false, logger);
+                    handler.InnerHandler = new SingleQueryCacheResponseHandler(
+                        new DomainRateLimitingHandler(
+                            getDomains(SolutionOperationsCommand.RateLimitingOptions ?? throw new InvalidOperationException("Rate limiting options are not set.")),
+                            new DomainRateLimitingHandler.DomainRateLimitConfig(
+                                10,
+                                TimeSpan.FromSeconds(1),
+                                100), false, logger));
                 }
                 
                 return handler;

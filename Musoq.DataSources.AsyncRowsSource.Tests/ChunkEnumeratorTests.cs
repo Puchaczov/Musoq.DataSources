@@ -18,7 +18,7 @@ public class ChunkEnumeratorTests
         var mockResolver2 = new Mock<IObjectResolver>();
         var chunk = new List<IObjectResolver> { mockResolver1.Object, mockResolver2.Object };
         collection.Add(chunk);
-        collection.CompleteAdding(); // sygnalizacja końca
+        collection.CompleteAdding();
         
         var enumerator = new AsyncRowsSourceBaseChunkEnumerator(
             collection,
@@ -50,7 +50,7 @@ public class ChunkEnumeratorTests
         
         collection.Add(chunk1);
         collection.Add(chunk2);
-        collection.CompleteAdding(); // sygnalizacja zakończenia
+        collection.CompleteAdding();
         
         var enumerator = new AsyncRowsSourceBaseChunkEnumerator(
             collection,
@@ -79,11 +79,11 @@ public class ChunkEnumeratorTests
         var mockResolver1 = new Mock<IObjectResolver>();
         var mockResolver2 = new Mock<IObjectResolver>();
         
-        collection.Add(new List<IObjectResolver>()); // Puste chunki wewnątrz (do przeskoczenia)
+        collection.Add(new List<IObjectResolver>());
         collection.Add(new List<IObjectResolver> { mockResolver1.Object });
-        collection.Add(new List<IObjectResolver>()); // kolejna pusta lista
+        collection.Add(new List<IObjectResolver>());
         collection.Add(new List<IObjectResolver> { mockResolver2.Object });
-        collection.CompleteAdding(); // sygnalizacja końca
+        collection.CompleteAdding();
 
         var enumerator = new AsyncRowsSourceBaseChunkEnumerator(
             collection,
@@ -136,11 +136,12 @@ public class ChunkEnumeratorTests
         
         var enumerator = new AsyncRowsSourceBaseChunkEnumerator(
             collection,
+            // ReSharper disable once AccessToModifiedClosure
             () => exceptionTriggered ? expectedException : null,
             CancellationToken.None);
 
         // Act & Assert
-        Assert.IsTrue(enumerator.MoveNext()); // Pierwsze wywołanie bez błędu
+        Assert.IsTrue(enumerator.MoveNext());
         
         exceptionTriggered = true;
         var actualException = Assert.ThrowsException<InvalidOperationException>(() => enumerator.MoveNext());
@@ -153,7 +154,6 @@ public class ChunkEnumeratorTests
     {
         // Arrange
         var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
-        // Kolekcja pusta; zakończona
         collection.CompleteAdding();
         
         var enumerator = new AsyncRowsSourceBaseChunkEnumerator(
@@ -186,12 +186,10 @@ public class ChunkEnumeratorTests
         Assert.IsTrue(enumerator.MoveNext());
         Assert.AreSame(mockResolver1.Object, enumerator.Current);
         
-        // Dodaj kolejny element i anuluj token
         collection.Add(new List<IObjectResolver> { mockResolver2.Object }, tokenSource.Token);
         tokenSource.Cancel();
         collection.CompleteAdding();
         
-        // Mimo anulowania powinniśmy otrzymać kolejny element
         Assert.IsTrue(enumerator.MoveNext());
         Assert.AreSame(mockResolver2.Object, enumerator.Current);
         
@@ -204,7 +202,7 @@ public class ChunkEnumeratorTests
     {
         // Arrange
         var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
-        collection.CompleteAdding(); // pusta kolekcja
+        collection.CompleteAdding();
         
         var enumerator = new AsyncRowsSourceBaseChunkEnumerator(
             collection,
@@ -244,5 +242,42 @@ public class ChunkEnumeratorTests
 
         // Act & Assert
         Assert.ThrowsException<InvalidOperationException>(() => _ = enumerator.Current);
+    }
+    
+    [Timeout(15000)]
+    [TestMethod]
+    public void WhenCollectionIsEmpty_AndExceptionThrown_ThenExceptionIsPropagated()
+    {
+        // Arrange
+        var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
+        collection.CompleteAdding();
+        
+        var expectedException = new InvalidOperationException("Test exception");
+        var enumerator = new AsyncRowsSourceBaseChunkEnumerator(
+            collection,
+            () => expectedException,
+            CancellationToken.None);
+
+        // Act & Assert
+        var actualException = Assert.ThrowsException<InvalidOperationException>(() => enumerator.MoveNext());
+        Assert.AreSame(expectedException, actualException);
+    }
+    
+    [Timeout(15000)]
+    [TestMethod]
+    public void WhenCollectionIsEmpty_AndExceptionThrown_WithoutCompleteAdding_ThenExceptionIsPropagated()
+    {
+        // Arrange
+        var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
+        
+        var expectedException = new InvalidOperationException("Test exception");
+        var enumerator = new AsyncRowsSourceBaseChunkEnumerator(
+            collection,
+            () => expectedException,
+            CancellationToken.None);
+
+        // Act & Assert
+        var actualException = Assert.ThrowsException<InvalidOperationException>(() => enumerator.MoveNext());
+        Assert.AreSame(expectedException, actualException);
     }
 }

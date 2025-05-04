@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http;
+using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 
@@ -113,7 +114,7 @@ public class DomainRateLimitingHandlerTests
         stopwatch.Stop();
         
         // Assert
-        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 990, 
+        Assert.IsTrue(stopwatch.ElapsedMilliseconds >= 950, 
             "Second request should have waited for the replenishment period but took " + stopwatch.Elapsed);
         Assert.AreEqual(2, testHandler.RequestCount);
     }

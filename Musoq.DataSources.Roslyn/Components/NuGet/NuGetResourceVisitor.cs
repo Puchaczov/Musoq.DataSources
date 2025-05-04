@@ -2,18 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
 internal class NuGetResourceVisitor(
-    NuGetResource commonResources, 
+    NuGetResource? commonResources, 
     INuGetRetrievalService nuGetRetrievalService,
     string? customApiEndpoint,
-    IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues
+    IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues,
+    ResolveValueStrategy resolveValueStrategy,
+    ILogger logger
 ) : INuGetResourceVisitor
 {
-    private static readonly HashSet<string> EmptyBannedPropertiesValues = new();
+    private static readonly HashSet<string> EmptyBannedPropertiesValues = [];
     
     public async Task VisitLicensesAsync(CancellationToken cancellationToken)
     {
@@ -137,8 +140,10 @@ internal class NuGetResourceVisitor(
                     resolvedValue = null;
                 }
             }
-            catch
+            catch(Exception exc)
             {
+                logger.LogError(exc, "Failed to retrieve metadata from NuGet.org for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
                 resolvedValue = null;
             }
         }
@@ -157,8 +162,10 @@ internal class NuGetResourceVisitor(
                     resolvedValue = null;
                 }
             }
-            catch (Exception)
+            catch (Exception exc)
             {
+                logger.LogError(exc, "Failed to retrieve metadata from custom API for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
                 resolvedValue = null;
             }
         }
@@ -182,47 +189,106 @@ internal class NuGetResourceVisitor(
                 resolvedValue = null;
             }
         }
-            
-        if (resolvedValue is "[]" or null)
-        {
-            try
-            {
-                resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
-                    "https://www.nuget.org",
-                    commonResources,
-                    propertyName,
-                    cancellationToken);
 
-                if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
-                {
-                    resolvedValue = null;
-                }
-            }
-            catch
-            {
-                resolvedValue = null;
-            }
-        }
-            
-        if (resolvedValue is "[]" or null && !string.IsNullOrEmpty(customApiEndpoint))
+        switch (resolveValueStrategy)
         {
-            try
-            {
-                resolvedValue = await nuGetRetrievalService.GetMetadataFromCustomApiAsync(
-                    customApiEndpoint,
-                    commonResources,
-                    propertyName,
-                    cancellationToken);
-                
-                if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
+            case ResolveValueStrategy.UseNugetOrgApiOnly:
+                if (resolvedValue is "[]" or null)
                 {
-                    resolvedValue = null;
+                    try
+                    {
+                        resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
+                            "https://www.nuget.org",
+                            commonResources,
+                            propertyName,
+                            cancellationToken);
+
+                        if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
+                        {
+                            resolvedValue = null;
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        logger.LogError(exc, "Failed to retrieve metadata from NuGet.org for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
+                        resolvedValue = null;
+                    }
                 }
-            }
-            catch (Exception)
-            {
-                resolvedValue = null;
-            }
+                break;
+            case ResolveValueStrategy.UseCustomApiOnly:
+                if (resolvedValue is "[]" or null && !string.IsNullOrEmpty(customApiEndpoint))
+                {
+                    try
+                    {
+                        resolvedValue = await nuGetRetrievalService.GetMetadataFromCustomApiAsync(
+                            customApiEndpoint,
+                            commonResources,
+                            propertyName,
+                            cancellationToken);
+                
+                        if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
+                        {
+                            resolvedValue = null;
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        logger.LogError(exc, "Failed to retrieve metadata from custom API for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
+                        resolvedValue = null;
+                    }
+                }
+                break;
+            case ResolveValueStrategy.UseNugetOrgApiAndCustomApi:
+                if (resolvedValue is "[]" or null)
+                {
+                    try
+                    {
+                        resolvedValue = await nuGetRetrievalService.GetMetadataFromNugetOrgAsync(
+                            "https://www.nuget.org",
+                            commonResources,
+                            propertyName,
+                            cancellationToken);
+
+                        if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
+                        {
+                            resolvedValue = null;
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        logger.LogError(exc, "Failed to retrieve metadata from NuGet.org for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
+                        resolvedValue = null;
+                    }
+                }
+            
+                if (resolvedValue is "[]" or null && !string.IsNullOrEmpty(customApiEndpoint))
+                {
+                    try
+                    {
+                        resolvedValue = await nuGetRetrievalService.GetMetadataFromCustomApiAsync(
+                            customApiEndpoint,
+                            commonResources,
+                            propertyName,
+                            cancellationToken);
+                
+                        if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
+                        {
+                            resolvedValue = null;
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        logger.LogError(exc, "Failed to retrieve metadata from custom API for property {PropertyName} ({PackageName}, {Version})", propertyName, commonResources.PackageName, commonResources.PackageVersion);
+                
+                        resolvedValue = null;
+                    }
+                }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(resolveValueStrategy), resolveValueStrategy, null);
         }
             
         return resolvedValue;

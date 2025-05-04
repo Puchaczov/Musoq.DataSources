@@ -14,8 +14,8 @@ namespace Musoq.DataSources.Roslyn.RowsSources;
 
 internal sealed class CSharpInMemorySolutionRowsSource(
     SolutionEntity solution,
-    IHttpClient httpClient,
-    IFileSystem fileSystem,
+    IHttpClient? httpClient,
+    IFileSystem? fileSystem,
     string? nugetPropertiesResolveEndpoint, 
     INuGetPropertiesResolver nuGetPropertiesResolver,
     ILogger logger, 
@@ -38,7 +38,8 @@ internal sealed class CSharpInMemorySolutionRowsSource(
                             solution.Path, 
                             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 
                                 OSPlatform.Windows : 
-                                OSPlatform.Linux
+                                OSPlatform.Linux,
+                            logger
                         ), 
                         nugetPropertiesResolveEndpoint,
                         new NuGetRetrievalService(
@@ -48,6 +49,7 @@ internal sealed class CSharpInMemorySolutionRowsSource(
                         fileSystem,
                         packageVersionConcurrencyManager,
                         SolutionOperationsCommand.BannedPropertiesValues,
+                        SolutionOperationsCommand.ResolveValueStrategy,
                         logger),
                     _queryCancelledToken
                 ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)

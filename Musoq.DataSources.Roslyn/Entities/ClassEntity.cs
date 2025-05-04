@@ -68,21 +68,6 @@ public class ClassEntity : TypeEntity
     }
 
     /// <summary>
-    /// Gets a value indicating whether the class is abstract.
-    /// </summary>
-    public bool IsAbstract => Symbol.IsAbstract;
-
-    /// <summary>
-    /// Gets a value indicating whether the class is sealed.
-    /// </summary>
-    public bool IsSealed => Symbol.IsSealed;
-    
-    /// <summary>
-    /// Gets a value indicating whether the class is static.
-    /// </summary>
-    public bool IsStatic => Symbol.IsStatic;
-
-    /// <summary>
     /// Gets the base types of the class.
     /// </summary>
     [BindablePropertyAsTable]

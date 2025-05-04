@@ -32,6 +32,10 @@ namespace Musoq.DataSources.AsyncRowsSource
                 }
                 else if (readRows.IsCompleted || readRows.Count == 0)
                 {
+                    var exception = getException();
+                    if (exception != null)
+                        throw exception;
+                    
                     if (token.IsCancellationRequested)
                         return false;
                     if (readRows.IsCompleted)
