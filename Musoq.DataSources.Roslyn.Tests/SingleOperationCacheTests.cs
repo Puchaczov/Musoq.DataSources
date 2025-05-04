@@ -31,7 +31,7 @@ public class SingleOperationCacheTests
         // Assert
         Assert.AreEqual(42, result1);
         Assert.AreEqual(100, result2); // Should return second value
-        Assert.AreEqual(2, operationCallCount); // Operation should be called only once
+        Assert.AreEqual(2, operationCallCount); // Operation is called twice because the cache removes the value after the first call
     }
     
     [TestMethod]
