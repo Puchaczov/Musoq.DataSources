@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.8.8</Version>
+        <Version>1.8.9</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -16,6 +16,11 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
+        <IsFinalBuild>false</IsFinalBuild>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <DisableMSBuildAssemblyCopyCheck>$(IsFinalBuild)</DisableMSBuildAssemblyCopyCheck>
     </PropertyGroup>
     
     <ItemGroup>
@@ -34,10 +39,12 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
-        <PackageReference Include="Microsoft.Build" Version="16.10.0">
+        <PackageReference Include="Microsoft.Build" Version="16.10.0" Condition="'$(IsFinalBuild)' == 'true'" />
+        <PackageReference Include="Microsoft.Build.Framework" Version="16.10.0" Condition="'$(IsFinalBuild)' == 'true'" />
+        <PackageReference Include="Microsoft.Build" Version="16.10.0" Condition="'$(IsFinalBuild)' == 'false'">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Build.Framework" Version="16.10.0">
+        <PackageReference Include="Microsoft.Build.Framework" Version="16.10.0" Condition="'$(IsFinalBuild)' == 'false'" >
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Build.Locator" Version="1.6.10" />
