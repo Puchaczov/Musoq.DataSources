@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
 internal class NuGetResourceVisitor(
-    NuGetResource commonResources, 
+    NuGetResource? commonResources, 
     INuGetRetrievalService nuGetRetrievalService,
     string? customApiEndpoint,
     IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues,

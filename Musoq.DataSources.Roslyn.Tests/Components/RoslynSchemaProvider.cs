@@ -4,7 +4,7 @@ using Musoq.Schema;
 
 namespace Musoq.DataSources.Roslyn.Tests.Components;
 
-public class RoslynSchemaProvider(Func<string, IHttpClient, INuGetPropertiesResolver> createNugetPropertiesResolver) : ISchemaProvider
+public class RoslynSchemaProvider(Func<string, IHttpClient?, INuGetPropertiesResolver> createNugetPropertiesResolver) : ISchemaProvider
 {
     public ISchema GetSchema(string schema)
     {

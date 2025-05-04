@@ -14,14 +14,14 @@ public interface IHttpClient
     /// Creates a new instance of the HTTP client.
     /// </summary>
     /// <returns>An instance of <see cref="IHttpClient"/>.</returns>
-    IHttpClient NewInstance();
+    IHttpClient? NewInstance();
     
     /// <summary>
     /// Creates a new instance of the HTTP client with the specified configuration.
     /// </summary>
     /// <param name="configure">Configuration action to customize the HTTP client.</param>
     /// <returns>An instance of <see cref="IHttpClient"/>.</returns>
-    IHttpClient NewInstance(Action<HttpClient> configure);
+    IHttpClient? NewInstance(Action<HttpClient> configure);
     
     /// <summary>
     /// Sends a GET request to the specified URL and returns the response.

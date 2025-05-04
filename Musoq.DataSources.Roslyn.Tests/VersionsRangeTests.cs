@@ -169,14 +169,14 @@ public class VersionsRangeTests
     [TestMethod]
     public void MultipleWildcardPatterns_ShouldMatchCorrectly()
     {
-        // Arrange - Testing wildcard in different positions
+        // Arrange
         var testVersions = new[] { "1.0.0", "1.0.1", "1.1.0", "1.1.1", "2.0.0", "2.1.0" };
         
-        // Act & Assert - Major.* pattern
+        // Act & Assert
         var actual1 = ParseAndResolve("1.*", testVersions);
         CollectionAssert.AreEqual(new[] { "1.0.0", "1.0.1", "1.1.0", "1.1.1" }, actual1);
         
-        // Act & Assert - Major.Minor.* pattern
+        // Act & Assert
         var actual2 = ParseAndResolve("1.1.*", testVersions);
         CollectionAssert.AreEqual(new[] { "1.1.0", "1.1.1" }, actual2);
     }
@@ -184,26 +184,26 @@ public class VersionsRangeTests
     [TestMethod]
     public void BoundaryValues_ShouldBeHandledCorrectly()
     {
-        // Arrange - Testing exact boundary values
+        // Arrange
         var testVersions = new[] { "0.9.9", "1.0.0", "1.0.1", "1.9.9", "2.0.0", "2.0.1" };
         
         // Act
         var actual = ParseAndResolve("[1.0.0, 2.0.0]", testVersions);
         
-        // Assert - Should include exact boundary values
+        // Assert
         CollectionAssert.AreEqual(new[] { "1.0.0", "1.0.1", "1.9.9", "2.0.0" }, actual);
     }
 
     [TestMethod]
     public void LargerVersionNumbers_ShouldCompareCorrectly()
     {
-        // Arrange - Testing versions with double-digit components
+        // Arrange
         var testVersions = new[] { "1.5.0", "1.10.0", "1.15.0", "10.0.0", "10.10.10", "11.0.0" };
         
         // Act
         var actual = ParseAndResolve("[1.10.0, 11.0.0)", testVersions);
         
-        // Assert - Should handle numeric comparison correctly, not string comparison
+        // Assert
         CollectionAssert.AreEqual(new[] { "1.10.0", "1.15.0", "10.0.0", "10.10.10" }, actual);
     }
 
@@ -219,14 +219,14 @@ public class VersionsRangeTests
         // Act
         var actual = ParseAndResolve("[1.0.0-beta, 1.0.0]", testVersions);
         
-        // Assert - Pre-release versions should be ordered correctly
+        // Assert
         CollectionAssert.AreEqual(new[] { "1.0.0-beta", "1.0.0-rc", "1.0.0-rc.1", "1.0.0" }, actual);
     }
 
     [TestMethod]
     public void MultipleOrRanges_ShouldCombineCorrectly()
     {
-        // Arrange - Testing complex OR expressions with multiple ranges
+        // Arrange
         var versionRange = "1.0.0 || [1.5.0, 2.0.0) || (3.0.0, 4.0.0]";
         var expected = new[] { "1.0.0", "1.5.0", "1.9.9", "3.1.0", "4.0.0" };
         var testVersions = new[] { "0.9.0", "1.0.0", "1.2.0", "1.5.0", "1.9.9", "2.0.0", "3.0.0", "3.1.0", "4.0.0", "5.0.0" };
@@ -242,10 +242,10 @@ public class VersionsRangeTests
     [ExpectedException(typeof(InvalidOperationException))]
     public void InvalidVersionRange_ShouldThrowException()
     {
-        // Arrange - Missing closing bracket
+        // Arrange
         var invalidRange = "[1.0.0, 2.0.0";
         
-        // Act - Should throw exception
+        // Act
         ParseAndResolve(invalidRange, CommonVersions);
         
         // Assert is handled by ExpectedException attribute
@@ -254,7 +254,7 @@ public class VersionsRangeTests
     [TestMethod]
     public void MultiPartVersions_ShouldCompareCorrectly()
     {
-        // Arrange - Testing versions with more than 3 parts
+        // Arrange
         var testVersions = new[] { 
             "1.0.0", 
             "1.0.0.1", 
@@ -270,7 +270,7 @@ public class VersionsRangeTests
         var actual2 = ParseAndResolve("[1.0.0.1, 1.0.1)", testVersions);
         var actual3 = ParseAndResolve("[1.0.0, 2.0.0)", testVersions);
         
-        // Assert - Should handle multi-part versions correctly
+        // Assert
         CollectionAssert.AreEqual(new[] { "1.0.0", "1.0.0.1", "1.0.0.42" }, actual1);
         CollectionAssert.AreEqual(new[] { "1.0.0.1", "1.0.0.42" }, actual2);
         CollectionAssert.AreEqual(new[] { "1.0.0", "1.0.0.1", "1.0.0.42", "1.0.1", "1.0.1.0", "1.0.2.2.241" }, actual3);
@@ -279,13 +279,13 @@ public class VersionsRangeTests
     [TestMethod]
     public void VersionWith4Parts_ShouldBeGreaterThan3Parts()
     {
-        // Arrange - Testing versions with 4 parts vs 3 parts
+        // Arrange
         var testVersions = new[] { "1.0.0", "1.0.0.0" };
         
         // Act
         var actual = ParseAndResolve("(1.0.0, 1.0.1)", testVersions);
         
-        // Assert - 1.0.0.0 should be greater than 1.0.0
+        // Assert
         CollectionAssert.AreEqual(new[] { "1.0.0.0" }, actual);
     }
 
@@ -298,7 +298,7 @@ public class VersionsRangeTests
         // Act
         var actual = ParseAndResolve("[1.0, 1.0.0]", testVersions);
 
-        // Assert - Use AreEquivalent instead of AreEqual to ignore order
+        // Assert
         CollectionAssert.AreEquivalent(new[] { "1.0", "1.0.0" }, actual);
     }
 
@@ -319,7 +319,7 @@ public class VersionsRangeTests
     [TestMethod]
     public void ParenthesisSingleVersion_ShouldMatchNothing()
     {
-        // Arrange - This is a range where min = max but both are exclusive
+        // Arrange
         var versionRange = "(2.0.0)";
         var expected = Array.Empty<string>();
 
@@ -333,7 +333,7 @@ public class VersionsRangeTests
     [TestMethod]
     public void MixedBracketsSingleVersion_ShouldThrowException()
     {
-        // Arrange - This is a range where min is inclusive but max is exclusive
+        // Arrange
         var versionRange = "[2.0.0)";
         var expected = Array.Empty<string>();
 

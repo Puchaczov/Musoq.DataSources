@@ -32,12 +32,12 @@ public class CSharpSchema : SchemaBase
     
     private const string SchemaName = "Csharp";
 
-    private static readonly IFileSystem FileSystem = new DefaultFileSystem();
+    private static readonly IFileSystem? FileSystem = new DefaultFileSystem();
     internal static string DefaultNugetCacheDirectoryPath { get; } = IFileSystem.Combine(SolutionOperationsCommand.DefaultCacheDirectoryPath, "NuGet");
     
     private static ConcurrentDictionary<string, PersistentCacheResponseHandler> HttpResponseCache => SolutionOperationsCommand.HttpResponseCache;
 
-    private readonly Func<string, IHttpClient, INuGetPropertiesResolver> _createNugetPropertiesResolver;
+    private readonly Func<string, IHttpClient?, INuGetPropertiesResolver> _createNugetPropertiesResolver;
     
     private static ResolveValueStrategy ResolveValueStrategy => SolutionOperationsCommand.ResolveValueStrategy;
     
@@ -283,7 +283,7 @@ public class CSharpSchema : SchemaBase
         _createNugetPropertiesResolver = (baseUrl, client) => new NuGetPropertiesResolver(baseUrl, client);
     }
 
-    internal CSharpSchema(Func<string, IHttpClient, INuGetPropertiesResolver> createNuGetPropertiesResolver)
+    internal CSharpSchema(Func<string, IHttpClient?, INuGetPropertiesResolver> createNuGetPropertiesResolver)
         : this()
     {
         _createNugetPropertiesResolver = createNuGetPropertiesResolver;

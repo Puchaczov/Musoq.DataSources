@@ -8,9 +8,9 @@ namespace Musoq.DataSources.Roslyn.Tests
         [TestMethod]
         public async Task EmptyOrNullInput_ReturnsEmptyList()
         {
-            string nullExpression = null;
-            var emptyExpression = "";
-            var whitespaceExpression = "   ";
+            string? nullExpression = null;
+            const string emptyExpression = "";
+            const string whitespaceExpression = "   ";
 
             var nullResult = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(nullExpression);
             var emptyResult = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(emptyExpression);
@@ -35,7 +35,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [TestMethod]
         [DataRow("MIT AND Apache-2.0", new[] { "MIT", "Apache-2.0" })]
         [DataRow("MIT OR Apache-2.0", new[] { "MIT", "Apache-2.0" })]
-        public async Task SimpleOperators_ReturnCorrectIdentifiers(string expression, string[] expected)
+        public async Task SimpleOperators_ReturnCorrectIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -50,7 +50,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [DataRow("(MIT OR Apache-2.0) AND GPL-3.0", new[] { "MIT", "Apache-2.0", "GPL-3.0" })]
         [DataRow("MIT OR (Apache-2.0 AND GPL-3.0)", new[] { "MIT", "Apache-2.0", "GPL-3.0" })]
         [DataRow("((MIT OR BSD-3-Clause) AND GPL-2.0) OR LGPL-2.1", new[] { "MIT", "BSD-3-Clause", "GPL-2.0", "LGPL-2.1" })]
-        public async Task NestedExpressions_ReturnCorrectIdentifiers(string expression, string[] expected)
+        public async Task NestedExpressions_ReturnCorrectIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -64,7 +64,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [TestMethod]
         [DataRow("GPL-3.0-only WITH Autoconf-exception-3.0", new[] { "GPL-3.0-only", "Autoconf-exception-3.0" })]
         [DataRow("GPL-2.0+ WITH Bison-exception-2.2", new[] { "GPL-2.0+", "Bison-exception-2.2" })]
-        public async Task WithExceptions_ReturnCorrectIdentifiers(string expression, string[] expected)
+        public async Task WithExceptions_ReturnCorrectIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -79,7 +79,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [DataRow("(GPL-3.0-only WITH Autoconf-exception-3.0) OR MIT", new[] { "GPL-3.0-only", "Autoconf-exception-3.0", "MIT" })]
         [DataRow("MIT AND (Apache-2.0 OR (BSD-3-Clause WITH GCC-exception-3.1))", new[] { "MIT", "Apache-2.0", "BSD-3-Clause", "GCC-exception-3.1" })]
         [DataRow("(LGPL-2.1+ WITH Unix-exception-2.0) AND (GPL-2.0 OR MIT)", new[] { "LGPL-2.1+", "Unix-exception-2.0", "GPL-2.0", "MIT" })]
-        public async Task ComplexExpressions_ReturnCorrectIdentifiers(string expression, string[] expected)
+        public async Task ComplexExpressions_ReturnCorrectIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
             
@@ -94,7 +94,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [DataRow("  MIT  AND  Apache-2.0  ", new[] { "MIT", "Apache-2.0" })]
         [DataRow("MIT   OR\tApache-2.0", new[] { "MIT", "Apache-2.0" })]
         [DataRow("( MIT OR Apache-2.0 ) AND GPL-3.0", new[] { "MIT", "Apache-2.0", "GPL-3.0" })]
-        public async Task WhitespaceVariations_ReturnCorrectIdentifiers(string expression, string[] expected)
+        public async Task WhitespaceVariations_ReturnCorrectIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -110,7 +110,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [DataRow("MIT and APACHE-2.0", new[] { "MIT", "APACHE-2.0" })]
         [DataRow("MIT Or Apache-2.0", new[] { "MIT", "Apache-2.0" })]
         [DataRow("GPL-3.0-only with Autoconf-exception-3.0", new[] { "GPL-3.0-only", "Autoconf-exception-3.0" })]
-        public async Task CaseInsensitiveOperators_ReturnCorrectIdentifiers(string expression, string[] expected)
+        public async Task CaseInsensitiveOperators_ReturnCorrectIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -128,7 +128,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [DataRow("(MIT", new[] { "MIT" })]
         [DataRow("MIT)", new[] { "MIT" })]
         [DataRow("()", new string[0])]
-        public async Task MalformedExpressions_ReturnAvailableIdentifiers(string expression, string[] expected)
+        public async Task MalformedExpressions_ReturnAvailableIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -158,7 +158,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [DataRow("LicenseRef-123.4-ABCD_xyz", new[] { "LicenseRef-123.4-ABCD_xyz" })]
         [DataRow("CDDL-1.1+", new[] { "CDDL-1.1+" })]
         [DataRow("License.With.Dots-1.0", new[] { "License.With.Dots-1.0" })]
-        public async Task SpecialCharactersInLicenseIds_ReturnCorrectIdentifiers(string expression, string[] expected)
+        public async Task SpecialCharactersInLicenseIds_ReturnCorrectIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -174,7 +174,7 @@ namespace Musoq.DataSources.Roslyn.Tests
                  new[] { "GPL-2.0", "Exception-1", "LGPL-2.1", "Exception-2" })]
         [DataRow("(MIT WITH MIT-exception) OR (Apache-2.0 WITH Apache-exception) OR (BSD WITH BSD-exception)",
                  new[] { "MIT", "MIT-exception", "Apache-2.0", "Apache-exception", "BSD", "BSD-exception" })]
-        public async Task MultipleExceptions_ReturnAllIdentifiers(string expression, string[] expected)
+        public async Task MultipleExceptions_ReturnAllIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -189,7 +189,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [DataRow("(((((((((MIT)))))))))) OR Apache-2.0", new[] { "MIT", "Apache-2.0" })]
         [DataRow("MIT OR (((((Apache-2.0 AND ((((GPL-3.0))))) AND (BSD))))))", 
                  new[] { "MIT", "Apache-2.0", "GPL-3.0", "BSD" })]
-        public async Task DeeplyNestedExpressions_ReturnCorrectIdentifiers(string expression, string[] expected)
+        public async Task DeeplyNestedExpressions_ReturnCorrectIdentifiers(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 
@@ -205,7 +205,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [DataRow("MIT OR AND GPL-3.0", new[] { "MIT", "GPL-3.0" })]
         [DataRow("MIT WITH AND GPL-3.0", new[] { "MIT", "GPL-3.0" })]
         [DataRow("OR MIT AND Apache-2.0", new[] { "MIT", "Apache-2.0" })]
-        public async Task InvalidOperatorSequences_ReturnAvailableLicenses(string expression, string[] expected)
+        public async Task InvalidOperatorSequences_ReturnAvailableLicenses(string? expression, string[] expected)
         {
             var result = await SpdxLicenseExpressionEvaluator.GetLicenseIdentifiersAsync(expression);
 

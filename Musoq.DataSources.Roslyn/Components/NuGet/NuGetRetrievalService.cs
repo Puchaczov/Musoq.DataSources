@@ -10,10 +10,10 @@ using Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetPropertiesResolver, IFileSystem fileSystem, IHttpClient httpClient) : INuGetRetrievalService
+internal sealed class NuGetRetrievalService(INuGetPropertiesResolver? nuGetPropertiesResolver, IFileSystem? fileSystem, IHttpClient? httpClient) : INuGetRetrievalService
 {
     public async Task<string?> GetMetadataFromPathAsync(
-        NuGetResource commonResources,
+        NuGetResource? commonResources,
         string propertyName,
         CancellationToken cancellationToken)
     {
@@ -50,7 +50,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
 
     public async Task<string?> GetMetadataFromNugetOrgAsync(
         string baseUrl,
-        NuGetResource commonResources,
+        NuGetResource? commonResources,
         string propertyName,
         CancellationToken cancellationToken)
     {
@@ -74,7 +74,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
 
     public async Task<string?> GetMetadataFromCustomApiAsync(
         string apiEndpoint,
-        NuGetResource commonResources,
+        NuGetResource? commonResources,
         string propertyName,
         CancellationToken cancellationToken)
     {
@@ -149,7 +149,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
         return packagePath;
     }
 
-    private static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>> ResolveNuspecStrategies(NuGetResource commonResources, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
+    private static IReadOnlyDictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>> ResolveNuspecStrategies(NuGetResource? commonResources, INuGetPropertiesResolver? nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         return new Dictionary<string, Func<XmlDocument, XmlNamespaceManager, Task<string?>>>
         {
@@ -170,7 +170,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
         };
     }
         
-    private static IReadOnlyDictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>> ResolveWebScrapeStrategies(IHttpClient client, NuGetResource commonResources, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
+    private static IReadOnlyDictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>> ResolveWebScrapeStrategies(IHttpClient? client, NuGetResource? commonResources, INuGetPropertiesResolver? nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         var capturedClient = client;
         return new Dictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>>
@@ -192,7 +192,7 @@ internal sealed class NuGetRetrievalService(INuGetPropertiesResolver nuGetProper
         };
     }
 
-    private static async Task<(XmlDocument, XmlNamespaceManager)> CreateXmlDocumentAndNamespaceManager(string nuspecFilePath, IFileSystem fileSystem, CancellationToken cancellationToken)
+    private static async Task<(XmlDocument, XmlNamespaceManager)> CreateXmlDocumentAndNamespaceManager(string nuspecFilePath, IFileSystem? fileSystem, CancellationToken cancellationToken)
     {
         var fileContent = await fileSystem.ReadAllTextAsync(nuspecFilePath, cancellationToken);
         var xmlDoc = new XmlDocument();

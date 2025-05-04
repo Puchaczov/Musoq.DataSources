@@ -15,7 +15,7 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet;
 /// </summary>
 /// <param name="baseUrl">Base URL for the NuGet properties resolver.</param>
 /// <param name="httpClient">HTTP client for making requests.</param>
-public class NuGetPropertiesResolver(string baseUrl, IHttpClient httpClient) : INuGetPropertiesResolver
+public class NuGetPropertiesResolver(string baseUrl, IHttpClient? httpClient) : INuGetPropertiesResolver
 {
     private readonly ConcurrentDictionary<string, LicensesResult> _cachedLicenseContentResponses = new();
     

@@ -15,8 +15,8 @@ namespace Musoq.DataSources.Roslyn.RowsSources;
 
 internal class CSharpImmediateLoadSolutionRowsSource(
     string solutionFilePath,
-    IHttpClient httpClient,
-    IFileSystem fileSystem,
+    IHttpClient? httpClient,
+    IFileSystem? fileSystem,
     string? nugetPropertiesResolveEndpoint, 
     INuGetPropertiesResolver nuGetPropertiesResolver,
     ILogger logger, 

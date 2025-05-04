@@ -14,8 +14,8 @@ namespace Musoq.DataSources.Roslyn.RowsSources;
 
 internal sealed class CSharpInMemorySolutionRowsSource(
     SolutionEntity solution,
-    IHttpClient httpClient,
-    IFileSystem fileSystem,
+    IHttpClient? httpClient,
+    IFileSystem? fileSystem,
     string? nugetPropertiesResolveEndpoint, 
     INuGetPropertiesResolver nuGetPropertiesResolver,
     ILogger logger, 

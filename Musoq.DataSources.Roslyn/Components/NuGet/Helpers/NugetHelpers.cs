@@ -9,7 +9,7 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet.Helpers;
 
 internal static class NugetHelpers
 {
-    public static async Task<Func<Task<string?>>> DiscoverLicensesNamesAsync(string url, NuGetResource commonResources, IHttpClient httpClient, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
+    public static async Task<Func<Task<string?>>> DiscoverLicensesNamesAsync(string url, NuGetResource? commonResources, IHttpClient? httpClient, INuGetPropertiesResolver nuGetPropertiesResolver, CancellationToken cancellationToken)
     {
         if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
         {
@@ -126,7 +126,7 @@ internal static class NugetHelpers
         return () => Task.FromResult<string?>(null);
     }
 
-    public static async Task<Func<Task<string?>>> DiscoverLicenseUrlAsync(string url, NuGetResource commonResources, IHttpClient httpClient, CancellationToken cancellationToken)
+    public static async Task<Func<Task<string?>>> DiscoverLicenseUrlAsync(string url, NuGetResource? commonResources, IHttpClient? httpClient, CancellationToken cancellationToken)
     {
         if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
         {
@@ -186,7 +186,7 @@ internal static class NugetHelpers
         return () => Task.FromResult<string?>(null);
     }
     
-    public static async Task<Func<Task<string?>>> DiscoverLicenseContentAsync(string url, NuGetResource commonResources, IHttpClient httpClient, CancellationToken cancellationToken)
+    public static async Task<Func<Task<string?>>> DiscoverLicenseContentAsync(string url, NuGetResource? commonResources, IHttpClient? httpClient, CancellationToken cancellationToken)
     {
         if (!commonResources.TryGetHtmlDocument(url, out var htmlDocument))
         {
@@ -334,7 +334,7 @@ internal static class NugetHelpers
         return false;
     }
 
-    private static async Task<string?> FindFirstLicenseUrlAsync(string sourceRepositoryUrl, IHttpClient httpClient, Func<string, string, bool> filterBasedOnFileNameAndContent, CancellationToken cancellationToken)
+    private static async Task<string?> FindFirstLicenseUrlAsync(string sourceRepositoryUrl, IHttpClient? httpClient, Func<string, string, bool> filterBasedOnFileNameAndContent, CancellationToken cancellationToken)
     {
         await foreach (var licenseUrlLicenseContentPair in FindLicenseAsync(sourceRepositoryUrl, httpClient, filterBasedOnFileNameAndContent, cancellationToken))
         {
@@ -344,7 +344,7 @@ internal static class NugetHelpers
         return null;
     }
 
-    private static async IAsyncEnumerable<(string LicenseUrl, string LicenseContent)> FindLicenseAsync(string sourceRepositoryUrl, IHttpClient httpClient, Func<string, string, bool> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
+    private static async IAsyncEnumerable<(string LicenseUrl, string LicenseContent)> FindLicenseAsync(string sourceRepositoryUrl, IHttpClient? httpClient, Func<string, string, bool> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         sourceRepositoryUrl = sourceRepositoryUrl.TrimEnd('/');
         
@@ -429,7 +429,7 @@ internal static class NugetHelpers
         }
     }
 
-    private static async Task<string> GetDefaultGithubBranchAsync(string sourceRepositoryUrl, IHttpClient httpClient, CancellationToken cancellationToken)
+    private static async Task<string> GetDefaultGithubBranchAsync(string sourceRepositoryUrl, IHttpClient? httpClient, CancellationToken cancellationToken)
     {
         httpClient = httpClient.NewInstance();
         
@@ -466,7 +466,7 @@ internal static class NugetHelpers
         return defaultBranch;
     }
     
-    private static async Task<string> GetDefaultGitlabBranchAsync(string sourceRepositoryUrl, IHttpClient httpClient, CancellationToken cancellationToken)
+    private static async Task<string> GetDefaultGitlabBranchAsync(string sourceRepositoryUrl, IHttpClient? httpClient, CancellationToken cancellationToken)
     {
         httpClient = httpClient.NewInstance();
         

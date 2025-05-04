@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using JetBrains.Profiler.Api;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -73,7 +72,7 @@ public class NugetResolveRawTests
         });
     }
 
-    private async Task<SolutionEntity> CreateSolutionAsync(string solutionFilePath, IHttpClient httpClient, IFileSystem fileSystem, string? nugetPropertiesResolveEndpoint, INuGetPropertiesResolver nugetPropertiesResolver, ILogger logger, CancellationToken cancellationToken)
+    private async Task<SolutionEntity> CreateSolutionAsync(string solutionFilePath, IHttpClient? httpClient, IFileSystem? fileSystem, string? nugetPropertiesResolveEndpoint, INuGetPropertiesResolver nugetPropertiesResolver, ILogger logger, CancellationToken cancellationToken)
     {
         var workspace = MSBuildWorkspace.Create();
         var solutionLoadLogger = new SolutionLoadLogger(logger);

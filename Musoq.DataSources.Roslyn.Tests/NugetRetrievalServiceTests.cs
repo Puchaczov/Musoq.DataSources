@@ -36,11 +36,11 @@ namespace Musoq.DataSources.Roslyn.Tests
   </metadata>
 </package>";
 
-        private FakeAiBasedPropertiesResolver _aiResolver;
-        private FakeFileSystem _fileSystem;
-        private FakeHttpClient _httpClient;
-        private NuGetRetrievalService _service;
-        private NuGetResource _commonResources;
+        private FakeAiBasedPropertiesResolver _aiResolver = null!;
+        private FakeFileSystem _fileSystem = null!;
+        private FakeHttpClient _httpClient = null!;
+        private NuGetRetrievalService _service = null!;
+        private NuGetResource _commonResources = null!;
 
         [TestInitialize]
         public void Setup()
@@ -486,12 +486,12 @@ namespace Musoq.DataSources.Roslyn.Tests
             _responses[url] = new FakeHttpResponse { Content = errorMessage, StatusCode = statusCode, ShouldThrow = true };
         }
 
-        public IHttpClient NewInstance()
+        public IHttpClient? NewInstance()
         {
             return new FakeHttpClient();
         }
 
-        public IHttpClient NewInstance(Action<HttpClient> configure)
+        public IHttpClient? NewInstance(Action<HttpClient> configure)
         {
             return new FakeHttpClient();
         }

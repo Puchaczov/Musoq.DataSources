@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Roslyn.Components.NuGet.Version;
 
 namespace Musoq.DataSources.Roslyn.Tests
@@ -21,7 +17,7 @@ namespace Musoq.DataSources.Roslyn.Tests
             // Arrange
             var malformedRange = "[1.0.0, 2.0.0";
             
-            // Act - Should throw exception
+            // Act
             ParseAndResolve(malformedRange, TestVersions);
             
             // Assert is handled by ExpectedException attribute
@@ -34,7 +30,7 @@ namespace Musoq.DataSources.Roslyn.Tests
             // Arrange
             var malformedRange = "[1.0.0 2.0.0]";
             
-            // Act - Should throw exception
+            // Act
             ParseAndResolve(malformedRange, TestVersions);
             
             // Assert is handled by ExpectedException attribute
@@ -44,10 +40,10 @@ namespace Musoq.DataSources.Roslyn.Tests
         [ExpectedException(typeof(InvalidOperationException))]
         public void MalformedRange_ExtraClosingBrackets_ShouldThrowException()
         {
-            // Arrange - Extra closing brackets
+            // Arrange
             var malformedRange = "[1.0.0, 2.0.0]]";
             
-            // Act - Should throw exception
+            // Act
             ParseAndResolve(malformedRange, TestVersions);
             
             // Assert is handled by ExpectedException attribute
@@ -59,7 +55,7 @@ namespace Musoq.DataSources.Roslyn.Tests
             // Arrange
             var emptyRange = "";
             
-            // Act & Assert - Should not throw, but might return an empty result or throw a specific exception
+            // Act & Assert
             Assert.ThrowsException<InvalidOperationException>(() => ParseAndResolve(emptyRange, TestVersions));
         }
 
@@ -76,7 +72,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [TestMethod]
         public void VeryLongVersionRange_ShouldNotCauseStackOverflow()
         {
-            // Arrange - Create a very long but valid version range
+            // Arrange
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 100; i++)
             {
@@ -84,42 +80,41 @@ namespace Musoq.DataSources.Roslyn.Tests
                 sb.Append($"[{i}.0.0, {i+1}.0.0)");
             }
             
-            // Act - This should complete without stack overflow
+            // Act
             var result = ParseAndResolve(sb.ToString(), TestVersions);
             
-            // Assert - Should return our test versions that match the range
+            // Assert
             Assert.IsNotNull(result);
         }
 
         [TestMethod]
         public void ExtremelyLongVersionNumbers_ShouldHandleGracefully()
         {
-            // Arrange - Very long version numbers
+            // Arrange
             var longVersionRange = "[1.0.0, 999999999999999999.999999999999999.999999999999999]";
             
             // Act
             var result = ParseAndResolve(longVersionRange, TestVersions);
             
-            // Assert - Only versions in range should be returned
+            // Assert
             Assert.IsNotNull(result);
-            // All test versions should be in the range [1.0.0, very large number]
             CollectionAssert.AreEquivalent(TestVersions, result.ToArray());
         }
 
         [TestMethod]
         public void MalformedVersionNumbers_ShouldHandleGracefully()
         {
-            // Arrange - Invalid version formats
+            // Arrange
             var invalidRange = "[abc, def]";
             
-            // Act & Assert - Should throw an exception but not crash
+            // Act & Assert
             Assert.ThrowsException<InvalidOperationException>(() => ParseAndResolve(invalidRange, TestVersions));
         }
 
         [TestMethod]
         public void DeepNestedExpressions_ShouldHandleGracefully()
         {
-            // Arrange - Create a deeply nested expression through many OR operations
+            // Arrange
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 1000; i++)
             {
@@ -127,7 +122,7 @@ namespace Musoq.DataSources.Roslyn.Tests
                 sb.Append($"{i}.0.0");
             }
             
-            // Act - This should complete without stack overflow
+            // Act
             var result = ParseAndResolve(sb.ToString(), TestVersions);
             
             // Assert
@@ -137,7 +132,7 @@ namespace Musoq.DataSources.Roslyn.Tests
         [TestMethod]
         public void SpecialCharactersInVersionRange_ShouldHandleGracefully()
         {
-            // Arrange - Various special characters
+            // Arrange
             var specialCharsRange = "[1.0.0, 2.0.0] || @#$%^&*()";
             
             // Act & Assert

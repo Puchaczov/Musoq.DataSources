@@ -10,12 +10,12 @@ internal sealed class DefaultHttpClient(Func<HttpClient> createHttpClient) : IHt
 {
     private readonly HttpClient _httpClient = createHttpClient();
 
-    public IHttpClient NewInstance()
+    public IHttpClient? NewInstance()
     {
         return new DefaultHttpClient(createHttpClient);
     }
 
-    public IHttpClient NewInstance(Action<HttpClient> configure)
+    public IHttpClient? NewInstance(Action<HttpClient> configure)
     {
         var httpClient = createHttpClient();
         

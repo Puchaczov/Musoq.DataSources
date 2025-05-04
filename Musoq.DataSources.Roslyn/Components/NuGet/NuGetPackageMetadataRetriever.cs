@@ -17,7 +17,7 @@ internal sealed class NuGetPackageMetadataRetriever(
     INuGetCachePathResolver nuGetCachePathResolver,
     string? customApiEndpoint,
     INuGetRetrievalService retrievalService,
-    IFileSystem fileSystem,
+    IFileSystem? fileSystem,
     IPackageVersionConcurrencyManager packageVersionConcurrencyManager,
     IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues,
     ResolveValueStrategy resolveValueStrategy,
