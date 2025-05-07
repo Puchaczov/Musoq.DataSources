@@ -176,7 +176,7 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         throw new NotImplementedException();
     }
 
-    public void Visit(AccessRefreshAggreationScoreNode node)
+    public void Visit(AccessRefreshAggregationScoreNode node)
     {
         throw new NotImplementedException();
     }

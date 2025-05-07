@@ -364,7 +364,7 @@ inner join #separatedvalues.comma('./Files/Gradebook.csv', true, 0) grades on pe
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(1).ColumnType);
             Assert.AreEqual("grades.Subject", table.Columns.ElementAt(2).ColumnName);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(2).ColumnType);
-            Assert.AreEqual("ToDecimal(grades.Grade)", table.Columns.ElementAt(3).ColumnName);
+            Assert.AreEqual("grades.ToDecimal(grades.Grade)", table.Columns.ElementAt(3).ColumnName);
             Assert.AreEqual(typeof(decimal?), table.Columns.ElementAt(3).ColumnType);
 
             Assert.IsTrue(table.Count == 24, "Table should contain exactly 24 records");
