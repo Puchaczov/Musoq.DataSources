@@ -278,9 +278,7 @@ public class CSharpSchema : SchemaBase
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
         AddSource<CSharpImmediateLoadSolutionRowsSource>("file");
-        AddSource<CSharpAdHocWorkspaceRowsSource>("adhocfile");
         AddTable<CSharpSolutionTable>("file");
-        AddTable<CSharpSolutionTable>("adhocfile");
 
         _createNugetPropertiesResolver = (baseUrl, client) => new NuGetPropertiesResolver(baseUrl, client);
     }
@@ -303,7 +301,6 @@ public class CSharpSchema : SchemaBase
         return name.ToLowerInvariant() switch
         {
             "solution" => new CSharpSolutionTable(),
-            "adhocfile" => new CSharpSolutionTable(),
             _ => base.GetTableByName(name, runtimeContext, parameters)
         };
     }
@@ -406,18 +403,6 @@ public class CSharpSchema : SchemaBase
                 }
                 
                 return new CSharpImmediateLoadSolutionRowsSource(
-                    (string) parameters[0],
-                    httpClient,
-                    FileSystem,
-                    externalNugetPropertiesResolveEndpoint,
-                    _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
-                    runtimeContext.Logger,
-                    runtimeContext.EndWorkToken
-                );
-            }
-            case "adhocfile":
-            {
-                return new CSharpAdHocWorkspaceRowsSource(
                     (string) parameters[0],
                     httpClient,
                     FileSystem,

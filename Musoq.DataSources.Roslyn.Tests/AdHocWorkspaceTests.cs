@@ -15,7 +15,7 @@ public class AdHocWorkspaceTests
     [TestMethod]
     public void WhenAdHocWorkspaceSolutionQueried_ShouldPass()
     {
-        var query = $"select s.Id from #csharp.adhocfile('{Solution1SolutionPath.Escape()}') s";
+        var query = $"select s.Id from #csharp.solution('{Solution1SolutionPath.Escape()}') s";
         
         var vm = CompileQuery(query);
 
@@ -28,20 +28,8 @@ public class AdHocWorkspaceTests
     [TestMethod]
     public void WhenAdHocWorkspaceProjectQueried_ShouldPass()
     {
-        // First, let's test the MSBuildWorkspace to see what values it produces
-        var msBuildQuery = $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p";
-        var msBuildVm = CompileQuery(msBuildQuery);
-        var msBuildResult = msBuildVm.Run();
-        
-        Console.WriteLine("MSBuildWorkspace Results:");
-        for (int i = 0; i < msBuildResult.Count; i++)
-        {
-            var row = msBuildResult[i];
-            Console.WriteLine($"Row {i}: Id={row[0]}, FilePath={row[1]}, OutputFilePath={row[2]}, OutputRefFilePath={row[3]}, DefaultNamespace={row[4]}, Language={row[5]}, AssemblyName={row[6]}, Name={row[7]}, IsSubmission={row[8]}, Version={row[9]}");
-        }
-        
-        // Now test the AdHocWorkspace
-        var query = $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.adhocfile('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p";
+        // Test the AdHocWorkspace implementation (which is now the default for 'solution')
+        var query = $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p";
         
         var vm = CompileQuery(query);
 
@@ -87,7 +75,7 @@ public class AdHocWorkspaceTests
     [TestMethod]
     public void WhenAdHocWorkspaceQuickAccessForTypes_ShouldPass()
     {
-        var query = $"select t.Name from #csharp.adhocfile('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t";
+        var query = $"select t.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t";
         
         var vm = CompileQuery(query);
         
@@ -106,7 +94,7 @@ public class AdHocWorkspaceTests
     [TestMethod]
     public void WhenAdHocWorkspaceChecksKindOfType_ShouldPass()
     {
-        var query = $"select t.Name, t.IsClass, t.IsEnum, t.IsInterface from #csharp.adhocfile('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t where t.Name in ('Class1', 'Interface1', 'Enum1', 'Tests', 'PartialTestClass', 'CyclomaticComplexityClass1')";
+        var query = $"select t.Name, t.IsClass, t.IsEnum, t.IsInterface from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t where t.Name in ('Class1', 'Interface1', 'Enum1', 'Tests', 'PartialTestClass', 'CyclomaticComplexityClass1')";
         
         var vm = CompileQuery(query);
         
@@ -124,7 +112,7 @@ public class AdHocWorkspaceTests
     [TestMethod]
     public void WhenAdHocWorkspaceDocumentQueries_ShouldPass()
     {
-        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.adhocfile('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
+        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
         
         var vm = CompileQuery(query);
         
@@ -148,23 +136,23 @@ public class AdHocWorkspaceTests
     }
 
     [TestMethod]
-    public void WhenComparingMsBuildVsAdHocWorkspace_ShouldProduceSameResults()
+    public void WhenComparingBeforeAndAfterAdHocWorkspaceReplacement_ShouldProduceSameResults()
     {
-        var msBuildQuery = $"select t.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t order by t.Name";
-        var adHocQuery = $"select t.Name from #csharp.adhocfile('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t order by t.Name";
+        // This test is now a sanity check to ensure AdHocWorkspace is working correctly
+        // since the 'solution' method now uses AdHocWorkspace internally
+        var query = $"select t.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t order by t.Name";
         
-        var msBuildVm = CompileQuery(msBuildQuery);
-        var adHocVm = CompileQuery(adHocQuery);
+        var vm = CompileQuery(query);
+        var result = vm.Run();
         
-        var msBuildResult = msBuildVm.Run();
-        var adHocResult = adHocVm.Run();
+        // Verify we get the expected types from the solution
+        Assert.AreEqual(8, result.Count, "Should return 8 types");
         
-        Assert.AreEqual(msBuildResult.Count, adHocResult.Count, "Both approaches should return the same number of results");
-        
-        for (int i = 0; i < msBuildResult.Count; i++)
+        var expectedTypes = new[] { "Class1", "CyclomaticComplexityClass1", "Enum1", "Interface1", "Interface2", "PartialTestClass", "PartialTestClass", "Tests" };
+        for (int i = 0; i < expectedTypes.Length; i++)
         {
-            Assert.AreEqual(msBuildResult[i][0].ToString(), adHocResult[i][0].ToString(), 
-                $"Type name at index {i} should be the same for both approaches");
+            Assert.AreEqual(expectedTypes[i], result[i][0].ToString(), 
+                $"Type at index {i} should be {expectedTypes[i]}");
         }
     }
 
