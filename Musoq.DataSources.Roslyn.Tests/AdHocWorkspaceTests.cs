@@ -37,26 +37,26 @@ public class AdHocWorkspaceTests
         Assert.IsTrue(result.Count == 2, "Result should have 2 entries");
 
         Assert.IsTrue(result.Any(row => 
-            Guid.TryParse(row[0].ToString(), out _) &&
-            ValidateIsValidPathFor(row[1].ToString(), ".csproj") &&
-            ValidateIsValidPathFor(row[2].ToString(), ".dll", false) &&
-            ValidateIsValidPathFor(row[3].ToString(), ".dll", false) &&
-            row[4].ToString() == "Solution1.ClassLibrary1" &&
-            row[5].ToString() == "C#" &&
-            row[6].ToString() == "Solution1.ClassLibrary1" &&
-            row[7].ToString() == "Solution1.ClassLibrary1" &&
+            Guid.TryParse(row[0]?.ToString(), out _) &&
+            ValidateIsValidPathFor(row[1]?.ToString(), ".csproj") &&
+            ValidateIsValidPathFor(row[2]?.ToString(), ".dll", false) &&
+            ValidateIsValidPathFor(row[3]?.ToString(), ".dll", false) &&
+            row[4]?.ToString() == "Solution1.ClassLibrary1" &&
+            row[5]?.ToString() == "C#" &&
+            row[6]?.ToString() == "Solution1.ClassLibrary1" &&
+            row[7]?.ToString() == "Solution1.ClassLibrary1" &&
             row[8] != null
         ), "First entry does not match expected details");
 
         Assert.IsTrue(result.Any(row => 
-            Guid.TryParse(row[0].ToString(), out _) &&
-            ValidateIsValidPathFor(row[1].ToString(), ".csproj") &&
-            ValidateIsValidPathFor(row[2].ToString(), ".dll", false) &&
-            ValidateIsValidPathFor(row[3].ToString(), ".dll", false) &&
-            row[4].ToString() == "Solution1.ClassLibrary1.Tests" &&
-            row[5].ToString() == "C#" &&
-            row[6].ToString() == "Solution1.ClassLibrary1.Tests" &&
-            row[7].ToString() == "Solution1.ClassLibrary1.Tests" &&
+            Guid.TryParse(row[0]?.ToString(), out _) &&
+            ValidateIsValidPathFor(row[1]?.ToString(), ".csproj") &&
+            ValidateIsValidPathFor(row[2]?.ToString(), ".dll", false) &&
+            ValidateIsValidPathFor(row[3]?.ToString(), ".dll", false) &&
+            row[4]?.ToString() == "Solution1.ClassLibrary1.Tests" &&
+            row[5]?.ToString() == "C#" &&
+            row[6]?.ToString() == "Solution1.ClassLibrary1.Tests" &&
+            row[7]?.ToString() == "Solution1.ClassLibrary1.Tests" &&
             row[8] != null
         ), "Second entry does not match expected details");
     }
@@ -164,15 +164,15 @@ public class AdHocWorkspaceTests
                 }));
     }
 
-    private static bool ValidateIsValidPathFor(string? toString, string extension, bool checkFileExists = true)
+    private static bool ValidateIsValidPathFor(string? path, string extension, bool checkFileExists = true)
     {
-        if (string.IsNullOrEmpty(toString))
+        if (string.IsNullOrEmpty(path))
             return false;
         
-        if (!toString.EndsWith(extension))
+        if (!path.EndsWith(extension))
             return false;
         
-        if (checkFileExists && !File.Exists(toString))
+        if (checkFileExists && !File.Exists(path))
             return false;
         
         return true;
