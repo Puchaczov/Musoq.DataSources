@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.MSBuild;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.Components;
@@ -42,10 +42,9 @@ internal class SolutionOperationsCommand(ILogger logger)
             return;
         }
         
-        var workspace = MSBuildWorkspace.Create();
-        var solutionLoadLogger = new SolutionLoadLogger(logger);
-        var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
-        var solution = await workspace.OpenSolutionAsync(solutionFilePath, solutionLoadLogger, projectLoadProgressLogger, cancellationToken: cancellationToken);
+        var workspace = new AdhocWorkspace();
+        var solutionParser = new SolutionParser(logger);
+        var solution = await solutionParser.ParseSolutionAsync(workspace, solutionFilePath, cancellationToken);
         
         logger.LogTrace("Initializing solution");
         

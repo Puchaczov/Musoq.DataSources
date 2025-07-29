@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using Microsoft.CodeAnalysis.MSBuild;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Musoq.DataSources.Roslyn.CoconaCommands;
@@ -74,10 +74,9 @@ public class NugetResolveRawTests
 
     private async Task<SolutionEntity> CreateSolutionAsync(string solutionFilePath, IHttpClient? httpClient, IFileSystem? fileSystem, string? nugetPropertiesResolveEndpoint, INuGetPropertiesResolver nugetPropertiesResolver, ILogger logger, CancellationToken cancellationToken)
     {
-        var workspace = MSBuildWorkspace.Create();
-        var solutionLoadLogger = new SolutionLoadLogger(logger);
-        var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
-        var solution = await workspace.OpenSolutionAsync(solutionFilePath, solutionLoadLogger, projectLoadProgressLogger, cancellationToken);
+        var workspace = new AdhocWorkspace();
+        var solutionParser = new SolutionParser(logger);
+        var solution = await solutionParser.ParseSolutionAsync(workspace, solutionFilePath, cancellationToken);
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
             new NuGetCachePathResolver(
