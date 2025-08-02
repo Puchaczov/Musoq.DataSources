@@ -24,13 +24,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="4.2.1">
+        <PackageReference Include="Musoq.Parser" Version="4.3.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Musoq.Plugins" Version="6.10.4">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Schema" Version="8.0.1">
+        <PackageReference Include="Musoq.Schema" Version="8.1.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>
