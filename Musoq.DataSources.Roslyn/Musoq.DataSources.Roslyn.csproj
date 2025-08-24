@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.8.11</Version>
+        <Version>1.8.12</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -55,11 +55,11 @@
             <PrivateAssets>all</PrivateAssets>
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Parser" Version="4.3.0">
+        <PackageReference Include="Musoq.Parser" Version="4.4.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.10.4" />
-        <PackageReference Include="Musoq.Schema" Version="8.1.0">
+        <PackageReference Include="Musoq.Plugins" Version="6.11.0" />
+        <PackageReference Include="Musoq.Schema" Version="8.2.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
