@@ -14,310 +14,58 @@ This comprehensive guide provides everything you need to create custom plugins f
 8. [Best Practices](#best-practices)
 9. [Real-World Examples](#real-world-examples)
 10. [Common Use Cases](#common-use-cases)
-11. [Working Example Plugin](#working-example-plugin)
+11. [Reference Plugins](#reference-plugins)
 12. [Support and Community](#support-and-community)
 
 ---
 
 ## Quick Start (5 Minutes)
 
-Get up and running with a working Musoq plugin in 5 minutes using this minimal template.
+The fastest way to understand Musoq plugin development is to examine existing plugins and adapt them to your needs.
 
-### 1. Create Project Structure
+### 1. Choose a Reference Plugin
+
+Pick the plugin that most closely matches your use case:
+
+- **Simple data generation**: Study `Musoq.DataSources.System/` 
+- **API integration**: Study `Musoq.DataSources.OpenAI/`
+- **File processing**: Study `Musoq.DataSources.Json/` or `Musoq.DataSources.FlatFile/`
+- **Database connectivity**: Study `Musoq.DataSources.Postgres/`
+
+### 2. Copy and Rename
 
 ```bash
-mkdir Musoq.DataSources.MyPlugin
+# Example: Create a new plugin based on the System plugin
+cp -r Musoq.DataSources.System Musoq.DataSources.MyPlugin
 cd Musoq.DataSources.MyPlugin
 
-# Create the basic directory structure
-mkdir Entities Tables Sources
-
-# Create the project file
-cat > Musoq.DataSources.MyPlugin.csproj << 'EOF'
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <EnableDynamicLoading>true</EnableDynamicLoading>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <Version>1.0.0</Version>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="4.4.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.11.0" />
-        <PackageReference Include="Musoq.Schema" Version="8.2.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
-    </ItemGroup>
-</Project>
-EOF
+# Rename the project file
+mv Musoq.DataSources.System.csproj Musoq.DataSources.MyPlugin.csproj
 ```
 
-### 2. Copy Template Files
+### 3. Update Key Files
 
-Save each of the following files in your project:
+1. **AssemblyInfo.cs** - Change the plugin name:
+   ```csharp
+   [assembly: PluginSchemas("myplugin")]
+   ```
 
-#### `AssemblyInfo.cs`
-```csharp
-using Musoq.Schema.Attributes;
+2. **Project file** - Update the assembly name and root namespace
+3. **Schema class** - Rename and update the schema name
+4. **Entity classes** - Update properties to match your data structure
+5. **RowSource** - Implement your data retrieval logic
 
-[assembly: PluginSchemas("myplugin")]
-```
-
-#### `Entities/SimpleEntity.cs`
-```csharp
-namespace Musoq.DataSources.MyPlugin.Entities;
-
-public class SimpleEntity
-{
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public DateTime Created { get; set; } = DateTime.Now;
-    public int Value { get; set; }
-}
-```
-
-#### `Tables/SimpleTableHelper.cs`
-```csharp
-using Musoq.Schema;
-using Musoq.DataSources.MyPlugin.Entities;
-
-namespace Musoq.DataSources.MyPlugin.Tables;
-
-internal static class SimpleTableHelper
-{
-    public static readonly IReadOnlyDictionary<string, int> NameToIndexMap = new Dictionary<string, int>
-    {
-        {nameof(SimpleEntity.Id), 0},
-        {nameof(SimpleEntity.Name), 1},
-        {nameof(SimpleEntity.Created), 2},
-        {nameof(SimpleEntity.Value), 3}
-    };
-    
-    public static readonly IReadOnlyDictionary<int, Func<SimpleEntity, object?>> IndexToMethodAccessMap = new Dictionary<int, Func<SimpleEntity, object?>>
-    {
-        {0, entity => entity.Id},
-        {1, entity => entity.Name},
-        {2, entity => entity.Created},
-        {3, entity => entity.Value}
-    };
-    
-    public static readonly ISchemaColumn[] Columns = new[]
-    {
-        new SchemaColumn(nameof(SimpleEntity.Id), 0, typeof(string)),
-        new SchemaColumn(nameof(SimpleEntity.Name), 1, typeof(string)),
-        new SchemaColumn(nameof(SimpleEntity.Created), 2, typeof(DateTime)),
-        new SchemaColumn(nameof(SimpleEntity.Value), 3, typeof(int))
-    };
-}
-```
-
-#### `Tables/SimpleTable.cs`
-```csharp
-using Musoq.Schema;
-using Musoq.DataSources.MyPlugin.Entities;
-
-namespace Musoq.DataSources.MyPlugin.Tables;
-
-internal class SimpleTable : ISchemaTable
-{
-    public ISchemaColumn[] Columns => SimpleTableHelper.Columns;
-    public SchemaTableMetadata Metadata { get; } = new(typeof(SimpleEntity));
-
-    public ISchemaColumn? GetColumnByName(string name) =>
-        Columns.SingleOrDefault(column => column.ColumnName == name);
-    
-    public ISchemaColumn[] GetColumnsByName(string name) =>
-        Columns.Where(column => column.ColumnName == name).ToArray();
-}
-```
-
-#### `Sources/SimpleRowSource.cs`
-```csharp
-using System.Collections.Concurrent;
-using Musoq.Schema;
-using Musoq.Schema.DataSources;
-using Musoq.DataSources.MyPlugin.Entities;
-using Musoq.DataSources.MyPlugin.Tables;
-
-namespace Musoq.DataSources.MyPlugin.Sources;
-
-internal class SimpleRowSource : RowSourceBase<SimpleEntity>
-{
-    private readonly int _count;
-
-    public SimpleRowSource(RuntimeContext runtimeContext, int count = 10)
-    {
-        _count = count;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        var entities = Enumerable.Range(1, _count)
-            .Select(i => new SimpleEntity
-            {
-                Id = i.ToString(),
-                Name = $"Item {i}",
-                Created = DateTime.Now.AddDays(-i),
-                Value = i * 10
-            })
-            .ToList();
-
-        var resolvers = entities.Select(entity => 
-            new EntityResolver<SimpleEntity>(entity, SimpleTableHelper.NameToIndexMap, SimpleTableHelper.IndexToMethodAccessMap))
-            .ToList();
-
-        chunkedSource.Add(resolvers);
-    }
-}
-```
-
-#### `SimpleLibrary.cs`
-```csharp
-using Musoq.Plugins;
-using Musoq.Plugins.Attributes;
-using Musoq.DataSources.MyPlugin.Entities;
-
-namespace Musoq.DataSources.MyPlugin;
-
-public class SimpleLibrary : LibraryBase
-{
-    [BindableMethod]
-    public string FormatItem([InjectSpecificSource(typeof(SimpleEntity))] SimpleEntity entity)
-    {
-        return $"{entity.Name} (#{entity.Id})";
-    }
-
-    [BindableMethod]
-    public int DaysOld([InjectSpecificSource(typeof(SimpleEntity))] SimpleEntity entity)
-    {
-        return (DateTime.Now - entity.Created).Days;
-    }
-}
-```
-
-#### `MyPluginSchema.cs`
-```csharp
-using Musoq.Schema;
-using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
-using Musoq.Schema.Managers;
-using Musoq.Schema.Reflection;
-using Musoq.DataSources.MyPlugin.Sources;
-using Musoq.DataSources.MyPlugin.Tables;
-
-namespace Musoq.DataSources.MyPlugin;
-
-/// <description>
-/// Simple demo plugin for Musoq
-/// </description>
-/// <short-description>
-/// Simple demo plugin for Musoq
-/// </short-description>
-/// <project-url>https://github.com/YourGitHub/MyPlugin</project-url>
-public class MyPluginSchema : SchemaBase
-{
-    /// <virtual-constructors>
-    /// <virtual-constructor>
-    /// <examples>
-    /// <example>
-    /// <from>#myplugin.simple()</from>
-    /// <description>Gets simple demo data</description>
-    /// <columns>
-    /// <column name="Id" type="string">Unique identifier</column>
-    /// <column name="Name" type="string">Item name</column>
-    /// <column name="Created" type="DateTime">Creation date</column>
-    /// <column name="Value" type="int">Numeric value</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// <virtual-constructor>
-    /// <virtual-param>Number of items to generate</virtual-param>
-    /// <examples>
-    /// <example>
-    /// <from>#myplugin.simple(int count)</from>
-    /// <description>Gets simple demo data with specified count</description>
-    /// <columns>
-    /// <column name="Id" type="string">Unique identifier</column>
-    /// <column name="Name" type="string">Item name</column>
-    /// <column name="Created" type="DateTime">Creation date</column>
-    /// <column name="Value" type="int">Numeric value</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// </virtual-constructors>
-    public MyPluginSchema() : base("myplugin", CreateLibrary()) { }
-
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
-    {
-        return name.ToLowerInvariant() switch
-        {
-            "simple" => new SimpleTable(),
-            _ => throw new NotSupportedException($"Table '{name}' not supported")
-        };
-    }
-
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
-    {
-        return name.ToLowerInvariant() switch
-        {
-            "simple" => new SimpleRowSource(runtimeContext, parameters.Length > 0 ? Convert.ToInt32(parameters[0]) : 10),
-            _ => throw new NotSupportedException($"Table '{name}' not supported")
-        };
-    }
-
-    public override SchemaMethodInfo[] GetConstructors()
-    {
-        var constructors = new List<SchemaMethodInfo>();
-        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<SimpleRowSource>("simple"));
-        return constructors.ToArray();
-    }
-
-    private static MethodsAggregator CreateLibrary()
-    {
-        var methodsManager = new MethodsManager();
-        methodsManager.RegisterLibraries(new SimpleLibrary());
-        return new MethodsAggregator(methodsManager);
-    }
-}
-```
-
-### 3. Build and Test
+### 4. Test Your Plugin
 
 ```bash
-# Build the plugin
+# Build the solution to verify everything compiles
 dotnet build
 
-# Test it works
-dotnet pack
+# Your plugin is now ready to use in Musoq queries:
+# SELECT * FROM #myplugin.tablename()
 ```
 
-### 4. Usage Example
-
-Once your plugin is built, you can use it in Musoq like this:
-
-```sql
--- Get all items
-SELECT * FROM #myplugin.simple()
-
--- Get 5 items
-SELECT * FROM #myplugin.simple(5)
-
--- Use custom functions
-SELECT Id, Name, FormatItem() as Formatted, DaysOld() as Age 
-FROM #myplugin.simple(5)
-
--- Filter and order
-SELECT * FROM #myplugin.simple(20) 
-WHERE Value > 50 
-ORDER BY Created DESC
-```
+This approach leverages proven patterns from existing plugins, ensuring your plugin follows established conventions and integrates seamlessly with the Musoq ecosystem.
 
 ---
 
@@ -1181,18 +929,58 @@ Transform and query data from ETL processes or data pipelines.
 
 ---
 
-## Working Example Plugin
+## Reference Plugins
 
-A complete, functional plugin implementation is available in the repository at `Musoq.DataSources.Example/` demonstrating:
+Instead of a separate example project, study these existing plugins in the repository for real-world implementations:
 
-- Proper project structure with all required files
-- Entity, Table, RowSource, Schema, and Library implementations
-- Multiple constructor patterns
-- Custom functions with entity injection
-- Comprehensive documentation
-- Successfully builds and integrates with the solution
+### Simple Plugin - System Plugin
+**Location**: `Musoq.DataSources.System/`
 
-Study this example to see all concepts in action and as a reference for your own plugins.
+A minimal plugin demonstrating basic concepts:
+- **SystemSchema.cs** - Simple schema with dual and range tables
+- **DualEntity.cs** - Basic entity with just a Value property
+- **RangeItemEntity.cs** - Simple numeric entity
+- **EmptyLibrary.cs** - Minimal library implementation
+
+Perfect starting point for understanding the basic plugin structure.
+
+### API Integration - OpenAI Plugin  
+**Location**: `Musoq.DataSources.OpenAI/`
+
+Advanced plugin showing HTTP API integration:
+- **OpenAiSchema.cs** - Schema with comprehensive documentation
+- **OpenAiApi.cs** - HTTP client implementation
+- **OpenAiLibrary.cs** - Custom functions for AI operations
+- **OpenAiEntity.cs** - Complex entity with multiple properties
+
+Great example for building plugins that integrate with REST APIs.
+
+### Complex Plugin - Docker Plugin
+**Location**: `Musoq.DataSources.Docker/`
+
+Comprehensive plugin with multiple related tables:
+- Multiple entity types (Container, Image, Network, Volume)
+- Complex schema with many table variants
+- Rich metadata and helper functions
+- External service integration patterns
+
+### Database Plugin - Postgres Plugin
+**Location**: `Musoq.DataSources.Postgres/`
+
+Example of database connectivity:
+- Connection string handling
+- Database-specific data types
+- Query optimization patterns
+- Error handling for database operations
+
+### Recommended Study Path
+
+1. **Start with System Plugin** - Understand basic structure
+2. **Review OpenAI Plugin** - Learn API integration patterns  
+3. **Examine Docker Plugin** - See complex multi-table schemas
+4. **Study Postgres Plugin** - Understand database connectivity
+
+Each plugin follows the same architectural patterns but demonstrates different complexity levels and use cases.
 
 ---
 
@@ -1236,15 +1024,36 @@ The guides demonstrate several architectural patterns found in existing plugins:
 
 ## Available Plugins in This Repository
 
-Study these existing plugins for real-world examples:
+Study these existing plugins for real-world examples and implementation patterns:
 
-- **OpenAI** - LLM integration with custom AI functions
-- **Docker** - Container, image, network, and volume management
-- **Kubernetes** - k8s resource queries
-- **System** - System utilities and range generators
-- **Postgres** - Database connectivity patterns
-- **Git** - Version control system integration
-- **Time** - Date/time manipulation utilities
+### 🤖 AI & Language Models
+- **OpenAI** (`Musoq.DataSources.OpenAI/`) - GPT API integration with custom AI functions
+- **Ollama** (`Musoq.DataSources.Ollama/`) - Local LLM integration patterns
+
+### 🐳 Infrastructure & DevOps  
+- **Docker** (`Musoq.DataSources.Docker/`) - Container, image, network, and volume management
+- **Kubernetes** (`Musoq.DataSources.Kubernetes/`) - k8s resource queries and monitoring
+
+### 🗄️ Databases
+- **Postgres** (`Musoq.DataSources.Postgres/`) - PostgreSQL database connectivity patterns
+- **Sqlite** (`Musoq.DataSources.Sqlite/`) - SQLite database integration
+
+### 📁 Files & Data
+- **Archives** (`Musoq.DataSources.Archives/`) - ZIP, RAR, and archive file processing
+- **FlatFile** (`Musoq.DataSources.FlatFile/`) - Fixed-width file parsing
+- **SeparatedValues** (`Musoq.DataSources.SeparatedValues/`) - CSV and delimiter-separated files
+- **Json** (`Musoq.DataSources.Json/`) - JSON file and API response processing
+
+### ⚙️ System & Utilities
+- **System** (`Musoq.DataSources.System/`) - System utilities and range generators
+- **Os** (`Musoq.DataSources.Os/`) - Operating system information and processes
+- **Time** (`Musoq.DataSources.Time/`) - Date/time manipulation utilities
+- **Git** (`Musoq.DataSources.Git/`) - Version control system integration
+
+### 🌐 Web & APIs
+- **Airtable** (`Musoq.DataSources.Airtable/`) - Airtable API integration
+
+Each plugin demonstrates different architectural patterns and complexity levels, making them excellent references for your own implementations.
 
 ---
 
