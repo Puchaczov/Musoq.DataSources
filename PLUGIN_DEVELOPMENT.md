@@ -9,13 +9,15 @@ This comprehensive guide provides everything you need to create custom plugins f
 3. [Plugin Architecture Overview](#plugin-architecture-overview)
 4. [Step-by-Step Implementation Guide](#step-by-step-implementation-guide)
 5. [Component Details](#component-details)
-6. [Advanced Features](#advanced-features)
-7. [Testing Your Plugin](#testing-your-plugin)
-8. [Best Practices](#best-practices)
-9. [Real-World Examples](#real-world-examples)
-10. [Common Use Cases](#common-use-cases)
-11. [Reference Plugins](#reference-plugins)
-12. [Support and Community](#support-and-community)
+6. [XML Metadata Annotations (Critical)](#xml-metadata-annotations-critical)
+7. [Documentation Generation](#documentation-generation)
+8. [Advanced Features](#advanced-features)
+9. [Testing Your Plugin](#testing-your-plugin)
+10. [Best Practices](#best-practices)
+11. [Real-World Examples](#real-world-examples)
+12. [Common Use Cases](#common-use-cases)
+13. [Reference Plugins](#reference-plugins)
+14. [Support and Community](#support-and-community)
 
 ---
 
@@ -50,10 +52,23 @@ mv Musoq.DataSources.System.csproj Musoq.DataSources.MyPlugin.csproj
    [assembly: PluginSchemas("myplugin")]
    ```
 
-2. **Project file** - Update the assembly name and root namespace
-3. **Schema class** - Rename and update the schema name
+2. **Project file** - Enable documentation generation:
+   ```xml
+   <GenerateDocumentationFile>true</GenerateDocumentationFile>
+   ```
+
+3. **Schema class** - Rename, update schema name, and **add XML metadata annotations**:
+   ```csharp
+   /// <description>Your plugin description</description>
+   /// <virtual-constructors>
+   /// <!-- Copy and adapt from reference plugin -->
+   /// </virtual-constructors>
+   ```
+
 4. **Entity classes** - Update properties to match your data structure
 5. **RowSource** - Implement your data retrieval logic
+
+⚠️ **Critical**: The XML metadata annotations are mandatory - see [XML Metadata Annotations](#xml-metadata-annotations-critical) section.
 
 ### 4. Test Your Plugin
 
@@ -502,6 +517,7 @@ The Schema class is the main entry point for your plugin. Key responsibilities:
 - **Data Source Creation**: `GetRowSource()` creates data source instances
 - **Constructor Definition**: `GetConstructors()` defines available table constructors
 - **Library Integration**: `CreateLibrary()` registers custom functions
+- **⚠️ XML Metadata**: Must include comprehensive XML annotations above the constructor (see [XML Metadata Annotations](#xml-metadata-annotations-critical))
 
 ### RowSource Patterns
 
@@ -544,6 +560,225 @@ internal class MyRowSource : RowSource
 - Include null safety annotations (`string?`, `int?`)
 - Consider using records for immutable data
 - Add meaningful XML documentation
+
+---
+
+## XML Metadata Annotations (Critical)
+
+⚠️ **This is one of the most important aspects of plugin development.** The XML metadata annotations are placed directly in the constructor's XML comments and provide essential information about how to use your plugin.
+
+### Schema Class Annotations
+
+Every schema class must include these annotations above the constructor:
+
+```csharp
+/// <description>
+/// Provides schema to work with [your data source description].
+/// </description>
+/// <short-description>
+/// [Brief description of your plugin]
+/// </short-description>
+/// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
+public class YourSchema : SchemaBase
+{
+    /// <virtual-constructors>
+    /// <!-- Your virtual constructor definitions go here -->
+    /// </virtual-constructors>
+    /// <additional-tables>
+    /// <!-- Your additional table definitions go here -->
+    /// </additional-tables>
+    public YourSchema() : base("yourschema", CreateLibrary())
+    {
+    }
+}
+```
+
+### Virtual Constructor Annotations
+
+Virtual constructors define how users call your plugin from SQL. Each table/method in your plugin needs a virtual constructor:
+
+```csharp
+/// <virtual-constructors>
+/// <virtual-constructor>
+/// <examples>
+/// <example>
+/// <from>
+/// <environmentVariables>
+/// <environmentVariable name="API_KEY" isRequired="true">Your API key</environmentVariable>
+/// <environmentVariable name="BASE_URL" isRequired="false">Base URL override</environmentVariable>
+/// </environmentVariables>
+/// #yourschema.datasource(string connectionString, int maxResults)
+/// </from>
+/// <description>Retrieves data from your data source with the given parameters</description>
+/// <columns>
+/// <column name="Id" type="int">Unique identifier</column>
+/// <column name="Name" type="string">Name of the entity</column>
+/// <column name="CreatedDate" type="DateTime">Creation timestamp</column>
+/// <column name="Tags" type="string[]">Array of tags</column>
+/// <column name="Metadata" type="IDictionary&lt;string, object&gt;">Additional metadata</column>
+/// </columns>
+/// </example>
+/// </examples>
+/// </virtual-constructor>
+/// </virtual-constructors>
+```
+
+### Annotation Reference
+
+#### Environment Variables
+```xml
+<environmentVariables>
+<environmentVariable name="VARIABLE_NAME" isRequired="true|false">Description of the variable</environmentVariable>
+</environmentVariables>
+```
+
+#### Method Parameters
+For methods with parameters, you can document them:
+```xml
+<virtual-param>Description of parameter 1</virtual-param>
+<virtual-param>Description of parameter 2</virtual-param>
+```
+
+#### Column Definitions
+```xml
+<columns>
+<column name="ColumnName" type="datatype">Description of what this column contains</column>
+</columns>
+```
+
+For dynamic columns (when columns are determined at runtime):
+```xml
+<columns isDynamic="true"></columns>
+```
+
+### Additional Tables
+
+When your plugin exposes complex entities with nested arrays or properties, document them:
+
+```csharp
+/// <additional-tables>
+/// <additional-table>
+/// <description>Represents a user profile within the system</description>
+/// <columns type="UserEntity">
+/// <column name="UserId" type="int">User's unique identifier</column>
+/// <column name="Email" type="string">User's email address</column>
+/// <column name="Permissions" type="PermissionEntity[]">Array of user permissions</column>
+/// </columns>
+/// </additional-table>
+/// <additional-table>
+/// <description>Represents a permission assigned to a user</description>
+/// <columns type="PermissionEntity[]">
+/// <column name="Name" type="string">Permission name</column>
+/// <column name="Level" type="int">Permission level (1-10)</column>
+/// </columns>
+/// </additional-table>
+/// </additional-tables>
+```
+
+### Complete Real-World Example
+
+Here's how the CANBus plugin documents its interface:
+
+```csharp
+/// <description>
+/// Provides schema to work with CAN bus data.
+/// </description>
+/// <short-description>
+/// Provides schema to work with CAN bus data.
+/// </short-description>
+/// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
+public class CANBusSchema : SchemaBase
+{
+    /// <virtual-constructors>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables>
+    /// </environmentVariables>
+    /// #can.messages(string dbc)
+    /// </from>
+    /// <description>Parses dbc file and returns all messages defined within it.</description>
+    /// <columns>
+    /// <column name="Id" type="uint">ID of the message entity</column>
+    /// <column name="Name" type="string">Name of the message entity</column>
+    /// <column name="Signals" type="SignalEntity[]">Signals of the message</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// </virtual-constructors>
+    /// <additional-tables>
+    /// <additional-table>
+    /// <description>Represent possible values of a signal</description>
+    /// <columns type="ValueMapEntity[]">
+    /// <column name="Value" type="int">Value of signal</column>
+    /// <column name="Name" type="string">Name of the value</column>
+    /// </columns>
+    /// </additional-table>
+    /// </additional-tables>
+    public CANBusSchema() : base("can", CreateLibrary())
+    {
+    }
+}
+```
+
+### Study Reference Examples
+
+Study these excellent examples in the repository:
+- **`Musoq.DataSources.CANBus/CANBusSchema.cs`** - Complex schema with multiple virtual constructors and additional tables
+- **`Musoq.DataSources.OpenAI/OpenAiSchema.cs`** - API integration with environment variables and dynamic columns
+- **`Musoq.DataSources.Docker/DockerSchema.cs`** - Multiple tables with different column sets
+- **`Musoq.DataSources.System/SystemSchema.cs`** - Simple schema with parameter documentation
+
+---
+
+## Documentation Generation
+
+🔥 **Critical**: Your plugin must generate XML documentation files for the metadata to be processed correctly.
+
+### Project Configuration
+
+Add this to your `.csproj` file:
+
+```xml
+<PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <!-- Other properties -->
+</PropertyGroup>
+
+<Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
+    <ItemGroup>
+        <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" 
+                                Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+    </ItemGroup>
+</Target>
+```
+
+### What Gets Generated
+
+When you build your plugin:
+1. XML documentation files are created from your annotations
+2. Musoq uses these files to provide:
+   - IntelliSense support
+   - Schema discovery
+   - Parameter validation
+   - Dynamic column information
+   - Help system content
+
+### Validation
+
+Build your plugin and verify:
+```bash
+dotnet build
+# Look for YourPlugin.xml in the output directory
+ls bin/Debug/net8.0/YourPlugin.xml
+```
+
+The generated XML file should contain your metadata annotations properly formatted.
 
 ---
 
@@ -688,7 +923,52 @@ public void Schema_Should_Create_Valid_Table()
 
 ## Best Practices
 
-### 1. Error Handling
+### 1. XML Metadata Documentation (Critical)
+
+**Always provide comprehensive XML metadata annotations:**
+
+```csharp
+/// <description>
+/// Clear, concise description of what your plugin does
+/// </description>
+/// <virtual-constructors>
+/// <virtual-constructor>
+/// <examples>
+/// <example>
+/// <from>
+/// <environmentVariables>
+/// <environmentVariable name="REQUIRED_VAR" isRequired="true">Description</environmentVariable>
+/// </environmentVariables>
+/// #yourschema.method(string param1, int param2)
+/// </from>
+/// <description>Detailed description of this method's functionality</description>
+/// <columns>
+/// <column name="ColumnName" type="type">What this column represents</column>
+/// </columns>
+/// </example>
+/// </examples>
+/// </virtual-constructor>
+/// </virtual-constructors>
+```
+
+**Key points:**
+- Document ALL parameters and their purposes
+- Include environment variable requirements
+- Describe each column clearly
+- Provide meaningful examples
+- Keep descriptions user-friendly
+
+### 2. Documentation Generation
+
+**Always enable XML documentation generation in your .csproj:**
+
+```xml
+<PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+</PropertyGroup>
+```
+
+### 3. Error Handling
 
 ```csharp
 protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
@@ -709,7 +989,7 @@ protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectRe
 }
 ```
 
-### 2. Resource Management
+### 4. Resource Management
 
 ```csharp
 public class MyRowSource : RowSourceBase<MyEntity>, IDisposable
@@ -737,20 +1017,20 @@ public class MyRowSource : RowSourceBase<MyEntity>, IDisposable
 }
 ```
 
-### 3. Performance Considerations
+### 5. Performance Considerations
 
 - Use chunking for large datasets
 - Implement pagination when possible
 - Consider caching for frequently accessed data
 - Use async/await for I/O operations
 
-### 4. Documentation
+### 6. Documentation
 
 - Add XML documentation to all public members
 - Include usage examples in schema comments
 - Document environment variables and configuration
 
-### 5. Versioning
+### 7. Versioning
 
 - Follow semantic versioning
 - Maintain backward compatibility
