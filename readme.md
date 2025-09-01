@@ -6,12 +6,10 @@ This project contains data sources for Musoq engine. Musoq data sources are plug
 
 Want to create a custom plugin for Musoq? We've got you covered! Check out our comprehensive plugin development resources:
 
-- **[📖 Plugin Development Guide](PLUGIN_DEVELOPMENT_GUIDE.md)** - Complete guide with architecture, patterns, and best practices
-- **[⚡ Quick Start Template](PLUGIN_QUICK_START.md)** - Get a working plugin in 5 minutes
+- **[📖 Plugin Development Guide](PLUGIN_DEVELOPMENT.md)** - Complete guide with quick start, architecture, patterns, and best practices
 - **[🎯 Example Plugin](Musoq.DataSources.Example/)** - Full working example for reference
-- **[📋 Development Overview](PLUGIN_DEVELOPMENT_README.md)** - Resource overview and getting started guide
 
-Whether you're integrating APIs, databases, files, or any other data source, these guides will help you build powerful, SQL-queryable plugins for Musoq.
+Whether you're integrating APIs, databases, files, or any other data source, this guide will help you build powerful, SQL-queryable plugins for Musoq in minutes.
 
 # Data sources
 
