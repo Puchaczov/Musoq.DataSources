@@ -7,7 +7,7 @@ This project contains data sources for Musoq engine. Musoq data sources are plug
 Want to create a custom plugin for Musoq? We've got you covered! Check out our comprehensive plugin development resources:
 
 - **[📖 Plugin Development Guide](PLUGIN_DEVELOPMENT.md)** - Complete guide with quick start, architecture, patterns, and best practices
-- **[🎯 Example Plugin](Musoq.DataSources.Example/)** - Full working example for reference
+
 
 Whether you're integrating APIs, databases, files, or any other data source, this guide will help you build powerful, SQL-queryable plugins for Musoq in minutes.
 
@@ -17,7 +17,7 @@ Whether you're integrating APIs, databases, files, or any other data source, thi
 - Archives (allows to treat archives as tables)
 - CANBus (allows to treat CAN .dbc files and corresponding .csv files that contains records of a CAN bus as tables)
 - Docker (allows to treat docker containers, images, etc as tables)
-- Example (demonstration plugin showing plugin development patterns)
+
 - FlatFile (allows to treat flat files as table)
 - Json (allows to treat json files as tables)
 - Kubernetes (allows to treat kubernetes pods, services, etc as tables)

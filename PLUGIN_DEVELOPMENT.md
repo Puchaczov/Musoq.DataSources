@@ -1,159 +1,213 @@
-# Musoq Plugin Development Guide
+# Musoq Plugin Development Tutorial
 
-This comprehensive guide provides everything you need to create custom plugins for Musoq, enabling you to query any data source using SQL-like syntax.
+Welcome to the comprehensive tutorial for creating Musoq plugins! In this guide, I'll teach you how to build powerful data source plugins from the ground up. By the end of this tutorial, you'll understand every component of a Musoq plugin and be able to create your own to query any data source using SQL-like syntax.
 
 ## Table of Contents
 
-1. [Quick Start (5 Minutes)](#quick-start-5-minutes)
-2. [Prerequisites](#prerequisites)
-3. [Plugin Architecture Overview](#plugin-architecture-overview)
-4. [Step-by-Step Implementation Guide](#step-by-step-implementation-guide)
-5. [Component Details](#component-details)
-6. [XML Metadata Annotations (Critical)](#xml-metadata-annotations-critical)
-7. [Documentation Generation](#documentation-generation)
-8. [Advanced Features](#advanced-features)
-9. [Testing Your Plugin](#testing-your-plugin)
-10. [Best Practices](#best-practices)
-11. [Real-World Examples](#real-world-examples)
+1. [Understanding Musoq Plugins](#understanding-musoq-plugins)
+2. [Prerequisites and Setup](#prerequisites-and-setup)
+3. [Core Concepts and Architecture](#core-concepts-and-architecture)
+4. [Building Your First Plugin](#building-your-first-plugin)
+5. [Understanding Each Component](#understanding-each-component)
+6. [Essential XML Metadata](#essential-xml-metadata)
+7. [Documentation and Build Configuration](#documentation-and-build-configuration)
+8. [Testing and Validation](#testing-and-validation)
+9. [Advanced Patterns and Features](#advanced-patterns-and-features)
+10. [Best Practices and Common Patterns](#best-practices-and-common-patterns)
+11. [Learning from Real-World Examples](#learning-from-real-world-examples)
 12. [Common Use Cases](#common-use-cases)
-13. [Reference Plugins](#reference-plugins)
-14. [Support and Community](#support-and-community)
+13. [Support and Community](#support-and-community)
 
 ---
 
-## Quick Start (5 Minutes)
+## Understanding Musoq Plugins
 
-The fastest way to understand Musoq plugin development is to examine existing plugins and adapt them to your needs.
+### What is a Musoq Plugin?
 
-### 1. Choose a Reference Plugin
+A Musoq plugin is a .NET library that extends Musoq's capability to query data sources that aren't natively supported. Think of it as a bridge between your data and SQL queries.
 
-Pick the plugin that most closely matches your use case:
-
-- **Simple data generation**: Study `Musoq.DataSources.System/` 
-- **API integration**: Study `Musoq.DataSources.OpenAI/`
-- **File processing**: Study `Musoq.DataSources.Json/` or `Musoq.DataSources.FlatFile/`
-- **Database connectivity**: Study `Musoq.DataSources.Postgres/`
-
-### 2. Copy and Rename
-
-```bash
-# Example: Create a new plugin based on the System plugin
-cp -r Musoq.DataSources.System Musoq.DataSources.MyPlugin
-cd Musoq.DataSources.MyPlugin
-
-# Rename the project file
-mv Musoq.DataSources.System.csproj Musoq.DataSources.MyPlugin.csproj
+**Example**: Instead of writing custom code to parse JSON files and filter data, you can write:
+```sql
+SELECT Name, Age FROM #json.file('users.json') WHERE Age > 25
 ```
 
-### 3. Update Key Files
+### How Plugins Work
 
-1. **AssemblyInfo.cs** - Change the plugin name:
-   ```csharp
-   [assembly: PluginSchemas("myplugin")]
-   ```
+When Musoq encounters a query like `#myplugin.table()`, it:
 
-2. **Project file** - Enable documentation generation:
-   ```xml
-   <GenerateDocumentationFile>true</GenerateDocumentationFile>
-   ```
+1. **Locates your plugin** using the schema name (`myplugin`)
+2. **Instantiates your schema class** to understand available tables
+3. **Creates a row source** to fetch data from your data source
+4. **Maps your data** to SQL-queryable rows and columns
+5. **Applies SQL operations** (WHERE, JOIN, GROUP BY, etc.) on your data
 
-3. **Schema class** - Rename, update schema name, and **add XML metadata annotations**:
-   ```csharp
-   /// <description>Your plugin description</description>
-   /// <virtual-constructors>
-   /// <virtual-constructor>
-   /// <virtual-param>Parameter description if any</virtual-param>
-   /// <examples>
-   /// <example>
-   /// <from>
-   /// <environmentVariables>
-   /// <environmentVariable name="REQUIRED_VAR" isRequired="true">Variable description</environmentVariable>
-   /// </environmentVariables>
-   /// #yourschema.tablename(string param)
-   /// </from>
-   /// <description>What this method does</description>
-   /// <columns>
-   /// <column name="Id" type="string">Column description</column>
-   /// <column name="Name" type="string">Column description</column>
-   /// </columns>
-   /// </example>
-   /// </examples>
-   /// </virtual-constructor>
-   /// </virtual-constructors>
-   ```
+### Plugin Lifecycle
 
-4. **Entity classes** - Update properties to match your data structure
-5. **RowSource** - Implement your data retrieval logic
-
-⚠️ **Critical**: The XML metadata annotations are mandatory - see [XML Metadata Annotations](#xml-metadata-annotations-critical) section.
-
-### 4. Test Your Plugin
-
-```bash
-# Build the solution to verify everything compiles
-dotnet build
-
-# Your plugin is now ready to use in Musoq queries:
-# SELECT * FROM #myplugin.tablename()
+```
+SQL Query → Schema Resolution → Table Metadata → Row Source Creation → Data Retrieval → SQL Processing → Results
 ```
 
-This approach leverages proven patterns from existing plugins, ensuring your plugin follows established conventions and integrates seamlessly with the Musoq ecosystem.
+Let's understand each step:
+
+**1. Schema Resolution**: Musoq finds your plugin by name
+**2. Table Metadata**: Your plugin describes what columns are available
+**3. Row Source Creation**: Your plugin creates an object to fetch data
+**4. Data Retrieval**: Your plugin fetches actual data from the source
+**5. SQL Processing**: Musoq applies SQL operations on your data
 
 ---
 
-## Prerequisites
+## Prerequisites and Setup
 
-- .NET 8.0 SDK or later
-- Understanding of C# programming
-- Basic knowledge of SQL concepts
-- Familiarity with the data source you want to integrate
+Before we begin building plugins, let's make sure you have everything you need and understand the development environment.
+
+### Required Tools
+
+- **.NET 8.0 SDK or later** - Download from [dotnet.microsoft.com](https://dotnet.microsoft.com/download)
+- **A code editor** - Visual Studio, VS Code, or any C# IDE
+- **Basic C# knowledge** - Understanding classes, interfaces, and async programming
+- **SQL familiarity** - Basic SELECT, WHERE, JOIN concepts
+
+### Understanding the Development Environment
+
+When you build a Musoq plugin, you're creating a **class library** that Musoq can dynamically load. Your plugin will be compiled into a DLL that other applications can reference and use.
+
+**Key concept**: Musoq loads your plugin at runtime and uses reflection to discover its capabilities. This means your plugin must follow specific conventions and interfaces.
+
+### Setting Up Your Development Environment
+
+1. **Create a workspace** for your plugin development:
+   ```bash
+   mkdir MyMusoqPlugin
+   cd MyMusoqPlugin
+   ```
+
+2. **Understand the Musoq ecosystem** by examining existing plugins in this repository. Each plugin in the `Musoq.DataSources.*` folders demonstrates different patterns and complexity levels.
+
+3. **Clone the repository** to have reference implementations available:
+   ```bash
+   git clone https://github.com/Puchaczov/Musoq.DataSources.git
+   ```
 
 ---
 
-## Plugin Architecture Overview
+## Core Concepts and Architecture
 
-A Musoq plugin consists of several key components working together:
+Before we start coding, let's understand the fundamental concepts that make Musoq plugins work.
+
+### The Five Essential Components
+
+Every Musoq plugin consists of exactly five key components. Think of them as the building blocks:
+
+#### 1. **Schema** - The Plugin's Main Interface
+- **Purpose**: The entry point that tells Musoq "I exist and here's what I can do"
+- **Responsibility**: Defines available tables and handles requests
+- **Analogy**: Like a restaurant menu - it lists what's available
+
+#### 2. **Entity** - Your Data Model  
+- **Purpose**: Represents the structure of your data
+- **Responsibility**: Defines properties that become SQL columns
+- **Analogy**: Like a database table schema - defines what fields exist
+
+#### 3. **Table** - Column Metadata Definition
+- **Purpose**: Describes the structure and types of your data to Musoq
+- **Responsibility**: Maps entity properties to SQL column information
+- **Analogy**: Like column definitions in CREATE TABLE statement
+
+#### 4. **RowSource** - The Data Fetcher
+- **Purpose**: Actually retrieves data from your data source
+- **Responsibility**: Connects to external systems and returns data
+- **Analogy**: Like a database driver - handles the actual data retrieval
+
+#### 5. **Helper** - The Column Mapping Bridge
+- **Purpose**: Creates efficient mappings between entity properties and table columns
+- **Responsibility**: Provides fast access patterns for data retrieval
+- **Analogy**: Like an index - speeds up data access
+
+### How These Components Work Together
 
 ```
-MyPlugin/
+SQL Query: SELECT Name FROM #myplugin.users()
+    ↓
+1. Schema receives the request for "users" table
+    ↓  
+2. Schema asks Table for column information about "users"
+    ↓
+3. Schema creates RowSource to fetch actual user data
+    ↓
+4. RowSource uses Entity to structure the data
+    ↓
+5. Helper provides efficient column access patterns
+    ↓
+6. Data flows back as SQL-queryable results
+```
+
+### The Plugin Directory Structure
+
+Here's how we'll organize our plugin files:
+
+```
+Musoq.DataSources.MyPlugin/
 ├── AssemblyInfo.cs              # Plugin registration
-├── MyPluginSchema.cs            # Main schema class
-├── Tables/
-│   ├── MyTable.cs              # Table metadata definition
-│   └── MyTableHelper.cs        # Column mappings and helpers
-├── Sources/
-│   └── MyRowSource.cs          # Data source implementation
+├── MyPluginSchema.cs            # Main schema class (Component #1)
 ├── Entities/
-│   └── MyEntity.cs             # Data model
-├── MyPluginLibrary.cs          # Custom functions (optional)
-└── MyPlugin.csproj             # Project configuration
+│   └── MyEntity.cs              # Data model (Component #2)
+├── Tables/
+│   ├── MyTable.cs               # Table metadata (Component #3)
+│   └── MyTableHelper.cs         # Column mappings (Component #5)
+├── Sources/
+│   └── MyRowSource.cs           # Data fetcher (Component #4)
+├── MyPluginLibrary.cs           # Custom functions (optional)
+└── MyPlugin.csproj              # Project configuration
 ```
 
-### Core Components
+**Why this structure?** Each component has a distinct responsibility, making the code easier to understand, test, and maintain.
 
-1. **Schema**: The main entry point that defines available tables and functions
-2. **Table**: Defines the structure and metadata of your data
-3. **RowSource**: Implements the data retrieval logic
-4. **Entity**: Represents the data model/structure
-5. **Library**: Provides custom functions and methods (optional)
-6. **Helper**: Contains mappings between entity properties and table columns
+### Understanding Data Flow
+
+Let's trace through what happens when someone runs a SQL query:
+
+**Step 1: Discovery**
+- User runs: `SELECT * FROM #weather.current()`
+- Musoq looks for a schema named "weather"
+
+**Step 2: Schema Resolution**
+- Your Schema class gets instantiated
+- Musoq calls `GetTableByName("current", ...)` on your schema
+
+**Step 3: Metadata Resolution**
+- Your Table class describes what columns are available
+- Helper class provides efficient access patterns
+
+**Step 4: Data Retrieval**
+- Musoq calls `GetRowSource("current", ...)` on your schema
+- Your RowSource fetches actual weather data
+- Data gets packaged into Entity objects
+
+**Step 5: SQL Processing**
+- Musoq applies SQL operations (WHERE, ORDER BY, etc.) on your data
+- Results are returned to the user
 
 ---
 
-## Step-by-Step Implementation Guide
+## Building Your First Plugin
 
-### Step 1: Create the Project
+Now let's build a complete plugin from scratch! We'll create a "Weather" plugin that provides current weather data. I'll guide you through each step, explaining why we're doing what we're doing.
 
-Create a new .NET class library:
+### Step 1: Create the Project Foundation
+
+First, let's create a new .NET class library:
 
 ```bash
-dotnet new classlib -n Musoq.DataSources.MyPlugin
-cd Musoq.DataSources.MyPlugin
+dotnet new classlib -n Musoq.DataSources.Weather
+cd Musoq.DataSources.Weather
 ```
+
+**Why this naming?** The `Musoq.DataSources.*` naming convention helps organize plugins and indicates their purpose clearly.
 
 ### Step 2: Configure the Project File
 
-Update your `.csproj` file:
+Replace the contents of `Musoq.DataSources.Weather.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -165,16 +219,24 @@ Update your `.csproj` file:
         <Version>1.0.0</Version>
         <Authors>Your Name</Authors>
         <Product>Musoq</Product>
-        <PackageProjectUrl>https://github.com/YourGitHub/MyPlugin</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/YourGitHub/Weather-Plugin</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageTags>sql, myplugin, dotnet-core</PackageTags>
+        <PackageTags>sql, weather, dotnet-core</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <PackageId>Musoq.DataSources.MyPlugin</PackageId>
+        <PackageId>Musoq.DataSources.Weather</PackageId>
     </PropertyGroup>
+
+    <!-- CRITICAL: This target ensures XML documentation is included -->
+    <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
+        <ItemGroup>
+            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" 
+                                    Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+        </ItemGroup>
+    </Target>
 
     <ItemGroup>
         <PackageReference Include="Musoq.Parser" Version="4.4.0">
@@ -184,105 +246,531 @@ Update your `.csproj` file:
         <PackageReference Include="Musoq.Schema" Version="8.2.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <!-- Add your specific dependencies here -->
     </ItemGroup>
 </Project>
 ```
 
-### Step 3: Register the Plugin
+**Key points about this configuration:**
+- `GenerateDocumentationFile` enables XML documentation generation (critical!)
+- `EnableDynamicLoading` allows Musoq to load your plugin at runtime
+- The special `_ResolveCopyLocalNuGetPackageXmls` target includes XML metadata in packages
+- We reference the three essential Musoq packages
 
-Create `AssemblyInfo.cs`:
+### Step 3: Register Your Plugin
+
+Create `AssemblyInfo.cs` in the root directory:
 
 ```csharp
 using Musoq.Schema.Attributes;
 
-[assembly: PluginSchemas("myplugin")]
+[assembly: PluginSchemas("weather")]
 ```
 
-### Step 4: Create the Entity
+**What's happening here?** This tells Musoq that your assembly contains a schema named "weather". When someone writes `#weather.something()`, Musoq will look for this registration.
 
-Create `Entities/MyEntity.cs`:
+### Step 4: Design Your Data Model (Entity)
+
+Create the `Entities/` directory and add `WeatherEntity.cs`:
 
 ```csharp
-namespace Musoq.DataSources.MyPlugin.Entities;
+namespace Musoq.DataSources.Weather.Entities;
 
 /// <summary>
-/// Represents a data record from your data source
+/// Represents current weather information for a location
 /// </summary>
-public class MyEntity
+public class WeatherEntity
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public DateTime CreatedDate { get; set; }
-    public int Count { get; set; }
-    public bool IsActive { get; set; }
-    
-    // Add properties that represent your data structure
+    public string Location { get; set; } = string.Empty;
+    public double Temperature { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public double Humidity { get; set; }
+    public double WindSpeed { get; set; }
+    public DateTime LastUpdated { get; set; }
+    public bool IsRaining { get; set; }
 }
 ```
 
-### Step 5: Create the Helper Class
+**Why this structure?** Each property will become a column in our SQL table. We use descriptive names and appropriate data types. The properties are simple values that SQL can easily understand.
 
-Create `Tables/MyTableHelper.cs`:
+### Step 5: Create the Helper (Column Mappings)
+
+Create the `Tables/` directory and add `WeatherTableHelper.cs`:
 
 ```csharp
 using Musoq.Schema;
-using Musoq.DataSources.MyPlugin.Entities;
+using Musoq.DataSources.Weather.Entities;
 
-namespace Musoq.DataSources.MyPlugin.Tables;
+namespace Musoq.DataSources.Weather.Tables;
 
-internal static class MyTableHelper
+internal static class WeatherTableHelper
 {
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<MyEntity, object?>> IndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<int, Func<WeatherEntity, object?>> IndexToMethodAccessMap;
     public static readonly ISchemaColumn[] Columns;
 
-    static MyTableHelper()
+    static WeatherTableHelper()
     {
+        // Map column names to their index positions
         NameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(MyEntity.Id), 0},
-            {nameof(MyEntity.Name), 1},
-            {nameof(MyEntity.CreatedDate), 2},
-            {nameof(MyEntity.Count), 3},
-            {nameof(MyEntity.IsActive), 4}
+            {nameof(WeatherEntity.Location), 0},
+            {nameof(WeatherEntity.Temperature), 1},
+            {nameof(WeatherEntity.Description), 2},
+            {nameof(WeatherEntity.Humidity), 3},
+            {nameof(WeatherEntity.WindSpeed), 4},
+            {nameof(WeatherEntity.LastUpdated), 5},
+            {nameof(WeatherEntity.IsRaining), 6}
         };
         
-        IndexToMethodAccessMap = new Dictionary<int, Func<MyEntity, object?>>
+        // Map column indices to property accessors
+        IndexToMethodAccessMap = new Dictionary<int, Func<WeatherEntity, object?>>
         {
-            {0, entity => entity.Id},
-            {1, entity => entity.Name},
-            {2, entity => entity.CreatedDate},
-            {3, entity => entity.Count},
-            {4, entity => entity.IsActive}
+            {0, entity => entity.Location},
+            {1, entity => entity.Temperature},
+            {2, entity => entity.Description},
+            {3, entity => entity.Humidity},
+            {4, entity => entity.WindSpeed},
+            {5, entity => entity.LastUpdated},
+            {6, entity => entity.IsRaining}
         };
         
+        // Define column metadata for SQL
         Columns = new[]
         {
-            new SchemaColumn(nameof(MyEntity.Id), 0, typeof(string)),
-            new SchemaColumn(nameof(MyEntity.Name), 1, typeof(string)),
-            new SchemaColumn(nameof(MyEntity.CreatedDate), 2, typeof(DateTime)),
-            new SchemaColumn(nameof(MyEntity.Count), 3, typeof(int)),
-            new SchemaColumn(nameof(MyEntity.IsActive), 4, typeof(bool))
+            new SchemaColumn(nameof(WeatherEntity.Location), 0, typeof(string)),
+            new SchemaColumn(nameof(WeatherEntity.Temperature), 1, typeof(double)),
+            new SchemaColumn(nameof(WeatherEntity.Description), 2, typeof(string)),
+            new SchemaColumn(nameof(WeatherEntity.Humidity), 3, typeof(double)),
+            new SchemaColumn(nameof(WeatherEntity.WindSpeed), 4, typeof(double)),
+            new SchemaColumn(nameof(WeatherEntity.LastUpdated), 5, typeof(DateTime)),
+            new SchemaColumn(nameof(WeatherEntity.IsRaining), 6, typeof(bool))
         };
     }
 }
 ```
 
-### Step 6: Create the Table
+**What's this doing?** This helper class creates efficient mappings for Musoq to:
+1. Look up columns by name (for `SELECT Location`)
+2. Access entity properties by index (for performance)
+3. Understand column types and metadata
 
-Create `Tables/MyTable.cs`:
+**Why three mappings?** Each serves a different purpose:
+- `NameToIndexMap`: "What's the index of the 'Temperature' column?" → 1
+- `IndexToMethodAccessMap`: "How do I get the value at index 1?" → `entity => entity.Temperature`
+- `Columns`: "What type is column 1?" → `double`
+
+### Step 6: Create the Table Definition
+
+Add `WeatherTable.cs` in the `Tables/` directory:
 
 ```csharp
 using Musoq.Schema;
-using Musoq.DataSources.MyPlugin.Entities;
+using Musoq.DataSources.Weather.Entities;
 
-namespace Musoq.DataSources.MyPlugin.Tables;
+namespace Musoq.DataSources.Weather.Tables;
 
+internal class WeatherTable : ISchemaTable
+{
+    public ISchemaColumn[] Columns => WeatherTableHelper.Columns;
+    
+    public SchemaTableMetadata Metadata { get; } = new(typeof(WeatherEntity));
+
+    public ISchemaColumn? GetColumnByName(string name)
+    {
+        return Columns.SingleOrDefault(column => column.ColumnName == name);
+    }
+    
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
+}
+```
+
+**What's the Table class for?** It implements the `ISchemaTable` interface that Musoq uses to understand your table structure. When Musoq needs to know "What columns does this table have?", it asks this class.
+
+### Step 7: Implement the Data Source (RowSource)
+
+Create the `Sources/` directory and add `WeatherRowSource.cs`:
+
+```csharp
+using System.Collections.Concurrent;
+using Musoq.Schema;
+using Musoq.Schema.DataSources;
+using Musoq.DataSources.Weather.Entities;
+using Musoq.DataSources.Weather.Tables;
+
+namespace Musoq.DataSources.Weather.Sources;
+
+internal class WeatherRowSource : RowSourceBase<WeatherEntity>
+{
+    private readonly string _location;
+    private readonly CancellationToken _cancellationToken;
+
+    public WeatherRowSource(RuntimeContext runtimeContext, string? location = null)
+    {
+        // Use provided location or default to environment variable
+        _location = location ?? runtimeContext.EnvironmentVariables.GetValueOrDefault("WEATHER_LOCATION", "London");
+        _cancellationToken = runtimeContext.EndWorkToken;
+    }
+
+    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    {
+        // Fetch weather data
+        var weatherData = GetWeatherData();
+
+        // Convert to object resolvers that Musoq can understand
+        var resolvers = weatherData.Select(entity => 
+            new EntityResolver<WeatherEntity>(entity, WeatherTableHelper.NameToIndexMap, WeatherTableHelper.IndexToMethodAccessMap))
+            .ToList();
+
+        // Add to the collection for Musoq to process
+        chunkedSource.Add(resolvers);
+    }
+
+    private List<WeatherEntity> GetWeatherData()
+    {
+        // For now, return mock data. In a real plugin, you'd call a weather API
+        return new List<WeatherEntity>
+        {
+            new WeatherEntity 
+            { 
+                Location = _location,
+                Temperature = 22.5,
+                Description = "Partly Cloudy",
+                Humidity = 65.0,
+                WindSpeed = 12.3,
+                LastUpdated = DateTime.Now,
+                IsRaining = false
+            }
+        };
+    }
+}
+```
+
+**Understanding the RowSource:** This is where the magic happens! The `CollectChunks` method is called by Musoq when it needs data. Here's what's happening:
+
+1. **Data Retrieval**: `GetWeatherData()` fetches actual data (in a real plugin, this would call an API)
+2. **Entity Resolution**: We wrap each entity in an `EntityResolver` that knows how to extract values efficiently
+3. **Data Delivery**: We add the data to `chunkedSource` for Musoq to process
+
+**Why chunking?** For large datasets, you can add multiple chunks, allowing Musoq to process data incrementally rather than loading everything into memory.
+
+### Step 8: Create the Schema (Main Interface)
+
+Finally, create the main `WeatherSchema.cs` in the root directory:
+
+```csharp
+using Musoq.Schema;
+using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
+using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
+using Musoq.DataSources.Weather.Sources;
+using Musoq.DataSources.Weather.Tables;
+
+namespace Musoq.DataSources.Weather;
+
+/// <description>
+/// Provides access to current weather information for any location
+/// </description>
+/// <short-description>
+/// Weather data source for current conditions
+/// </short-description>
+/// <project-url>https://github.com/YourGitHub/Weather-Plugin</project-url>
+public class WeatherSchema : SchemaBase
+{
+    private const string SchemaName = "weather";
+    private const string CurrentWeatherTable = "current";
+
+    /// <virtual-constructors>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables>
+    /// <environmentVariable name="WEATHER_LOCATION" isRequired="false">Default location for weather queries</environmentVariable>
+    /// </environmentVariables>
+    /// #weather.current()
+    /// </from>
+    /// <description>Gets current weather for the default location</description>
+    /// <columns>
+    /// <column name="Location" type="string">Location name</column>
+    /// <column name="Temperature" type="double">Temperature in Celsius</column>
+    /// <column name="Description" type="string">Weather condition description</column>
+    /// <column name="Humidity" type="double">Humidity percentage</column>
+    /// <column name="WindSpeed" type="double">Wind speed in km/h</column>
+    /// <column name="LastUpdated" type="DateTime">Last update timestamp</column>
+    /// <column name="IsRaining" type="bool">Whether it's currently raining</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <virtual-param>Location name (city, coordinates, etc.)</virtual-param>
+    /// <examples>
+    /// <example>
+    /// <from>#weather.current(string location)</from>
+    /// <description>Gets current weather for a specific location</description>
+    /// <columns>
+    /// <column name="Location" type="string">Location name</column>
+    /// <column name="Temperature" type="double">Temperature in Celsius</column>
+    /// <column name="Description" type="string">Weather condition description</column>
+    /// <column name="Humidity" type="double">Humidity percentage</column>
+    /// <column name="WindSpeed" type="double">Wind speed in km/h</column>
+    /// <column name="LastUpdated" type="DateTime">Last update timestamp</column>
+    /// <column name="IsRaining" type="bool">Whether it's currently raining</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// </virtual-constructors>
+    public WeatherSchema() : base(SchemaName, CreateLibrary())
+    {
+    }
+
+    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    {
+        return name.ToLowerInvariant() switch
+        {
+            CurrentWeatherTable => new WeatherTable(),
+            _ => throw new NotSupportedException($"Table '{name}' is not supported.")
+        };
+    }
+
+    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    {
+        return name.ToLowerInvariant() switch
+        {
+            CurrentWeatherTable => new WeatherRowSource(runtimeContext, parameters.Length > 0 ? parameters[0]?.ToString() : null),
+            _ => throw new NotSupportedException($"Table '{name}' is not supported.")
+        };
+    }
+
+    public override SchemaMethodInfo[] GetConstructors()
+    {
+        var constructors = new List<SchemaMethodInfo>();
+        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<WeatherRowSource>(CurrentWeatherTable));
+        return constructors.ToArray();
+    }
+
+    private static MethodsAggregator CreateLibrary()
+    {
+        var methodsManager = new MethodsManager();
+        // No custom functions for now
+        return new MethodsAggregator(methodsManager);
+    }
+}
+```
+
+**Understanding the Schema class:** This is the conductor of your plugin orchestra. Notice:
+
+1. **XML Documentation**: The extensive comments above the constructor are essential - they tell Musoq how to use your plugin
+2. **GetTableByName**: When someone requests `#weather.current()`, this method returns a `WeatherTable`
+3. **GetRowSource**: This creates the actual data source that fetches weather data
+4. **GetConstructors**: This tells Musoq what parameters your methods accept
+
+### Step 9: Build and Test
+
+Now let's build our plugin:
+
+```bash
+dotnet build
+```
+
+If everything compiles successfully, congratulations! You've just built your first Musoq plugin.
+
+### Step 10: Understanding What We Built
+
+Let's trace through what happens when someone runs this query:
+
+```sql
+SELECT Location, Temperature FROM #weather.current('Paris') WHERE Temperature > 20
+```
+
+1. **Musoq sees `#weather.current('Paris')`** and looks for the "weather" schema
+2. **Your AssemblyInfo.cs** tells Musoq that this assembly provides the "weather" schema
+3. **Musoq instantiates WeatherSchema** and calls `GetTableByName("current", ...)`
+4. **WeatherSchema returns a WeatherTable** describing the available columns
+5. **Musoq calls GetRowSource("current", ...)** with "Paris" as a parameter
+6. **WeatherSchema creates a WeatherRowSource** with location="Paris"
+7. **WeatherRowSource.CollectChunks()** fetches weather data for Paris
+8. **Musoq applies the SQL operations** (SELECT specific columns, WHERE temperature > 20)
+9. **Results are returned** to the user
+
+This is the fundamental flow of every Musoq plugin!
+
+---
+
+## Understanding Each Component
+
+Now that you've built a complete plugin, let's dive deeper into each component to understand exactly what they do and how to customize them for different scenarios.
+
+### Component 1: The Entity - Your Data Model
+
+The Entity represents the structure of your data. It's the C# class that models what a single record looks like.
+
+#### Design Principles for Entities
+
+**1. Keep it simple**: Use basic data types that SQL understands:
+```csharp
+// Good - Simple, SQL-friendly types
+public class UserEntity
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public bool IsActive { get; set; }
+}
+```
+
+**2. Handle complex data appropriately**: For complex data, use collections or nested objects:
+```csharp
+// Good - Complex types that make sense
+public class ProductEntity
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public List<string> Tags { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+```
+
+**3. Use nullable types when appropriate**:
+```csharp
+public class WeatherEntity
+{
+    public string Location { get; set; } = string.Empty;
+    public double? Temperature { get; set; }  // Might not be available
+    public DateTime? LastUpdated { get; set; } // Might be null for new records
+}
+```
+
+#### Common Entity Patterns
+
+**Simple Record Entity** (like our weather plugin):
+```csharp
+public class SimpleEntity
+{
+    public string Id { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
+}
+```
+
+**API Response Entity** (for REST API integrations):
+```csharp
+public class ApiResponseEntity  
+{
+    public string Id { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public Dictionary<string, object> Data { get; set; } = new();
+    public List<string> Errors { get; set; } = new();
+}
+```
+
+**File-based Entity** (for file processing):
+```csharp
+public class FileEntity
+{
+    public string FileName { get; set; } = string.Empty;
+    public long Size { get; set; }
+    public DateTime Modified { get; set; }
+    public string Content { get; set; } = string.Empty;
+}
+```
+
+### Component 2: The Helper - Efficient Data Access
+
+The Helper class creates mappings that allow Musoq to efficiently access your entity properties. 
+
+#### Understanding the Three Mappings
+
+Let's look at why each mapping exists:
+
+```csharp
+static MyTableHelper()
+{
+    // 1. Name-to-Index: "What position is the 'Temperature' column?"
+    NameToIndexMap = new Dictionary<string, int>
+    {
+        {nameof(WeatherEntity.Location), 0},     // "Location" → 0
+        {nameof(WeatherEntity.Temperature), 1},  // "Temperature" → 1
+        {nameof(WeatherEntity.Description), 2}   // "Description" → 2
+    };
+    
+    // 2. Index-to-Accessor: "How do I get the value at position 1?"
+    IndexToMethodAccessMap = new Dictionary<int, Func<WeatherEntity, object?>>
+    {
+        {0, entity => entity.Location},        // Position 0 → get Location
+        {1, entity => entity.Temperature},     // Position 1 → get Temperature  
+        {2, entity => entity.Description}      // Position 2 → get Description
+    };
+    
+    // 3. Column Metadata: "What type is position 1? What's its name?"
+    Columns = new[]
+    {
+        new SchemaColumn("Location", 0, typeof(string)),        // Position 0: string column
+        new SchemaColumn("Temperature", 1, typeof(double)),     // Position 1: double column
+        new SchemaColumn("Description", 2, typeof(string))      // Position 2: string column
+    };
+}
+```
+
+**Why not just use reflection?** While we could use reflection to access properties, these pre-built mappings are much faster. When processing thousands of rows, this performance difference matters significantly.
+
+#### Helper Generation Pattern
+
+Here's a useful pattern for generating helpers systematically:
+
+```csharp
+private static (Dictionary<string, int> nameToIndex, 
+               Dictionary<int, Func<T, object?>> indexToAccessor,
+               SchemaColumn[] columns) 
+               GenerateMappings<T>()
+{
+    var properties = typeof(T).GetProperties();
+    var nameToIndex = new Dictionary<string, int>();
+    var indexToAccessor = new Dictionary<int, Func<T, object?>>();
+    var columns = new SchemaColumn[properties.Length];
+
+    for (int i = 0; i < properties.Length; i++)
+    {
+        var prop = properties[i];
+        nameToIndex[prop.Name] = i;
+        indexToAccessor[i] = entity => prop.GetValue(entity);
+        columns[i] = new SchemaColumn(prop.Name, i, prop.PropertyType);
+    }
+
+    return (nameToIndex, indexToAccessor, columns);
+}
+```
+
+### Component 3: The Table - Schema Definition
+
+The Table class implements `ISchemaTable` and tells Musoq about your table structure.
+
+#### Understanding ISchemaTable
+
+```csharp
+public interface ISchemaTable
+{
+    ISchemaColumn[] Columns { get; }                           // All available columns
+    SchemaTableMetadata Metadata { get; }                     // Table metadata
+    ISchemaColumn? GetColumnByName(string name);              // Find one column by name
+    ISchemaColumn[] GetColumnsByName(string name);            // Find multiple columns by name
+}
+```
+
+**When would you have multiple columns with the same name?** Rarely, but it can happen with complex schemas or when joining data sources.
+
+#### Custom Table Implementations
+
+Most tables follow this simple pattern:
+```csharp
 internal class MyTable : ISchemaTable
 {
     public ISchemaColumn[] Columns => MyTableHelper.Columns;
-    
     public SchemaTableMetadata Metadata { get; } = new(typeof(MyEntity));
 
     public ISchemaColumn? GetColumnByName(string name)
@@ -297,321 +785,185 @@ internal class MyTable : ISchemaTable
 }
 ```
 
-### Step 7: Create the Row Source
+### Component 4: The RowSource - Data Retrieval Engine
 
-Create `Sources/MyRowSource.cs`:
+The RowSource is where you implement the actual data fetching logic. This is the most important and most customizable component.
+
+#### Understanding RowSourceBase<T>
+
+The `RowSourceBase<T>` class provides a framework for data collection:
 
 ```csharp
-using System.Collections.Concurrent;
-using Musoq.Schema;
-using Musoq.Schema.DataSources;
-using Musoq.DataSources.MyPlugin.Entities;
-using Musoq.DataSources.MyPlugin.Tables;
-
-namespace Musoq.DataSources.MyPlugin.Sources;
-
-internal class MyRowSource : RowSourceBase<MyEntity>
+public abstract class RowSourceBase<T> : RowSource
 {
-    private readonly string? _connectionString;
-    private readonly CancellationToken _cancellationToken;
+    protected abstract void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource);
+}
+```
 
-    public MyRowSource(RuntimeContext runtimeContext, string? connectionString = null)
+**Your job**: Implement `CollectChunks` to fetch data and add it to the collection.
+
+#### Data Fetching Patterns
+
+**Pattern 1: Simple Collection** (like our weather example)
+```csharp
+protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+{
+    // Get all data at once
+    var allData = GetAllData();
+    
+    // Convert to resolvers
+    var resolvers = allData.Select(entity => 
+        new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
+        .ToList();
+    
+    // Add as a single chunk
+    chunkedSource.Add(resolvers);
+}
+```
+
+**Pattern 2: Chunked Processing** (for large datasets)
+```csharp
+protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+{
+    const int chunkSize = 1000;
+    int offset = 0;
+    
+    while (true)
     {
-        _connectionString = connectionString ?? runtimeContext.EnvironmentVariables.GetValueOrDefault("MY_CONNECTION_STRING");
-        _cancellationToken = runtimeContext.EndWorkToken;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        var entities = GetDataFromSource();
-
-        var resolvers = entities.Select(entity => 
+        var chunk = GetDataChunk(offset, chunkSize);
+        if (!chunk.Any()) break;
+        
+        var resolvers = chunk.Select(entity => 
             new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
             .ToList();
-
-        chunkedSource.Add(resolvers);
-    }
-
-    private List<MyEntity> GetDataFromSource()
-    {
-        // Implement your data retrieval logic here
-        // This could be:
-        // - API calls
-        // - Database queries
-        // - File reading
-        // - Web scraping
-        // - etc.
         
-        return new List<MyEntity>
-        {
-            new MyEntity 
-            { 
-                Id = "1", 
-                Name = "Sample Record", 
-                CreatedDate = DateTime.Now, 
-                Count = 42, 
-                IsActive = true 
-            }
-        };
-    }
-}
-```
-
-### Step 8: Create the Library (Optional)
-
-Create `MyPluginLibrary.cs`:
-
-```csharp
-using Musoq.Plugins;
-using Musoq.Plugins.Attributes;
-using Musoq.DataSources.MyPlugin.Entities;
-
-namespace Musoq.DataSources.MyPlugin;
-
-/// <summary>
-/// Provides custom functions for MyPlugin
-/// </summary>
-public class MyPluginLibrary : LibraryBase
-{
-    /// <summary>
-    /// Formats the entity name with a prefix
-    /// </summary>
-    /// <param name="entity">The entity instance</param>
-    /// <param name="prefix">Prefix to add</param>
-    /// <returns>Formatted name</returns>
-    [BindableMethod]
-    public string FormatName([InjectSpecificSource(typeof(MyEntity))] MyEntity entity, string prefix)
-    {
-        return $"{prefix}: {entity.Name}";
-    }
-
-    /// <summary>
-    /// Calculates days since creation
-    /// </summary>
-    /// <param name="entity">The entity instance</param>
-    /// <returns>Days since creation</returns>
-    [BindableMethod]
-    public int DaysSinceCreation([InjectSpecificSource(typeof(MyEntity))] MyEntity entity)
-    {
-        return (DateTime.Now - entity.CreatedDate).Days;
-    }
-}
-```
-
-### Step 9: Create the Schema
-
-Create `MyPluginSchema.cs`:
-
-```csharp
-using Musoq.Schema;
-using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
-using Musoq.Schema.Managers;
-using Musoq.Schema.Reflection;
-using Musoq.DataSources.MyPlugin.Sources;
-using Musoq.DataSources.MyPlugin.Tables;
-
-namespace Musoq.DataSources.MyPlugin;
-
-/// <description>
-/// Provides access to MyPlugin data source
-/// </description>
-/// <short-description>
-/// Provides access to MyPlugin data source
-/// </short-description>
-/// <project-url>https://github.com/YourGitHub/MyPlugin</project-url>
-public class MyPluginSchema : SchemaBase
-{
-    private const string SchemaName = "myplugin";
-    private const string TableName = "data";
-
-    /// <virtual-constructors>
-    /// <virtual-constructor>
-    /// <examples>
-    /// <example>
-    /// <from>
-    /// <environmentVariables>
-    /// <environmentVariable name="MY_CONNECTION_STRING" isRequired="false">Connection string for MyPlugin</environmentVariable>
-    /// </environmentVariables>
-    /// #myplugin.data()
-    /// </from>
-    /// <description>Gets data from MyPlugin source</description>
-    /// <columns>
-    /// <column name="Id" type="string">Unique identifier</column>
-    /// <column name="Name" type="string">Record name</column>
-    /// <column name="CreatedDate" type="DateTime">Creation date</column>
-    /// <column name="Count" type="int">Count value</column>
-    /// <column name="IsActive" type="bool">Active status</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// <virtual-constructor>
-    /// <virtual-param>Connection string</virtual-param>
-    /// <examples>
-    /// <example>
-    /// <from>#myplugin.data(string connectionString)</from>
-    /// <description>Gets data from MyPlugin source with custom connection</description>
-    /// <columns>
-    /// <column name="Id" type="string">Unique identifier</column>
-    /// <column name="Name" type="string">Record name</column>
-    /// <column name="CreatedDate" type="DateTime">Creation date</column>
-    /// <column name="Count" type="int">Count value</column>
-    /// <column name="IsActive" type="bool">Active status</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// </virtual-constructors>
-    public MyPluginSchema() 
-        : base(SchemaName, CreateLibrary())
-    {
-    }
-
-    /// <summary>
-    /// Gets the table metadata for the specified table name
-    /// </summary>
-    /// <param name="name">Table name</param>
-    /// <param name="runtimeContext">Runtime context</param>
-    /// <param name="parameters">Parameters</param>
-    /// <returns>Table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
-    {
-        return name.ToLowerInvariant() switch
-        {
-            TableName => new MyTable(),
-            _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-        };
-    }
-
-    /// <summary>
-    /// Gets the row source for the specified table name
-    /// </summary>
-    /// <param name="name">Table name</param>
-    /// <param name="runtimeContext">Runtime context</param>
-    /// <param name="parameters">Parameters</param>
-    /// <returns>Row source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
-    {
-        return name.ToLowerInvariant() switch
-        {
-            TableName => new MyRowSource(runtimeContext, parameters.Length > 0 ? parameters[0]?.ToString() : null),
-            _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-        };
-    }
-
-    /// <summary>
-    /// Gets the available constructors for this schema
-    /// </summary>
-    /// <returns>Schema method information</returns>
-    public override SchemaMethodInfo[] GetConstructors()
-    {
-        var constructors = new List<SchemaMethodInfo>();
-        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<MyRowSource>(TableName));
-        return constructors.ToArray();
-    }
-
-    private static MethodsAggregator CreateLibrary()
-    {
-        var methodsManager = new MethodsManager();
-        var library = new MyPluginLibrary();
-        methodsManager.RegisterLibraries(library);
-        return new MethodsAggregator(methodsManager);
-    }
-}
-```
-
----
-
-## Component Details
-
-### Schema Class Deep Dive
-
-The Schema class is the main entry point for your plugin. Key responsibilities:
-
-- **Registration**: Inherits from `SchemaBase` and registers with the specified name
-- **Table Resolution**: `GetTableByName()` returns appropriate table metadata
-- **Data Source Creation**: `GetRowSource()` creates data source instances
-- **Constructor Definition**: `GetConstructors()` defines available table constructors
-- **Library Integration**: `CreateLibrary()` registers custom functions
-- **⚠️ XML Metadata**: Must include comprehensive XML annotations above the constructor (see [XML Metadata Annotations](#xml-metadata-annotations-critical))
-
-### RowSource Patterns
-
-There are two main patterns for implementing row sources:
-
-#### 1. Synchronous Collection (RowSourceBase<T>)
-```csharp
-internal class MyRowSource : RowSourceBase<MyEntity>
-{
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        // Collect all data and add to chunkedSource
-        var data = GetAllData();
-        var resolvers = data.Select(item => new EntityResolver<MyEntity>(...)).ToList();
         chunkedSource.Add(resolvers);
+        offset += chunkSize;
     }
 }
 ```
 
-#### 2. Streaming/Async (RowSource)
+**Pattern 3: Streaming Data** (for APIs with pagination)
 ```csharp
-internal class MyRowSource : RowSource
+protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
 {
-    public override IEnumerable<IObjectResolver> Rows
+    string? nextPageToken = null;
+    
+    do
     {
-        get
+        var (data, newNextPageToken) = GetDataPage(nextPageToken);
+        nextPageToken = newNextPageToken;
+        
+        if (data.Any())
         {
-            foreach (var item in GetDataStream())
-            {
-                yield return new EntityResolver<MyEntity>(item, ...);
-            }
+            var resolvers = data.Select(entity => 
+                new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
+                .ToList();
+            
+            chunkedSource.Add(resolvers);
         }
+    } 
+    while (nextPageToken != null);
+}
+```
+
+#### Handling Parameters in RowSource
+
+Parameters from SQL queries are passed to your RowSource constructor:
+
+```csharp
+public class MyRowSource : RowSourceBase<MyEntity>
+{
+    private readonly string _query;
+    private readonly int _maxResults;
+
+    public MyRowSource(RuntimeContext runtimeContext, string? query = null, int maxResults = 100)
+    {
+        _query = query ?? "default";
+        _maxResults = maxResults;
     }
 }
 ```
 
-### Entity Design Principles
+**Corresponding SQL**: `SELECT * FROM #myplugin.data('search term', 50)`
 
-- Use properties with public getters
-- Include null safety annotations (`string?`, `int?`)
-- Consider using records for immutable data
-- Add meaningful XML documentation
+#### Using Environment Variables
 
-### GetConstructors() Method (Optional)
-
-Some plugins override this method to provide constructor information. This is useful when you need custom handling:
+Access environment variables through the RuntimeContext:
 
 ```csharp
-/// <summary>
-/// Gets information's about all tables in the schema.
-/// </summary>
-/// <returns>Data sources constructors</returns>
-public override SchemaMethodInfo[] GetConstructors()
+public MyRowSource(RuntimeContext runtimeContext)
 {
-    var constructors = new List<SchemaMethodInfo>();
+    // Required variable - will throw if missing
+    var apiKey = runtimeContext.EnvironmentVariables["API_KEY"];
     
-    // Add constructor info for each table/method
-    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<MyRowSource>("tablename"));
-    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<AnotherRowSource>("anothertable"));
+    // Optional with default
+    var baseUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("BASE_URL", "https://api.example.com");
     
-    return constructors.ToArray();
+    // Check if variable exists
+    if (runtimeContext.EnvironmentVariables.TryGetValue("OPTIONAL_VAR", out var value))
+    {
+        // Use the optional variable
+    }
 }
 ```
 
-**When to override GetConstructors():**
-- Multiple tables with different row sources
-- Custom constructor parameter handling
-- Special method resolution needs
+### Component 5: The Schema - The Orchestrator
 
-**Example from System plugin:**
+The Schema class is the main coordinator that ties everything together.
+
+#### Understanding Schema Responsibilities
+
+1. **Table Resolution**: "What table does 'users' refer to?"
+2. **Row Source Creation**: "Create a data source for the 'users' table"
+3. **Constructor Information**: "What parameters does the 'users' table accept?"
+4. **Library Integration**: "What custom functions are available?"
+
+#### Schema Method Patterns
+
+**Simple Schema** (single table):
 ```csharp
-public override SchemaMethodInfo[] GetConstructors()
+public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
 {
-    var constructors = new List<SchemaMethodInfo>();
-    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<DualRowSource>("dual"));
-    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<RangeSource>("range"));
-    return constructors.ToArray();
+    return name.ToLowerInvariant() switch
+    {
+        "data" => new MyTable(),
+        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
+    };
+}
+
+public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+{
+    return name.ToLowerInvariant() switch
+    {
+        "data" => new MyRowSource(runtimeContext),
+        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
+    };
+}
+```
+
+**Multi-table Schema** (multiple related tables):
+```csharp
+public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+{
+    return name.ToLowerInvariant() switch
+    {
+        "users" => new UsersTable(),
+        "orders" => new OrdersTable(),
+        "products" => new ProductsTable(),
+        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
+    };
+}
+
+public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+{
+    return name.ToLowerInvariant() switch
+    {
+        "users" => new UsersRowSource(runtimeContext),
+        "orders" => new OrdersRowSource(runtimeContext),
+        "products" => new ProductsRowSource(runtimeContext),
+        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
+    };
 }
 ```
 
