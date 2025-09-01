@@ -61,7 +61,24 @@ mv Musoq.DataSources.System.csproj Musoq.DataSources.MyPlugin.csproj
    ```csharp
    /// <description>Your plugin description</description>
    /// <virtual-constructors>
-   /// <!-- Copy and adapt from reference plugin -->
+   /// <virtual-constructor>
+   /// <virtual-param>Parameter description if any</virtual-param>
+   /// <examples>
+   /// <example>
+   /// <from>
+   /// <environmentVariables>
+   /// <environmentVariable name="REQUIRED_VAR" isRequired="true">Variable description</environmentVariable>
+   /// </environmentVariables>
+   /// #yourschema.tablename(string param)
+   /// </from>
+   /// <description>What this method does</description>
+   /// <columns>
+   /// <column name="Id" type="string">Column description</column>
+   /// <column name="Name" type="string">Column description</column>
+   /// </columns>
+   /// </example>
+   /// </examples>
+   /// </virtual-constructor>
    /// </virtual-constructors>
    ```
 
@@ -561,6 +578,43 @@ internal class MyRowSource : RowSource
 - Consider using records for immutable data
 - Add meaningful XML documentation
 
+### GetConstructors() Method (Optional)
+
+Some plugins override this method to provide constructor information. This is useful when you need custom handling:
+
+```csharp
+/// <summary>
+/// Gets information's about all tables in the schema.
+/// </summary>
+/// <returns>Data sources constructors</returns>
+public override SchemaMethodInfo[] GetConstructors()
+{
+    var constructors = new List<SchemaMethodInfo>();
+    
+    // Add constructor info for each table/method
+    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<MyRowSource>("tablename"));
+    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<AnotherRowSource>("anothertable"));
+    
+    return constructors.ToArray();
+}
+```
+
+**When to override GetConstructors():**
+- Multiple tables with different row sources
+- Custom constructor parameter handling
+- Special method resolution needs
+
+**Example from System plugin:**
+```csharp
+public override SchemaMethodInfo[] GetConstructors()
+{
+    var constructors = new List<SchemaMethodInfo>();
+    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<DualRowSource>("dual"));
+    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<RangeSource>("range"));
+    return constructors.ToArray();
+}
+```
+
 ---
 
 ## XML Metadata Annotations (Critical)
@@ -632,24 +686,72 @@ Virtual constructors define how users call your plugin from SQL. Each table/meth
 </environmentVariables>
 ```
 
-#### Method Parameters
-For methods with parameters, you can document them:
+#### Virtual Parameter Documentation
+Every parameter in your method signature should be documented with `<virtual-param>` tags:
 ```xml
-<virtual-param>Description of parameter 1</virtual-param>
-<virtual-param>Description of parameter 2</virtual-param>
+<virtual-constructor>
+<virtual-param>Model to use: gpt-4, gpt-3.5-turbo, etc.</virtual-param>
+<virtual-param>Max tokens to generate</virtual-param>
+<virtual-param>Temperature (0.0-2.0)</virtual-param>
+<examples>
+<example>
+<from>#yourschema.method(string model, int maxTokens, decimal temperature)</from>
+<description>Method with multiple documented parameters</description>
+<columns>
+<!-- column definitions -->
+</columns>
+</example>
+</examples>
+</virtual-constructor>
+```
+
+**Real example from OpenAI plugin:**
+```xml
+<virtual-constructor>
+<virtual-param>Models to use: gpt-4, gpt-4-32k, gpt-4-vision-preview, gpt-4-turbo-preview, gpt-3.5-turbo, gpt-3.5-turbo-1106, gpt-3.5-turbo-16k, gpt-3.5-turbo-instruct, babbage-002, davinci-002</virtual-param>
+<virtual-param>Max tokens to generate</virtual-param>
+<virtual-param>Temperature</virtual-param>
+<virtual-param>Frequency penalty</virtual-param>
+<virtual-param>Presence penalty</virtual-param>
+<examples>
+<example>
+<from>#openai.gpt(string model, int maxTokens, decimal temperature, decimal frequencyPenalty, decimal presencePenalty)</from>
+<description>Gives the access to OpenAI api</description>
+<columns isDynamic="true"></columns>
+</example>
+</examples>
+</virtual-constructor>
 ```
 
 #### Column Definitions
+
+**Static Columns (Known at compile time):**
 ```xml
 <columns>
 <column name="ColumnName" type="datatype">Description of what this column contains</column>
+<column name="Id" type="int">Unique identifier</column>
+<column name="Name" type="string">Entity name</column>
+<column name="Tags" type="string[]">Array of tags</column>
+<column name="Metadata" type="IDictionary&lt;string, object&gt;">Key-value metadata</column>
+<column name="Networks" type="IList&lt;string&gt;">List of network names</column>
 </columns>
 ```
 
-For dynamic columns (when columns are determined at runtime):
+**Dynamic Columns (Determined at runtime):**
 ```xml
 <columns isDynamic="true"></columns>
 ```
+
+Use `isDynamic="true"` when:
+- Column structure depends on runtime data
+- API responses have varying schemas
+- Database tables have unknown column structures
+- Plugin discovers columns from external metadata
+
+**Examples from existing plugins:**
+- **OpenAI/Ollama**: `<columns isDynamic="true"></columns>` - AI responses vary
+- **Postgres**: `<columns isDynamic="true"></columns>` - Database tables have varying schemas
+- **CANBus**: Static columns for messages, but dynamic columns for separated values
 
 ### Additional Tables
 
@@ -675,7 +777,96 @@ When your plugin exposes complex entities with nested arrays or properties, docu
 /// </additional-tables>
 ```
 
-### Complete Real-World Example
+### Complex Data Types Documentation
+
+Document complex .NET types exactly as they appear in your entities:
+
+#### Collections and Generics
+```xml
+<column name="Tags" type="string[]">Array of string tags</column>
+<column name="Networks" type="IList&lt;string&gt;">List of network names</column>
+<column name="Metadata" type="IDictionary&lt;string, string&gt;">Key-value metadata pairs</column>
+<column name="Settings" type="IDictionary&lt;string, object&gt;">Dynamic settings dictionary</column>
+```
+
+#### Custom Entity Arrays
+```xml
+<column name="Signals" type="SignalEntity[]">Array of signal entities</column>
+<column name="Permissions" type="PermissionEntity[]">User permissions array</column>
+```
+
+#### Complex Object Properties
+```xml
+<column name="NetworkSettings" type="SummaryNetworkSettings">Network configuration object</column>
+<column name="UsageData" type="VolumeUsageData">Storage usage information</column>
+```
+
+**Real examples from existing plugins:**
+
+**Docker plugin complex types:**
+```xml
+<column name="Labels" type="IDictionary&lt;string, string&gt;">Assigned labels to specific container</column>
+<column name="Ports" type="IList&lt;string&gt;">Mapped ports</column>
+<column name="Mounts" type="IList&lt;MountPoint&gt;">Mounted points</column>
+<column name="NetworkSettings" type="SummaryNetworkSettings">Network settings</column>
+```
+
+**CANBus plugin entity arrays:**
+```xml
+<column name="Signals" type="SignalEntity[]">Signals of the message</column>
+<column name="Receiver" type="string[]">Receiver for the signal entity</column>
+```
+
+### Multiple Examples and Overloads
+
+When your plugin supports method overloads, document each one separately with multiple examples:
+
+```csharp
+/// <virtual-constructors>
+/// <virtual-constructor>
+/// <examples>
+/// <example>
+/// <from>#system.range(long max)</from>
+/// <description>Generates range from 0 to max</description>
+/// <columns>
+/// <column name="Value" type="long">Enumerated value</column>
+/// </columns>
+/// </example>
+/// <example>
+/// <from>#system.range(long min, long max)</from>
+/// <description>Generates range from min to max</description>
+/// <columns>
+/// <column name="Value" type="long">Enumerated value</column>
+/// </columns>
+/// </example>
+/// </examples>
+/// </virtual-constructor>
+/// </virtual-constructors>
+```
+
+**Real example from System plugin showing overloads:**
+```csharp
+/// <virtual-constructor>
+/// <virtual-param>Minimal value</virtual-param>
+/// <virtual-param>Maximal value</virtual-param>
+/// <examples>
+/// <example>
+/// <from>#system.range(long min, long max)</from>
+/// <description>Gives the ability to generate ranged values</description>
+/// <columns>
+/// <column name="Value" type="long">Enumerated value</column>
+/// </columns>
+/// </example>
+/// <example>
+/// <from>#system.range(int min, int max)</from>
+/// <description>Gives the ability to generate ranged values</description>
+/// <columns>
+/// <column name="Value" type="long">Enumerated value</column>
+/// </columns>
+/// </example>
+/// </examples>
+/// </virtual-constructor>
+```
 
 Here's how the CANBus plugin documents its interface:
 
@@ -731,15 +922,58 @@ Study these excellent examples in the repository:
 - **`Musoq.DataSources.Docker/DockerSchema.cs`** - Multiple tables with different column sets
 - **`Musoq.DataSources.System/SystemSchema.cs`** - Simple schema with parameter documentation
 
+### Environment Variable Usage Patterns
+
+After documenting environment variables in your XML annotations, use them in your RowSource constructor:
+
+#### Required Environment Variables
+```csharp
+public class MyRowSource : RowSourceBase<MyEntity>
+{
+    private readonly string _apiKey;
+    private readonly string _endpoint;
+
+    public MyRowSource(RuntimeContext runtimeContext, string? customEndpoint = null)
+    {
+        // Required environment variable - will throw if missing
+        _apiKey = runtimeContext.EnvironmentVariables["API_KEY"];
+        
+        // Optional with default
+        _endpoint = customEndpoint ?? 
+                   runtimeContext.EnvironmentVariables.GetValueOrDefault("API_ENDPOINT", "https://default.api.com");
+    }
+}
+```
+
+#### Common Patterns from Existing Plugins
+
+**OpenAI pattern:**
+```csharp
+// Required API key, no default
+var apiKey = runtimeContext.EnvironmentVariables["OPENAI_API_KEY"];
+```
+
+**Ollama pattern:**
+```csharp
+// Optional with sensible default
+var baseUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
+```
+
+**Postgres pattern:**
+```csharp
+// Required connection string
+var connectionString = runtimeContext.EnvironmentVariables["NPGSQL_CONNECTION_STRING"];
+```
+
 ---
 
 ## Documentation Generation
 
 🔥 **Critical**: Your plugin must generate XML documentation files for the metadata to be processed correctly.
 
-### Project Configuration
+### Project Configuration (Mandatory)
 
-Add this to your `.csproj` file:
+**This exact configuration is required in your `.csproj` file:**
 
 ```xml
 <PropertyGroup>
@@ -750,6 +984,7 @@ Add this to your `.csproj` file:
     <!-- Other properties -->
 </PropertyGroup>
 
+<!-- This target is CRITICAL - it ensures XML files are included in the package -->
 <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
     <ItemGroup>
         <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" 
@@ -757,6 +992,60 @@ Add this to your `.csproj` file:
     </ItemGroup>
 </Target>
 ```
+
+⚠️ **Without the `_ResolveCopyLocalNuGetPackageXmls` target, your XML metadata will not be available to Musoq at runtime!**
+
+### Complete .csproj Template
+
+Copy this exact template for new plugins:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>1.0.0</Version>
+        <Authors>Your Name</Authors>
+        <Product>Musoq</Product>
+        <PackageProjectUrl>https://github.com/YourGitHub/MyPlugin</PackageProjectUrl>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageTags>sql, myplugin, dotnet-core</PackageTags>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageId>Musoq.DataSources.MyPlugin</PackageId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+    </ItemGroup>
+
+    <!-- CRITICAL: This target includes XML documentation files -->
+    <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
+        <ItemGroup>
+            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" 
+                                    Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+        <PackageReference Include="Musoq.Parser" Version="4.4.0">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="Musoq.Plugins" Version="6.11.0" />
+        <PackageReference Include="Musoq.Schema" Version="8.2.0">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <!-- Add your specific dependencies here -->
+    </ItemGroup>
+</Project>
+```
+
+**This configuration is used by ALL working plugins in the repository.**
 
 ### What Gets Generated
 
