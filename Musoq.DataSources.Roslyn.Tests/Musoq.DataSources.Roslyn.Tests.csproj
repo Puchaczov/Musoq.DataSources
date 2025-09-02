@@ -10,23 +10,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="coverlet.collector" Version="6.0.0" />
         <PackageReference Include="JetBrains.Profiler.Api" Version="1.4.8" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
-        <PackageReference Include="Musoq.Converter" Version="4.2.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="8.2.0" />
-        <PackageReference Include="Musoq.Schema" Version="8.2.0" />
+        <PackageReference Include="Musoq.Converter" Version="4.3.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="8.3.0" />
+        <PackageReference Include="Musoq.Schema" Version="8.3.0" />
         <!-- pin required for tests nuget packages, at least for now -->
         <PackageReference Include="NUnit" Version="3.14.0" />
-        <PackageReference Include="NUnit.Analyzers" Version="3.9.0"/>
-        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
+        <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
+        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
     </ItemGroup>
 
     <ItemGroup>

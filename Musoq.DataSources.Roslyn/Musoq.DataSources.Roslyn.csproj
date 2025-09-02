@@ -24,7 +24,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
     </ItemGroup>
     
     <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
@@ -44,7 +44,7 @@
         <PackageReference Include="Microsoft.Build" Version="16.10.0" Condition="'$(IsFinalBuild)' == 'false'">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Build.Framework" Version="16.10.0" Condition="'$(IsFinalBuild)' == 'false'" >
+        <PackageReference Include="Microsoft.Build.Framework" Version="16.10.0" Condition="'$(IsFinalBuild)' == 'false'">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Build.Locator" Version="1.6.10" />
@@ -55,11 +55,11 @@
             <PrivateAssets>all</PrivateAssets>
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Parser" Version="4.4.0">
+        <PackageReference Include="Musoq.Parser" Version="4.5.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.11.0" />
-        <PackageReference Include="Musoq.Schema" Version="8.2.0">
+        <PackageReference Include="Musoq.Plugins" Version="6.12.0" />
+        <PackageReference Include="Musoq.Schema" Version="8.3.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
