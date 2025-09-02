@@ -239,11 +239,11 @@ Replace the contents of `Musoq.DataSources.Weather.csproj`:
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="4.4.0">
+        <PackageReference Include="Musoq.Parser" Version="4.5.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.11.0" />
-        <PackageReference Include="Musoq.Schema" Version="8.2.0">
+        <PackageReference Include="Musoq.Plugins" Version="6.12.0" />
+        <PackageReference Include="Musoq.Schema" Version="8.3.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>
@@ -1333,11 +1333,11 @@ Every Musoq plugin **must** include this exact configuration in your `.csproj` f
 
     <!-- Musoq dependencies -->
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="4.4.0">
+        <PackageReference Include="Musoq.Parser" Version="4.5.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.11.0" />
-        <PackageReference Include="Musoq.Schema" Version="8.2.0">
+        <PackageReference Include="Musoq.Plugins" Version="6.12.0" />
+        <PackageReference Include="Musoq.Schema" Version="8.3.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <!-- Add your specific dependencies here -->
