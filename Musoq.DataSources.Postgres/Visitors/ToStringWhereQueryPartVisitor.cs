@@ -141,6 +141,21 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         _builder.Append($" {node.ObjValue} ");
     }
 
+    public void Visit(HexIntegerNode node)
+    {
+        _builder.Append($" {node.ObjValue} ");
+    }
+
+    public void Visit(BinaryIntegerNode node)
+    {
+        _builder.Append($" {node.ObjValue} ");
+    }
+
+    public void Visit(OctalIntegerNode node)
+    {
+        _builder.Append($" {node.ObjValue} ");
+    }
+
     public void Visit(BooleanNode node)
     {
         _builder.Append($" {node.Value} ");

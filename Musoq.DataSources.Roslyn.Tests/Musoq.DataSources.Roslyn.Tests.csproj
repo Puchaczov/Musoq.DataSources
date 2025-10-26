@@ -16,9 +16,9 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
-        <PackageReference Include="Musoq.Converter" Version="4.1.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="8.1.0" />
-        <PackageReference Include="Musoq.Schema" Version="8.1.0" />
+        <PackageReference Include="Musoq.Converter" Version="5.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="9.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="9.0.0" />
         <!-- pin required for tests nuget packages, at least for now -->
         <PackageReference Include="NUnit" Version="3.14.0" />
         <PackageReference Include="NUnit.Analyzers" Version="3.9.0"/>

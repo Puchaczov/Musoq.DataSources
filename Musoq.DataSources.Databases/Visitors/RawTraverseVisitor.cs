@@ -36,6 +36,20 @@ public class RawTraverseVisitor<TExpressionVisitor> : IExpressionVisitor
         node.Accept(Visitor);
     }
 
+    public void Visit(HexIntegerNode node)
+    {
+        node.Accept(Visitor);
+    }
+
+    public void Visit(BinaryIntegerNode node)
+    {
+        node.Accept(Visitor);
+    }
+
+    public void Visit(OctalIntegerNode node)
+    {
+    }
+
     public virtual void Visit(BooleanNode node)
     {
         node.Accept(Visitor);
