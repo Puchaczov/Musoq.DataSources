@@ -39,15 +39,15 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
-        <PackageReference Include="Microsoft.Build" Version="17.7.2" Condition="'$(IsFinalBuild)' == 'true'" />
-        <PackageReference Include="Microsoft.Build.Framework" Version="17.7.2" Condition="'$(IsFinalBuild)' == 'true'" />
-        <PackageReference Include="Microsoft.Build" Version="17.7.2" Condition="'$(IsFinalBuild)' == 'false'">
+        <PackageReference Include="Microsoft.Build" Version="17.13.26" Condition="'$(IsFinalBuild)' == 'true'" />
+        <PackageReference Include="Microsoft.Build.Framework" Version="17.13.26" Condition="'$(IsFinalBuild)' == 'true'" />
+        <PackageReference Include="Microsoft.Build" Version="17.13.26" Condition="'$(IsFinalBuild)' == 'false'">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Build.Framework" Version="17.7.2" Condition="'$(IsFinalBuild)' == 'false'" >
+        <PackageReference Include="Microsoft.Build.Framework" Version="17.13.26" Condition="'$(IsFinalBuild)' == 'false'">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Build.Locator" Version="1.6.10" />
+        <PackageReference Include="Microsoft.Build.Locator" Version="1.10.2" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0" />
