@@ -11,6 +11,7 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class AttributeEntity
 {
+    private const string AttributeSuffix = "Attribute";
     private readonly AttributeData _attributeData;
 
     /// <summary>
@@ -25,7 +26,18 @@ public class AttributeEntity
     /// <summary>
     /// Gets the name of the attribute.
     /// </summary>
-    public string? Name => _attributeData.AttributeClass?.Name;
+    public string? Name
+    {
+        get
+        {
+            var name = _attributeData.AttributeClass?.Name;
+            if (name?.EndsWith(AttributeSuffix) == true && name.Length > AttributeSuffix.Length)
+            {
+                return name.Substring(0, name.Length - AttributeSuffix.Length);
+            }
+            return name;
+        }
+    }
 
     /// <summary>
     /// Gets the constructor arguments of the attribute as strings.
