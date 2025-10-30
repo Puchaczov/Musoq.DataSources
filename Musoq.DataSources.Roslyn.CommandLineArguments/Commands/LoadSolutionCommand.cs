@@ -1,25 +1,33 @@
+using System.Net.Http.Json;
 using Spectre.Console.Cli;
 using Musoq.DataSources.Roslyn.CommandLineArguments.Settings;
+using Musoq.DataSources.Roslyn.CommandLineArguments.Dtos;
 
 namespace Musoq.DataSources.Roslyn.CommandLineArguments.Commands;
 
-public class LoadSolutionCommand : AsyncCommand<LoadSolutionSettings>
+public class LoadSolutionCommand : CliCommandBase<LoadSolutionSettings>
 {
-    private readonly Func<string, string?[], Task<int>> _invokeAsync;
-
-    public LoadSolutionCommand(Func<string, string?[], Task<int>> invokeAsync)
+    public override Task<int> ExecuteAsync(CommandContext context, LoadSolutionSettings settings)
     {
-        _invokeAsync = invokeAsync;
-    }
-
-    public override async Task<int> ExecuteAsync(CommandContext context, LoadSolutionSettings settings)
-    {
-        return await _invokeAsync("load", new[]
+        var dto = new LoadBucketRequestDto
         {
-            "csharp", "solution", "load",
-            "--solution-file-path", settings.Path,
-            "--bucket", settings.Bucket,
-            "--cache-directory-path", settings.CacheDirectoryPath
-        });
+            SchemaName = "csharp",
+            Arguments =
+            [
+                "solution",
+                "load",
+                "--solution-file-path",
+                settings.Path,
+                "--cache-directory-path",
+                settings.CacheDirectoryPath
+            ]
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"bucket/load/{settings.Bucket}")
+        {
+            Content = JsonContent.Create(dto)
+        };
+
+        return InvokeAsync(context, request);
     }
 }

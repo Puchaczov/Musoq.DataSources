@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Roslyn.CommandLineArguments;
 
 public static class SpectreArguments
 {
-    public static void ConfigureCommands(IConfigurator config, Func<string, string?[], Task<int>> invokeAsync)
+    public static void ConfigureCommands(IConfigurator config, Func<HttpRequestMessage, Task<int>> invokeAsync)
     {
         config.AddBranch("csharp", csharp =>
         {

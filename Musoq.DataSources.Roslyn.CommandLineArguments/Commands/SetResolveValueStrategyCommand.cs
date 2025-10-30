@@ -1,24 +1,34 @@
+using System.Net.Http.Json;
 using Spectre.Console.Cli;
 using Musoq.DataSources.Roslyn.CommandLineArguments.Settings;
+using Musoq.DataSources.Roslyn.CommandLineArguments.Dtos;
 
 namespace Musoq.DataSources.Roslyn.CommandLineArguments.Commands;
 
-public class SetResolveValueStrategyCommand : AsyncCommand<SetResolveValueStrategySettings>
+public class SetResolveValueStrategyCommand : CliCommandBase<SetResolveValueStrategySettings>
 {
-    private readonly Func<string, string?[], Task<int>> _invokeAsync;
-
-    public SetResolveValueStrategyCommand(Func<string, string?[], Task<int>> invokeAsync)
+    public override Task<int> ExecuteAsync(CommandContext context, SetResolveValueStrategySettings settings)
     {
-        _invokeAsync = invokeAsync;
-    }
-
-    public override async Task<int> ExecuteAsync(CommandContext context, SetResolveValueStrategySettings settings)
-    {
-        return await _invokeAsync("set", new[]
+        var dto = new SetBucketRequestDto
         {
-            "csharp", "solution", "resolve", "value", "strategy", "set",
-            "--bucket", settings.Bucket,
-            "--value", settings.Strategy
-        });
+            SchemaName = "csharp",
+            Arguments =
+            [
+                "solution",
+                "resolve",
+                "value",
+                "strategy",
+                "set",
+                "--value",
+                settings.Strategy
+            ]
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"bucket/set/{settings.Bucket}")
+        {
+            Content = JsonContent.Create(dto)
+        };
+
+        return InvokeAsync(context, request);
     }
 }

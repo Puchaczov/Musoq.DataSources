@@ -1,23 +1,30 @@
+using System.Net.Http.Json;
 using Spectre.Console.Cli;
 using Musoq.DataSources.Roslyn.CommandLineArguments.Settings;
+using Musoq.DataSources.Roslyn.CommandLineArguments.Dtos;
 
 namespace Musoq.DataSources.Roslyn.CommandLineArguments.Commands;
 
-public class GetCacheCommand : AsyncCommand<BucketSettings>
+public class GetCacheCommand : CliCommandBase<BucketSettings>
 {
-    private readonly Func<string, string?[], Task<int>> _invokeAsync;
-
-    public GetCacheCommand(Func<string, string?[], Task<int>> invokeAsync)
+    public override Task<int> ExecuteAsync(CommandContext context, BucketSettings settings)
     {
-        _invokeAsync = invokeAsync;
-    }
-
-    public override async Task<int> ExecuteAsync(CommandContext context, BucketSettings settings)
-    {
-        return await _invokeAsync("get", new[]
+        var dto = new GetBucketRequestDto
         {
-            "csharp", "solution", "cache", "get",
-            "--bucket", settings.Bucket
-        });
+            SchemaName = "csharp",
+            Arguments =
+            [
+                "solution",
+                "cache",
+                "get"
+            ]
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"bucket/get/{settings.Bucket}")
+        {
+            Content = JsonContent.Create(dto)
+        };
+
+        return InvokeAsync(context, request);
     }
 }

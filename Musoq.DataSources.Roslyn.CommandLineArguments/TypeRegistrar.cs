@@ -26,21 +26,14 @@ public sealed class TypeRegistrar : ITypeRegistrar
         return new TypeResolver(_registrations);
     }
 
-    private sealed class TypeResolver : ITypeResolver
+    private sealed class TypeResolver(Dictionary<Type, Func<object>> registrations) : ITypeResolver
     {
-        private readonly Dictionary<Type, Func<object>> _registrations;
-
-        public TypeResolver(Dictionary<Type, Func<object>> registrations)
-        {
-            _registrations = registrations;
-        }
-
         public object? Resolve(Type? type)
         {
             if (type == null)
                 return null;
 
-            if (_registrations.TryGetValue(type, out var factory))
+            if (registrations.TryGetValue(type, out var factory))
             {
                 return factory();
             }
