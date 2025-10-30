@@ -13,7 +13,7 @@ using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 
-namespace Musoq.DataSources.Roslyn.CoconaCommands;
+namespace Musoq.DataSources.Roslyn.CliCommands;
 
 internal class SolutionOperationsCommand(ILogger logger)
 {
