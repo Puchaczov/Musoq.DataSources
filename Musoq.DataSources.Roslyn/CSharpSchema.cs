@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
-using Musoq.DataSources.Roslyn.CoconaCommands;
+using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;

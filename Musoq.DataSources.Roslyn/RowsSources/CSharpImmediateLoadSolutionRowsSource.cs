@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
-using Musoq.DataSources.Roslyn.CoconaCommands;
+using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
@@ -62,10 +62,10 @@ internal class CSharpImmediateLoadSolutionRowsSource(
         
         await Parallel.ForEachAsync(solutionEntity.Projects, cancellationToken, async (project, token) =>
         {
-            await Parallel.ForEachAsync(project.Documents, token, async (document, _) =>
+            foreach (var document in project.Documents)
             {
-                await document.InitializeAsync();
-            });
+                await document.InitializeAsync(token);
+            }
         });
         
         logger.LogTrace("Solution initialized.");

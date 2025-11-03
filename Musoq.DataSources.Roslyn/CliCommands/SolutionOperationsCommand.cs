@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -13,7 +14,7 @@ using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 
-namespace Musoq.DataSources.Roslyn.CoconaCommands;
+namespace Musoq.DataSources.Roslyn.CliCommands;
 
 internal class SolutionOperationsCommand(ILogger logger)
 {
@@ -43,9 +44,8 @@ internal class SolutionOperationsCommand(ILogger logger)
         }
         
         var workspace = MSBuildWorkspace.Create();
-        var solutionLoadLogger = new SolutionLoadLogger(logger);
         var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
-        var solution = await workspace.OpenSolutionAsync(solutionFilePath, solutionLoadLogger, projectLoadProgressLogger, cancellationToken: cancellationToken);
+        var solution = await workspace.OpenSolutionAsync(solutionFilePath, projectLoadProgressLogger, cancellationToken: cancellationToken);
         
         logger.LogTrace("Initializing solution");
         

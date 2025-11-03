@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Musoq.DataSources.Roslyn.CoconaCommands;
+using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
@@ -53,10 +53,10 @@ public class NugetResolveRawTests
         
         await Parallel.ForEachAsync(solutionEntity.Projects, CancellationToken.None, async (project, token) =>
         {
-            await Parallel.ForEachAsync(project.Documents, token, async (document, _) =>
+            foreach (var document in project.Documents)
             {
-                await document.InitializeAsync();
-            });
+                await document.InitializeAsync(token);
+            }
         });
 
         var projects = solutionEntity.Projects;
