@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>2.0.0</Version>
+        <Version>2.0.2</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -13,14 +13,12 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
         <IsFinalBuild>false</IsFinalBuild>
-    </PropertyGroup>
-    
-    <PropertyGroup>
-        <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
     </PropertyGroup>
     
     <ItemGroup>
@@ -34,32 +32,26 @@
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="ConsoleAppFramework" Version="5.2.4">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
-        <PackageReference Include="Microsoft.Build" Version="17.13.26" />
-        <PackageReference Include="Microsoft.Build.Framework" Version="17.13.26">
-            <PrivateAssets>none</PrivateAssets>
-            <IncludeAssets>compile; runtime; native</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="Microsoft.Build.Locator" Version="1.10.2" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0">
-            <PrivateAssets>all</PrivateAssets>
+        <PackageReference Include="ConsoleAppFramework" Version="5.2.4" />
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" >
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0">
-            <PrivateAssets>all</PrivateAssets>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" >
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0" >
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.10" />
         <PackageReference Include="Musoq.Parser" Version="5.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="7.0.0" />
+        <PackageReference Include="Musoq.Plugins" Version="7.0.0" >
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
         <PackageReference Include="Musoq.Schema" Version="9.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
@@ -106,20 +98,5 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
-    
-    <!-- Copy Microsoft.Build.Framework.dll from NuGet cache to output directory -->
-    <Target Name="CopyMicrosoftBuildFramework" AfterTargets="Build" BeforeTargets="Pack">
-        <ItemGroup>
-            <MicrosoftBuildFrameworkDll Include="$(NuGetPackageRoot)microsoft.build.framework\17.13.26\lib\net472\Microsoft.Build.Framework.dll" />
-        </ItemGroup>
-        <Copy SourceFiles="@(MicrosoftBuildFrameworkDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-        <!-- Add to build output for packaging -->
-        <ItemGroup>
-            <_PackageFiles Include="$(OutDir)Microsoft.Build.Framework.dll">
-                <BuildAction>None</BuildAction>
-                <PackagePath>lib/net8.0</PackagePath>
-            </_PackageFiles>
-        </ItemGroup>
-    </Target>
 
 </Project>

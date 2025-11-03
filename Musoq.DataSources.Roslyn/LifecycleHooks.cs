@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,7 +32,15 @@ public static class LifecycleHooks
     {
         if (MSBuildLocator.CanRegister)
         {
-            MSBuildLocator.RegisterDefaults();
+            var msBuild = MSBuildLocator.QueryVisualStudioInstances(new VisualStudioInstanceQueryOptions()
+                {
+                    AllowAllRuntimeVersions = true,
+                    AllowAllDotnetLocations = true,
+                    DiscoveryTypes = DiscoveryType.DotNetSdk
+                }).OrderByDescending(instance => instance.Version)
+                .First();
+            
+            MSBuildLocator.RegisterInstance(msBuild);
         }
         
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>

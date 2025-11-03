@@ -62,10 +62,10 @@ internal class CSharpImmediateLoadSolutionRowsSource(
         
         await Parallel.ForEachAsync(solutionEntity.Projects, cancellationToken, async (project, token) =>
         {
-            await Parallel.ForEachAsync(project.Documents, token, async (document, _) =>
+            foreach (var document in project.Documents)
             {
-                await document.InitializeAsync();
-            });
+                await document.InitializeAsync(token);
+            }
         });
         
         logger.LogTrace("Solution initialized.");

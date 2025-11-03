@@ -1,6 +1,5 @@
 using Spectre.Console.Cli;
 using Musoq.DataSources.Roslyn.CommandLineArguments.Commands;
-using Musoq.DataSources.Roslyn.CommandLineArguments.Settings;
 
 namespace Musoq.DataSources.Roslyn.CommandLineArguments;
 

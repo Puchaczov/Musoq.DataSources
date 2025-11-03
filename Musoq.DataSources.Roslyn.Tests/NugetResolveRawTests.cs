@@ -53,10 +53,10 @@ public class NugetResolveRawTests
         
         await Parallel.ForEachAsync(solutionEntity.Projects, CancellationToken.None, async (project, token) =>
         {
-            await Parallel.ForEachAsync(project.Documents, token, async (document, _) =>
+            foreach (var document in project.Documents)
             {
-                await document.InitializeAsync();
-            });
+                await document.InitializeAsync(token);
+            }
         });
 
         var projects = solutionEntity.Projects;

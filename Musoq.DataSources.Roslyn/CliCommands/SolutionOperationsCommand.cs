@@ -44,9 +44,8 @@ internal class SolutionOperationsCommand(ILogger logger)
         }
         
         var workspace = MSBuildWorkspace.Create();
-        var solutionLoadLogger = new SolutionLoadLogger(logger);
         var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
-        var solution = await workspace.OpenSolutionAsync(solutionFilePath, solutionLoadLogger, projectLoadProgressLogger, cancellationToken: cancellationToken);
+        var solution = await workspace.OpenSolutionAsync(solutionFilePath, projectLoadProgressLogger, cancellationToken: cancellationToken);
         
         logger.LogTrace("Initializing solution");
         
