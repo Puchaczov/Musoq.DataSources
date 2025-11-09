@@ -1,6 +1,10 @@
-﻿using Musoq.Schema;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Sqlite;
 
@@ -58,6 +62,34 @@ public class SqliteSchema : SchemaBase
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
         return new SqliteRowSource(runtimeContext);
+    }
+
+    /// <summary>
+    /// Gets the constructor information for a specific data source method (dynamic table).
+    /// </summary>
+    /// <param name="methodName">The name of the table to get constructor information for.</param>
+    /// <param name="runtimeContext">The runtime context.</param>
+    /// <returns>An array of SchemaMethodInfo objects representing the table's constructors.</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []
+        );
+
+        return [new SchemaMethodInfo(methodName, constructorInfo)];
+    }
+
+    /// <summary>
+    /// Gets constructor information for all data source methods.
+    /// For Sqlite, tables are dynamic and discovered at runtime, so this returns an empty array.
+    /// </summary>
+    /// <param name="runtimeContext">The runtime context.</param>
+    /// <returns>An empty array since table names are dynamic.</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return [];
     }
     
     private static MethodsAggregator CreateLibrary()
