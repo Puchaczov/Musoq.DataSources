@@ -15,7 +15,9 @@ using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.RowsSources;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Roslyn;
 
@@ -486,6 +488,47 @@ public class CSharpSchema : SchemaBase
         }
 
         return accessTokens;
+    }
+
+    /// <summary>
+    /// Gets raw information's about specific method in the schema.
+    /// </summary>
+    /// <param name="methodName">Method name</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Data sources constructors</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName switch
+        {
+            "solution" => CreateSolutionMethodInfo(),
+            _ => throw new NotSupportedException($"Method '{methodName}' is not supported. Available methods: solution")
+        };
+    }
+
+    /// <summary>
+    /// Gets raw information's about all tables in the schema.
+    /// </summary>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Data sources constructors</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return CreateSolutionMethodInfo();
+    }
+
+    private static SchemaMethodInfo[] CreateSolutionMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string))
+            ]);
+
+        return
+        [
+            new SchemaMethodInfo("solution", constructorInfo)
+        ];
     }
 
     private static MethodsAggregator CreateLibrary()

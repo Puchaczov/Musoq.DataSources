@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security;
 using LibGit2Sharp;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Git;
 
@@ -18,6 +22,7 @@ namespace Musoq.DataSources.Git;
 public class GitSchema : SchemaBase
 {
     private const string SchemaName = "Git";
+    private const string RepositoryTable = "repository";
     private readonly Func<string, Repository> _createRepository;
     
     /// <virtual-constructors>
@@ -205,11 +210,41 @@ public class GitSchema : SchemaBase
     {
         switch (name.ToLowerInvariant())
         {
-            case "repository":
+            case RepositoryTable:
                 return new RepositoryTable();
         }
 
         return base.GetTableByName(name, runtimeContext, parameters);
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            RepositoryTable => [CreateRepositoryMethodInfo()],
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: {RepositoryTable}")
+        };
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return [CreateRepositoryMethodInfo()];
+    }
+
+    private static SchemaMethodInfo CreateRepositoryMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(RepositoryTable, constructorInfo);
     }
 
     /// <summary>
@@ -237,7 +272,7 @@ public class GitSchema : SchemaBase
         
         switch (name.ToLowerInvariant())
         {
-            case "repository":
+            case RepositoryTable:
                 return new RepositoryRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
         }
 

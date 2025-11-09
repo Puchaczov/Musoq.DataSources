@@ -1,6 +1,9 @@
-﻿using Musoq.Schema;
+﻿using System;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Postgres;
 
@@ -59,6 +62,38 @@ public class PostgresSchema : SchemaBase
     public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
     {
         return new PostgresRowSource(runtimeContext, (string)parameters[0]);
+    }
+
+    /// <summary>
+    /// Gets raw information's about specific method in the schema.
+    /// </summary>
+    /// <param name="methodName">Method name</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Data sources constructors</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("schemaName", typeof(string))
+            ]);
+
+        return
+        [
+            new SchemaMethodInfo(methodName, constructorInfo)
+        ];
+    }
+
+    /// <summary>
+    /// Gets raw information's about all tables in the schema.
+    /// </summary>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Data sources constructors</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return [];
     }
     
     private static MethodsAggregator CreateLibrary()

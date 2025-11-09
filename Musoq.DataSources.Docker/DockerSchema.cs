@@ -5,7 +5,9 @@ using Musoq.DataSources.Docker.Networks;
 using Musoq.DataSources.Docker.Volumes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Docker;
 
@@ -182,6 +184,82 @@ public class DockerSchema : SchemaBase
             VolumesTableName => new VolumesSource(_dockerApi),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
+    }
+
+    /// <summary>
+    /// Gets raw constructor information for a specific data source method.
+    /// </summary>
+    /// <param name="methodName">Name of the data source method</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of constructor information for the specified method</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            ContainersTableName => [CreateContainersMethodInfo()],
+            ImagesTableName => [CreateImagesMethodInfo()],
+            NetworksTableName => [CreateNetworksMethodInfo()],
+            VolumesTableName => [CreateVolumesMethodInfo()],
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {DockerSchemaName} schema. " +
+                $"Available data sources: {string.Join(", ", ContainersTableName, ImagesTableName, NetworksTableName, VolumesTableName)}")
+        };
+    }
+
+    /// <summary>
+    /// Gets raw constructor information for all data source methods in the schema.
+    /// </summary>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of constructor information for all methods</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return
+        [
+            CreateContainersMethodInfo(),
+            CreateImagesMethodInfo(),
+            CreateNetworksMethodInfo(),
+            CreateVolumesMethodInfo()
+        ];
+    }
+
+    private static SchemaMethodInfo CreateContainersMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(ContainersTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateImagesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(ImagesTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateNetworksMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(NetworksTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateVolumesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(VolumesTableName, constructorInfo);
     }
 
     private static MethodsAggregator CreateLibrary()

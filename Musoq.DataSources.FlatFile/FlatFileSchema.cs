@@ -3,6 +3,7 @@ using Musoq.Schema.Exceptions;
 using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
+using System;
 using System.Collections.Generic;
 using Musoq.Schema;
 
@@ -82,6 +83,38 @@ public class FlatFileSchema : SchemaBase
         constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<FlatFileSource>("file"));
 
         return constructors.ToArray();
+    }
+
+    /// <summary>
+    /// Gets raw constructor information for a specific data source method.
+    /// </summary>
+    /// <param name="methodName">Name of the data source method</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of constructor information for the specified method</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            "file" => [CreateFileMethodInfo()],
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: file")
+        };
+    }
+
+    /// <summary>
+    /// Gets raw constructor information for all data source methods in the schema.
+    /// </summary>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of constructor information for all methods</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return [CreateFileMethodInfo()];
+    }
+
+    private static SchemaMethodInfo CreateFileMethodInfo()
+    {
+        return TypeHelper.GetSchemaMethodInfosForType<FlatFileSource>("file")[0];
     }
 
     private static MethodsAggregator CreateLibrary()

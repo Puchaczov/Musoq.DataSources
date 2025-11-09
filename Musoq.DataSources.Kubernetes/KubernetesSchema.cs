@@ -19,7 +19,9 @@ using Musoq.DataSources.Kubernetes.Services;
 using Musoq.DataSources.Kubernetes.StatefulSets;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Kubernetes;
 
@@ -557,6 +559,258 @@ public class KubernetesSchema : SchemaBase
                     api => api.ListEvents() : api => api.ListNamespacedEvents((string)parameters[0])),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
+    }
+
+    /// <summary>
+    /// Gets raw constructor information for a specific data source method.
+    /// </summary>
+    /// <param name="methodName">Name of the data source method</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of constructor information for the specified method</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            PodsTableName => [CreatePodsMethodInfo()],
+            ServicesTableName => [CreateServicesMethodInfo()],
+            DeploymentsTableName => [CreateDeploymentsMethodInfo()],
+            ReplicaSetsTableName => [CreateReplicaSetsMethodInfo()],
+            NodesTableName => [CreateNodesMethodInfo()],
+            SecretsTableName => [CreateSecretsMethodInfo()],
+            ConfigMapsTableName => [CreateConfigMapsMethodInfo()],
+            IngressesTableName => [CreateIngressesMethodInfo()],
+            PersistentVolumesTableName => [CreatePersistentVolumesMethodInfo()],
+            PersistentVolumeClaimsTableName => [CreatePersistentVolumeClaimsMethodInfo()],
+            JobsTableName => [CreateJobsMethodInfo()],
+            CronJobsTableName => [CreateCronJobsMethodInfo()],
+            StatefulSetsTableName => [CreateStatefulSetsMethodInfo()],
+            DaemonSetsTableName => [CreateDaemonSetsMethodInfo()],
+            PodContainersTableName => [CreatePodContainersMethodInfo()],
+            PodLogsTableName => [CreatePodLogsMethodInfo()],
+            EventsTableName => CreateEventsMethodInfos(),
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: {string.Join(", ", PodsTableName, ServicesTableName, DeploymentsTableName, ReplicaSetsTableName, NodesTableName, SecretsTableName, ConfigMapsTableName, IngressesTableName, PersistentVolumesTableName, PersistentVolumeClaimsTableName, JobsTableName, CronJobsTableName, StatefulSetsTableName, DaemonSetsTableName, PodContainersTableName, PodLogsTableName, EventsTableName)}")
+        };
+    }
+
+    /// <summary>
+    /// Gets raw constructor information for all data source methods in the schema.
+    /// </summary>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of constructor information for all methods</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        var constructors = new List<SchemaMethodInfo>
+        {
+            CreatePodsMethodInfo(),
+            CreateServicesMethodInfo(),
+            CreateDeploymentsMethodInfo(),
+            CreateReplicaSetsMethodInfo(),
+            CreateNodesMethodInfo(),
+            CreateSecretsMethodInfo(),
+            CreateConfigMapsMethodInfo(),
+            CreateIngressesMethodInfo(),
+            CreatePersistentVolumesMethodInfo(),
+            CreatePersistentVolumeClaimsMethodInfo(),
+            CreateJobsMethodInfo(),
+            CreateCronJobsMethodInfo(),
+            CreateStatefulSetsMethodInfo(),
+            CreateDaemonSetsMethodInfo(),
+            CreatePodContainersMethodInfo(),
+            CreatePodLogsMethodInfo()
+        };
+
+        constructors.AddRange(CreateEventsMethodInfos());
+
+        return constructors.ToArray();
+    }
+
+    private static SchemaMethodInfo CreatePodsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(PodsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateServicesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(ServicesTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateDeploymentsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(DeploymentsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateReplicaSetsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(ReplicaSetsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateNodesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(NodesTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateSecretsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(SecretsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateConfigMapsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(ConfigMapsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateIngressesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(IngressesTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreatePersistentVolumesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(PersistentVolumesTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreatePersistentVolumeClaimsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(PersistentVolumeClaimsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateJobsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(JobsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateCronJobsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(CronJobsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateStatefulSetsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(StatefulSetsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateDaemonSetsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(DaemonSetsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreatePodContainersMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        return new SchemaMethodInfo(PodContainersTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreatePodLogsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("podName", typeof(string)),
+                ("containerName", typeof(string)),
+                ("namespaceName", typeof(string))
+            ]);
+
+        return new SchemaMethodInfo(PodLogsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo[] CreateEventsMethodInfos()
+    {
+        var eventsInfo1 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        var eventsInfo2 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("namespaceName", typeof(string))
+            ]);
+
+        return
+        [
+            new SchemaMethodInfo(EventsTableName, eventsInfo1),
+            new SchemaMethodInfo(EventsTableName, eventsInfo2)
+        ];
     }
 
     private static MethodsAggregator CreateLibrary()
