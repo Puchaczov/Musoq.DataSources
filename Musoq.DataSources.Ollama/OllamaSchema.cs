@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
+using System;
 
 namespace Musoq.DataSources.Ollama;
 
@@ -103,6 +105,59 @@ public class OllamaSchema : SchemaBase
     public override SchemaMethodInfo[] GetConstructors()
     {
         return [];
+    }
+
+    /// <summary>
+    /// Gets raw constructor information for a specific data source method.
+    /// </summary>
+    /// <param name="methodName">Name of the data source method</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of constructor information for the specified method</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            "llm" => CreateLlmMethodInfos(),
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {OllamaSchemaName} schema. " +
+                $"Available data sources: llm")
+        };
+    }
+
+    /// <summary>
+    /// Gets raw constructor information for all data source methods in the schema.
+    /// </summary>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of constructor information for all methods</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return CreateLlmMethodInfos();
+    }
+
+    private static SchemaMethodInfo[] CreateLlmMethodInfos()
+    {
+        var llmInfo1 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("model", typeof(string))
+            ]);
+
+        var llmInfo2 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("model", typeof(string)),
+                ("temperature", typeof(decimal))
+            ]);
+
+        return
+        [
+            new SchemaMethodInfo("llm", llmInfo1),
+            new SchemaMethodInfo("llm", llmInfo2)
+        ];
     }
 
     private static MethodsAggregator CreateLibrary()

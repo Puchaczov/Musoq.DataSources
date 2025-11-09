@@ -98,7 +98,39 @@ public class TimeSchema : SchemaBase
 
         return constructors.ToArray();
     }
-        
+
+    /// <summary>
+    /// Gets the constructor information for a specific data source method.
+    /// </summary>
+    /// <param name="methodName">The name of the method to get constructor information for.</param>
+    /// <param name="runtimeContext">The runtime context.</param>
+    /// <returns>An array of SchemaMethodInfo objects representing the method's constructors.</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            "interval" => [CreateIntervalMethodInfo()],
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by time schema. " +
+                $"Available data sources: interval")
+        };
+    }
+
+    /// <summary>
+    /// Gets constructor information for all data source methods.
+    /// </summary>
+    /// <param name="runtimeContext">The runtime context.</param>
+    /// <returns>An array of all SchemaMethodInfo objects.</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return [CreateIntervalMethodInfo()];
+    }
+
+    private static SchemaMethodInfo CreateIntervalMethodInfo()
+    {
+        return TypeHelper.GetSchemaMethodInfosForType<TimeSource>("interval")[0];
+    }
+
     private static MethodsAggregator CreateLibrary()
     {
         var methodsManager = new MethodsManager();

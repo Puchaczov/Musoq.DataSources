@@ -1,7 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.SeparatedValues
 {
@@ -134,6 +139,88 @@ namespace Musoq.DataSources.SeparatedValues
             }
 
             return base.GetRowSource(name, runtimeContext, parameters);
+        }
+
+        /// <summary>
+        /// Gets the constructor information for a specific data source method.
+        /// </summary>
+        /// <param name="methodName">The name of the method to get constructor information for.</param>
+        /// <param name="runtimeContext">The runtime context.</param>
+        /// <returns>An array of SchemaMethodInfo objects representing the method's constructors.</returns>
+        public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+        {
+            return methodName.ToLowerInvariant() switch
+            {
+                "comma" => [CreateCommaMethodInfo()],
+                "tab" => [CreateTabMethodInfo()],
+                "semicolon" => [CreateSemicolonMethodInfo()],
+                _ => throw new NotSupportedException(
+                    $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                    $"Available data sources: comma, tab, semicolon")
+            };
+        }
+
+        /// <summary>
+        /// Gets constructor information for all data source methods.
+        /// </summary>
+        /// <param name="runtimeContext">The runtime context.</param>
+        /// <returns>An array of all SchemaMethodInfo objects.</returns>
+        public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+        {
+            return
+            [
+                CreateCommaMethodInfo(),
+                CreateTabMethodInfo(),
+                CreateSemicolonMethodInfo()
+            ];
+        }
+
+        private static SchemaMethodInfo CreateCommaMethodInfo()
+        {
+            var constructorInfo = new ConstructorInfo(
+                originConstructorInfo: null!,
+                supportsInterCommunicator: false,
+                arguments:
+                [
+                    ("path", typeof(string)),
+                    ("hasHeader", typeof(bool)),
+                    ("skipLines", typeof(int))
+                ]
+            );
+
+            return new SchemaMethodInfo("comma", constructorInfo);
+        }
+
+        private static SchemaMethodInfo CreateTabMethodInfo()
+        {
+            var constructorInfo = new ConstructorInfo(
+                originConstructorInfo: null!,
+                supportsInterCommunicator: false,
+                arguments:
+                [
+                    ("path", typeof(string)),
+                    ("hasHeader", typeof(bool)),
+                    ("skipLines", typeof(int))
+                ]
+            );
+
+            return new SchemaMethodInfo("tab", constructorInfo);
+        }
+
+        private static SchemaMethodInfo CreateSemicolonMethodInfo()
+        {
+            var constructorInfo = new ConstructorInfo(
+                originConstructorInfo: null!,
+                supportsInterCommunicator: false,
+                arguments:
+                [
+                    ("path", typeof(string)),
+                    ("hasHeader", typeof(bool)),
+                    ("skipLines", typeof(int))
+                ]
+            );
+
+            return new SchemaMethodInfo("semicolon", constructorInfo);
         }
 
         private static MethodsAggregator CreateLibrary()

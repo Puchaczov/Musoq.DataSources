@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Archives;
 
@@ -15,6 +18,7 @@ namespace Musoq.DataSources.Archives;
 public class ArchivesSchema : SchemaBase
 {
     private const string SchemaName = "Archives";
+    private const string FileTable = "file";
 
     /// <virtual-constructors>
     /// <virtual-constructor>
@@ -75,9 +79,39 @@ public class ArchivesSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            "file" => new ArchivesRowSource((string) parameters[0]),
+            FileTable => new ArchivesRowSource((string) parameters[0]),
             _ => throw new NotSupportedException($"Source {parameters[0]} is not supported.")
         };
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            FileTable => [CreateFileMethodInfo()],
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: {FileTable}")
+        };
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return [CreateFileMethodInfo()];
+    }
+
+    private static SchemaMethodInfo CreateFileMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(FileTable, constructorInfo);
     }
 
     private static MethodsAggregator CreateLibrary()

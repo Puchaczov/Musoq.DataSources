@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.DataSources.CANBus.Messages;
 using Musoq.DataSources.CANBus.SeparatedValuesFromFile;
@@ -6,6 +8,7 @@ using Musoq.DataSources.CANBus.Signals;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.CANBus;
 
@@ -19,6 +22,9 @@ namespace Musoq.DataSources.CANBus;
 public class CANBusSchema : SchemaBase
 {
     private const string SchemaName = "can";
+    private const string SeparatedValuesTable = "separatedvalues";
+    private const string MessagesTable = "messages";
+    private const string SignalsTable = "signals";
 
     private readonly Func<string, ICANBusApi> _createCanBusApi;
     
@@ -130,13 +136,110 @@ public class CANBusSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            "separatedvalues" => new SeparatedValuesFromFileCanFramesTable(
+            SeparatedValuesTable => new SeparatedValuesFromFileCanFramesTable(
                 _createCanBusApi((string)parameters[1]), 
                 runtimeContext.EndWorkToken),
-            "messages" => new MessagesTable(),
-            "signals" => new SignalsTable(),
+            MessagesTable => new MessagesTable(),
+            SignalsTable => new SignalsTable(),
             _ => base.GetTableByName(name, runtimeContext, parameters)
         };
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            SeparatedValuesTable => CreateSeparatedValuesMethodInfos(),
+            MessagesTable => [CreateMessagesMethodInfo()],
+            SignalsTable => [CreateSignalsMethodInfo()],
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: {string.Join(", ", SeparatedValuesTable, MessagesTable, SignalsTable)}")
+        };
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        var constructors = new List<SchemaMethodInfo>
+        {
+            CreateMessagesMethodInfo(),
+            CreateSignalsMethodInfo()
+        };
+        
+        constructors.AddRange(CreateSeparatedValuesMethodInfos());
+        
+        return constructors.ToArray();
+    }
+
+    private static SchemaMethodInfo[] CreateSeparatedValuesMethodInfos()
+    {
+        var overload1 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("csvData", typeof(string)),
+                ("dbcData", typeof(string))
+            ]
+        );
+        
+        var overload2 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("csvData", typeof(string)),
+                ("dbcData", typeof(string)),
+                ("idOfType", typeof(string))
+            ]
+        );
+        
+        var overload3 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("csvData", typeof(string)),
+                ("dbcData", typeof(string)),
+                ("idOfType", typeof(string)),
+                ("endianness", typeof(string))
+            ]
+        );
+        
+        return
+        [
+            new SchemaMethodInfo(SeparatedValuesTable, overload1),
+            new SchemaMethodInfo(SeparatedValuesTable, overload2),
+            new SchemaMethodInfo(SeparatedValuesTable, overload3)
+        ];
+    }
+
+    private static SchemaMethodInfo CreateMessagesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("dbc", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(MessagesTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateSignalsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("dbc", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(SignalsTable, constructorInfo);
     }
 
     /// <summary>
@@ -151,15 +254,15 @@ public class CANBusSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            "separatedvalues" => new SeparatedValuesFromFileCanFramesSource(
+            SeparatedValuesTable => new SeparatedValuesFromFileCanFramesSource(
                 (string)parameters[0], 
                 _createCanBusApi((string)parameters[1]), 
                 runtimeContext,
                 parameters.Length > 2 ? (string)parameters[2] : "dec",
                 parameters.Length > 3 ? (string)parameters[3] : "little"
             ),
-            "messages" => new MessagesSource(_createCanBusApi((string)parameters[0]), runtimeContext),
-            "signals" => new SignalsSource(_createCanBusApi((string)parameters[0]), runtimeContext),
+            MessagesTable => new MessagesSource(_createCanBusApi((string)parameters[0]), runtimeContext),
+            SignalsTable => new SignalsSource(_createCanBusApi((string)parameters[0]), runtimeContext),
             _ => base.GetRowSource(name, runtimeContext, parameters)
         };
     }

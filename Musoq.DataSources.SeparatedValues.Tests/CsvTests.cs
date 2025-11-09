@@ -744,8 +744,8 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
 
-            Assert.AreEqual(5, table.Columns.Count());
-            Assert.AreEqual(4, table.Count);
+            Assert.AreEqual(4, table.Columns.Count());
+            Assert.AreEqual(3, table.Count);
         }
 
         [TestMethod]
@@ -756,7 +756,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
 
-            Assert.AreEqual(5, table.Columns.Count());
+            Assert.AreEqual(4, table.Columns.Count());
             Assert.AreEqual(1, table.Count);
         }
 

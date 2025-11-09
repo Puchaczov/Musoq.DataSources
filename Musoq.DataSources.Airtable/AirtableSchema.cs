@@ -4,6 +4,9 @@ using Musoq.DataSources.Airtable.Sources.Table;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Musoq.DataSources.Airtable;
 
@@ -17,6 +20,9 @@ namespace Musoq.DataSources.Airtable;
 public class AirtableSchema : SchemaBase
 {
     private const string SchemaName = "airtable";
+    private const string BasesTable = "bases";
+    private const string BaseTable = "base";
+    private const string RecordsTable = "records";
     
     private readonly IAirtableApi? _api;
     
@@ -99,15 +105,74 @@ public class AirtableSchema : SchemaBase
     {
         return name switch
         {
-            "bases" => new AirtableBasesSchemaTable(),
-            "base" => new AirtableBaseSchemaTable(),
-            "records" => new AirtableTableSchemaTable(
+            BasesTable => new AirtableBasesSchemaTable(),
+            BaseTable => new AirtableBaseSchemaTable(),
+            RecordsTable => new AirtableTableSchemaTable(
                 _api ?? new AirtableApi(
                     runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"], 
                     runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_BASE_ID"],
                     Convert.ToString(parameters[0])), runtimeContext),
             _ => throw new NotSupportedException($"Table {name} is not supported.")
         };
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            BasesTable => [CreateBasesMethodInfo()],
+            BaseTable => [CreateBaseMethodInfo()],
+            RecordsTable => [CreateRecordsMethodInfo()],
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: {string.Join(", ", BasesTable, BaseTable, RecordsTable)}")
+        };
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return
+        [
+            CreateBasesMethodInfo(),
+            CreateBaseMethodInfo(),
+            CreateRecordsMethodInfo()
+        ];
+    }
+
+    private static SchemaMethodInfo CreateBasesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []
+        );
+
+        return new SchemaMethodInfo(BasesTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateBaseMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []
+        );
+
+        return new SchemaMethodInfo(BaseTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateRecordsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("tableName", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(RecordsTable, constructorInfo);
     }
 
     /// <summary>
@@ -122,11 +187,11 @@ public class AirtableSchema : SchemaBase
     {
         return name switch
         {
-            "bases" => new AirtableBasesRowSource(
+            BasesTable => new AirtableBasesRowSource(
                 _api ?? new AirtableApi(runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"]), runtimeContext),
-            "base" => new AirtableBaseRowSource(
+            BaseTable => new AirtableBaseRowSource(
                 _api ?? new AirtableApi(runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"], runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_BASE_ID"]), runtimeContext),
-            "records" => new AirtableTableRowSource(
+            RecordsTable => new AirtableTableRowSource(
                 _api ?? new AirtableApi(
                     runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"], 
                     runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_BASE_ID"],

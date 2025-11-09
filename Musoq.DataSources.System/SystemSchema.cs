@@ -141,6 +141,74 @@ namespace Musoq.DataSources.System
             return constructors.ToArray();
         }
 
+        /// <summary>
+        /// Gets the constructor information for a specific data source method.
+        /// </summary>
+        /// <param name="methodName">The name of the method to get constructor information for.</param>
+        /// <param name="runtimeContext">The runtime context.</param>
+        /// <returns>An array of SchemaMethodInfo objects representing the method's constructors.</returns>
+        public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+        {
+            return methodName.ToLowerInvariant() switch
+            {
+                Dual => [CreateDualMethodInfo()],
+                Range => CreateRangeMethodInfos(),
+                _ => throw new NotSupportedException(
+                    $"Data source '{methodName}' is not supported by {System} schema. " +
+                    $"Available data sources: {Dual}, {Range}")
+            };
+        }
+
+        /// <summary>
+        /// Gets constructor information for all data source methods.
+        /// </summary>
+        /// <param name="runtimeContext">The runtime context.</param>
+        /// <returns>An array of all SchemaMethodInfo objects.</returns>
+        public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+        {
+            var constructors = new List<SchemaMethodInfo>
+            {
+                CreateDualMethodInfo()
+            };
+
+            constructors.AddRange(CreateRangeMethodInfos());
+
+            return constructors.ToArray();
+        }
+
+        private static SchemaMethodInfo CreateDualMethodInfo()
+        {
+            return TypeHelper.GetSchemaMethodInfosForType<DualRowSource>(Dual)[0];
+        }
+
+        private static SchemaMethodInfo[] CreateRangeMethodInfos()
+        {
+            var rangeInfo1 = new ConstructorInfo(
+                originConstructorInfo: null!,
+                supportsInterCommunicator: false,
+                arguments:
+                [
+                    ("max", typeof(long))
+                ]
+            );
+
+            var rangeInfo2 = new ConstructorInfo(
+                originConstructorInfo: null!,
+                supportsInterCommunicator: false,
+                arguments:
+                [
+                    ("min", typeof(long)),
+                    ("max", typeof(long))
+                ]
+            );
+
+            return
+            [
+                new SchemaMethodInfo(Range, rangeInfo1),
+                new SchemaMethodInfo(Range, rangeInfo2)
+            ];
+        }
+
         private static MethodsAggregator CreateLibrary()
         {
             var methodsManager = new MethodsManager();

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Musoq.DataSources.Os.Compare.Directories;
 using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
@@ -9,7 +11,9 @@ using Musoq.DataSources.Os.Process;
 using Musoq.DataSources.Os.Zip;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Os;
 
@@ -357,6 +361,121 @@ public class OsSchema : SchemaBase
         }
 
         throw new NotSupportedException($"Unsupported row source {name}");
+    }
+
+    /// <summary>
+    /// Gets the raw constructors for a specific method.
+    /// </summary>
+    /// <param name="methodName">The name of the method</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of SchemaMethodInfo objects describing the method signatures</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            FilesTable => [CreateFilesMethodInfo()],
+            DirectoriesTable => [CreateDirectoriesMethodInfo()],
+            ZipTable => [CreateZipMethodInfo()],
+            ProcessesName => [CreateProcessesMethodInfo()],
+            DllsTable => [CreateDllsMethodInfo()],
+            DirsCompare => [CreateDirsCompareMethodInfo()],
+            Metadata => CreateMetadataMethodInfos(),
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: {string.Join(", ", FilesTable, DirectoriesTable, ZipTable, ProcessesName, DllsTable, DirsCompare, Metadata)}")
+        };
+    }
+
+    /// <summary>
+    /// Gets the raw constructors for all methods in the schema.
+    /// </summary>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Array of SchemaMethodInfo objects for all data source methods</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        var constructors = new List<SchemaMethodInfo>
+        {
+            CreateFilesMethodInfo(),
+            CreateDirectoriesMethodInfo(),
+            CreateZipMethodInfo(),
+            CreateProcessesMethodInfo(),
+            CreateDllsMethodInfo(),
+            CreateDirsCompareMethodInfo()
+        };
+        
+        constructors.AddRange(CreateMetadataMethodInfos());
+        
+        return constructors.ToArray();
+    }
+
+    private static SchemaMethodInfo CreateFilesMethodInfo()
+    {
+        return TypeHelper.GetSchemaMethodInfosForType<FilesSource>(FilesTable)[0];
+    }
+
+    private static SchemaMethodInfo CreateDirectoriesMethodInfo()
+    {
+        return TypeHelper.GetSchemaMethodInfosForType<DirectoriesSource>(DirectoriesTable)[0];
+    }
+
+    private static SchemaMethodInfo CreateZipMethodInfo()
+    {
+        return TypeHelper.GetSchemaMethodInfosForType<ZipSource>(ZipTable)[0];
+    }
+
+    private static SchemaMethodInfo CreateProcessesMethodInfo()
+    {
+        return TypeHelper.GetSchemaMethodInfosForType<ProcessesSource>(ProcessesName)[0];
+    }
+
+    private static SchemaMethodInfo CreateDllsMethodInfo()
+    {
+        return TypeHelper.GetSchemaMethodInfosForType<DllSource>(DllsTable)[0];
+    }
+
+    private static SchemaMethodInfo CreateDirsCompareMethodInfo()
+    {
+        return TypeHelper.GetSchemaMethodInfosForType<CompareDirectoriesSource>(DirsCompare)[0];
+    }
+
+    private static SchemaMethodInfo[] CreateMetadataMethodInfos()
+    {
+        var metadataInfo1 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("directoryOrFile", typeof(string))
+            ]
+        );
+        
+        var metadataInfo2 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("pathDirectoryOrFile", typeof(string)),
+                ("throwOnMetadataReadError", typeof(bool))
+            ]
+        );
+        
+        var metadataInfo3 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("directory", typeof(string)),
+                ("useSubDirectories", typeof(bool)),
+                ("throwOnMetadataReadError", typeof(bool))
+            ]
+        );
+        
+        return
+        [
+            new SchemaMethodInfo(Metadata, metadataInfo1),
+            new SchemaMethodInfo(Metadata, metadataInfo2),
+            new SchemaMethodInfo(Metadata, metadataInfo3)
+        ];
     }
 
     private static MethodsAggregator CreateLibrary()

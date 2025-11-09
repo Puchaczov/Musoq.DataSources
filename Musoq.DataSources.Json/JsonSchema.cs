@@ -2,6 +2,7 @@
 using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
+using System;
 using System.Collections.Generic;
 using Musoq.Schema;
 
@@ -72,6 +73,47 @@ namespace Musoq.DataSources.Json
             constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<JsonSource>(FileTable));
 
             return constructors.ToArray();
+        }
+
+        /// <summary>
+        /// Gets raw constructor information for a specific data source method.
+        /// </summary>
+        /// <param name="methodName">Name of the data source method</param>
+        /// <param name="runtimeContext">Runtime context</param>
+        /// <returns>Array of constructor information for the specified method</returns>
+        public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+        {
+            return methodName.ToLowerInvariant() switch
+            {
+                FileTable => [CreateFileMethodInfo()],
+                _ => throw new NotSupportedException(
+                    $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                    $"Available data sources: {FileTable}")
+            };
+        }
+
+        /// <summary>
+        /// Gets raw constructor information for all data source methods in the schema.
+        /// </summary>
+        /// <param name="runtimeContext">Runtime context</param>
+        /// <returns>Array of constructor information for all methods</returns>
+        public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+        {
+            return [CreateFileMethodInfo()];
+        }
+
+        private static SchemaMethodInfo CreateFileMethodInfo()
+        {
+            var constructorInfo = new ConstructorInfo(
+                originConstructorInfo: null!,
+                supportsInterCommunicator: false,
+                arguments:
+                [
+                    ("jsonFilePath", typeof(string)),
+                    ("jsonSchemaFilePath", typeof(string))
+                ]);
+
+            return new SchemaMethodInfo(FileTable, constructorInfo);
         }
         
         private static MethodsAggregator CreateLibrary()

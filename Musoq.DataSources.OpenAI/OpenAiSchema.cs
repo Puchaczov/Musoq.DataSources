@@ -1,4 +1,5 @@
-﻿using Musoq.Schema;
+﻿using System;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
@@ -165,6 +166,87 @@ public class OpenAiSchema : SchemaBase
         constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<OpenAiSingleRowSource>("gpt"));
 
         return constructors.ToArray();
+    }
+
+    /// <summary>
+    /// Gets raw information's about specific method in the schema.
+    /// </summary>
+    /// <param name="methodName">Method name</param>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Data sources constructors</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    {
+        return methodName switch
+        {
+            "gpt" => CreateGptMethodInfos(),
+            _ => throw new NotSupportedException($"Method '{methodName}' is not supported. Available methods: gpt")
+        };
+    }
+
+    /// <summary>
+    /// Gets raw information's about all tables in the schema.
+    /// </summary>
+    /// <param name="runtimeContext">Runtime context</param>
+    /// <returns>Data sources constructors</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    {
+        return CreateGptMethodInfos();
+    }
+
+    private static SchemaMethodInfo[] CreateGptMethodInfos()
+    {
+        var gptInfo1 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: []);
+
+        var gptInfo2 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("model", typeof(string))
+            ]);
+
+        var gptInfo3 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("model", typeof(string)),
+                ("maxTokens", typeof(int))
+            ]);
+
+        var gptInfo4 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("model", typeof(string)),
+                ("maxTokens", typeof(int)),
+                ("temperature", typeof(float))
+            ]);
+
+        var gptInfo5 = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("model", typeof(string)),
+                ("maxTokens", typeof(int)),
+                ("temperature", typeof(float)),
+                ("frequencyPenalty", typeof(float)),
+                ("presencePenalty", typeof(float))
+            ]);
+
+        return
+        [
+            new SchemaMethodInfo("gpt", gptInfo1),
+            new SchemaMethodInfo("gpt", gptInfo2),
+            new SchemaMethodInfo("gpt", gptInfo3),
+            new SchemaMethodInfo("gpt", gptInfo4),
+            new SchemaMethodInfo("gpt", gptInfo5)
+        ];
     }
 
     private static MethodsAggregator CreateLibrary()
