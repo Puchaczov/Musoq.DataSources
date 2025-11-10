@@ -24,6 +24,11 @@ public class GitSchema : SchemaBase
     private const string SchemaName = "Git";
     private const string RepositoryTable = "repository";
     private const string TagsTable = "tags";
+    private const string CommitsTable = "commits";
+    private const string BranchesTable = "branches";
+    private const string FileHistoryTable = "filehistory";
+    private const string StatusTable = "status";
+    private const string RemotesTable = "remotes";
     private readonly Func<string, Repository> _createRepository;
     
     /// <virtual-constructors>
@@ -234,6 +239,16 @@ public class GitSchema : SchemaBase
                 return new RepositoryTable();
             case TagsTable:
                 return new TagsTable();
+            case CommitsTable:
+                return new CommitsTable();
+            case BranchesTable:
+                return new BranchesTable();
+            case FileHistoryTable:
+                return new FileHistoryTable();
+            case StatusTable:
+                return new StatusTable();
+            case RemotesTable:
+                return new RemotesTable();
         }
 
         return base.GetTableByName(name, runtimeContext, parameters);
@@ -245,15 +260,28 @@ public class GitSchema : SchemaBase
         {
             RepositoryTable => [CreateRepositoryMethodInfo()],
             TagsTable => [CreateTagsMethodInfo()],
+            CommitsTable => [CreateCommitsMethodInfo()],
+            BranchesTable => [CreateBranchesMethodInfo()],
+            FileHistoryTable => [CreateFileHistoryMethodInfo()],
+            StatusTable => [CreateStatusMethodInfo()],
+            RemotesTable => [CreateRemotesMethodInfo()],
             _ => throw new NotSupportedException(
                 $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {RepositoryTable}, {TagsTable}")
+                $"Available data sources: {RepositoryTable}, {TagsTable}, {CommitsTable}, {BranchesTable}, {FileHistoryTable}, {StatusTable}, {RemotesTable}")
         };
     }
 
     public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
     {
-        return [CreateRepositoryMethodInfo(), CreateTagsMethodInfo()];
+        return [
+            CreateRepositoryMethodInfo(), 
+            CreateTagsMethodInfo(), 
+            CreateCommitsMethodInfo(), 
+            CreateBranchesMethodInfo(),
+            CreateFileHistoryMethodInfo(),
+            CreateStatusMethodInfo(),
+            CreateRemotesMethodInfo()
+        ];
     }
 
     private static SchemaMethodInfo CreateRepositoryMethodInfo()
@@ -282,6 +310,77 @@ public class GitSchema : SchemaBase
         );
 
         return new SchemaMethodInfo(TagsTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateCommitsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(CommitsTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateBranchesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(BranchesTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateFileHistoryMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string)),
+                ("filePattern", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(FileHistoryTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateStatusMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(StatusTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateRemotesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(RemotesTable, constructorInfo);
     }
 
     /// <summary>
@@ -313,6 +412,16 @@ public class GitSchema : SchemaBase
                 return new RepositoryRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
             case TagsTable:
                 return new TagsRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+            case CommitsTable:
+                return new CommitsRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+            case BranchesTable:
+                return new BranchesRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+            case FileHistoryTable:
+                return new FileHistoryRowsSource((string) parameters[0], (string) parameters[1], _createRepository, runtimeContext.EndWorkToken);
+            case StatusTable:
+                return new StatusRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+            case RemotesTable:
+                return new RemotesRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
         }
 
         return base.GetRowSource(name, runtimeContext, parameters);

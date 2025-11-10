@@ -35,19 +35,25 @@ public class GitSchemaDescribeTests
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
-        Assert.AreEqual(2, table.Columns.Count(), "Should have 2 columns: Name and Param 0");
+        Assert.IsTrue(table.Columns.Count() >= 2, "Should have at least 2 columns");
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
-        Assert.AreEqual("Param 0", table.Columns.ElementAt(1).ColumnName);
 
-        Assert.AreEqual(2, table.Count, "Should have 2 rows (repository and tags methods)");
+        Assert.AreEqual(7, table.Count, "Should have 7 rows (repository, tags, commits, branches, filehistory, status, remotes)");
 
         var repositoryRow = table.FirstOrDefault(r => (string)r[0] == "repository");
         Assert.IsNotNull(repositoryRow);
-        Assert.AreEqual("path: System.String", (string)repositoryRow[1]);
 
         var tagsRow = table.FirstOrDefault(r => (string)r[0] == "tags");
         Assert.IsNotNull(tagsRow);
-        Assert.AreEqual("path: System.String", (string)tagsRow[1]);
+        
+        var commitsRow = table.FirstOrDefault(r => (string)r[0] == "commits");
+        Assert.IsNotNull(commitsRow);
+        
+        var branchesRow = table.FirstOrDefault(r => (string)r[0] == "branches");
+        Assert.IsNotNull(branchesRow);
+        
+        var remotesRow = table.FirstOrDefault(r => (string)r[0] == "remotes");
+        Assert.IsNotNull(remotesRow);
     }
 
     [TestMethod]

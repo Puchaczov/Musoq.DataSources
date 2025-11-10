@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using LibGit2Sharp;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git.Entities;
 
@@ -23,6 +26,76 @@ public class BranchEntity
     {
         LibGitBranch = branch;
         _libGitRepository = repository;
+    }
+
+    /// <summary>
+    /// A read-only dictionary mapping column names to their respective indices.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
+
+    /// <summary>
+    /// A read-only dictionary mapping column indices to functions that access the corresponding properties.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<int, Func<BranchEntity, object?>> IndexToObjectAccessMap;
+
+    /// <summary>
+    /// An array of schema columns representing the structure of the branch entity.
+    /// </summary>
+    public static readonly ISchemaColumn[] Columns =
+    [
+        new SchemaColumn(nameof(FriendlyName), 0, typeof(string)),
+        new SchemaColumn(nameof(CanonicalName), 1, typeof(string)),
+        new SchemaColumn(nameof(IsRemote), 2, typeof(bool)),
+        new SchemaColumn(nameof(IsTracking), 3, typeof(bool)),
+        new SchemaColumn(nameof(IsCurrentRepositoryHead), 4, typeof(bool)),
+        new SchemaColumn(nameof(TrackedBranch), 5, typeof(BranchEntity)),
+        new SchemaColumn(nameof(BranchTrackingDetails), 6, typeof(BranchTrackingDetailsEntity)),
+        new SchemaColumn(nameof(Tip), 7, typeof(CommitEntity)),
+        new SchemaColumn(nameof(Commits), 8, typeof(IEnumerable<CommitEntity>)),
+        new SchemaColumn(nameof(UpstreamBranchCanonicalName), 9, typeof(string)),
+        new SchemaColumn(nameof(RemoteName), 10, typeof(string)),
+        new SchemaColumn(nameof(ParentBranch), 11, typeof(BranchEntity)),
+        new SchemaColumn(nameof(Self), 12, typeof(BranchEntity))
+    ];
+
+    /// <summary>
+    /// Static constructor to initialize the static read-only dictionaries.
+    /// </summary>
+    static BranchEntity()
+    {
+        NameToIndexMap = new Dictionary<string, int>
+        {
+            {nameof(FriendlyName), 0},
+            {nameof(CanonicalName), 1},
+            {nameof(IsRemote), 2},
+            {nameof(IsTracking), 3},
+            {nameof(IsCurrentRepositoryHead), 4},
+            {nameof(TrackedBranch), 5},
+            {nameof(BranchTrackingDetails), 6},
+            {nameof(Tip), 7},
+            {nameof(Commits), 8},
+            {nameof(UpstreamBranchCanonicalName), 9},
+            {nameof(RemoteName), 10},
+            {nameof(ParentBranch), 11},
+            {nameof(Self), 12}
+        };
+
+        IndexToObjectAccessMap = new Dictionary<int, Func<BranchEntity, object?>>
+        {
+            {0, entity => entity.FriendlyName},
+            {1, entity => entity.CanonicalName},
+            {2, entity => entity.IsRemote},
+            {3, entity => entity.IsTracking},
+            {4, entity => entity.IsCurrentRepositoryHead},
+            {5, entity => entity.TrackedBranch},
+            {6, entity => entity.BranchTrackingDetails},
+            {7, entity => entity.Tip},
+            {8, entity => entity.Commits},
+            {9, entity => entity.UpstreamBranchCanonicalName},
+            {10, entity => entity.RemoteName},
+            {11, entity => entity.ParentBranch},
+            {12, entity => entity.Self}
+        };
     }
 
     /// <summary>

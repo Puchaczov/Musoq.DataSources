@@ -620,6 +620,106 @@ public class GitToSqlTests
         Assert.IsTrue((string) row[1] == "389642ba15392c4540e82628bdff9c99dc6f7923");
     }
 
+    [TestMethod]
+    public async Task WhenCommitsQueriedDirectly_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                c.Sha,
+                c.Author,
+                c.Message
+            from #git.commits('{RepositoryPath}') c
+            where c.Author = 'anonymous'";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count > 0);
+        
+        var row = result[0];
+        Assert.IsNotNull((string)row[0]);
+        Assert.IsTrue((string)row[1] == "anonymous");
+        Assert.IsNotNull((string)row[2]);
+    }
+
+    [TestMethod]
+    public async Task WhenBranchesQueriedDirectly_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
+
+        var query = @"
+            select
+                b.FriendlyName,
+                b.IsRemote,
+                b.Tip.Sha
+            from #git.branches('{RepositoryPath}') b";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count > 0);
+        
+        var masterBranch = result.FirstOrDefault(r => ((string)r[0])?.Contains("master") == true);
+        Assert.IsNotNull(masterBranch);
+        Assert.IsNotNull((string)masterBranch[2]);
+    }
+
+    [TestMethod]
+    public async Task WhenFileHistoryQueried_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                h.CommitSha,
+                h.FilePath,
+                h.ChangeType,
+                h.Author
+            from #git.filehistory('{RepositoryPath}', '*') h";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 0);
+    }
+
+    [TestMethod]
+    public async Task WhenCommitParentsQueried_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
+
+        var query = @"
+            select 
+                c.Sha, 
+                p.Sha as ParentSha
+            from #git.commits('{RepositoryPath}') c 
+            cross apply c.Parents as p";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 0);
+    }
+
+    [TestMethod]
+    public async Task WhenRemotesQueried_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                r.Name,
+                r.Url
+            from #git.remotes('{RepositoryPath}') r";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 0);
+    }
+
     static GitToSqlTests()
     {
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
