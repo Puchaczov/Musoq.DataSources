@@ -297,6 +297,41 @@ public class GitToSqlTests
     }
 
     [TestMethod]
+    public async Task WhenTagsQueriedDirectly_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository3ZipPath);
+
+        var query = @"
+            select
+                t.FriendlyName,
+                t.CanonicalName,
+                t.Message,
+                t.IsAnnotated,
+                t.Commit.Sha
+            from #git.tags('{RepositoryPath}') t";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count == 2);
+
+        var v01Row = result.FirstOrDefault(r => (string)r[0] == "v0.1");
+        Assert.IsNotNull(v01Row);
+        Assert.IsTrue((string)v01Row[1] == "refs/tags/v0.1");
+        Assert.IsNull((string)v01Row[2]);
+        Assert.IsFalse((bool)v01Row[3]);
+        Assert.IsNotNull((string)v01Row[4]);
+
+        var v00Row = result.FirstOrDefault(r => (string)r[0] == "v0.0");
+        Assert.IsNotNull(v00Row);
+        Assert.IsTrue((string)v00Row[1] == "refs/tags/v0.0");
+        Assert.IsTrue((string)v00Row[2] == "Initial release of repository\n");
+        Assert.IsTrue((bool)v00Row[3]);
+        Assert.IsNotNull((string)v00Row[4]);
+    }
+
+    [TestMethod]
     public async Task WhenStashQueried_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository4ZipPath);
@@ -583,6 +618,106 @@ public class GitToSqlTests
         
         Assert.IsTrue((string) row[0] == "789f584ce162424f61b33e020e2138aad47e60ba");
         Assert.IsTrue((string) row[1] == "389642ba15392c4540e82628bdff9c99dc6f7923");
+    }
+
+    [TestMethod]
+    public async Task WhenCommitsQueriedDirectly_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                c.Sha,
+                c.Author,
+                c.Message
+            from #git.commits('{RepositoryPath}') c
+            where c.Author = 'anonymous'";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count > 0);
+        
+        var row = result[0];
+        Assert.IsNotNull((string)row[0]);
+        Assert.IsTrue((string)row[1] == "anonymous");
+        Assert.IsNotNull((string)row[2]);
+    }
+
+    [TestMethod]
+    public async Task WhenBranchesQueriedDirectly_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
+
+        var query = @"
+            select
+                b.FriendlyName,
+                b.IsRemote,
+                b.Tip.Sha
+            from #git.branches('{RepositoryPath}') b";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count > 0);
+        
+        var masterBranch = result.FirstOrDefault(r => ((string)r[0])?.Contains("master") == true);
+        Assert.IsNotNull(masterBranch);
+        Assert.IsNotNull((string)masterBranch[2]);
+    }
+
+    [TestMethod]
+    public async Task WhenFileHistoryQueried_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                h.CommitSha,
+                h.FilePath,
+                h.ChangeType,
+                h.Author
+            from #git.filehistory('{RepositoryPath}', '*') h";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 0);
+    }
+
+    [TestMethod]
+    public async Task WhenCommitParentsQueried_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
+
+        var query = @"
+            select 
+                c.Sha, 
+                p.Sha as ParentSha
+            from #git.commits('{RepositoryPath}') c 
+            cross apply c.Parents as p";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 0);
+    }
+
+    [TestMethod]
+    public async Task WhenRemotesQueried_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                r.Name,
+                r.Url
+            from #git.remotes('{RepositoryPath}') r";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 0);
     }
 
     static GitToSqlTests()

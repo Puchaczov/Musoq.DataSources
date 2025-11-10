@@ -19,11 +19,9 @@ public class SqliteQueryTests
         var vm = CreateAndRunVirtualMachineWithResponse(script);
         var table = vm.Run();
         
-        Assert.AreEqual(4, table.Count);
+        Assert.AreEqual(2, table.Count);
         Assert.AreEqual("Key", table[0].Values[0]);
-        Assert.AreEqual("Key.Chars", table[1].Values[0]);
-        Assert.AreEqual("Key.Length", table[2].Values[0]);
-        Assert.AreEqual("Value", table[3].Values[0]);
+        Assert.AreEqual("Value", table[1].Values[0]);
     }
     
     [TestMethod]

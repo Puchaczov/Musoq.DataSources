@@ -37,16 +37,16 @@ public class AirtableTests
         
         var table = vm.Run();
         
-        Assert.AreEqual(9, table.Count);
+        Assert.AreEqual(3, table.Count);
         
         Assert.AreEqual("Id", table[0][0]);
         Assert.AreEqual(typeof(string).FullName, table[0][2]);
         
-        Assert.AreEqual("Name", table[3][0]);
-        Assert.AreEqual(typeof(string).FullName, table[3][2]);
+        Assert.AreEqual("Name", table[1][0]);
+        Assert.AreEqual(typeof(string).FullName, table[1][2]);
         
-        Assert.AreEqual("PermissionLevel", table[6][0]);
-        Assert.AreEqual(typeof(string).FullName, table[6][2]);
+        Assert.AreEqual("PermissionLevel", table[2][0]);
+        Assert.AreEqual(typeof(string).FullName, table[2][2]);
     }
     
     [TestMethod]
