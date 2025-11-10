@@ -19,12 +19,10 @@ public class PostgresQueryTests
         var vm = CreateAndRunVirtualMachineWithResponse<PostgresTestTable>(script);
         var table = vm.Run();
         
-        Assert.AreEqual(5, table.Count);
+        Assert.AreEqual(3, table.Count);
         Assert.AreEqual("Key", table[0][0]);
-        Assert.AreEqual("Key.Chars", table[1][0]);
-        Assert.AreEqual("Key.Length", table[2][0]);
-        Assert.AreEqual("Value", table[3][0]);
-        Assert.AreEqual("Id", table[4][0]);
+        Assert.AreEqual("Value", table[1][0]);
+        Assert.AreEqual("Id", table[2][0]);
     }
     
     [TestMethod]

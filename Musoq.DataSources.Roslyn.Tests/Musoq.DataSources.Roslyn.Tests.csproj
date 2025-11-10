@@ -21,8 +21,8 @@
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
         <PackageReference Include="Musoq.Converter" Version="5.0.1" />
-        <PackageReference Include="Musoq.Evaluator" Version="9.0.2" />
-        <PackageReference Include="Musoq.Schema" Version="9.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="9.1.0" />
+        <PackageReference Include="Musoq.Schema" Version="9.1.0" />
         <PackageReference Include="NUnit" Version="3.14.0" />
         <PackageReference Include="NUnit.Analyzers" Version="3.9.0"/>
         <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
