@@ -23,6 +23,7 @@ public class GitSchema : SchemaBase
 {
     private const string SchemaName = "Git";
     private const string RepositoryTable = "repository";
+    private const string TagsTable = "tags";
     private readonly Func<string, Repository> _createRepository;
     
     /// <virtual-constructors>
@@ -45,6 +46,25 @@ public class GitSchema : SchemaBase
     /// <column name="Information" type="RepositoryInformationEntity">Repository information</column>
     /// <column name="Stashes" type="StashEntity[]">Repository stashes</column>
     /// <column name="Self" type="RepositoryEntity">This instance</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.tags(string path)
+    /// </from>
+    /// <description>Allows to query tags directly from a Git repository.</description>
+    /// <columns>
+    /// <column name="FriendlyName" type="string?">Tag friendly name</column>
+    /// <column name="CanonicalName" type="string?">Tag canonical name</column>
+    /// <column name="Message" type="string?">Tag message</column>
+    /// <column name="IsAnnotated" type="bool">Is annotated tag</column>
+    /// <column name="Annotation" type="AnnotationEntity">Tag annotation</column>
+    /// <column name="Commit" type="CommitEntity?">Tag commit</column>
     /// </columns>
     /// </example>
     /// </examples>
@@ -212,6 +232,8 @@ public class GitSchema : SchemaBase
         {
             case RepositoryTable:
                 return new RepositoryTable();
+            case TagsTable:
+                return new TagsTable();
         }
 
         return base.GetTableByName(name, runtimeContext, parameters);
@@ -222,15 +244,16 @@ public class GitSchema : SchemaBase
         return methodName.ToLowerInvariant() switch
         {
             RepositoryTable => [CreateRepositoryMethodInfo()],
+            TagsTable => [CreateTagsMethodInfo()],
             _ => throw new NotSupportedException(
                 $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {RepositoryTable}")
+                $"Available data sources: {RepositoryTable}, {TagsTable}")
         };
     }
 
     public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
     {
-        return [CreateRepositoryMethodInfo()];
+        return [CreateRepositoryMethodInfo(), CreateTagsMethodInfo()];
     }
 
     private static SchemaMethodInfo CreateRepositoryMethodInfo()
@@ -245,6 +268,20 @@ public class GitSchema : SchemaBase
         );
 
         return new SchemaMethodInfo(RepositoryTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateTagsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(TagsTable, constructorInfo);
     }
 
     /// <summary>
@@ -274,6 +311,8 @@ public class GitSchema : SchemaBase
         {
             case RepositoryTable:
                 return new RepositoryRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+            case TagsTable:
+                return new TagsRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
         }
 
         return base.GetRowSource(name, runtimeContext, parameters);

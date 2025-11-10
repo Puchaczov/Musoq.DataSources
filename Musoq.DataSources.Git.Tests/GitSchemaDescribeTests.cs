@@ -39,11 +39,15 @@ public class GitSchemaDescribeTests
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
         Assert.AreEqual("Param 0", table.Columns.ElementAt(1).ColumnName);
 
-        Assert.AreEqual(1, table.Count, "Should have 1 row (repository method)");
+        Assert.AreEqual(2, table.Count, "Should have 2 rows (repository and tags methods)");
 
-        var row = table.First();
-        Assert.AreEqual("repository", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
+        var repositoryRow = table.FirstOrDefault(r => (string)r[0] == "repository");
+        Assert.IsNotNull(repositoryRow);
+        Assert.AreEqual("path: System.String", (string)repositoryRow[1]);
+
+        var tagsRow = table.FirstOrDefault(r => (string)r[0] == "tags");
+        Assert.IsNotNull(tagsRow);
+        Assert.AreEqual("path: System.String", (string)tagsRow[1]);
     }
 
     [TestMethod]
