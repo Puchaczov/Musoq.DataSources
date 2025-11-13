@@ -74,6 +74,110 @@ public class GitSchema : SchemaBase
     /// </example>
     /// </examples>
     /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.commits(string path)
+    /// </from>
+    /// <description>Allows to query commits directly from a Git repository.</description>
+    /// <columns>
+    /// <column name="Sha" type="string">Commit SHA</column>
+    /// <column name="Message" type="string">Commit message</column>
+    /// <column name="MessageShort" type="string">Short commit message</column>
+    /// <column name="Author" type="string">Author name</column>
+    /// <column name="AuthorEmail" type="string">Author email</column>
+    /// <column name="Committer" type="string">Committer name</column>
+    /// <column name="CommitterEmail" type="string">Committer email</column>
+    /// <column name="CommittedWhen" type="DateTimeOffset">Commit date and time</column>
+    /// <column name="Self" type="CommitEntity">This instance</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.branches(string path)
+    /// </from>
+    /// <description>Allows to query branches directly from a Git repository.</description>
+    /// <columns>
+    /// <column name="FriendlyName" type="string">Branch friendly name</column>
+    /// <column name="CanonicalName" type="string">Branch canonical name</column>
+    /// <column name="IsRemote" type="bool">Is remote branch</column>
+    /// <column name="IsTracking" type="bool">Is tracking another branch</column>
+    /// <column name="IsCurrentRepositoryHead" type="bool">Is current repository HEAD</column>
+    /// <column name="TrackedBranch" type="BranchEntity">Tracked branch</column>
+    /// <column name="BranchTrackingDetails" type="BranchTrackingDetailsEntity">Branch tracking details</column>
+    /// <column name="Tip" type="CommitEntity">Branch tip commit</column>
+    /// <column name="Commits" type="CommitEntity[]">Branch commits</column>
+    /// <column name="UpstreamBranchCanonicalName" type="string">Upstream branch canonical name</column>
+    /// <column name="RemoteName" type="string">Remote name</column>
+    /// <column name="ParentBranch" type="BranchEntity">Parent branch</column>
+    /// <column name="Self" type="BranchEntity">This instance</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.filehistory(string path, string filePattern)
+    /// </from>
+    /// <description>Allows to query the history of file changes in a Git repository.</description>
+    /// <columns>
+    /// <column name="CommitSha" type="string">Commit SHA</column>
+    /// <column name="Author" type="string">Author name</column>
+    /// <column name="AuthorEmail" type="string">Author email</column>
+    /// <column name="CommittedWhen" type="DateTimeOffset">Commit date and time</column>
+    /// <column name="FilePath" type="string">Changed file path</column>
+    /// <column name="ChangeType" type="string">Type of change</column>
+    /// <column name="OldPath" type="string">Previous file path</column>
+    /// <column name="LinesAdded" type="int">Lines added</column>
+    /// <column name="LinesDeleted" type="int">Lines deleted</column>
+    /// <column name="Commit" type="CommitEntity">Commit entity</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.status(string path)
+    /// </from>
+    /// <description>Allows to query the working directory status of a Git repository.</description>
+    /// <columns>
+    /// <column name="FilePath" type="string">File path</column>
+    /// <column name="State" type="string">File state</column>
+    /// <column name="IndexStatus" type="string">Index status</column>
+    /// <column name="WorkDirStatus" type="string">Working directory status</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.remotes(string path)
+    /// </from>
+    /// <description>Allows to query Git remotes from a repository.</description>
+    /// <columns>
+    /// <column name="Name" type="string">Remote name</column>
+    /// <column name="Url" type="string">Remote URL</column>
+    /// <column name="PushUrl" type="string">Push URL</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
     /// </virtual-constructors>
     /// <additional-tables>
     /// <additional-table>
