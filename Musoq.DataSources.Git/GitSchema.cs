@@ -136,11 +136,8 @@ public class GitSchema : SchemaBase
     /// <column name="AuthorEmail" type="string">Author email</column>
     /// <column name="CommittedWhen" type="DateTimeOffset">Commit date and time</column>
     /// <column name="FilePath" type="string">Changed file path</column>
-    /// <column name="ChangeType" type="string">Type of change</column>
-    /// <column name="OldPath" type="string">Previous file path</column>
-    /// <column name="LinesAdded" type="int">Lines added</column>
-    /// <column name="LinesDeleted" type="int">Lines deleted</column>
-    /// <column name="Commit" type="CommitEntity">Commit entity</column>
+    /// <column name="ChangeType" type="string">Type of change (Added, Modified, Deleted, Renamed)</column>
+    /// <column name="OldPath" type="string">Previous file path (for renamed files)</column>
     /// </columns>
     /// </example>
     /// </examples>

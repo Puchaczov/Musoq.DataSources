@@ -28,7 +28,17 @@ internal sealed class FileHistoryRowsSource(
             SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
         };
         
-        foreach (var commit in repository.Commits.QueryBy(filter))
+        IEnumerable<Commit> commits;
+        if (IsWildcardPattern(filePattern))
+        {
+            commits = repository.Commits.QueryBy(filter);
+        }
+        else
+        {
+            commits = repository.Commits.QueryBy(filePattern, filter).Select(entry => entry.Commit);
+        }
+        
+        foreach (var commit in commits)
         {
             if (cancellationToken.IsCancellationRequested)
                 break;
@@ -50,7 +60,7 @@ internal sealed class FileHistoryRowsSource(
                 if (!IsMatch(change.Path, filePattern))
                     continue;
 
-                var entity = new FileHistoryEntity(commit, change, repository);
+                var entity = new FileHistoryEntity(commit, change);
                 chunk.Add(new EntityResolver<FileHistoryEntity>(
                     entity,
                     FileHistoryEntity.NameToIndexMap,
@@ -71,6 +81,11 @@ internal sealed class FileHistoryRowsSource(
         }
 
         return Task.CompletedTask;
+    }
+
+    private static bool IsWildcardPattern(string pattern)
+    {
+        return pattern.Contains('*') || pattern.Contains('?');
     }
 
     private static bool IsMatch(string path, string pattern)

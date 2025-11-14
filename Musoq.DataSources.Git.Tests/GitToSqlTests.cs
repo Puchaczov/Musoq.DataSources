@@ -674,15 +674,50 @@ public class GitToSqlTests
         var query = @"
             select
                 h.CommitSha,
+                h.Author,
+                h.AuthorEmail,
+                h.CommittedWhen,
                 h.FilePath,
                 h.ChangeType,
-                h.Author
+                h.OldPath
             from #git.filehistory('{RepositoryPath}', '*') h";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 0);
+        
+        var row = result[0];
+        Assert.IsNotNull(row[0]);
+        Assert.IsNotNull(row[1]);
+        Assert.IsNotNull(row[2]);
+        Assert.IsNotNull(row[3]);
+        Assert.IsNotNull(row[4]);
+        Assert.IsNotNull(row[5]);
+    }
+
+    [TestMethod]
+    public async Task WhenFileHistoryQueriedWithSpecificFile_ShouldPass()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                h.CommitSha,
+                h.FilePath,
+                h.ChangeType
+            from #git.filehistory('{RepositoryPath}', 'README.md') h";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 0);
+        
+        foreach (var row in result)
+        {
+            var filePath = row[1] as string;
+            Assert.IsTrue(filePath?.EndsWith("README.md", StringComparison.OrdinalIgnoreCase) ?? false);
+        }
     }
 
     [TestMethod]

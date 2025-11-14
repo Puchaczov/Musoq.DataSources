@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using LibGit2Sharp;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -14,13 +13,11 @@ public class FileHistoryEntity
 {
     private readonly TreeEntryChanges? _change;
     private readonly Commit? _commit;
-    private readonly Repository _repository;
 
-    public FileHistoryEntity(Commit? commit, TreeEntryChanges? change, Repository repository)
+    public FileHistoryEntity(Commit? commit, TreeEntryChanges? change)
     {
         _commit = commit;
         _change = change;
-        _repository = repository;
     }
 
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
@@ -34,10 +31,7 @@ public class FileHistoryEntity
         new SchemaColumn(nameof(CommittedWhen), 3, typeof(DateTimeOffset)),
         new SchemaColumn(nameof(FilePath), 4, typeof(string)),
         new SchemaColumn(nameof(ChangeType), 5, typeof(string)),
-        new SchemaColumn(nameof(OldPath), 6, typeof(string)),
-        new SchemaColumn(nameof(LinesAdded), 7, typeof(int)),
-        new SchemaColumn(nameof(LinesDeleted), 8, typeof(int)),
-        new SchemaColumn(nameof(Commit), 9, typeof(CommitEntity))
+        new SchemaColumn(nameof(OldPath), 6, typeof(string))
     ];
 
     static FileHistoryEntity()
@@ -50,10 +44,7 @@ public class FileHistoryEntity
             {nameof(CommittedWhen), 3},
             {nameof(FilePath), 4},
             {nameof(ChangeType), 5},
-            {nameof(OldPath), 6},
-            {nameof(LinesAdded), 7},
-            {nameof(LinesDeleted), 8},
-            {nameof(Commit), 9}
+            {nameof(OldPath), 6}
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<FileHistoryEntity, object?>>
@@ -64,10 +55,7 @@ public class FileHistoryEntity
             {3, entity => entity.CommittedWhen},
             {4, entity => entity.FilePath},
             {5, entity => entity.ChangeType},
-            {6, entity => entity.OldPath},
-            {7, entity => entity.LinesAdded},
-            {8, entity => entity.LinesDeleted},
-            {9, entity => entity.Commit}
+            {6, entity => entity.OldPath}
         };
     }
 
@@ -78,32 +66,4 @@ public class FileHistoryEntity
     public string? FilePath => _change?.Path;
     public string? ChangeType => _change?.Status.ToString();
     public string? OldPath => _change?.OldPath;
-    public int LinesAdded => _change != null ? GetPatchStats()?.LinesAdded ?? 0 : 0;
-    public int LinesDeleted => _change != null ? GetPatchStats()?.LinesDeleted ?? 0 : 0;
-    public CommitEntity Commit => new(_commit, _repository);
-
-    private PatchStats? GetPatchStats()
-    {
-        if (_commit == null || _change == null) return null;
-        
-        try
-        {
-            var parent = _commit.Parents.FirstOrDefault();
-            if (parent == null) return null;
-            
-            var patch = _repository.Diff.Compare<Patch>(parent.Tree, _commit.Tree);
-            var entry = patch[_change.Path];
-            return entry != null ? new PatchStats { LinesAdded = entry.LinesAdded, LinesDeleted = entry.LinesDeleted } : null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private class PatchStats
-    {
-        public int LinesAdded { get; set; }
-        public int LinesDeleted { get; set; }
-    }
 }
