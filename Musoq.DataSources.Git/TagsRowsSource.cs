@@ -20,20 +20,30 @@ internal sealed class TagsRowsSource(
         CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
-        var tags = repository.Tags
-            .Select(tag => new TagEntity(tag, repository))
-            .ToList();
+        var chunk = new List<IObjectResolver>(100);
 
-        foreach (var tag in tags)
+        foreach (var tag in repository.Tags)
         {
-            chunkedSource.Add(
-            [
-                new EntityResolver<TagEntity>(
-                    tag,
-                    TagEntity.NameToIndexMap,
-                    TagEntity.IndexToObjectAccessMap
-                )
-            ], cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            var entity = new TagEntity(tag, repository);
+            chunk.Add(new EntityResolver<TagEntity>(
+                entity,
+                TagEntity.NameToIndexMap,
+                TagEntity.IndexToObjectAccessMap
+            ));
+
+            if (chunk.Count >= 100)
+            {
+                chunkedSource.Add(chunk.ToArray(), cancellationToken);
+                chunk.Clear();
+            }
+        }
+
+        if (chunk.Count > 0)
+        {
+            chunkedSource.Add(chunk.ToArray(), cancellationToken);
         }
 
         return Task.CompletedTask;

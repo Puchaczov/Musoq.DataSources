@@ -20,20 +20,30 @@ internal sealed class BranchesRowsSource(
         CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
-        var branches = repository.Branches
-            .Select(branch => new BranchEntity(branch, repository))
-            .ToList();
+        var chunk = new List<IObjectResolver>(100);
 
-        foreach (var branch in branches)
+        foreach (var branch in repository.Branches)
         {
-            chunkedSource.Add(
-            [
-                new EntityResolver<BranchEntity>(
-                    branch,
-                    BranchEntity.NameToIndexMap,
-                    BranchEntity.IndexToObjectAccessMap
-                )
-            ], cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            var entity = new BranchEntity(branch, repository);
+            chunk.Add(new EntityResolver<BranchEntity>(
+                entity,
+                BranchEntity.NameToIndexMap,
+                BranchEntity.IndexToObjectAccessMap
+            ));
+
+            if (chunk.Count >= 100)
+            {
+                chunkedSource.Add(chunk.ToArray(), cancellationToken);
+                chunk.Clear();
+            }
+        }
+
+        if (chunk.Count > 0)
+        {
+            chunkedSource.Add(chunk.ToArray(), cancellationToken);
         }
 
         return Task.CompletedTask;

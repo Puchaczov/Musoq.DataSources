@@ -20,20 +20,30 @@ internal sealed class RemotesRowsSource(
         CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
-        var remotes = repository.Network.Remotes
-            .Select(remote => new RemoteEntity(remote))
-            .ToList();
+        var chunk = new List<IObjectResolver>(100);
 
-        foreach (var remote in remotes)
+        foreach (var remote in repository.Network.Remotes)
         {
-            chunkedSource.Add(
-            [
-                new EntityResolver<RemoteEntity>(
-                    remote,
-                    RemoteEntity.NameToIndexMap,
-                    RemoteEntity.IndexToObjectAccessMap
-                )
-            ], cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            var entity = new RemoteEntity(remote);
+            chunk.Add(new EntityResolver<RemoteEntity>(
+                entity,
+                RemoteEntity.NameToIndexMap,
+                RemoteEntity.IndexToObjectAccessMap
+            ));
+
+            if (chunk.Count >= 100)
+            {
+                chunkedSource.Add(chunk.ToArray(), cancellationToken);
+                chunk.Clear();
+            }
+        }
+
+        if (chunk.Count > 0)
+        {
+            chunkedSource.Add(chunk.ToArray(), cancellationToken);
         }
 
         return Task.CompletedTask;

@@ -20,20 +20,30 @@ internal sealed class CommitsRowsSource(
         CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
-        var commits = repository.Commits
-            .Select(commit => new CommitEntity(commit, repository))
-            .ToList();
+        var chunk = new List<IObjectResolver>(100);
 
-        foreach (var commit in commits)
+        foreach (var commit in repository.Commits)
         {
-            chunkedSource.Add(
-            [
-                new EntityResolver<CommitEntity>(
-                    commit,
-                    CommitEntity.NameToIndexMap,
-                    CommitEntity.IndexToObjectAccessMap
-                )
-            ], cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            var entity = new CommitEntity(commit, repository);
+            chunk.Add(new EntityResolver<CommitEntity>(
+                entity,
+                CommitEntity.NameToIndexMap,
+                CommitEntity.IndexToObjectAccessMap
+            ));
+
+            if (chunk.Count >= 100)
+            {
+                chunkedSource.Add(chunk.ToArray(), cancellationToken);
+                chunk.Clear();
+            }
+        }
+
+        if (chunk.Count > 0)
+        {
+            chunkedSource.Add(chunk.ToArray(), cancellationToken);
         }
 
         return Task.CompletedTask;
