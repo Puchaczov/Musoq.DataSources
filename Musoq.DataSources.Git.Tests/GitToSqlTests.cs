@@ -426,16 +426,16 @@ public class GitToSqlTests
         var query = @"
             with BranchInfo as (
                 select
-                    c.Sha,
-                    c.Message,
-                    c.Author,
-                    c.AuthorEmail,
-                    c.CommittedWhen
+                    c.Sha as Sha,
+                    c.Message as Message,
+                    c.Author as Author,
+                    c.AuthorEmail as AuthorEmail,
+                    c.CommittedWhen as CommittedWhen
                 from #git.repository('{RepositoryPath}') r 
                 cross apply r.SearchForBranches('feature/branch_1') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
             )
-            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
+            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -459,16 +459,16 @@ public class GitToSqlTests
         var query = @"
             with BranchInfo as (
                 select
-                    c.Sha,
-                    c.Message,
-                    c.Author,
-                    c.AuthorEmail,
-                    c.CommittedWhen
+                    c.Sha as Sha,
+                    c.Message as Message,
+                    c.Author as Author,
+                    c.AuthorEmail as AuthorEmail,
+                    c.CommittedWhen as CommittedWhen
                 from #git.repository('{RepositoryPath}') r 
                 cross apply r.SearchForBranches('feature/branch_1') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
+            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -500,16 +500,16 @@ public class GitToSqlTests
         var query = @"
             with BranchInfo as (
                 select
-                    c.Sha,
-                    c.Message,
-                    c.Author,
-                    c.AuthorEmail,
-                    c.CommittedWhen
+                    c.Sha as Sha,
+                    c.Message as Message,
+                    c.Author as Author,
+                    c.AuthorEmail as AuthorEmail,
+                    c.CommittedWhen as CommittedWhen
                 from #git.repository('{RepositoryPath}') r 
                 cross apply r.SearchForBranches('feature/branch_2') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
+            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -549,16 +549,16 @@ public class GitToSqlTests
         var query = @"
             with BranchInfo as (
                 select
-                    c.Sha,
-                    c.Message,
-                    c.Author,
-                    c.AuthorEmail,
-                    c.CommittedWhen
+                    c.Sha as Sha,
+                    c.Message as Message,
+                    c.Author as Author,
+                    c.AuthorEmail as AuthorEmail,
+                    c.CommittedWhen as CommittedWhen
                 from #git.repository('{RepositoryPath}') r 
                 cross apply r.SearchForBranches('feature/branch_2') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select * from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
+            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
         
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
