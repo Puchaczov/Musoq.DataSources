@@ -1,0 +1,95 @@
+{
+    "Autofac": {
+      "PackageId": "Autofac",
+      "Url": "https://github.com/autofac/Autofac/blob/develop/LICENSE"
+    },
+    "Autofac.Extensions.DependencyInjection": {
+      "PackageId": "Autofac.Extensions.DependencyInjection",
+      "Url": "https://github.com/autofac/Autofac/blob/develop/LICENSE"
+    },
+    "AutoMapper": {
+      "PackageId": "AutoMapper",
+      "Url": "https://github.com/AutoMapper/AutoMapper/blob/master/LICENSE.txt"
+    },
+    "xunit.assert": {
+      "PackageId": "xunit.assert",
+      "Url": "https://github.com/xunit/xunit/blob/main/LICENSE"
+    },
+    "AutoMapper.Extensions.Microsoft.DependencyInjection": {
+      "PackageId": "AutoMapper.Extensions.Microsoft.DependencyInjection",
+      "Url": "https://github.com/AutoMapper/AutoMapper.Extensions.Microsoft.DependencyInjection/blob/master/LICENSE"
+    },
+    "CsvHelper": {
+      "PackageId": "CsvHelper",
+      "Url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+    },
+    "FluentValidation": {
+      "PackageId": "FluentValidation",
+      "Url": "https://github.com/FluentValidation/FluentValidation/blob/main/License.txt"
+    },
+    "MediatR": {
+      "PackageId": "MediatR",
+      "Url": "https://github.com/jbogard/MediatR/blob/master/LICENSE"
+    },
+    "MediatR.Contracts": {
+      "PackageId": "MediatR.Contracts",
+      "Url": "https://github.com/jbogard/MediatR/blob/master/LICENSE"
+    },
+    "Serilog": {
+      "PackageId": "Serilog",
+      "Url": "https://github.com/serilog/serilog/blob/dev/LICENSE"
+    },
+    "Serilog.Sinks.Async": {
+      "PackageId": "Serilog.Sinks.Async",
+      "Url": "https://github.com/serilog/serilog-sinks-async/blob/dev/LICENSE"
+    },
+    "Serilog.Sinks.File": {
+      "PackageId": "Serilog.Sinks.File",
+      "Url": "https://github.com/serilog/serilog-sinks-file/blob/dev/LICENSE"
+    },
+    "Serilog.Sinks.RollingFile": {
+      "PackageId": "Serilog.Sinks.RollingFile",
+      "Url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+    },
+    "SQLitePCLRaw.bundle_e_sqlite3": {
+      "PackageId": "SQLitePCLRaw.bundle_e_sqlite3",
+      "Url": "https://github.com/ericsink/SQLitePCL.raw/blob/master/LICENSE.TXT"
+    },
+    "SQLitePCLRaw.core": {
+      "PackageId": "SQLitePCLRaw.core",
+      "Url": "https://github.com/ericsink/SQLitePCL.raw/blob/master/LICENSE.TXT"
+    },
+    "SQLitePCLRaw.lib.e_sqlite3": {
+      "PackageId": "SQLitePCLRaw.lib.e_sqlite3",
+      "Url": "https://github.com/ericsink/SQLitePCL.raw/blob/master/LICENSE.TXT"
+    },
+    "SQLitePCLRaw.provider.e_sqlite3": {
+      "PackageId": "SQLitePCLRaw.provider.e_sqlite3",
+      "Url": "https://github.com/ericsink/SQLitePCL.raw/blob/master/LICENSE.TXT"
+    },
+    "Newtonsoft.Json": {
+      "PackageId": "Newtonsoft.Json",
+      "Url": "https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md"
+    },
+    "Microsoft.DotNet.PlatformAbstractions": {
+      "PackageId": "Microsoft.DotNet.PlatformAbstractions",
+      "Url": "https://github.com/dotnet/runtime/blob/main/LICENSE.TXT"
+    },
+    "Docker.DotNet": {
+      "PackageId": "Docker.DotNet",
+      "Url": "https://raw.githubusercontent.com/dotnet/Docker.DotNet/master/LICENSE"
+    },
+    "YamlDotNet": {
+      "PackageId": "YamlDotNet",
+      "Url": "https://raw.githubusercontent.com/aaubry/YamlDotNet/master/LICENSE.txt"
+    },
+    "Fastenshtein": {
+      "PackageId": "Fastenshtein",
+      "Url": "https://raw.githubusercontent.com/DanHarltey/Fastenshtein/master/LICENSE"
+    },
+    "Fractions": {
+      "PackageId": "Fractions",
+      "Url": "https://raw.githubusercontent.com/danm-de/Fractions/master/license.txt"
+    }
+  }
+  
