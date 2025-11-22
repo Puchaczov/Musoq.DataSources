@@ -1,0 +1,38 @@
+name: Release Plugins
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version (e.g., 1.2.3)'
+        required: true
+      plugin_name:
+        description: 'Specific Plugin Name (Leave empty for All)'
+        required: false
+        default: 'All'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Pack Plugins
+      shell: pwsh
+      run: |
+        ./scripts/Pack-Plugin.ps1 -PluginName "${{ inputs.plugin_name }}"
+
+    - name: Create GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        $Version = "${{ inputs.version }}"
+        gh release create $Version --title "Release $Version" --generate-notes ./artifacts/*.zip
