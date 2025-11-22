@@ -774,7 +774,7 @@ public class GitToSqlTests
         if (string.IsNullOrEmpty(directory))
             throw new InvalidOperationException("Directory is empty.");
 
-        var repositoryPath = Path.Combine(directory, "Repositories", ".TestsExecutions", testName);
+        var repositoryPath = Path.Combine(directory, ".TestsExecutions", testName);
 
         if (Directory.Exists(repositoryPath))
             Directory.Delete(repositoryPath, true);
