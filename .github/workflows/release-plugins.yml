@@ -29,11 +29,13 @@ jobs:
     - name: Install nuget-license
       shell: pwsh
       run: |
-        try {
-          dotnet tool install -g nuget-license
-        } catch {
+        dotnet tool install -g nuget-license
+        if ($LASTEXITCODE -ne 0) {
           # If already installed, try to update
-          dotnet tool update -g nuget-license || Write-Host "nuget-license already installed/updated"
+          dotnet tool update -g nuget-license
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "nuget-license already installed/updated"
+          }
         }
         # On Windows global tools are installed to %USERPROFILE%\.dotnet\tools
         $tools = Join-Path $env:USERPROFILE ".dotnet\tools"
