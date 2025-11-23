@@ -33,8 +33,12 @@ jobs:
         dotnet tool install -g nuget-license 2>&1 | Out-Null
         if ($LASTEXITCODE -ne 0) {
           dotnet tool update -g nuget-license 2>&1 | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to install or update nuget-license tool"
+            exit 1
+          }
         }
-        # On Windows global tools are installed to %USERPROFILE%\.dotnet\tools
+        # On Windows (this workflow runs on windows-latest), global tools are installed to %USERPROFILE%\.dotnet\tools
         $tools = Join-Path $env:USERPROFILE ".dotnet\tools"
         Add-Content -Path $env:GITHUB_PATH -Value $tools
 
