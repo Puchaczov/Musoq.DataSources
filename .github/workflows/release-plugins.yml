@@ -25,6 +25,20 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    # Install nuget-license as a global dotnet tool and add the tool path to the runner PATH
+    - name: Install nuget-license
+      shell: pwsh
+      run: |
+        try {
+          dotnet tool install -g nuget-license
+        } catch {
+          # If already installed, try to update
+          dotnet tool update -g nuget-license || Write-Host "nuget-license already installed/updated"
+        }
+        # On Windows global tools are installed to %USERPROFILE%\.dotnet\tools
+        $tools = Join-Path $env:USERPROFILE ".dotnet\tools"
+        Add-Content -Path $env:GITHUB_PATH -Value $tools
+
     - name: Pack Plugins
       shell: pwsh
       run: |
