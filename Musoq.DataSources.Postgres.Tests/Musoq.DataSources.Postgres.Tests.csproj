@@ -11,10 +11,10 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
-        <PackageReference Include="Musoq.Converter" Version="5.0.3" />
-        <PackageReference Include="Musoq.Evaluator" Version="9.3.0" />
-        <PackageReference Include="Musoq.Parser" Version="5.3.0" />
-        <PackageReference Include="Musoq.Plugins" Version="8.0.0" />
+        <PackageReference Include="Musoq.Converter" Version="5.0.4" />
+        <PackageReference Include="Musoq.Evaluator" Version="9.4.0" />
+        <PackageReference Include="Musoq.Parser" Version="5.4.0" />
+        <PackageReference Include="Musoq.Plugins" Version="8.1.0" />
         <PackageReference Include="Musoq.Schema" Version="9.2.1" />
     </ItemGroup>
 
