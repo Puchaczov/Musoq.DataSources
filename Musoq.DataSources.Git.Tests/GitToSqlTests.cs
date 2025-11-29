@@ -774,7 +774,7 @@ public class GitToSqlTests
     }
 
     [TestMethod]
-    public async Task WhenFileHistoryQueriedWithTake_ShouldReturnLimitedChanges()
+    public async Task WhenFileHistoryWithTake_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
 
@@ -792,7 +792,7 @@ public class GitToSqlTests
     }
 
     [TestMethod]
-    public async Task WhenFileHistoryQueriedWithSkipAndTake_ShouldReturnCorrectChanges()
+    public async Task WhenFileHistoryWithSkipTake_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
 
@@ -826,7 +826,7 @@ public class GitToSqlTests
     }
 
     [TestMethod]
-    public async Task WhenFileHistoryQueriedWithNegativeTake_ShouldReturnOldestChanges()
+    public async Task WhenFileHistoryWithNegTake_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
 
