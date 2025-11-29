@@ -38,7 +38,7 @@ public class GitSchemaDescribeTests
         Assert.IsTrue(table.Columns.Count() >= 2, "Should have at least 2 columns");
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
 
-        Assert.AreEqual(7, table.Count, "Should have 7 rows (repository, tags, commits, branches, filehistory, status, remotes)");
+        Assert.AreEqual(9, table.Count, "Should have 9 rows (repository, tags, commits, branches, filehistory x3, status, remotes)");
 
         var repositoryRow = table.FirstOrDefault(r => (string)r[0] == "repository");
         Assert.IsNotNull(repositoryRow);

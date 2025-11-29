@@ -755,6 +755,106 @@ public class GitToSqlTests
         Assert.IsTrue(result.Count >= 0);
     }
 
+    [TestMethod]
+    public async Task WhenFileHistoryQueried_ShouldReturnAllChanges()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                CommitSha,
+                Author,
+                FilePath
+            from #git.filehistory('{RepositoryPath}', 'README.md')";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, "README.md should have at least 1 change");
+    }
+
+    [TestMethod]
+    public async Task WhenFileHistoryQueriedWithTake_ShouldReturnLimitedChanges()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var query = @"
+            select
+                CommitSha,
+                Author,
+                FilePath
+            from #git.filehistory('{RepositoryPath}', 'README.md', 1)";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should return exactly 1 change (most recent)");
+    }
+
+    [TestMethod]
+    public async Task WhenFileHistoryQueriedWithSkipAndTake_ShouldReturnCorrectChanges()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var queryAll = @"
+            select
+                CommitSha
+            from #git.filehistory('{RepositoryPath}', '*')";
+
+        var vmAll = CreateAndRunVirtualMachine(queryAll.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var allResults = vmAll.Run();
+        
+        if (allResults.Count <= 1)
+        {
+            Assert.Inconclusive("Repository does not have enough file changes to test skip/take");
+        }
+
+        var query = @"
+            select
+                CommitSha,
+                Author,
+                FilePath
+            from #git.filehistory('{RepositoryPath}', '*', 1, 1)";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should return exactly 1 change");
+        
+        var secondCommitSha = (string)allResults[1][0];
+        Assert.AreEqual(secondCommitSha, (string)result[0][0], "Should return the second commit");
+    }
+
+    [TestMethod]
+    public async Task WhenFileHistoryQueriedWithNegativeTake_ShouldReturnOldestChanges()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository1ZipPath);
+
+        var queryAll = @"
+            select
+                CommitSha
+            from #git.filehistory('{RepositoryPath}', '*')";
+
+        var vmAll = CreateAndRunVirtualMachine(queryAll.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var allResults = vmAll.Run();
+        
+        Assert.IsTrue(allResults.Count >= 1, "Should have at least 1 change");
+        var oldestCommitSha = (string)allResults[allResults.Count - 1][0];
+
+        var queryOldest = @"
+            select
+                CommitSha,
+                Author,
+                FilePath
+            from #git.filehistory('{RepositoryPath}', '*', -1)";
+
+        var vm = CreateAndRunVirtualMachine(queryOldest.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should return exactly 1 change (oldest)");
+        Assert.AreEqual(oldestCommitSha, (string)result[0][0], "Should return the oldest commit");
+    }
+
     static GitToSqlTests()
     {
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));

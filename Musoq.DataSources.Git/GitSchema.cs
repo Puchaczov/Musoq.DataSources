@@ -140,6 +140,38 @@ public class GitSchema : SchemaBase
     /// <column name="OldPath" type="string">Previous file path (for renamed files)</column>
     /// </columns>
     /// </example>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.filehistory(string path, string filePattern, int take)
+    /// </from>
+    /// <description>Allows to query the history of file changes in a Git repository, limited to the first N changes.</description>
+    /// <columns>
+    /// <column name="CommitSha" type="string">Commit SHA</column>
+    /// <column name="Author" type="string">Author name</column>
+    /// <column name="AuthorEmail" type="string">Author email</column>
+    /// <column name="CommittedWhen" type="DateTimeOffset">Commit date and time</column>
+    /// <column name="FilePath" type="string">Changed file path</column>
+    /// <column name="ChangeType" type="string">Type of change (Added, Modified, Deleted, Renamed)</column>
+    /// <column name="OldPath" type="string">Previous file path (for renamed files)</column>
+    /// </columns>
+    /// </example>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.filehistory(string path, string filePattern, int skip, int take)
+    /// </from>
+    /// <description>Allows to query the history of file changes in a Git repository, skipping the first N changes and taking the next M changes.</description>
+    /// <columns>
+    /// <column name="CommitSha" type="string">Commit SHA</column>
+    /// <column name="Author" type="string">Author name</column>
+    /// <column name="AuthorEmail" type="string">Author email</column>
+    /// <column name="CommittedWhen" type="DateTimeOffset">Commit date and time</column>
+    /// <column name="FilePath" type="string">Changed file path</column>
+    /// <column name="ChangeType" type="string">Type of change (Added, Modified, Deleted, Renamed)</column>
+    /// <column name="OldPath" type="string">Previous file path (for renamed files)</column>
+    /// </columns>
+    /// </example>
     /// </examples>
     /// </virtual-constructor>
     /// <virtual-constructor>
@@ -363,7 +395,7 @@ public class GitSchema : SchemaBase
             TagsTable => [CreateTagsMethodInfo()],
             CommitsTable => [CreateCommitsMethodInfo()],
             BranchesTable => [CreateBranchesMethodInfo()],
-            FileHistoryTable => [CreateFileHistoryMethodInfo()],
+            FileHistoryTable => CreateFileHistoryMethodInfos(),
             StatusTable => [CreateStatusMethodInfo()],
             RemotesTable => [CreateRemotesMethodInfo()],
             _ => throw new NotSupportedException(
@@ -379,7 +411,7 @@ public class GitSchema : SchemaBase
             CreateTagsMethodInfo(), 
             CreateCommitsMethodInfo(), 
             CreateBranchesMethodInfo(),
-            CreateFileHistoryMethodInfo(),
+            ..CreateFileHistoryMethodInfos(),
             CreateStatusMethodInfo(),
             CreateRemotesMethodInfo()
         ];
@@ -441,9 +473,9 @@ public class GitSchema : SchemaBase
         return new SchemaMethodInfo(BranchesTable, constructorInfo);
     }
 
-    private static SchemaMethodInfo CreateFileHistoryMethodInfo()
+    private static SchemaMethodInfo[] CreateFileHistoryMethodInfos()
     {
-        var constructorInfo = new ConstructorInfo(
+        var simpleConstructorInfo = new ConstructorInfo(
             originConstructorInfo: null!,
             supportsInterCommunicator: false,
             arguments:
@@ -452,8 +484,36 @@ public class GitSchema : SchemaBase
                 ("filePattern", typeof(string))
             ]
         );
+        
+        var takeConstructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string)),
+                ("filePattern", typeof(string)),
+                ("take", typeof(int))
+            ]
+        );
+        
+        var skipTakeConstructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("path", typeof(string)),
+                ("filePattern", typeof(string)),
+                ("skip", typeof(int)),
+                ("take", typeof(int))
+            ]
+        );
 
-        return new SchemaMethodInfo(FileHistoryTable, constructorInfo);
+        return
+        [
+            new SchemaMethodInfo(FileHistoryTable, simpleConstructorInfo),
+            new SchemaMethodInfo(FileHistoryTable, takeConstructorInfo),
+            new SchemaMethodInfo(FileHistoryTable, skipTakeConstructorInfo)
+        ];
     }
 
     private static SchemaMethodInfo CreateStatusMethodInfo()
@@ -518,7 +578,9 @@ public class GitSchema : SchemaBase
             case BranchesTable:
                 return new BranchesRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
             case FileHistoryTable:
-                return new FileHistoryRowsSource((string) parameters[0], (string) parameters[1], _createRepository, runtimeContext.EndWorkToken);
+                var skip = parameters.Length > 3 ? (int) parameters[2] : 0;
+                var take = parameters.Length > 3 ? (int) parameters[3] : (parameters.Length > 2 ? (int) parameters[2] : int.MaxValue);
+                return new FileHistoryRowsSource((string) parameters[0], (string) parameters[1], skip, take, _createRepository, runtimeContext.EndWorkToken);
             case StatusTable:
                 return new StatusRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
             case RemotesTable:

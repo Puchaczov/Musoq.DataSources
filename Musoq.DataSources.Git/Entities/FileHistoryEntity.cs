@@ -13,11 +13,20 @@ public class FileHistoryEntity
 {
     private readonly TreeEntryChanges? _change;
     private readonly Commit? _commit;
+    private readonly string? _path;
+    private readonly ChangeKind? _changeKind;
 
     public FileHistoryEntity(Commit? commit, TreeEntryChanges? change)
     {
         _commit = commit;
         _change = change;
+    }
+    
+    public FileHistoryEntity(Commit? commit, string? path, ChangeKind changeKind)
+    {
+        _commit = commit;
+        _path = path;
+        _changeKind = changeKind;
     }
 
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
@@ -63,7 +72,7 @@ public class FileHistoryEntity
     public string? Author => _commit?.Author?.Name;
     public string? AuthorEmail => _commit?.Author?.Email;
     public DateTimeOffset? CommittedWhen => _commit?.Committer?.When;
-    public string? FilePath => _change?.Path;
-    public string? ChangeType => _change?.Status.ToString();
+    public string? FilePath => _change?.Path ?? _path;
+    public string? ChangeType => _change?.Status.ToString() ?? _changeKind?.ToString();
     public string? OldPath => _change?.OldPath;
 }
