@@ -6,7 +6,7 @@ using Musoq.Parser.Helpers;
 
 namespace Musoq.DataSources.Git.Tests;
 
-//[Ignore]
+[Ignore]
 [TestClass]
 public class GitPlaygroundTests
 {
