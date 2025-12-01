@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,18 +34,20 @@ internal sealed class FileHistoryRowsSource(
             SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
         };
 
-        var isFullPathPattern = filePattern.Contains('/') || filePattern.Contains('\\');
-        var isWildcardPattern = filePattern.Contains('*') || filePattern.Contains('?');
+        var normalizedPattern = NormalizePathToRepositoryRelative(filePattern, repositoryPath);
+        
+        var isFullPathPattern = normalizedPattern.Contains('/') || normalizedPattern.Contains('\\');
+        var isWildcardPattern = normalizedPattern.Contains('*') || normalizedPattern.Contains('?');
         
         List<string> matchingPaths;
         
         if (!isWildcardPattern && isFullPathPattern)
         {
-            matchingPaths = [filePattern.Replace('\\', '/')];
+            matchingPaths = [normalizedPattern.Replace('\\', '/')];
         }
         else
         {
-            matchingPaths = FindMatchingPaths(repository, filePattern, isFullPathPattern, isWildcardPattern);
+            matchingPaths = FindMatchingPaths(repository, normalizedPattern, isFullPathPattern, isWildcardPattern);
         }
 
         var skipped = 0;
@@ -164,5 +167,23 @@ internal sealed class FileHistoryRowsSource(
         }
         
         return fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase);
+    }
+    
+    private static string NormalizePathToRepositoryRelative(string pattern, string repositoryPath)
+    {
+        if (!Path.IsPathRooted(pattern))
+            return pattern;
+        
+        var normalizedRepoPath = Path.GetFullPath(repositoryPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var normalizedPattern = Path.GetFullPath(pattern);
+        
+        if (normalizedPattern.StartsWith(normalizedRepoPath, StringComparison.OrdinalIgnoreCase))
+        {
+            var relativePath = normalizedPattern.Substring(normalizedRepoPath.Length)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return relativePath;
+        }
+        
+        return pattern;
     }
 }
