@@ -29,7 +29,7 @@ $OutputDirectory = Resolve-Path $OutputDirectory
 
 $SolutionRoot = Resolve-Path "$PSScriptRoot/.."
 
-$LicenseGathererTool = Join-Path $SolutionRoot "tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.dll"
+$LicenseGathererTool = Join-Path $SolutionRoot "tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe"
 $LinksCacheFile = Join-Path $SolutionRoot "LinksCache.json"
 $LinksManualFile = Join-Path $SolutionRoot "LinksManual.json"
 $LicensesCacheDir = Join-Path $SolutionRoot ".licenses-cache"
@@ -83,7 +83,7 @@ foreach ($Project in $Projects) {
         $OwnPackage | ConvertTo-Json | Set-Content -Path $OwnPackageJsonPath
         
         $GatherArgs = @(
-            $LicenseGathererTool, "retrieve",
+            "retrieve",
             "--solution-or-cs-project-file-path", $Project.FullName,
             "--own-package-file-path", $OwnPackageJsonPath,
             "--licenses-folder", $ProjectLicensesDir,
@@ -93,7 +93,7 @@ foreach ($Project in $Projects) {
             "--downloaded-licenses-folder", $DownloadedLicensesDir
         )
         
-        dotnet @GatherArgs | Out-Null
+        & $LicenseGathererTool @GatherArgs | Out-Null
         $ProjectLicenseMap[$Project.FullName] = $ProjectLicensesDir
     }
     catch {
