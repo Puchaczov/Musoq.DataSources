@@ -70,23 +70,24 @@ jobs:
           $PropertyGroup = $csproj.Project.PropertyGroup | Select-Object -First 1
           $Version = if ($PropertyGroup.Version) { $PropertyGroup.Version } else { "1.0.0" }
           $ProjectName = $Project.BaseName
+          $ReleaseTag = "$Version-$ProjectName"
           
           Write-Host "Processing $ProjectName with version $Version" -ForegroundColor Cyan
           
           # Check if release already exists by exit code (0 => exists)
           $ReleaseExists = $false
-          gh release view $Version --repo ${{ github.repository }} 1>$null 2>$null
+          gh release view $ReleaseTag --repo ${{ github.repository }} 1>$null 2>$null
           if ($LASTEXITCODE -eq 0) { $ReleaseExists = $true }
 
           if ($ReleaseExists) {
             # Release exists: upload/refresh assets for this project
-            gh release upload $Version ./artifacts/*$ProjectName*.zip --clobber --repo ${{ github.repository }}
-            Write-Host "Attached assets for $ProjectName to existing release $Version" -ForegroundColor Yellow
+            gh release upload $ReleaseTag ./artifacts/*$ProjectName*.zip --clobber --repo ${{ github.repository }}
+            Write-Host "Attached assets for $ProjectName to existing release $ReleaseTag" -ForegroundColor Yellow
             $PublishedCount++
           } else {
             # Create the release with this project's assets
-            gh release create $Version --title "Release $Version ($ProjectName)" --generate-notes ./artifacts/*$ProjectName*.zip --repo ${{ github.repository }}
-            Write-Host "Created release $Version for $ProjectName" -ForegroundColor Green
+            gh release create $ReleaseTag --title "Release $Version ($ProjectName)" --generate-notes ./artifacts/*$ProjectName*.zip --repo ${{ github.repository }}
+            Write-Host "Created release $ReleaseTag for $ProjectName" -ForegroundColor Green
             $PublishedCount++
           }
         }
