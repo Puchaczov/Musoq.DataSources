@@ -73,15 +73,19 @@ jobs:
           
           Write-Host "Processing $ProjectName with version $Version" -ForegroundColor Cyan
           
-          # Check if release already exists
-          $ReleaseExists = gh release view $Version --repo ${{ github.repository }} 2>&1 | Where-Object { $_ -match "release not found" }
-          
+          # Check if release already exists by exit code (0 => exists)
+          $ReleaseExists = $false
+          gh release view $Version --repo ${{ github.repository }} 1>$null 2>$null
+          if ($LASTEXITCODE -eq 0) { $ReleaseExists = $true }
+
           if ($ReleaseExists) {
-            Write-Host "Release $Version already exists for $ProjectName. Skipping..." -ForegroundColor Yellow
-            $SkippedCount++
+            # Release exists: upload/refresh assets for this project
+            gh release upload $Version ./artifacts/*$ProjectName*.zip --clobber --repo ${{ github.repository }}
+            Write-Host "Attached assets for $ProjectName to existing release $Version" -ForegroundColor Yellow
+            $PublishedCount++
           } else {
-            # Create the release
-            gh release create $Version --title "Release $Version ($ProjectName)" --generate-notes ./artifacts/*$ProjectName*.zip
+            # Create the release with this project's assets
+            gh release create $Version --title "Release $Version ($ProjectName)" --generate-notes ./artifacts/*$ProjectName*.zip --repo ${{ github.repository }}
             Write-Host "Created release $Version for $ProjectName" -ForegroundColor Green
             $PublishedCount++
           }

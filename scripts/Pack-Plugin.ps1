@@ -15,6 +15,7 @@ $Targets = @(
 $ExcludedAssemblies = @("Musoq.Schema.dll", "Musoq.Parser.dll", "Musoq.Plugins.dll")
 
 $IgnorePatterns = @(
+    "Tests$",
     "\.Tests", 
     "\.Benchmarks", 
     "Helpers$", 
