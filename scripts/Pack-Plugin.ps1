@@ -65,6 +65,12 @@ foreach ($Project in $Projects) {
     New-Item -ItemType Directory -Path $LicenseTempDir -Force | Out-Null
 
     try {
+        Write-Host "  Restoring NuGet packages..." -ForegroundColor Gray
+        $RestoreArgs = @(
+            "restore", $Project.FullName
+        )
+        dotnet @RestoreArgs | Out-Null
+        
         [xml]$csproj = Get-Content $Project.FullName
         $PropertyGroup = $csproj.Project.PropertyGroup | Select-Object -First 1
         
