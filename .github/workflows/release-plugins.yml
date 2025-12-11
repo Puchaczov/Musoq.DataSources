@@ -79,11 +79,17 @@ jobs:
           if ($ReleaseExists) {
             Write-Host "Release $ReleaseTag already exists for $ProjectName. Skipping..." -ForegroundColor Yellow
           } else {
-            # Create the release with this project's assets
-            gh release create $ReleaseTag --title "Release $Version ($ProjectName)" --generate-notes ./artifacts/*$ProjectName*.zip --repo ${{ github.repository }}
-            if ($LASTEXITCODE -ne 0) { Write-Error "Failed to create release $ReleaseTag for $ProjectName"; exit 1 }
-            Write-Host "Created release $ReleaseTag for $ProjectName" -ForegroundColor Green
-            $PublishedCount++
+            # Check if matching artifacts exist before attempting to create release
+            $ArtifactMatches = @(Get-ChildItem -Path "./artifacts" -Filter "*$ProjectName*.zip" -ErrorAction SilentlyContinue)
+            if ($ArtifactMatches.Count -eq 0) {
+              Write-Host "No artifacts found for $ProjectName. Skipping release creation..." -ForegroundColor Yellow
+            } else {
+              # Create the release with this project's assets
+              gh release create $ReleaseTag --title "Release $Version ($ProjectName)" --generate-notes ./artifacts/*$ProjectName*.zip --repo ${{ github.repository }}
+              if ($LASTEXITCODE -ne 0) { Write-Error "Failed to create release $ReleaseTag for $ProjectName"; exit 1 }
+              Write-Host "Created release $ReleaseTag for $ProjectName" -ForegroundColor Green
+              $PublishedCount++
+            }
           }
         }
         
