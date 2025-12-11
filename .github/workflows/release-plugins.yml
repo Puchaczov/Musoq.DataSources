@@ -51,7 +51,6 @@ jobs:
       run: |
         $PluginName = "${{ inputs.plugin_name }}"
         $PublishedCount = 0
-        $SkippedCount = 0
         
         # Get projects to process
         if ($PluginName -eq "All") {
@@ -63,9 +62,7 @@ jobs:
         if ($Projects.Count -eq 0) {
           Write-Error "No matching plugin projects found."
           exit 1
-        }
-        
-        foreach ($Project in $Projects) {
+        }        foreach ($Project in $Projects) {
           [xml]$csproj = Get-Content $Project.FullName
           $PropertyGroup = $csproj.Project.PropertyGroup | Select-Object -First 1
           $Version = if ($PropertyGroup.Version) { $PropertyGroup.Version } else { "1.0.0" }
@@ -80,17 +77,15 @@ jobs:
           if ($LASTEXITCODE -eq 0) { $ReleaseExists = $true }
 
           if ($ReleaseExists) {
-            # Release exists: upload/refresh assets for this project
-            gh release upload $ReleaseTag ./artifacts/*$ProjectName*.zip --clobber --repo ${{ github.repository }}
-            Write-Host "Attached assets for $ProjectName to existing release $ReleaseTag" -ForegroundColor Yellow
-            $PublishedCount++
+            Write-Host "Release $ReleaseTag already exists for $ProjectName. Skipping..." -ForegroundColor Yellow
           } else {
             # Create the release with this project's assets
             gh release create $ReleaseTag --title "Release $Version ($ProjectName)" --generate-notes ./artifacts/*$ProjectName*.zip --repo ${{ github.repository }}
+            if ($LASTEXITCODE -ne 0) { Write-Error "Failed to create release $ReleaseTag for $ProjectName"; exit 1 }
             Write-Host "Created release $ReleaseTag for $ProjectName" -ForegroundColor Green
             $PublishedCount++
           }
         }
         
         Write-Host ""
-        Write-Host "Summary: Published=$PublishedCount, Skipped=$SkippedCount" -ForegroundColor Magenta
+        Write-Host "Summary: Published=$PublishedCount" -ForegroundColor Magenta
