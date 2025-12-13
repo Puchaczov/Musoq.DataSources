@@ -1,27 +1,3 @@
-<#
-.SYNOPSIS
-    Publishes plugin releases to GitHub.
-
-.DESCRIPTION
-    Creates GitHub releases for plugins that don't already have releases for their current version.
-    Outputs metadata about published plugins for registry updates.
-
-.PARAMETER PluginName
-    The name of a specific plugin to release, or "All" for all plugins.
-
-.PARAMETER ArtifactsDirectory
-    The directory containing the plugin artifacts (zip files).
-
-.PARAMETER Repository
-    The GitHub repository in "owner/repo" format.
-
-.PARAMETER OutputMetadataPath
-    Optional path to output JSON metadata about published releases.
-
-.EXAMPLE
-    ./Publish-PluginReleases.ps1 -PluginName "All" -Repository "Puchaczov/Musoq.DataSources"
-#>
-
 param(
     [string]$PluginName = "All",
     [string]$ArtifactsDirectory = "$PSScriptRoot/../artifacts",
@@ -32,17 +8,48 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Load common configuration
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 
-# Resolve artifacts directory
+if (-not (Test-ValidRepository -Repository $Repository)) {
+    Write-Error "Invalid repository format: $Repository. Expected 'owner/repo' format."
+    exit 1
+}
+
+if ($PluginName -ne "All") {
+    if (-not (Test-ValidPluginName -Name $PluginName)) {
+        Write-Error "Invalid plugin name format: $PluginName"
+        exit 1
+    }
+}
+
+if ($OutputMetadataPath) {
+    $OutputDir = Split-Path -Parent $OutputMetadataPath
+    if ($OutputDir -and -not (Test-Path $OutputDir)) {
+        Write-Error "Output directory does not exist: $OutputDir"
+        exit 1
+    }
+    
+    if ($OutputMetadataPath -match '\.\.[/\\]') {
+        Write-Error "Invalid output path: path traversal not allowed"
+        exit 1
+    }
+}
+
 if (-not (Test-Path $ArtifactsDirectory)) {
     Write-Error "Artifacts directory not found: $ArtifactsDirectory"
     exit 1
 }
 $ArtifactsDirectory = Resolve-Path $ArtifactsDirectory
 
-# Get projects to process
+$SolutionRoot = Get-SolutionRoot
+$ArtifactsFullPath = (Resolve-Path $ArtifactsDirectory).Path
+if (-not $ArtifactsFullPath.StartsWith($SolutionRoot.Path, [System.StringComparison]::OrdinalIgnoreCase)) {
+    $TempPath = [System.IO.Path]::GetTempPath()
+    if (-not $ArtifactsFullPath.StartsWith($TempPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+        Write-Warning "Artifacts directory is outside solution root: $ArtifactsFullPath"
+    }
+}
+
 $Projects = Get-PluginProjects -PluginName $PluginName
 
 if ($Projects.Count -eq 0) {
@@ -55,14 +62,33 @@ $PublishedCount = 0
 $SkippedCount = 0
 
 foreach ($Project in $Projects) {
-    $Metadata = Get-ProjectMetadata -Project $Project
+    try {
+        $Metadata = Get-ProjectMetadata -Project $Project
+    }
+    catch {
+        Write-Warning "Skipping $($Project.BaseName): Failed to extract valid metadata - $_"
+        $SkippedCount++
+        continue
+    }
+    
     $ProjectName = $Metadata.Name
     $Version = $Metadata.Version
     $ReleaseTag = $Metadata.ReleaseTag
     
     Write-Host "Processing $ProjectName with version $Version" -ForegroundColor Cyan
     
-    # Check if release already exists
+    if (-not (Test-ValidPluginName -Name $ProjectName)) {
+        Write-Warning "  Skipping: Invalid plugin name format"
+        $SkippedCount++
+        continue
+    }
+    
+    if (-not (Test-ValidVersion -Version $Version)) {
+        Write-Warning "  Skipping: Invalid version format"
+        $SkippedCount++
+        continue
+    }
+    
     $ReleaseExists = $false
     gh release view $ReleaseTag --repo $Repository 1>$null 2>$null
     if ($LASTEXITCODE -eq 0) { $ReleaseExists = $true }
@@ -73,7 +99,6 @@ foreach ($Project in $Projects) {
         continue
     }
     
-    # Check if matching artifacts exist
     $ArtifactMatches = @(Get-ChildItem -Path $ArtifactsDirectory -Filter "*$ProjectName*.zip" -ErrorAction SilentlyContinue)
     if ($ArtifactMatches.Count -eq 0) {
         Write-Host "  No artifacts found. Skipping release creation..." -ForegroundColor Yellow
@@ -81,9 +106,29 @@ foreach ($Project in $Projects) {
         continue
     }
     
-    # Create the release
-    $ArtifactPattern = Join-Path $ArtifactsDirectory "*$ProjectName*.zip"
-    gh release create $ReleaseTag --title "Release $Version ($ProjectName)" --generate-notes $ArtifactPattern --repo $Repository
+    $ValidArtifacts = @()
+    foreach ($artifact in $ArtifactMatches) {
+        if ($artifact.Name -notmatch "^Musoq\.DataSources\.[A-Za-z0-9]+-(windows|linux|macos|alpine)-(x64|arm64)\.zip$") {
+            Write-Warning "  Skipping invalid artifact: $($artifact.Name)"
+            continue
+        }
+        
+        $bytes = [System.IO.File]::ReadAllBytes($artifact.FullName) | Select-Object -First 4
+        if ($bytes.Count -ge 4 -and $bytes[0] -eq 0x50 -and $bytes[1] -eq 0x4B) {
+            $ValidArtifacts += $artifact
+        } else {
+            Write-Warning "  Skipping invalid zip file: $($artifact.Name)"
+        }
+    }
+    
+    if ($ValidArtifacts.Count -eq 0) {
+        Write-Warning "  No valid artifacts found. Skipping release creation..."
+        $SkippedCount++
+        continue
+    }
+    
+    $ArtifactPaths = $ValidArtifacts | ForEach-Object { $_.FullName }
+    gh release create $ReleaseTag --title "Release $Version ($ProjectName)" --generate-notes @ArtifactPaths --repo $Repository
     
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to create release $ReleaseTag for $ProjectName"
@@ -93,7 +138,6 @@ foreach ($Project in $Projects) {
     Write-Host "  Created release $ReleaseTag" -ForegroundColor Green
     $PublishedCount++
     
-    # Collect metadata for registry update
     $ArtifactInfo = Get-ArtifactNames -ProjectName $ProjectName
     $PublishedPlugins += @{
         Name = $ProjectName
@@ -110,11 +154,9 @@ foreach ($Project in $Projects) {
 Write-Host ""
 Write-Host "Summary: Published=$PublishedCount, Skipped=$SkippedCount" -ForegroundColor Magenta
 
-# Output metadata for registry update if requested
 if ($OutputMetadataPath -and $PublishedPlugins.Count -gt 0) {
     $PublishedPlugins | ConvertTo-Json -Depth 10 | Set-Content -Path $OutputMetadataPath -Encoding UTF8
     Write-Host "Published plugin metadata written to: $OutputMetadataPath" -ForegroundColor Gray
 }
 
-# Return published plugins for pipeline use
 return $PublishedPlugins

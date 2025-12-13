@@ -1,81 +1,224 @@
-<#
-.SYNOPSIS
-    Updates the plugin registry with newly published plugins.
-
-.DESCRIPTION
-    Downloads the existing plugin registry from the dedicated GitHub release,
-    merges in newly published plugin versions, and uploads the updated registry.
-    Creates the registry release if it doesn't exist.
-
-.PARAMETER Repository
-    The GitHub repository in "owner/repo" format.
-
-.PARAMETER PublishedMetadataPath
-    Path to JSON file containing metadata about newly published plugins.
-
-.PARAMETER PublishedPlugins
-    Alternative to PublishedMetadataPath - array of plugin metadata objects.
-
-.EXAMPLE
-    ./Update-PluginRegistry.ps1 -Repository "Puchaczov/Musoq.DataSources" -PublishedMetadataPath "./published.json"
-#>
-
 param(
     [Parameter(Mandatory=$true)]
     [string]$Repository,
     [string]$PublishedMetadataPath = "",
-    [array]$PublishedPlugins = @()
+    [array]$PublishedPlugins = @(),
+    [switch]$RegenerateFromReleases
 )
 
 $ErrorActionPreference = "Stop"
 
-# Load common configuration
 . "$PSScriptRoot/common/Plugin-Config.ps1"
+
+if (-not (Test-ValidRepository -Repository $Repository)) {
+    Write-Error "Invalid repository format: $Repository. Expected 'owner/repo' format."
+    exit 1
+}
+
+if ($PublishedMetadataPath) {
+    if ($PublishedMetadataPath -match '\.\.[/\\]') {
+        Write-Error "Invalid metadata path: path traversal not allowed"
+        exit 1
+    }
+    
+    if (Test-Path $PublishedMetadataPath) {
+        try {
+            $RawContent = Get-Content $PublishedMetadataPath -Raw
+            
+            if ($RawContent.Length -gt 10MB) {
+                Write-Error "Metadata file too large (max 10MB)"
+                exit 1
+            }
+            
+            $PublishedPlugins = $RawContent | ConvertFrom-Json
+        }
+        catch {
+            Write-Error "Failed to parse metadata file: $_"
+            exit 1
+        }
+    }
+}
+
+function Test-ValidPluginData {
+    param([object]$Plugin)
+    
+    $errors = @()
+    
+    if (-not $Plugin.Name) {
+        $errors += "Missing Name"
+    } elseif (-not (Test-ValidPluginName -Name $Plugin.Name)) {
+        $errors += "Invalid Name format: $($Plugin.Name)"
+    }
+    
+    if (-not $Plugin.Version) {
+        $errors += "Missing Version"
+    } elseif (-not (Test-ValidVersion -Version $Plugin.Version)) {
+        $errors += "Invalid Version format: $($Plugin.Version)"
+    }
+    
+    if (-not $Plugin.ShortName) {
+        $errors += "Missing ShortName"
+    } elseif (-not (Test-ValidShortName -ShortName $Plugin.ShortName)) {
+        $errors += "Invalid ShortName format: $($Plugin.ShortName)"
+    }
+    
+    if (-not $Plugin.ReleaseTag) {
+        $errors += "Missing ReleaseTag"
+    } elseif ($Plugin.ReleaseTag.Length -gt 200 -or $Plugin.ReleaseTag -match '[<>|&;`$\s]') {
+        $errors += "Invalid ReleaseTag format"
+    }
+    
+    if (-not $Plugin.ReleaseDate) {
+        $errors += "Missing ReleaseDate"
+    } elseif ($Plugin.ReleaseDate -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$') {
+        $errors += "Invalid ReleaseDate format (expected ISO 8601)"
+    }
+    
+    if ($Plugin.Description -and -not (Test-ValidDescription -Description $Plugin.Description)) {
+        $errors += "Invalid Description"
+    }
+    
+    if ($Plugin.Tags -and -not (Test-ValidTags -Tags $Plugin.Tags)) {
+        $errors += "Invalid Tags"
+    }
+    
+    if ($Plugin.Artifacts) {
+        foreach ($key in $Plugin.Artifacts.Keys) {
+            if ($key -notmatch '^(windows|linux|macos|alpine)-(x64|arm64)$') {
+                $errors += "Invalid artifact platform key: $key"
+            }
+            $artifactName = $Plugin.Artifacts[$key]
+            if ($artifactName -notmatch '^Musoq\.DataSources\.[A-Za-z0-9]+-(windows|linux|macos|alpine)-(x64|arm64)\.zip$') {
+                $errors += "Invalid artifact name: $artifactName"
+            }
+        }
+    }
+    
+    return @{
+        IsValid = ($errors.Count -eq 0)
+        Errors = $errors
+    }
+}
+
+function Get-PluginDataFromRelease {
+    param(
+        [string]$ReleaseTag,
+        [string]$Repository
+    )
+    
+    if ($ReleaseTag -notmatch '^(\d+\.\d+\.\d+(-[\w\d]+)?)-(.+)$') {
+        return $null
+    }
+    
+    $Version = $Matches[1]
+    $PluginName = $Matches[3]
+    
+    if (-not (Test-ValidPluginName -Name $PluginName)) {
+        return $null
+    }
+    
+    if (-not (Test-ValidVersion -Version $Version)) {
+        return $null
+    }
+    
+    $Projects = Get-PluginProjects -PluginName $PluginName
+    if ($Projects.Count -eq 0) {
+        return $null
+    }
+    
+    try {
+        $Metadata = Get-ProjectMetadata -Project $Projects[0]
+    } catch {
+        return $null
+    }
+    
+    $ReleaseInfo = gh release view $ReleaseTag --repo $Repository --json createdAt 2>$null | ConvertFrom-Json
+    $ReleaseDate = if ($ReleaseInfo.createdAt) { 
+        [DateTime]::Parse($ReleaseInfo.createdAt).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") 
+    } else { 
+        (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") 
+    }
+    
+    return @{
+        Name = $PluginName
+        ShortName = $Metadata.ShortName
+        Description = $Metadata.Description
+        Tags = $Metadata.Tags
+        Version = $Version
+        ReleaseTag = $ReleaseTag
+        ReleaseDate = $ReleaseDate
+        Artifacts = Get-ArtifactNames -ProjectName $PluginName
+    }
+}
+
+$ValidatedPlugins = @()
+foreach ($Plugin in $PublishedPlugins) {
+    $validation = Test-ValidPluginData -Plugin $Plugin
+    if ($validation.IsValid) {
+        $ValidatedPlugins += $Plugin
+    } else {
+        Write-Warning "Skipping invalid plugin data for '$($Plugin.Name)': $($validation.Errors -join ', ')"
+    }
+}
+$PublishedPlugins = $ValidatedPlugins
+
+$HasNewPlugins = $PublishedPlugins.Count -gt 0
+
+if ($HasNewPlugins) {
+    Write-Host "Updating plugin registry with $($PublishedPlugins.Count) new plugin(s)..." -ForegroundColor Cyan
+} else {
+    Write-Host "No new plugins to add. Checking if registry needs to be created or updated..." -ForegroundColor Cyan
+}
 
 $RegistryTag = $script:RegistryReleaseTag
 $RegistryFile = $script:RegistryFileName
 $TempDir = Join-Path ([System.IO.Path]::GetTempPath()) "plugin-registry-$(Get-Random)"
 
-# Load published plugins from file if path provided
-if ($PublishedMetadataPath -and (Test-Path $PublishedMetadataPath)) {
-    $PublishedPlugins = Get-Content $PublishedMetadataPath -Raw | ConvertFrom-Json
-}
-
-if ($PublishedPlugins.Count -eq 0) {
-    Write-Host "No plugins to add to registry. Skipping update." -ForegroundColor Yellow
-    exit 0
-}
-
-Write-Host "Updating plugin registry with $($PublishedPlugins.Count) plugin(s)..." -ForegroundColor Cyan
-
 try {
-    # Create temp directory
     New-Item -ItemType Directory -Path $TempDir -Force | Out-Null
     $LocalRegistryPath = Join-Path $TempDir $RegistryFile
     
-    # Check if registry release exists
     $RegistryReleaseExists = $false
     gh release view $RegistryTag --repo $Repository 1>$null 2>$null
     if ($LASTEXITCODE -eq 0) { $RegistryReleaseExists = $true }
     
-    # Initialize or download existing registry
     $Registry = $null
     
     if ($RegistryReleaseExists) {
         Write-Host "  Downloading existing registry..." -ForegroundColor Gray
         
-        # Download the registry file from the release
         Push-Location $TempDir
         gh release download $RegistryTag --pattern $RegistryFile --repo $Repository 2>$null
         Pop-Location
         
         if (Test-Path $LocalRegistryPath) {
-            $Registry = Get-Content $LocalRegistryPath -Raw | ConvertFrom-Json -AsHashtable
-            Write-Host "  Loaded existing registry with $($Registry.plugins.Count) plugin(s)" -ForegroundColor Gray
+            $DownloadedFileSize = (Get-Item $LocalRegistryPath).Length
+            $MaxRegistryDownloadSize = 50MB
+            
+            if ($DownloadedFileSize -gt $MaxRegistryDownloadSize) {
+                Write-Warning "Downloaded registry file is suspiciously large ($([math]::Round($DownloadedFileSize / 1MB, 2)) MB). Creating fresh registry."
+            } elseif ($DownloadedFileSize -eq 0) {
+                Write-Warning "Downloaded registry file is empty. Creating fresh registry."
+            } else {
+                try {
+                    $RegistryContent = Get-Content $LocalRegistryPath -Raw
+                    $Registry = $RegistryContent | ConvertFrom-Json -AsHashtable
+                    Write-Host "  Loaded existing registry with $($Registry.plugins.Count) plugin(s)" -ForegroundColor Gray
+                } catch {
+                    Write-Warning "Failed to parse existing registry JSON: $($_.Exception.Message). Creating fresh registry."
+                    $Registry = $null
+                }
+            }
         }
     }
     
-    # Create new registry if not exists or failed to download
+    $NeedToCreateRegistry = (-not $Registry) -or (-not $RegistryReleaseExists)
+    
+    if (-not $HasNewPlugins -and -not $NeedToCreateRegistry -and -not $RegenerateFromReleases) {
+        Write-Host "Registry exists and no new plugins to add. Skipping update." -ForegroundColor Yellow
+        exit 0
+    }
+    
     if (-not $Registry) {
         Write-Host "  Creating new registry..." -ForegroundColor Gray
         $Registry = @{
@@ -85,61 +228,171 @@ try {
             plugins = @()
             versionHistory = @{}
         }
+    } else {
+        Write-Host "  Validating registry structure..." -ForegroundColor Gray
+        
+        $RegistryValid = $true
+        
+        if (-not $Registry.ContainsKey('schemaVersion')) {
+            Write-Warning "Registry missing 'schemaVersion' field, will reset"
+            $RegistryValid = $false
+        }
+        if (-not $Registry.ContainsKey('plugins')) {
+            Write-Warning "Registry missing 'plugins' field, will reset"
+            $RegistryValid = $false
+        }
+        
+        if ($RegistryValid -and $Registry.schemaVersion -and -not ($Registry.schemaVersion -match '^\d+\.\d+$')) {
+            Write-Warning "Registry has invalid schemaVersion format: '$($Registry.schemaVersion)', will reset"
+            $RegistryValid = $false
+        }
+        
+        if ($RegistryValid -and $Registry.repository) {
+            if (-not ($Registry.repository -match '^https://github\.com/[a-zA-Z0-9\-_]+/[a-zA-Z0-9\.\-_]+$')) {
+                Write-Warning "Registry has invalid repository URL format, will reset"
+                $RegistryValid = $false
+            }
+        }
+        
+        if (-not $RegistryValid) {
+            Write-Host "  Registry structure invalid, creating fresh registry..." -ForegroundColor Yellow
+            $Registry = @{
+                schemaVersion = "1.0"
+                lastUpdated = ""
+                repository = "https://github.com/$Repository"
+                plugins = @()
+                versionHistory = @{}
+            }
+        }
     }
     
-    # Ensure plugins is an array (handle legacy format migration)
     if ($Registry.plugins -is [hashtable]) {
         Write-Host "  Migrating from legacy format..." -ForegroundColor Gray
         $Registry.plugins = @()
         $Registry.versionHistory = @{}
     }
     
-    # Ensure versionHistory exists
     if (-not $Registry.versionHistory) {
         $Registry.versionHistory = @{}
     }
     
-    # Convert plugins array to hashtable for easier lookup during update
+    if ($Registry.plugins -and $Registry.plugins.Count -gt 0) {
+        Write-Host "  Validating $($Registry.plugins.Count) existing plugin(s) in registry..." -ForegroundColor Gray
+        $ValidExistingPlugins = @()
+        $InvalidCount = 0
+        
+        foreach ($ExistingPlugin in $Registry.plugins) {
+            $PluginData = @{
+                Name = $ExistingPlugin.name
+                ShortName = $ExistingPlugin.shortName
+                Description = $ExistingPlugin.description
+                Tags = $ExistingPlugin.tags
+                Version = $ExistingPlugin.latestVersion
+                ReleaseTag = $ExistingPlugin.releaseTag
+                ReleaseDate = $ExistingPlugin.releaseDate
+                Artifacts = $ExistingPlugin.artifacts
+            }
+            
+            $validation = Test-ValidPluginData -Plugin $PluginData
+            if ($validation.IsValid) {
+                $ValidExistingPlugins += $ExistingPlugin
+            } else {
+                $InvalidCount++
+                Write-Warning "Removing invalid existing plugin '$($ExistingPlugin.name)' from registry: $($validation.Errors -join ', ')"
+            }
+        }
+        
+        if ($InvalidCount -gt 0) {
+            Write-Host "  Removed $InvalidCount invalid plugin(s) from registry" -ForegroundColor Yellow
+        }
+        
+        $Registry.plugins = $ValidExistingPlugins
+    }
+    
+    if ($Registry.versionHistory -and $Registry.versionHistory -is [hashtable]) {
+        $CleanVersionHistory = @{}
+        foreach ($PluginName in $Registry.versionHistory.Keys) {
+            if (-not (Test-ValidPluginName -Name $PluginName)) {
+                Write-Warning "Removing invalid version history for plugin '$PluginName'"
+                continue
+            }
+            
+            $VersionEntries = $Registry.versionHistory[$PluginName]
+            if ($VersionEntries -is [hashtable]) {
+                $CleanVersions = @{}
+                foreach ($Version in $VersionEntries.Keys) {
+                    if (-not (Test-ValidVersion -Version $Version)) {
+                        Write-Warning "Removing invalid version '$Version' from history for '$PluginName'"
+                        continue
+                    }
+                    $CleanVersions[$Version] = $VersionEntries[$Version]
+                }
+                if ($CleanVersions.Count -gt 0) {
+                    $CleanVersionHistory[$PluginName] = $CleanVersions
+                }
+            }
+        }
+        $Registry.versionHistory = $CleanVersionHistory
+    }
+    
+    if ($RegenerateFromReleases -or $NeedToCreateRegistry -or ($Registry.plugins.Count -eq 0)) {
+        Write-Host "  Scanning existing releases to populate registry..." -ForegroundColor Cyan
+        
+        $ReleasesJson = gh release list --repo $Repository --limit 100 --json tagName 2>$null
+        if ($LASTEXITCODE -eq 0 -and $ReleasesJson) {
+            $Releases = $ReleasesJson | ConvertFrom-Json
+            foreach ($Release in $Releases) {
+                $Tag = $Release.tagName
+                
+                if ($Tag -eq $RegistryTag) {
+                    continue
+                }
+                
+                $PluginFromRelease = Get-PluginDataFromRelease -ReleaseTag $Tag -Repository $Repository
+                if ($PluginFromRelease) {
+                    $validation = Test-ValidPluginData -Plugin $PluginFromRelease
+                    if ($validation.IsValid) {
+                        $PublishedPlugins += $PluginFromRelease
+                        Write-Host "    Found release: $Tag" -ForegroundColor Gray
+                    }
+                }
+            }
+        }
+    }
+    
     $PluginsMap = @{}
     foreach ($p in $Registry.plugins) {
         $PluginsMap[$p.name] = $p
     }
     
-    # Update registry with published plugins
     foreach ($Plugin in $PublishedPlugins) {
         $PluginName = $Plugin.Name
         $Version = $Plugin.Version
         
         Write-Host "  Adding $PluginName v$Version to registry..." -ForegroundColor Gray
         
-        # Ensure versionHistory entry exists for this plugin
         if (-not $Registry.versionHistory.ContainsKey($PluginName)) {
             $Registry.versionHistory[$PluginName] = @{}
         }
         
-        # Add to version history
         $Registry.versionHistory[$PluginName][$Version] = @{
             releaseTag = $Plugin.ReleaseTag
             releaseDate = $Plugin.ReleaseDate
         }
         
-        # Check if plugin already exists in registry
         if ($PluginsMap.ContainsKey($PluginName)) {
             $ExistingPlugin = $PluginsMap[$PluginName]
             
-            # Update if this version is newer
             $CurrentLatest = $ExistingPlugin.latestVersion
             if (-not $CurrentLatest -or ([version]$Version -ge [version]$CurrentLatest)) {
                 $ExistingPlugin.latestVersion = $Version
                 $ExistingPlugin.releaseTag = $Plugin.ReleaseTag
                 $ExistingPlugin.releaseDate = $Plugin.ReleaseDate
                 $ExistingPlugin.artifacts = $Plugin.Artifacts
-                # Update metadata in case it changed
                 $ExistingPlugin.description = $Plugin.Description
                 $ExistingPlugin.tags = $Plugin.Tags
             }
         } else {
-            # Add new plugin entry (optimized flat structure for fast search/list)
             $NewPlugin = @{
                 name = $PluginName
                 shortName = $Plugin.ShortName
@@ -154,19 +407,64 @@ try {
         }
     }
     
-    # Convert map back to sorted array
     $Registry.plugins = $PluginsMap.Values | Sort-Object { $_.name }
     
-    # Update timestamp
     $Registry.lastUpdated = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     
-    # Write updated registry to file
-    $Registry | ConvertTo-Json -Depth 10 | Set-Content -Path $LocalRegistryPath -Encoding UTF8
-    Write-Host "  Registry updated with $($Registry.plugins.Count) total plugin(s)" -ForegroundColor Gray
+    Write-Host "  Performing final registry validation..." -ForegroundColor Gray
     
-    # Create or update the registry release
+    $MaxPluginCount = 1000
+    if ($Registry.plugins.Count -gt $MaxPluginCount) {
+        Write-Error "Registry contains too many plugins ($($Registry.plugins.Count)). Maximum allowed: $MaxPluginCount"
+        exit 1
+    }
+    
+    $FinalValidPlugins = @()
+    foreach ($FinalPlugin in $Registry.plugins) {
+        $PluginData = @{
+            Name = $FinalPlugin.name
+            ShortName = $FinalPlugin.shortName
+            Description = $FinalPlugin.description
+            Tags = $FinalPlugin.tags
+            Version = $FinalPlugin.latestVersion
+            ReleaseTag = $FinalPlugin.releaseTag
+            ReleaseDate = $FinalPlugin.releaseDate
+            Artifacts = $FinalPlugin.artifacts
+        }
+        
+        $validation = Test-ValidPluginData -Plugin $PluginData
+        if ($validation.IsValid) {
+            $FinalValidPlugins += $FinalPlugin
+        } else {
+            Write-Warning "Final validation failed for '$($FinalPlugin.name)': $($validation.Errors -join ', ')"
+        }
+    }
+    $Registry.plugins = $FinalValidPlugins
+    
+    if ($Registry.plugins.Count -eq 0) {
+        Write-Host "No valid plugins in registry. Creating empty registry structure." -ForegroundColor Yellow
+    }
+    
+    $RegistryJson = $Registry | ConvertTo-Json -Depth 10
+    $MaxRegistrySizeBytes = 50MB
+    $RegistryBytes = [System.Text.Encoding]::UTF8.GetByteCount($RegistryJson)
+    
+    if ($RegistryBytes -gt $MaxRegistrySizeBytes) {
+        Write-Error "Registry file too large: $([math]::Round($RegistryBytes / 1MB, 2)) MB. Maximum allowed: $([math]::Round($MaxRegistrySizeBytes / 1MB, 2)) MB"
+        exit 1
+    }
+    
+    try {
+        $null = $RegistryJson | ConvertFrom-Json
+    } catch {
+        Write-Error "Generated registry JSON is invalid: $($_.Exception.Message)"
+        exit 1
+    }
+    
+    $RegistryJson | Set-Content -Path $LocalRegistryPath -Encoding UTF8
+    Write-Host "  Registry updated with $($Registry.plugins.Count) total plugin(s) ($([math]::Round($RegistryBytes / 1KB, 2)) KB)" -ForegroundColor Gray
+    
     if ($RegistryReleaseExists) {
-        # Upload with clobber to replace existing
         gh release upload $RegistryTag $LocalRegistryPath --clobber --repo $Repository
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Failed to upload registry to existing release"
@@ -174,7 +472,6 @@ try {
         }
         Write-Host "  Updated registry in release '$RegistryTag'" -ForegroundColor Green
     } else {
-        # Create new release with the registry file
         gh release create $RegistryTag --title "Plugin Registry" --notes "Auto-updated plugin registry for Musoq plugin discovery." $LocalRegistryPath --repo $Repository
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Failed to create registry release"
@@ -186,7 +483,6 @@ try {
     Write-Host "Plugin registry update complete!" -ForegroundColor Cyan
 }
 finally {
-    # Cleanup temp directory
     if (Test-Path $TempDir) {
         Remove-Item $TempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
