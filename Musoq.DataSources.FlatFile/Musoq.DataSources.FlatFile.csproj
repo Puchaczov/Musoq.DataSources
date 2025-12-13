@@ -6,6 +6,7 @@
         <Version>7.2.3</Version>
         <Authors>Jakub Puchała</Authors>
     <Product>Musoq</Product>
+    <Description>Query flat text files using SQL syntax</Description>
     <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageTags>sql, flatfile, dotnet-core</PackageTags>

@@ -8,6 +8,7 @@
         <Version>4.2.3</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
+        <Description>Query Docker containers, images, and networks using SQL syntax</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>sql, docker, dotnet-core</PackageTags>

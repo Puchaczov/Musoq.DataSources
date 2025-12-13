@@ -3,9 +3,6 @@ name: Release Plugins
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Release Version (e.g., 1.2.3)'
-        required: true
       plugin_name:
         description: 'Specific Plugin Name (Leave empty for All)'
         required: false
@@ -47,9 +44,21 @@ jobs:
       run: |
         ./scripts/Pack-Plugin.ps1 -PluginName "${{ inputs.plugin_name }}"
 
-    - name: Create GitHub Release
+    - name: Publish Plugin Releases
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      shell: pwsh
       run: |
-        $Version = "${{ inputs.version }}"
-        gh release create $Version --title "Release $Version" --generate-notes ./artifacts/*.zip
+        ./scripts/Publish-PluginReleases.ps1 `
+          -PluginName "${{ inputs.plugin_name }}" `
+          -Repository "${{ github.repository }}" `
+          -OutputMetadataPath "./published-plugins.json"
+
+    - name: Update Plugin Registry
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      shell: pwsh
+      run: |
+        ./scripts/Update-PluginRegistry.ps1 `
+          -Repository "${{ github.repository }}" `
+          -PublishedMetadataPath "./published-plugins.json"

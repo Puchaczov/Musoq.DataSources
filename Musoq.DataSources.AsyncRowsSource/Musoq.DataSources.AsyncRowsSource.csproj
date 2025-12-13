@@ -8,6 +8,7 @@
         <Version>2.2.3</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
+        <Description>Base infrastructure for asynchronous row-based data sources</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>musoq, dotnet-core</PackageTags>

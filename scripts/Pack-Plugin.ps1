@@ -15,6 +15,7 @@ $Targets = @(
 $ExcludedAssemblies = @("Musoq.Schema.dll", "Musoq.Parser.dll", "Musoq.Plugins.dll")
 
 $IgnorePatterns = @(
+    "Tests$",
     "\.Tests", 
     "\.Benchmarks", 
     "Helpers$", 
@@ -29,7 +30,7 @@ $OutputDirectory = Resolve-Path $OutputDirectory
 
 $SolutionRoot = Resolve-Path "$PSScriptRoot/.."
 
-$LicenseGathererTool = Join-Path $SolutionRoot "tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.dll"
+$LicenseGathererTool = Join-Path $SolutionRoot "tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe"
 $LinksCacheFile = Join-Path $SolutionRoot "LinksCache.json"
 $LinksManualFile = Join-Path $SolutionRoot "LinksManual.json"
 $LicensesCacheDir = Join-Path $SolutionRoot ".licenses-cache"
@@ -65,6 +66,12 @@ foreach ($Project in $Projects) {
     New-Item -ItemType Directory -Path $LicenseTempDir -Force | Out-Null
 
     try {
+        Write-Host "  Restoring NuGet packages..." -ForegroundColor Gray
+        $RestoreArgs = @(
+            "restore", $Project.FullName
+        )
+        dotnet @RestoreArgs | Out-Null
+        
         [xml]$csproj = Get-Content $Project.FullName
         $PropertyGroup = $csproj.Project.PropertyGroup | Select-Object -First 1
         
@@ -83,7 +90,7 @@ foreach ($Project in $Projects) {
         $OwnPackage | ConvertTo-Json | Set-Content -Path $OwnPackageJsonPath
         
         $GatherArgs = @(
-            $LicenseGathererTool, "retrieve",
+            "retrieve",
             "--solution-or-cs-project-file-path", $Project.FullName,
             "--own-package-file-path", $OwnPackageJsonPath,
             "--licenses-folder", $ProjectLicensesDir,
@@ -93,7 +100,7 @@ foreach ($Project in $Projects) {
             "--downloaded-licenses-folder", $DownloadedLicensesDir
         )
         
-        dotnet @GatherArgs | Out-Null
+        & $LicenseGathererTool @GatherArgs | Out-Null
         $ProjectLicenseMap[$Project.FullName] = $ProjectLicensesDir
     }
     catch {
