@@ -1,29 +1,46 @@
 ﻿using System.Collections.Concurrent;
 using k8s.Models;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Kubernetes.Pods;
 
 internal class PodsSource : RowSourceBase<PodEntity>
 {
+    private const string PodsSourceName = "kubernetes_pods";
     private readonly IKubernetesApi _client;
+    private readonly RuntimeContext _runtimeContext;
 
-    public PodsSource(IKubernetesApi client)
+    public PodsSource(IKubernetesApi client, RuntimeContext runtimeContext)
     {
         _client = client;
+        _runtimeContext = runtimeContext;
     }
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        var pods = _client.ListPodsForAllNamespaces();
+        _runtimeContext.ReportDataSourceBegin(PodsSourceName);
+        
+        try
+        {
+            var pods = _client.ListPodsForAllNamespaces();
+            _runtimeContext.ReportDataSourceRowsKnown(PodsSourceName, pods.Items.Count);
 
-        chunkedSource.Add(
-            pods.Items.Select(c => 
-                new EntityResolver<PodEntity>(
-                    MapV1PodToPodEntity(c), 
-                    PodsSourceHelper.PodsNameToIndexMap, 
-                    PodsSourceHelper.PodsIndexToMethodAccessMap))
-                .ToList());
+            chunkedSource.Add(
+                pods.Items.Select(c => 
+                    new EntityResolver<PodEntity>(
+                        MapV1PodToPodEntity(c), 
+                        PodsSourceHelper.PodsNameToIndexMap, 
+                        PodsSourceHelper.PodsIndexToMethodAccessMap))
+                    .ToList());
+            
+            _runtimeContext.ReportDataSourceEnd(PodsSourceName, pods.Items.Count);
+        }
+        catch
+        {
+            _runtimeContext.ReportDataSourceEnd(PodsSourceName, 0);
+            throw;
+        }
     }
 
     private static PodEntity MapV1PodToPodEntity(V1Pod v1Pod)

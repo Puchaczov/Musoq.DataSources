@@ -1,25 +1,42 @@
 ﻿using System.Collections.Concurrent;
 using k8s.Models;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Kubernetes.Nodes;
 
 internal class NodesSource : RowSourceBase<NodeEntity>
 {
+    private const string NodesSourceName = "kubernetes_nodes";
     private readonly IKubernetesApi _client;
+    private readonly RuntimeContext _runtimeContext;
 
-    public NodesSource(IKubernetesApi client)
+    public NodesSource(IKubernetesApi client, RuntimeContext runtimeContext)
     {
         _client = client;
+        _runtimeContext = runtimeContext;
     }
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        var nodes = _client.ListNodes();
+        _runtimeContext.ReportDataSourceBegin(NodesSourceName);
+        
+        try
+        {
+            var nodes = _client.ListNodes();
+            _runtimeContext.ReportDataSourceRowsKnown(NodesSourceName, nodes.Items.Count);
 
-        chunkedSource.Add(
-            nodes.Items.Select(c => 
-                new EntityResolver<NodeEntity>(MapV1NodeToNodeEntity(c), NodesSourceHelper.NodesNameToIndexMap, NodesSourceHelper.NodesIndexToMethodAccessMap)).ToList());
+            chunkedSource.Add(
+                nodes.Items.Select(c => 
+                    new EntityResolver<NodeEntity>(MapV1NodeToNodeEntity(c), NodesSourceHelper.NodesNameToIndexMap, NodesSourceHelper.NodesIndexToMethodAccessMap)).ToList());
+            
+            _runtimeContext.ReportDataSourceEnd(NodesSourceName, nodes.Items.Count);
+        }
+        catch
+        {
+            _runtimeContext.ReportDataSourceEnd(NodesSourceName, 0);
+            throw;
+        }
     }
 
     private static NodeEntity MapV1NodeToNodeEntity(V1Node v1Node)

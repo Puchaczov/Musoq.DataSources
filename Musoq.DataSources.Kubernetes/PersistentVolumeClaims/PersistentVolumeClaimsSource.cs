@@ -1,27 +1,43 @@
 ﻿using System.Collections.Concurrent;
 using k8s.Models;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Kubernetes.PersistentVolumeClaims;
 
 internal class PersistentVolumeClaimsSource : RowSourceBase<PersistentVolumeClaimEntity>
 {
+    private const string PersistentVolumeClaimsSourceName = "kubernetes_persistentvolumeclaims";
     private readonly IKubernetesApi _kubernetesApi;
+    private readonly RuntimeContext _runtimeContext;
 
-    public PersistentVolumeClaimsSource(IKubernetesApi kubernetesApi)
+    public PersistentVolumeClaimsSource(IKubernetesApi kubernetesApi, RuntimeContext runtimeContext)
     {
         _kubernetesApi = kubernetesApi;
+        _runtimeContext = runtimeContext;
     }
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        var pvcList = _kubernetesApi.ListPersistentVolumeClaimsForAllNamespaces();
+        _runtimeContext.ReportDataSourceBegin(PersistentVolumeClaimsSourceName);
+        long totalRowsProcessed = 0;
+        
+        try
+        {
+            var pvcList = _kubernetesApi.ListPersistentVolumeClaimsForAllNamespaces();
+            totalRowsProcessed = pvcList.Items.Count;
+            _runtimeContext.ReportDataSourceRowsKnown(PersistentVolumeClaimsSourceName, totalRowsProcessed);
 
-        chunkedSource.Add(
-            pvcList.Items.Select(c => new EntityResolver<PersistentVolumeClaimEntity>(
-                MapV1PersistentVolumeClaimToPersistentVolumeClaimsEntity(c),
-                PersistentVolumeClaimsSourceHelper.PersistentVolumeClaimsNameToIndexMap,
-                PersistentVolumeClaimsSourceHelper.PersistentVolumeClaimsIndexToMethodAccessMap)).ToList());
+            chunkedSource.Add(
+                pvcList.Items.Select(c => new EntityResolver<PersistentVolumeClaimEntity>(
+                    MapV1PersistentVolumeClaimToPersistentVolumeClaimsEntity(c),
+                    PersistentVolumeClaimsSourceHelper.PersistentVolumeClaimsNameToIndexMap,
+                    PersistentVolumeClaimsSourceHelper.PersistentVolumeClaimsIndexToMethodAccessMap)).ToList());
+        }
+        finally
+        {
+            _runtimeContext.ReportDataSourceEnd(PersistentVolumeClaimsSourceName, totalRowsProcessed);
+        }
     }
 
     private static PersistentVolumeClaimEntity MapV1PersistentVolumeClaimToPersistentVolumeClaimsEntity(

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Musoq.DataSources.JsonHelpers;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Newtonsoft.Json;
 
@@ -15,28 +16,29 @@ namespace Musoq.DataSources.Json
     /// </summary>
     public class JsonSource : RowSourceBase<dynamic>
     {
+        private const string JsonSourceName = "json";
         private readonly Stream _stream;
-        private readonly CancellationToken _endWorkToken;
+        private readonly RuntimeContext _runtimeContext;
         
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonSource"/> class.
         /// </summary>
         /// <param name="stream"></param>
-        /// <param name="endWorkToken"></param>
-        public JsonSource(Stream stream, CancellationToken endWorkToken)
+        /// <param name="runtimeContext"></param>
+        public JsonSource(Stream stream, RuntimeContext runtimeContext)
         {
             _stream = stream;
-            _endWorkToken = endWorkToken;
+            _runtimeContext = runtimeContext;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonSource"/> class.
         /// </summary>
         /// <param name="path"></param>
-        /// <param name="endWorkToken"></param>
-        public JsonSource(string path, CancellationToken endWorkToken)
+        /// <param name="runtimeContext"></param>
+        public JsonSource(string path, RuntimeContext runtimeContext)
         {
-            _endWorkToken = endWorkToken;
+            _runtimeContext = runtimeContext;
             _stream = File.OpenRead(path);
         }
 
@@ -47,58 +49,71 @@ namespace Musoq.DataSources.Json
         /// <exception cref="NotSupportedException"></exception>
         protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
         {
-            using var contentStream = _stream;
-            using var contentReader = new StreamReader(contentStream);
-            using var reader = new JsonTextReader(contentReader);
-            reader.SupportMultipleContent = true;
-
-            if (!reader.Read())
-                throw new NotSupportedException("Cannot read file. Json is probably malformed.");
+            _runtimeContext.ReportDataSourceBegin(JsonSourceName);
+            long totalRowsProcessed = 0;
+            var endWorkToken = _runtimeContext.EndWorkToken;
             
-            var rows = reader.TokenType switch
+            try
             {
-                JsonToken.StartObject => new[] { JsonParser.ParseObject(reader, _endWorkToken) },
-                JsonToken.StartArray => JsonParser.ParseArray(reader, _endWorkToken),
-                _ => null
-            };
+                using var contentStream = _stream;
+                using var contentReader = new StreamReader(contentStream);
+                using var reader = new JsonTextReader(contentReader);
+                reader.SupportMultipleContent = true;
 
-            if (rows == null)
-                throw new NotSupportedException("This type of .json file is not supported.");
-
-            using var enumerator = rows.GetEnumerator();
-
-            if (!enumerator.MoveNext())
-                return;
-
-            if (enumerator.Current is not IDictionary<string, object> firstRow)
-                return;
-
-            var index = 0;
-            var indexToNameMap = firstRow.Keys.ToDictionary(_ => index++);
+                if (!reader.Read())
+                    throw new NotSupportedException("Cannot read file. Json is probably malformed.");
             
-            var list = new List<IObjectResolver>
-            {
-                new JsonObjectResolver(firstRow, indexToNameMap)
-            };
+                var rows = reader.TokenType switch
+                {
+                    JsonToken.StartObject => new[] { JsonParser.ParseObject(reader, endWorkToken) },
+                    JsonToken.StartArray => JsonParser.ParseArray(reader, endWorkToken),
+                    _ => null
+                };
+
+                if (rows == null)
+                    throw new NotSupportedException("This type of .json file is not supported.");
+
+                using var enumerator = rows.GetEnumerator();
+
+                if (!enumerator.MoveNext())
+                    return;
+
+                if (enumerator.Current is not IDictionary<string, object> firstRow)
+                    return;
+
+                var index = 0;
+                var indexToNameMap = firstRow.Keys.ToDictionary(_ => index++);
             
-            while (enumerator.MoveNext())
-            {
-                _endWorkToken.ThrowIfCancellationRequested();
+                var list = new List<IObjectResolver>
+                {
+                    new JsonObjectResolver(firstRow, indexToNameMap)
+                };
+                totalRowsProcessed++;
+            
+                while (enumerator.MoveNext())
+                {
+                    endWorkToken.ThrowIfCancellationRequested();
                 
-                if (enumerator.Current is not IDictionary<string, object> row)
-                    continue;
+                    if (enumerator.Current is not IDictionary<string, object> row)
+                        continue;
 
-                list.Add(new JsonObjectResolver(row, indexToNameMap));
+                    list.Add(new JsonObjectResolver(row, indexToNameMap));
+                    totalRowsProcessed++;
 
-                if (list.Count < 1000)
-                    continue;
+                    if (list.Count < 1000)
+                        continue;
 
-                chunkedSource.Add(list, _endWorkToken);
+                    chunkedSource.Add(list, endWorkToken);
 
-                list = new List<IObjectResolver>(1000);
-            }
+                    list = new List<IObjectResolver>(1000);
+                }
             
-            chunkedSource.Add(list, _endWorkToken);
+                chunkedSource.Add(list, endWorkToken);
+            }
+            finally
+            {
+                _runtimeContext.ReportDataSourceEnd(JsonSourceName, totalRowsProcessed);
+            }
         }
     }
 }

@@ -1,28 +1,45 @@
 ﻿using System.Collections.Concurrent;
 using k8s.Models;
 using Musoq.DataSources.Kubernetes.Deployments;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Kubernetes.Events;
 
 internal class EventsSource : RowSourceBase<DeploymentEntity>
 {
+    private const string EventsSourceName = "kubernetes_events";
     private readonly IKubernetesApi _client;
     private readonly Func<IKubernetesApi, Corev1EventList> _retrieve;
+    private readonly RuntimeContext _runtimeContext;
 
-    public EventsSource(IKubernetesApi client, Func<IKubernetesApi, Corev1EventList> retrieve)
+    public EventsSource(IKubernetesApi client, Func<IKubernetesApi, Corev1EventList> retrieve, RuntimeContext runtimeContext)
     {
         _client = client;
         _retrieve = retrieve;
+        _runtimeContext = runtimeContext;
     }
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        var eventsList = _retrieve(_client);
+        _runtimeContext.ReportDataSourceBegin(EventsSourceName);
         
-        chunkedSource.Add(
-            eventsList.Items.Select(c => 
-                new EntityResolver<EventEntity>(MapV1EventToEventEntity(c), EventsSourceHelper.EventsNameToIndexMap, EventsSourceHelper.EventsIndexToMethodAccessMap)).ToList());
+        try
+        {
+            var eventsList = _retrieve(_client);
+            _runtimeContext.ReportDataSourceRowsKnown(EventsSourceName, eventsList.Items.Count);
+        
+            chunkedSource.Add(
+                eventsList.Items.Select(c => 
+                    new EntityResolver<EventEntity>(MapV1EventToEventEntity(c), EventsSourceHelper.EventsNameToIndexMap, EventsSourceHelper.EventsIndexToMethodAccessMap)).ToList());
+            
+            _runtimeContext.ReportDataSourceEnd(EventsSourceName, eventsList.Items.Count);
+        }
+        catch
+        {
+            _runtimeContext.ReportDataSourceEnd(EventsSourceName, 0);
+            throw;
+        }
     }
 
     private static EventEntity MapV1EventToEventEntity(Corev1Event corev1Event)
