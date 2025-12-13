@@ -26,6 +26,7 @@ public class OllamaSingleRowSourceTests
         
         var source = new OllamaSingleRowSource(
             new RuntimeContext(
+                "test",
                 CancellationToken.None,
                 Array.Empty<ISchemaColumn>(),
                 new Dictionary<string, string>(),

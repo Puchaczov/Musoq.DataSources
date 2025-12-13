@@ -91,6 +91,7 @@ namespace Musoq.DataSources.Os.Tests
             
             var source = new TestFilesSource("./Directories", false, 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -110,6 +111,7 @@ namespace Musoq.DataSources.Os.Tests
             
             var source = new TestFilesSource("./Directories", true, 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -133,6 +135,7 @@ namespace Musoq.DataSources.Os.Tests
             
             var source = new TestDirectoriesSource("./Directories", false, 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -154,6 +157,7 @@ namespace Musoq.DataSources.Os.Tests
             
             var source = new TestDirectoriesSource("./Directories", true, 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -176,6 +180,7 @@ namespace Musoq.DataSources.Os.Tests
             
             var source = new TestDirectoriesSource("./Some/Non/Existing/Path", true, 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -194,6 +199,7 @@ namespace Musoq.DataSources.Os.Tests
             
             var source = new TestFilesSource("./Some/Non/Existing/Path.pdf", true, 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -213,6 +219,7 @@ namespace Musoq.DataSources.Os.Tests
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
             var source = new DirectoriesSource("./Directories", true, new RuntimeContext(
+                "test",
                 tokenSource.Token, 
                 Array.Empty<ISchemaColumn>(), 
                 new Dictionary<string, string>(),
@@ -230,6 +237,7 @@ namespace Musoq.DataSources.Os.Tests
             var mockLogger = new Mock<ILogger>();
             var source = new DirectoriesSource("./Directories", true, 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -326,6 +334,7 @@ namespace Musoq.DataSources.Os.Tests
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
             var source = new FilesSource("./Directories", true, new RuntimeContext(
+                "test",
                 tokenSource.Token, 
                 Array.Empty<ISchemaColumn>(), 
                 new Dictionary<string, string>(),
@@ -343,6 +352,7 @@ namespace Musoq.DataSources.Os.Tests
             var mockLogger = new Mock<ILogger>();
             var source = new FilesSource("./Directories", true, 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -360,6 +370,7 @@ namespace Musoq.DataSources.Os.Tests
             var mockLogger = new Mock<ILogger>();
             var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory2", 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -393,6 +404,7 @@ namespace Musoq.DataSources.Os.Tests
             var mockLogger = new Mock<ILogger>();
             var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory1", 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),

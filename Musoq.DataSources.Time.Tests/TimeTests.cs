@@ -37,6 +37,7 @@ namespace Musoq.DataSources.Time.Tests
             var nextHour = now.AddHours(1);
             var source = new TimeSource(now, nextHour, "minutes", 
                 new RuntimeContext(
+                    "test",
                     tokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(), 
@@ -56,6 +57,7 @@ namespace Musoq.DataSources.Time.Tests
             var nextHour = now.AddHours(1);
             var source = new TimeSource(now, nextHour, "minutes", 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),

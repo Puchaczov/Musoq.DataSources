@@ -69,6 +69,7 @@ namespace Musoq.Schema.FlatFile.Tests
             endWorkTokenSource.Cancel();
             var schema = new FlatFileSource("./TestMultilineFile.txt", 
                 new RuntimeContext(
+                    "test",
                     endWorkTokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -86,6 +87,7 @@ namespace Musoq.Schema.FlatFile.Tests
             var mockLogger = new Mock<ILogger>();
             var schema = new FlatFileSource("./TestMultilineFile.txt", 
                 new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
