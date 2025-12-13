@@ -3,7 +3,7 @@
       <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>8.2.3</Version>
+        <Version>8.3.0</Version>
         <Authors>Jakub Pucha³a</Authors>
     <Product>Musoq</Product>
     <Description>Query JSON files and data using SQL syntax</Description>
