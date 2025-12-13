@@ -6,6 +6,7 @@
         <Version>3.2.3</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
+        <Description>Query CAN bus data and DBC files using SQL syntax</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>sql, can, can-bus, dotnet-core</PackageTags>

@@ -6,6 +6,7 @@
         <Version>1.5.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
+        <Description>Query Git repositories, commits, branches, and history using SQL syntax</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>sql, git, dotnet-core</PackageTags>

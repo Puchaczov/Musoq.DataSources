@@ -6,6 +6,7 @@
         <Version>8.2.3</Version>
         <Authors>Jakub Puchała</Authors>
     <Product>Musoq</Product>
+    <Description>Query CSV, TSV, and other separated value files using SQL syntax</Description>
     <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageTags>sql, csv, dotnet-core</PackageTags>

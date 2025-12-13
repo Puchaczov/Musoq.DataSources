@@ -6,6 +6,7 @@
         <Version>2.2.3</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
+        <Description>Query and analyze C# source code using Roslyn and SQL syntax</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>sql, roslyn, dotnet-core</PackageTags>

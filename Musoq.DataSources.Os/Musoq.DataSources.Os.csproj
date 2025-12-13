@@ -6,6 +6,7 @@
         <Version>8.2.3</Version>
         <Authors>Jakub Puchała</Authors>
     <Product>Musoq</Product>
+    <Description>Query file system, directories, and OS resources using SQL syntax</Description>
     <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageTags>sql, os, dotnet-core</PackageTags>

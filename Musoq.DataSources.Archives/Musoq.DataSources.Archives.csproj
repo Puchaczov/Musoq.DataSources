@@ -6,6 +6,7 @@
         <Version>5.2.3</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
+        <Description>Query ZIP, TAR, and other archive files using SQL syntax</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>sql, archives, dotnet-core</PackageTags>
