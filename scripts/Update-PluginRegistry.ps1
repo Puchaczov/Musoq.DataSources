@@ -41,6 +41,71 @@ function ConvertTo-Iso8601String {
     return $Value
 }
 
+<#
+.SYNOPSIS
+    Strips the pre-release suffix from a version string for comparison.
+
+.DESCRIPTION
+    Removes any pre-release suffix (everything after the first hyphen) from a version string
+    to enable proper version comparison using PowerShell's [version] type.
+
+.PARAMETER Version
+    The version string that may contain a pre-release suffix (e.g., "5.3.0-beta").
+
+.OUTPUTS
+    String with pre-release suffix removed (e.g., "5.3.0").
+#>
+function Get-BaseVersion {
+    param([string]$Version)
+    
+    if ([string]::IsNullOrWhiteSpace($Version)) {
+        return $null
+    }
+    
+    return $Version -replace '-.*$', ''
+}
+
+<#
+.SYNOPSIS
+    Updates the version history for a plugin.
+
+.DESCRIPTION
+    Adds or updates the version history entry for a specific plugin version.
+
+.PARAMETER Registry
+    The registry hashtable to update.
+
+.PARAMETER PluginName
+    The name of the plugin.
+
+.PARAMETER Version
+    The version string.
+
+.PARAMETER ReleaseTag
+    The release tag for this version.
+
+.PARAMETER ReleaseDate
+    The release date for this version.
+#>
+function Update-PluginVersionHistory {
+    param(
+        [hashtable]$Registry,
+        [string]$PluginName,
+        [string]$Version,
+        [string]$ReleaseTag,
+        [string]$ReleaseDate
+    )
+    
+    if (-not $Registry.versionHistory.ContainsKey($PluginName)) {
+        $Registry.versionHistory[$PluginName] = @{}
+    }
+    
+    $Registry.versionHistory[$PluginName][$Version] = @{
+        releaseTag = $ReleaseTag
+        releaseDate = $ReleaseDate
+    }
+}
+
 if (-not (Test-ValidRepository -Repository $Repository)) {
     Write-Error "Invalid repository format: $Repository. Expected 'owner/repo' format."
     exit 1
@@ -382,9 +447,15 @@ try {
     if ($RegenerateFromReleases -or $NeedToCreateRegistry -or ($Registry.plugins.Count -eq 0)) {
         Write-Host "  Scanning existing releases to populate registry..." -ForegroundColor Cyan
         
-        $ReleasesJson = gh release list --repo $Repository --limit 100 --json tagName 2>$null
+        # Use a high limit to get all releases - GitHub API supports up to 1000 per page
+        $ReleasesJson = gh release list --repo $Repository --limit 1000 --json tagName 2>$null
         if ($LASTEXITCODE -eq 0 -and $ReleasesJson) {
             $Releases = $ReleasesJson | ConvertFrom-Json
+            
+            # Build a map of all plugin versions from releases
+            # Key: plugin name, Value: hashtable of version -> release data
+            $ReleaseVersionsMap = @{}
+            
             foreach ($Release in $Releases) {
                 $Tag = $Release.tagName
                 
@@ -396,9 +467,47 @@ try {
                 if ($PluginFromRelease) {
                     $validation = Test-ValidPluginData -Plugin $PluginFromRelease
                     if ($validation.IsValid) {
-                        $PublishedPlugins += $PluginFromRelease
+                        $PluginName = $PluginFromRelease.Name
+                        $Version = $PluginFromRelease.Version
+                        
+                        if (-not $ReleaseVersionsMap.ContainsKey($PluginName)) {
+                            $ReleaseVersionsMap[$PluginName] = @{}
+                        }
+                        
+                        $ReleaseVersionsMap[$PluginName][$Version] = $PluginFromRelease
                         Write-Host "    Found release: $Tag" -ForegroundColor Gray
+                        
+                        # Also update version history for all versions found
+                        Update-PluginVersionHistory -Registry $Registry -PluginName $PluginName -Version $Version -ReleaseTag $PluginFromRelease.ReleaseTag -ReleaseDate $PluginFromRelease.ReleaseDate
                     }
+                }
+            }
+            
+            # For each plugin, find the latest version and add to PublishedPlugins
+            foreach ($PluginName in $ReleaseVersionsMap.Keys) {
+                $VersionsMap = $ReleaseVersionsMap[$PluginName]
+                $LatestVersion = $null
+                $LatestPlugin = $null
+                
+                foreach ($Version in $VersionsMap.Keys) {
+                    $VersionToCompare = Get-BaseVersion -Version $Version
+                    try {
+                        if ($null -eq $LatestVersion) {
+                            $LatestVersion = $VersionToCompare
+                            $LatestPlugin = $VersionsMap[$Version]
+                        } elseif ([version]$VersionToCompare -gt [version]$LatestVersion) {
+                            $LatestVersion = $VersionToCompare
+                            $LatestPlugin = $VersionsMap[$Version]
+                        }
+                    } catch {
+                        # Log and skip invalid versions for debugging purposes
+                        Write-Warning "Skipping invalid version '$Version' for plugin '$PluginName': $($_.Exception.Message)"
+                        continue
+                    }
+                }
+                
+                if ($LatestPlugin) {
+                    $PublishedPlugins += $LatestPlugin
                 }
             }
         }
@@ -415,20 +524,26 @@ try {
         
         Write-Host "  Adding $PluginName v$Version to registry..." -ForegroundColor Gray
         
-        if (-not $Registry.versionHistory.ContainsKey($PluginName)) {
-            $Registry.versionHistory[$PluginName] = @{}
-        }
-        
-        $Registry.versionHistory[$PluginName][$Version] = @{
-            releaseTag = $Plugin.ReleaseTag
-            releaseDate = $Plugin.ReleaseDate
-        }
+        Update-PluginVersionHistory -Registry $Registry -PluginName $PluginName -Version $Version -ReleaseTag $Plugin.ReleaseTag -ReleaseDate $Plugin.ReleaseDate
         
         if ($PluginsMap.ContainsKey($PluginName)) {
             $ExistingPlugin = $PluginsMap[$PluginName]
             
             $CurrentLatest = $ExistingPlugin.latestVersion
-            if (-not $CurrentLatest -or ([version]$Version -ge [version]$CurrentLatest)) {
+            # Strip pre-release suffix for version comparison using helper function
+            $VersionToCompare = Get-BaseVersion -Version $Version
+            $CurrentLatestToCompare = Get-BaseVersion -Version $CurrentLatest
+            # Update if no current version or new version is greater than or equal
+            $shouldUpdate = -not $CurrentLatestToCompare -or [string]::IsNullOrWhiteSpace($CurrentLatestToCompare)
+            if (-not $shouldUpdate) {
+                try {
+                    $shouldUpdate = [version]$VersionToCompare -ge [version]$CurrentLatestToCompare
+                } catch {
+                    # If version comparison fails, update anyway to be safe
+                    $shouldUpdate = $true
+                }
+            }
+            if ($shouldUpdate) {
                 $ExistingPlugin.latestVersion = $Version
                 $ExistingPlugin.releaseTag = $Plugin.ReleaseTag
                 $ExistingPlugin.releaseDate = $Plugin.ReleaseDate
