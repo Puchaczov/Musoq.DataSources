@@ -178,10 +178,10 @@ public class DockerSchema : SchemaBase
         
         return name.ToLowerInvariant() switch
         {
-            ContainersTableName => new ContainersSource(_dockerApi),
-            ImagesTableName => new ImagesSource(_dockerApi),
-            NetworksTableName => new NetworksSource(_dockerApi),
-            VolumesTableName => new VolumesSource(_dockerApi),
+            ContainersTableName => new ContainersSource(_dockerApi, runtimeContext),
+            ImagesTableName => new ImagesSource(_dockerApi, runtimeContext),
+            NetworksTableName => new NetworksSource(_dockerApi, runtimeContext),
+            VolumesTableName => new VolumesSource(_dockerApi, runtimeContext),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }

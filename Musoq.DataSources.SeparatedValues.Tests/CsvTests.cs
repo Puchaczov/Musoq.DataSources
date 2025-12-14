@@ -667,6 +667,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                 tokenSource.Token)
             {
                 RuntimeContext = new RuntimeContext(
+                    "test",
                     tokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
@@ -704,6 +705,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
             };
 
             var context = new RuntimeContext(
+                "test",
                 tokenSource.Token, 
                 columns, 
                 new Dictionary<string, string>(),
@@ -767,6 +769,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
             var source = new SeparatedValuesFromFileRowsSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true, 2, CancellationToken.None)
             {
                 RuntimeContext = new RuntimeContext(
+                    "test",
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),

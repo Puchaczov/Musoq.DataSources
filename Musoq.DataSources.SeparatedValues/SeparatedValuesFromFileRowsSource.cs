@@ -18,9 +18,11 @@ namespace Musoq.DataSources.SeparatedValues;
 
 internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
 {
+    private const string SeparatedValuesSourceName = "separated_values";
     private readonly SeparatedValueInfo[] _files;
     private const int BufferSize = 65536;
     private const int ChunkSize = 100000;
+    private long _totalRowsProcessed;
         
     public RuntimeContext? RuntimeContext { get; init; }
 
@@ -59,7 +61,17 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
 
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
-        await Parallel.ForEachAsync(_files, cancellationToken, async (file, loopToken) => await ProcessFileAsync(file, chunkedSource, loopToken));
+        RuntimeContext?.ReportDataSourceBegin(SeparatedValuesSourceName);
+        _totalRowsProcessed = 0;
+        
+        try
+        {
+            await Parallel.ForEachAsync(_files, cancellationToken, async (file, loopToken) => await ProcessFileAsync(file, chunkedSource, loopToken));
+        }
+        finally
+        {
+            RuntimeContext?.ReportDataSourceEnd(SeparatedValuesSourceName, _totalRowsProcessed);
+        }
     }
 
     private async Task ProcessFileAsync(SeparatedValueInfo csvFile, BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
@@ -168,6 +180,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
                 continue;
                 
             chunk.Add(new EntityResolver<object?[]>(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap), nameToIndexMap, indexToMethodAccess));
+            Interlocked.Increment(ref _totalRowsProcessed);
 
             if (chunk.Count < ChunkSize) continue;
                 

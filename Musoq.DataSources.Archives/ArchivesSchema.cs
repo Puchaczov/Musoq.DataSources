@@ -79,7 +79,7 @@ public class ArchivesSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            FileTable => new ArchivesRowSource((string) parameters[0]),
+            FileTable => new ArchivesRowSource((string) parameters[0], runtimeContext),
             _ => throw new NotSupportedException($"Source {parameters[0]} is not supported.")
         };
     }

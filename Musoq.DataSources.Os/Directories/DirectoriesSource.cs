@@ -14,12 +14,15 @@ namespace Musoq.DataSources.Os.Directories;
 
 internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 {
+    private const string DirectoriesSourceName = "directories";
+    
     // ReSharper disable once InconsistentNaming
     private static readonly int MaxDegreeOfParallelism = Environment.ProcessorCount * 2;
     
     private const int ChunkSize = 2000;
     private readonly string _path;
     private readonly bool _recursive;
+    private readonly RuntimeContext _communicator;
 
     public DirectoriesSource(string path, bool recursive, RuntimeContext communicator) 
         : base(communicator.EndWorkToken)
@@ -29,32 +32,47 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         
         _path = new DirectoryInfo(path).FullName;
         _recursive = recursive;
+        _communicator = communicator;
     }
 
     protected override async Task CollectChunksAsync(
         BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
         CancellationToken cancellationToken)
     {
-        if (!Directory.Exists(_path))
-            return;
-
-        var pendingResolvers = new List<string>(ChunkSize);
+        _communicator.ReportDataSourceBegin(DirectoriesSourceName);
+        long totalRowsProcessed = 0;
         
-        await foreach (var dir in EnumerateDirectoriesAsync(_path, _recursive, cancellationToken))
+        try
         {
-            pendingResolvers.Add(dir);
+            if (!Directory.Exists(_path))
+                return;
 
-            if (pendingResolvers.Count < ChunkSize) continue;
+            var pendingResolvers = new List<string>(ChunkSize);
+        
+            await foreach (var dir in EnumerateDirectoriesAsync(_path, _recursive, cancellationToken))
+            {
+                pendingResolvers.Add(dir);
+
+                if (pendingResolvers.Count < ChunkSize) continue;
             
-            await ProcessResolverChunkAsync(pendingResolvers, chunkedSource, cancellationToken);
-            pendingResolvers.Clear();
-        }
+                var processed = await ProcessResolverChunkAsync(pendingResolvers, chunkedSource, cancellationToken);
+                Interlocked.Add(ref totalRowsProcessed, processed);
+                pendingResolvers.Clear();
+            }
 
-        if (pendingResolvers.Count > 0)
-            await ProcessResolverChunkAsync(pendingResolvers, chunkedSource, cancellationToken);
+            if (pendingResolvers.Count > 0)
+            {
+                var processed = await ProcessResolverChunkAsync(pendingResolvers, chunkedSource, cancellationToken);
+                Interlocked.Add(ref totalRowsProcessed, processed);
+            }
+        }
+        finally
+        {
+            _communicator.ReportDataSourceEnd(DirectoriesSourceName, totalRowsProcessed);
+        }
     }
 
-    private static async Task ProcessResolverChunkAsync(
+    private static async Task<long> ProcessResolverChunkAsync(
         List<string> dirs,
         BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
         CancellationToken cancellationToken)
@@ -86,6 +104,8 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 
         if (!resolvers.IsEmpty)
             chunkedSource.Add(resolvers.ToList(), cancellationToken);
+        
+        return resolvers.Count;
     }
 
     private static async IAsyncEnumerable<string> EnumerateDirectoriesAsync(

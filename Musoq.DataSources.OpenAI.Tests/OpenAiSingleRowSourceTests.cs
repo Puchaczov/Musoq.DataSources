@@ -23,6 +23,7 @@ public class OpenAiSingleRowSourceTests
         
         var source = new OpenAiSingleRowSource(
             new RuntimeContext(
+                "test",
                 CancellationToken.None,
                 Array.Empty<ISchemaColumn>(),
                 new Dictionary<string, string>()

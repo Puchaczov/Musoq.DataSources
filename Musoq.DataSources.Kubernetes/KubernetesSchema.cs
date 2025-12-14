@@ -538,25 +538,25 @@ public class KubernetesSchema : SchemaBase
 
         return name.ToLowerInvariant() switch
         {
-            PodsTableName => new PodsSource(client),
-            ServicesTableName => new ServicesSource(client),
-            DeploymentsTableName => new DeploymentsSource(client),
-            ReplicaSetsTableName => new ReplicaSetsSource(client),
-            NodesTableName => new NodesSource(client),
-            SecretsTableName => new SecretsSource(client),
-            ConfigMapsTableName => new ConfigmapsSource(client),
-            IngressesTableName => new IngressesSource(client),
-            PersistentVolumesTableName => new PersistentVolumesSource(client),
-            PodContainersTableName => new PodContainersSource(client),
-            PersistentVolumeClaimsTableName => new PersistentVolumeClaimsSource(client),
-            JobsTableName => new JobsSource(client),
-            CronJobsTableName => new CronJobsSource(client),
-            DaemonSetsTableName => new DaemonSetsSource(client),
-            StatefulSetsTableName => new StatefulSetsSource(client),
-            PodLogsTableName => new PodLogsSource(client, (string)parameters[0], (string)parameters[1], (string)parameters[2]),
+            PodsTableName => new PodsSource(client, runtimeContext),
+            ServicesTableName => new ServicesSource(client, runtimeContext),
+            DeploymentsTableName => new DeploymentsSource(client, runtimeContext),
+            ReplicaSetsTableName => new ReplicaSetsSource(client, runtimeContext),
+            NodesTableName => new NodesSource(client, runtimeContext),
+            SecretsTableName => new SecretsSource(client, runtimeContext),
+            ConfigMapsTableName => new ConfigmapsSource(client, runtimeContext),
+            IngressesTableName => new IngressesSource(client, runtimeContext),
+            PersistentVolumesTableName => new PersistentVolumesSource(client, runtimeContext),
+            PodContainersTableName => new PodContainersSource(client, runtimeContext),
+            PersistentVolumeClaimsTableName => new PersistentVolumeClaimsSource(client, runtimeContext),
+            JobsTableName => new JobsSource(client, runtimeContext),
+            CronJobsTableName => new CronJobsSource(client, runtimeContext),
+            DaemonSetsTableName => new DaemonSetsSource(client, runtimeContext),
+            StatefulSetsTableName => new StatefulSetsSource(client, runtimeContext),
+            PodLogsTableName => new PodLogsSource(client, (string)parameters[0], (string)parameters[1], (string)parameters[2], runtimeContext),
             EventsTableName => new EventsSource(client, 
                 parameters.Length == 0 ? 
-                    api => api.ListEvents() : api => api.ListNamespacedEvents((string)parameters[0])),
+                    api => api.ListEvents() : api => api.ListNamespacedEvents((string)parameters[0]), runtimeContext),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }

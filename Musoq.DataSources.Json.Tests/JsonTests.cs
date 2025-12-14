@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Schema;
 
 namespace Musoq.DataSources.Json.Tests
 {
@@ -100,9 +104,17 @@ namespace Musoq.DataSources.Json.Tests
         [TestMethod]
         public void JsonSource_Cancelled_ShouldBeEmpty()
         {
+            var mockLogger = new Mock<ILogger>();
             using var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
-            var source = new JsonSource("./JsonTestFile_First.json", tokenSource.Token);
+            var runtimeContext = new RuntimeContext(
+                "test",
+                tokenSource.Token,
+                Array.Empty<ISchemaColumn>(),
+                new Dictionary<string, string>(),
+                (null, null, null, false),
+                mockLogger.Object);
+            var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
 
             var fired = source.Rows.Count();
 
@@ -112,7 +124,15 @@ namespace Musoq.DataSources.Json.Tests
         [TestMethod]
         public void JsonSource_FullLoadTest()
         {
-            var source = new JsonSource("./JsonTestFile_First.json", CancellationToken.None);
+            var mockLogger = new Mock<ILogger>();
+            var runtimeContext = new RuntimeContext(
+                "test",
+                CancellationToken.None,
+                Array.Empty<ISchemaColumn>(),
+                new Dictionary<string, string>(),
+                (null, null, null, false),
+                mockLogger.Object);
+            var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
 
             var fired = source.Rows.Count();
 

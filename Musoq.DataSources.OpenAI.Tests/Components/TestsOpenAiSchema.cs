@@ -23,6 +23,6 @@ internal class TestsOpenAiSchema(IOpenAiApi openAiApi) : OpenAiSchema
             Temperature = parameters.Length > 2 ? Convert.ToSingle(parameters[2]) : 0,
             FrequencyPenalty = parameters.Length > 3 ? Convert.ToSingle(parameters[3]) : 0,
             PresencePenalty = parameters.Length > 4 ? Convert.ToSingle(parameters[4]) : 0
-        }, runtimeContext.EndWorkToken);
+        });
     }
 }

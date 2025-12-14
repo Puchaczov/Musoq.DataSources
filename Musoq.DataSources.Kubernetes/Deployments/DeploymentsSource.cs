@@ -1,25 +1,42 @@
 ﻿using System.Collections.Concurrent;
 using k8s.Models;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Kubernetes.Deployments;
 
 internal class DeploymentsSource : RowSourceBase<DeploymentEntity>
 {
+    private const string DeploymentsSourceName = "kubernetes_deployments";
     private readonly IKubernetesApi _client;
+    private readonly RuntimeContext _runtimeContext;
 
-    public DeploymentsSource(IKubernetesApi client)
+    public DeploymentsSource(IKubernetesApi client, RuntimeContext runtimeContext)
     {
         _client = client;
+        _runtimeContext = runtimeContext;
     }
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        var deployments = _client.ListDeploymentsForAllNamespaces();
+        _runtimeContext.ReportDataSourceBegin(DeploymentsSourceName);
         
-        chunkedSource.Add(
-            deployments.Items.Select(c => 
-                new EntityResolver<DeploymentEntity>(MapV1DeploymentToDeploymentEntity(c), DeploymentsSourceHelper.DeploymentsNameToIndexMap, DeploymentsSourceHelper.DeploymentsIndexToMethodAccessMap)).ToList());
+        try
+        {
+            var deployments = _client.ListDeploymentsForAllNamespaces();
+            _runtimeContext.ReportDataSourceRowsKnown(DeploymentsSourceName, deployments.Items.Count);
+        
+            chunkedSource.Add(
+                deployments.Items.Select(c => 
+                    new EntityResolver<DeploymentEntity>(MapV1DeploymentToDeploymentEntity(c), DeploymentsSourceHelper.DeploymentsNameToIndexMap, DeploymentsSourceHelper.DeploymentsIndexToMethodAccessMap)).ToList());
+            
+            _runtimeContext.ReportDataSourceEnd(DeploymentsSourceName, deployments.Items.Count);
+        }
+        catch
+        {
+            _runtimeContext.ReportDataSourceEnd(DeploymentsSourceName, 0);
+            throw;
+        }
     }
 
     private static DeploymentEntity MapV1DeploymentToDeploymentEntity(V1Deployment v1Deployment)

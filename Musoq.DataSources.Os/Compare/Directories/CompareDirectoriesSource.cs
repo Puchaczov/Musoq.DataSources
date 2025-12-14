@@ -11,67 +11,79 @@ namespace Musoq.DataSources.Os.Compare.Directories;
 internal class CompareDirectoriesSource(string firstDirectory, string secondDirectory, RuntimeContext runtimeContext)
     : RowSourceBase<CompareDirectoriesResult>
 {
+    private const string CompareDirectoriesSourceName = "compare_directories";
     private readonly DirectoryInfo _firstDirectory = new(firstDirectory);
     private readonly DirectoryInfo _secondDirectory = new(secondDirectory);
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        var leftJoinedFiles = from firstDirFile in GetAllFiles(_firstDirectory)
-            join secondDirFile in GetAllFiles(_secondDirectory) on firstDirFile.FullPath.Replace(_firstDirectory.FullName, string.Empty) equals secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty) into files
-            from secondDirFile in files.DefaultIfEmpty()
-            select new SourceDestinationFilesPair([firstDirFile, secondDirFile]);
-
-        var rightJoinedFiles = from secondDirFile in GetAllFiles(_secondDirectory)
-            where !File.Exists(Path.Combine(_firstDirectory.FullName, secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty).Trim('\\')))
-            select new SourceDestinationFilesPair([null, secondDirFile]);
-
-        var allFiles = leftJoinedFiles.Concat(rightJoinedFiles);
-
-        var lib = new OsLibrary();
-        var source = new List<IObjectResolver>();
-
-        foreach(var files in allFiles)
+        runtimeContext.ReportDataSourceBegin(CompareDirectoriesSourceName);
+        long totalRowsProcessed = 0;
+        
+        try
         {
-            State result;
+            var leftJoinedFiles = from firstDirFile in GetAllFiles(_firstDirectory)
+                join secondDirFile in GetAllFiles(_secondDirectory) on firstDirFile.FullPath.Replace(_firstDirectory.FullName, string.Empty) equals secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty) into files
+                from secondDirFile in files.DefaultIfEmpty()
+                select new SourceDestinationFilesPair([firstDirFile, secondDirFile]);
 
-            // 11
-            if (files.Source != null && files.Destination != null)
+            var rightJoinedFiles = from secondDirFile in GetAllFiles(_secondDirectory)
+                where !File.Exists(Path.Combine(_firstDirectory.FullName, secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty).Trim('\\')))
+                select new SourceDestinationFilesPair([null, secondDirFile]);
+
+            var allFiles = leftJoinedFiles.Concat(rightJoinedFiles);
+
+            var lib = new OsLibrary();
+            var source = new List<IObjectResolver>();
+
+            foreach(var files in allFiles)
             {
-                result = lib.Sha256File(files.Source) != lib.Sha256File(files.Destination) ? State.Modified : State.TheSame;
-            }
-            // 10
-            else if (files.Source != null)
-            {
-                result = State.Removed;
-            }
-            // 01
-            else if (files.Destination != null)
-            {
-                result = State.Added;
-            }
-            // 00
-            else
-            {
-                continue;
+                State result;
+
+                // 11
+                if (files.Source != null && files.Destination != null)
+                {
+                    result = lib.Sha256File(files.Source) != lib.Sha256File(files.Destination) ? State.Modified : State.TheSame;
+                }
+                // 10
+                else if (files.Source != null)
+                {
+                    result = State.Removed;
+                }
+                // 01
+                else if (files.Destination != null)
+                {
+                    result = State.Added;
+                }
+                // 00
+                else
+                {
+                    continue;
+                }
+
+                var value = new CompareDirectoriesResult(_firstDirectory, files.Source, _secondDirectory, files.Destination, result);
+
+                source.Add(new EntityResolver<CompareDirectoriesResult>(value, CompareDirectoriesHelper.CompareDirectoriesNameToIndexMap, CompareDirectoriesHelper.CompareDirectoriesIndexToMethodAccessMap));
+                totalRowsProcessed++;
+
+                if (source.Count <= 100)
+                {
+                    continue;
+                }
+
+                runtimeContext.EndWorkToken.ThrowIfCancellationRequested();
+
+                chunkedSource.Add(source);
+                source = [];
             }
 
-            var value = new CompareDirectoriesResult(_firstDirectory, files.Source, _secondDirectory, files.Destination, result);
-
-            source.Add(new EntityResolver<CompareDirectoriesResult>(value, CompareDirectoriesHelper.CompareDirectoriesNameToIndexMap, CompareDirectoriesHelper.CompareDirectoriesIndexToMethodAccessMap));
-
-            if (source.Count <= 100)
-            {
-                continue;
-            }
-
-            runtimeContext.EndWorkToken.ThrowIfCancellationRequested();
-
-            chunkedSource.Add(source);
-            source = [];
+            if (source.Count > 0)
+                chunkedSource.Add(source);
         }
-
-        if (source.Count > 0)
-            chunkedSource.Add(source);
+        finally
+        {
+            runtimeContext.ReportDataSourceEnd(CompareDirectoriesSourceName, totalRowsProcessed);
+        }
     }
 
     private static IEnumerable<FileEntity> GetAllFiles(DirectoryInfo directory)

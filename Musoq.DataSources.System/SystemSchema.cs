@@ -110,15 +110,15 @@ namespace Musoq.DataSources.System
             switch (name.ToLowerInvariant())
             {
                 case Dual:
-                    return new DualRowSource();
+                    return new DualRowSource(interCommunicator);
                 case Range:
                     {
                         switch(parameters.Length)
                         {
                             case 1:
-                                return new RangeSource(0, Convert.ToInt64(parameters[0]));
+                                return new RangeSource(0, Convert.ToInt64(parameters[0]), interCommunicator);
                             case 2:
-                                return new RangeSource(Convert.ToInt64(parameters[0]), Convert.ToInt64(parameters[1]));
+                                return new RangeSource(Convert.ToInt64(parameters[0]), Convert.ToInt64(parameters[1]), interCommunicator);
                         }
                         break;
                     }

@@ -8,6 +8,7 @@ namespace Musoq.DataSources.Time
 {
     internal class TimeSource : RowSourceBase<DateTimeOffset>
     {
+        private const string TimeSourceName = "time";
         private readonly string _resolution;
         private readonly RuntimeContext _communicator;
         private readonly DateTimeOffset _startAt;
@@ -35,51 +36,62 @@ namespace Musoq.DataSources.Time
         protected override void CollectChunks(
             BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
         {
-            Func<DateTimeOffset, DateTimeOffset> modify;
-            switch (_resolution)
+            _communicator.ReportDataSourceBegin(TimeSourceName);
+            long totalRowsProcessed = 0;
+            
+            try
             {
-                case "seconds":
-                    modify = offset => offset.AddSeconds(1);
-                    break;
-                case "minutes":
-                    modify = offset => offset.AddMinutes(1);
-                    break;
-                case "hours":
-                    modify = offset => offset.AddHours(1);
-                    break;
-                case "days":
-                    modify = offset => offset.AddDays(1);
-                    break;
-                case "months":
-                    modify = offset => offset.AddMonths(1);
-                    break;
-                case "years":
-                    modify = offset => offset.AddYears(1);
-                    break;
-                default:
-                    throw new NotSupportedException($"Chosen resolution '{_resolution}' is not supported.");
-            }
+                Func<DateTimeOffset, DateTimeOffset> modify;
+                switch (_resolution)
+                {
+                    case "seconds":
+                        modify = offset => offset.AddSeconds(1);
+                        break;
+                    case "minutes":
+                        modify = offset => offset.AddMinutes(1);
+                        break;
+                    case "hours":
+                        modify = offset => offset.AddHours(1);
+                        break;
+                    case "days":
+                        modify = offset => offset.AddDays(1);
+                        break;
+                    case "months":
+                        modify = offset => offset.AddMonths(1);
+                        break;
+                    case "years":
+                        modify = offset => offset.AddYears(1);
+                        break;
+                    default:
+                        throw new NotSupportedException($"Chosen resolution '{_resolution}' is not supported.");
+                }
 
-            var listOfCalcTimes = new List<EntityResolver<DateTimeOffset>>();
-            var currentTime = _startAt;
-            var i = 0;
-            var endWorkToken = _communicator.EndWorkToken;
+                var listOfCalcTimes = new List<EntityResolver<DateTimeOffset>>();
+                var currentTime = _startAt;
+                var i = 0;
+                var endWorkToken = _communicator.EndWorkToken;
 
-            while (currentTime <= _stopAt)
-            {
-                listOfCalcTimes.Add(new EntityResolver<DateTimeOffset>(currentTime, TimeHelper.TimeNameToIndexMap,
-                    TimeHelper.TimeIndexToMethodAccessMap));
-                currentTime = modify(currentTime);
+                while (currentTime <= _stopAt)
+                {
+                    listOfCalcTimes.Add(new EntityResolver<DateTimeOffset>(currentTime, TimeHelper.TimeNameToIndexMap,
+                        TimeHelper.TimeIndexToMethodAccessMap));
+                    currentTime = modify(currentTime);
+                    totalRowsProcessed++;
 
-                if (i++ > 99)
-                    continue;
+                    if (i++ > 99)
+                        continue;
+
+                    chunkedSource.Add(listOfCalcTimes, endWorkToken);
+                    listOfCalcTimes = [];
+                    i = 0;
+                }
 
                 chunkedSource.Add(listOfCalcTimes, endWorkToken);
-                listOfCalcTimes = [];
-                i = 0;
             }
-
-            chunkedSource.Add(listOfCalcTimes, endWorkToken);
+            finally
+            {
+                _communicator.ReportDataSourceEnd(TimeSourceName, totalRowsProcessed);
+            }
         }
     }
 }

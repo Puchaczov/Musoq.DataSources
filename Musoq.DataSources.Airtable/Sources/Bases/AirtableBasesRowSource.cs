@@ -7,6 +7,7 @@ namespace Musoq.DataSources.Airtable.Sources.Bases;
 
 internal class AirtableBasesRowSource : RowSourceBase<AirtableBase>
 {
+    private const string AirtableBasesSourceName = "airtable_bases";
     private readonly IAirtableApi _airtableApi;
     private readonly RuntimeContext _runtimeContext;
 
@@ -18,13 +19,24 @@ internal class AirtableBasesRowSource : RowSourceBase<AirtableBase>
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        foreach (var bases in _airtableApi.GetBases(_runtimeContext.QueryInformation.Columns.Select(f => f.ColumnName)))
+        _runtimeContext.ReportDataSourceBegin(AirtableBasesSourceName);
+        long totalRowsProcessed = 0;
+        
+        try
         {
-            var chunk = bases
-                .Select(@base => new EntityResolver<AirtableBase>(@base, AirtableBasesHelper.BasesNameToIndexMap, AirtableBasesHelper.BasesIndexToMethodAccessMap))
-                .ToList();
+            foreach (var bases in _airtableApi.GetBases(_runtimeContext.QueryInformation.Columns.Select(f => f.ColumnName)))
+            {
+                var chunk = bases
+                    .Select(@base => new EntityResolver<AirtableBase>(@base, AirtableBasesHelper.BasesNameToIndexMap, AirtableBasesHelper.BasesIndexToMethodAccessMap))
+                    .ToList();
             
-            chunkedSource.Add(chunk);
+                totalRowsProcessed += chunk.Count;
+                chunkedSource.Add(chunk);
+            }
+        }
+        finally
+        {
+            _runtimeContext.ReportDataSourceEnd(AirtableBasesSourceName, totalRowsProcessed);
         }
     }
 }

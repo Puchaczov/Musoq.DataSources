@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>4.2.3</Version>
+        <Version>4.3.0</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Query and interact with Ollama LLM models using SQL syntax</Description>
@@ -37,11 +37,11 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="OllamaSharp" Version="5.0.4" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="5.5.0">
+        <PackageReference Include="Musoq.Parser" Version="5.6.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.2.0" />
-        <PackageReference Include="Musoq.Schema" Version="9.3.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.3.0" />
+        <PackageReference Include="Musoq.Schema" Version="10.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Polly" Version="8.5.1" />
