@@ -10,6 +10,23 @@ $ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 
+<#
+.SYNOPSIS
+    Converts a value to ISO 8601 date string format.
+
+.DESCRIPTION
+    Normalizes date values to ISO 8601 format (yyyy-MM-ddTHH:mm:ssZ).
+    PowerShell's ConvertFrom-Json automatically converts ISO 8601 date strings to DateTime objects.
+    This function converts DateTime objects back to the expected string format using InvariantCulture
+    to ensure consistent validation regardless of the system's culture settings.
+
+.PARAMETER Value
+    The value to convert. Can be a DateTime object, string, or null.
+
+.OUTPUTS
+    String in ISO 8601 format (yyyy-MM-ddTHH:mm:ssZ) if input is a DateTime object,
+    the original value if it's already a string, or null if input is null.
+#>
 function ConvertTo-Iso8601String {
     param([object]$Value)
     
