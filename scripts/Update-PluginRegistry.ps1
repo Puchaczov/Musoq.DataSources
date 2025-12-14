@@ -10,6 +10,20 @@ $ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 
+function ConvertTo-Iso8601String {
+    param([object]$Value)
+    
+    if ($null -eq $Value) {
+        return $null
+    }
+    
+    if ($Value -is [DateTime]) {
+        return $Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture)
+    }
+    
+    return $Value
+}
+
 if (-not (Test-ValidRepository -Repository $Repository)) {
     Write-Error "Invalid repository format: $Repository. Expected 'owner/repo' format."
     exit 1
@@ -31,6 +45,13 @@ if ($PublishedMetadataPath) {
             }
             
             $PublishedPlugins = $RawContent | ConvertFrom-Json
+            
+            # Normalize ReleaseDate fields that may have been auto-converted to DateTime objects
+            foreach ($plugin in $PublishedPlugins) {
+                if ($plugin.ReleaseDate) {
+                    $plugin.ReleaseDate = ConvertTo-Iso8601String -Value $plugin.ReleaseDate
+                }
+            }
         }
         catch {
             Write-Error "Failed to parse metadata file: $_"
@@ -70,8 +91,11 @@ function Test-ValidPluginData {
     
     if (-not $Plugin.ReleaseDate) {
         $errors += "Missing ReleaseDate"
-    } elseif ($Plugin.ReleaseDate -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$') {
-        $errors += "Invalid ReleaseDate format (expected ISO 8601)"
+    } else {
+        $releaseDateStr = ConvertTo-Iso8601String -Value $Plugin.ReleaseDate
+        if ($releaseDateStr -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$') {
+            $errors += "Invalid ReleaseDate format (expected ISO 8601)"
+        }
     }
     
     if ($Plugin.Description -and -not (Test-ValidDescription -Description $Plugin.Description)) {
@@ -134,9 +158,9 @@ function Get-PluginDataFromRelease {
     
     $ReleaseInfo = gh release view $ReleaseTag --repo $Repository --json createdAt 2>$null | ConvertFrom-Json
     $ReleaseDate = if ($ReleaseInfo.createdAt) { 
-        [DateTime]::Parse($ReleaseInfo.createdAt).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") 
+        [DateTime]::Parse($ReleaseInfo.createdAt).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture) 
     } else { 
-        (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") 
+        (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture) 
     }
     
     return @{
@@ -289,7 +313,7 @@ try {
                 Tags = $ExistingPlugin.tags
                 Version = $ExistingPlugin.latestVersion
                 ReleaseTag = $ExistingPlugin.releaseTag
-                ReleaseDate = $ExistingPlugin.releaseDate
+                ReleaseDate = ConvertTo-Iso8601String -Value $ExistingPlugin.releaseDate
                 Artifacts = $ExistingPlugin.artifacts
             }
             
@@ -409,7 +433,7 @@ try {
     
     $Registry.plugins = $PluginsMap.Values | Sort-Object { $_.name }
     
-    $Registry.lastUpdated = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $Registry.lastUpdated = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture)
     
     Write-Host "  Performing final registry validation..." -ForegroundColor Gray
     
@@ -428,7 +452,7 @@ try {
             Tags = $FinalPlugin.tags
             Version = $FinalPlugin.latestVersion
             ReleaseTag = $FinalPlugin.releaseTag
-            ReleaseDate = $FinalPlugin.releaseDate
+            ReleaseDate = ConvertTo-Iso8601String -Value $FinalPlugin.releaseDate
             Artifacts = $FinalPlugin.artifacts
         }
         

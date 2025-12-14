@@ -146,7 +146,7 @@ foreach ($Project in $Projects) {
         Tags = $Metadata.Tags
         Version = $Version
         ReleaseTag = $ReleaseTag
-        ReleaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        ReleaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture)
         Artifacts = $ArtifactInfo
     }
 }
