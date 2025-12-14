@@ -382,9 +382,15 @@ try {
     if ($RegenerateFromReleases -or $NeedToCreateRegistry -or ($Registry.plugins.Count -eq 0)) {
         Write-Host "  Scanning existing releases to populate registry..." -ForegroundColor Cyan
         
-        $ReleasesJson = gh release list --repo $Repository --limit 100 --json tagName 2>$null
+        # Use a high limit to get all releases - GitHub API supports up to 1000 per page
+        $ReleasesJson = gh release list --repo $Repository --limit 1000 --json tagName 2>$null
         if ($LASTEXITCODE -eq 0 -and $ReleasesJson) {
             $Releases = $ReleasesJson | ConvertFrom-Json
+            
+            # Build a map of all plugin versions from releases
+            # Key: plugin name, Value: hashtable of version -> release data
+            $ReleaseVersionsMap = @{}
+            
             foreach ($Release in $Releases) {
                 $Tag = $Release.tagName
                 
@@ -396,9 +402,52 @@ try {
                 if ($PluginFromRelease) {
                     $validation = Test-ValidPluginData -Plugin $PluginFromRelease
                     if ($validation.IsValid) {
-                        $PublishedPlugins += $PluginFromRelease
+                        $PluginName = $PluginFromRelease.Name
+                        $Version = $PluginFromRelease.Version
+                        
+                        if (-not $ReleaseVersionsMap.ContainsKey($PluginName)) {
+                            $ReleaseVersionsMap[$PluginName] = @{}
+                        }
+                        
+                        $ReleaseVersionsMap[$PluginName][$Version] = $PluginFromRelease
                         Write-Host "    Found release: $Tag" -ForegroundColor Gray
+                        
+                        # Also update version history for all versions found
+                        if (-not $Registry.versionHistory.ContainsKey($PluginName)) {
+                            $Registry.versionHistory[$PluginName] = @{}
+                        }
+                        $Registry.versionHistory[$PluginName][$Version] = @{
+                            releaseTag = $PluginFromRelease.ReleaseTag
+                            releaseDate = $PluginFromRelease.ReleaseDate
+                        }
                     }
+                }
+            }
+            
+            # For each plugin, find the latest version and add to PublishedPlugins
+            foreach ($PluginName in $ReleaseVersionsMap.Keys) {
+                $VersionsMap = $ReleaseVersionsMap[$PluginName]
+                $LatestVersion = $null
+                $LatestPlugin = $null
+                
+                foreach ($Version in $VersionsMap.Keys) {
+                    $VersionToCompare = $Version -replace '-.*$', ''
+                    try {
+                        if ($null -eq $LatestVersion) {
+                            $LatestVersion = $VersionToCompare
+                            $LatestPlugin = $VersionsMap[$Version]
+                        } elseif ([version]$VersionToCompare -gt [version]$LatestVersion) {
+                            $LatestVersion = $VersionToCompare
+                            $LatestPlugin = $VersionsMap[$Version]
+                        }
+                    } catch {
+                        # Skip invalid versions
+                        continue
+                    }
+                }
+                
+                if ($LatestPlugin) {
+                    $PublishedPlugins += $LatestPlugin
                 }
             }
         }
@@ -428,7 +477,10 @@ try {
             $ExistingPlugin = $PluginsMap[$PluginName]
             
             $CurrentLatest = $ExistingPlugin.latestVersion
-            if (-not $CurrentLatest -or ([version]$Version -ge [version]$CurrentLatest)) {
+            # Strip pre-release suffix for version comparison
+            $VersionToCompare = $Version -replace '-.*$', ''
+            $CurrentLatestToCompare = if ($CurrentLatest) { $CurrentLatest -replace '-.*$', '' } else { $null }
+            if (-not $CurrentLatestToCompare -or ([version]$VersionToCompare -ge [version]$CurrentLatestToCompare)) {
                 $ExistingPlugin.latestVersion = $Version
                 $ExistingPlugin.releaseTag = $Plugin.ReleaseTag
                 $ExistingPlugin.releaseDate = $Plugin.ReleaseDate
