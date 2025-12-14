@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>2.2.3</Version>
+        <Version>2.3.0</Version>
         <Authors>Jakub Pucha³a</Authors>
         <Product>Musoq</Product>
         <Description>Query and analyze C# source code using Roslyn and SQL syntax</Description>
