@@ -41,6 +41,71 @@ function ConvertTo-Iso8601String {
     return $Value
 }
 
+<#
+.SYNOPSIS
+    Strips the pre-release suffix from a version string for comparison.
+
+.DESCRIPTION
+    Removes any pre-release suffix (everything after the first hyphen) from a version string
+    to enable proper version comparison using PowerShell's [version] type.
+
+.PARAMETER Version
+    The version string that may contain a pre-release suffix (e.g., "5.3.0-beta").
+
+.OUTPUTS
+    String with pre-release suffix removed (e.g., "5.3.0").
+#>
+function Get-BaseVersion {
+    param([string]$Version)
+    
+    if ([string]::IsNullOrWhiteSpace($Version)) {
+        return $null
+    }
+    
+    return $Version -replace '-.*$', ''
+}
+
+<#
+.SYNOPSIS
+    Updates the version history for a plugin.
+
+.DESCRIPTION
+    Adds or updates the version history entry for a specific plugin version.
+
+.PARAMETER Registry
+    The registry hashtable to update.
+
+.PARAMETER PluginName
+    The name of the plugin.
+
+.PARAMETER Version
+    The version string.
+
+.PARAMETER ReleaseTag
+    The release tag for this version.
+
+.PARAMETER ReleaseDate
+    The release date for this version.
+#>
+function Update-PluginVersionHistory {
+    param(
+        [hashtable]$Registry,
+        [string]$PluginName,
+        [string]$Version,
+        [string]$ReleaseTag,
+        [string]$ReleaseDate
+    )
+    
+    if (-not $Registry.versionHistory.ContainsKey($PluginName)) {
+        $Registry.versionHistory[$PluginName] = @{}
+    }
+    
+    $Registry.versionHistory[$PluginName][$Version] = @{
+        releaseTag = $ReleaseTag
+        releaseDate = $ReleaseDate
+    }
+}
+
 if (-not (Test-ValidRepository -Repository $Repository)) {
     Write-Error "Invalid repository format: $Repository. Expected 'owner/repo' format."
     exit 1
@@ -413,13 +478,7 @@ try {
                         Write-Host "    Found release: $Tag" -ForegroundColor Gray
                         
                         # Also update version history for all versions found
-                        if (-not $Registry.versionHistory.ContainsKey($PluginName)) {
-                            $Registry.versionHistory[$PluginName] = @{}
-                        }
-                        $Registry.versionHistory[$PluginName][$Version] = @{
-                            releaseTag = $PluginFromRelease.ReleaseTag
-                            releaseDate = $PluginFromRelease.ReleaseDate
-                        }
+                        Update-PluginVersionHistory -Registry $Registry -PluginName $PluginName -Version $Version -ReleaseTag $PluginFromRelease.ReleaseTag -ReleaseDate $PluginFromRelease.ReleaseDate
                     }
                 }
             }
@@ -431,7 +490,7 @@ try {
                 $LatestPlugin = $null
                 
                 foreach ($Version in $VersionsMap.Keys) {
-                    $VersionToCompare = $Version -replace '-.*$', ''
+                    $VersionToCompare = Get-BaseVersion -Version $Version
                     try {
                         if ($null -eq $LatestVersion) {
                             $LatestVersion = $VersionToCompare
@@ -464,22 +523,15 @@ try {
         
         Write-Host "  Adding $PluginName v$Version to registry..." -ForegroundColor Gray
         
-        if (-not $Registry.versionHistory.ContainsKey($PluginName)) {
-            $Registry.versionHistory[$PluginName] = @{}
-        }
-        
-        $Registry.versionHistory[$PluginName][$Version] = @{
-            releaseTag = $Plugin.ReleaseTag
-            releaseDate = $Plugin.ReleaseDate
-        }
+        Update-PluginVersionHistory -Registry $Registry -PluginName $PluginName -Version $Version -ReleaseTag $Plugin.ReleaseTag -ReleaseDate $Plugin.ReleaseDate
         
         if ($PluginsMap.ContainsKey($PluginName)) {
             $ExistingPlugin = $PluginsMap[$PluginName]
             
             $CurrentLatest = $ExistingPlugin.latestVersion
-            # Strip pre-release suffix for version comparison
-            $VersionToCompare = $Version -replace '-.*$', ''
-            $CurrentLatestToCompare = if ($CurrentLatest) { $CurrentLatest -replace '-.*$', '' } else { $null }
+            # Strip pre-release suffix for version comparison using helper function
+            $VersionToCompare = Get-BaseVersion -Version $Version
+            $CurrentLatestToCompare = Get-BaseVersion -Version $CurrentLatest
             if (-not $CurrentLatestToCompare -or ([version]$VersionToCompare -ge [version]$CurrentLatestToCompare)) {
                 $ExistingPlugin.latestVersion = $Version
                 $ExistingPlugin.releaseTag = $Plugin.ReleaseTag
