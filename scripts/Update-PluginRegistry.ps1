@@ -500,7 +500,8 @@ try {
                             $LatestPlugin = $VersionsMap[$Version]
                         }
                     } catch {
-                        # Skip invalid versions
+                        # Log and skip invalid versions for debugging purposes
+                        Write-Warning "Skipping invalid version '$Version' for plugin '$PluginName': $($_.Exception.Message)"
                         continue
                     }
                 }
@@ -532,7 +533,17 @@ try {
             # Strip pre-release suffix for version comparison using helper function
             $VersionToCompare = Get-BaseVersion -Version $Version
             $CurrentLatestToCompare = Get-BaseVersion -Version $CurrentLatest
-            if (-not $CurrentLatestToCompare -or ([version]$VersionToCompare -ge [version]$CurrentLatestToCompare)) {
+            # Update if no current version or new version is greater than or equal
+            $shouldUpdate = -not $CurrentLatestToCompare -or [string]::IsNullOrWhiteSpace($CurrentLatestToCompare)
+            if (-not $shouldUpdate) {
+                try {
+                    $shouldUpdate = [version]$VersionToCompare -ge [version]$CurrentLatestToCompare
+                } catch {
+                    # If version comparison fails, update anyway to be safe
+                    $shouldUpdate = $true
+                }
+            }
+            if ($shouldUpdate) {
                 $ExistingPlugin.latestVersion = $Version
                 $ExistingPlugin.releaseTag = $Plugin.ReleaseTag
                 $ExistingPlugin.releaseDate = $Plugin.ReleaseDate
