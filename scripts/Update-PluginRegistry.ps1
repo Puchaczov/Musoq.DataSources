@@ -255,9 +255,12 @@ try {
     
     $NeedToCreateRegistry = (-not $Registry) -or (-not $RegistryReleaseExists)
     
-    if (-not $HasNewPlugins -and -not $NeedToCreateRegistry -and -not $RegenerateFromReleases) {
-        Write-Host "Registry exists and no new plugins to add. Skipping update." -ForegroundColor Yellow
-        exit 0
+    # Always ensure registry is up-to-date by scanning releases when no new plugins are provided
+    # This ensures the registry stays synchronized with actual releases even when publish-plugins
+    # doesn't create new releases (e.g., they already exist)
+    if (-not $HasNewPlugins -and -not $RegenerateFromReleases) {
+        Write-Host "No new plugins provided. Will scan existing releases to ensure registry is up-to-date..." -ForegroundColor Cyan
+        $RegenerateFromReleases = $true
     }
     
     if (-not $Registry) {
