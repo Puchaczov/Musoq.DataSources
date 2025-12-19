@@ -168,8 +168,6 @@ public class BlameHunkEntity
     {
         get
         {
-            // LibGit2Sharp uses 0-based indexing internally
-            // If the original start line is different from the final start line, return 1-based value
             if (_hunk.InitialStartLineNumber != _hunk.FinalStartLineNumber)
                 return _hunk.InitialStartLineNumber + 1;
             
@@ -184,7 +182,6 @@ public class BlameHunkEntity
     {
         get
         {
-            // If the initial path is different from the current file path, it was moved/copied
             if (_hunk.InitialPath != _filePath)
                 return _hunk.InitialPath;
             
@@ -202,12 +199,10 @@ public class BlameHunkEntity
             if (_lines != null)
                 return _lines;
 
-            // Lazy load the content from the blob
             var lines = new List<BlameLineEntity>();
             
             try
             {
-                // Get the blob at the final commit
                 var commit = _hunk.FinalCommit;
                 var treeEntry = commit[_filePath];
                 
@@ -215,12 +210,10 @@ public class BlameHunkEntity
                 {
                     var blob = (Blob)treeEntry.Target;
                     
-                    // Read content as text
                     using var reader = new System.IO.StreamReader(blob.GetContentStream());
                     var content = reader.ReadToEnd();
                     var allLines = content.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
                     
-                    // Extract only the lines for this hunk (convert from 0-based to 1-based)
                     var startIndex = _hunk.FinalStartLineNumber;
                     var endIndex = Math.Min(startIndex + _hunk.LineCount, allLines.Length);
                     
@@ -232,8 +225,6 @@ public class BlameHunkEntity
             }
             catch
             {
-                // If we can't load the content, return empty
-                // This can happen for binary files or missing blobs
             }
             
             _lines = lines;

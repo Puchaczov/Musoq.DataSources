@@ -43,12 +43,10 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
 
         var repository = _createRepository(_repositoryPath);
         
-        // Resolve the commit from the revision
         Commit? commit = null;
         
         try
         {
-            // Try to lookup as a commit directly
             var gitObject = repository.Lookup(_revision);
             
             if (gitObject == null)
@@ -56,7 +54,6 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
                 throw new ArgumentException($"Invalid revision '{_revision}': not found", "revision");
             }
             
-            // Try to peel to a commit (handles tags and other references)
             var peeledCommit = gitObject.Peel<Commit>();
             if (peeledCommit != null)
             {
@@ -72,25 +69,21 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
             throw new ArgumentException($"Invalid revision '{_revision}': {ex.Message}", "revision", ex);
         }
 
-        // Check if file exists at this revision
         var treeEntry = commit[_filePath];
         if (treeEntry == null)
         {
             throw new FileNotFoundException($"File '{_filePath}' does not exist at revision '{_revision}'");
         }
 
-        // Check if it's a binary file
         if (treeEntry.TargetType == TreeEntryTargetType.Blob)
         {
             var blob = (Blob)treeEntry.Target;
             if (blob.IsBinary)
             {
-                // Return empty for binary files
                 return Task.CompletedTask;
             }
         }
 
-        // Get blame information
         BlameHunkCollection blameHunks;
         try
         {
@@ -98,7 +91,6 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
         }
         catch
         {
-            // Return empty on any blame errors
             return Task.CompletedTask;
         }
 
