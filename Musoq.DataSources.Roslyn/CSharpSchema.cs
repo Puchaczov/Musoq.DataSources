@@ -93,6 +93,7 @@ public class CSharpSchema : SchemaBase
     /// <columns type="DocumentEntity">
     /// <column name="Name" type="string">Name</column>
     /// <column name="Text" type="string">Text</column>
+    /// <column name="FilePath" type="string">Absolute file path of the document on disk</column>
     /// <column name="ClassCount" type="int">Class count</column>
     /// <column name="InterfaceCount" type="int">Interface count</column>
     /// <column name="EnumCount" type="int">Enum count</column>
@@ -185,6 +186,11 @@ public class CSharpSchema : SchemaBase
     /// <column name="Text" type="string">Text</column>
     /// <column name="Attributes" type="AttributeEntity[]">Attributes</column>
     /// <column name="CyclomaticComplexity" type="int">Cyclomatic complexity</column>
+    /// <column name="LinesOfCode" type="int">Lines of code</column>
+    /// <column name="StatementsCount" type="int">Number of statements in the method body</column>
+    /// <column name="HasBody" type="bool">Whether the method has an implementation body</column>
+    /// <column name="IsEmpty" type="bool">Whether the method has a body but contains no statements</column>
+    /// <column name="BodyContainsOnlyTrivia" type="bool">Whether the method body contains only comments and/or whitespace</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>
@@ -203,6 +209,10 @@ public class CSharpSchema : SchemaBase
     /// <column name="IsSealed" type="bool">Is sealed</column>
     /// <column name="IsStatic" type="bool">Is static</column>
     /// <column name="Modifiers" type="string[]">Modifiers</column>
+    /// <column name="IsAutoProperty" type="bool">Whether the property is an auto-implemented property</column>
+    /// <column name="HasGetter" type="bool">Whether the property has a get accessor</column>
+    /// <column name="HasSetter" type="bool">Whether the property has a set accessor (includes init)</column>
+    /// <column name="HasInitSetter" type="bool">Whether the property has an init accessor specifically</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>

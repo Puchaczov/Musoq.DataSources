@@ -131,6 +131,63 @@ public class MethodEntity
     }
 
     /// <summary>
+    /// Gets the number of statements in the method body.
+    /// Returns 0 for methods without bodies (abstract, interface, extern).
+    /// </summary>
+    public int StatementsCount
+    {
+        get
+        {
+            if (_methodDeclaration.Body != null)
+            {
+                return _methodDeclaration.Body.Statements.Count;
+            }
+            
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the method has an implementation body.
+    /// Returns false for abstract methods, interface method declarations, extern methods,
+    /// and partial method declarations without implementation.
+    /// </summary>
+    public bool HasBody => _methodDeclaration.Body != null || _methodDeclaration.ExpressionBody != null;
+
+    /// <summary>
+    /// Gets a value indicating whether the method has a body but contains no statements.
+    /// Useful for detecting stub implementations.
+    /// </summary>
+    public bool IsEmpty => HasBody && _methodDeclaration.Body != null && _methodDeclaration.Body.Statements.Count == 0;
+
+    /// <summary>
+    /// Gets a value indicating whether the method body exists but contains only comments and/or whitespace.
+    /// Returns false for methods without bodies or expression-bodied members.
+    /// </summary>
+    public bool BodyContainsOnlyTrivia
+    {
+        get
+        {
+            if (_methodDeclaration.Body == null)
+            {
+                return false;
+            }
+
+            // If there are statements, it's not just trivia
+            if (_methodDeclaration.Body.Statements.Count > 0)
+            {
+                return false;
+            }
+
+            // Check if there's any non-trivia content (excluding braces)
+            var bodyContent = _methodDeclaration.Body.DescendantTrivia();
+            
+            // If we have an empty body with only whitespace/comments, it contains only trivia
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Returns a string that represents the current object.
     /// </summary>
     /// <returns>A string that represents the current object.</returns>
