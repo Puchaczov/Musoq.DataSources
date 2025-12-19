@@ -82,9 +82,10 @@ public class GitToSqlTests
             Assert.AreEqual(1, result.Count);
 
             var row = result[0];
+            var repoPath = unpackedRepositoryPath.Path;
 
-            Assert.IsTrue((string) row[0] == Path.Combine(unpackedRepositoryPath, ".git\\"));
-            Assert.IsTrue((string) row[1] == $"{unpackedRepositoryPath}\\");
+            Assert.IsTrue(((string)row[0]).TrimEnd(Path.DirectorySeparatorChar) == Path.Combine(repoPath, ".git").TrimEnd(Path.DirectorySeparatorChar));
+            Assert.IsTrue(((string)row[1]).TrimEnd(Path.DirectorySeparatorChar) == repoPath.TrimEnd(Path.DirectorySeparatorChar));
             Assert.IsTrue((string) row[2] == "master");
             Assert.IsTrue((string) row[3] == "refs/heads/master");
             Assert.IsTrue((bool) row[4] == false);
@@ -96,8 +97,8 @@ public class GitToSqlTests
             Assert.IsTrue((string) row[10] == "initial commit");
             Assert.IsTrue((string) row[11] == "anonymous");
             Assert.IsTrue((string) row[12] == "anonymous");
-            Assert.IsTrue((string) row[13] == Path.Combine(unpackedRepositoryPath, ".git\\"));
-            Assert.IsTrue((string) row[14] == $"{unpackedRepositoryPath}\\");
+            Assert.IsTrue(((string)row[13]).TrimEnd(Path.DirectorySeparatorChar) == Path.Combine(repoPath, ".git").TrimEnd(Path.DirectorySeparatorChar));
+            Assert.IsTrue(((string)row[14]).TrimEnd(Path.DirectorySeparatorChar) == repoPath.TrimEnd(Path.DirectorySeparatorChar));
             Assert.IsTrue((bool) row[15] == false);
             Assert.IsTrue((bool) row[16] == false);
             Assert.IsTrue((bool) row[17] == false);

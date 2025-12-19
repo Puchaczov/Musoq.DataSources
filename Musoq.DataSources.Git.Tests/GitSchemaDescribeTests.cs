@@ -38,7 +38,7 @@ public class GitSchemaDescribeTests
         Assert.IsTrue(table.Columns.Count() >= 2, "Should have at least 2 columns");
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
 
-        Assert.AreEqual(9, table.Count, "Should have 9 rows (repository, tags, commits, branches, filehistory x3, status, remotes)");
+        Assert.AreEqual(11, table.Count, "Should have 11 rows (repository, tags, commits, branches, filehistory x3, status, remotes, blame x2)");
 
         var repositoryRow = table.FirstOrDefault(r => (string)r[0] == "repository");
         Assert.IsNotNull(repositoryRow);
@@ -54,6 +54,9 @@ public class GitSchemaDescribeTests
         
         var remotesRow = table.FirstOrDefault(r => (string)r[0] == "remotes");
         Assert.IsNotNull(remotesRow);
+        
+        var blameRows = table.Where(r => ((string)r[0]).StartsWith("blame")).ToList();
+        Assert.AreEqual(2, blameRows.Count, "Should have 2 blame method signatures");
     }
 
     [TestMethod]

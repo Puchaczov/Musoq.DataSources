@@ -29,6 +29,7 @@ public class GitSchema : SchemaBase
     private const string FileHistoryTable = "filehistory";
     private const string StatusTable = "status";
     private const string RemotesTable = "remotes";
+    private const string BlameTable = "blame";
     private readonly Func<string, Repository> _createRepository;
     
     /// <virtual-constructors>
@@ -207,6 +208,58 @@ public class GitSchema : SchemaBase
     /// </example>
     /// </examples>
     /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.blame(string repositoryPath, string filePath)
+    /// </from>
+    /// <description>Returns hunk-based blame information for a file at HEAD revision.</description>
+    /// <columns>
+    /// <column name="StartLineNumber" type="int">First line of hunk (1-based)</column>
+    /// <column name="EndLineNumber" type="int">Last line of hunk (1-based)</column>
+    /// <column name="LineCount" type="int">Number of lines in hunk</column>
+    /// <column name="CommitSha" type="string">SHA of commit that last modified these lines</column>
+    /// <column name="Author" type="string">Author name</column>
+    /// <column name="AuthorEmail" type="string">Author email</column>
+    /// <column name="AuthorDate" type="DateTimeOffset">When author made the change</column>
+    /// <column name="Committer" type="string">Committer name</column>
+    /// <column name="CommitterEmail" type="string">Committer email</column>
+    /// <column name="CommitterDate" type="DateTimeOffset">When commit was applied</column>
+    /// <column name="Summary" type="string">First line of commit message</column>
+    /// <column name="OriginalStartLineNumber" type="int?">Original line number if moved/copied</column>
+    /// <column name="OriginalFilePath" type="string?">Original file path if moved/copied (null if same file)</column>
+    /// <column name="Lines" type="BlameLineEntity[]">Line details with content (lazy loaded)</column>
+    /// <column name="Self" type="BlameHunkEntity">This instance</column>
+    /// </columns>
+    /// </example>
+    /// <example>
+    /// <from>
+    /// <environmentVariables></environmentVariables>
+    /// #git.blame(string repositoryPath, string filePath, string revision)
+    /// </from>
+    /// <description>Returns hunk-based blame information for a file at a specific revision.</description>
+    /// <columns>
+    /// <column name="StartLineNumber" type="int">First line of hunk (1-based)</column>
+    /// <column name="EndLineNumber" type="int">Last line of hunk (1-based)</column>
+    /// <column name="LineCount" type="int">Number of lines in hunk</column>
+    /// <column name="CommitSha" type="string">SHA of commit that last modified these lines</column>
+    /// <column name="Author" type="string">Author name</column>
+    /// <column name="AuthorEmail" type="string">Author email</column>
+    /// <column name="AuthorDate" type="DateTimeOffset">When author made the change</column>
+    /// <column name="Committer" type="string">Committer name</column>
+    /// <column name="CommitterEmail" type="string">Committer email</column>
+    /// <column name="CommitterDate" type="DateTimeOffset">When commit was applied</column>
+    /// <column name="Summary" type="string">First line of commit message</column>
+    /// <column name="OriginalStartLineNumber" type="int?">Original line number if moved/copied</column>
+    /// <column name="OriginalFilePath" type="string?">Original file path if moved/copied (null if same file)</column>
+    /// <column name="Lines" type="BlameLineEntity[]">Line details with content (lazy loaded)</column>
+    /// <column name="Self" type="BlameHunkEntity">This instance</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
     /// </virtual-constructors>
     /// <additional-tables>
     /// <additional-table>
@@ -350,6 +403,34 @@ public class GitSchema : SchemaBase
     /// <column name="SecondBranch" type="BranchEntity">Second branch</column>
     /// </columns>
     /// </additional-table>
+    /// <additional-table>
+    /// <description>Represents a blame hunk (contiguous group of lines sharing the same attribution)</description>
+    /// <columns type="BlameHunkEntity">
+    /// <column name="StartLineNumber" type="int">First line of hunk (1-based)</column>
+    /// <column name="EndLineNumber" type="int">Last line of hunk (1-based)</column>
+    /// <column name="LineCount" type="int">Number of lines in hunk</column>
+    /// <column name="CommitSha" type="string">SHA of commit that last modified these lines</column>
+    /// <column name="Author" type="string">Author name</column>
+    /// <column name="AuthorEmail" type="string">Author email</column>
+    /// <column name="AuthorDate" type="DateTimeOffset">When author made the change</column>
+    /// <column name="Committer" type="string">Committer name</column>
+    /// <column name="CommitterEmail" type="string">Committer email</column>
+    /// <column name="CommitterDate" type="DateTimeOffset">When commit was applied</column>
+    /// <column name="Summary" type="string">First line of commit message</column>
+    /// <column name="OriginalStartLineNumber" type="int?">Original line number if moved/copied</column>
+    /// <column name="OriginalFilePath" type="string?">Original file path if moved/copied (null if same file)</column>
+    /// <column name="Lines" type="BlameLineEntity[]">Line details with content (lazy loaded)</column>
+    /// <column name="Self" type="BlameHunkEntity">This instance</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represents a single line within a blame hunk</description>
+    /// <columns type="BlameLineEntity">
+    /// <column name="LineNumber" type="int">Line number (1-based)</column>
+    /// <column name="Content" type="string">Actual line content</column>
+    /// <column name="Self" type="BlameLineEntity">This instance</column>
+    /// </columns>
+    /// </additional-table>
     /// </additional-tables>
     public GitSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
@@ -382,6 +463,8 @@ public class GitSchema : SchemaBase
                 return new StatusTable();
             case RemotesTable:
                 return new RemotesTable();
+            case BlameTable:
+                return new BlameTable();
         }
 
         return base.GetTableByName(name, runtimeContext, parameters);
@@ -398,9 +481,10 @@ public class GitSchema : SchemaBase
             FileHistoryTable => CreateFileHistoryMethodInfos(),
             StatusTable => [CreateStatusMethodInfo()],
             RemotesTable => [CreateRemotesMethodInfo()],
+            BlameTable => CreateBlameMethodInfos(),
             _ => throw new NotSupportedException(
                 $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {RepositoryTable}, {TagsTable}, {CommitsTable}, {BranchesTable}, {FileHistoryTable}, {StatusTable}, {RemotesTable}")
+                $"Available data sources: {RepositoryTable}, {TagsTable}, {CommitsTable}, {BranchesTable}, {FileHistoryTable}, {StatusTable}, {RemotesTable}, {BlameTable}")
         };
     }
 
@@ -413,7 +497,8 @@ public class GitSchema : SchemaBase
             CreateBranchesMethodInfo(),
             ..CreateFileHistoryMethodInfos(),
             CreateStatusMethodInfo(),
-            CreateRemotesMethodInfo()
+            CreateRemotesMethodInfo(),
+            ..CreateBlameMethodInfos()
         ];
     }
 
@@ -544,6 +629,36 @@ public class GitSchema : SchemaBase
         return new SchemaMethodInfo(RemotesTable, constructorInfo);
     }
 
+    private static SchemaMethodInfo[] CreateBlameMethodInfos()
+    {
+        var simpleConstructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("repositoryPath", typeof(string)),
+                ("filePath", typeof(string))
+            ]
+        );
+        
+        var revisionConstructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments:
+            [
+                ("repositoryPath", typeof(string)),
+                ("filePath", typeof(string)),
+                ("revision", typeof(string))
+            ]
+        );
+
+        return
+        [
+            new SchemaMethodInfo(BlameTable, simpleConstructorInfo),
+            new SchemaMethodInfo(BlameTable, revisionConstructorInfo)
+        ];
+    }
+
     /// <summary>
     /// Gets the data source based on the given data source and parameters.
     /// </summary>
@@ -585,6 +700,11 @@ public class GitSchema : SchemaBase
                 return new StatusRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
             case RemotesTable:
                 return new RemotesRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+            case BlameTable:
+                var repositoryPath = (string) parameters[0];
+                var filePath = (string) parameters[1];
+                var revision = parameters.Length > 2 ? (string) parameters[2] : "HEAD";
+                return new BlameRowsSource(repositoryPath, filePath, revision, _createRepository, runtimeContext.EndWorkToken);
         }
 
         return base.GetRowSource(name, runtimeContext, parameters);
