@@ -53,7 +53,7 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
             
             if (gitObject == null)
             {
-                throw new ArgumentException($"Invalid revision '{_revision}': not found", nameof(_revision));
+                throw new ArgumentException($"Invalid revision '{_revision}': not found", "revision");
             }
             
             // Try to peel to a commit (handles tags and other references)
@@ -64,12 +64,12 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
             }
             else
             {
-                throw new ArgumentException($"Invalid revision '{_revision}': does not point to a commit", nameof(_revision));
+                throw new ArgumentException($"Invalid revision '{_revision}': does not point to a commit", "revision");
             }
         }
         catch (Exception ex) when (ex is not ArgumentException)
         {
-            throw new ArgumentException($"Invalid revision '{_revision}': {ex.Message}", nameof(_revision), ex);
+            throw new ArgumentException($"Invalid revision '{_revision}': {ex.Message}", "revision", ex);
         }
 
         // Check if file exists at this revision

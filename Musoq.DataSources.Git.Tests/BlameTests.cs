@@ -17,7 +17,7 @@ public class BlameTests
 {
     static BlameTests()
     {
-        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
+        Culture.Apply(CultureInfo.GetCultureInfo("en-US"));
     }
 
     [TestMethod]
