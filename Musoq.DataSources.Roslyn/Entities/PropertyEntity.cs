@@ -113,7 +113,8 @@ public class PropertyEntity
         {
             if (_propertyDeclaration?.AccessorList == null)
             {
-                // Expression-bodied properties are not auto-properties
+                // Properties without accessor lists (expression-bodied properties, or properties
+                // without syntax references) are not auto-properties
                 return false;
             }
 

@@ -179,10 +179,7 @@ public class MethodEntity
                 return false;
             }
 
-            // Check if there's any non-trivia content (excluding braces)
-            var bodyContent = _methodDeclaration.Body.DescendantTrivia();
-            
-            // If we have an empty body with only whitespace/comments, it contains only trivia
+            // If we have an empty body with no statements, it contains only trivia (comments/whitespace)
             return true;
         }
     }
