@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -12,6 +13,7 @@ namespace Musoq.DataSources.Roslyn.Entities;
 public class PropertyEntity
 {
     private readonly IPropertySymbol _propertySymbol;
+    private readonly PropertyDeclarationSyntax? _propertyDeclaration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PropertyEntity"/> class.
@@ -20,6 +22,10 @@ public class PropertyEntity
     public PropertyEntity(IPropertySymbol propertySymbol)
     {
         _propertySymbol = propertySymbol;
+        
+        // Get the syntax node from the symbol
+        var syntaxReference = propertySymbol.DeclaringSyntaxReferences.FirstOrDefault();
+        _propertyDeclaration = syntaxReference?.GetSyntax() as PropertyDeclarationSyntax;
     }
 
     /// <summary>
@@ -96,4 +102,90 @@ public class PropertyEntity
                         token.IsKind(SyntaxKind.AbstractKeyword) ||
                         token.IsKind(SyntaxKind.SealedKeyword))
         .Select(token => token.ValueText) ?? [];
+
+    /// <summary>
+    /// Gets a value indicating whether the property is an auto-implemented property.
+    /// Returns true for properties with no explicit getter/setter body.
+    /// </summary>
+    public bool IsAutoProperty
+    {
+        get
+        {
+            if (_propertyDeclaration?.AccessorList == null)
+            {
+                // Properties without accessor lists (expression-bodied properties, or properties
+                // without syntax references) are not auto-properties
+                return false;
+            }
+
+            foreach (var accessor in _propertyDeclaration.AccessorList.Accessors)
+            {
+                // If any accessor has a body or expression body, it's not an auto-property
+                if (accessor.Body != null || accessor.ExpressionBody != null)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the property has a get accessor.
+    /// </summary>
+    public bool HasGetter
+    {
+        get
+        {
+            if (_propertyDeclaration?.AccessorList != null)
+            {
+                return _propertyDeclaration.AccessorList.Accessors
+                    .Any(a => a.IsKind(SyntaxKind.GetAccessorDeclaration));
+            }
+
+            // Expression-bodied properties have an implicit getter
+            if (_propertyDeclaration?.ExpressionBody != null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the property has a set accessor (includes init).
+    /// </summary>
+    public bool HasSetter
+    {
+        get
+        {
+            if (_propertyDeclaration?.AccessorList == null)
+            {
+                return false;
+            }
+
+            return _propertyDeclaration.AccessorList.Accessors
+                .Any(a => a.IsKind(SyntaxKind.SetAccessorDeclaration) || 
+                         a.IsKind(SyntaxKind.InitAccessorDeclaration));
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the property has an init accessor specifically.
+    /// </summary>
+    public bool HasInitSetter
+    {
+        get
+        {
+            if (_propertyDeclaration?.AccessorList == null)
+            {
+                return false;
+            }
+
+            return _propertyDeclaration.AccessorList.Accessors
+                .Any(a => a.IsKind(SyntaxKind.InitAccessorDeclaration));
+        }
+    }
 }

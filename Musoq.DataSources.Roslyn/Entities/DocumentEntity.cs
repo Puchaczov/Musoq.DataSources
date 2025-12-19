@@ -69,6 +69,12 @@ public class DocumentEntity
     }
 
     /// <summary>
+    /// Gets the absolute file path of the document on disk.
+    /// Returns null for in-memory or generated documents without a physical file.
+    /// </summary>
+    public string? FilePath => _document.FilePath;
+
+    /// <summary>
     /// Gets the count of class declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>

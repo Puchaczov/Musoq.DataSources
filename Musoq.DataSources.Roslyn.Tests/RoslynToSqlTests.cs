@@ -70,7 +70,7 @@ public class RoslynToSqlTests
         
         var result = vm.Run();
         
-        Assert.IsTrue(result.Count == 8, "Result should be empty");
+        Assert.IsTrue(result.Count == 11, $"Result should contain 11 types, but got {result.Count}");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1") == 1, "Class1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1") == 1, "Interface1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface2") == 1, "Interface2 should be present");
@@ -78,6 +78,9 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Tests") == 1, "Tests should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "PartialTestClass") == 2, "PartialTestClass should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "CyclomaticComplexityClass1") == 1, "CyclomaticComplexityClass1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "TestFeatures") == 1, "TestFeatures should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "AbstractClassWithAbstractMethod") == 1, "AbstractClassWithAbstractMethod should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "IInterfaceWithMethods") == 1, "IInterfaceWithMethods should be present");
     }
 
     [TestMethod]
@@ -798,6 +801,225 @@ where c.Name = 'Class1'
         Assert.AreEqual(11, result[0][2]);
         Assert.AreEqual(67, result[0][3]);
         Assert.AreEqual(16, result[0][4]);
+    }
+
+    [TestMethod]
+    public void WhenDocumentFilePathQueried_ShouldReturnFilePath()
+    {
+        var query = $"select d.Name, d.FilePath from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("Class1.cs", result[0][0].ToString());
+        
+        var filePath = result[0][1]?.ToString();
+        Assert.IsNotNull(filePath);
+        Assert.IsTrue(filePath.EndsWith("Class1.cs"));
+        Assert.IsTrue(File.Exists(filePath));
+    }
+
+    [TestMethod]
+    public void WhenMethodBodyPropertiesQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.HasBody,
+                        m.IsEmpty,
+                        m.StatementsCount,
+                        m.BodyContainsOnlyTrivia
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'TestFeatures'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // EmptyMethod test
+        var emptyMethod = result.FirstOrDefault(r => r[0].ToString() == "EmptyMethod");
+        Assert.IsNotNull(emptyMethod);
+        Assert.AreEqual(true, emptyMethod[1]); // HasBody
+        Assert.AreEqual(true, emptyMethod[2]); // IsEmpty
+        Assert.AreEqual(0, emptyMethod[3]); // StatementsCount
+        Assert.AreEqual(true, emptyMethod[4]); // BodyContainsOnlyTrivia
+        
+        // MethodWithOnlyComments test
+        var methodWithComments = result.FirstOrDefault(r => r[0].ToString() == "MethodWithOnlyComments");
+        Assert.IsNotNull(methodWithComments);
+        Assert.AreEqual(true, methodWithComments[1]); // HasBody
+        Assert.AreEqual(true, methodWithComments[2]); // IsEmpty
+        Assert.AreEqual(0, methodWithComments[3]); // StatementsCount
+        Assert.AreEqual(true, methodWithComments[4]); // BodyContainsOnlyTrivia
+        
+        // SingleStatementMethod test
+        var singleStatementMethod = result.FirstOrDefault(r => r[0].ToString() == "SingleStatementMethod");
+        Assert.IsNotNull(singleStatementMethod);
+        Assert.AreEqual(true, singleStatementMethod[1]); // HasBody
+        Assert.AreEqual(false, singleStatementMethod[2]); // IsEmpty
+        Assert.AreEqual(1, singleStatementMethod[3]); // StatementsCount
+        Assert.AreEqual(false, singleStatementMethod[4]); // BodyContainsOnlyTrivia
+        
+        // MultipleStatementsMethod test
+        var multipleStatementsMethod = result.FirstOrDefault(r => r[0].ToString() == "MultipleStatementsMethod");
+        Assert.IsNotNull(multipleStatementsMethod);
+        Assert.AreEqual(true, multipleStatementsMethod[1]); // HasBody
+        Assert.AreEqual(false, multipleStatementsMethod[2]); // IsEmpty
+        Assert.AreEqual(3, multipleStatementsMethod[3]); // StatementsCount
+        Assert.AreEqual(false, multipleStatementsMethod[4]); // BodyContainsOnlyTrivia
+        
+        // ExpressionBodiedMethod test
+        var expressionBodiedMethod = result.FirstOrDefault(r => r[0].ToString() == "ExpressionBodiedMethod");
+        Assert.IsNotNull(expressionBodiedMethod);
+        Assert.AreEqual(true, expressionBodiedMethod[1]); // HasBody
+        Assert.AreEqual(false, expressionBodiedMethod[2]); // IsEmpty (expression bodies are never empty)
+        Assert.AreEqual(0, expressionBodiedMethod[3]); // StatementsCount (no block body)
+        Assert.AreEqual(false, expressionBodiedMethod[4]); // BodyContainsOnlyTrivia
+        
+        // MethodWithNestedBlocks test - should count only direct statements
+        var methodWithNestedBlocks = result.FirstOrDefault(r => r[0].ToString() == "MethodWithNestedBlocks");
+        Assert.IsNotNull(methodWithNestedBlocks);
+        Assert.AreEqual(true, methodWithNestedBlocks[1]); // HasBody
+        Assert.AreEqual(false, methodWithNestedBlocks[2]); // IsEmpty
+        Assert.AreEqual(2, methodWithNestedBlocks[3]); // StatementsCount (if statement and var y = 2)
+        Assert.AreEqual(false, methodWithNestedBlocks[4]); // BodyContainsOnlyTrivia
+    }
+
+    [TestMethod]
+    public void WhenPropertyAccessorPropertiesQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        p.Name,
+                        p.IsAutoProperty,
+                        p.HasGetter,
+                        p.HasSetter,
+                        p.HasInitSetter
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects pr 
+                    cross apply pr.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Properties p
+                    where c.Name = 'TestFeatures'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // AutoProperty test
+        var autoProperty = result.FirstOrDefault(r => r[0].ToString() == "AutoProperty");
+        Assert.IsNotNull(autoProperty);
+        Assert.AreEqual(true, autoProperty[1]); // IsAutoProperty
+        Assert.AreEqual(true, autoProperty[2]); // HasGetter
+        Assert.AreEqual(true, autoProperty[3]); // HasSetter
+        Assert.AreEqual(false, autoProperty[4]); // HasInitSetter
+        
+        // AutoPropertyWithInit test
+        var autoPropertyWithInit = result.FirstOrDefault(r => r[0].ToString() == "AutoPropertyWithInit");
+        Assert.IsNotNull(autoPropertyWithInit);
+        Assert.AreEqual(true, autoPropertyWithInit[1]); // IsAutoProperty
+        Assert.AreEqual(true, autoPropertyWithInit[2]); // HasGetter
+        Assert.AreEqual(true, autoPropertyWithInit[3]); // HasSetter (init counts as setter)
+        Assert.AreEqual(true, autoPropertyWithInit[4]); // HasInitSetter
+        
+        // AutoPropertyReadOnly test
+        var autoPropertyReadOnly = result.FirstOrDefault(r => r[0].ToString() == "AutoPropertyReadOnly");
+        Assert.IsNotNull(autoPropertyReadOnly);
+        Assert.AreEqual(true, autoPropertyReadOnly[1]); // IsAutoProperty
+        Assert.AreEqual(true, autoPropertyReadOnly[2]); // HasGetter
+        Assert.AreEqual(false, autoPropertyReadOnly[3]); // HasSetter
+        Assert.AreEqual(false, autoPropertyReadOnly[4]); // HasInitSetter
+        
+        // PropertyWithCustomGetter test
+        var propertyWithCustomGetter = result.FirstOrDefault(r => r[0].ToString() == "PropertyWithCustomGetter");
+        Assert.IsNotNull(propertyWithCustomGetter);
+        Assert.AreEqual(false, propertyWithCustomGetter[1]); // IsAutoProperty
+        Assert.AreEqual(true, propertyWithCustomGetter[2]); // HasGetter
+        Assert.AreEqual(true, propertyWithCustomGetter[3]); // HasSetter
+        Assert.AreEqual(false, propertyWithCustomGetter[4]); // HasInitSetter
+        
+        // ExpressionBodiedProperty test
+        var expressionBodiedProperty = result.FirstOrDefault(r => r[0].ToString() == "ExpressionBodiedProperty");
+        Assert.IsNotNull(expressionBodiedProperty);
+        Assert.AreEqual(false, expressionBodiedProperty[1]); // IsAutoProperty
+        Assert.AreEqual(true, expressionBodiedProperty[2]); // HasGetter
+        Assert.AreEqual(false, expressionBodiedProperty[3]); // HasSetter
+        Assert.AreEqual(false, expressionBodiedProperty[4]); // HasInitSetter
+        
+        // GetterOnly test
+        var getterOnly = result.FirstOrDefault(r => r[0].ToString() == "GetterOnly");
+        Assert.IsNotNull(getterOnly);
+        Assert.AreEqual(true, getterOnly[1]); // IsAutoProperty
+        Assert.AreEqual(true, getterOnly[2]); // HasGetter
+        Assert.AreEqual(false, getterOnly[3]); // HasSetter
+        Assert.AreEqual(false, getterOnly[4]); // HasInitSetter
+        
+        // InitOnly test
+        var initOnly = result.FirstOrDefault(r => r[0].ToString() == "InitOnly");
+        Assert.IsNotNull(initOnly);
+        Assert.AreEqual(true, initOnly[1]); // IsAutoProperty
+        Assert.AreEqual(false, initOnly[2]); // HasGetter
+        Assert.AreEqual(true, initOnly[3]); // HasSetter (init counts as setter)
+        Assert.AreEqual(true, initOnly[4]); // HasInitSetter
+    }
+
+    [TestMethod]
+    public void WhenAbstractMethodQueried_ShouldHaveNoBody()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.HasBody,
+                        m.IsEmpty,
+                        m.StatementsCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'AbstractClassWithAbstractMethod' and m.Name = 'AbstractMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("AbstractMethod", result[0][0].ToString());
+        Assert.AreEqual(false, result[0][1]); // HasBody
+        Assert.AreEqual(false, result[0][2]); // IsEmpty
+        Assert.AreEqual(0, result[0][3]); // StatementsCount
+    }
+
+    [TestMethod]
+    public void WhenInterfaceMethodQueried_ShouldHaveNoBody()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.HasBody,
+                        m.IsEmpty,
+                        m.StatementsCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Interfaces i
+                    cross apply i.Methods m
+                    where i.Name = 'IInterfaceWithMethods' and m.Name = 'InterfaceMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("InterfaceMethod", result[0][0].ToString());
+        Assert.AreEqual(false, result[0][1]); // HasBody
+        Assert.AreEqual(false, result[0][2]); // IsEmpty
+        Assert.AreEqual(0, result[0][3]); // StatementsCount
     }
 
     static RoslynToSqlTests()
