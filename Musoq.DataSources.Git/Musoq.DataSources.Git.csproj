@@ -3,8 +3,8 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.6.0</Version>
-        <Authors>Jakub Pucha³a</Authors>
+        <Version>1.7.0</Version>
+        <Authors>Jakub Puchaï¿½a</Authors>
         <Product>Musoq</Product>
         <Description>Query Git repositories, commits, branches, and history using SQL syntax</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
