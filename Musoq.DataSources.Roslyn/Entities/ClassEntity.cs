@@ -346,6 +346,8 @@ public class ClassEntity : TypeEntity
     /// <summary>
     /// Gets the afferent coupling (Ca) - number of types that depend on this class.
     /// This is a measure of how many other classes use this class.
+    /// Note: This is an approximation based on identifier name matching within cached syntax trees.
+    /// For large codebases, consider using FindReferences() for more accurate results.
     /// </summary>
     public int AfferentCoupling
     {
@@ -357,8 +359,9 @@ public class ClassEntity : TypeEntity
             {
                 foreach (var document in project.Documents)
                 {
-                    var tree = document.GetSyntaxTreeAsync().Result;
-                    if (tree == null) continue;
+                    // Use TryGetSyntaxTree to avoid blocking on async calls
+                    if (!document.TryGetSyntaxTree(out var tree) || tree == null)
+                        continue;
                     
                     var root = tree.GetRoot();
                     var identifiers = root.DescendantNodes().OfType<IdentifierNameSyntax>()

@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -26,12 +28,12 @@ public class UsingDirectiveEntity
     /// <summary>
     /// Gets a value indicating whether this is a static using directive.
     /// </summary>
-    public bool IsStatic => _syntax.StaticKeyword.Value != null;
+    public bool IsStatic => _syntax.StaticKeyword != default && !_syntax.StaticKeyword.IsMissing;
 
     /// <summary>
     /// Gets a value indicating whether this is a global using directive.
     /// </summary>
-    public bool IsGlobal => _syntax.GlobalKeyword.Value != null;
+    public bool IsGlobal => _syntax.GlobalKeyword != default && !_syntax.GlobalKeyword.IsMissing;
 
     /// <summary>
     /// Gets the alias if this is an alias using directive, null otherwise.
@@ -46,7 +48,7 @@ public class UsingDirectiveEntity
     /// <summary>
     /// Gets a value indicating whether this is an unsafe using directive.
     /// </summary>
-    public bool IsUnsafe => _syntax.UnsafeKeyword.Value != null;
+    public bool IsUnsafe => _syntax.UnsafeKeyword != default && !_syntax.UnsafeKeyword.IsMissing;
 
     /// <summary>
     /// Gets the line number where this using directive appears.
