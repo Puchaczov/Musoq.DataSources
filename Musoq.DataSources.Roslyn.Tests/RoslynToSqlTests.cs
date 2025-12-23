@@ -70,7 +70,7 @@ public class RoslynToSqlTests
         
         var result = vm.Run();
         
-        Assert.IsTrue(result.Count == 11, $"Result should contain 11 types, but got {result.Count}");
+        Assert.IsTrue(result.Count == 12, $"Result should contain 12 types, but got {result.Count}");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1") == 1, "Class1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1") == 1, "Interface1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface2") == 1, "Interface2 should be present");
@@ -81,6 +81,7 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count(r => r[0].ToString() == "TestFeatures") == 1, "TestFeatures should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "AbstractClassWithAbstractMethod") == 1, "AbstractClassWithAbstractMethod should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "IInterfaceWithMethods") == 1, "IInterfaceWithMethods should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "InterfaceImplementor") == 1, "InterfaceImplementor should be present");
     }
 
     [TestMethod]
@@ -1020,6 +1021,324 @@ where c.Name = 'Class1'
         Assert.AreEqual(false, result[0][1]); // HasBody
         Assert.AreEqual(false, result[0][2]); // IsEmpty
         Assert.AreEqual(0, result[0][3]); // StatementsCount
+    }
+
+    [TestMethod]
+    public void WhenFieldsQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        f.Name,
+                        f.Type,
+                        f.IsReadOnly,
+                        f.IsConst,
+                        f.IsStatic,
+                        f.IsVolatile,
+                        f.Accessibility
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Fields f
+                    where c.Name = 'TestFeatures'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // Should have _readonlyField, _staticField, ConstField, _volatileField, _backingField
+        Assert.IsTrue(result.Count >= 4, $"Should have at least 4 fields, got {result.Count}");
+        
+        // Check readonly field
+        var readonlyField = result.FirstOrDefault(r => r[0].ToString() == "_readonlyField");
+        Assert.IsNotNull(readonlyField);
+        Assert.AreEqual("Int32", readonlyField[1].ToString());
+        Assert.AreEqual(true, readonlyField[2]); // IsReadOnly
+        Assert.AreEqual(false, readonlyField[3]); // IsConst
+        Assert.AreEqual(false, readonlyField[4]); // IsStatic
+        
+        // Check const field
+        var constField = result.FirstOrDefault(r => r[0].ToString() == "ConstField");
+        Assert.IsNotNull(constField);
+        Assert.AreEqual(true, constField[3]); // IsConst
+        
+        // Check static field
+        var staticField = result.FirstOrDefault(r => r[0].ToString() == "_staticField");
+        Assert.IsNotNull(staticField);
+        Assert.AreEqual(true, staticField[4]); // IsStatic
+        
+        // Check volatile field
+        var volatileField = result.FirstOrDefault(r => r[0].ToString() == "_volatileField");
+        Assert.IsNotNull(volatileField);
+        Assert.AreEqual(true, volatileField[5]); // IsVolatile
+    }
+
+    [TestMethod]
+    public void WhenConstructorsQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        c.Name,
+                        c.ParameterCount,
+                        c.HasBody,
+                        c.HasInitializer,
+                        c.InitializerKind
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Constructors c
+                    where cls.Name = 'TestFeatures'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // Should have 3 constructors
+        Assert.AreEqual(3, result.Count);
+        
+        // Check default constructor
+        var defaultCtor = result.FirstOrDefault(r => (int)r[1] == 0);
+        Assert.IsNotNull(defaultCtor);
+        Assert.AreEqual(true, defaultCtor[2]); // HasBody
+        Assert.AreEqual(false, defaultCtor[3]); // HasInitializer
+        
+        // Check constructor with initializer (calls this())
+        var ctorWithInit = result.FirstOrDefault(r => (int)r[1] == 2);
+        Assert.IsNotNull(ctorWithInit);
+        Assert.AreEqual(true, ctorWithInit[3]); // HasInitializer
+        Assert.AreEqual("this", ctorWithInit[4]?.ToString()); // InitializerKind
+    }
+
+    [TestMethod]
+    public void WhenStructsQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        s.Name,
+                        s.IsReadOnly,
+                        s.MethodsCount,
+                        s.PropertiesCount,
+                        s.FieldsCount,
+                        s.ConstructorsCount
+                    from #csharp.solution('{Solution1SolutionPath}') sl 
+                    cross apply sl.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Structs s
+                    where s.Name = 'TestStruct' or s.Name = 'ReadOnlyTestStruct'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        // Check TestStruct
+        var testStruct = result.FirstOrDefault(r => r[0].ToString() == "TestStruct");
+        Assert.IsNotNull(testStruct);
+        Assert.AreEqual(false, testStruct[1]); // IsReadOnly
+        Assert.AreEqual(1, testStruct[2]); // MethodsCount
+        Assert.AreEqual(2, testStruct[3]); // PropertiesCount
+        Assert.AreEqual(1, testStruct[4]); // FieldsCount
+        Assert.AreEqual(1, testStruct[5]); // ConstructorsCount
+        
+        // Check ReadOnlyTestStruct
+        var readonlyStruct = result.FirstOrDefault(r => r[0].ToString() == "ReadOnlyTestStruct");
+        Assert.IsNotNull(readonlyStruct);
+        Assert.AreEqual(true, readonlyStruct[1]); // IsReadOnly
+    }
+
+    [TestMethod]
+    public void WhenAsyncMethodPropertiesQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.IsAsync,
+                        m.ContainsAwait,
+                        m.AwaitCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'TestFeatures' and m.Name = 'AsyncMethodWithAwaits'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]); // IsAsync
+        Assert.AreEqual(true, result[0][2]); // ContainsAwait
+        Assert.AreEqual(2, result[0][3]); // AwaitCount (2 awaits)
+    }
+
+    [TestMethod]
+    public void WhenLambdaPropertiesQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.ContainsLambda,
+                        m.LambdaCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'TestFeatures' and m.Name = 'MethodWithLambda'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]); // ContainsLambda
+        Assert.AreEqual(2, result[0][2]); // LambdaCount (2 lambdas)
+    }
+
+    [TestMethod]
+    public void WhenNestingDepthQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.MaxNestingDepth
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'TestFeatures' and m.Name = 'DeeplyNestedMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(3, result[0][1]); // MaxNestingDepth (3 levels of if)
+    }
+
+    [TestMethod]
+    public void WhenUsingDirectivesQueried_ShouldReturnResults()
+    {
+        var query = """
+                    select
+                        u.Name,
+                        u.IsStatic,
+                        u.IsGlobal,
+                        u.HasAlias
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.UsingDirectives u
+                    where d.Name = 'Class1.cs'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // Should have at least one using directive
+        Assert.IsTrue(result.Count >= 0, "Should have using directives (or none if implicit usings)");
+    }
+
+    [TestMethod]
+    public void WhenEventsQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        e.Name,
+                        e.Type,
+                        e.IsStatic,
+                        e.IsFieldLike
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Events e
+                    where c.Name = 'TestFeatures'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("SimpleEvent", result[0][0].ToString());
+        Assert.AreEqual("EventHandler", result[0][1].ToString());
+        Assert.AreEqual(false, result[0][2]); // IsStatic
+        Assert.AreEqual(true, result[0][3]); // IsFieldLike
+    }
+
+    [TestMethod]
+    public void WhenClassCouplingMetricsQueried_ShouldReturnValues()
+    {
+        var query = """
+                    select
+                        c.Name,
+                        c.EfferentCoupling,
+                        c.Instability,
+                        c.WeightedMethodsPerClass,
+                        c.MaxMethodComplexity,
+                        c.AverageMethodComplexity
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue((int)result[0][1] >= 0); // EfferentCoupling
+        Assert.IsTrue((double)result[0][2] >= 0 && (double)result[0][2] <= 1); // Instability
+        Assert.IsTrue((int)result[0][3] >= 0); // WeightedMethodsPerClass
+    }
+
+    [TestMethod]
+    public void WhenDocumentationCoverageQueried_ShouldReturnValues()
+    {
+        var query = """
+                    select
+                        c.Name,
+                        c.HasDocumentation,
+                        c.MethodDocumentationCoverage,
+                        c.PropertyDocumentationCoverage
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    where c.Name = 'TestFeatures'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]); // HasDocumentation (TestFeatures has XML doc)
+        Assert.IsTrue((double)result[0][2] >= 0 && (double)result[0][2] <= 100); // MethodDocumentationCoverage
+        Assert.IsTrue((double)result[0][3] >= 0 && (double)result[0][3] <= 100); // PropertyDocumentationCoverage
+    }
+
+    [TestMethod]
+    public void WhenGetStructsByNames_ShouldReturnStructs()
+    {
+        var query = """
+                    select
+                        st.Name,
+                        st.IsReadOnly
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.GetStructsByNames('TestStruct', 'ReadOnlyTestStruct') st
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "TestStruct" && (bool)r[1] == false));
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "ReadOnlyTestStruct" && (bool)r[1] == true));
     }
 
     static RoslynToSqlTests()

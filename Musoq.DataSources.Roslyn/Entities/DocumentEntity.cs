@@ -165,6 +165,112 @@ public class DocumentEntity
     }
 
     /// <summary>
+    /// Gets the struct declarations in the document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public IEnumerable<StructEntity> Structs
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            if (_syntaxTree is null || _semanticModel is null)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return FilterNodes<StructDeclarationSyntax>(_syntaxTree.GetRoot())
+                .Select(node =>
+                {
+                    var symbol = _semanticModel.GetDeclaredSymbol(node);
+                    if (symbol is null)
+                        throw new InvalidOperationException("Could not get symbol for struct declaration.");
+                    return new StructEntity((INamedTypeSymbol)symbol, node, _semanticModel, _solution, this);
+                });
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of struct declarations in the document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int StructCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return Structs.Count();
+        }
+    }
+
+    /// <summary>
+    /// Gets the using directives in the document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public IEnumerable<UsingDirectiveEntity> UsingDirectives
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            if (_syntaxTree is null)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return _syntaxTree.GetRoot()
+                .DescendantNodes()
+                .OfType<UsingDirectiveSyntax>()
+                .Select(u => new UsingDirectiveEntity(u));
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of using directives in the document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int UsingDirectiveCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return UsingDirectives.Count();
+        }
+    }
+
+    /// <summary>
+    /// Gets the total lines of code in the document.
+    /// </summary>
+    public int LinesOfCode
+    {
+        get
+        {
+            if (_document.TryGetText(out var text))
+            {
+                return text.Lines.Count;
+            }
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of total type declarations (classes, interfaces, enums, structs) in the document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int TotalTypeCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return ClassCount + InterfaceCount + EnumCount + StructCount;
+        }
+    }
+
+    /// <summary>
     /// Initializes the document entity by loading the syntax tree and semantic model.
     /// </summary>
     /// <returns>A task that represents the asynchronous initialization operation.</returns>

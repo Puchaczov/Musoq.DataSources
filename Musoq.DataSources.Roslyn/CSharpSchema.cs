@@ -285,6 +285,98 @@ public class CSharpSchema : SchemaBase
     /// <column name="Tags" type="string">Tags</column>
     /// </columns>
     /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent field of class or struct</description>
+    /// <columns type="FieldEntity">
+    /// <column name="Name" type="string">Field name</column>
+    /// <column name="Type" type="string">Field type</column>
+    /// <column name="FullTypeName" type="string">Full type name including namespace</column>
+    /// <column name="IsReadOnly" type="bool">Whether the field is readonly</column>
+    /// <column name="IsConst" type="bool">Whether the field is const</column>
+    /// <column name="IsStatic" type="bool">Whether the field is static</column>
+    /// <column name="IsVolatile" type="bool">Whether the field is volatile</column>
+    /// <column name="HasInitializer" type="bool">Whether the field has an initializer</column>
+    /// <column name="Accessibility" type="string">Accessibility level</column>
+    /// <column name="Modifiers" type="string[]">Modifiers</column>
+    /// <column name="Attributes" type="AttributeEntity[]">Attributes</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent constructor of class or struct</description>
+    /// <columns type="ConstructorEntity">
+    /// <column name="Name" type="string">Containing type name</column>
+    /// <column name="IsStatic" type="bool">Whether it is a static constructor</column>
+    /// <column name="IsImplicitlyDeclared" type="bool">Whether it is default constructor</column>
+    /// <column name="Accessibility" type="string">Accessibility level</column>
+    /// <column name="ParameterCount" type="int">Number of parameters</column>
+    /// <column name="Parameters" type="ParameterEntity[]">Constructor parameters</column>
+    /// <column name="HasBody" type="bool">Whether constructor has a body</column>
+    /// <column name="StatementsCount" type="int">Number of statements</column>
+    /// <column name="LinesOfCode" type="int">Lines of code</column>
+    /// <column name="HasInitializer" type="bool">Whether it calls this() or base()</column>
+    /// <column name="InitializerKind" type="string">Type of initializer (this or base)</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent struct declaration</description>
+    /// <columns type="StructEntity">
+    /// <column name="Name" type="string">Struct name</column>
+    /// <column name="FullName" type="string">Full name including namespace</column>
+    /// <column name="Namespace" type="string">Namespace</column>
+    /// <column name="IsReadOnly" type="bool">Whether it is readonly struct</column>
+    /// <column name="IsRefStruct" type="bool">Whether it is ref struct</column>
+    /// <column name="IsRecordStruct" type="bool">Whether it is record struct</column>
+    /// <column name="MethodsCount" type="int">Number of methods</column>
+    /// <column name="PropertiesCount" type="int">Number of properties</column>
+    /// <column name="FieldsCount" type="int">Number of fields</column>
+    /// <column name="ConstructorsCount" type="int">Number of constructors</column>
+    /// <column name="LinesOfCode" type="int">Lines of code</column>
+    /// <column name="Methods" type="MethodEntity[]">Methods</column>
+    /// <column name="Properties" type="PropertyEntity[]">Properties</column>
+    /// <column name="Fields" type="FieldEntity[]">Fields</column>
+    /// <column name="Constructors" type="ConstructorEntity[]">Constructors</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent event declaration</description>
+    /// <columns type="EventEntity">
+    /// <column name="Name" type="string">Event name</column>
+    /// <column name="Type" type="string">Event delegate type</column>
+    /// <column name="IsStatic" type="bool">Whether it is static</column>
+    /// <column name="IsVirtual" type="bool">Whether it is virtual</column>
+    /// <column name="IsAbstract" type="bool">Whether it is abstract</column>
+    /// <column name="IsOverride" type="bool">Whether it is override</column>
+    /// <column name="Accessibility" type="string">Accessibility level</column>
+    /// <column name="HasExplicitAccessors" type="bool">Whether it has add/remove accessors</column>
+    /// <column name="IsFieldLike" type="bool">Whether it is field-like event</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent local function within a method</description>
+    /// <columns type="LocalFunctionEntity">
+    /// <column name="Name" type="string">Function name</column>
+    /// <column name="ReturnType" type="string">Return type</column>
+    /// <column name="IsAsync" type="bool">Whether it is async</column>
+    /// <column name="IsStatic" type="bool">Whether it is static</column>
+    /// <column name="ParameterCount" type="int">Number of parameters</column>
+    /// <column name="Parameters" type="ParameterEntity[]">Parameters</column>
+    /// <column name="HasBody" type="bool">Whether it has a body</column>
+    /// <column name="StatementsCount" type="int">Number of statements</column>
+    /// <column name="LinesOfCode" type="int">Lines of code</column>
+    /// <column name="CyclomaticComplexity" type="int">Cyclomatic complexity</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent using directive in document</description>
+    /// <columns type="UsingDirectiveEntity">
+    /// <column name="Name" type="string">Namespace or type being imported</column>
+    /// <column name="IsStatic" type="bool">Whether it is static using</column>
+    /// <column name="IsGlobal" type="bool">Whether it is global using</column>
+    /// <column name="Alias" type="string">Alias name if present</column>
+    /// <column name="HasAlias" type="bool">Whether it has an alias</column>
+    /// <column name="LineNumber" type="int">Line number</column>
+    /// </columns>
+    /// </additional-table>
     /// </additional-tables>
     public CSharpSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())

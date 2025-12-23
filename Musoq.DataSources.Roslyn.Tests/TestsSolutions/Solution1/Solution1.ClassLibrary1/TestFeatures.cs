@@ -5,6 +5,12 @@ namespace Solution1.ClassLibrary1;
 /// </summary>
 public class TestFeatures
 {
+    // Field tests
+    private readonly int _readonlyField = 10;
+    private static string _staticField = "static";
+    public const int ConstField = 42;
+    private volatile bool _volatileField;
+    
     // Auto-property tests
     public string AutoProperty { get; set; }
     public string AutoPropertyWithInit { get; init; }
@@ -26,6 +32,21 @@ public class TestFeatures
     
     // Property with only init setter
     public string InitOnly { init; }
+    
+    // Constructors
+    public TestFeatures()
+    {
+    }
+    
+    public TestFeatures(string value)
+    {
+        _backingField = value;
+    }
+    
+    public TestFeatures(string value, int number) : this(value)
+    {
+        var x = number;
+    }
     
     // Method with no body (abstract would require abstract class, so using partial)
     public partial void PartialMethodNoBody();
@@ -68,6 +89,73 @@ public class TestFeatures
         }
         var y = 2;
     }
+    
+    // Async method with awaits
+    public async Task<int> AsyncMethodWithAwaits()
+    {
+        await Task.Delay(100);
+        await Task.Delay(200);
+        return 42;
+    }
+    
+    // Method with lambda
+    public void MethodWithLambda()
+    {
+        var numbers = new[] { 1, 2, 3 };
+        var doubled = numbers.Select(x => x * 2);
+        var tripled = numbers.Select(n => n * 3);
+    }
+    
+    // Method with deep nesting
+    public void DeeplyNestedMethod(bool a, bool b, bool c)
+    {
+        if (a)
+        {
+            if (b)
+            {
+                if (c)
+                {
+                    var x = 1;
+                }
+            }
+        }
+    }
+    
+    // Event field-like
+    public event EventHandler? SimpleEvent;
+}
+
+/// <summary>
+/// Test struct for struct entity testing
+/// </summary>
+public struct TestStruct
+{
+    public int Value { get; set; }
+    public string Name { get; init; }
+    
+    private readonly int _privateField;
+    
+    public TestStruct(int value, string name)
+    {
+        Value = value;
+        Name = name;
+        _privateField = value;
+    }
+    
+    public int GetValue() => Value;
+}
+
+/// <summary>
+/// Test readonly struct
+/// </summary>
+public readonly struct ReadOnlyTestStruct
+{
+    public int Value { get; }
+    
+    public ReadOnlyTestStruct(int value)
+    {
+        Value = value;
+    }
 }
 
 public abstract class AbstractClassWithAbstractMethod
@@ -82,3 +170,17 @@ public interface IInterfaceWithMethods
     void InterfaceMethod();
     string InterfaceProperty { get; set; }
 }
+
+/// <summary>
+/// Class implementing interface for FindImplementations test
+/// </summary>
+public class InterfaceImplementor : IInterfaceWithMethods
+{
+    public void InterfaceMethod()
+    {
+        throw new NotImplementedException();
+    }
+    
+    public string InterfaceProperty { get; set; }
+}
+

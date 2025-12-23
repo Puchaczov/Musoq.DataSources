@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -185,6 +186,141 @@ public class MethodEntity
     }
 
     /// <summary>
+    /// Gets a value indicating whether the method is async.
+    /// </summary>
+    public bool IsAsync => _methodSymbol.IsAsync;
+
+    /// <summary>
+    /// Gets a value indicating whether the method is static.
+    /// </summary>
+    public bool IsStatic => _methodSymbol.IsStatic;
+
+    /// <summary>
+    /// Gets a value indicating whether the method is virtual.
+    /// </summary>
+    public bool IsVirtual => _methodSymbol.IsVirtual;
+
+    /// <summary>
+    /// Gets a value indicating whether the method is abstract.
+    /// </summary>
+    public bool IsAbstract => _methodSymbol.IsAbstract;
+
+    /// <summary>
+    /// Gets a value indicating whether the method is override.
+    /// </summary>
+    public bool IsOverride => _methodSymbol.IsOverride;
+
+    /// <summary>
+    /// Gets a value indicating whether the method is sealed.
+    /// </summary>
+    public bool IsSealed => _methodSymbol.IsSealed;
+
+    /// <summary>
+    /// Gets a value indicating whether the method is an extension method.
+    /// </summary>
+    public bool IsExtensionMethod => _methodSymbol.IsExtensionMethod;
+
+    /// <summary>
+    /// Gets a value indicating whether the method is generic.
+    /// </summary>
+    public bool IsGeneric => _methodSymbol.IsGenericMethod;
+
+    /// <summary>
+    /// Gets the number of type parameters if the method is generic.
+    /// </summary>
+    public int TypeParameterCount => _methodSymbol.TypeParameters.Length;
+
+    /// <summary>
+    /// Gets the type parameters of the method as a collection of strings.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<string> TypeParameters => _methodSymbol.TypeParameters.Select(tp => tp.Name);
+
+    /// <summary>
+    /// Gets the accessibility of the method (public, private, etc.).
+    /// </summary>
+    public string Accessibility => _methodSymbol.DeclaredAccessibility.ToString().ToLowerInvariant();
+
+    /// <summary>
+    /// Gets the number of local functions defined within this method.
+    /// </summary>
+    public int LocalFunctionCount => _methodDeclaration.DescendantNodes()
+        .OfType<LocalFunctionStatementSyntax>()
+        .Count();
+
+    /// <summary>
+    /// Gets a value indicating whether the method contains any await expressions.
+    /// </summary>
+    public bool ContainsAwait => _methodDeclaration.DescendantNodes()
+        .Any(n => n.IsKind(SyntaxKind.AwaitExpression));
+
+    /// <summary>
+    /// Gets the number of await expressions in the method.
+    /// </summary>
+    public int AwaitCount => _methodDeclaration.DescendantNodes()
+        .Count(n => n.IsKind(SyntaxKind.AwaitExpression));
+
+    /// <summary>
+    /// Gets a value indicating whether the method contains any lambda expressions.
+    /// </summary>
+    public bool ContainsLambda => _methodDeclaration.DescendantNodes()
+        .Any(n => n.IsKind(SyntaxKind.SimpleLambdaExpression) || 
+                  n.IsKind(SyntaxKind.ParenthesizedLambdaExpression));
+
+    /// <summary>
+    /// Gets the number of lambda expressions in the method.
+    /// </summary>
+    public int LambdaCount => _methodDeclaration.DescendantNodes()
+        .Count(n => n.IsKind(SyntaxKind.SimpleLambdaExpression) || 
+                    n.IsKind(SyntaxKind.ParenthesizedLambdaExpression));
+
+    /// <summary>
+    /// Gets a value indicating whether the method has XML documentation.
+    /// </summary>
+    public bool HasDocumentation
+    {
+        get
+        {
+            var trivia = _methodDeclaration.GetLeadingTrivia();
+            return trivia.Any(t => 
+                t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
+        }
+    }
+
+    /// <summary>
+    /// Gets the nesting depth of the method (max depth of nested control structures).
+    /// </summary>
+    public int MaxNestingDepth
+    {
+        get
+        {
+            if (_methodDeclaration.Body == null)
+                return 0;
+
+            return CalculateMaxNestingDepth(_methodDeclaration.Body, 0);
+        }
+    }
+
+    /// <summary>
+    /// Gets the number of return statements in the method.
+    /// </summary>
+    public int ReturnCount => _methodDeclaration.DescendantNodes()
+        .Count(n => n.IsKind(SyntaxKind.ReturnStatement));
+
+    /// <summary>
+    /// Gets the number of throw statements in the method.
+    /// </summary>
+    public int ThrowCount => _methodDeclaration.DescendantNodes()
+        .Count(n => n.IsKind(SyntaxKind.ThrowStatement) || n.IsKind(SyntaxKind.ThrowExpression));
+
+    /// <summary>
+    /// Gets the number of try-catch blocks in the method.
+    /// </summary>
+    public int TryCatchCount => _methodDeclaration.DescendantNodes()
+        .Count(n => n.IsKind(SyntaxKind.TryStatement));
+
+    /// <summary>
     /// Returns a string that represents the current object.
     /// </summary>
     /// <returns>A string that represents the current object.</returns>
@@ -198,5 +334,37 @@ public class MethodEntity
     private static int CountSyntaxKind(SyntaxNode node, SyntaxKind kind)
     {
         return node.DescendantNodes().Count(n => n.IsKind(kind));
+    }
+
+    private static int CalculateMaxNestingDepth(SyntaxNode node, int currentDepth)
+    {
+        var maxDepth = currentDepth;
+        
+        foreach (var child in node.ChildNodes())
+        {
+            var childDepth = currentDepth;
+            
+            // These constructs increase nesting depth
+            if (child.IsKind(SyntaxKind.IfStatement) ||
+                child.IsKind(SyntaxKind.ElseClause) ||
+                child.IsKind(SyntaxKind.WhileStatement) ||
+                child.IsKind(SyntaxKind.ForStatement) ||
+                child.IsKind(SyntaxKind.ForEachStatement) ||
+                child.IsKind(SyntaxKind.DoStatement) ||
+                child.IsKind(SyntaxKind.SwitchStatement) ||
+                child.IsKind(SyntaxKind.TryStatement) ||
+                child.IsKind(SyntaxKind.CatchClause) ||
+                child.IsKind(SyntaxKind.FinallyClause) ||
+                child.IsKind(SyntaxKind.UsingStatement) ||
+                child.IsKind(SyntaxKind.LockStatement))
+            {
+                childDepth = currentDepth + 1;
+            }
+            
+            var descendantMaxDepth = CalculateMaxNestingDepth(child, childDepth);
+            maxDepth = Math.Max(maxDepth, descendantMaxDepth);
+        }
+        
+        return maxDepth;
     }
 }

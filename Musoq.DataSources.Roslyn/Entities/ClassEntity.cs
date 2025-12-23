@@ -232,6 +232,250 @@ public class ClassEntity : TypeEntity
         .OfType<PropertyDeclarationSyntax>()
         .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!));
 
+    /// <summary>
+    /// Gets the fields of the class.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<FieldEntity> Fields => Syntax.Members
+        .OfType<FieldDeclarationSyntax>()
+        .SelectMany(f => f.Declaration.Variables
+            .Select(v => new FieldEntity(
+                (IFieldSymbol)SemanticModel.GetDeclaredSymbol(v)!,
+                v)));
+
+    /// <summary>
+    /// Gets the constructors of the class.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<ConstructorEntity> Constructors => Syntax.Members
+        .OfType<ConstructorDeclarationSyntax>()
+        .Select(c => new ConstructorEntity(SemanticModel.GetDeclaredSymbol(c)!, c));
+
+    /// <summary>
+    /// Gets the events of the class.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<EventEntity> Events
+    {
+        get
+        {
+            var events = new List<EventEntity>();
+            
+            // Event declarations with explicit add/remove
+            foreach (var eventDecl in Syntax.Members.OfType<EventDeclarationSyntax>())
+            {
+                var symbol = SemanticModel.GetDeclaredSymbol(eventDecl);
+                if (symbol != null)
+                    events.Add(new EventEntity(symbol, eventDecl));
+            }
+            
+            // Field-like event declarations
+            foreach (var eventField in Syntax.Members.OfType<EventFieldDeclarationSyntax>())
+            {
+                foreach (var variable in eventField.Declaration.Variables)
+                {
+                    var symbol = SemanticModel.GetDeclaredSymbol(variable) as IEventSymbol;
+                    if (symbol != null)
+                        events.Add(new EventEntity(symbol, fieldSyntax: eventField));
+                }
+            }
+            
+            return events;
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of events in the class.
+    /// </summary>
+    public int EventsCount => Events.Count();
+
+    /// <summary>
+    /// Gets a value indicating whether the class has XML documentation.
+    /// </summary>
+    public bool HasDocumentation
+    {
+        get
+        {
+            var trivia = Syntax.GetLeadingTrivia();
+            return trivia.Any(t => 
+                t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
+        }
+    }
+
+    /// <summary>
+    /// Gets the percentage of methods that have XML documentation.
+    /// </summary>
+    public double MethodDocumentationCoverage
+    {
+        get
+        {
+            var methods = Syntax.Members.OfType<MethodDeclarationSyntax>().ToList();
+            if (methods.Count == 0)
+                return 100.0;
+
+            var documentedCount = methods.Count(m => 
+                m.GetLeadingTrivia().Any(t => 
+                    t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                    t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)));
+
+            return (documentedCount * 100.0) / methods.Count;
+        }
+    }
+
+    /// <summary>
+    /// Gets the percentage of properties that have XML documentation.
+    /// </summary>
+    public double PropertyDocumentationCoverage
+    {
+        get
+        {
+            var properties = Syntax.Members.OfType<PropertyDeclarationSyntax>().ToList();
+            if (properties.Count == 0)
+                return 100.0;
+
+            var documentedCount = properties.Count(p => 
+                p.GetLeadingTrivia().Any(t => 
+                    t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                    t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)));
+
+            return (documentedCount * 100.0) / properties.Count;
+        }
+    }
+
+    /// <summary>
+    /// Gets the afferent coupling (Ca) - number of types that depend on this class.
+    /// This is a measure of how many other classes use this class.
+    /// </summary>
+    public int AfferentCoupling
+    {
+        get
+        {
+            var dependentTypes = new HashSet<string>();
+            
+            foreach (var project in Solution.Projects)
+            {
+                foreach (var document in project.Documents)
+                {
+                    var tree = document.GetSyntaxTreeAsync().Result;
+                    if (tree == null) continue;
+                    
+                    var root = tree.GetRoot();
+                    var identifiers = root.DescendantNodes().OfType<IdentifierNameSyntax>()
+                        .Where(id => id.Identifier.Text == Symbol.Name);
+                    
+                    foreach (var identifier in identifiers)
+                    {
+                        var containingType = identifier.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+                        if (containingType != null && containingType != Syntax)
+                        {
+                            var typeName = containingType.Identifier.Text;
+                            if (typeName != Symbol.Name)
+                                dependentTypes.Add(typeName);
+                        }
+                    }
+                }
+            }
+            
+            return dependentTypes.Count;
+        }
+    }
+
+    /// <summary>
+    /// Gets the efferent coupling (Ce) - number of types this class depends on.
+    /// This is a measure of how many other classes this class uses.
+    /// </summary>
+    public int EfferentCoupling
+    {
+        get
+        {
+            var dependencies = new HashSet<string>();
+            
+            // Get all type references in the class
+            foreach (var identifier in Syntax.DescendantNodes().OfType<IdentifierNameSyntax>())
+            {
+                var symbolInfo = SemanticModel.GetSymbolInfo(identifier);
+                var symbol = symbolInfo.Symbol;
+                
+                if (symbol?.ContainingType != null && 
+                    symbol.ContainingType.Name != Symbol.Name &&
+                    symbol.ContainingType.TypeKind == TypeKind.Class)
+                {
+                    dependencies.Add(symbol.ContainingType.Name);
+                }
+            }
+            
+            // Get base type dependencies
+            if (Symbol.BaseType != null && Symbol.BaseType.Name != "Object")
+            {
+                dependencies.Add(Symbol.BaseType.Name);
+            }
+            
+            // Get interface dependencies
+            foreach (var iface in Symbol.Interfaces)
+            {
+                dependencies.Add(iface.Name);
+            }
+            
+            return dependencies.Count;
+        }
+    }
+
+    /// <summary>
+    /// Gets the instability metric (I = Ce / (Ca + Ce)).
+    /// Value ranges from 0 (completely stable) to 1 (completely unstable).
+    /// </summary>
+    public double Instability
+    {
+        get
+        {
+            var ca = AfferentCoupling;
+            var ce = EfferentCoupling;
+            var total = ca + ce;
+            
+            if (total == 0)
+                return 0;
+            
+            return (double)ce / total;
+        }
+    }
+
+    /// <summary>
+    /// Gets the Weighted Methods per Class (WMC) metric.
+    /// Sum of cyclomatic complexities of all methods.
+    /// </summary>
+    public int WeightedMethodsPerClass
+    {
+        get
+        {
+            return Methods.Sum(m => m.CyclomaticComplexity);
+        }
+    }
+
+    /// <summary>
+    /// Gets the maximum cyclomatic complexity among all methods.
+    /// </summary>
+    public int MaxMethodComplexity
+    {
+        get
+        {
+            var methods = Methods.ToList();
+            return methods.Count == 0 ? 0 : methods.Max(m => m.CyclomaticComplexity);
+        }
+    }
+
+    /// <summary>
+    /// Gets the average cyclomatic complexity of methods.
+    /// </summary>
+    public double AverageMethodComplexity
+    {
+        get
+        {
+            var methods = Methods.ToList();
+            return methods.Count == 0 ? 0 : methods.Average(m => m.CyclomaticComplexity);
+        }
+    }
+
     private static HashSet<string> GetUsedFields(MethodDeclarationSyntax method, SemanticModel semanticModel)
     {
         var usedFields = new HashSet<string>();
