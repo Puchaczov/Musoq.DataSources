@@ -113,12 +113,16 @@ Write-Host "Starting Parallel Build..." -ForegroundColor Cyan
 $BuildScriptBlock = {
     param($ProjectFullName, $ProjectBaseName, $OutputDirectory, $Targets, $ExcludedAssemblies, $ProjectLicensesDir)
     
+    # ErrorActionPreference is NOT inherited in Start-Job, so we must set it explicitly
+    $ErrorActionPreference = "Stop"
+    
     $Results = @()
     foreach ($Target in $Targets) {
         $Rid = $Target.Rid
         $TempDir = Join-Path $OutputDirectory "temp_${ProjectBaseName}_$Rid"
         $PublishDir = Join-Path $TempDir "publish"
         $PackageDir = Join-Path $TempDir "package"
+        $ZipName = "${ProjectBaseName}-$($Target.Platform)-$($Target.Architecture).zip"
         
         try {
             $PublishArgs = @(
@@ -141,16 +145,37 @@ $BuildScriptBlock = {
                 Copy-Item -Path $ProjectLicensesDir -Destination $DestLicensesDir -Recurse -Force
             }
 
+            # Validate that publish directory exists and has content
+            if (-not (Test-Path $PublishDir)) {
+                throw "Publish directory does not exist: $PublishDir"
+            }
+            
+            $PublishContents = Get-ChildItem -Path $PublishDir -Force
+            if ($PublishContents.Count -eq 0) {
+                throw "Publish directory is empty: $PublishDir"
+            }
+
+            # Use Get-ChildItem to get file paths for Compress-Archive to avoid wildcard expansion issues
             $InnerZipPath = Join-Path $PackageDir "Plugin.zip"
-            Compress-Archive -Path "$PublishDir\*" -DestinationPath $InnerZipPath -Force
+            $FilesToCompress = Get-ChildItem -Path $PublishDir -Force | Select-Object -ExpandProperty FullName
+            Compress-Archive -Path $FilesToCompress -DestinationPath $InnerZipPath -Force
+            
+            # Validate Plugin.zip was created with content
+            if (-not (Test-Path $InnerZipPath)) {
+                throw "Failed to create Plugin.zip"
+            }
+            $PluginZipSize = (Get-Item $InnerZipPath).Length
+            if ($PluginZipSize -lt 1000) {
+                throw "Plugin.zip is suspiciously small ($PluginZipSize bytes), publish may have failed"
+            }
 
             Set-Content -Path "$PackageDir\EntryPoint.txt" -Value "${ProjectBaseName}.dll"
             Set-Content -Path "$PackageDir\Platform.txt" -Value $Target.Platform
             Set-Content -Path "$PackageDir\Architecture.txt" -Value $Target.Architecture
 
-            $ZipName = "${ProjectBaseName}-$($Target.Platform)-$($Target.Architecture).zip"
             $ZipPath = Join-Path $OutputDirectory $ZipName
-            Compress-Archive -Path "$PackageDir\*" -DestinationPath $ZipPath -Force
+            $PackageContents = Get-ChildItem -Path $PackageDir -Force | Select-Object -ExpandProperty FullName
+            Compress-Archive -Path $PackageContents -DestinationPath $ZipPath -Force
             
             $Results += "    -> Created: $ZipName"
         }
