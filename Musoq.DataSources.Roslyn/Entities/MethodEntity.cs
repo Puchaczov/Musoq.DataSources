@@ -15,6 +15,7 @@ public class MethodEntity
 {
     private readonly IMethodSymbol _methodSymbol;
     private readonly MethodDeclarationSyntax _methodDeclaration;
+    private readonly SemanticModel? _semanticModel;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MethodEntity"/> class.
@@ -25,6 +26,20 @@ public class MethodEntity
     {
         _methodSymbol = methodSymbol;
         _methodDeclaration = methodDeclaration;
+        _semanticModel = null;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MethodEntity"/> class with semantic model.
+    /// </summary>
+    /// <param name="methodSymbol">The method symbol to extract information from.</param>
+    /// <param name="methodDeclaration">The method declaration syntax node.</param>
+    /// <param name="semanticModel">The semantic model for analyzing usage.</param>
+    public MethodEntity(IMethodSymbol methodSymbol, MethodDeclarationSyntax methodDeclaration, SemanticModel semanticModel)
+    {
+        _methodSymbol = methodSymbol;
+        _methodDeclaration = methodDeclaration;
+        _semanticModel = semanticModel;
     }
 
     /// <summary>
@@ -38,10 +53,18 @@ public class MethodEntity
     public string ReturnType => _methodSymbol.ReturnType.Name;
 
     /// <summary>
-    /// Gets the parameters of the method as a collection of strings.
+    /// Gets the parameters of the method as a collection of ParameterEntity objects.
+    /// When semantic model is available, each parameter includes IsUsed property.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ParameterEntity> Parameters => _methodSymbol.Parameters.Select(p => new ParameterEntity(p));
+    public IEnumerable<ParameterEntity> Parameters
+    {
+        get
+        {
+            var methodBody = (SyntaxNode?)_methodDeclaration.Body ?? _methodDeclaration.ExpressionBody;
+            return _methodSymbol.Parameters.Select(p => new ParameterEntity(p, methodBody, _semanticModel));
+        }
+    }
 
     /// <summary>
     /// Gets the modifiers of the method as a collection of strings.
@@ -319,6 +342,83 @@ public class MethodEntity
     /// </summary>
     public int TryCatchCount => _methodDeclaration.DescendantNodes()
         .Count(n => n.IsKind(SyntaxKind.TryStatement));
+
+    /// <summary>
+    /// Gets the local variables declared in the method.
+    /// Returns an empty collection if the semantic model is not available.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<VariableEntity> LocalVariables
+    {
+        get
+        {
+            if (_semanticModel == null || _methodDeclaration.Body == null)
+                return Enumerable.Empty<VariableEntity>();
+
+            var variables = new List<VariableEntity>();
+
+            foreach (var declaration in _methodDeclaration.Body.DescendantNodes().OfType<LocalDeclarationStatementSyntax>())
+            {
+                foreach (var variable in declaration.Declaration.Variables)
+                {
+                    var symbol = _semanticModel.GetDeclaredSymbol(variable) as ILocalSymbol;
+                    if (symbol != null)
+                    {
+                        variables.Add(new VariableEntity(symbol, variable, _semanticModel, _methodDeclaration.Body));
+                    }
+                }
+            }
+
+            return variables;
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of local variables in the method.
+    /// </summary>
+    public int LocalVariableCount
+    {
+        get
+        {
+            if (_methodDeclaration.Body == null)
+                return 0;
+
+            return _methodDeclaration.Body.DescendantNodes()
+                .OfType<LocalDeclarationStatementSyntax>()
+                .SelectMany(d => d.Declaration.Variables)
+                .Count();
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of unused parameters in the method.
+    /// Returns null if the semantic model is not available.
+    /// </summary>
+    public int? UnusedParameterCount
+    {
+        get
+        {
+            if (_semanticModel == null)
+                return null;
+
+            return Parameters.Count(p => p.IsUsed == false);
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of unused local variables in the method.
+    /// Returns null if the semantic model is not available.
+    /// </summary>
+    public int? UnusedVariableCount
+    {
+        get
+        {
+            if (_semanticModel == null)
+                return null;
+
+            return LocalVariables.Count(v => !v.IsUsed);
+        }
+    }
 
     /// <summary>
     /// Returns a string that represents the current object.

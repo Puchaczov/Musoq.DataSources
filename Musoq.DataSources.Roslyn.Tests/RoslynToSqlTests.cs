@@ -70,7 +70,7 @@ public class RoslynToSqlTests
         
         var result = vm.Run();
         
-        Assert.IsTrue(result.Count == 12, $"Result should contain 12 types, but got {result.Count}");
+        Assert.IsTrue(result.Count == 13, $"Result should contain 13 types, but got {result.Count}");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1") == 1, "Class1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1") == 1, "Interface1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface2") == 1, "Interface2 should be present");
@@ -82,6 +82,7 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count(r => r[0].ToString() == "AbstractClassWithAbstractMethod") == 1, "AbstractClassWithAbstractMethod should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "IInterfaceWithMethods") == 1, "IInterfaceWithMethods should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "InterfaceImplementor") == 1, "InterfaceImplementor should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "UnusedCodeTestClass") == 1, "UnusedCodeTestClass should be present");
     }
 
     [TestMethod]
@@ -1339,6 +1340,154 @@ where c.Name = 'Class1'
         Assert.AreEqual(2, result.Count);
         Assert.IsTrue(result.Any(r => r[0].ToString() == "TestStruct" && (bool)r[1] == false));
         Assert.IsTrue(result.Any(r => r[0].ToString() == "ReadOnlyTestStruct" && (bool)r[1] == true));
+    }
+
+    [TestMethod]
+    public void WhenUnusedParametersQueried_ShouldReturnUnusedParameters()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        param.Name,
+                        param.Type,
+                        param.IsUsed
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.Parameters param
+                    where c.Name = 'UnusedCodeTestClass' and m.Name = 'MethodWithUnusedParameter'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        // usedParam should be used (true)
+        var usedParam = result.FirstOrDefault(r => r[1].ToString() == "usedParam");
+        Assert.IsNotNull(usedParam);
+        Assert.AreEqual(true, usedParam[3]); // IsUsed
+        
+        // unusedParam should be unused (false)
+        var unusedParam = result.FirstOrDefault(r => r[1].ToString() == "unusedParam");
+        Assert.IsNotNull(unusedParam);
+        Assert.AreEqual(false, unusedParam[3]); // IsUsed
+    }
+
+    [TestMethod]
+    public void WhenLocalVariablesQueried_ShouldReturnVariablesWithUsage()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        v.Name,
+                        v.Type,
+                        v.IsUsed
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.LocalVariables v
+                    where c.Name = 'UnusedCodeTestClass' and m.Name = 'MethodWithUnusedVariable'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        // usedVar should be used (true)
+        var usedVar = result.FirstOrDefault(r => r[1].ToString() == "usedVar");
+        Assert.IsNotNull(usedVar);
+        Assert.AreEqual(true, usedVar[3]); // IsUsed
+        
+        // unusedVar should be unused (false)
+        var unusedVar = result.FirstOrDefault(r => r[1].ToString() == "unusedVar");
+        Assert.IsNotNull(unusedVar);
+        Assert.AreEqual(false, unusedVar[3]); // IsUsed
+    }
+
+    [TestMethod]
+    public void WhenMethodUnusedParameterCountQueried_ShouldReturnCorrectCount()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.UnusedParameterCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'UnusedCodeTestClass' 
+                      and (m.Name = 'MethodWithUnusedParameter' or m.Name = 'MethodWithMultipleUnusedParams' or m.Name = 'MethodWithAllParamsUsed')
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(3, result.Count);
+        
+        // MethodWithUnusedParameter has 1 unused param
+        var oneUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithUnusedParameter");
+        Assert.IsNotNull(oneUnused);
+        Assert.AreEqual(1, oneUnused[1]);
+        
+        // MethodWithMultipleUnusedParams has 3 unused params
+        var threeUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithMultipleUnusedParams");
+        Assert.IsNotNull(threeUnused);
+        Assert.AreEqual(3, threeUnused[1]);
+        
+        // MethodWithAllParamsUsed has 0 unused params
+        var noneUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithAllParamsUsed");
+        Assert.IsNotNull(noneUnused);
+        Assert.AreEqual(0, noneUnused[1]);
+    }
+
+    [TestMethod]
+    public void WhenMethodUnusedVariableCountQueried_ShouldReturnCorrectCount()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.LocalVariableCount,
+                        m.UnusedVariableCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'UnusedCodeTestClass' and m.Name = 'MethodWithUnusedVariable'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(2, result[0][1]); // LocalVariableCount
+        Assert.AreEqual(1, result[0][2]); // UnusedVariableCount
+    }
+
+    [TestMethod]
+    public void WhenGetMethodsWithUnusedParametersCalled_ShouldReturnMethodsWithUnusedParams()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.UnusedParameterCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.GetMethodsWithUnusedParameters() m
+                    where m.Name like 'MethodWith%Unused%'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // Should find at least MethodWithUnusedParameter and MethodWithMultipleUnusedParams
+        Assert.IsTrue(result.Count >= 2);
     }
 
     static RoslynToSqlTests()

@@ -184,3 +184,71 @@ public class InterfaceImplementor : IInterfaceWithMethods
     public string InterfaceProperty { get; set; }
 }
 
+/// <summary>
+/// Class for testing unused code detection
+/// </summary>
+public class UnusedCodeTestClass
+{
+    // Unused field for testing
+    private int _unusedField;
+    
+    // Used field
+    private int _usedField;
+    
+    public UnusedCodeTestClass()
+    {
+        _usedField = 42;
+    }
+    
+    /// <summary>
+    /// Method with unused parameter
+    /// </summary>
+    public void MethodWithUnusedParameter(int usedParam, string unusedParam)
+    {
+        var result = usedParam * 2;
+        Console.WriteLine(result);
+    }
+    
+    /// <summary>
+    /// Method with unused local variable
+    /// </summary>
+    public void MethodWithUnusedVariable()
+    {
+        var unusedVar = 10;
+        var usedVar = 20;
+        Console.WriteLine(usedVar);
+    }
+    
+    /// <summary>
+    /// Method with all parameters used
+    /// </summary>
+    public int MethodWithAllParamsUsed(int a, int b)
+    {
+        return a + b;
+    }
+    
+    /// <summary>
+    /// Method with multiple unused parameters
+    /// </summary>
+    public void MethodWithMultipleUnusedParams(int a, int b, int c)
+    {
+        // None of the parameters are used
+    }
+    
+    /// <summary>
+    /// Private method that is never called (unused method)
+    /// </summary>
+    private void UnusedPrivateMethod()
+    {
+        Console.WriteLine("Never called");
+    }
+    
+    /// <summary>
+    /// Gets the used field value
+    /// </summary>
+    public int GetUsedField()
+    {
+        return _usedField;
+    }
+}
+

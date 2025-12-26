@@ -229,6 +229,22 @@ public class CSharpSchema : SchemaBase
     /// <column name="IsRef" type="bool">Is ref</column>
     /// <column name="IsByRef" type="bool">Is by ref</column>
     /// <column name="IsByValue" type="bool">Is by value</column>
+    /// <column name="IsUsed" type="bool?">Whether parameter is used in method body</column>
+    /// </columns>
+    /// </additional-table>
+    /// <additional-table>
+    /// <description>Represent local variable in a method</description>
+    /// <columns type="VariableEntity">
+    /// <column name="Name" type="string">Variable name</column>
+    /// <column name="Type" type="string">Variable type</column>
+    /// <column name="FullTypeName" type="string">Full type name including namespace</column>
+    /// <column name="IsConst" type="bool">Whether variable is const</column>
+    /// <column name="IsRef" type="bool">Whether variable has ref modifier</column>
+    /// <column name="IsFixed" type="bool">Whether variable has fixed modifier</column>
+    /// <column name="HasInitializer" type="bool">Whether variable has an initializer</column>
+    /// <column name="InitializerText" type="string">Initializer expression text</column>
+    /// <column name="IsUsed" type="bool">Whether variable is used after declaration</column>
+    /// <column name="LineNumber" type="int">Line number where declared</column>
     /// </columns>
     /// </additional-table>
     /// <additional-table>

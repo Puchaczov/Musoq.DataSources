@@ -386,6 +386,68 @@ public class CSharpLibrary : LibraryBase
             .SelectMany(d => d.Classes)
             .Where(c => c.LackOfCohesion >= threshold);
     }
+
+    /// <summary>
+    /// Gets all methods that have unused parameters.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>Methods with at least one unused parameter.</returns>
+    [BindableMethod]
+    public IEnumerable<MethodEntity> GetMethodsWithUnusedParameters([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Classes)
+            .SelectMany(c => c.Methods)
+            .Where(m => m.UnusedParameterCount > 0);
+    }
+
+    /// <summary>
+    /// Gets all methods that have unused local variables.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>Methods with at least one unused local variable.</returns>
+    [BindableMethod]
+    public IEnumerable<MethodEntity> GetMethodsWithUnusedVariables([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Classes)
+            .SelectMany(c => c.Methods)
+            .Where(m => m.UnusedVariableCount > 0);
+    }
+
+    /// <summary>
+    /// Gets all unused parameters across the solution.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>All unused parameters with their containing method context.</returns>
+    [BindableMethod]
+    public IEnumerable<ParameterEntity> GetUnusedParameters([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Classes)
+            .SelectMany(c => c.Methods)
+            .SelectMany(m => m.Parameters)
+            .Where(p => p.IsUsed == false);
+    }
+
+    /// <summary>
+    /// Gets all unused local variables across the solution.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>All unused local variables with their containing method context.</returns>
+    [BindableMethod]
+    public IEnumerable<VariableEntity> GetUnusedVariables([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Classes)
+            .SelectMany(c => c.Methods)
+            .SelectMany(m => m.LocalVariables)
+            .Where(v => !v.IsUsed);
+    }
     
     internal async Task<IEnumerable<NugetPackageEntity>> GetNugetPackagesAsync(ProjectEntity project, bool withTransitivePackages)
     {

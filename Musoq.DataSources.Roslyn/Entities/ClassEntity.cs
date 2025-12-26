@@ -223,7 +223,7 @@ public class ClassEntity : TypeEntity
     /// </summary>
     public override IEnumerable<MethodEntity> Methods => Syntax.Members
         .OfType<MethodDeclarationSyntax>()
-        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m));
+        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel));
 
     /// <summary>
     /// Gets the properties of the type.
