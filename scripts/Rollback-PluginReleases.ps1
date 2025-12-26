@@ -10,6 +10,10 @@ $ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 
+# Configuration constants
+$script:MaxReleasesToFetch = 1000
+$script:BatchWindowHours = 1
+
 <#
 .SYNOPSIS
     Rollback plugin releases by deleting the latest version and updating the registry.
@@ -37,6 +41,36 @@ $ErrorActionPreference = "Stop"
     If specified, skips confirmation prompts.
 #>
 
+<#
+.SYNOPSIS
+    Parses an ISO 8601 date string in a culture-invariant way.
+
+.PARAMETER DateString
+    The date string in ISO 8601 format (e.g., "2025-12-26T15:30:00Z").
+
+.OUTPUTS
+    A DateTime object in UTC.
+#>
+function ConvertFrom-Iso8601Date {
+    param([string]$DateString)
+    
+    if ([string]::IsNullOrWhiteSpace($DateString)) {
+        return [DateTime]::UtcNow
+    }
+    
+    try {
+        return [DateTime]::ParseExact(
+            $DateString, 
+            "yyyy-MM-ddTHH:mm:ssZ", 
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+        )
+    } catch {
+        # Fallback to general parsing with invariant culture
+        return [DateTime]::Parse($DateString, [System.Globalization.CultureInfo]::InvariantCulture)
+    }
+}
+
 if (-not (Test-ValidRepository -Repository $Repository)) {
     Write-Error "Invalid repository format: $Repository. Expected 'owner/repo' format."
     exit 1
@@ -62,7 +96,7 @@ if ($DryRun) {
 
 # Get all releases from the repository
 Write-Host "Fetching releases from $Repository..." -ForegroundColor Cyan
-$ReleasesJson = gh release list --repo $Repository --limit 1000 --json tagName,createdAt 2>$null
+$ReleasesJson = gh release list --repo $Repository --limit $script:MaxReleasesToFetch --json tagName,createdAt 2>$null
 if ($LASTEXITCODE -ne 0 -or -not $ReleasesJson) {
     Write-Error "Failed to fetch releases from repository"
     exit 1
@@ -145,14 +179,14 @@ if ($PluginName -eq "All") {
     }
     
     # Sort by creation date to find the latest
-    $SortedVersions = $AllVersions | Sort-Object { [DateTime]::Parse($_.CreatedAt) } -Descending
-    $LatestReleaseDate = [DateTime]::Parse($SortedVersions[0].CreatedAt)
+    $SortedVersions = $AllVersions | Sort-Object { ConvertFrom-Iso8601Date $_.CreatedAt } -Descending
+    $LatestReleaseDate = ConvertFrom-Iso8601Date $SortedVersions[0].CreatedAt
     
-    # Get all plugins released within 1 hour of the latest (batch releases)
-    $BatchWindow = $LatestReleaseDate.AddHours(-1)
+    # Get all plugins released within the batch window of the latest (batch releases)
+    $BatchWindow = $LatestReleaseDate.AddHours(-$script:BatchWindowHours)
     
     foreach ($v in $SortedVersions) {
-        $ReleaseDate = [DateTime]::Parse($v.CreatedAt)
+        $ReleaseDate = ConvertFrom-Iso8601Date $v.CreatedAt
         if ($ReleaseDate -ge $BatchWindow) {
             # Check if this is the latest version for this plugin
             $LatestForPlugin = $PluginVersionsMap[$v.PluginName][0]
