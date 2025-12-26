@@ -252,3 +252,80 @@ public class UnusedCodeTestClass
     }
 }
 
+/// <summary>
+/// Unused interface for testing IsUsed property
+/// </summary>
+public interface IUnusedInterface
+{
+    void DoSomething();
+}
+
+/// <summary>
+/// Used interface for testing IsUsed property
+/// </summary>
+public interface IUsedInterface
+{
+    void DoSomethingUseful();
+}
+
+/// <summary>
+/// Class that uses IUsedInterface
+/// </summary>
+public class UsedInterfaceImplementor : IUsedInterface
+{
+    public void DoSomethingUseful()
+    {
+        Console.WriteLine("Used");
+    }
+}
+
+/// <summary>
+/// Unused enum for testing IsUsed property
+/// </summary>
+public enum UnusedEnum
+{
+    Value1,
+    Value2
+}
+
+/// <summary>
+/// Used enum for testing IsUsed property
+/// </summary>
+public enum UsedEnum
+{
+    Used1,
+    Used2
+}
+
+/// <summary>
+/// Class that uses UsedEnum
+/// </summary>
+public class EnumUser
+{
+    public UsedEnum GetEnum() => UsedEnum.Used1;
+}
+
+/// <summary>
+/// Unused struct for testing IsUsed property
+/// </summary>
+public struct UnusedStruct
+{
+    public int Value { get; set; }
+}
+
+/// <summary>
+/// Used struct for testing IsUsed property
+/// </summary>
+public struct UsedStruct
+{
+    public int Value { get; set; }
+}
+
+/// <summary>
+/// Class that uses UsedStruct
+/// </summary>
+public class StructUser
+{
+    public UsedStruct GetStruct() => new UsedStruct { Value = 42 };
+}
+

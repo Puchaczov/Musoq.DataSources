@@ -70,7 +70,8 @@ public class RoslynToSqlTests
         
         var result = vm.Run();
         
-        Assert.IsTrue(result.Count == 13, $"Result should contain 13 types, but got {result.Count}");
+        // We now have 20 types (structs are counted separately via d.Structs)
+        Assert.IsTrue(result.Count >= 20, $"Result should contain at least 20 types, but got {result.Count}");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1") == 1, "Class1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1") == 1, "Interface1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface2") == 1, "Interface2 should be present");
@@ -83,6 +84,13 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count(r => r[0].ToString() == "IInterfaceWithMethods") == 1, "IInterfaceWithMethods should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "InterfaceImplementor") == 1, "InterfaceImplementor should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "UnusedCodeTestClass") == 1, "UnusedCodeTestClass should be present");
+        // New types for testing unused code detection
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "IUnusedInterface") == 1, "IUnusedInterface should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "IUsedInterface") == 1, "IUsedInterface should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "UsedInterfaceImplementor") == 1, "UsedInterfaceImplementor should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "UnusedEnum") == 1, "UnusedEnum should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "UsedEnum") == 1, "UsedEnum should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "EnumUser") == 1, "EnumUser should be present");
     }
 
     [TestMethod]
@@ -1488,6 +1496,185 @@ where c.Name = 'Class1'
         
         // Should find at least MethodWithUnusedParameter and MethodWithMultipleUnusedParams
         Assert.IsTrue(result.Count >= 2);
+    }
+
+    [TestMethod]
+    public void WhenFieldIsUsedQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        f.Name,
+                        f.IsUsed,
+                        f.ReferenceCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Fields f
+                    where c.Name = 'UnusedCodeTestClass'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // Should have _unusedField and _usedField
+        Assert.IsTrue(result.Count >= 2);
+        
+        // _usedField should be used
+        var usedField = result.FirstOrDefault(r => r[0].ToString() == "_usedField");
+        Assert.IsNotNull(usedField);
+        Assert.AreEqual(true, usedField[1]); // IsUsed
+        Assert.IsTrue((int)usedField[2] > 0); // ReferenceCount > 0
+        
+        // _unusedField should not be used
+        var unusedField = result.FirstOrDefault(r => r[0].ToString() == "_unusedField");
+        Assert.IsNotNull(unusedField);
+        Assert.AreEqual(false, unusedField[1]); // IsUsed
+        Assert.AreEqual(0, unusedField[2]); // ReferenceCount == 0
+    }
+
+    [TestMethod]
+    public void WhenClassIsUsedQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        c.Name,
+                        c.IsUsed,
+                        c.ReferenceCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    where c.Name = 'UsedInterfaceImplementor' or c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        // Class1 should be used (referenced in Tests.cs)
+        var class1 = result.FirstOrDefault(r => r[0].ToString() == "Class1");
+        Assert.IsNotNull(class1);
+        Assert.IsNotNull(class1[1]); // IsUsed should not be null
+    }
+
+    [TestMethod]
+    public void WhenInterfaceIsUsedQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        i.Name,
+                        i.IsUsed,
+                        i.ReferenceCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Interfaces i
+                    where i.Name = 'IUsedInterface' or i.Name = 'IUnusedInterface'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        // IUsedInterface should be used (implemented by UsedInterfaceImplementor)
+        var usedInterface = result.FirstOrDefault(r => r[0].ToString() == "IUsedInterface");
+        Assert.IsNotNull(usedInterface);
+        Assert.AreEqual(true, usedInterface[1]); // IsUsed
+        Assert.IsTrue((int)usedInterface[2] > 0); // ReferenceCount > 0
+        
+        // IUnusedInterface should not be used
+        var unusedInterface = result.FirstOrDefault(r => r[0].ToString() == "IUnusedInterface");
+        Assert.IsNotNull(unusedInterface);
+        Assert.AreEqual(false, unusedInterface[1]); // IsUsed
+        Assert.AreEqual(0, unusedInterface[2]); // ReferenceCount == 0
+    }
+
+    [TestMethod]
+    public void WhenEnumIsUsedQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        e.Name,
+                        e.IsUsed,
+                        e.ReferenceCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Enums e
+                    where e.Name = 'UsedEnum' or e.Name = 'UnusedEnum'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        // UsedEnum should be used (referenced in EnumUser)
+        var usedEnum = result.FirstOrDefault(r => r[0].ToString() == "UsedEnum");
+        Assert.IsNotNull(usedEnum);
+        Assert.AreEqual(true, usedEnum[1]); // IsUsed
+        Assert.IsTrue((int)usedEnum[2] > 0); // ReferenceCount > 0
+        
+        // UnusedEnum should not be used
+        var unusedEnum = result.FirstOrDefault(r => r[0].ToString() == "UnusedEnum");
+        Assert.IsNotNull(unusedEnum);
+        Assert.AreEqual(false, unusedEnum[1]); // IsUsed
+        Assert.AreEqual(0, unusedEnum[2]); // ReferenceCount == 0
+    }
+
+    [TestMethod]
+    public void WhenStructIsUsedQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        st.Name,
+                        st.IsUsed,
+                        st.ReferenceCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Structs st
+                    where st.Name = 'UsedStruct' or st.Name = 'UnusedStruct'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        // UsedStruct should be used (referenced in StructUser)
+        var usedStruct = result.FirstOrDefault(r => r[0].ToString() == "UsedStruct");
+        Assert.IsNotNull(usedStruct);
+        Assert.AreEqual(true, usedStruct[1]); // IsUsed
+        Assert.IsTrue((int)usedStruct[2] > 0); // ReferenceCount > 0
+        
+        // UnusedStruct should not be used
+        var unusedStruct = result.FirstOrDefault(r => r[0].ToString() == "UnusedStruct");
+        Assert.IsNotNull(unusedStruct);
+        Assert.AreEqual(false, unusedStruct[1]); // IsUsed
+        Assert.AreEqual(0, unusedStruct[2]); // ReferenceCount == 0
+    }
+
+    [TestMethod]
+    public void WhenGetUnusedFieldsCalled_ShouldReturnUnusedFields()
+    {
+        var query = """
+                    select
+                        f.Name
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.GetUnusedFields() f
+                    where f.Name = '_unusedField'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // Should find _unusedField
+        Assert.IsTrue(result.Count >= 1);
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "_unusedField"));
     }
 
     static RoslynToSqlTests()

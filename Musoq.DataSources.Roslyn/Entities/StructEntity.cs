@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -139,7 +140,8 @@ public class StructEntity : TypeEntity
         .SelectMany(f => f.Declaration.Variables
             .Select(v => new FieldEntity(
                 (IFieldSymbol)SemanticModel.GetDeclaredSymbol(v)!,
-                v)));
+                v,
+                Solution)));
 
     /// <summary>
     /// Gets the constructors of the struct.
@@ -148,6 +150,28 @@ public class StructEntity : TypeEntity
     public IEnumerable<ConstructorEntity> Constructors => Syntax.Members
         .OfType<ConstructorDeclarationSyntax>()
         .Select(c => new ConstructorEntity(SemanticModel.GetDeclaredSymbol(c)!, c));
+
+    /// <summary>
+    /// Gets the number of references to this struct in the solution.
+    /// </summary>
+    public int ReferenceCount
+    {
+        get
+        {
+            var references = SymbolFinder.FindReferencesAsync(Symbol, Solution).Result;
+            return references.Sum(r => r.Locations.Count());
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the struct is used (referenced) in the solution.
+    /// </summary>
+    public bool IsUsed => ReferenceCount > 0;
+
+    /// <summary>
+    /// Gets the count of unused fields in the struct.
+    /// </summary>
+    public int UnusedFieldCount => Fields.Count(f => f.IsUsed == false);
 
     /// <summary>
     /// Gets itself.

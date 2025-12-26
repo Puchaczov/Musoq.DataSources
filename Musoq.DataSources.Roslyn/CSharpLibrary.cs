@@ -448,6 +448,91 @@ public class CSharpLibrary : LibraryBase
             .SelectMany(m => m.LocalVariables)
             .Where(v => !v.IsUsed);
     }
+
+    /// <summary>
+    /// Gets all unused class-level fields across the solution.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>All unused fields with their containing class context.</returns>
+    [BindableMethod]
+    public IEnumerable<FieldEntity> GetUnusedFields([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Classes)
+            .SelectMany(c => c.Fields)
+            .Where(f => f.IsUsed == false);
+    }
+
+    /// <summary>
+    /// Gets all classes that have unused fields.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>Classes with at least one unused field.</returns>
+    [BindableMethod]
+    public IEnumerable<ClassEntity> GetClassesWithUnusedFields([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Classes)
+            .Where(c => c.UnusedFieldCount > 0);
+    }
+
+    /// <summary>
+    /// Gets all unused classes (classes with no references) across the solution.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>All unused classes.</returns>
+    [BindableMethod]
+    public IEnumerable<ClassEntity> GetUnusedClasses([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Classes)
+            .Where(c => !c.IsUsed);
+    }
+
+    /// <summary>
+    /// Gets all unused interfaces (interfaces with no references) across the solution.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>All unused interfaces.</returns>
+    [BindableMethod]
+    public IEnumerable<InterfaceEntity> GetUnusedInterfaces([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Interfaces)
+            .Where(i => !i.IsUsed);
+    }
+
+    /// <summary>
+    /// Gets all unused enums (enums with no references) across the solution.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>All unused enums.</returns>
+    [BindableMethod]
+    public IEnumerable<EnumEntity> GetUnusedEnums([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Enums)
+            .Where(e => !e.IsUsed);
+    }
+
+    /// <summary>
+    /// Gets all unused structs (structs with no references) across the solution.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <returns>All unused structs.</returns>
+    [BindableMethod]
+    public IEnumerable<StructEntity> GetUnusedStructs([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Structs)
+            .Where(s => !s.IsUsed);
+    }
     
     internal async Task<IEnumerable<NugetPackageEntity>> GetNugetPackagesAsync(ProjectEntity project, bool withTransitivePackages)
     {

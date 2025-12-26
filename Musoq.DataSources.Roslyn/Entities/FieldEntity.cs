@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -14,6 +15,7 @@ public class FieldEntity
 {
     private readonly IFieldSymbol _fieldSymbol;
     private readonly VariableDeclaratorSyntax? _syntax;
+    private readonly Solution? _solution;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FieldEntity"/> class.
@@ -24,6 +26,20 @@ public class FieldEntity
     {
         _fieldSymbol = fieldSymbol;
         _syntax = syntax;
+        _solution = null;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FieldEntity"/> class with solution context.
+    /// </summary>
+    /// <param name="fieldSymbol">The field symbol representing the field.</param>
+    /// <param name="syntax">The variable declarator syntax node.</param>
+    /// <param name="solution">The solution for finding references.</param>
+    public FieldEntity(IFieldSymbol fieldSymbol, VariableDeclaratorSyntax? syntax, Solution solution)
+    {
+        _fieldSymbol = fieldSymbol;
+        _syntax = syntax;
+        _solution = solution;
     }
 
     /// <summary>
@@ -90,6 +106,38 @@ public class FieldEntity
     /// Gets a value indicating whether the field is an implicitly declared backing field.
     /// </summary>
     public bool IsImplicitlyDeclared => _fieldSymbol.IsImplicitlyDeclared;
+
+    /// <summary>
+    /// Gets the number of references to this field in the solution.
+    /// Returns null if the solution context is not available.
+    /// </summary>
+    public int? ReferenceCount
+    {
+        get
+        {
+            if (_solution == null)
+                return null;
+
+            var references = SymbolFinder.FindReferencesAsync(_fieldSymbol, _solution).Result;
+            return references.Sum(r => r.Locations.Count());
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the field is used (referenced) in the solution.
+    /// Returns null if the solution context is not available.
+    /// </summary>
+    public bool? IsUsed
+    {
+        get
+        {
+            if (_solution == null)
+                return null;
+
+            var refCount = ReferenceCount;
+            return refCount > 0;
+        }
+    }
 
     /// <summary>
     /// Gets the modifiers of the field (e.g., public, private, protected, static, readonly).
