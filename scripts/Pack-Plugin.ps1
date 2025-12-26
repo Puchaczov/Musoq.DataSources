@@ -113,11 +113,7 @@ Write-Host "Starting Parallel Build..." -ForegroundColor Cyan
 $BuildScriptBlock = {
     param($ProjectFullName, $ProjectBaseName, $OutputDirectory, $Targets, $ExcludedAssemblies, $ProjectLicensesDir)
     
-    # ErrorActionPreference is NOT inherited in Start-Job, so we must set it explicitly
     $ErrorActionPreference = "Stop"
-    
-    # Minimum size threshold for Plugin.zip to be considered valid (1KB)
-    # A valid plugin with DLLs should be much larger than this
     $MinPluginZipSizeBytes = 1000
     
     $Results = @()
@@ -149,7 +145,6 @@ $BuildScriptBlock = {
                 Copy-Item -Path $ProjectLicensesDir -Destination $DestLicensesDir -Recurse -Force
             }
 
-            # Validate that publish directory exists and has content
             if (-not (Test-Path $PublishDir)) {
                 throw "Publish directory does not exist: $PublishDir"
             }
@@ -159,12 +154,10 @@ $BuildScriptBlock = {
                 throw "Publish directory is empty: $PublishDir"
             }
 
-            # Use Get-ChildItem to get file paths for Compress-Archive to avoid wildcard expansion issues
             $InnerZipPath = Join-Path $PackageDir "Plugin.zip"
             $FilesToCompress = Get-ChildItem -Path $PublishDir -Force | Select-Object -ExpandProperty FullName
             Compress-Archive -Path $FilesToCompress -DestinationPath $InnerZipPath -Force
             
-            # Validate Plugin.zip was created with content
             if (-not (Test-Path $InnerZipPath)) {
                 throw "Failed to create Plugin.zip"
             }

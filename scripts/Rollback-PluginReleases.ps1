@@ -10,7 +10,6 @@ $ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 
-# Configuration constants
 $script:MaxReleasesToFetch = 1000
 $script:BatchWindowHours = 1
 
@@ -66,7 +65,6 @@ function ConvertFrom-Iso8601Date {
             [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
         )
     } catch {
-        # Fallback to general parsing with invariant culture
         return [DateTime]::Parse($DateString, [System.Globalization.CultureInfo]::InvariantCulture)
     }
 }
@@ -94,7 +92,6 @@ if ($DryRun) {
     Write-Host ""
 }
 
-# Get all releases from the repository
 Write-Host "Fetching releases from $Repository..." -ForegroundColor Cyan
 $ReleasesJson = gh release list --repo $Repository --limit $script:MaxReleasesToFetch --json tagName,createdAt 2>$null
 if ($LASTEXITCODE -ne 0 -or -not $ReleasesJson) {
@@ -107,18 +104,15 @@ $Releases = $ReleasesJson | ConvertFrom-Json
 $RegistryTag = $script:RegistryReleaseTag
 $RegistryFile = $script:RegistryFileName
 
-# Build a map of plugin name -> versions (sorted by version descending)
 $PluginVersionsMap = @{}
 
 foreach ($Release in $Releases) {
     $Tag = $Release.tagName
     
-    # Skip the registry release
     if ($Tag -eq $RegistryTag) {
         continue
     }
     
-    # Parse the release tag: VERSION-PLUGINNAME
     if ($Tag -notmatch '^(\d+\.\d+\.\d+(-[\w\d]+)?)-(.+)$') {
         continue
     }
@@ -145,7 +139,6 @@ foreach ($Release in $Releases) {
     }
 }
 
-# Sort versions for each plugin (newest first)
 foreach ($Name in $PluginVersionsMap.Keys) {
     $PluginVersionsMap[$Name] = $PluginVersionsMap[$Name] | Sort-Object { 
         try {
@@ -156,11 +149,9 @@ foreach ($Name in $PluginVersionsMap.Keys) {
     } -Descending
 }
 
-# Determine which plugins to rollback
 $PluginsToRollback = @()
 
 if ($PluginName -eq "All") {
-    # Find the most recently released plugins (by looking at the newest release overall)
     $AllVersions = @()
     foreach ($Name in $PluginVersionsMap.Keys) {
         foreach ($v in $PluginVersionsMap[$Name]) {
@@ -178,17 +169,14 @@ if ($PluginName -eq "All") {
         exit 0
     }
     
-    # Sort by creation date to find the latest
     $SortedVersions = $AllVersions | Sort-Object { ConvertFrom-Iso8601Date $_.CreatedAt } -Descending
     $LatestReleaseDate = ConvertFrom-Iso8601Date $SortedVersions[0].CreatedAt
     
-    # Get all plugins released within the batch window of the latest (batch releases)
     $BatchWindow = $LatestReleaseDate.AddHours(-$script:BatchWindowHours)
     
     foreach ($v in $SortedVersions) {
         $ReleaseDate = ConvertFrom-Iso8601Date $v.CreatedAt
         if ($ReleaseDate -ge $BatchWindow) {
-            # Check if this is the latest version for this plugin
             $LatestForPlugin = $PluginVersionsMap[$v.PluginName][0]
             if ($LatestForPlugin.ReleaseTag -eq $v.ReleaseTag) {
                 $PluginsToRollback += $v
@@ -196,7 +184,6 @@ if ($PluginName -eq "All") {
         }
     }
 } else {
-    # Rollback specific plugin
     if (-not $PluginVersionsMap.ContainsKey($PluginName)) {
         Write-Host "No releases found for plugin: $PluginName" -ForegroundColor Yellow
         exit 0
@@ -229,7 +216,6 @@ foreach ($p in $PluginsToRollback) {
 }
 Write-Host ""
 
-# Confirm action
 if (-not $DryRun -and -not $Force) {
     $Confirmation = Read-Host "Are you sure you want to delete these releases? (yes/no)"
     if ($Confirmation -ne "yes") {
@@ -238,14 +224,12 @@ if (-not $DryRun -and -not $Force) {
     }
 }
 
-# Download and update the registry
 $TempDir = Join-Path ([System.IO.Path]::GetTempPath()) "plugin-rollback-$(Get-Random)"
 New-Item -ItemType Directory -Path $TempDir -Force | Out-Null
 
 try {
     $LocalRegistryPath = Join-Path $TempDir $RegistryFile
     
-    # Check if registry release exists
     $RegistryReleaseExists = $false
     gh release view $RegistryTag --repo $Repository 1>$null 2>$null
     if ($LASTEXITCODE -eq 0) { $RegistryReleaseExists = $true }
@@ -282,7 +266,6 @@ try {
         }
     }
     
-    # Delete the releases
     $DeletedCount = 0
     $FailedCount = 0
     
@@ -303,11 +286,9 @@ try {
             }
         }
         
-        # Update the registry
         $PluginName = $p.PluginName
         $DeletedVersion = $p.Version
         
-        # Remove from version history
         if ($Registry.versionHistory -and $Registry.versionHistory.ContainsKey($PluginName)) {
             if ($Registry.versionHistory[$PluginName].ContainsKey($DeletedVersion)) {
                 if ($DryRun) {
@@ -319,11 +300,9 @@ try {
             }
         }
         
-        # Update or remove the plugin entry
         $PluginEntry = $Registry.plugins | Where-Object { $_.name -eq $PluginName }
         if ($PluginEntry) {
             if ($PluginEntry.latestVersion -eq $DeletedVersion) {
-                # Find the previous version
                 $PreviousVersions = @()
                 if ($PluginVersionsMap.ContainsKey($PluginName)) {
                     $PreviousVersions = $PluginVersionsMap[$PluginName] | Where-Object { $_.Version -ne $DeletedVersion }
@@ -337,7 +316,6 @@ try {
                         $PluginEntry.latestVersion = $NewLatest.Version
                         $PluginEntry.releaseTag = $NewLatest.ReleaseTag
                         
-                        # Try to get the release date from version history
                         if ($Registry.versionHistory -and 
                             $Registry.versionHistory.ContainsKey($PluginName) -and
                             $Registry.versionHistory[$PluginName].ContainsKey($NewLatest.Version)) {
@@ -349,7 +327,6 @@ try {
                         Write-Host "  Updated $PluginName to v$($NewLatest.Version)" -ForegroundColor Gray
                     }
                 } else {
-                    # No previous version, remove the plugin entirely
                     if ($DryRun) {
                         Write-Host "  [DRY RUN] Would remove $PluginName from registry (no previous versions)" -ForegroundColor Yellow
                     } else {
@@ -357,7 +334,6 @@ try {
                         Write-Host "  Removed $PluginName from registry (no previous versions)" -ForegroundColor Gray
                     }
                     
-                    # Also remove from version history entirely
                     if ($Registry.versionHistory -and $Registry.versionHistory.ContainsKey($PluginName)) {
                         if (-not $DryRun) {
                             $Registry.versionHistory.Remove($PluginName)
@@ -368,7 +344,6 @@ try {
         }
     }
     
-    # Save and upload the updated registry
     if (-not $DryRun -and $RegistryReleaseExists -and $DeletedCount -gt 0) {
         $Registry.lastUpdated = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture)
         
