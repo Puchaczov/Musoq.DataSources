@@ -1,4 +1,6 @@
+using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -8,6 +10,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 public class ParameterEntity
 {
     private readonly IParameterSymbol _parameterSymbol;
+    private readonly SyntaxNode? _methodBody;
+    private readonly SemanticModel? _semanticModel;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ParameterEntity"/> class.
@@ -16,6 +20,21 @@ public class ParameterEntity
     public ParameterEntity(IParameterSymbol parameterSymbol)
     {
         _parameterSymbol = parameterSymbol;
+        _methodBody = null;
+        _semanticModel = null;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ParameterEntity"/> class with method body context.
+    /// </summary>
+    /// <param name="parameterSymbol">The parameter symbol representing the parameter.</param>
+    /// <param name="methodBody">The method body syntax node.</param>
+    /// <param name="semanticModel">The semantic model.</param>
+    public ParameterEntity(IParameterSymbol parameterSymbol, SyntaxNode? methodBody, SemanticModel? semanticModel)
+    {
+        _parameterSymbol = parameterSymbol;
+        _methodBody = methodBody;
+        _semanticModel = semanticModel;
     }
 
     /// <summary>
@@ -72,6 +91,34 @@ public class ParameterEntity
     /// Gets a value indicating whether the parameter is passed by value.
     /// </summary>
     public bool IsByValue => _parameterSymbol.RefKind == RefKind.None;
+
+    /// <summary>
+    /// Gets a value indicating whether the parameter is used within the method body.
+    /// Returns null if the method body context is not available.
+    /// </summary>
+    public bool? IsUsed
+    {
+        get
+        {
+            if (_methodBody == null || _semanticModel == null)
+                return null;
+
+            var identifiers = _methodBody.DescendantNodes()
+                .OfType<IdentifierNameSyntax>()
+                .Where(id => id.Identifier.Text == Name);
+
+            foreach (var identifier in identifiers)
+            {
+                var symbolInfo = _semanticModel.GetSymbolInfo(identifier);
+                if (SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, _parameterSymbol))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
 
     /// <summary>
     /// Returns a string that represents the current object.
