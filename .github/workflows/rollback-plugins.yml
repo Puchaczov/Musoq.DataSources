@@ -1,0 +1,42 @@
+name: Rollback Plugins
+
+on:
+  workflow_dispatch:
+    inputs:
+      plugin_name:
+        description: 'Plugin Name to Rollback (e.g., Musoq.DataSources.Git) or "All" for latest batch'
+        required: false
+        default: 'All'
+      dry_run:
+        description: 'Dry Run (show what would be deleted without making changes)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  rollback:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Rollback Plugin Releases
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      shell: pwsh
+      run: |
+        $dryRunFlag = ""
+        if ("${{ inputs.dry_run }}" -eq "true") {
+          $dryRunFlag = "-DryRun"
+        }
+        
+        ./scripts/Rollback-PluginReleases.ps1 `
+          -PluginName "${{ inputs.plugin_name }}" `
+          -Repository "${{ github.repository }}" `
+          -Force `
+          $dryRunFlag
