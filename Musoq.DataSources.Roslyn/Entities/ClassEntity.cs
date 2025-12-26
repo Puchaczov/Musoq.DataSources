@@ -263,7 +263,6 @@ public class ClassEntity : TypeEntity
         {
             var events = new List<EventEntity>();
             
-            // Event declarations with explicit add/remove
             foreach (var eventDecl in Syntax.Members.OfType<EventDeclarationSyntax>())
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(eventDecl);
@@ -271,7 +270,6 @@ public class ClassEntity : TypeEntity
                     events.Add(new EventEntity(symbol, eventDecl));
             }
             
-            // Field-like event declarations
             foreach (var eventField in Syntax.Members.OfType<EventFieldDeclarationSyntax>())
             {
                 foreach (var variable in eventField.Declaration.Variables)
@@ -361,7 +359,6 @@ public class ClassEntity : TypeEntity
             {
                 foreach (var document in project.Documents)
                 {
-                    // Use TryGetSyntaxTree to avoid blocking on async calls
                     if (!document.TryGetSyntaxTree(out var tree) || tree == null)
                         continue;
                     
@@ -396,7 +393,6 @@ public class ClassEntity : TypeEntity
         {
             var dependencies = new HashSet<string>();
             
-            // Get all type references in the class
             foreach (var identifier in Syntax.DescendantNodes().OfType<IdentifierNameSyntax>())
             {
                 var symbolInfo = SemanticModel.GetSymbolInfo(identifier);
@@ -410,13 +406,11 @@ public class ClassEntity : TypeEntity
                 }
             }
             
-            // Get base type dependencies
             if (Symbol.BaseType != null && Symbol.BaseType.Name != "Object")
             {
                 dependencies.Add(Symbol.BaseType.Name);
             }
             
-            // Get interface dependencies
             foreach (var iface in Symbol.Interfaces)
             {
                 dependencies.Add(iface.Name);

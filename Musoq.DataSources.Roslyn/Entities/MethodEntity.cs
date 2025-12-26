@@ -133,10 +133,8 @@ public class MethodEntity
     {
         get
         {
-            // Start with 1 for the method entry point
             var complexity = 1;
 
-            // Count branching statements
             complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.IfStatement);
             complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.ElseClause);
             complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.CasePatternSwitchLabel);
@@ -146,7 +144,6 @@ public class MethodEntity
             complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.CatchClause);
             complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.ConditionalExpression);
 
-            // Count logical operators
             complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.LogicalAndExpression);
             complexity += CountSyntaxKind(_methodDeclaration, SyntaxKind.LogicalOrExpression);
 
@@ -197,13 +194,11 @@ public class MethodEntity
                 return false;
             }
 
-            // If there are statements, it's not just trivia
             if (_methodDeclaration.Body.Statements.Count > 0)
             {
                 return false;
             }
 
-            // If we have an empty body with no statements, it contains only trivia (comments/whitespace)
             return true;
         }
     }
@@ -444,7 +439,6 @@ public class MethodEntity
         {
             var childDepth = currentDepth;
             
-            // These constructs increase nesting depth
             if (child.IsKind(SyntaxKind.IfStatement) ||
                 child.IsKind(SyntaxKind.ElseClause) ||
                 child.IsKind(SyntaxKind.WhileStatement) ||

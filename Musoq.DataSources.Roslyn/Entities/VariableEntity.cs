@@ -82,14 +82,12 @@ public class VariableEntity
     {
         get
         {
-            // Get all identifier references in the containing scope
             var identifiers = _containingScope.DescendantNodes()
                 .OfType<IdentifierNameSyntax>()
                 .Where(id => id.Identifier.Text == Name);
 
             foreach (var identifier in identifiers)
             {
-                // Skip the declaration itself
                 if (identifier.SpanStart <= _syntax.Span.End)
                     continue;
 

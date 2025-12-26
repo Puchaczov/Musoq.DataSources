@@ -5,18 +5,15 @@ namespace Solution1.ClassLibrary1;
 /// </summary>
 public class TestFeatures
 {
-    // Field tests
     private readonly int _readonlyField = 10;
     private static string _staticField = "static";
     public const int ConstField = 42;
     private volatile bool _volatileField;
     
-    // Auto-property tests
     public string AutoProperty { get; set; }
     public string AutoPropertyWithInit { get; init; }
     public string AutoPropertyReadOnly { get; }
     
-    // Property with custom getter
     private string _backingField;
     public string PropertyWithCustomGetter
     {
@@ -24,16 +21,12 @@ public class TestFeatures
         set { _backingField = value; }
     }
     
-    // Expression-bodied property
     public string ExpressionBodiedProperty => "test";
     
-    // Property with only getter
     public string GetterOnly { get; }
     
-    // Property with only init setter
     public string InitOnly { init; }
     
-    // Constructors
     public TestFeatures()
     {
     }
@@ -48,28 +41,23 @@ public class TestFeatures
         var x = number;
     }
     
-    // Method with no body (abstract would require abstract class, so using partial)
     public partial void PartialMethodNoBody();
     
-    // Method with empty body
     public void EmptyMethod()
     {
     }
     
-    // Method with only comments
     public void MethodWithOnlyComments()
     {
         // This is just a comment
         // Another comment
     }
     
-    // Method with single statement
     public void SingleStatementMethod()
     {
         var x = 1;
     }
     
-    // Method with multiple statements
     public void MultipleStatementsMethod()
     {
         var x = 1;
@@ -77,10 +65,8 @@ public class TestFeatures
         var z = x + y;
     }
     
-    // Expression-bodied method
     public int ExpressionBodiedMethod() => 42;
     
-    // Method with nested blocks (for statement count testing)
     public void MethodWithNestedBlocks()
     {
         if (true)
@@ -90,7 +76,6 @@ public class TestFeatures
         var y = 2;
     }
     
-    // Async method with awaits
     public async Task<int> AsyncMethodWithAwaits()
     {
         await Task.Delay(100);
@@ -98,7 +83,6 @@ public class TestFeatures
         return 42;
     }
     
-    // Method with lambda
     public void MethodWithLambda()
     {
         var numbers = new[] { 1, 2, 3 };
@@ -106,7 +90,6 @@ public class TestFeatures
         var tripled = numbers.Select(n => n * 3);
     }
     
-    // Method with deep nesting
     public void DeeplyNestedMethod(bool a, bool b, bool c)
     {
         if (a)
@@ -121,7 +104,6 @@ public class TestFeatures
         }
     }
     
-    // Event field-like
     public event EventHandler? SimpleEvent;
 }
 
@@ -189,10 +171,8 @@ public class InterfaceImplementor : IInterfaceWithMethods
 /// </summary>
 public class UnusedCodeTestClass
 {
-    // Unused field for testing
     private int _unusedField;
     
-    // Used field
     private int _usedField;
     
     public UnusedCodeTestClass()
@@ -232,7 +212,6 @@ public class UnusedCodeTestClass
     /// </summary>
     public void MethodWithMultipleUnusedParams(int a, int b, int c)
     {
-        // None of the parameters are used
     }
     
     /// <summary>
