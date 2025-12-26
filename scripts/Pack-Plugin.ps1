@@ -116,6 +116,10 @@ $BuildScriptBlock = {
     # ErrorActionPreference is NOT inherited in Start-Job, so we must set it explicitly
     $ErrorActionPreference = "Stop"
     
+    # Minimum size threshold for Plugin.zip to be considered valid (1KB)
+    # A valid plugin with DLLs should be much larger than this
+    $MinPluginZipSizeBytes = 1000
+    
     $Results = @()
     foreach ($Target in $Targets) {
         $Rid = $Target.Rid
@@ -165,7 +169,7 @@ $BuildScriptBlock = {
                 throw "Failed to create Plugin.zip"
             }
             $PluginZipSize = (Get-Item $InnerZipPath).Length
-            if ($PluginZipSize -lt 1000) {
+            if ($PluginZipSize -lt $MinPluginZipSizeBytes) {
                 throw "Plugin.zip is suspiciously small ($PluginZipSize bytes), publish may have failed"
             }
 
