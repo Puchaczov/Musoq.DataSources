@@ -30,7 +30,7 @@ public class RepresentativeQueryTests
             from #os.files('./Files', false)
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should return at least one file");
@@ -52,7 +52,7 @@ public class RepresentativeQueryTests
             where Extension = '.csv'
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should find CSV files");
@@ -74,7 +74,7 @@ public class RepresentativeQueryTests
             where Name = 'Transactions.csv'
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
@@ -94,7 +94,7 @@ public class RepresentativeQueryTests
             from #os.directories('./', false)
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should find directories");
@@ -116,7 +116,7 @@ public class RepresentativeQueryTests
             from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(10, table.Count, "Should have 10 transactions");
@@ -138,7 +138,7 @@ public class RepresentativeQueryTests
             from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
@@ -160,7 +160,7 @@ public class RepresentativeQueryTests
             where ToDecimal(Amount) > 0
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "Should have 2 salary payments");
@@ -186,7 +186,7 @@ public class RepresentativeQueryTests
             order by emp.Name
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count >= 5, "Should have at least 5 project assignments");
@@ -208,7 +208,7 @@ public class RepresentativeQueryTests
             group by Department
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(3, table.Count, "Should have 3 departments");
@@ -236,7 +236,7 @@ public class RepresentativeQueryTests
             where Id > 2
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(3, table.Count, "Should have 3 employees with Id > 2");
@@ -261,7 +261,7 @@ public class RepresentativeQueryTests
             order by Day
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(31, table.Count, "January has 31 days");
@@ -285,7 +285,7 @@ public class RepresentativeQueryTests
             where DayOfWeek = 0 or DayOfWeek = 6
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "First week of 2024 has 2 weekend days");
@@ -310,7 +310,7 @@ public class RepresentativeQueryTests
             where Value % 2 = 0
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(5, table.Count, "Should have 5 even numbers from 1-10");
@@ -332,7 +332,7 @@ public class RepresentativeQueryTests
             from #system.dual()
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
@@ -356,7 +356,7 @@ public class RepresentativeQueryTests
             select 'Option C' as Option, 300 as Value from #system.dual()
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(3, table.Count, "Should have 3 options");
@@ -378,7 +378,7 @@ public class RepresentativeQueryTests
             from #json.file('./Files/People.json', './Files/People.schema.json')
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(3, table.Count, "Should have 3 people");
@@ -398,7 +398,7 @@ public class RepresentativeQueryTests
             where Age > 30
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "Should find 2 people over 30");
@@ -417,7 +417,7 @@ public class RepresentativeQueryTests
             from #json.file('./Files/People.json', './Files/People.schema.json')
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(3, table.Count);
@@ -449,7 +449,7 @@ public class RepresentativeQueryTests
             order by Name
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count >= 3, "Should find at least 3 CSV files");
@@ -476,7 +476,7 @@ public class RepresentativeQueryTests
             order by EmpCount desc
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have departments with more than 1 employee");
@@ -509,7 +509,7 @@ public class RepresentativeQueryTests
             from EmployeeProjectSummary
             """;
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have employee summaries");
@@ -537,7 +537,7 @@ public class RepresentativeQueryTests
             from #git.repository('{unpackedRepository.Path.EscapePath()}') r 
             cross apply r.Commits c";
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have at least one commit");
@@ -562,7 +562,7 @@ public class RepresentativeQueryTests
                 b.Tip.Sha
             from #git.branches('{unpackedRepository.Path.EscapePath()}') b";
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have at least one branch");
@@ -586,7 +586,7 @@ public class RepresentativeQueryTests
                 t.Commit.Sha
             from #git.tags('{unpackedRepository.Path.EscapePath()}') t";
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have at least one tag");
@@ -612,7 +612,7 @@ public class RepresentativeQueryTests
                 repository.BranchFrom('feature/feature_a')
             ) as Difference";
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have at least one difference");
@@ -636,7 +636,7 @@ public class RepresentativeQueryTests
                 h.FilePath
             from #git.filehistory('{unpackedRepository.Path.EscapePath()}', 'README.md') h";
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have file history");
@@ -664,7 +664,7 @@ public class RepresentativeQueryTests
             )
             select CommitSha, CommitMessage, CommitAuthor from BranchInfo";
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count, "Should have 1 branch-specific commit");
@@ -687,11 +687,326 @@ public class RepresentativeQueryTests
             from #git.commits('{unpackedRepository.Path.EscapePath()}') c 
             cross apply c.Parents as p";
 
-        var vm = CreateAndRunVirtualMachine(query);
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         // Query executes successfully - not all commits have parents (initial commit)
         Assert.IsNotNull(table, "Query should execute and return a table");
+    }
+
+    #endregion
+
+    #region C# Roslyn Code Analysis Queries (#csharp)
+
+    /// <summary>
+    /// Demonstrates listing all types in a solution project.
+    /// Query: Access types quickly via project.Types.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_ListTypes_ShouldReturnAllTypes()
+    {
+        var query = $@"
+            select t.Name, t.IsClass, t.IsEnum, t.IsInterface
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects p 
+            cross apply p.Types t
+            where t.Name in ('Class1', 'Interface1', 'Enum1')";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count >= 3, "Should find at least 3 types");
+        Assert.IsTrue(table.Any(r => r[0].ToString() == "Class1" && (bool)r[1] == true), "Should find Class1 as a class");
+        Assert.IsTrue(table.Any(r => r[0].ToString() == "Interface1" && (bool)r[3] == true), "Should find Interface1 as an interface");
+        Assert.IsTrue(table.Any(r => r[0].ToString() == "Enum1" && (bool)r[2] == true), "Should find Enum1 as an enum");
+    }
+
+    /// <summary>
+    /// Demonstrates querying class metrics.
+    /// Query: Get class information with method and property counts.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_ClassMetrics_ShouldReturnClassInfo()
+    {
+        var query = $@"
+            select 
+                c.Name,
+                c.Namespace,
+                c.MethodsCount,
+                c.PropertiesCount,
+                c.LinesOfCode
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            where c.Name = 'Class1'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count, "Should find exactly one Class1");
+        Assert.AreEqual("Class1", table[0][0].ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", table[0][1].ToString());
+        Assert.IsTrue((int)table[0][2] >= 1, "Class1 should have methods");
+    }
+
+    /// <summary>
+    /// Demonstrates querying method body properties.
+    /// Query: Check if methods have bodies, are empty, or have statements.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_MethodBodyProperties_ShouldReturnCorrectValues()
+    {
+        var query = $@"
+            select
+                m.Name,
+                m.HasBody,
+                m.IsEmpty,
+                m.StatementsCount
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'TestFeatures'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should find methods in TestFeatures class");
+        
+        // Find the EmptyMethod
+        var emptyMethod = table.FirstOrDefault(r => r[0].ToString() == "EmptyMethod");
+        Assert.IsNotNull(emptyMethod, "Should find EmptyMethod");
+        Assert.AreEqual(true, emptyMethod[1], "EmptyMethod HasBody should be true");
+        Assert.AreEqual(true, emptyMethod[2], "EmptyMethod IsEmpty should be true");
+        Assert.AreEqual(0, emptyMethod[3], "EmptyMethod StatementsCount should be 0");
+    }
+
+    /// <summary>
+    /// Demonstrates querying property accessor features.
+    /// Query: Check auto-properties, getters, setters, and init setters.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_PropertyAccessors_ShouldReturnAccessorInfo()
+    {
+        var query = $@"
+            select
+                p.Name,
+                p.IsAutoProperty,
+                p.HasGetter,
+                p.HasSetter,
+                p.HasInitSetter
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects pr 
+            cross apply pr.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties p
+            where c.Name = 'TestFeatures'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should find properties in TestFeatures class");
+        
+        // Find the AutoProperty
+        var autoProperty = table.FirstOrDefault(r => r[0].ToString() == "AutoProperty");
+        Assert.IsNotNull(autoProperty, "Should find AutoProperty");
+        Assert.AreEqual(true, autoProperty[1], "AutoProperty IsAutoProperty should be true");
+        Assert.AreEqual(true, autoProperty[2], "AutoProperty HasGetter should be true");
+        Assert.AreEqual(true, autoProperty[3], "AutoProperty HasSetter should be true");
+        
+        // Find the AutoPropertyWithInit
+        var initProperty = table.FirstOrDefault(r => r[0].ToString() == "AutoPropertyWithInit");
+        Assert.IsNotNull(initProperty, "Should find AutoPropertyWithInit");
+        Assert.AreEqual(true, initProperty[4], "AutoPropertyWithInit HasInitSetter should be true");
+    }
+
+    /// <summary>
+    /// Demonstrates querying cyclomatic complexity.
+    /// Query: Find methods with their complexity metrics.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_CyclomaticComplexity_ShouldReturnComplexityMetrics()
+    {
+        var query = $@"
+            select
+                m.Name,
+                m.CyclomaticComplexity,
+                m.LinesOfCode
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
+            cross apply c.Methods m";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should find methods");
+        Assert.IsTrue(table.All(r => r[1] != null), "CyclomaticComplexity should not be null");
+        
+        // CyclomaticComplexityMethod1 should have complexity 1 (no branches)
+        var method1 = table.FirstOrDefault(r => r[0].ToString() == "CyclomaticComplexityMethod1");
+        Assert.IsNotNull(method1, "Should find CyclomaticComplexityMethod1");
+        Assert.AreEqual(1, method1[1], "CyclomaticComplexityMethod1 should have complexity 1");
+    }
+
+    /// <summary>
+    /// Demonstrates querying interface definitions.
+    /// Query: List interfaces with their methods.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_QueryInterfaces_ShouldReturnInterfaceDetails()
+    {
+        var query = $@"
+            select
+                i.Name,
+                i.FullName,
+                i.Namespace
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects pr 
+            cross apply pr.Documents d 
+            cross apply d.Interfaces i
+            where i.Name = 'Interface1'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count, "Should find Interface1");
+        Assert.AreEqual("Interface1", table[0][0].ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Interface1", table[0][1].ToString());
+    }
+
+    /// <summary>
+    /// Demonstrates querying enums with their members.
+    /// Query: List enums and their values.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_QueryEnums_ShouldReturnEnumDetails()
+    {
+        var query = $@"
+            select
+                e.Name,
+                e.FullName,
+                e.Members
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects pr 
+            cross apply pr.Documents d 
+            cross apply d.Enums e
+            where e.Name = 'Enum1'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count, "Should find Enum1");
+        Assert.AreEqual("Enum1", table[0][0].ToString());
+        
+        var members = (table[0][2] as IEnumerable<string> ?? Array.Empty<string>()).ToList();
+        Assert.IsTrue(members.Contains("Value1"), "Should contain Value1");
+        Assert.IsTrue(members.Contains("Value2"), "Should contain Value2");
+    }
+
+    /// <summary>
+    /// Demonstrates finding references to a class.
+    /// Query: Locate all usages of a specific class.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_FindReferences_ShouldLocateClassUsages()
+    {
+        var query = $@"
+            select r.Name, rd.StartLine, rd.EndLine 
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s
+            cross apply s.GetClassesByNames('Class1') c
+            cross apply s.FindReferences(c.Self) rd
+            cross apply rd.ReferencedClasses r";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should find references to Class1");
+    }
+
+    /// <summary>
+    /// Demonstrates querying method parameters.
+    /// Query: Analyze method parameters with their properties.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_MethodParameters_ShouldReturnParameterInfo()
+    {
+        var query = $@"
+            select
+                m.Name as MethodName,
+                p.Name as ParamName,
+                p.Type,
+                p.IsOptional,
+                p.IsParams
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects pr 
+            cross apply pr.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.Parameters p
+            where c.Name = 'Class1' and m.Name = 'Method3'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count, "Should find one parameter for Method3");
+        Assert.AreEqual("a", table[0][1].ToString());
+        Assert.AreEqual("Int32", table[0][2].ToString());
+    }
+
+    /// <summary>
+    /// Demonstrates querying class attributes.
+    /// Query: Find classes with their attribute information.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_ClassAttributes_ShouldReturnAttributeInfo()
+    {
+        var query = $@"
+            select
+                c.Name,
+                a.Name as AttributeName
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects pr 
+            cross apply pr.Documents d 
+            cross apply d.Classes c
+            cross apply c.Attributes a
+            where c.Name = 'Tests'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count, "Should find attribute on Tests class");
+        Assert.AreEqual("ExcludeFromCodeCoverage", table[0][1].ToString());
+    }
+
+    /// <summary>
+    /// Demonstrates querying class metrics for design analysis.
+    /// Query: Analyze class design with inheritance and cohesion metrics.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_ClassDesignMetrics_ShouldReturnMetrics()
+    {
+        var query = $@"
+            select 
+                c.Name,
+                c.MethodsCount,
+                c.FieldsCount,
+                c.InheritanceDepth,
+                c.InterfacesCount
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            where c.Name = 'Class1'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count, "Should find Class1");
+        Assert.AreEqual("Class1", table[0][0].ToString());
+        Assert.IsTrue((int)table[0][1] >= 1, "Class1 should have methods");
+        Assert.IsTrue((int)table[0][3] >= 1, "Class1 should have inheritance depth >= 1");
     }
 
     #endregion
@@ -705,6 +1020,20 @@ public class RepresentativeQueryTests
             Guid.NewGuid().ToString(), 
             new RepresentativeSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+    }
+
+    private CompiledQuery CreateAndRunVirtualMachineWithRoslynEnv(string script)
+    {
+        return InstanceCreatorHelpers.CompileForExecution(
+            script, 
+            Guid.NewGuid().ToString(), 
+            new RepresentativeSchemaProvider(),
+            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
+                new Dictionary<string, string>
+                {
+                    {"MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists"},
+                    {"EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists"}
+                }));
     }
 
     private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath, string testName)
@@ -756,6 +1085,7 @@ public class RepresentativeQueryTests
     private static string Repository3ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository3.zip");
     private static string Repository4ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository4.zip");
     private static string Repository5ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository5.zip");
+    private static string Solution1SolutionPath => Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
 
     private class UnpackedRepository : IDisposable
     {
