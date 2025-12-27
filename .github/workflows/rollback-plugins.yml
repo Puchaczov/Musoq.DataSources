@@ -30,13 +30,14 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: pwsh
       run: |
-        $dryRunFlag = ""
-        if ("${{ inputs.dry_run }}" -eq "true") {
-          $dryRunFlag = "-DryRun"
+        $params = @{
+          PluginName = "${{ inputs.plugin_name }}"
+          Repository = "${{ github.repository }}"
+          Force = $true
         }
         
-        ./scripts/Rollback-PluginReleases.ps1 `
-          -PluginName "${{ inputs.plugin_name }}" `
-          -Repository "${{ github.repository }}" `
-          -Force `
-          $dryRunFlag
+        if ("${{ inputs.dry_run }}" -eq "true") {
+          $params.DryRun = $true
+        }
+        
+        ./scripts/Rollback-PluginReleases.ps1 @params
