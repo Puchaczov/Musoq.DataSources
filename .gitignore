@@ -267,3 +267,6 @@ __pycache__/
 # License cache
 .licenses-cache/
 LinksCache.json
+
+# NuGet cache in TestsSolutions
+**/TestsSolutions/NugetCache/
