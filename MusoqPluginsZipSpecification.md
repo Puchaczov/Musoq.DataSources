@@ -65,13 +65,13 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
 
 ## Creation Process (Example)
 
-1. **Build the project:**
+1. **Publish the project:**
    ```bash
-   dotnet build MyPlugin.csproj -c Release -o ./publish -r win-x64 --no-self-contained
+   dotnet publish MyPlugin.csproj -c Release -r win-x64 --no-self-contained -o ./publish
    ```
 
 2. **Prepare the Inner Zip:**
-   - Remove excluded assemblies (`Musoq.Schema.dll`, etc.) from `./publish`.
+   - Remove excluded assemblies (`Musoq.Schema.dll`, `Musoq.Parser.dll`, `Musoq.Plugins.dll`) from `./publish`.
    - Gather and place all license files into a `third-party-notices` folder within `./publish`.
    - Zip the contents of `./publish` into `Plugin.zip`.
 

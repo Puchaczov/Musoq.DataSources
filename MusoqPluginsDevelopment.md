@@ -239,11 +239,16 @@ Replace the contents of `Musoq.DataSources.Weather.csproj`:
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="4.5.0">
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="Musoq.Parser" Version="5.7.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.12.0" />
-        <PackageReference Include="Musoq.Schema" Version="8.3.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.4.0" />
+        <PackageReference Include="Musoq.Schema" Version="10.1.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>
@@ -404,28 +409,40 @@ namespace Musoq.DataSources.Weather.Sources;
 
 internal class WeatherRowSource : RowSourceBase<WeatherEntity>
 {
+    private const string WeatherSourceName = "weather";
     private readonly string _location;
-    private readonly CancellationToken _cancellationToken;
+    private readonly RuntimeContext _runtimeContext;
 
     public WeatherRowSource(RuntimeContext runtimeContext, string? location = null)
     {
+        _runtimeContext = runtimeContext;
         // Use provided location or default to environment variable
         _location = location ?? runtimeContext.EnvironmentVariables.GetValueOrDefault("WEATHER_LOCATION", "London");
-        _cancellationToken = runtimeContext.EndWorkToken;
     }
 
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
-        // Fetch weather data
-        var weatherData = GetWeatherData();
+        // Report that data source processing has begun
+        _runtimeContext.ReportDataSourceBegin(WeatherSourceName);
+        
+        try
+        {
+            // Fetch weather data
+            var weatherData = GetWeatherData();
 
-        // Convert to object resolvers that Musoq can understand
-        var resolvers = weatherData.Select(entity => 
-            new EntityResolver<WeatherEntity>(entity, WeatherTableHelper.NameToIndexMap, WeatherTableHelper.IndexToMethodAccessMap))
-            .ToList();
+            // Convert to object resolvers that Musoq can understand
+            var resolvers = weatherData.Select(entity => 
+                new EntityResolver<WeatherEntity>(entity, WeatherTableHelper.NameToIndexMap, WeatherTableHelper.IndexToMethodAccessMap))
+                .ToList();
 
-        // Add to the collection for Musoq to process
-        chunkedSource.Add(resolvers);
+            // Add to the collection for Musoq to process
+            chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
+        }
+        finally
+        {
+            // Report that data source processing has completed
+            _runtimeContext.ReportDataSourceEnd(WeatherSourceName, 1);
+        }
     }
 
     private List<WeatherEntity> GetWeatherData()
@@ -450,9 +467,11 @@ internal class WeatherRowSource : RowSourceBase<WeatherEntity>
 
 **Understanding the RowSource:** This is where the magic happens! The `CollectChunks` method is called by Musoq when it needs data. Here's what's happening:
 
-1. **Data Retrieval**: `GetWeatherData()` fetches actual data (in a real plugin, this would call an API)
-2. **Entity Resolution**: We wrap each entity in an `EntityResolver` that knows how to extract values efficiently
-3. **Data Delivery**: We add the data to `chunkedSource` for Musoq to process
+1. **Data Source Reporting**: We call `ReportDataSourceBegin()` to notify Musoq that data retrieval has started
+2. **Data Retrieval**: `GetWeatherData()` fetches actual data (in a real plugin, this would call an API)
+3. **Entity Resolution**: We wrap each entity in an `EntityResolver` that knows how to extract values efficiently
+4. **Data Delivery**: We add the data to `chunkedSource` for Musoq to process, using the `EndWorkToken` for cancellation support
+5. **Completion Reporting**: In the `finally` block, we call `ReportDataSourceEnd()` to notify Musoq of completion
 
 **Why chunking?** For large datasets, you can add multiple chunks, allowing Musoq to process data incrementally rather than loading everything into memory.
 
@@ -808,16 +827,25 @@ public abstract class RowSourceBase<T> : RowSource
 ```csharp
 protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
 {
-    // Get all data at once
-    var allData = GetAllData();
+    _runtimeContext.ReportDataSourceBegin(SourceName);
     
-    // Convert to resolvers
-    var resolvers = allData.Select(entity => 
-        new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
-        .ToList();
-    
-    // Add as a single chunk
-    chunkedSource.Add(resolvers);
+    try
+    {
+        // Get all data at once
+        var allData = GetAllData();
+        
+        // Convert to resolvers
+        var resolvers = allData.Select(entity => 
+            new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
+            .ToList();
+        
+        // Add as a single chunk
+        chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
+    }
+    finally
+    {
+        _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
+    }
 }
 ```
 
@@ -825,20 +853,30 @@ protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectRe
 ```csharp
 protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
 {
+    _runtimeContext.ReportDataSourceBegin(SourceName);
+    long totalRowsProcessed = 0;
     const int chunkSize = 1000;
     int offset = 0;
     
-    while (true)
+    try
     {
-        var chunk = GetDataChunk(offset, chunkSize);
-        if (!chunk.Any()) break;
-        
-        var resolvers = chunk.Select(entity => 
-            new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
-            .ToList();
-        
-        chunkedSource.Add(resolvers);
-        offset += chunkSize;
+        while (true)
+        {
+            var chunk = GetDataChunk(offset, chunkSize);
+            if (!chunk.Any()) break;
+            
+            var resolvers = chunk.Select(entity => 
+                new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
+                .ToList();
+            
+            chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
+            offset += chunkSize;
+            totalRowsProcessed += chunk.Count;
+        }
+    }
+    finally
+    {
+        _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
     }
 }
 ```
@@ -847,23 +885,33 @@ protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectRe
 ```csharp
 protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
 {
+    _runtimeContext.ReportDataSourceBegin(SourceName);
+    long totalRowsProcessed = 0;
     string? nextPageToken = null;
     
-    do
+    try
     {
-        var (data, newNextPageToken) = GetDataPage(nextPageToken);
-        nextPageToken = newNextPageToken;
-        
-        if (data.Any())
+        do
         {
-            var resolvers = data.Select(entity => 
-                new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
-                .ToList();
+            var (data, newNextPageToken) = GetDataPage(nextPageToken);
+            nextPageToken = newNextPageToken;
             
-            chunkedSource.Add(resolvers);
-        }
-    } 
-    while (nextPageToken != null);
+            if (data.Any())
+            {
+                var resolvers = data.Select(entity => 
+                    new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
+                    .ToList();
+                
+                chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
+                totalRowsProcessed += data.Count;
+            }
+        } 
+        while (nextPageToken != null);
+    }
+    finally
+    {
+        _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
+    }
 }
 ```
 
@@ -1331,13 +1379,19 @@ Every Musoq plugin **must** include this exact configuration in your `.csproj` f
         </ItemGroup>
     </Target>
 
+    <!-- License and metadata -->
+    <ItemGroup>
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+    </ItemGroup>
+
     <!-- Musoq dependencies -->
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="4.5.0">
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="Musoq.Parser" Version="5.7.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="6.12.0" />
-        <PackageReference Include="Musoq.Schema" Version="8.3.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.4.0" />
+        <PackageReference Include="Musoq.Schema" Version="10.1.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <!-- Add your specific dependencies here -->
@@ -1431,7 +1485,7 @@ Configure the test project file:
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
         <PackageReference Include="xunit" Version="2.4.2" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
         <PackageReference Include="Moq" Version="4.20.69" />
@@ -1739,7 +1793,7 @@ dotnet test
 Your output should show all tests passing:
 ```
 Test run for Musoq.DataSources.Weather.Tests.dll(.NETCoreApp,Version=v8.0)
-Microsoft (R) Test Execution Command Line Tool Version 17.8.0
+Microsoft (R) Test Execution Command Line Tool Version 18.0.0
 Starting test execution, please wait...
 
 Passed!  - Failed:     0, Passed:    15, Skipped:     0, Total:    15
