@@ -289,11 +289,24 @@ from #csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
-order by c.LinesOfCode desc
+```
+
+### Query All Types in a Project
+Quick access to all types (classes, interfaces, enums) in a project.
+
+```sql
+select 
+    t.Name,
+    t.IsClass,
+    t.IsInterface,
+    t.IsEnum
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects p 
+cross apply p.Types t
 ```
 
 ### Find Methods with High Complexity
-Identify methods that may need refactoring.
+Identify methods that may need refactoring based on cyclomatic complexity.
 
 ```sql
 select
@@ -302,25 +315,188 @@ select
     m.CyclomaticComplexity,
     m.LinesOfCode
 from #csharp.solution('./MySolution.sln') s 
-cross apply s.GetClassesByNames('*') c
+cross apply s.GetClassesByNames('MyClass') c
 cross apply c.Methods m
-where m.CyclomaticComplexity > 10
-order by m.CyclomaticComplexity desc
+where m.CyclomaticComplexity > 5
 ```
 
-### Analyze Interface Implementations
-List classes implementing specific interfaces.
+### Analyze Method Body Structure
+Check for empty methods, stub implementations, and statement counts.
 
 ```sql
 select
-    c.Name,
-    c.FullName,
-    c.Interfaces
+    m.Name,
+    m.HasBody,
+    m.IsEmpty,
+    m.StatementsCount,
+    m.BodyContainsOnlyTrivia
 from #csharp.solution('./MySolution.sln') s 
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
-where 'IDisposable' in c.Interfaces
+cross apply c.Methods m
+where c.Name = 'MyClass'
+```
+
+### Analyze Property Accessors
+Find auto-properties, init-only setters, and property patterns.
+
+```sql
+select
+    p.Name,
+    p.Type,
+    p.IsAutoProperty,
+    p.HasGetter,
+    p.HasSetter,
+    p.HasInitSetter
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects p 
+cross apply p.Documents d 
+cross apply d.Classes c
+cross apply c.Properties p
+where c.Name = 'MyClass'
+```
+
+### Find References to a Class
+Locate all usages of a specific class across the solution.
+
+```sql
+select 
+    r.Name,
+    rd.StartLine,
+    rd.StartColumn,
+    rd.EndLine,
+    rd.EndColumn
+from #csharp.solution('./MySolution.sln') s
+cross apply s.GetClassesByNames('MyClass') c
+cross apply s.FindReferences(c.Self) rd
+cross apply rd.ReferencedClasses r
+```
+
+### Query Interface Definitions
+List interfaces with their methods and properties.
+
+```sql
+select
+    i.Name,
+    i.FullName,
+    i.Namespace,
+    i.BaseInterfaces,
+    i.Methods,
+    i.Properties
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects pr 
+cross apply pr.Documents d 
+cross apply d.Interfaces i
+```
+
+### Analyze Enums
+List enums with their members.
+
+```sql
+select
+    e.Name,
+    e.FullName,
+    e.Namespace,
+    e.Members
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects pr 
+cross apply pr.Documents d 
+cross apply d.Enums e
+```
+
+### Query Project References
+List all project-to-project references.
+
+```sql
+select
+    p.Name as ProjectName,
+    ref.Name as ReferencedProject
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects p 
+cross apply p.ProjectReferences ref
+```
+
+### Query Library References
+List all library/assembly references in projects.
+
+```sql
+select
+    p.Name as ProjectName,
+    lib.Name as LibraryName,
+    lib.Version,
+    lib.Location
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects p 
+cross apply p.LibraryReferences lib
+```
+
+### Query NuGet Packages
+List all NuGet packages with license information.
+
+```sql
+select 
+    p.Name as ProjectName,
+    np.Id as PackageId,
+    np.Version,
+    np.License,
+    np.Authors,
+    np.IsTransitive
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects p 
+cross apply p.GetNugetPackages(false) np
+```
+
+### Analyze Class Attributes
+Find classes decorated with specific attributes.
+
+```sql
+select
+    c.Name,
+    a.Name as AttributeName,
+    a.ConstructorArguments
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects pr 
+cross apply pr.Documents d 
+cross apply d.Classes c
+cross apply c.Attributes a
+```
+
+### Query Method Parameters
+Analyze method parameters with their modifiers.
+
+```sql
+select
+    m.Name as MethodName,
+    p.Name as ParamName,
+    p.Type,
+    p.IsOptional,
+    p.IsParams,
+    p.IsRef,
+    p.IsOut
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects pr 
+cross apply pr.Documents d 
+cross apply d.Classes c
+cross apply c.Methods m
+cross apply m.Parameters p
+```
+
+### Calculate Lack of Cohesion
+Analyze class design metrics.
+
+```sql
+select 
+    c.Name,
+    c.MethodsCount,
+    c.FieldsCount,
+    c.LackOfCohesion,
+    c.InheritanceDepth
+from #csharp.solution('./MySolution.sln') s 
+cross apply s.Projects p 
+cross apply p.Documents d 
+cross apply d.Classes c
+where c.MethodsCount > 2
 ```
 
 ---
