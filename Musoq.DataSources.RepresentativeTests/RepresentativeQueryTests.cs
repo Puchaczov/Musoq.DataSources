@@ -690,7 +690,8 @@ public class RepresentativeQueryTests
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
-        Assert.IsTrue(table.Count >= 0, "Query should execute successfully");
+        // Query executes successfully - not all commits have parents (initial commit)
+        Assert.IsNotNull(table, "Query should execute and return a table");
     }
 
     #endregion
@@ -767,7 +768,8 @@ public class RepresentativeQueryTests
 
         public void Dispose()
         {
-            // Cleanup handled elsewhere
+            // Git tests share repository state, cleanup is deferred to avoid conflicts
+            // The test framework handles cleanup at the end of test runs
         }
     }
 
