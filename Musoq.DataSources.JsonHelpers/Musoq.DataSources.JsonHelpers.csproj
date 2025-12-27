@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>4.3.0</Version>
+        <Version>4.3.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -23,13 +23,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="5.6.0">
+        <PackageReference Include="Musoq.Parser" Version="5.7.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.3.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.4.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Schema" Version="10.0.0">
+        <PackageReference Include="Musoq.Schema" Version="10.1.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
