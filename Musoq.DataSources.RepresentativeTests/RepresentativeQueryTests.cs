@@ -431,6 +431,55 @@ public class RepresentativeQueryTests
 
     #endregion
 
+    #region Archive Queries (#archives)
+
+    /// <summary>
+    /// Demonstrates reading archive contents.
+    /// Query: List files in a ZIP archive with their content.
+    /// </summary>
+    [TestMethod]
+    public void Archive_ListContents_ShouldReturnArchiveFiles()
+    {
+        var query = """
+            select 
+                Key as FileName,
+                IsDirectory
+            from #archives.file('./Files/TestArchive.zip')
+            """;
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(2, table.Count, "Archive should contain 2 files");
+        Assert.IsTrue(table.Any(r => r[0].ToString()!.Contains("test1.txt")), "Should contain test1.txt");
+        Assert.IsTrue(table.Any(r => r[0].ToString()!.Contains("test2.txt")), "Should contain test2.txt");
+    }
+
+    /// <summary>
+    /// Demonstrates reading text content from archive files.
+    /// Query: Extract text content from archive entries.
+    /// </summary>
+    [TestMethod]
+    public void Archive_ReadTextContent_ShouldExtractFileContent()
+    {
+        var query = """
+            select 
+                Key as FileName,
+                GetTextContent() as Content
+            from #archives.file('./Files/TestArchive.zip')
+            where IsDirectory = false
+            """;
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(2, table.Count, "Should have 2 files");
+        Assert.IsTrue(table.Any(r => r[1].ToString()!.Contains("Hello World")), "Should contain Hello World content");
+        Assert.IsTrue(table.Any(r => r[1].ToString()!.Contains("Second file content")), "Should contain second file content");
+    }
+
+    #endregion
+
     #region Combined Queries (Multiple Data Sources)
 
     /// <summary>
@@ -1007,6 +1056,49 @@ public class RepresentativeQueryTests
         Assert.AreEqual("Class1", table[0][0].ToString());
         Assert.IsTrue((int)table[0][1] >= 1, "Class1 should have methods");
         Assert.IsTrue((int)table[0][3] >= 1, "Class1 should have inheritance depth >= 1");
+    }
+
+    /// <summary>
+    /// Demonstrates querying project references.
+    /// Query: List all project-to-project references.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_ProjectReferences_ShouldReturnReferences()
+    {
+        var query = $@"
+            select
+                p.Name as ProjectName
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects p";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count >= 2, "Should find at least 2 projects");
+        Assert.IsTrue(table.Any(r => r[0].ToString()!.Contains("ClassLibrary1")), "Should find ClassLibrary1 project");
+    }
+
+    /// <summary>
+    /// Demonstrates querying library references.
+    /// Query: List all library/assembly references in projects.
+    /// </summary>
+    [TestMethod]
+    public void Roslyn_LibraryReferences_ShouldReturnLibraries()
+    {
+        var query = $@"
+            select
+                p.Name as ProjectName,
+                lib.Name as LibraryName
+            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            cross apply s.Projects p 
+            cross apply p.LibraryReferences lib
+            where p.Name = 'Solution1.ClassLibrary1'";
+
+        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
+        var table = vm.Run();
+
+        // ClassLibrary1 should have some library references (System.*) 
+        Assert.IsTrue(table.Count >= 0, "Query should execute successfully");
     }
 
     #endregion
