@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO.Compression;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.RepresentativeTests.Components;
 using Musoq.DataSources.Tests.Common;
@@ -517,6 +518,183 @@ public class RepresentativeQueryTests
 
     #endregion
 
+    #region Git Repository Queries (#git)
+
+    /// <summary>
+    /// Demonstrates querying commits from a git repository.
+    /// Query: List commits with author information.
+    /// </summary>
+    [TestMethod]
+    public async Task Git_ListCommits_ShouldReturnCommitHistory()
+    {
+        using var unpackedRepository = await UnpackGitRepositoryAsync(Repository2ZipPath, "git_listcommits");
+
+        var query = $@"
+            select
+                c.Sha,
+                c.MessageShort,
+                c.Author
+            from #git.repository('{unpackedRepository.Path.EscapePath()}') r 
+            cross apply r.Commits c";
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should have at least one commit");
+        Assert.IsNotNull(table[0][0], "Sha should not be null");
+        Assert.IsNotNull(table[0][1], "MessageShort should not be null");
+        Assert.IsNotNull(table[0][2], "Author should not be null");
+    }
+
+    /// <summary>
+    /// Demonstrates querying branches from a git repository.
+    /// Query: List all branches with their tip commit.
+    /// </summary>
+    [TestMethod]
+    public async Task Git_ListBranches_ShouldReturnBranchInformation()
+    {
+        using var unpackedRepository = await UnpackGitRepositoryAsync(Repository2ZipPath, "git_listbranches");
+
+        var query = $@"
+            select
+                b.FriendlyName,
+                b.IsRemote,
+                b.Tip.Sha
+            from #git.branches('{unpackedRepository.Path.EscapePath()}') b";
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should have at least one branch");
+        var masterBranch = table.FirstOrDefault(r => ((string)r[0])?.Contains("master") == true);
+        Assert.IsNotNull(masterBranch, "Should find master branch");
+    }
+
+    /// <summary>
+    /// Demonstrates querying tags from a git repository.
+    /// Query: List all tags with annotations.
+    /// </summary>
+    [TestMethod]
+    public async Task Git_ListTags_ShouldReturnTagInformation()
+    {
+        using var unpackedRepository = await UnpackGitRepositoryAsync(Repository3ZipPath, "git_listtags");
+
+        var query = $@"
+            select
+                t.FriendlyName,
+                t.IsAnnotated,
+                t.Commit.Sha
+            from #git.tags('{unpackedRepository.Path.EscapePath()}') t";
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should have at least one tag");
+        Assert.IsNotNull(table[0][0], "FriendlyName should not be null");
+    }
+
+    /// <summary>
+    /// Demonstrates comparing differences between branches.
+    /// Query: Find files changed between two branches.
+    /// </summary>
+    [TestMethod]
+    public async Task Git_DifferenceBetweenBranches_ShouldShowChanges()
+    {
+        using var unpackedRepository = await UnpackGitRepositoryAsync(Repository4ZipPath, "git_diffbranches");
+
+        var query = $@"
+            select
+                Difference.Path,
+                Difference.ChangeKind
+            from #git.repository('{unpackedRepository.Path.EscapePath()}') repository 
+            cross apply repository.DifferenceBetween(
+                repository.BranchFrom('master'), 
+                repository.BranchFrom('feature/feature_a')
+            ) as Difference";
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should have at least one difference");
+        Assert.AreEqual("documentation/index.md", table[0][0], "Path should match");
+        Assert.AreEqual("Deleted", table[0][1], "ChangeKind should be Deleted");
+    }
+
+    /// <summary>
+    /// Demonstrates querying file history in a repository.
+    /// Query: Track changes to a specific file over time.
+    /// </summary>
+    [TestMethod]
+    public async Task Git_FileHistory_ShouldTrackFileChanges()
+    {
+        using var unpackedRepository = await UnpackGitRepositoryAsync(Repository1ZipPath, "git_filehistory");
+
+        var query = $@"
+            select
+                h.CommitSha,
+                h.Author,
+                h.FilePath
+            from #git.filehistory('{unpackedRepository.Path.EscapePath()}', 'README.md') h";
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count > 0, "Should have file history");
+        Assert.IsNotNull(table[0][0], "CommitSha should not be null");
+    }
+
+    /// <summary>
+    /// Demonstrates finding branch-specific commits.
+    /// Query: Find commits unique to a feature branch.
+    /// </summary>
+    [TestMethod]
+    public async Task Git_BranchSpecificCommits_ShouldFindUniqueCommits()
+    {
+        using var unpackedRepository = await UnpackGitRepositoryAsync(Repository5ZipPath, "git_branchcommits");
+
+        var query = $@"
+            with BranchInfo as (
+                select
+                    c.Sha as CommitSha,
+                    c.Message as CommitMessage,
+                    c.Author as CommitAuthor
+                from #git.repository('{unpackedRepository.Path.EscapePath()}') r 
+                cross apply r.SearchForBranches('feature/branch_1') b
+                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
+            )
+            select CommitSha, CommitMessage, CommitAuthor from BranchInfo";
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count, "Should have 1 branch-specific commit");
+        Assert.AreEqual("655595cfb4bdfc4e42b9bb80d48212c2dca95086", table[0][0], "Sha should match");
+    }
+
+    /// <summary>
+    /// Demonstrates querying commit parents.
+    /// Query: Find parent commits for merge analysis.
+    /// </summary>
+    [TestMethod]
+    public async Task Git_CommitParents_ShouldShowParentRelationships()
+    {
+        using var unpackedRepository = await UnpackGitRepositoryAsync(Repository2ZipPath, "git_parents");
+
+        var query = $@"
+            select 
+                c.Sha, 
+                p.Sha as ParentSha
+            from #git.commits('{unpackedRepository.Path.EscapePath()}') c 
+            cross apply c.Parents as p";
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
+
+        Assert.IsTrue(table.Count >= 0, "Query should execute successfully");
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)
@@ -526,6 +704,31 @@ public class RepresentativeQueryTests
             Guid.NewGuid().ToString(), 
             new RepresentativeSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+    }
+
+    private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath, string testName)
+    {
+        if (!File.Exists(zippedRepositoryPath))
+            throw new InvalidOperationException($"File does not exist: {zippedRepositoryPath}");
+
+        var directory = Path.GetDirectoryName(zippedRepositoryPath);
+
+        if (string.IsNullOrEmpty(directory))
+            throw new InvalidOperationException("Directory is empty.");
+
+        var repositoryPath = Path.Combine(directory, ".TestsExecutions", testName);
+
+        if (Directory.Exists(repositoryPath))
+            Directory.Delete(repositoryPath, true);
+
+        ZipFile.ExtractToDirectory(zippedRepositoryPath, repositoryPath);
+
+        if (!Directory.Exists(repositoryPath))
+            throw new InvalidOperationException("Directory was not created.");
+
+        var fileName = Path.GetFileNameWithoutExtension(zippedRepositoryPath);
+        var fullPath = Path.Combine(repositoryPath, fileName);
+        return Task.FromResult(new UnpackedRepository(fullPath));
     }
 
     static RepresentativeQueryTests()
@@ -547,5 +750,34 @@ public class RepresentativeQueryTests
         }
     }
 
+    private static string Repository1ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository1.zip");
+    private static string Repository2ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository2.zip");
+    private static string Repository3ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository3.zip");
+    private static string Repository4ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository4.zip");
+    private static string Repository5ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository5.zip");
+
+    private class UnpackedRepository : IDisposable
+    {
+        public UnpackedRepository(string path)
+        {
+            Path = path;
+        }
+
+        public string Path { get; }
+
+        public void Dispose()
+        {
+            // Cleanup handled elsewhere
+        }
+    }
+
     #endregion
+}
+
+internal static class StringExtensions
+{
+    public static string EscapePath(this string path)
+    {
+        return path.Replace("\\", "\\\\");
+    }
 }

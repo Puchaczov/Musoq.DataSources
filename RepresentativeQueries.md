@@ -181,7 +181,29 @@ select
     c.CommittedWhen
 from #git.repository('./repo') r 
 cross apply r.Commits c
-order by c.CommittedWhen desc
+```
+
+### Query Commits Directly
+Faster access to commits without full repository context.
+
+```sql
+select
+    c.Sha,
+    c.Author,
+    c.Message
+from #git.commits('./repo') c
+where c.Author = 'john.doe'
+```
+
+### List All Branches
+Query all branches with their tip commit.
+
+```sql
+select
+    b.FriendlyName,
+    b.IsRemote,
+    b.Tip.Sha
+from #git.branches('./repo') b
 ```
 
 ### Compare Branches
@@ -208,21 +230,45 @@ select
     t.IsAnnotated,
     t.Commit.Sha
 from #git.tags('./repo') t
-order by t.FriendlyName
+```
+
+### Track File History
+See all changes to a specific file over time.
+
+```sql
+select
+    h.CommitSha,
+    h.Author,
+    h.FilePath,
+    h.ChangeType
+from #git.filehistory('./repo', 'README.md') h
 ```
 
 ### Analyze Branch-Specific Commits
 Find commits that are specific to a feature branch.
 
 ```sql
-select
-    c.Sha,
-    c.Message,
-    c.Author,
-    c.CommittedWhen
-from #git.repository('./repo') r 
-cross apply r.SearchForBranches('feature/my-feature') b
-cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
+with BranchInfo as (
+    select
+        c.Sha as CommitSha,
+        c.Message as CommitMessage,
+        c.Author as CommitAuthor
+    from #git.repository('./repo') r 
+    cross apply r.SearchForBranches('feature/my-feature') b
+    cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
+)
+select CommitSha, CommitMessage, CommitAuthor from BranchInfo
+```
+
+### Query Commit Parents
+Analyze commit relationships for merge analysis.
+
+```sql
+select 
+    c.Sha, 
+    p.Sha as ParentSha
+from #git.commits('./repo') c 
+cross apply c.Parents as p
 ```
 
 ---
