@@ -139,7 +139,7 @@ foreach ($Release in $Releases) {
     }
 }
 
-foreach ($Name in $PluginVersionsMap.Keys) {
+foreach ($Name in @($PluginVersionsMap.Keys)) {
     $PluginVersionsMap[$Name] = $PluginVersionsMap[$Name] | Sort-Object { 
         try {
             [version]($_.Version -replace '-.*$', '')
@@ -153,7 +153,7 @@ $PluginsToRollback = @()
 
 if ($PluginName -eq "All") {
     $AllVersions = @()
-    foreach ($Name in $PluginVersionsMap.Keys) {
+    foreach ($Name in @($PluginVersionsMap.Keys)) {
         foreach ($v in $PluginVersionsMap[$Name]) {
             $AllVersions += @{
                 PluginName = $Name
@@ -269,7 +269,7 @@ try {
     $DeletedCount = 0
     $FailedCount = 0
     
-    foreach ($p in $PluginsToRollback) {
+    foreach ($p in @($PluginsToRollback)) {
         Write-Host "Deleting release: $($p.ReleaseTag)..." -ForegroundColor Cyan
         
         if ($DryRun) {
