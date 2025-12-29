@@ -11,7 +11,7 @@ The final package must be a Zip archive with a filename following this pattern:
 ```
 
 **Examples:**
-- `Musoq.DataSources.Postgres-windows-x64.zip`
+- `Musoq.DataSources.Git-windows-x64.zip`
 - `Musoq.DataSources.Sqlite-linux-arm64.zip`
 - `Musoq.DataSources.Json-alpine-x64.zip`
 
@@ -24,19 +24,21 @@ The package is a **nested Zip archive**. The outer zip file contains metadata fi
 | File | Required | Description | Content Example |
 |------|----------|-------------|-----------------|
 | `Plugin.zip` | Yes | The inner zip archive containing the build artifacts. | *(Binary Data)* |
-| `EntryPoint.txt` | Yes | The name of the main plugin assembly DLL. | `Musoq.DataSources.Postgres.dll` |
+| `EntryPoint.txt` | Yes | The name of the main plugin assembly DLL. | `Musoq.DataSources.Git.dll` |
 | `Platform.txt` | Yes | The target operating system. | `windows`, `linux`, `macos`, or `alpine` |
 | `Architecture.txt` | Yes | The target CPU architecture. | `x64` or `arm64` |
+| `Version.txt` | No | The version string. If omitted, extracted from DLL metadata. | `1.2.3` |
+| `LibraryName.txt` | No | Display name for the plugin. If omitted, inferred from entry point. | `Musoq.DataSources.Git` |
 
 ### Plugin Artifacts (Inner Zip: `Plugin.zip`)
 
 The `Plugin.zip` file must contain the published output of the plugin project.
 
 **Contents:**
-- The main plugin DLL (e.g., `Musoq.DataSources.Postgres.dll`)
+- The main plugin DLL (e.g., `Musoq.DataSources.Git.dll`)
 - The dependency configuration file (`.deps.json`)
 - The runtime configuration file (`.runtimeconfig.json`)
-- All required third-party dependency DLLs (e.g., `Npgsql.dll`)
+- All required third-party dependency DLLs (e.g., `LibGit2Sharp.dll`)
 - A `third-party-notices` folder containing license files for all dependencies
 
 **Exclusions:**
@@ -52,14 +54,18 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
 ├── EntryPoint.txt          # Content: "Musoq.DataSources.MyPlugin.dll"
 ├── Platform.txt            # Content: "windows"
 ├── Architecture.txt        # Content: "x64"
+├── Version.txt             # (Optional) Content: "1.0.0"
+├── LibraryName.txt         # (Optional) Content: "Musoq.DataSources.MyPlugin"
 └── Plugin.zip              # Inner Archive
     ├── Musoq.DataSources.MyPlugin.dll
     ├── Musoq.DataSources.MyPlugin.deps.json
     ├── Musoq.DataSources.MyPlugin.runtimeconfig.json
+    ├── Musoq.DataSources.MyPlugin.xml   # XML documentation (optional)
     ├── ThirdParty.Dependency.dll
     ├── third-party-notices/    # License files folder
-    │   ├── LICENSE.txt
-    │   └── ThirdParty.Dependency.LICENSE.txt
+    │   ├── report.json
+    │   └── ThirdParty.Dependency/
+    │       └── license.txt
     └── ... (other build artifacts)
 ```
 
@@ -77,11 +83,13 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
 
 3. **Create Metadata Files:**
    - Create `EntryPoint.txt` with the DLL name.
-   - Create `Platform.txt` with `windows`.
-   - Create `Architecture.txt` with `x64`.
+   - Create `Platform.txt` with the platform (e.g., `windows`, `linux`, `alpine`, `macos`).
+   - Create `Architecture.txt` with the architecture (e.g., `x64`, `arm64`).
+   - (Optional) Create `Version.txt` with the version string if you don't want it extracted from DLL metadata.
+   - (Optional) Create `LibraryName.txt` with the display name if different from the entry point filename.
 
 4. **Create the Final Package:**
-   - Zip `Plugin.zip`, `EntryPoint.txt`, `Platform.txt`, and `Architecture.txt` into `Musoq.DataSources.MyPlugin-windows-x64.zip`.
+   - Zip `Plugin.zip`, `EntryPoint.txt`, `Platform.txt`, `Architecture.txt`, and any optional metadata files into `Musoq.DataSources.MyPlugin-windows-x64.zip`.
 
 ## License Gathering Tool Setup
 
@@ -159,3 +167,26 @@ This command will:
 3. Download license texts (using `Licenses Cache` to avoid redundant requests).
 4. Save them into the specified `--licenses-folder`.
 5. Generate a summary report.
+
+## Installation
+
+Once you have created the package, you can install it using the Musoq CLI.
+
+```bash
+# Install from a local package (zip or extracted directory)
+musoq datasource import /path/to/Musoq.DataSources.Git-windows-x64.zip
+# or
+musoq datasource import /path/to/extracted/package
+
+# Install from the built-in plugin registry
+musoq datasource install git
+```
+
+### Installing from a custom registry
+
+You can add multiple registries. The configuration is persisted by the local agent.
+
+```bash
+# Add a registry
+musoq registry add custom https://your-registry.example.com/registry.json
+```
