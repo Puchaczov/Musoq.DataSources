@@ -200,14 +200,20 @@ if ($PluginName -eq "All") {
 } else {
     if (-not $PluginVersionsMap.ContainsKey($PluginName)) {
         Write-Host "No releases found for plugin: $PluginName" -ForegroundColor Yellow
+        Write-Host "Available plugins in map: $($PluginVersionsMap.Keys -join ', ')" -ForegroundColor Gray
         exit 0
     }
     
     $PluginVersions = $PluginVersionsMap[$PluginName]
+    Write-Host "Found plugin in map with $($PluginVersions.Count) version(s)" -ForegroundColor Gray
+    
     # Check for null, empty array, or null first element
     # PowerShell returns 0 for .Count on null and $null for out-of-bounds array access
     if ($null -eq $PluginVersions -or $PluginVersions.Count -eq 0 -or $null -eq $PluginVersions[0]) {
         Write-Host "No valid releases found for plugin: $PluginName" -ForegroundColor Yellow
+        if ($PluginVersions.Count -gt 0) {
+            Write-Host "First element details: Version='$($PluginVersions[0].Version)', Tag='$($PluginVersions[0].ReleaseTag)'" -ForegroundColor Gray
+        }
         exit 0
     }
     
