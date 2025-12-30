@@ -182,7 +182,7 @@ foreach ($Release in $Releases) {
 # Debug: Show what's in the map before sorting
 if ($PluginVersionsMap.ContainsKey("Musoq.DataSources.CompiledCode")) {
     Write-Host "Before sorting, Musoq.DataSources.CompiledCode has $($PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count) version(s):" -ForegroundColor Cyan
-    for ($i = 0; $i < $PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count; $i++) {
+    for ($i = 0; $i -lt $PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count; $i++) {
         $v = $PluginVersionsMap['Musoq.DataSources.CompiledCode'][$i]
         Write-Host "  [$i] Version='$($v.Version)', ReleaseTag='$($v.ReleaseTag)'" -ForegroundColor Cyan
     }
@@ -201,7 +201,7 @@ foreach ($Name in @($PluginVersionsMap.Keys)) {
 # Debug: Show what's in the map after sorting
 if ($PluginVersionsMap.ContainsKey("Musoq.DataSources.CompiledCode")) {
     Write-Host "After sorting, Musoq.DataSources.CompiledCode has $($PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count) version(s):" -ForegroundColor Yellow
-    for ($i = 0; $i < $PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count; $i++) {
+    for ($i = 0; $i -lt $PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count; $i++) {
         $v = $PluginVersionsMap['Musoq.DataSources.CompiledCode'][$i]
         Write-Host "  [$i] Version='$($v.Version)', ReleaseTag='$($v.ReleaseTag)'" -ForegroundColor Yellow
     }
