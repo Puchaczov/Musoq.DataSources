@@ -170,7 +170,7 @@ foreach ($Release in $Releases) {
         $PluginVersionsMap[$ParsedPluginName] = @()
     }
     
-    $PluginVersionsMap[$ParsedPluginName] += @{
+    $PluginVersionsMap[$ParsedPluginName] += [PSCustomObject]@{
         Version = $Version
         ReleaseTag = $Tag
         CreatedAt = $Release.createdAt
