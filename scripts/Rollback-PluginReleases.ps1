@@ -313,6 +313,7 @@ try {
         
         # Skip version history update if version is null or empty
         if ([string]::IsNullOrWhiteSpace($DeletedVersion)) {
+            Write-Warning "Skipping version history update for $PluginName: version is null or empty"
             continue
         }
         
