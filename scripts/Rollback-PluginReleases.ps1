@@ -42,30 +42,40 @@ $script:BatchWindowHours = 1
 
 <#
 .SYNOPSIS
-    Parses an ISO 8601 date string in a culture-invariant way.
+    Converts an ISO 8601 date string or DateTime object to a DateTime in UTC.
 
-.PARAMETER DateString
-    The date string in ISO 8601 format (e.g., "2025-12-26T15:30:00Z").
+.PARAMETER DateInput
+    The date as either a string in ISO 8601 format (e.g., "2025-12-26T15:30:00Z") or a DateTime object.
 
 .OUTPUTS
     A DateTime object in UTC.
 #>
 function ConvertFrom-Iso8601Date {
-    param([string]$DateString)
+    param($DateInput)
     
-    if ([string]::IsNullOrWhiteSpace($DateString)) {
+    # If already a DateTime, ensure it's in UTC and return
+    if ($DateInput -is [DateTime]) {
+        if ($DateInput.Kind -eq [System.DateTimeKind]::Utc) {
+            return $DateInput
+        }
+        return $DateInput.ToUniversalTime()
+    }
+    
+    # If null or empty string, return current UTC time
+    if ([string]::IsNullOrWhiteSpace($DateInput)) {
         return [DateTime]::UtcNow
     }
     
+    # Parse string date
     try {
         return [DateTime]::ParseExact(
-            $DateString, 
+            $DateInput, 
             "yyyy-MM-ddTHH:mm:ssZ", 
             [System.Globalization.CultureInfo]::InvariantCulture,
             [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
         )
     } catch {
-        return [DateTime]::Parse($DateString, [System.Globalization.CultureInfo]::InvariantCulture)
+        return [DateTime]::Parse($DateInput, [System.Globalization.CultureInfo]::InvariantCulture)
     }
 }
 
