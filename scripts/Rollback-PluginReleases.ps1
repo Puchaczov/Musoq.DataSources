@@ -211,6 +211,11 @@ if ($PluginName -eq "All") {
     $PluginVersions = $PluginVersionsMap[$PluginName]
     Write-Host "Found plugin in map with $($PluginVersions.Count) version(s)" -ForegroundColor Gray
     
+    # Debug: Show all versions in the array
+    for ($i = 0; $i -lt [Math]::Min($PluginVersions.Count, 5); $i++) {
+        Write-Host "  [$i] Version='$($PluginVersions[$i].Version)', Tag='$($PluginVersions[$i].ReleaseTag)'" -ForegroundColor Gray
+    }
+    
     # Check for null, empty array, or null first element
     # PowerShell returns 0 for .Count on null and $null for out-of-bounds array access
     if ($null -eq $PluginVersions -or $PluginVersions.Count -eq 0 -or $null -eq $PluginVersions[0]) {
@@ -218,6 +223,12 @@ if ($PluginName -eq "All") {
         if ($PluginVersions.Count -gt 0) {
             Write-Host "First element details: Version='$($PluginVersions[0].Version)', Tag='$($PluginVersions[0].ReleaseTag)'" -ForegroundColor Gray
         }
+        exit 0
+    }
+    
+    # Additional check: verify the first element has valid Version and ReleaseTag
+    if ([string]::IsNullOrWhiteSpace($PluginVersions[0].Version) -or [string]::IsNullOrWhiteSpace($PluginVersions[0].ReleaseTag)) {
+        Write-Host "No valid releases found for plugin: $PluginName (first release has empty version or tag)" -ForegroundColor Yellow
         exit 0
     }
     
