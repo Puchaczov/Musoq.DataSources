@@ -124,6 +124,9 @@ $PluginVersionsMap = @{}
 foreach ($Release in $Releases) {
     $Tag = $Release.tagName
     
+    # Debug: Show ALL tags being processed
+    Write-Host "DEBUG ALL: Processing tag='$Tag'" -ForegroundColor DarkGray
+    
     if ($Tag -eq $RegistryTag) {
         continue
     }
@@ -189,13 +192,25 @@ if ($PluginVersionsMap.ContainsKey("Musoq.DataSources.CompiledCode")) {
 }
 
 foreach ($Name in @($PluginVersionsMap.Keys)) {
-    $PluginVersionsMap[$Name] = $PluginVersionsMap[$Name] | Sort-Object { 
-        try {
-            [version]($_.Version -replace '-.*$', '')
-        } catch {
-            [version]"0.0.0"
+    if ($Name -eq "Musoq.DataSources.CompiledCode") {
+        Write-Host "Sorting Musoq.DataSources.CompiledCode..." -ForegroundColor Magenta
+    }
+    
+    $PluginVersionsMap[$Name] = $PluginVersionsMap[$Name] | Sort-Object -Property @{
+        Expression = { 
+            try {
+                # Extract version without suffix for sorting
+                $versionString = $_.Version -replace '-.*$', ''
+                [version]$versionString
+            } catch {
+                [version]"0.0.0"
+            }
         }
     } -Descending
+    
+    if ($Name -eq "Musoq.DataSources.CompiledCode") {
+        Write-Host "After sorting $Name, it has $($PluginVersionsMap[$Name].Count) version(s)" -ForegroundColor Magenta
+    }
 }
 
 # Debug: Show what's in the map after sorting
