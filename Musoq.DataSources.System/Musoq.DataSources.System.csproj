@@ -3,8 +3,8 @@
   <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>7.3.1</Version>
-        <Authors>Jakub Pucha³a</Authors>
+        <Version>7.3.2</Version>
+        <Authors>Jakub Puchaa</Authors>
     <Product>Musoq</Product>
     <Description>Query system information and processes using SQL syntax</Description>
     <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
@@ -30,11 +30,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="Musoq.Parser" Version="5.7.0">
+    <PackageReference Include="Musoq.Parser" Version="5.8.0">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Musoq.Plugins" Version="8.4.0" />
-    <PackageReference Include="Musoq.Schema" Version="10.1.0">
+    <PackageReference Include="Musoq.Plugins" Version="8.5.0" />
+    <PackageReference Include="Musoq.Schema" Version="10.2.0">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
   </ItemGroup>
