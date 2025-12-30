@@ -128,6 +128,8 @@ foreach ($Release in $Releases) {
         continue
     }
     
+    # Capture match results immediately to prevent them from being overwritten
+    # by subsequent regex operations in validation functions
     $Version = $Matches[1]
     $ParsedPluginName = $Matches[3]
     
@@ -200,7 +202,13 @@ if ($PluginName -eq "All") {
         exit 0
     }
     
-    $LatestVersion = $PluginVersionsMap[$PluginName][0]
+    $PluginVersions = $PluginVersionsMap[$PluginName]
+    if ($PluginVersions.Count -eq 0 -or $null -eq $PluginVersions[0]) {
+        Write-Host "No valid releases found for plugin: $PluginName" -ForegroundColor Yellow
+        exit 0
+    }
+    
+    $LatestVersion = $PluginVersions[0]
     $PluginsToRollback += @{
         PluginName = $PluginName
         Version = $LatestVersion.Version
@@ -299,6 +307,11 @@ try {
         
         $PluginName = $p.PluginName
         $DeletedVersion = $p.Version
+        
+        # Skip version history update if version is null or empty
+        if ([string]::IsNullOrWhiteSpace($DeletedVersion)) {
+            continue
+        }
         
         if ($Registry.versionHistory -and $Registry.versionHistory.ContainsKey($PluginName)) {
             if ($Registry.versionHistory[$PluginName].ContainsKey($DeletedVersion)) {
