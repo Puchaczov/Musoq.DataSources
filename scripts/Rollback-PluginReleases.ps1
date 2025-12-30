@@ -129,7 +129,8 @@ foreach ($Release in $Releases) {
     }
     
     # Capture match results immediately to prevent them from being overwritten
-    # by subsequent regex operations in validation functions
+    # by subsequent regex operations in validation functions (Test-ValidPluginName
+    # and Test-ValidVersion both use -match/-notmatch which modify $Matches)
     $Version = $Matches[1]
     $ParsedPluginName = $Matches[3]
     
@@ -203,6 +204,8 @@ if ($PluginName -eq "All") {
     }
     
     $PluginVersions = $PluginVersionsMap[$PluginName]
+    # Check for empty array or null first element
+    # PowerShell returns $null for out-of-bounds array access, so this is safe
     if ($PluginVersions.Count -eq 0 -or $null -eq $PluginVersions[0]) {
         Write-Host "No valid releases found for plugin: $PluginName" -ForegroundColor Yellow
         exit 0
