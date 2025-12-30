@@ -160,6 +160,7 @@ foreach ($Release in $Releases) {
     
     if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
         Write-Host "  PASSED all validations, adding to map" -ForegroundColor Green
+        Write-Host "  About to add: Version='$Version', ReleaseTag='$Tag'" -ForegroundColor Cyan
     }
     
     if (-not $PluginVersionsMap.ContainsKey($ParsedPluginName)) {
@@ -171,6 +172,20 @@ foreach ($Release in $Releases) {
         ReleaseTag = $Tag
         CreatedAt = $Release.createdAt
     }
+    
+    if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+        $justAdded = $PluginVersionsMap[$ParsedPluginName][-1]
+        Write-Host "  Just added to map: Version='$($justAdded.Version)', ReleaseTag='$($justAdded.ReleaseTag)'" -ForegroundColor Cyan
+    }
+}
+
+# Debug: Show what's in the map before sorting
+if ($PluginVersionsMap.ContainsKey("Musoq.DataSources.CompiledCode")) {
+    Write-Host "Before sorting, Musoq.DataSources.CompiledCode has $($PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count) version(s):" -ForegroundColor Cyan
+    for ($i = 0; $i < $PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count; $i++) {
+        $v = $PluginVersionsMap['Musoq.DataSources.CompiledCode'][$i]
+        Write-Host "  [$i] Version='$($v.Version)', ReleaseTag='$($v.ReleaseTag)'" -ForegroundColor Cyan
+    }
 }
 
 foreach ($Name in @($PluginVersionsMap.Keys)) {
@@ -181,6 +196,15 @@ foreach ($Name in @($PluginVersionsMap.Keys)) {
             [version]"0.0.0"
         }
     } -Descending
+}
+
+# Debug: Show what's in the map after sorting
+if ($PluginVersionsMap.ContainsKey("Musoq.DataSources.CompiledCode")) {
+    Write-Host "After sorting, Musoq.DataSources.CompiledCode has $($PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count) version(s):" -ForegroundColor Yellow
+    for ($i = 0; $i < $PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count; $i++) {
+        $v = $PluginVersionsMap['Musoq.DataSources.CompiledCode'][$i]
+        Write-Host "  [$i] Version='$($v.Version)', ReleaseTag='$($v.ReleaseTag)'" -ForegroundColor Yellow
+    }
 }
 
 $PluginsToRollback = @()
