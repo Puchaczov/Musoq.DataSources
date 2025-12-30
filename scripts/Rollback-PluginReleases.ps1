@@ -138,12 +138,28 @@ foreach ($Release in $Releases) {
     $Version = $Matches[1]
     $ParsedPluginName = $Matches[3]
     
+    # Debug: Check if variables are captured correctly
+    if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+        Write-Host "DEBUG: Processing $Tag" -ForegroundColor Magenta
+        Write-Host "  Captured Version='$Version', ParsedPluginName='$ParsedPluginName'" -ForegroundColor Magenta
+    }
+    
     if (-not (Test-ValidPluginName -Name $ParsedPluginName)) {
+        if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+            Write-Host "  FAILED: Plugin name validation" -ForegroundColor Red
+        }
         continue
     }
     
     if (-not (Test-ValidVersion -Version $Version)) {
+        if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+            Write-Host "  FAILED: Version validation" -ForegroundColor Red
+        }
         continue
+    }
+    
+    if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+        Write-Host "  PASSED all validations, adding to map" -ForegroundColor Green
     }
     
     if (-not $PluginVersionsMap.ContainsKey($ParsedPluginName)) {
