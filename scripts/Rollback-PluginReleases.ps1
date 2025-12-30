@@ -204,9 +204,9 @@ if ($PluginName -eq "All") {
     }
     
     $PluginVersions = $PluginVersionsMap[$PluginName]
-    # Check for empty array or null first element
-    # PowerShell returns $null for out-of-bounds array access, so this is safe
-    if ($PluginVersions.Count -eq 0 -or $null -eq $PluginVersions[0]) {
+    # Check for null, empty array, or null first element
+    # PowerShell returns 0 for .Count on null and $null for out-of-bounds array access
+    if ($null -eq $PluginVersions -or $PluginVersions.Count -eq 0 -or $null -eq $PluginVersions[0]) {
         Write-Host "No valid releases found for plugin: $PluginName" -ForegroundColor Yellow
         exit 0
     }
