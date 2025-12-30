@@ -8,6 +8,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Trim whitespace from string parameters to handle accidental spaces
+$PluginName = $PluginName.Trim()
+$Repository = $Repository.Trim()
+
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 
 $script:MaxReleasesToFetch = 1000
