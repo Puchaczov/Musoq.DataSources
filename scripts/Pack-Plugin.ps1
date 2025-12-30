@@ -20,7 +20,8 @@ $IgnorePatterns = @(
     "\.Benchmarks", 
     "Helpers$", 
     "\.Common$", 
-    "\.CommandLineArguments$"
+    "\.CommandLineArguments$",
+    "AsyncRowsSource$"
 )
 
 if (-not (Test-Path $OutputDirectory)) {
@@ -40,6 +41,21 @@ if (-not (Test-Path $LinksManualFile)) {
     Set-Content -Path $LinksManualFile -Value "{}"
 }
 
+function Test-IsValidMusoqPlugin {
+    param([string]$ProjectPath)
+    
+    $ProjectDir = Split-Path -Parent $ProjectPath
+    $CsFiles = Get-ChildItem -Path $ProjectDir -Filter "*.cs" -Recurse -ErrorAction SilentlyContinue
+    
+    foreach ($CsFile in $CsFiles) {
+        $Content = Get-Content -Path $CsFile.FullName -Raw -ErrorAction SilentlyContinue
+        if (($Content -match ":\s*.*\bSchemaBase\b") -or ($Content -match ":\s*.*\bISchema\b")) {
+            return $true
+        }
+    }
+    return $false
+}
+
 $Projects = Get-ChildItem -Path $SolutionRoot -Recurse -Filter "Musoq.DataSources.*.csproj"
 
 if ($PluginName -ne "All") {
@@ -49,6 +65,25 @@ if ($PluginName -ne "All") {
         $Projects = $Projects | Where-Object { $_.BaseName -notmatch $Pattern }
     }
 }
+
+$ValidProjects = @()
+$InvalidProjects = @()
+foreach ($Project in $Projects) {
+    if (Test-IsValidMusoqPlugin -ProjectPath $Project.FullName) {
+        $ValidProjects += $Project
+    } else {
+        $InvalidProjects += $Project
+    }
+}
+
+if ($InvalidProjects.Count -gt 0) {
+    Write-Host "Skipping non-plugin projects (no SchemaBase/ISchema implementation found):" -ForegroundColor Yellow
+    foreach ($InvalidProject in $InvalidProjects) {
+        Write-Host "  - $($InvalidProject.BaseName)" -ForegroundColor Yellow
+    }
+}
+
+$Projects = $ValidProjects
 
 if ($Projects.Count -eq 0) {
     Write-Error "No matching plugin projects found."
