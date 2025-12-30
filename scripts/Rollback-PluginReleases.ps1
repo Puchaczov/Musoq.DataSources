@@ -8,6 +8,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Trim whitespace from string parameters to handle accidental spaces
+$PluginName = $PluginName.Trim()
+$Repository = $Repository.Trim()
+
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 
 $script:MaxReleasesToFetch = 1000
@@ -42,30 +46,41 @@ $script:BatchWindowHours = 1
 
 <#
 .SYNOPSIS
-    Parses an ISO 8601 date string in a culture-invariant way.
+    Converts an ISO 8601 date string or DateTime object to a DateTime in UTC.
 
-.PARAMETER DateString
-    The date string in ISO 8601 format (e.g., "2025-12-26T15:30:00Z").
+.PARAMETER DateInput
+    The date as either a string in ISO 8601 format (e.g., "2025-12-26T15:30:00Z") or a DateTime object.
+    If a DateTime object is provided and not in UTC, it will be converted to UTC.
 
 .OUTPUTS
     A DateTime object in UTC.
 #>
 function ConvertFrom-Iso8601Date {
-    param([string]$DateString)
+    param([object]$DateInput)
     
-    if ([string]::IsNullOrWhiteSpace($DateString)) {
+    # If already a DateTime, ensure it's in UTC and return
+    if ($DateInput -is [DateTime]) {
+        if ($DateInput.Kind -eq [System.DateTimeKind]::Utc) {
+            return $DateInput
+        }
+        return $DateInput.ToUniversalTime()
+    }
+    
+    # If null or empty string, return current UTC time
+    if ([string]::IsNullOrWhiteSpace($DateInput)) {
         return [DateTime]::UtcNow
     }
     
+    # Parse string date
     try {
         return [DateTime]::ParseExact(
-            $DateString, 
+            $DateInput, 
             "yyyy-MM-ddTHH:mm:ssZ", 
             [System.Globalization.CultureInfo]::InvariantCulture,
             [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
         )
     } catch {
-        return [DateTime]::Parse($DateString, [System.Globalization.CultureInfo]::InvariantCulture)
+        return [DateTime]::Parse($DateInput, [System.Globalization.CultureInfo]::InvariantCulture)
     }
 }
 
@@ -109,6 +124,9 @@ $PluginVersionsMap = @{}
 foreach ($Release in $Releases) {
     $Tag = $Release.tagName
     
+    # Debug: Show ALL tags being processed
+    Write-Host "DEBUG ALL: Processing tag='$Tag'" -ForegroundColor DarkGray
+    
     if ($Tag -eq $RegistryTag) {
         continue
     }
@@ -117,36 +135,91 @@ foreach ($Release in $Releases) {
         continue
     }
     
+    # Capture match results immediately to prevent them from being overwritten
+    # by subsequent regex operations in validation functions (Test-ValidPluginName
+    # and Test-ValidVersion both use -match/-notmatch which modify $Matches)
     $Version = $Matches[1]
     $ParsedPluginName = $Matches[3]
     
+    # Debug: Check if variables are captured correctly
+    if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+        Write-Host "DEBUG: Processing $Tag" -ForegroundColor Magenta
+        Write-Host "  Captured Version='$Version', ParsedPluginName='$ParsedPluginName'" -ForegroundColor Magenta
+    }
+    
     if (-not (Test-ValidPluginName -Name $ParsedPluginName)) {
+        if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+            Write-Host "  FAILED: Plugin name validation" -ForegroundColor Red
+        }
         continue
     }
     
     if (-not (Test-ValidVersion -Version $Version)) {
+        if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+            Write-Host "  FAILED: Version validation" -ForegroundColor Red
+        }
         continue
+    }
+    
+    if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+        Write-Host "  PASSED all validations, adding to map" -ForegroundColor Green
+        Write-Host "  About to add: Version='$Version', ReleaseTag='$Tag'" -ForegroundColor Cyan
     }
     
     if (-not $PluginVersionsMap.ContainsKey($ParsedPluginName)) {
         $PluginVersionsMap[$ParsedPluginName] = @()
     }
     
-    $PluginVersionsMap[$ParsedPluginName] += @{
+    $PluginVersionsMap[$ParsedPluginName] += [PSCustomObject]@{
         Version = $Version
         ReleaseTag = $Tag
         CreatedAt = $Release.createdAt
     }
+    
+    if ($ParsedPluginName -eq "Musoq.DataSources.CompiledCode") {
+        $justAdded = $PluginVersionsMap[$ParsedPluginName][-1]
+        Write-Host "  Just added to map: Version='$($justAdded.Version)', ReleaseTag='$($justAdded.ReleaseTag)'" -ForegroundColor Cyan
+    }
+}
+
+# Debug: Show what's in the map before sorting
+if ($PluginVersionsMap.ContainsKey("Musoq.DataSources.CompiledCode")) {
+    Write-Host "Before sorting, Musoq.DataSources.CompiledCode has $($PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count) version(s):" -ForegroundColor Cyan
+    for ($i = 0; $i -lt $PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count; $i++) {
+        $v = $PluginVersionsMap['Musoq.DataSources.CompiledCode'][$i]
+        Write-Host "  [$i] Version='$($v.Version)', ReleaseTag='$($v.ReleaseTag)'" -ForegroundColor Cyan
+    }
 }
 
 foreach ($Name in @($PluginVersionsMap.Keys)) {
-    $PluginVersionsMap[$Name] = $PluginVersionsMap[$Name] | Sort-Object { 
-        try {
-            [version]($_.Version -replace '-.*$', '')
-        } catch {
-            [version]"0.0.0"
+    if ($Name -eq "Musoq.DataSources.CompiledCode") {
+        Write-Host "Sorting Musoq.DataSources.CompiledCode..." -ForegroundColor Magenta
+    }
+    
+    $PluginVersionsMap[$Name] = $PluginVersionsMap[$Name] | Sort-Object -Property @{
+        Expression = { 
+            try {
+                # Extract version without suffix for sorting
+                $versionString = $_.Version -replace '-.*$', ''
+                [version]$versionString
+            } catch {
+                [version]"0.0.0"
+            }
         }
     } -Descending
+    
+    if ($Name -eq "Musoq.DataSources.CompiledCode") {
+        Write-Host "After sorting $Name, it has $($PluginVersionsMap[$Name].Count) version(s)" -ForegroundColor Magenta
+    }
+}
+
+# Debug: Show what's in the map after sorting
+if ($PluginVersionsMap.ContainsKey("Musoq.DataSources.CompiledCode")) {
+    Write-Host "After sorting, Musoq.DataSources.CompiledCode has $($PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count) version(s):" -ForegroundColor Yellow
+    for ($i = 0; $i -lt $PluginVersionsMap['Musoq.DataSources.CompiledCode'].Count; $i++) {
+        $v = $PluginVersionsMap['Musoq.DataSources.CompiledCode'][$i]
+        Write-Host "  [$i] Version='$($v.Version)', ReleaseTag='$($v.ReleaseTag)'" -ForegroundColor Yellow
+    }
 }
 
 $PluginsToRollback = @()
@@ -186,10 +259,35 @@ if ($PluginName -eq "All") {
 } else {
     if (-not $PluginVersionsMap.ContainsKey($PluginName)) {
         Write-Host "No releases found for plugin: $PluginName" -ForegroundColor Yellow
+        Write-Host "Available plugins in map: $($PluginVersionsMap.Keys -join ', ')" -ForegroundColor Gray
         exit 0
     }
     
-    $LatestVersion = $PluginVersionsMap[$PluginName][0]
+    $PluginVersions = $PluginVersionsMap[$PluginName]
+    Write-Host "Found plugin in map with $($PluginVersions.Count) version(s)" -ForegroundColor Gray
+    
+    # Debug: Show all versions in the array
+    for ($i = 0; $i -lt [Math]::Min($PluginVersions.Count, 5); $i++) {
+        Write-Host "  [$i] Version='$($PluginVersions[$i].Version)', Tag='$($PluginVersions[$i].ReleaseTag)'" -ForegroundColor Gray
+    }
+    
+    # Check for null, empty array, or null first element
+    # PowerShell returns 0 for .Count on null and $null for out-of-bounds array access
+    if ($null -eq $PluginVersions -or $PluginVersions.Count -eq 0 -or $null -eq $PluginVersions[0]) {
+        Write-Host "No valid releases found for plugin: $PluginName" -ForegroundColor Yellow
+        if ($PluginVersions.Count -gt 0) {
+            Write-Host "First element details: Version='$($PluginVersions[0].Version)', Tag='$($PluginVersions[0].ReleaseTag)'" -ForegroundColor Gray
+        }
+        exit 0
+    }
+    
+    # Additional check: verify the first element has valid Version and ReleaseTag
+    if ([string]::IsNullOrWhiteSpace($PluginVersions[0].Version) -or [string]::IsNullOrWhiteSpace($PluginVersions[0].ReleaseTag)) {
+        Write-Host "No valid releases found for plugin: $PluginName (first release has empty version or tag)" -ForegroundColor Yellow
+        exit 0
+    }
+    
+    $LatestVersion = $PluginVersions[0]
     $PluginsToRollback += @{
         PluginName = $PluginName
         Version = $LatestVersion.Version
@@ -288,6 +386,12 @@ try {
         
         $PluginName = $p.PluginName
         $DeletedVersion = $p.Version
+        
+        # Skip version history update if version is null or empty
+        if ([string]::IsNullOrWhiteSpace($DeletedVersion)) {
+            Write-Warning "Skipping version history update for ${PluginName}: version is null or empty"
+            continue
+        }
         
         if ($Registry.versionHistory -and $Registry.versionHistory.ContainsKey($PluginName)) {
             if ($Registry.versionHistory[$PluginName].ContainsKey($DeletedVersion)) {
