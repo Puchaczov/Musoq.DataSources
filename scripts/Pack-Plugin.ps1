@@ -249,7 +249,28 @@ foreach ($Project in $Projects) {
     $RunningJobs += Start-Job -ScriptBlock $BuildScriptBlock -ArgumentList $JobParams
 }
 
-$RunningJobs | Wait-Job | Receive-Job | Write-Host
+$AllJobs = $RunningJobs | Wait-Job
+$AllResults = $AllJobs | Receive-Job
+$AllResults | Write-Host
+
+# Check for failed jobs
+$FailedJobs = $AllJobs | Where-Object { $_.State -eq 'Failed' }
+if ($FailedJobs) {
+    foreach ($Job in $FailedJobs) {
+        Write-Error "Job $($Job.Id) for failed"
+    }
+    $AllJobs | Remove-Job
+    throw "One or more plugin builds failed"
+}
+
+# Check for error messages in results  
+$ErrorResults = $AllResults | Where-Object { $_ -match "Error building" }
+if ($ErrorResults) {
+    $AllJobs | Remove-Job
+    throw "One or more plugin builds reported errors"
+}
+
+$AllJobs | Remove-Job
 
 foreach ($Project in $Projects) {
     $LicenseTempDir = Join-Path $OutputDirectory "temp_licenses_$($Project.BaseName)"
