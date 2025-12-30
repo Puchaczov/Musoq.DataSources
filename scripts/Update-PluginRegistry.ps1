@@ -239,8 +239,14 @@ function Get-PluginDataFromRelease {
     }
     
     $ReleaseInfo = gh release view $ReleaseTag --repo $Repository --json createdAt 2>$null | ConvertFrom-Json
-    $ReleaseDate = if ($ReleaseInfo.createdAt) { 
-        [DateTime]::Parse($ReleaseInfo.createdAt).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture) 
+    $ReleaseDate = if ($ReleaseInfo.createdAt) {
+        # ConvertFrom-Json auto-converts ISO 8601 dates to DateTime objects
+        $dateTime = if ($ReleaseInfo.createdAt -is [DateTime]) {
+            $ReleaseInfo.createdAt
+        } else {
+            [DateTime]::Parse($ReleaseInfo.createdAt, [System.Globalization.CultureInfo]::InvariantCulture)
+        }
+        $dateTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture) 
     } else { 
         (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture) 
     }
