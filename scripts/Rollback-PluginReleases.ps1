@@ -46,12 +46,13 @@ $script:BatchWindowHours = 1
 
 .PARAMETER DateInput
     The date as either a string in ISO 8601 format (e.g., "2025-12-26T15:30:00Z") or a DateTime object.
+    If a DateTime object is provided and not in UTC, it will be converted to UTC.
 
 .OUTPUTS
     A DateTime object in UTC.
 #>
 function ConvertFrom-Iso8601Date {
-    param($DateInput)
+    param([object]$DateInput)
     
     # If already a DateTime, ensure it's in UTC and return
     if ($DateInput -is [DateTime]) {
