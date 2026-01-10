@@ -189,6 +189,13 @@ $BuildScriptBlock = {
                 throw "Publish directory is empty: $PublishDir"
             }
 
+            # Validate that entry point DLL exists in publish directory
+            $EntryPointDll = "${ProjectBaseName}.dll"
+            $EntryPointPath = Join-Path $PublishDir $EntryPointDll
+            if (-not (Test-Path $EntryPointPath)) {
+                throw "Entry point DLL '$EntryPointDll' not found in publish directory: $PublishDir"
+            }
+
             $InnerZipPath = Join-Path $PackageDir "Plugin.zip"
             $FilesToCompress = Get-ChildItem -Path $PublishDir -Force | Select-Object -ExpandProperty FullName
             Compress-Archive -Path $FilesToCompress -DestinationPath $InnerZipPath -Force

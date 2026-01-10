@@ -115,7 +115,53 @@ foreach ($Project in $Projects) {
         
         $bytes = [System.IO.File]::ReadAllBytes($artifact.FullName) | Select-Object -First 4
         if ($bytes.Count -ge 4 -and $bytes[0] -eq 0x50 -and $bytes[1] -eq 0x4B) {
-            $ValidArtifacts += $artifact
+            # Validate that Plugin.zip contains the entry point DLL
+            $ValidationTempDir = Join-Path ([System.IO.Path]::GetTempPath()) "artifact-validation-$(Get-Random)"
+            try {
+                New-Item -ItemType Directory -Path $ValidationTempDir -Force | Out-Null
+                Expand-Archive -Path $artifact.FullName -DestinationPath $ValidationTempDir -Force
+                
+                $EntryPointFile = Join-Path $ValidationTempDir "EntryPoint.txt"
+                $PluginZipFile = Join-Path $ValidationTempDir "Plugin.zip"
+                
+                if (-not (Test-Path $EntryPointFile)) {
+                    Write-Warning "  Skipping artifact missing EntryPoint.txt: $($artifact.Name)"
+                    continue
+                }
+                
+                if (-not (Test-Path $PluginZipFile)) {
+                    Write-Warning "  Skipping artifact missing Plugin.zip: $($artifact.Name)"
+                    continue
+                }
+                
+                $EntryPointDll = (Get-Content $EntryPointFile -Raw).Trim()
+                if ([string]::IsNullOrWhiteSpace($EntryPointDll)) {
+                    Write-Warning "  Skipping artifact with empty EntryPoint.txt: $($artifact.Name)"
+                    continue
+                }
+                
+                # Extract Plugin.zip and verify entry point DLL exists
+                $PluginTempDir = Join-Path $ValidationTempDir "plugin-contents"
+                New-Item -ItemType Directory -Path $PluginTempDir -Force | Out-Null
+                Expand-Archive -Path $PluginZipFile -DestinationPath $PluginTempDir -Force
+                
+                $EntryPointPath = Join-Path $PluginTempDir $EntryPointDll
+                if (-not (Test-Path $EntryPointPath)) {
+                    Write-Warning "  Skipping artifact with missing entry point DLL '$EntryPointDll': $($artifact.Name)"
+                    continue
+                }
+                
+                $ValidArtifacts += $artifact
+            }
+            catch {
+                Write-Warning "  Skipping artifact due to validation error: $($artifact.Name) - $_"
+                continue
+            }
+            finally {
+                if (Test-Path $ValidationTempDir) {
+                    Remove-Item $ValidationTempDir -Recurse -Force -ErrorAction SilentlyContinue
+                }
+            }
         } else {
             Write-Warning "  Skipping invalid zip file: $($artifact.Name)"
         }
