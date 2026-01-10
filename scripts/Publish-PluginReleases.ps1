@@ -116,7 +116,7 @@ foreach ($Project in $Projects) {
         $bytes = [System.IO.File]::ReadAllBytes($artifact.FullName) | Select-Object -First 4
         if ($bytes.Count -ge 4 -and $bytes[0] -eq 0x50 -and $bytes[1] -eq 0x4B) {
             # Validate that Plugin.zip contains the entry point DLL
-            $ValidationTempDir = Join-Path ([System.IO.Path]::GetTempPath()) "artifact-validation-$(Get-Random)"
+            $ValidationTempDir = Join-Path ([System.IO.Path]::GetTempPath()) "artifact-validation-$([guid]::NewGuid().ToString('N'))"
             try {
                 New-Item -ItemType Directory -Path $ValidationTempDir -Force | Out-Null
                 Expand-Archive -Path $artifact.FullName -DestinationPath $ValidationTempDir -Force
