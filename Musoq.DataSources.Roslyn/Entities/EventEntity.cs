@@ -37,7 +37,18 @@ public class EventEntity
     /// <summary>
     /// Gets the type of the event (delegate type).
     /// </summary>
-    public string Type => _eventSymbol.Type.Name;
+    public string Type
+    {
+        get
+        {
+            var type = _eventSymbol.Type;
+            if (type is INamedTypeSymbol namedType && namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            {
+                return namedType.TypeArguments.FirstOrDefault()?.Name ?? type.Name;
+            }
+            return type.Name;
+        }
+    }
 
     /// <summary>
     /// Gets the full type name including namespace.

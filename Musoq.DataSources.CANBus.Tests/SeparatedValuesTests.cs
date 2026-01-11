@@ -135,9 +135,9 @@ where IsWellKnown = false";
 select
     ID,
     Timestamp,
-    there ,
+    Message,
     IsWellKnown
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')";
+from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc') s";
         
         var vm = CreateAndRunVirtualMachine(query);
         
@@ -353,7 +353,8 @@ inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.Id";
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+        return InstanceCreatorHelpers.CompileForExecution(
+            script, Guid.NewGuid().ToString(), new CANBusSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
     static SeparatedValuesTests()
