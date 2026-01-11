@@ -105,7 +105,10 @@ foreach ($Project in $Projects) {
         $RestoreArgs = @(
             "restore", $Project.FullName
         )
-        dotnet @RestoreArgs | Out-Null
+        $RestoreOutput = dotnet @RestoreArgs 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "NuGet restore failed for $($Project.BaseName): $($RestoreOutput -join "`n")"
+        }
         
         [xml]$csproj = Get-Content $Project.FullName
         $PropertyGroup = $csproj.Project.PropertyGroup | Select-Object -First 1
@@ -167,7 +170,10 @@ $BuildScriptBlock = {
                 "--no-self-contained",
                 "-o", $PublishDir
             )
-            dotnet @PublishArgs | Out-Null
+            $PublishOutput = dotnet @PublishArgs 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "dotnet publish failed with exit code $LASTEXITCODE. Output: $($PublishOutput -join "`n")"
+            }
 
             New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
             
@@ -187,6 +193,13 @@ $BuildScriptBlock = {
             $PublishContents = Get-ChildItem -Path $PublishDir -Force
             if ($PublishContents.Count -eq 0) {
                 throw "Publish directory is empty: $PublishDir"
+            }
+
+            # Validate that entry point DLL exists in publish directory
+            $EntryPointDll = "${ProjectBaseName}.dll"
+            $EntryPointPath = Join-Path $PublishDir $EntryPointDll
+            if (-not (Test-Path $EntryPointPath)) {
+                throw "Entry point DLL '$EntryPointDll' not found in publish directory: $PublishDir"
             }
 
             $InnerZipPath = Join-Path $PackageDir "Plugin.zip"
