@@ -35,7 +35,7 @@ public static class InstanceCreatorHelpers
                 items =>
                 {
                     items.PositionalEnvironmentVariables = environmentVariables;
-                    items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns) =>
+                    items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns, options) =>
                         new BuildMetadataAndInferTypesForTestsVisitor(provider, columns, environmentVariables, loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>());
                 });
         

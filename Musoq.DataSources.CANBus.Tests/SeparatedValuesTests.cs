@@ -135,7 +135,7 @@ where IsWellKnown = false";
 select
     ID,
     Timestamp,
-    Message,
+    there ,
     IsWellKnown
 from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc')";
         

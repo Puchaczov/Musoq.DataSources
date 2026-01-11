@@ -32,11 +32,11 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="5.8.0">
+        <PackageReference Include="Musoq.Parser" Version="5.9.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.5.0" />
-        <PackageReference Include="Musoq.Schema" Version="10.2.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.6.0" />
+        <PackageReference Include="Musoq.Schema" Version="10.3.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="OpenAI" Version="2.1.0" />
