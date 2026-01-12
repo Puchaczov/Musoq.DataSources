@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>5.3.2</Version>
+        <Version>5.3.3</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Query and interact with OpenAI models using SQL syntax</Description>

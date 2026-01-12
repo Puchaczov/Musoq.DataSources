@@ -3,7 +3,7 @@
   <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>7.3.2</Version>
+        <Version>7.3.3</Version>
         <Authors>Jakub Puchaa</Authors>
     <Product>Musoq</Product>
     <Description>Query and generate time-based data and date ranges using SQL syntax</Description>
