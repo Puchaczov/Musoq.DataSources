@@ -146,7 +146,7 @@ foreach ($Project in $Projects) {
     }
 }
 
-Write-Host "Starting Parallel Build..." -ForegroundColor Cyan
+Write-Host "Starting Build..." -ForegroundColor Cyan
 
 $BuildScriptBlock = {
     param($ProjectFullName, $ProjectBaseName, $OutputDirectory, $Targets, $ExcludedAssemblies, $ProjectLicensesDir)
