@@ -15,6 +15,8 @@ public static class InstanceCreatorHelpers
 {
     private static ILoggerResolver DefaultLoggerResolver => new VoidLoggerResolver();
 
+    private static CompilationOptions CompilationOptions { get; } = new(ParallelizationMode.Full, usePrimitiveTypeValidation: false);
+
     public static CompiledQuery CompileForExecution(
         string script,
         string assemblyName,
@@ -35,8 +37,8 @@ public static class InstanceCreatorHelpers
                 items =>
                 {
                     items.PositionalEnvironmentVariables = environmentVariables;
-                    items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns) =>
-                        new BuildMetadataAndInferTypesForTestsVisitor(provider, columns, environmentVariables, loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>());
+                    items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns, _) =>
+                        new BuildMetadataAndInferTypesForTestsVisitor(provider, columns, environmentVariables, CompilationOptions, loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>());
                 });
         
         var runnableField = compiledQuery.GetType().GetRuntimeFields().FirstOrDefault(f => f.Name.Contains("runnable"));
