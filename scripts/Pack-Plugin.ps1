@@ -146,7 +146,7 @@ foreach ($Project in $Projects) {
     }
 }
 
-Write-Host "Starting Parallel Build..." -ForegroundColor Cyan
+Write-Host "Starting Build..." -ForegroundColor Cyan
 
 $BuildScriptBlock = {
     param($ProjectFullName, $ProjectBaseName, $OutputDirectory, $Targets, $ExcludedAssemblies, $ProjectLicensesDir)
@@ -234,21 +234,8 @@ $BuildScriptBlock = {
     return $Results
 }
 
-$MaxConcurrency = [Environment]::ProcessorCount
-$RunningJobs = @()
-
 foreach ($Project in $Projects) {
-    while ($RunningJobs.Count -ge $MaxConcurrency) {
-        $Finished = $RunningJobs | Where-Object { $_.State -ne 'Running' }
-        foreach ($Job in $Finished) {
-            Receive-Job -Job $Job | Write-Host
-            Remove-Job -Job $Job
-        }
-        $RunningJobs = $RunningJobs | Where-Object { $_.State -eq 'Running' }
-        if ($RunningJobs.Count -ge $MaxConcurrency) { Start-Sleep -Milliseconds 200 }
-    }
-    
-    Write-Host "Queueing Build: $($Project.BaseName)" -ForegroundColor Gray
+    Write-Host "Building: $($Project.BaseName)" -ForegroundColor Gray
     
     $JobParams = @(
         $Project.FullName,
@@ -259,31 +246,15 @@ foreach ($Project in $Projects) {
         $ProjectLicenseMap[$Project.FullName]
     )
     
-    $RunningJobs += Start-Job -ScriptBlock $BuildScriptBlock -ArgumentList $JobParams
-}
-
-$AllJobs = $RunningJobs | Wait-Job
-$AllResults = $AllJobs | Receive-Job
-$AllResults | Write-Host
-
-# Check for failed jobs
-$FailedJobs = $AllJobs | Where-Object { $_.State -eq 'Failed' }
-if ($FailedJobs) {
-    foreach ($Job in $FailedJobs) {
-        Write-Error "Job $($Job.Id) for failed"
+    $Results = & $BuildScriptBlock @JobParams
+    $Results | Write-Host
+    
+    # Check for error messages in results  
+    $ErrorResults = $Results | Where-Object { $_ -match "Error building" }
+    if ($ErrorResults) {
+        throw "Build failed for $($Project.BaseName)"
     }
-    $AllJobs | Remove-Job
-    throw "One or more plugin builds failed"
 }
-
-# Check for error messages in results  
-$ErrorResults = $AllResults | Where-Object { $_ -match "Error building" }
-if ($ErrorResults) {
-    $AllJobs | Remove-Job
-    throw "One or more plugin builds reported errors"
-}
-
-$AllJobs | Remove-Job
 
 foreach ($Project in $Projects) {
     $LicenseTempDir = Join-Path $OutputDirectory "temp_licenses_$($Project.BaseName)"
