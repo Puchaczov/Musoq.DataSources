@@ -5,13 +5,13 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>5.3.3</Version>
+        <Version>5.3.4</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
-        <Description>Query Airtable bases and tables using SQL syntax</Description>
+        <Description>Lets you explore Airtable bases and tables with SQL-style queries, making it easy to join and filter Airtable data without leaving Musoq.</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageTags>sql, airtable, dotnet-core</PackageTags>
+        <PackageTags>sql, airtable, base, tables, musoq, plugin, datasource, dotnet</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -33,11 +33,11 @@
     <ItemGroup>
         <PackageReference Include="Airtable" Version="1.4.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="5.9.0">
+        <PackageReference Include="Musoq.Parser" Version="5.9.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.6.0" />
-        <PackageReference Include="Musoq.Schema" Version="10.3.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.6.1" />
+        <PackageReference Include="Musoq.Schema" Version="10.3.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

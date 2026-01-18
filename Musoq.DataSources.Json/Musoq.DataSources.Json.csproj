@@ -3,13 +3,13 @@
       <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>8.3.3</Version>
+        <Version>8.3.4</Version>
         <Authors>Jakub Puchaa</Authors>
     <Product>Musoq</Product>
-    <Description>Query JSON files and data using SQL syntax</Description>
+    <Description>Lets you query JSON files and data with SQL-style queries, flattening nested structures into rows and columns.</Description>
     <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageTags>sql, json, dotnet-core</PackageTags>
+    <PackageTags>sql, json, documents, musoq, plugin, datasource, dotnet</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -30,11 +30,11 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="Musoq.Parser" Version="5.9.0">
+    <PackageReference Include="Musoq.Parser" Version="5.9.1">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Musoq.Plugins" Version="8.6.0" />
-    <PackageReference Include="Musoq.Schema" Version="10.3.0">
+    <PackageReference Include="Musoq.Plugins" Version="8.6.1" />
+    <PackageReference Include="Musoq.Schema" Version="10.3.1">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
   </ItemGroup>

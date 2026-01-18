@@ -3,13 +3,13 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.7.3</Version>
+        <Version>1.7.4</Version>
         <Authors>Jakub Pucha�a</Authors>
         <Product>Musoq</Product>
-        <Description>Query Git repositories, commits, branches, and history using SQL syntax</Description>
+        <Description>Lets you query repos, commits, branches, and history with SQL-style queries for audits, metrics, and change tracking.</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageTags>sql, git, dotnet-core</PackageTags>
+        <PackageTags>sql, git, commits, history, musoq, plugin, datasource, dotnet</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -31,11 +31,11 @@
 
     <ItemGroup>
         <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
-        <PackageReference Include="Musoq.Parser" Version="5.9.0">
+        <PackageReference Include="Musoq.Parser" Version="5.9.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.6.0" />
-        <PackageReference Include="Musoq.Schema" Version="10.3.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.6.1" />
+        <PackageReference Include="Musoq.Schema" Version="10.3.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>

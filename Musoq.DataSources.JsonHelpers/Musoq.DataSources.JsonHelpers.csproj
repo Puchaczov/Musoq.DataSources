@@ -3,12 +3,12 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>4.3.3</Version>
+        <Version>4.3.4</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageTags>sql, json, dotnet-core</PackageTags>
+        <PackageTags>sql, json, helpers, infrastructure, musoq, datasource, dotnet</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -23,13 +23,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Parser" Version="5.9.0">
+        <PackageReference Include="Musoq.Parser" Version="5.9.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.6.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.6.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Schema" Version="10.3.0">
+        <PackageReference Include="Musoq.Schema" Version="10.3.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

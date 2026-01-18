@@ -3,13 +3,13 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>3.3.3</Version>
+        <Version>3.3.4</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
-        <Description>Query CAN bus data and DBC files using SQL syntax</Description>
+        <Description>Lets you query CAN bus data and DBC files with SQL-style queries, turning frames into a tabular view.</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageTags>sql, can, can-bus, dotnet-core</PackageTags>
+        <PackageTags>sql, can, can-bus, dbc, automotive, musoq, plugin, datasource, dotnet</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -33,11 +33,11 @@
         <PackageReference Include="CsvHelper" Version="33.0.1" />
         <PackageReference Include="DbcParserLib" Version="1.7.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="5.9.0">
+        <PackageReference Include="Musoq.Parser" Version="5.9.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.6.0" />
-        <PackageReference Include="Musoq.Schema" Version="10.3.0">
+        <PackageReference Include="Musoq.Plugins" Version="8.6.1" />
+        <PackageReference Include="Musoq.Schema" Version="10.3.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Iot.Device.Bindings" Version="3.2.0" />

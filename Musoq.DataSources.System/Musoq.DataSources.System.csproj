@@ -3,13 +3,13 @@
   <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>7.3.3</Version>
+        <Version>7.3.4</Version>
         <Authors>Jakub Puchaa</Authors>
     <Product>Musoq</Product>
-    <Description>Query system information and processes using SQL syntax</Description>
+    <Description>Lets you query system info, hardware, and running processes with SQL-style queries for quick diagnostics and inventory-style reporting.</Description>
     <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageTags>sql, system, dotnet-core</PackageTags>
+    <PackageTags>sql, system, processes, hardware, musoq, plugin, datasource, dotnet</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -30,11 +30,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="Musoq.Parser" Version="5.9.0">
+    <PackageReference Include="Musoq.Parser" Version="5.9.1">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Musoq.Plugins" Version="8.6.0" />
-    <PackageReference Include="Musoq.Schema" Version="10.3.0">
+    <PackageReference Include="Musoq.Plugins" Version="8.6.1" />
+    <PackageReference Include="Musoq.Schema" Version="10.3.1">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
   </ItemGroup>
