@@ -232,6 +232,18 @@ public class UnusedCodeTestClass
 }
 
 /// <summary>
+/// Class that uses a method from UnusedCodeTestClass
+/// </summary>
+public class UsedMethodCaller
+{
+    public int CallGetUsedField()
+    {
+        var instance = new UnusedCodeTestClass();
+        return instance.GetUsedField();
+    }
+}
+
+/// <summary>
 /// Unused interface for testing IsUsed property
 /// </summary>
 public interface IUnusedInterface

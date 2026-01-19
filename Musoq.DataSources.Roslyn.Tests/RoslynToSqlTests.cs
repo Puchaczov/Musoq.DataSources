@@ -1659,6 +1659,38 @@ where c.Name = 'Class1'
     }
 
     [TestMethod]
+    public void WhenMethodIsUsedQueried_ShouldReturnCorrectValues()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.IsUsed,
+                        m.ReferenceCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where m.Name = 'GetUsedField' or m.Name = 'UnusedPrivateMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        var usedMethod = result.FirstOrDefault(r => r[0].ToString() == "GetUsedField");
+        Assert.IsNotNull(usedMethod);
+        Assert.AreEqual(true, usedMethod[1]);
+        Assert.IsTrue((int)usedMethod[2] > 0);
+        
+        var unusedMethod = result.FirstOrDefault(r => r[0].ToString() == "UnusedPrivateMethod");
+        Assert.IsNotNull(unusedMethod);
+        Assert.AreEqual(false, unusedMethod[1]);
+        Assert.AreEqual(0, unusedMethod[2]);
+    }
+
+    [TestMethod]
     public void WhenGetUnusedFieldsCalled_ShouldReturnUnusedFields()
     {
         var query = """

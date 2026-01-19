@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -16,6 +17,7 @@ public class MethodEntity
     private readonly IMethodSymbol _methodSymbol;
     private readonly MethodDeclarationSyntax _methodDeclaration;
     private readonly SemanticModel? _semanticModel;
+    private readonly Solution? _solution;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MethodEntity"/> class.
@@ -27,6 +29,7 @@ public class MethodEntity
         _methodSymbol = methodSymbol;
         _methodDeclaration = methodDeclaration;
         _semanticModel = null;
+        _solution = null;
     }
 
     /// <summary>
@@ -40,6 +43,22 @@ public class MethodEntity
         _methodSymbol = methodSymbol;
         _methodDeclaration = methodDeclaration;
         _semanticModel = semanticModel;
+        _solution = null;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MethodEntity"/> class with semantic model and solution context.
+    /// </summary>
+    /// <param name="methodSymbol">The method symbol to extract information from.</param>
+    /// <param name="methodDeclaration">The method declaration syntax node.</param>
+    /// <param name="semanticModel">The semantic model for analyzing usage.</param>
+    /// <param name="solution">The solution for finding references.</param>
+    public MethodEntity(IMethodSymbol methodSymbol, MethodDeclarationSyntax methodDeclaration, SemanticModel semanticModel, Solution solution)
+    {
+        _methodSymbol = methodSymbol;
+        _methodDeclaration = methodDeclaration;
+        _semanticModel = semanticModel;
+        _solution = solution;
     }
 
     /// <summary>
@@ -412,6 +431,38 @@ public class MethodEntity
                 return null;
 
             return LocalVariables.Count(v => !v.IsUsed);
+        }
+    }
+
+    /// <summary>
+    /// Gets the number of references to this method in the solution.
+    /// Returns null if the solution context is not available.
+    /// </summary>
+    public int? ReferenceCount
+    {
+        get
+        {
+            if (_solution == null)
+                return null;
+
+            var references = SymbolFinder.FindReferencesAsync(_methodSymbol, _solution).Result;
+            return references.Sum(r => r.Locations.Count());
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the method is used (referenced) in the solution.
+    /// Returns null if the solution context is not available.
+    /// </summary>
+    public bool? IsUsed
+    {
+        get
+        {
+            if (_solution == null)
+                return null;
+
+            var refCount = ReferenceCount;
+            return refCount > 0;
         }
     }
 

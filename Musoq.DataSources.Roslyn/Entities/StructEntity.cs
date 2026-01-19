@@ -122,7 +122,7 @@ public class StructEntity : TypeEntity
     /// </summary>
     public override IEnumerable<MethodEntity> Methods => Syntax.Members
         .OfType<MethodDeclarationSyntax>()
-        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel));
+        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution));
 
     /// <summary>
     /// Gets the properties of the struct.
