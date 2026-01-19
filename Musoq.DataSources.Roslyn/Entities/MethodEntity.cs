@@ -111,7 +111,15 @@ public class MethodEntity
         {
             var syntaxReference = _methodSymbol.DeclaringSyntaxReferences.FirstOrDefault();
             var methodDeclaration = syntaxReference?.GetSyntax() as MethodDeclarationSyntax;
-            return methodDeclaration?.Body == null ? string.Empty : methodDeclaration.ToFullString();
+            if (methodDeclaration == null)
+                return string.Empty;
+
+            var stripped = methodDeclaration.WithoutLeadingTrivia();
+
+            if (stripped.Body == null && stripped.ExpressionBody == null)
+                return string.Empty;
+
+            return stripped.ToFullString();
         }
     }
     
@@ -465,6 +473,227 @@ public class MethodEntity
             return refCount > 0;
         }
     }
+
+    /// <summary>
+    /// Gets the methods that are called by this method.
+    /// Returns an empty collection if the semantic model is not available.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<CalledMethodInfo> Callees
+    {
+        get
+        {
+            if (_semanticModel == null)
+                return Enumerable.Empty<CalledMethodInfo>();
+
+            var invocations = _methodDeclaration.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>();
+
+            var callees = new List<CalledMethodInfo>();
+            foreach (var invocation in invocations)
+            {
+                var symbolInfo = _semanticModel.GetSymbolInfo(invocation);
+                var calledMethod = symbolInfo.Symbol as IMethodSymbol ??
+                                   symbolInfo.CandidateSymbols.OfType<IMethodSymbol>().FirstOrDefault();
+
+                if (calledMethod != null)
+                {
+                    callees.Add(new CalledMethodInfo(
+                        calledMethod.Name,
+                        calledMethod.ContainingType?.Name ?? string.Empty,
+                        calledMethod.ContainingNamespace?.ToDisplayString() ?? string.Empty,
+                        calledMethod.IsStatic,
+                        calledMethod.IsExtensionMethod
+                    ));
+                }
+            }
+            return callees;
+        }
+    }
+
+    /// <summary>
+    /// Gets the number of methods called by this method.
+    /// </summary>
+    public int CalleeCount => Callees.Count();
+
+    /// <summary>
+    /// Gets a value indicating whether the method calls itself (directly recursive).
+    /// </summary>
+    public bool IsRecursive
+    {
+        get
+        {
+            if (_semanticModel == null)
+                return false;
+
+            var thisMethodQualifiedName = $"{_methodSymbol.ContainingType?.ToDisplayString()}.{_methodSymbol.Name}";
+
+            var invocations = _methodDeclaration.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>();
+
+            foreach (var invocation in invocations)
+            {
+                var symbolInfo = _semanticModel.GetSymbolInfo(invocation);
+                var calledMethod = symbolInfo.Symbol as IMethodSymbol ??
+                                   symbolInfo.CandidateSymbols.OfType<IMethodSymbol>().FirstOrDefault();
+
+                if (calledMethod != null)
+                {
+                    var calledMethodQualifiedName = $"{calledMethod.ContainingType?.ToDisplayString()}.{calledMethod.Name}";
+                    if (calledMethodQualifiedName == thisMethodQualifiedName)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the method returns Task or Task{T}.
+    /// </summary>
+    public bool ReturnsTask
+    {
+        get
+        {
+            var returnTypeName = _methodSymbol.ReturnType.Name;
+            return returnTypeName == "Task" || returnTypeName == "ValueTask" ||
+                   _methodSymbol.ReturnType.OriginalDefinition.ToDisplayString().StartsWith("System.Threading.Tasks.Task") ||
+                   _methodSymbol.ReturnType.OriginalDefinition.ToDisplayString().StartsWith("System.Threading.Tasks.ValueTask");
+        }
+    }
+
+    /// <summary>
+    /// Gets the full return type name including namespace and generic arguments.
+    /// </summary>
+    public string FullReturnType => _methodSymbol.ReturnType.ToDisplayString();
+
+    /// <summary>
+    /// Gets a value indicating whether the return type is nullable.
+    /// </summary>
+    public bool IsReturnTypeNullable => _methodSymbol.ReturnType.NullableAnnotation == NullableAnnotation.Annotated;
+
+    /// <summary>
+    /// Gets the method that this method overrides, if any.
+    /// Returns null if this method does not override another method.
+    /// </summary>
+    public string? OverriddenMethodName => _methodSymbol.OverriddenMethod?.Name;
+
+    /// <summary>
+    /// Gets the containing type name of the overridden method, if any.
+    /// </summary>
+    public string? OverriddenMethodContainingType => _methodSymbol.OverriddenMethod?.ContainingType?.Name;
+
+    /// <summary>
+    /// Gets the interface methods that this method implements.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<ImplementedInterfaceMethodInfo> ImplementedInterfaceMethods
+    {
+        get
+        {
+            var containingType = _methodSymbol.ContainingType;
+            if (containingType == null)
+                return Enumerable.Empty<ImplementedInterfaceMethodInfo>();
+
+            var implementedMethods = new List<ImplementedInterfaceMethodInfo>();
+            
+            foreach (var iface in containingType.AllInterfaces)
+            {
+                foreach (var member in iface.GetMembers().OfType<IMethodSymbol>())
+                {
+                    var implementation = containingType.FindImplementationForInterfaceMember(member);
+                    if (SymbolEqualityComparer.Default.Equals(implementation, _methodSymbol))
+                    {
+                        implementedMethods.Add(new ImplementedInterfaceMethodInfo(
+                            member.Name,
+                            iface.Name,
+                            iface.ContainingNamespace?.ToDisplayString() ?? string.Empty
+                        ));
+                    }
+                }
+            }
+            
+            return implementedMethods;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether this method implements an interface method.
+    /// </summary>
+    public bool ImplementsInterface => ImplementedInterfaceMethods.Any();
+
+    /// <summary>
+    /// Gets a value indicating whether this method is part of the public API (public or protected in a public type).
+    /// </summary>
+    public bool IsPublicApi
+    {
+        get
+        {
+            if (_methodSymbol.DeclaredAccessibility != Microsoft.CodeAnalysis.Accessibility.Public &&
+                _methodSymbol.DeclaredAccessibility != Microsoft.CodeAnalysis.Accessibility.Protected)
+                return false;
+
+            var containingType = _methodSymbol.ContainingType;
+            while (containingType != null)
+            {
+                if (containingType.DeclaredAccessibility != Microsoft.CodeAnalysis.Accessibility.Public)
+                    return false;
+                containingType = containingType.ContainingType;
+            }
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Gets the start line number of the method in the source file (1-based).
+    /// </summary>
+    public int StartLine
+    {
+        get
+        {
+            var lineSpan = _methodDeclaration.SyntaxTree.GetLineSpan(_methodDeclaration.Span);
+            return lineSpan.StartLinePosition.Line + 1;
+        }
+    }
+
+    /// <summary>
+    /// Gets the end line number of the method in the source file (1-based).
+    /// </summary>
+    public int EndLine
+    {
+        get
+        {
+            var lineSpan = _methodDeclaration.SyntaxTree.GetLineSpan(_methodDeclaration.Span);
+            return lineSpan.EndLinePosition.Line + 1;
+        }
+    }
+
+    /// <summary>
+    /// Gets the file path of the source file containing this method.
+    /// </summary>
+    public string? SourceFilePath => _methodDeclaration.SyntaxTree.FilePath;
+
+    /// <summary>
+    /// Gets the containing type name.
+    /// </summary>
+    public string ContainingTypeName => _methodSymbol.ContainingType?.Name ?? string.Empty;
+
+    /// <summary>
+    /// Gets the containing namespace.
+    /// </summary>
+    public string ContainingNamespace => _methodSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+
+    /// <summary>
+    /// Gets the underlying method symbol for advanced scenarios.
+    /// </summary>
+    internal IMethodSymbol Symbol => _methodSymbol;
+
+    /// <summary>
+    /// Gets the solution context, if available.
+    /// </summary>
+    internal Solution? Solution => _solution;
 
     /// <summary>
     /// Returns a string that represents the current object.

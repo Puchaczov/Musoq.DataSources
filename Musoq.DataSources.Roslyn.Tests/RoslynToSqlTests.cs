@@ -325,6 +325,33 @@ where c.Name = 'Class1'
     }
 
     [TestMethod]
+    public void WhenMethodTextQueried_ShouldNotContainXmlDoc()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.Text
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    where cls.Name = 'CallGraphTestClass' and m.Name = 'RecursiveMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+
+        var methodText = result[0][1]?.ToString() ?? string.Empty;
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(methodText), "Method text should not be empty");
+        Assert.IsFalse(methodText.Contains("///"), "Method text should not include XML doc comments");
+        Assert.IsTrue(methodText.TrimStart().StartsWith("public int RecursiveMethod"), "Method text should start with method signature");
+    }
+
+    [TestMethod]
     public void WhenLinesOfCodeOfSpecificMethodQueried_ShouldPass()
     {
         var query = """
@@ -1707,6 +1734,319 @@ where c.Name = 'Class1'
         // Should find _unusedField
         Assert.IsTrue(result.Count >= 1);
         Assert.IsTrue(result.Any(r => r[0].ToString() == "_unusedField"));
+    }
+
+    [TestMethod]
+    public void WhenMethodCalleesQueried_ShouldReturnCalledMethods()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.CalleeCount,
+                        c.Name as CalleeName,
+                        c.ContainingTypeName
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    cross apply m.Callees c
+                    where m.Name = 'CallerMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        // CallerMethod calls HelperMethod1, HelperMethod2, and WriteLine
+        Assert.IsTrue(result.Count >= 2, "CallerMethod should call at least 2 methods");
+        Assert.IsTrue(result.Any(r => r[2].ToString() == "HelperMethod1"), "Should call HelperMethod1");
+        Assert.IsTrue(result.Any(r => r[2].ToString() == "HelperMethod2"), "Should call HelperMethod2");
+    }
+
+    [TestMethod]
+    public void WhenMethodIsRecursiveQueried_ShouldReturnCorrectValue()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.IsRecursive,
+                        m.CalleeCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    where m.Name = 'RecursiveMethod' or m.Name = 'NonRecursiveMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        var recursiveMethod = result.FirstOrDefault(r => r[0].ToString() == "RecursiveMethod");
+        Assert.IsNotNull(recursiveMethod);
+        Assert.IsTrue((int)recursiveMethod[2] >= 1, $"RecursiveMethod should have at least one callee (itself), has {recursiveMethod[2]}");
+        Assert.AreEqual(true, recursiveMethod[1], "RecursiveMethod should be marked as recursive");
+        
+        var nonRecursiveMethod = result.FirstOrDefault(r => r[0].ToString() == "NonRecursiveMethod");
+        Assert.IsNotNull(nonRecursiveMethod);
+        Assert.AreEqual(0, (int)nonRecursiveMethod[2], "NonRecursiveMethod should not have callees");
+        Assert.AreEqual(false, nonRecursiveMethod[1], "NonRecursiveMethod should not be recursive");
+    }
+
+    [TestMethod]
+    public void WhenMethodOverridesQueried_ShouldReturnOverriddenMethodInfo()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.IsOverride,
+                        m.OverriddenMethodName,
+                        m.OverriddenMethodContainingType
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    where cls.Name = 'DerivedClassWithOverride' and m.IsOverride = true
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count >= 1, "Should find at least one overridden method");
+        
+        var virtualMethod = result.FirstOrDefault(r => r[0].ToString() == "VirtualMethod");
+        Assert.IsNotNull(virtualMethod);
+        Assert.AreEqual("VirtualMethod", virtualMethod[2], "Should override VirtualMethod");
+        Assert.AreEqual("BaseClassForOverride", virtualMethod[3], "Should be from BaseClassForOverride");
+    }
+
+    [TestMethod]
+    public void WhenMethodImplementsInterfaceQueried_ShouldReturnInterfaceInfo()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.ImplementsInterface,
+                        i.InterfaceName,
+                        i.MethodName
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    cross apply m.ImplementedInterfaceMethods i
+                    where cls.Name = 'InterfaceImplementorClass'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count >= 1, "Should find interface implementations");
+        Assert.IsTrue(result.Any(r => r[2].ToString() == "ITestInterface"), "Should implement ITestInterface");
+    }
+
+    [TestMethod]
+    public void WhenMethodReturnsTaskQueried_ShouldReturnCorrectValue()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.ReturnsTask,
+                        m.IsAsync,
+                        m.FullReturnType
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    where cls.Name = 'AsyncTestClass'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count >= 4, "Should find async test methods");
+        
+        var asyncVoidMethod = result.FirstOrDefault(r => r[0].ToString() == "AsyncVoidMethod");
+        Assert.IsNotNull(asyncVoidMethod);
+        Assert.AreEqual(true, asyncVoidMethod[1], "AsyncVoidMethod should return Task");
+        Assert.AreEqual(true, asyncVoidMethod[2], "AsyncVoidMethod should be async");
+        
+        var syncMethod = result.FirstOrDefault(r => r[0].ToString() == "SyncMethod");
+        Assert.IsNotNull(syncMethod);
+        Assert.AreEqual(false, syncMethod[1], "SyncMethod should not return Task");
+        Assert.AreEqual(false, syncMethod[2], "SyncMethod should not be async");
+    }
+
+    [TestMethod]
+    public void WhenMethodNullableReturnQueried_ShouldReturnCorrectValue()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.IsReturnTypeNullable
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    where m.Name = 'NullableReturnMethod' or m.Name = 'NonNullableReturnMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        var nullableMethod = result.FirstOrDefault(r => r[0].ToString() == "NullableReturnMethod");
+        Assert.IsNotNull(nullableMethod);
+        Assert.AreEqual(true, nullableMethod[1], "NullableReturnMethod should have nullable return");
+        
+        var nonNullableMethod = result.FirstOrDefault(r => r[0].ToString() == "NonNullableReturnMethod");
+        Assert.IsNotNull(nonNullableMethod);
+        Assert.AreEqual(false, nonNullableMethod[1], "NonNullableReturnMethod should not have nullable return");
+    }
+
+    [TestMethod]
+    public void WhenMethodIsPublicApiQueried_ShouldReturnCorrectValue()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.IsPublicApi,
+                        m.Accessibility
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    where cls.Name = 'PublicApiClass'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count >= 3, "Should find methods in PublicApiClass");
+        
+        var publicMethod = result.FirstOrDefault(r => r[0].ToString() == "PublicMethod");
+        Assert.IsNotNull(publicMethod);
+        Assert.AreEqual(true, publicMethod[1], "PublicMethod should be part of public API");
+        
+        var protectedMethod = result.FirstOrDefault(r => r[0].ToString() == "ProtectedMethod");
+        Assert.IsNotNull(protectedMethod);
+        Assert.AreEqual(true, protectedMethod[1], "ProtectedMethod should be part of public API");
+    }
+
+    [TestMethod]
+    public void WhenMethodLocationQueried_ShouldReturnLineNumbers()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.StartLine,
+                        m.EndLine,
+                        m.SourceFilePath,
+                        m.ContainingTypeName,
+                        m.ContainingNamespace
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    where m.Name = 'CallerMethod'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        
+        var method = result[0];
+        Assert.IsTrue((int)method[1] > 0, "StartLine should be positive");
+        Assert.IsTrue((int)method[2] > (int)method[1], "EndLine should be greater than StartLine");
+        Assert.IsTrue(method[3]?.ToString()?.EndsWith(".cs") == true, "SourceFilePath should end with .cs");
+        Assert.AreEqual("CallGraphTestClass", method[4]?.ToString(), "ContainingTypeName should be CallGraphTestClass");
+    }
+
+    [TestMethod]
+    public void WhenClassIsPublicApiQueried_ShouldReturnCorrectValue()
+    {
+        var query = """
+                    select
+                        c.Name,
+                        c.IsPublicApi,
+                        c.PublicMethodCount,
+                        c.StartLine,
+                        c.EndLine
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    where c.Name = 'PublicApiClass' or c.Name = 'InternalApiClass'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(2, result.Count);
+        
+        var publicClass = result.FirstOrDefault(r => r[0].ToString() == "PublicApiClass");
+        Assert.IsNotNull(publicClass);
+        Assert.AreEqual(true, publicClass[1], "PublicApiClass should be part of public API");
+        Assert.IsTrue((int)publicClass[2] >= 1, "Should have at least 1 public method");
+        
+        var internalClass = result.FirstOrDefault(r => r[0].ToString() == "InternalApiClass");
+        Assert.IsNotNull(internalClass);
+        Assert.AreEqual(false, internalClass[1], "InternalApiClass should not be part of public API");
+    }
+
+    [TestMethod]
+    public void WhenDocumentReferencedTypesQueried_ShouldReturnTypes()
+    {
+        var query = """
+                    select
+                        d.Name,
+                        d.ReferencedTypeCount,
+                        d.ReferencedNamespaceCount,
+                        d.ReferencedAssemblyCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    where d.Name = 'TestFeatures.cs'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(1, result.Count);
+        
+        var doc = result[0];
+        Assert.IsTrue((int)doc[1] > 0, "Should reference some types");
+        Assert.IsTrue((int)doc[2] > 0, "Should reference some namespaces");
+        Assert.IsTrue((int)doc[3] > 0, "Should reference some assemblies");
+    }
+
+    [TestMethod]
+    public void WhenDocumentReferencedNamespacesQueried_ShouldReturnNamespaces()
+    {
+        var query = """
+                    select
+                        d.Name,
+                        d.ReferencedNamespaceCount
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    where d.Name = 'TestFeatures.cs'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.IsTrue(result.Count > 0, "Should find document");
+        Assert.IsTrue((int)result[0][1] > 0, "Should reference some namespaces");
     }
 
     static RoslynToSqlTests()

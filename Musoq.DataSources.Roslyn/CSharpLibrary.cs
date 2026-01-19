@@ -161,6 +161,48 @@ public class CSharpLibrary : LibraryBase
     }
 
     /// <summary>
+    /// Gets methods by names from all classes in the solution.
+    /// </summary>
+    /// <param name="entity">Injected solution entity.</param>
+    /// <param name="names">The names of the methods to get.</param>
+    /// <returns>Methods with the specified names.</returns>
+    [BindableMethod]
+    public IEnumerable<MethodEntity> GetMethodsByNames([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params string[] names)
+    {
+        return entity.Projects
+            .SelectMany(p => p.Documents)
+            .SelectMany(d => d.Classes)
+            .SelectMany(c => c.Methods)
+            .Where(m => names.Contains(m.Name));
+    }
+
+    /// <summary>
+    /// Finds references of the specified method entity.
+    /// </summary>
+    /// <param name="entity">The method entity to find references for.</param>
+    /// <returns>References of the specified method entity.</returns>
+    [BindableMethod]
+    public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(MethodEntity))] MethodEntity entity)
+    {
+        if (entity.Solution == null)
+            yield break;
+
+        var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
+        
+        foreach (var reference in references)
+        {
+            if (!reference.Locations.Any())
+                continue;
+            
+            foreach (var location in reference.Locations)
+            {
+                if (location.Document.TryGetSyntaxTree(out var tree) && location.Document.TryGetSemanticModel(out var model))
+                    yield return new ReferencedDocumentEntity(location.Document, entity.Solution, tree, model, location);
+            }
+        }
+    }
+
+    /// <summary>
     /// Finds references of the specified struct entity.
     /// </summary>
     /// <param name="entity">The struct entity to find references for.</param>

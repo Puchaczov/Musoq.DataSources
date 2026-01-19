@@ -497,6 +497,81 @@ public class ClassEntity : TypeEntity
     /// </summary>
     public int UnusedFieldCount => Fields.Count(f => f.IsUsed == false);
 
+    /// <summary>
+    /// Gets a value indicating whether this class is part of the public API (public type).
+    /// </summary>
+    public bool IsPublicApi
+    {
+        get
+        {
+            if (Symbol.DeclaredAccessibility != Accessibility.Public)
+                return false;
+
+            var containingType = Symbol.ContainingType;
+            while (containingType != null)
+            {
+                if (containingType.DeclaredAccessibility != Accessibility.Public)
+                    return false;
+                containingType = containingType.ContainingType;
+            }
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of public methods in the class.
+    /// </summary>
+    public int PublicMethodCount => Methods.Count(m => m.Accessibility == "public");
+
+    /// <summary>
+    /// Gets the count of public properties in the class.
+    /// </summary>
+    public int PublicPropertyCount => Properties.Count(p => p.Accessibility == "public");
+
+    /// <summary>
+    /// Gets a value indicating whether all public members have documentation.
+    /// </summary>
+    public bool HasFullDocumentation
+    {
+        get
+        {
+            var publicMethods = Methods.Where(m => m.Accessibility == "public").ToList();
+            if (publicMethods.Count == 0)
+                return HasDocumentation;
+            
+            return HasDocumentation && publicMethods.All(m => m.HasDocumentation);
+        }
+    }
+
+    /// <summary>
+    /// Gets the start line number of the class in the source file (1-based).
+    /// </summary>
+    public int StartLine
+    {
+        get
+        {
+            var lineSpan = Syntax.SyntaxTree.GetLineSpan(Syntax.Span);
+            return lineSpan.StartLinePosition.Line + 1;
+        }
+    }
+
+    /// <summary>
+    /// Gets the end line number of the class in the source file (1-based).
+    /// </summary>
+    public int EndLine
+    {
+        get
+        {
+            var lineSpan = Syntax.SyntaxTree.GetLineSpan(Syntax.Span);
+            return lineSpan.EndLinePosition.Line + 1;
+        }
+    }
+
+    /// <summary>
+    /// Gets the file path of the source file containing this class.
+    /// </summary>
+    public string? SourceFilePath => Syntax.SyntaxTree.FilePath;
+
     private static HashSet<string> GetUsedFields(MethodDeclarationSyntax method, SemanticModel semanticModel)
     {
         var usedFields = new HashSet<string>();

@@ -188,4 +188,9 @@ public class PropertyEntity
                 .Any(a => a.IsKind(SyntaxKind.InitAccessorDeclaration));
         }
     }
+
+    /// <summary>
+    /// Gets the accessibility of the property (public, private, etc.).
+    /// </summary>
+    public string Accessibility => _propertySymbol.DeclaredAccessibility.ToString().ToLowerInvariant();
 }

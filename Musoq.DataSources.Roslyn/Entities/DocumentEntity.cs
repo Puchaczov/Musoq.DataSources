@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -267,6 +268,146 @@ public class DocumentEntity
                 throw new InvalidOperationException("Document is not initialized.");
 
             return ClassCount + InterfaceCount + EnumCount + StructCount;
+        }
+    }
+
+    /// <summary>
+    /// Gets the distinct types referenced in this document.
+    /// Returns the names of all types that are used in this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
+    public IEnumerable<ReferencedTypeInfo> ReferencedTypes
+    {
+        get
+        {
+            if (!_wasInitialized || _semanticModel == null || _syntaxTree == null)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            var types = new HashSet<(string Name, string Namespace, string Kind)>();
+            
+            foreach (var identifier in _syntaxTree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>())
+            {
+                var symbolInfo = _semanticModel.GetSymbolInfo(identifier);
+                if (symbolInfo.Symbol is INamedTypeSymbol typeSymbol)
+                {
+                    var kind = typeSymbol.TypeKind.ToString();
+                    types.Add((typeSymbol.Name, typeSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty, kind));
+                }
+            }
+            
+            foreach (var typeSyntax in _syntaxTree.GetRoot().DescendantNodes().OfType<TypeSyntax>())
+            {
+                var typeInfo = _semanticModel.GetTypeInfo(typeSyntax);
+                if (typeInfo.Type is INamedTypeSymbol namedType)
+                {
+                    var kind = namedType.TypeKind.ToString();
+                    types.Add((namedType.Name, namedType.ContainingNamespace?.ToDisplayString() ?? string.Empty, kind));
+                }
+            }
+
+            return types.Select(t => new ReferencedTypeInfo(t.Name, t.Namespace, t.Kind));
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of distinct types referenced in this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int ReferencedTypeCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return ReferencedTypes.Count();
+        }
+    }
+
+    /// <summary>
+    /// Gets the distinct namespaces referenced in this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
+    public IEnumerable<string> ReferencedNamespaces
+    {
+        get
+        {
+            if (!_wasInitialized || _semanticModel == null || _syntaxTree == null)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            var namespaces = new HashSet<string>();
+            
+            foreach (var identifier in _syntaxTree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>())
+            {
+                var symbolInfo = _semanticModel.GetSymbolInfo(identifier);
+                if (symbolInfo.Symbol?.ContainingNamespace != null && 
+                    !symbolInfo.Symbol.ContainingNamespace.IsGlobalNamespace)
+                {
+                    namespaces.Add(symbolInfo.Symbol.ContainingNamespace.ToDisplayString());
+                }
+            }
+
+            return namespaces.OrderBy(n => n);
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of distinct namespaces referenced in this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int ReferencedNamespaceCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return ReferencedNamespaces.Count();
+        }
+    }
+
+    /// <summary>
+    /// Gets the external assemblies referenced in this document (non-project references).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
+    public IEnumerable<string> ReferencedAssemblies
+    {
+        get
+        {
+            if (!_wasInitialized || _semanticModel == null || _syntaxTree == null)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            var assemblies = new HashSet<string>();
+            
+            foreach (var identifier in _syntaxTree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>())
+            {
+                var symbolInfo = _semanticModel.GetSymbolInfo(identifier);
+                var containingAssembly = symbolInfo.Symbol?.ContainingAssembly;
+                if (containingAssembly != null)
+                {
+                    assemblies.Add(containingAssembly.Name);
+                }
+            }
+
+            return assemblies.OrderBy(a => a);
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of external assemblies referenced in this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int ReferencedAssemblyCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return ReferencedAssemblies.Count();
         }
     }
 

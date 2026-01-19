@@ -320,3 +320,217 @@ public class StructUser
     public UsedStruct GetStruct() => new UsedStruct { Value = 42 };
 }
 
+/// <summary>
+/// Class for testing call graph features (Callees, IsRecursive)
+/// </summary>
+public class CallGraphTestClass
+{
+    /// <summary>
+    /// Method that calls other methods
+    /// </summary>
+    public void CallerMethod()
+    {
+        HelperMethod1();
+        HelperMethod2();
+        Console.WriteLine("Calling helpers");
+    }
+    
+    /// <summary>
+    /// First helper method
+    /// </summary>
+    public void HelperMethod1()
+    {
+        Console.WriteLine("Helper 1");
+    }
+    
+    /// <summary>
+    /// Second helper method
+    /// </summary>
+    public void HelperMethod2()
+    {
+        Console.WriteLine("Helper 2");
+    }
+    
+    /// <summary>
+    /// Recursive method that calls itself
+    /// </summary>
+    public int RecursiveMethod(int n)
+    {
+        if (n <= 1)
+            return 1;
+        return n * RecursiveMethod(n - 1);
+    }
+    
+    /// <summary>
+    /// Non-recursive method
+    /// </summary>
+    public int NonRecursiveMethod(int n)
+    {
+        return n * 2;
+    }
+}
+
+/// <summary>
+/// Base class for override testing
+/// </summary>
+public class BaseClassForOverride
+{
+    /// <summary>
+    /// Virtual method to be overridden
+    /// </summary>
+    public virtual void VirtualMethod()
+    {
+        Console.WriteLine("Base implementation");
+    }
+    
+    /// <summary>
+    /// Another virtual method
+    /// </summary>
+    public virtual string GetValue() => "Base";
+}
+
+/// <summary>
+/// Derived class that overrides methods
+/// </summary>
+public class DerivedClassWithOverride : BaseClassForOverride
+{
+    /// <summary>
+    /// Overridden virtual method
+    /// </summary>
+    public override void VirtualMethod()
+    {
+        Console.WriteLine("Derived implementation");
+    }
+    
+    /// <summary>
+    /// Overridden GetValue
+    /// </summary>
+    public override string GetValue() => "Derived";
+}
+
+/// <summary>
+/// Interface for implementation testing
+/// </summary>
+public interface ITestInterface
+{
+    /// <summary>
+    /// Interface method
+    /// </summary>
+    void InterfaceMethodToImplement();
+    
+    /// <summary>
+    /// Another interface method
+    /// </summary>
+    string GetInterfaceValue();
+}
+
+/// <summary>
+/// Class that implements ITestInterface
+/// </summary>
+public class InterfaceImplementorClass : ITestInterface
+{
+    /// <summary>
+    /// Implementation of interface method
+    /// </summary>
+    public void InterfaceMethodToImplement()
+    {
+        Console.WriteLine("Implemented");
+    }
+    
+    /// <summary>
+    /// Implementation of GetInterfaceValue
+    /// </summary>
+    public string GetInterfaceValue() => "Interface Value";
+}
+
+/// <summary>
+/// Class for testing async/Task return types
+/// </summary>
+public class AsyncTestClass
+{
+    /// <summary>
+    /// Async method returning Task
+    /// </summary>
+    public async Task AsyncVoidMethod()
+    {
+        await Task.Delay(100);
+    }
+    
+    /// <summary>
+    /// Async method returning Task of int
+    /// </summary>
+    public async Task<int> AsyncIntMethod()
+    {
+        await Task.Delay(100);
+        return 42;
+    }
+    
+    /// <summary>
+    /// Sync method returning Task (not async)
+    /// </summary>
+    public Task SyncTaskMethod()
+    {
+        return Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// Regular sync method
+    /// </summary>
+    public int SyncMethod()
+    {
+        return 42;
+    }
+    
+    /// <summary>
+    /// Method with nullable return type
+    /// </summary>
+    public string? NullableReturnMethod()
+    {
+        return null;
+    }
+    
+    /// <summary>
+    /// Method with non-nullable return type
+    /// </summary>
+    public string NonNullableReturnMethod()
+    {
+        return "value";
+    }
+}
+
+/// <summary>
+/// Public API class for testing IsPublicApi
+/// </summary>
+public class PublicApiClass
+{
+    /// <summary>
+    /// Public method - part of public API
+    /// </summary>
+    public void PublicMethod() { }
+    
+    /// <summary>
+    /// Private method - not part of public API
+    /// </summary>
+    private void PrivateMethod() { }
+    
+    /// <summary>
+    /// Internal method - not part of public API
+    /// </summary>
+    internal void InternalMethod() { }
+    
+    /// <summary>
+    /// Protected method - part of public API
+    /// </summary>
+    protected void ProtectedMethod() { }
+}
+
+/// <summary>
+/// Internal class for testing IsPublicApi
+/// </summary>
+internal class InternalApiClass
+{
+    /// <summary>
+    /// Public method in internal class - not part of public API
+    /// </summary>
+    public void PublicMethodInInternalClass() { }
+}
