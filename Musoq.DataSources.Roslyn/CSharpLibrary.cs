@@ -67,7 +67,7 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(ClassEntity))] ClassEntity entity)
     {
-        var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
+        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
         
         foreach (var reference in references)
         {
@@ -90,7 +90,7 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(InterfaceEntity))] InterfaceEntity entity)
     {
-        var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
+        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
         
         foreach (var reference in references)
         {
@@ -113,7 +113,7 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(EnumEntity))] EnumEntity entity)
     {
-        var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
+        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
         
         foreach (var reference in references)
         {
@@ -141,11 +141,8 @@ public class CSharpLibrary : LibraryBase
         
         if (nugetPackageEntities != null)
             return nugetPackageEntities;
-            
-        var taskGetNugetPackages = Task.Run(async () => await GetNugetPackagesAsync(project, withTransitivePackages), project.CancellationToken);
-        taskGetNugetPackages.Wait();
-        
-        return taskGetNugetPackages.Result;
+
+        return RoslynAsyncHelper.RunSync(GetNugetPackagesAsync(project, withTransitivePackages));
     }
 
     /// <summary>
@@ -187,7 +184,7 @@ public class CSharpLibrary : LibraryBase
         if (entity.Solution == null)
             yield break;
 
-        var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
+        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
         
         foreach (var reference in references)
         {
@@ -210,7 +207,7 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(StructEntity))] StructEntity entity)
     {
-        var references = SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution).Result;
+        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
         
         foreach (var reference in references)
         {
@@ -234,7 +231,7 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ClassEntity> FindImplementations([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, InterfaceEntity interfaceEntity)
     {
-        var implementations = SymbolFinder.FindImplementationsAsync(interfaceEntity.Symbol, interfaceEntity.Solution).Result;
+        var implementations = RoslynAsyncHelper.RunSync(SymbolFinder.FindImplementationsAsync(interfaceEntity.Symbol, interfaceEntity.Solution));
         
         foreach (var implementation in implementations)
         {
@@ -248,10 +245,13 @@ public class CSharpLibrary : LibraryBase
                     continue;
                     
                 var tree = syntax.SyntaxTree;
-                var compilation = interfaceEntity.Solution.Projects
+                var documentForModel = interfaceEntity.Solution.Projects
                     .SelectMany(p => p.Documents)
-                    .FirstOrDefault(d => d.FilePath == tree.FilePath)
-                    ?.GetSemanticModelAsync().Result;
+                    .FirstOrDefault(d => d.FilePath == tree.FilePath);
+
+                var compilation = documentForModel == null
+                    ? null
+                    : RoslynAsyncHelper.RunSync(documentForModel.GetSemanticModelAsync());
                     
                 if (compilation == null)
                     continue;
@@ -277,7 +277,7 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ClassEntity> FindDerivedClasses([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, ClassEntity classEntity)
     {
-        var derivedClasses = SymbolFinder.FindDerivedClassesAsync(classEntity.Symbol, classEntity.Solution).Result;
+        var derivedClasses = RoslynAsyncHelper.RunSync(SymbolFinder.FindDerivedClassesAsync(classEntity.Symbol, classEntity.Solution));
         
         foreach (var derived in derivedClasses)
         {
@@ -295,7 +295,7 @@ public class CSharpLibrary : LibraryBase
                 if (document == null)
                     continue;
                     
-                var semanticModel = document.GetSemanticModelAsync().Result;
+                var semanticModel = RoslynAsyncHelper.RunSync(document.GetSemanticModelAsync());
                 if (semanticModel == null)
                     continue;
                     

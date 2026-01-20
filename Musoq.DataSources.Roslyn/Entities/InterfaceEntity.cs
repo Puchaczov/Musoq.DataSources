@@ -75,7 +75,7 @@ public class InterfaceEntity : TypeEntity
     {
         get
         {
-            var references = SymbolFinder.FindReferencesAsync(Symbol, Solution).Result;
+            var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(Symbol, Solution));
             return references.Sum(r => r.Locations.Count());
         }
     }

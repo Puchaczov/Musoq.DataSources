@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
+using Musoq.DataSources.Roslyn;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -453,7 +454,7 @@ public class MethodEntity
             if (_solution == null)
                 return null;
 
-            var references = SymbolFinder.FindReferencesAsync(_methodSymbol, _solution).Result;
+            var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(_methodSymbol, _solution));
             return references.Sum(r => r.Locations.Count());
         }
     }
