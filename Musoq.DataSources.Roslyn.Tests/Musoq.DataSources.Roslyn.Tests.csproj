@@ -10,7 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="coverlet.collector" Version="6.0.0" />
         <PackageReference Include="JetBrains.Profiler.Api" Version="1.4.8" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
@@ -20,16 +20,18 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
         <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
-        <PackageReference Include="Musoq.Converter" Version="5.3.2" />
-        <PackageReference Include="Musoq.Evaluator" Version="10.3.1" />
-        <PackageReference Include="Musoq.Schema" Version="10.3.1" />
+        <PackageReference Include="Musoq.Converter" Version="6.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="11.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="6.0.0" />
+        <PackageReference Include="Musoq.Plugins" Version="9.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="11.0.0" />
         <PackageReference Include="NUnit" Version="3.14.0" />
-        <PackageReference Include="NUnit.Analyzers" Version="3.9.0"/>
-        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
+        <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
+        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
     </ItemGroup>
 
     <ItemGroup>

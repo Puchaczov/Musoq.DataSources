@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.7.4</Version>
+        <Version>1.8.0</Version>
         <Authors>Jakub Pucha�a</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query repos, commits, branches, and history with SQL-style queries for audits, metrics, and change tracking.</Description>
@@ -20,22 +20,24 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
     </ItemGroup>
 
     <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
         <ItemGroup>
-            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')"/>
+            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
         </ItemGroup>
     </Target>
 
     <ItemGroup>
         <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
-        <PackageReference Include="Musoq.Parser" Version="5.9.1">
+        <PackageReference Include="Musoq.Converter" Version="6.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="11.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="6.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.6.1" />
-        <PackageReference Include="Musoq.Schema" Version="10.3.1">
+        <PackageReference Include="Musoq.Plugins" Version="9.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="11.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>

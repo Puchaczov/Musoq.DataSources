@@ -2,6 +2,7 @@
 using Musoq.Parser;
 using Musoq.Parser.Nodes;
 using Musoq.Parser.Nodes.From;
+using Musoq.Parser.Nodes.InterpretationSchema;
 
 namespace Musoq.DataSources.Postgres.Visitors;
 
@@ -496,6 +497,141 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
     }
 
     public void Visit(FieldLinkNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(BitwiseAndNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(BitwiseOrNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(BitwiseXorNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(LeftShiftNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(RightShiftNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(InterpretFromNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(InterpretCallNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(ParseCallNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(InterpretAtCallNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(TryInterpretCallNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(TryParseCallNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(PartialInterpretCallNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(BinarySchemaNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(TextSchemaNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(FieldDefinitionNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(TextFieldDefinitionNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(ComputedFieldNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(FieldConstraintNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(PrimitiveTypeNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(ByteArrayTypeNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(StringTypeNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(SchemaReferenceTypeNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(ArrayTypeNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(BitsTypeNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(AlignmentNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(RepeatUntilTypeNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(InlineSchemaTypeNode node)
     {
         throw new NotImplementedException();
     }

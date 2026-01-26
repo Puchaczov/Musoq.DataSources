@@ -3,7 +3,7 @@
       <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>8.3.4</Version>
+        <Version>8.4.0</Version>
         <Authors>Jakub Puchaa</Authors>
     <Product>Musoq</Product>
     <Description>Lets you query JSON files and data with SQL-style queries, flattening nested structures into rows and columns.</Description>
@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
   </ItemGroup>
 
   <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
@@ -28,19 +28,21 @@
   </Target>
 
   <ItemGroup>
+    <PackageReference Include="Musoq.Converter" Version="6.0.0" />
+    <PackageReference Include="Musoq.Evaluator" Version="11.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="Musoq.Parser" Version="5.9.1">
+    <PackageReference Include="Musoq.Parser" Version="6.0.0">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Musoq.Plugins" Version="8.6.1" />
-    <PackageReference Include="Musoq.Schema" Version="10.3.1">
+    <PackageReference Include="Musoq.Plugins" Version="9.0.0" />
+    <PackageReference Include="Musoq.Schema" Version="11.0.0">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Musoq.DataSources.JsonHelpers\Musoq.DataSources.JsonHelpers.csproj"  />
+    <ProjectReference Include="..\Musoq.DataSources.JsonHelpers\Musoq.DataSources.JsonHelpers.csproj" />
   </ItemGroup>
 
 </Project>

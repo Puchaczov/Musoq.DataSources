@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>5.3.4</Version>
+        <Version>5.4.0</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query PostgreSQL databases with SQL-style queries through Musoq, useful for combining Postgres data with other sources.</Description>
@@ -21,7 +21,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
     </ItemGroup>
 
     <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
@@ -33,11 +33,13 @@
     <ItemGroup>
         <PackageReference Include="Dapper" Version="2.1.35" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="5.9.1">
+        <PackageReference Include="Musoq.Converter" Version="6.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="11.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="6.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.6.1" />
-        <PackageReference Include="Musoq.Schema" Version="10.3.1">
+        <PackageReference Include="Musoq.Plugins" Version="9.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="11.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Npgsql" Version="8.0.3" />
