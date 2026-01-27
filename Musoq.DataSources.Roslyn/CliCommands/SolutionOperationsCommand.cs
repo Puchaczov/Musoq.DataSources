@@ -49,14 +49,21 @@ internal class SolutionOperationsCommand(ILogger logger)
         
         logger.LogTrace("Initializing solution");
         
-        await Parallel.ForEachAsync(solution.Projects, cancellationToken, async (project, outerToken) =>
+        try
         {
-            await Parallel.ForEachAsync(project.Documents, outerToken, async (document, innerToken) =>
+            await Parallel.ForEachAsync(solution.Projects, cancellationToken, async (project, outerToken) =>
             {
-                await document.GetSyntaxTreeAsync(innerToken);
-                await document.GetSemanticModelAsync(innerToken);
+                await Parallel.ForEachAsync(project.Documents, outerToken, async (document, innerToken) =>
+                {
+                    await document.GetSyntaxTreeAsync(innerToken);
+                    await document.GetSemanticModelAsync(innerToken);
+                });
             });
-        });
+        }
+        catch (MissingMethodException ex)
+        {
+            throw RoslynVersionHelper.CreateVersionMismatchException(ex, "SolutionOperationsCommand.InitializeSolutionAsync");
+        }
 
         Solutions.TryAdd(solutionFilePath, solution);
         RateLimitingOptions ??= await ReadDomainRateLimitingOptionsAsync(cancellationToken);

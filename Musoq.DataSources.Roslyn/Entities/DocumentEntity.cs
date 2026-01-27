@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -417,9 +418,16 @@ public class DocumentEntity
     /// <returns>A task that represents the asynchronous initialization operation.</returns>
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        _syntaxTree = await _document.GetSyntaxTreeAsync(cancellationToken);
-        _semanticModel = await _document.GetSemanticModelAsync(cancellationToken);
-        _wasInitialized = true;
+        try
+        {
+            _syntaxTree = await _document.GetSyntaxTreeAsync(cancellationToken);
+            _semanticModel = await _document.GetSemanticModelAsync(cancellationToken);
+            _wasInitialized = true;
+        }
+        catch (MissingMethodException ex)
+        {
+            throw RoslynVersionHelper.CreateVersionMismatchException(ex, "DocumentEntity.InitializeAsync");
+        }
     }
 
     /// <summary>
