@@ -12,7 +12,7 @@
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
         <PackageReference Include="Musoq.Converter" Version="6.0.0" />
         <PackageReference Include="Musoq.Evaluator" Version="11.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="6.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="6.0.1" />
         <PackageReference Include="Musoq.Plugins" Version="9.0.0" />
         <PackageReference Include="Musoq.Schema" Version="11.0.0" />
     </ItemGroup>

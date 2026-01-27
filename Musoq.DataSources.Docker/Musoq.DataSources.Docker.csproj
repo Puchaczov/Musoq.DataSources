@@ -35,7 +35,7 @@
       <PackageReference Include="Docker.DotNet" Version="3.125.15" />
       <PackageReference Include="Musoq.Converter" Version="6.0.0" />
       <PackageReference Include="Musoq.Evaluator" Version="11.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="6.0.0">
+        <PackageReference Include="Musoq.Parser" Version="6.0.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Musoq.Plugins" Version="9.0.0" />

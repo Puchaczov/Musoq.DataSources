@@ -39,7 +39,7 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="OllamaSharp" Version="5.0.4" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="6.0.0">
+        <PackageReference Include="Musoq.Parser" Version="6.0.1">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Musoq.Plugins" Version="9.0.0" />

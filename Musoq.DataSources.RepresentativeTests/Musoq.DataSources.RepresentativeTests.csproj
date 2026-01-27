@@ -14,7 +14,7 @@
     <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
     <PackageReference Include="Musoq.Converter" Version="6.0.0" />
     <PackageReference Include="Musoq.Evaluator" Version="11.0.0" />
-    <PackageReference Include="Musoq.Parser" Version="6.0.0" />
+    <PackageReference Include="Musoq.Parser" Version="6.0.1" />
     <PackageReference Include="Musoq.Plugins" Version="9.0.0" />
     <PackageReference Include="Musoq.Schema" Version="11.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
