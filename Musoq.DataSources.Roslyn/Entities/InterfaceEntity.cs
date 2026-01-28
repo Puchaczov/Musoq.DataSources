@@ -70,13 +70,18 @@ public class InterfaceEntity : TypeEntity
 
     /// <summary>
     /// Gets the number of references to this interface in the solution.
+    /// Returns -1 if the operation times out.
     /// </summary>
     public int ReferenceCount
     {
         get
         {
-            var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(Symbol, Solution));
-            return references.Sum(r => r.Locations.Count());
+            var references = RoslynAsyncHelper.RunSyncWithTimeout(
+                ct => SymbolFinder.FindReferencesAsync(Symbol, Solution, ct)!,
+                RoslynAsyncHelper.DefaultReferenceTimeout,
+                defaultValue: null);
+            
+            return references?.Sum(r => r.Locations.Count()) ?? -1;
         }
     }
 

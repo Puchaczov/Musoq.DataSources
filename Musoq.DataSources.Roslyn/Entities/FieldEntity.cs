@@ -110,7 +110,7 @@ public class FieldEntity
 
     /// <summary>
     /// Gets the number of references to this field in the solution.
-    /// Returns null if the solution context is not available.
+    /// Returns null if the solution context is not available or if the operation times out.
     /// </summary>
     public int? ReferenceCount
     {
@@ -119,8 +119,12 @@ public class FieldEntity
             if (_solution == null)
                 return null;
 
-            var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(_fieldSymbol, _solution));
-            return references.Sum(r => r.Locations.Count());
+            var references = RoslynAsyncHelper.RunSyncWithTimeout(
+                ct => SymbolFinder.FindReferencesAsync(_fieldSymbol, _solution, ct)!,
+                RoslynAsyncHelper.DefaultReferenceTimeout,
+                defaultValue: null);
+            
+            return references?.Sum(r => r.Locations.Count());
         }
     }
 
@@ -149,9 +153,8 @@ public class FieldEntity
         get
         {
             var syntaxRef = _fieldSymbol.DeclaringSyntaxReferences.FirstOrDefault();
-            var fieldDeclaration = syntaxRef?.GetSyntax()?.Parent?.Parent as FieldDeclarationSyntax;
-            
-            if (fieldDeclaration == null)
+
+            if (syntaxRef?.GetSyntax()?.Parent?.Parent is not FieldDeclarationSyntax fieldDeclaration)
                 return [];
 
             return fieldDeclaration.Modifiers

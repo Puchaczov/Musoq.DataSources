@@ -111,8 +111,7 @@ public class MethodEntity
         get
         {
             var syntaxReference = _methodSymbol.DeclaringSyntaxReferences.FirstOrDefault();
-            var methodDeclaration = syntaxReference?.GetSyntax() as MethodDeclarationSyntax;
-            if (methodDeclaration == null)
+            if (syntaxReference?.GetSyntax() is not MethodDeclarationSyntax methodDeclaration)
                 return string.Empty;
 
             var stripped = methodDeclaration.WithoutLeadingTrivia();
@@ -384,8 +383,7 @@ public class MethodEntity
             {
                 foreach (var variable in declaration.Declaration.Variables)
                 {
-                    var symbol = _semanticModel.GetDeclaredSymbol(variable) as ILocalSymbol;
-                    if (symbol != null)
+                    if (_semanticModel.GetDeclaredSymbol(variable) is ILocalSymbol symbol)
                     {
                         variables.Add(new VariableEntity(symbol, variable, _semanticModel, _methodDeclaration.Body));
                     }
@@ -445,7 +443,7 @@ public class MethodEntity
 
     /// <summary>
     /// Gets the number of references to this method in the solution.
-    /// Returns null if the solution context is not available.
+    /// Returns null if the solution context is not available or if the operation times out.
     /// </summary>
     public int? ReferenceCount
     {
@@ -454,8 +452,12 @@ public class MethodEntity
             if (_solution == null)
                 return null;
 
-            var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(_methodSymbol, _solution));
-            return references.Sum(r => r.Locations.Count());
+            var references = RoslynAsyncHelper.RunSyncWithTimeout(
+                ct => SymbolFinder.FindReferencesAsync(_methodSymbol, _solution, ct)!,
+                RoslynAsyncHelper.DefaultReferenceTimeout,
+                defaultValue: null);
+            
+            return references?.Sum(r => r.Locations.Count());
         }
     }
 
@@ -491,6 +493,7 @@ public class MethodEntity
                 .OfType<InvocationExpressionSyntax>();
 
             var callees = new List<CalledMethodInfo>();
+            
             foreach (var invocation in invocations)
             {
                 var symbolInfo = _semanticModel.GetSymbolInfo(invocation);

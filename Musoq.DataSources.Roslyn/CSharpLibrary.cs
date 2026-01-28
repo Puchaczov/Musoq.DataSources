@@ -67,7 +67,13 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(ClassEntity))] ClassEntity entity)
     {
-        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
+        var references = RoslynAsyncHelper.RunSyncWithTimeout(
+            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
+            RoslynAsyncHelper.DefaultReferenceTimeout,
+            defaultValue: null);
+        
+        if (references == null)
+            yield break;
         
         foreach (var reference in references)
         {
@@ -90,7 +96,13 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(InterfaceEntity))] InterfaceEntity entity)
     {
-        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
+        var references = RoslynAsyncHelper.RunSyncWithTimeout(
+            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
+            RoslynAsyncHelper.DefaultReferenceTimeout,
+            defaultValue: null);
+        
+        if (references == null)
+            yield break;
         
         foreach (var reference in references)
         {
@@ -113,7 +125,13 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(EnumEntity))] EnumEntity entity)
     {
-        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
+        var references = RoslynAsyncHelper.RunSyncWithTimeout(
+            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
+            RoslynAsyncHelper.DefaultReferenceTimeout,
+            defaultValue: null);
+        
+        if (references == null)
+            yield break;
         
         foreach (var reference in references)
         {
@@ -184,7 +202,13 @@ public class CSharpLibrary : LibraryBase
         if (entity.Solution == null)
             yield break;
 
-        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
+        var references = RoslynAsyncHelper.RunSyncWithTimeout(
+            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
+            RoslynAsyncHelper.DefaultReferenceTimeout,
+            defaultValue: null);
+        
+        if (references == null)
+            yield break;
         
         foreach (var reference in references)
         {
@@ -207,7 +231,13 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences([InjectSpecificSource(typeof(StructEntity))] StructEntity entity)
     {
-        var references = RoslynAsyncHelper.RunSync(SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution));
+        var references = RoslynAsyncHelper.RunSyncWithTimeout(
+            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
+            RoslynAsyncHelper.DefaultReferenceTimeout,
+            defaultValue: null);
+        
+        if (references == null)
+            yield break;
         
         foreach (var reference in references)
         {
