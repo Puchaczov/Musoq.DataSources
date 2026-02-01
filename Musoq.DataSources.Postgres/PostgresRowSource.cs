@@ -29,15 +29,15 @@ internal class PostgresRowSource : DatabaseRowSource
         var queryBuilder = new StringBuilder();
 
         queryBuilder.Append("SELECT");
-        queryBuilder.Append(string.Join(",", _runtimeContext.QueryInformation.Columns.Select(f => $" \"{f.ColumnName}\"")));
+        queryBuilder.Append(string.Join(",", _runtimeContext.QuerySourceInfo.Columns.Select(f => $" \"{f.ColumnName}\"")));
         queryBuilder.Append(" FROM ");
-        queryBuilder.Append($"{_schema}.\"{_runtimeContext.QueryInformation.FromNode.Method}\"");
+        queryBuilder.Append($"{_schema}.\"{_runtimeContext.QuerySourceInfo.FromNode.Method}\"");
         queryBuilder.Append(" WHERE ");
         
         var visitor = new ToStringWhereQueryPartVisitor();
         var traverser = new ToStringWhereQueryPartTraverseVisitor(visitor);
         
-        _runtimeContext.QueryInformation.WhereNode.Accept(traverser);
+        _runtimeContext.QuerySourceInfo.WhereNode.Accept(traverser);
         
         queryBuilder.Append(visitor.StringifiedWherePart);
         

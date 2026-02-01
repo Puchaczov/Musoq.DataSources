@@ -24,7 +24,7 @@ internal class AirtableBaseRowSource : RowSourceBase<AirtableTable>
         
         try
         {
-            foreach (var tables in _airtableApi.GetTables(_runtimeContext.QueryInformation.Columns.Select(f => f.ColumnName)))
+            foreach (var tables in _airtableApi.GetTables(_runtimeContext.QuerySourceInfo.Columns.Select(f => f.ColumnName)))
             {
                 var chunk = tables
                     .Select(@base => new EntityResolver<AirtableTable>(@base, AirtableBaseHelper.BasesNameToIndexMap, AirtableBaseHelper.BasesIndexToMethodAccessMap))

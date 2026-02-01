@@ -671,7 +671,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                     tokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object)
             };
 
@@ -709,7 +709,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                 tokenSource.Token, 
                 columns, 
                 new Dictionary<string, string>(),
-                (null, null, null, false),
+                QuerySourceInfo.Empty,
                 mockLogger.Object);
 
             var source = new SeparatedValuesFromFileRowsSource("./Files/AllTypes.csv", ",", true, 0, tokenSource.Token)
@@ -773,7 +773,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object)
             };
 

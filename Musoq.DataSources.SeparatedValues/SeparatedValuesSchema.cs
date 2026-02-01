@@ -82,17 +82,17 @@ namespace Musoq.DataSources.SeparatedValues
             switch (name.ToLowerInvariant())
             {
                 case "comma":
-                    if (runtimeContext.QueryInformation.HasExternallyProvidedTypes)
+                    if (runtimeContext.QuerySourceInfo.HasExternallyProvidedTypes)
                         return new InitiallyInferredTable(runtimeContext.AllColumns);
                     
                     return new SeparatedValuesTable((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
                 case "tab":
-                    if (runtimeContext.QueryInformation.HasExternallyProvidedTypes)
+                    if (runtimeContext.QuerySourceInfo.HasExternallyProvidedTypes)
                         return new InitiallyInferredTable(runtimeContext.AllColumns);
                     
                     return new SeparatedValuesTable((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };
                 case "semicolon":
-                    if (runtimeContext.QueryInformation.HasExternallyProvidedTypes)
+                    if (runtimeContext.QuerySourceInfo.HasExternallyProvidedTypes)
                         return new InitiallyInferredTable(runtimeContext.AllColumns);
                     
                     return new SeparatedValuesTable((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2]) { InferredColumns = runtimeContext.AllColumns };

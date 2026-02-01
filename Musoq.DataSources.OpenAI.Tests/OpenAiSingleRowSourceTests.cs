@@ -30,7 +30,7 @@ public class OpenAiSingleRowSourceTests
                 {
                     {"OPENAI_API_KEY", "OPENAI_API_KEY"}
                 },
-                (null, null, null, false),
+                QuerySourceInfo.Empty,
                 mockLogger.Object), new OpenAiRequestInfo()
             {
                 Model = ModelName

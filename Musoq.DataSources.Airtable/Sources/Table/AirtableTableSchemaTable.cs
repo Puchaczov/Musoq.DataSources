@@ -30,7 +30,7 @@ internal class AirtableTableSchemaTable : ISchemaTable
             var index = 0;
 
             _columns = _api.GetColumns(
-                _runtimeContext.QueryInformation.Columns.Select(f => f.ColumnName)
+                _runtimeContext.QuerySourceInfo.Columns.Select(f => f.ColumnName)
             ).Select(field => new SchemaColumn(field.Name, index++, ConvertToCsharpType(field)))
                 .Cast<ISchemaColumn>()
                 .ToArray();

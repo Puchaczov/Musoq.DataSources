@@ -7,11 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Converter" Version="6.0.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="11.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="6.0.1" />
-        <PackageReference Include="Musoq.Plugins" Version="9.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="11.0.0" />
+        <PackageReference Include="Musoq.Converter" Version="7.0.2" />
+        <PackageReference Include="Musoq.Evaluator" Version="12.0.2" />
+        <PackageReference Include="Musoq.Parser" Version="7.0.0" />
+        <PackageReference Include="Musoq.Plugins" Version="10.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="12.0.0" />
         <PackageReference Include="Spectre.Console.Cli" Version="0.49.1" />
         <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
     </ItemGroup>

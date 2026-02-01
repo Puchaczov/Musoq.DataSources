@@ -73,7 +73,7 @@ namespace Musoq.Schema.FlatFile.Tests
                     endWorkTokenSource.Token, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var fires = schema.Rows.Count();
@@ -91,7 +91,7 @@ namespace Musoq.Schema.FlatFile.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var fires = schema.Rows.Count();

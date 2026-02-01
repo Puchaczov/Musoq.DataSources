@@ -95,7 +95,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false), mockLogger.Object));
+                    QuerySourceInfo.Empty, mockLogger.Object));
 
             var folders = source.GetFiles();
 
@@ -115,7 +115,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var folders = source.GetFiles();
@@ -139,7 +139,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var directories = source.GetDirectories();
@@ -161,7 +161,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var directories = source.GetDirectories();
@@ -184,7 +184,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var directories = source.GetDirectories();
@@ -203,7 +203,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var directories = source.GetFiles();
@@ -223,7 +223,7 @@ namespace Musoq.DataSources.Os.Tests
                 tokenSource.Token, 
                 Array.Empty<ISchemaColumn>(), 
                 new Dictionary<string, string>(),
-                (null, null, null, false),
+                QuerySourceInfo.Empty,
                 mockLogger.Object));
 
             var fired = source.Rows.Count();
@@ -241,7 +241,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var fired = source.Rows.Count();
@@ -338,7 +338,7 @@ namespace Musoq.DataSources.Os.Tests
                 tokenSource.Token, 
                 Array.Empty<ISchemaColumn>(), 
                 new Dictionary<string, string>(),
-                (null, null, null, false),
+                QuerySourceInfo.Empty,
                 mockLogger.Object));
 
             var fired = source.Rows.Count();
@@ -356,7 +356,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var fired = source.Rows.Count();
@@ -374,7 +374,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var rows = source.Rows.ToArray();
@@ -408,7 +408,7 @@ namespace Musoq.DataSources.Os.Tests
                     CancellationToken.None, 
                     Array.Empty<ISchemaColumn>(), 
                     new Dictionary<string, string>(),
-                    (null, null, null, false),
+                    QuerySourceInfo.Empty,
                     mockLogger.Object));
 
             var rows = source.Rows.ToArray();

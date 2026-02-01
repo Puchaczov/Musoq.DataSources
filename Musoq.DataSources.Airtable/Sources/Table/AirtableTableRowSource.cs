@@ -23,7 +23,7 @@ internal class AirtableTableRowSource : RowSourceBase<dynamic>
         
         try
         {
-            var columns = _runtimeContext.QueryInformation.Columns.Select(f => f.ColumnName).ToArray();
+            var columns = _runtimeContext.QuerySourceInfo.Columns.Select(f => f.ColumnName).ToArray();
             var columnsHashSet = new HashSet<string>(columns.Distinct());
         
             using var enumeratorChunks = _api.GetRecordsChunks(columns).GetEnumerator();

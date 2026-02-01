@@ -24,7 +24,7 @@ public abstract class DatabaseTable : ISchemaTable
         DatabaseHelpers.GetDataFromDatabase(
             blockingCollection,
             () => CreateConnection(_runtimeContext),
-            () => CreateQueryCommand(_runtimeContext.QueryInformation.FromNode.Method),
+            () => CreateQueryCommand(_runtimeContext.QuerySourceInfo.FromNode.Method),
             (query, connection) => returnQuery?.Invoke() ?? connection.Query(query),
             _runtimeContext.EndWorkToken);
         

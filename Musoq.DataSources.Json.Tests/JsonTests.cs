@@ -112,7 +112,7 @@ namespace Musoq.DataSources.Json.Tests
                 tokenSource.Token,
                 Array.Empty<ISchemaColumn>(),
                 new Dictionary<string, string>(),
-                (null, null, null, false),
+                QuerySourceInfo.Empty,
                 mockLogger.Object);
             var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
 
@@ -130,7 +130,7 @@ namespace Musoq.DataSources.Json.Tests
                 CancellationToken.None,
                 Array.Empty<ISchemaColumn>(),
                 new Dictionary<string, string>(),
-                (null, null, null, false),
+                QuerySourceInfo.Empty,
                 mockLogger.Object);
             var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
 

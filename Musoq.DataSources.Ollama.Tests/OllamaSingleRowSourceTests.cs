@@ -30,7 +30,7 @@ public class OllamaSingleRowSourceTests
                 CancellationToken.None,
                 Array.Empty<ISchemaColumn>(),
                 new Dictionary<string, string>(),
-                (null, null, null, false), mockLogger.Object), new OllamaRequestInfo
+                QuerySourceInfo.Empty, mockLogger.Object), new OllamaRequestInfo
             {
                 Model = "test-model",
                 Temperature = 0,
