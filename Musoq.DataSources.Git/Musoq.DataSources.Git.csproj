@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.8.0</Version>
+        <Version>1.8.1</Version>
         <Authors>Jakub Pucha�a</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query repos, commits, branches, and history with SQL-style queries for audits, metrics, and change tracking.</Description>

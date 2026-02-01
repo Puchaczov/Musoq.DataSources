@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>5.4.0</Version>
+        <Version>5.4.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you connect to SQLite databases and run SQL-style queries from Musoq, ideal for lightweight local data exploration.</Description>

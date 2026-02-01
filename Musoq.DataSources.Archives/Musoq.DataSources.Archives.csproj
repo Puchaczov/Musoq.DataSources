@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>5.4.0</Version>
+        <Version>5.4.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query ZIP, TAR, and other archives with SQL-style queries, exposing file lists and metadata as rows.</Description>

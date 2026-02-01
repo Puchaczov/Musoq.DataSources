@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>5.4.0</Version>
+        <Version>5.4.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query PostgreSQL databases with SQL-style queries through Musoq, useful for combining Postgres data with other sources.</Description>

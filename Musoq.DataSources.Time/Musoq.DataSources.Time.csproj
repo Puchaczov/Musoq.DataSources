@@ -3,7 +3,7 @@
   <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>7.4.0</Version>
+        <Version>7.4.1</Version>
         <Authors>Jakub Puchaa</Authors>
     <Product>Musoq</Product>
     <Description>Lets you generate dates, ranges, and time series, then query them with SQL-style queries to drive reports, schedules, and time-based joins.</Description>
