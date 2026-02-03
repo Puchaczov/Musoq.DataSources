@@ -191,6 +191,7 @@ public class CSharpSchema : SchemaBase
     /// <column name="HasBody" type="bool">Whether the method has an implementation body</column>
     /// <column name="IsEmpty" type="bool">Whether the method has a body but contains no statements</column>
     /// <column name="BodyContainsOnlyTrivia" type="bool">Whether the method body contains only comments and/or whitespace</column>
+    /// <column name="LocalFunctions" type="LocalFunctionEntity[]">Local functions defined within this method</column>
     /// <column name="ReferenceCount" type="int?">Number of references to the method (null if unavailable)</column>
     /// <column name="IsUsed" type="bool?">Whether the method is referenced (null if unavailable)</column>
     /// </columns>

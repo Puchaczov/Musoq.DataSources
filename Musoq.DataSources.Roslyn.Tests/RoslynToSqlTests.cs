@@ -1446,6 +1446,52 @@ where c.Name = 'Class1'
     }
 
     [TestMethod]
+    public void WhenLocalFunctionsQueried_ShouldReturnLocalFunctions()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        lf.Name,
+                        lf.ReturnType,
+                        lf.IsAsync,
+                        lf.IsStatic
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects proj 
+                    cross apply proj.Documents d 
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.LocalFunctions lf
+                    where c.Name = 'CallGraphTestClass' and m.Name = 'MethodWithLocalFunctions'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+        
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+        
+        Assert.AreEqual(3, result.Count);
+        
+        // LocalAdd should be present
+        var localAdd = result.FirstOrDefault(r => r[1].ToString() == "LocalAdd");
+        Assert.IsNotNull(localAdd);
+        Assert.AreEqual("Int32", localAdd[2].ToString()); // ReturnType
+        Assert.AreEqual(false, localAdd[3]); // IsAsync
+        Assert.AreEqual(false, localAdd[4]); // IsStatic
+        
+        // LocalAsyncFunction should be present
+        var localAsync = result.FirstOrDefault(r => r[1].ToString() == "LocalAsyncFunction");
+        Assert.IsNotNull(localAsync);
+        Assert.AreEqual("Task", localAsync[2].ToString()); // ReturnType (just the name, not generic args)
+        Assert.AreEqual(true, localAsync[3]); // IsAsync
+        Assert.AreEqual(false, localAsync[4]); // IsStatic
+        
+        // LocalStaticFunction should be present
+        var localStatic = result.FirstOrDefault(r => r[1].ToString() == "LocalStaticFunction");
+        Assert.IsNotNull(localStatic);
+        Assert.AreEqual("Int32", localStatic[2].ToString()); // ReturnType
+        Assert.AreEqual(false, localStatic[3]); // IsAsync
+        Assert.AreEqual(true, localStatic[4]); // IsStatic
+    }
+
+    [TestMethod]
     public void WhenMethodUnusedParameterCountQueried_ShouldReturnCorrectCount()
     {
         var query = """

@@ -3,7 +3,7 @@
       <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>8.4.1</Version>
+        <Version>8.4.2</Version>
         <Authors>Jakub Puchaa</Authors>
     <Product>Musoq</Product>
     <Description>Lets you query files, folders, and OS resources with SQL-style queries, including metadata, permissions, and directory structure.</Description>

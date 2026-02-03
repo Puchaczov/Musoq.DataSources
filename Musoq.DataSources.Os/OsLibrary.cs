@@ -354,12 +354,19 @@ public partial class OsLibrary : LibraryBase
     [BindableMethod]
     public string? GetFileContent([InjectSpecificSource(typeof(FileEntity))] FileEntity extendedFileInfo)
     {
-        if (!extendedFileInfo.Exists)
-            return null;
+        try
+        {
+            if (!extendedFileInfo.Exists)
+                return null;
 
-        using var file = extendedFileInfo.OpenRead();
-        using var fileReader = new StreamReader(file);
-        return fileReader.ReadToEnd();
+            using var file = extendedFileInfo.OpenRead();
+            using var fileReader = new StreamReader(file);
+            return fileReader.ReadToEnd();
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -400,8 +407,17 @@ public partial class OsLibrary : LibraryBase
     /// <param name="length">The length</param>
     /// <returns>Head bytes of a file</returns>
     [BindableMethod]
-    public byte[] Head([InjectSpecificSource(typeof(FileEntity))] FileEntity file, int length)
-        => GetFileBytes(file, length, 0);
+    public byte[]? Head([InjectSpecificSource(typeof(FileEntity))] FileEntity file, int length)
+    {
+        try
+        {
+            return GetFileBytes(file, length, 0);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
     /// <summary>
     /// Gets tail bytes of a file
@@ -410,22 +426,29 @@ public partial class OsLibrary : LibraryBase
     /// <param name="length">The length</param>
     /// <returns>Tail bytes of a file</returns>
     [BindableMethod]
-    public byte[] Tail([InjectSpecificSource(typeof(FileEntity))] FileEntity file, int length)
+    public byte[]? Tail([InjectSpecificSource(typeof(FileEntity))] FileEntity file, int length)
     {
-        if (file == null)
-            throw new InjectSourceNullReferenceException(typeof(FileInfo));
+        try
+        {
+            if (file == null)
+                throw new InjectSourceNullReferenceException(typeof(FileInfo));
 
-        using var stream = file.OpenRead();
-        using var reader = new BinaryReader(stream);
-        var toRead = length < stream.Length ? length : stream.Length;
+            using var stream = file.OpenRead();
+            using var reader = new BinaryReader(stream);
+            var toRead = length < stream.Length ? length : stream.Length;
 
-        var bytes = new byte[toRead];
+            var bytes = new byte[toRead];
 
-        stream.Position = stream.Length - length;
-        for (var i = 0; i < toRead; ++i)
-            bytes[i] = reader.ReadByte();
+            stream.Position = stream.Length - length;
+            for (var i = 0; i < toRead; ++i)
+                bytes[i] = reader.ReadByte();
 
-        return bytes;
+            return bytes;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -436,24 +459,31 @@ public partial class OsLibrary : LibraryBase
     /// <param name="offset">The offset</param>
     /// <returns>Bytes of a file</returns>
     [BindableMethod]
-    public byte[] GetFileBytes([InjectSpecificSource(typeof(FileEntity))] FileEntity file, long bytesCount = long.MaxValue, long offset = 0)
+    public byte[]? GetFileBytes([InjectSpecificSource(typeof(FileEntity))] FileEntity file, long bytesCount = long.MaxValue, long offset = 0)
     {
-        if (file == null)
-            throw new InjectSourceNullReferenceException(typeof(FileInfo));
+        try
+        {
+            if (file == null)
+                throw new InjectSourceNullReferenceException(typeof(FileInfo));
 
-        using var stream = file.OpenRead();
-        using var reader = new BinaryReader(stream);
-        if (offset > 0)
-            stream.Seek(offset, SeekOrigin.Begin);
+            using var stream = file.OpenRead();
+            using var reader = new BinaryReader(stream);
+            if (offset > 0)
+                stream.Seek(offset, SeekOrigin.Begin);
 
-        var toRead = bytesCount < stream.Length ? bytesCount : stream.Length;
+            var toRead = bytesCount < stream.Length ? bytesCount : stream.Length;
 
-        var bytes = new byte[toRead];
+            var bytes = new byte[toRead];
 
-        for (var i = 0; i < toRead; ++i)
-            bytes[i] = reader.ReadByte();
+            for (var i = 0; i < toRead; ++i)
+                bytes[i] = reader.ReadByte();
 
-        return bytes;
+            return bytes;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -462,13 +492,20 @@ public partial class OsLibrary : LibraryBase
     /// <param name="file">The file</param>
     /// <returns>Sha1 of a file</returns>
     [BindableMethod]
-    public string Sha1File([InjectSpecificSource(typeof(FileEntity))] FileEntity file)
+    public string? Sha1File([InjectSpecificSource(typeof(FileEntity))] FileEntity file)
     {
-        if (file == null)
-            throw new InjectSourceNullReferenceException(typeof(FileEntity));
+        try
+        {
+            if (file == null)
+                throw new InjectSourceNullReferenceException(typeof(FileEntity));
 
-        using var stream = file.OpenRead();
-        return HashHelper.ComputeHash(stream, SHA1.Create);
+            using var stream = file.OpenRead();
+            return HashHelper.ComputeHash(stream, SHA1.Create);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -477,12 +514,19 @@ public partial class OsLibrary : LibraryBase
     /// <param name="file">The file</param>
     /// <returns>Sha256 of a file</returns>
     [BindableMethod]
-    public string Sha256File([InjectSpecificSource(typeof(FileEntity))] FileEntity file)
+    public string? Sha256File([InjectSpecificSource(typeof(FileEntity))] FileEntity file)
     {
-        if (file == null)
-            throw new InjectSourceNullReferenceException(typeof(FileEntity));
+        try
+        {
+            if (file == null)
+                throw new InjectSourceNullReferenceException(typeof(FileEntity));
 
-        return Sha256File(file.FileInfo);
+            return Sha256File(file.FileInfo);
+        }
+        catch
+        {
+            return null;
+        }
     }
         
     /// <summary>
@@ -490,13 +534,20 @@ public partial class OsLibrary : LibraryBase
     /// </summary>
     /// <param name="file">The file</param>
     /// <returns>Sha1 of a file</returns>
-    public string Sha256File(FileInfo file)
+    public string? Sha256File(FileInfo file)
     {
-        if (file == null)
-            throw new ArgumentNullException(nameof(file));
+        try
+        {
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
 
-        using var stream = file.OpenRead();
-        return HashHelper.ComputeHash(stream, SHA256.Create);
+            using var stream = file.OpenRead();
+            return HashHelper.ComputeHash(stream, SHA256.Create);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -505,13 +556,20 @@ public partial class OsLibrary : LibraryBase
     /// <param name="file">The file</param>
     /// <returns>Md5 of a file</returns>
     [BindableMethod]
-    public string Md5File([InjectSpecificSource(typeof(FileEntity))] FileEntity file)
+    public string? Md5File([InjectSpecificSource(typeof(FileEntity))] FileEntity file)
     {
-        if (file == null)
-            throw new InjectSourceNullReferenceException(typeof(FileEntity));
+        try
+        {
+            if (file == null)
+                throw new InjectSourceNullReferenceException(typeof(FileEntity));
 
-        using var stream = file.OpenRead();
-        return HashHelper.ComputeHash(stream, MD5.Create);
+            using var stream = file.OpenRead();
+            return HashHelper.ComputeHash(stream, MD5.Create);
+        }
+        catch
+        {
+            return null;
+        }
     }
     
     /// <summary>
@@ -521,15 +579,22 @@ public partial class OsLibrary : LibraryBase
     /// <returns></returns>
     /// <exception cref="InjectSourceNullReferenceException"></exception>
     [BindableMethod]
-    public string Base64File([InjectSpecificSource(typeof(FileEntity))] FileEntity file)
+    public string? Base64File([InjectSpecificSource(typeof(FileEntity))] FileEntity file)
     {
-        if (file == null)
-            throw new InjectSourceNullReferenceException(typeof(FileEntity));
+        try
+        {
+            if (file == null)
+                throw new InjectSourceNullReferenceException(typeof(FileEntity));
 
-        using var stream = file.OpenRead();
-        using var reader = new BinaryReader(stream);
-        var bytes = reader.ReadBytes((int)stream.Length);
-        return Convert.ToBase64String(bytes);
+            using var stream = file.OpenRead();
+            using var reader = new BinaryReader(stream);
+            var bytes = reader.ReadBytes((int)stream.Length);
+            return Convert.ToBase64String(bytes);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -540,14 +605,21 @@ public partial class OsLibrary : LibraryBase
     /// <returns>True if has content; otherwise false</returns>
     /// <exception cref="InjectSourceNullReferenceException"></exception>
     [BindableMethod]
-    public bool HasContent([InjectSpecificSource(typeof(FileEntity))] FileEntity file, string pattern)
+    public bool? HasContent([InjectSpecificSource(typeof(FileEntity))] FileEntity file, string pattern)
     {
-        if (file == null)
-            throw new InjectSourceNullReferenceException(typeof(FileEntity));
+        try
+        {
+            if (file == null)
+                throw new InjectSourceNullReferenceException(typeof(FileEntity));
 
-        using var stream = new StreamReader(file.OpenRead());
-        var content = stream.ReadToEnd();
-        return Regex.IsMatch(content, pattern);
+            using var stream = new StreamReader(file.OpenRead());
+            var content = stream.ReadToEnd();
+            return Regex.IsMatch(content, pattern);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -569,30 +641,37 @@ public partial class OsLibrary : LibraryBase
     /// <param name="word">The word</param>
     /// <returns>Line containing searched word</returns>
     [BindableMethod]
-    public string GetLinesContainingWord([InjectSpecificSource(typeof(FileEntity))] FileEntity file, string word)
+    public string? GetLinesContainingWord([InjectSpecificSource(typeof(FileEntity))] FileEntity file, string word)
     {
-        if (file == null)
-            throw new InjectSourceNullReferenceException(typeof(FileEntity));
-
-        using var stream = new StreamReader(file.OpenRead());
-        var lines = new List<string>();
-        var line = 1;
-        while (!stream.EndOfStream)
+        try
         {
-            var strLine = stream.ReadLine();
-            if (strLine != null && strLine.Contains(word))
-                lines.Add(line.ToString());
-            line += 1;
+            if (file == null)
+                throw new InjectSourceNullReferenceException(typeof(FileEntity));
+
+            using var stream = new StreamReader(file.OpenRead());
+            var lines = new List<string>();
+            var line = 1;
+            while (!stream.EndOfStream)
+            {
+                var strLine = stream.ReadLine();
+                if (strLine != null && strLine.Contains(word))
+                    lines.Add(line.ToString());
+                line += 1;
+            }
+
+            var builder = new StringBuilder("(");
+
+            for (int i = 0, j = lines.Count - 1; i < j; ++i) builder.Append(lines[i]);
+
+            builder.Append(lines[lines.Count]);
+            builder.Append(')');
+
+            return builder.ToString();
         }
-
-        var builder = new StringBuilder("(");
-
-        for (int i = 0, j = lines.Count - 1; i < j; ++i) builder.Append(lines[i]);
-
-        builder.Append(lines[lines.Count]);
-        builder.Append(')');
-
-        return builder.ToString();
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -714,15 +793,22 @@ public partial class OsLibrary : LibraryBase
     [BindableMethod]
     public FileEntity? GetFileInfo(string fullPath)
     {
-        var fileInfo = new FileInfo(fullPath);
-        
-        if (!fileInfo.Exists)
+        try
+        {
+            var fileInfo = new FileInfo(fullPath);
+            
+            if (!fileInfo.Exists)
+                return null;
+            
+            if (fileInfo.DirectoryName == null)
+                throw new InvalidOperationException("Directory name is null.");
+            
+            return new FileEntity(fileInfo, fileInfo.DirectoryName);
+        }
+        catch
+        {
             return null;
-        
-        if (fileInfo.DirectoryName == null)
-            throw new InvalidOperationException("Directory name is null.");
-        
-        return new FileEntity(fileInfo, fileInfo.DirectoryName);
+        }
     }
 
     /// <summary>
@@ -740,20 +826,27 @@ public partial class OsLibrary : LibraryBase
     /// <param name="context">The context</param>
     /// <returns>ExtendedFileInfo</returns>
     [BindableMethod]
-    public long CountOfLines([InjectSpecificSource(typeof(FileEntity))] FileEntity context)
+    public long? CountOfLines([InjectSpecificSource(typeof(FileEntity))] FileEntity context)
     {
-        if (context == null)
-            throw new InjectSourceNullReferenceException(typeof(FileEntity));
-
-        using var stream = new StreamReader(context.OpenRead());
-        var lines = 0;
-        while (!stream.EndOfStream)
+        try
         {
-            lines += 1;
-            stream.ReadLine();
-        }
+            if (context == null)
+                throw new InjectSourceNullReferenceException(typeof(FileEntity));
 
-        return lines;
+            using var stream = new StreamReader(context.OpenRead());
+            var lines = 0;
+            while (!stream.EndOfStream)
+            {
+                lines += 1;
+                stream.ReadLine();
+            }
+
+            return lines;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -762,24 +855,31 @@ public partial class OsLibrary : LibraryBase
     /// <param name="context">The context</param>
     /// <returns>Count of non empty lines</returns>
     [BindableMethod]
-    public long CountOfNotEmptyLines([InjectSpecificSource(typeof(FileEntity))] FileEntity context)
+    public long? CountOfNotEmptyLines([InjectSpecificSource(typeof(FileEntity))] FileEntity context)
     {
-        if (context == null)
-            throw new InjectSourceNullReferenceException(typeof(FileEntity));
-
-        using var stream = new StreamReader(context.OpenRead());
-        var lines = 0;
-        while (!stream.EndOfStream)
+        try
         {
-            var line = stream.ReadLine();
+            if (context == null)
+                throw new InjectSourceNullReferenceException(typeof(FileEntity));
 
-            if (line == string.Empty)
-                continue;
+            using var stream = new StreamReader(context.OpenRead());
+            var lines = 0;
+            while (!stream.EndOfStream)
+            {
+                var line = stream.ReadLine();
 
-            lines += 1;
+                if (line == string.Empty)
+                    continue;
+
+                lines += 1;
+            }
+
+            return lines;
         }
-
-        return lines;
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -990,15 +1090,22 @@ public partial class OsLibrary : LibraryBase
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>All metadata of a file in a json format</returns>
     [BindableMethod]
-    public string AllMetadataJson([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    public string? AllMetadataJson([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
     {
-        return JsonSerializer.Serialize(fileInfo.Metadata.GroupBy(f => f.Name).Select(f => new
+        try
         {
-            Directory = f.Key,
-            Tags = f.SelectMany(t => t.Tags.Select(tag => new
+            return JsonSerializer.Serialize(fileInfo.Metadata.GroupBy(f => f.Name).Select(f => new
             {
-                Tag = tag.Name, tag.Description
-            }))
-        }));
+                Directory = f.Key,
+                Tags = f.SelectMany(t => t.Tags.Select(tag => new
+                {
+                    Tag = tag.Name, tag.Description
+                }))
+            }));
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

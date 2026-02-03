@@ -368,6 +368,30 @@ public class CallGraphTestClass
     {
         return n * 2;
     }
+    
+    /// <summary>
+    /// Method with local functions for testing LocalFunctions property
+    /// </summary>
+    public int MethodWithLocalFunctions(int x, int y)
+    {
+        int LocalAdd(int a, int b)
+        {
+            return a + b;
+        }
+        
+        async Task<string> LocalAsyncFunction()
+        {
+            await Task.Delay(10);
+            return "result";
+        }
+        
+        static int LocalStaticFunction(int value)
+        {
+            return value * 2;
+        }
+        
+        return LocalAdd(x, y) + LocalStaticFunction(5);
+    }
 }
 
 /// <summary>

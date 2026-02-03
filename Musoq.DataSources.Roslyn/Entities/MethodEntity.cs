@@ -294,6 +294,32 @@ public class MethodEntity
         .Count();
 
     /// <summary>
+    /// Gets the local functions defined within this method.
+    /// Returns an empty collection if the semantic model is not available.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<LocalFunctionEntity> LocalFunctions
+    {
+        get
+        {
+            if (_semanticModel == null)
+                return Enumerable.Empty<LocalFunctionEntity>();
+
+            var localFunctions = new List<LocalFunctionEntity>();
+
+            foreach (var localFunctionSyntax in _methodDeclaration.DescendantNodes().OfType<LocalFunctionStatementSyntax>())
+            {
+                if (_semanticModel.GetDeclaredSymbol(localFunctionSyntax) is IMethodSymbol symbol)
+                {
+                    localFunctions.Add(new LocalFunctionEntity(symbol, localFunctionSyntax));
+                }
+            }
+
+            return localFunctions;
+        }
+    }
+
+    /// <summary>
     /// Gets a value indicating whether the method contains any await expressions.
     /// </summary>
     public bool ContainsAwait => _methodDeclaration.DescendantNodes()
