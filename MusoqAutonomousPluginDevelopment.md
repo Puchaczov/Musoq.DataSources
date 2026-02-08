@@ -228,7 +228,7 @@ SQL: SELECT Col FROM #schema.method('arg')
 
 ### 3.2 Assembly Registration Files
 
-**`AssemblyInfo.cs`** — Registers the schema name that users will reference in SQL:
+**`AssemblyInfo.cs`** — **[CRITICAL]** Registers the schema name that Musoq uses for plugin discovery:
 
 ```csharp
 using Musoq.Schema.Attributes;
@@ -236,7 +236,22 @@ using Musoq.Schema.Attributes;
 [assembly: PluginSchemas("[FILL: schema-name-lowercase]")]
 ```
 
-The schema name is what appears after `#` in SQL queries: `#schemaname.method()`.
+**Why this is critical:**
+
+- Without this attribute, Musoq **will not discover your plugin at all**.
+- The schema name (e.g., `"github"`, `"jira"`, `"docker"`) is what appears after `#` in SQL queries: `SELECT * FROM #github.user_info()`.
+- Must match the namespace convention: for `Musoq.DataSources.GitHub`, the schema name is `"github"` (lowercase).
+- **Never use** `ComVisible` or other outdated attributes in this file — the `PluginSchemas` attribute is the only requirement.
+
+**Examples from existing plugins:**
+
+| Plugin | Schema Name | SQL Usage |
+|--------|------------|-----------|
+| Docker | `"docker"` | `SELECT * FROM #docker.containers()` |
+| Kubernetes | `"kubernetes"` | `SELECT * FROM #kubernetes.pods()` |
+| GitHub | `"github"` | `SELECT * FROM #github.user_repositories()` |
+| Jira | `"jira"` | `SELECT * FROM #jira.issues()` |
+| OpenAI | `"openai"` | `SELECT * FROM #openai.completions()` |
 
 **`Assembly.cs`** — Exposes internal types to the test project:
 
@@ -1558,7 +1573,8 @@ These are real issues encountered during plugin development with proven solution
 
 | Problem | Cause | Solution |
 |---------|-------|----------|
-| Plugin not discovered by Musoq | Missing `[assembly: PluginSchemas(...)]` | Add `AssemblyInfo.cs` with the attribute |
+| Plugin not discovered by Musoq | Missing `[assembly: PluginSchemas(...)]` in AssemblyInfo.cs | Create `AssemblyInfo.cs` with **ONLY** `using Musoq.Schema.Attributes;` and `[assembly: PluginSchemas("schema-name")]`. Do NOT include ComVisible or other attributes. Schema name must be lowercase. |
+| Wrong schema name in plugin discovery | AssemblyInfo.cs has incorrect schema name | Ensure schema name matches the plugin naming convention: for `Musoq.DataSources.GitHub`, use `"github"`. Must be lowercase letter-only. |
 | XML metadata missing at runtime | `GenerateDocumentationFile` not set, or `_ResolveCopyLocalNuGetPackageXmls` target missing | Add both to `.csproj` |
 | Assembly loading conflict | Musoq.Schema.dll or Musoq.Parser.dll included in Plugin.zip | Remove from publish output; add `ExcludeAssets=runtime` to `.csproj` |
 | Plugin loads but columns are empty | XML docs not generated | Check that `.xml` file exists next to `.dll` in build output |
@@ -2237,7 +2253,3 @@ AND created >= "2024-01-01" AND priority = "High"
 ```
 
 API call fetches only matching issues instead of all issues in the project.
-
----
-
-*This document was validated by building a working data source plugin from scratch that queries compound binary files (OLE structured storage). All patterns, code templates, test structures, and packaging scripts have been verified against the actual Musoq framework.*

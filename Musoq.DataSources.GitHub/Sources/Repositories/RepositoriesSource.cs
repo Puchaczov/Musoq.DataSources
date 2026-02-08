@@ -1,0 +1,123 @@
+using System.Collections.Concurrent;
+using Musoq.DataSources.GitHub.Entities;
+using Musoq.DataSources.GitHub.Helpers;
+using Musoq.Schema;
+using Musoq.Schema.DataSources;
+using Octokit;
+
+namespace Musoq.DataSources.GitHub.Sources.Repositories;
+
+internal class RepositoriesSource : RowSourceBase<RepositoryEntity>
+{
+    private const string SourceName = "github_repositories";
+    private readonly IGitHubApi _api;
+    private readonly RuntimeContext _runtimeContext;
+    private readonly string? _owner;
+
+    public RepositoriesSource(IGitHubApi api, RuntimeContext runtimeContext, string? owner = null)
+    {
+        _api = api;
+        _runtimeContext = runtimeContext;
+        _owner = owner;
+    }
+
+    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    {
+        _runtimeContext.ReportDataSourceBegin(SourceName);
+        long totalRowsProcessed = 0;
+
+        try
+        {
+            var parameters = WhereNodeHelper.ExtractParameters(_runtimeContext.QuerySourceInfo.WhereNode);
+            var takeValue = _runtimeContext.QueryHints.TakeValue;
+            var skipValue = _runtimeContext.QueryHints.SkipValue;
+            
+            int page = 1;
+            int perPage = 100;
+            
+            // Adjust for skip/take hints
+            if (skipValue.HasValue && skipValue.Value > 0)
+            {
+                page = (int)(skipValue.Value / perPage) + 1;
+            }
+            
+            var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
+            var fetchedRows = 0;
+            
+            while (fetchedRows < maxRows && !_runtimeContext.EndWorkToken.IsCancellationRequested)
+            {
+                IReadOnlyList<RepositoryEntity> repos;
+                
+                if (!string.IsNullOrEmpty(parameters.SearchQuery) || 
+                    !string.IsNullOrEmpty(parameters.Language))
+                {
+                    // Use search API
+                    var searchRequest = new SearchRepositoriesRequest(parameters.SearchQuery ?? "")
+                    {
+                        Language = !string.IsNullOrEmpty(parameters.Language) 
+                            ? Language.CSharp // Would need proper language mapping
+                            : null
+                    };
+                    
+                    if (parameters.IsFork.HasValue)
+                        searchRequest.Fork = parameters.IsFork.Value ? ForkQualifier.OnlyForks : ForkQualifier.IncludeForks;
+                    
+                    if (parameters.IsArchived.HasValue)
+                        searchRequest.Archived = parameters.IsArchived.Value;
+                    
+                    repos = _api.SearchRepositoriesAsync(searchRequest, perPage, page).Result;
+                }
+                else if (!string.IsNullOrEmpty(_owner))
+                {
+                    repos = _api.GetRepositoriesForOwnerAsync(_owner, perPage, page).Result;
+                }
+                else
+                {
+                    var request = new RepositoryRequest();
+                    
+                    if (!string.IsNullOrEmpty(parameters.Visibility))
+                    {
+                        request.Visibility = parameters.Visibility.ToLowerInvariant() switch
+                        {
+                            "public" => RepositoryRequestVisibility.Public,
+                            "private" => RepositoryRequestVisibility.Private,
+                            "internal" => RepositoryRequestVisibility.Internal,
+                            _ => RepositoryRequestVisibility.All
+                        };
+                    }
+                    
+                    repos = _api.GetUserRepositoriesAsync(request, perPage, page).Result;
+                }
+                
+                if (repos.Count == 0)
+                    break;
+                
+                var resolvers = repos
+                    .Take(maxRows - fetchedRows)
+                    .Select(r => new EntityResolver<RepositoryEntity>(
+                        r, 
+                        RepositoriesSourceHelper.RepositoriesNameToIndexMap, 
+                        RepositoriesSourceHelper.RepositoriesIndexToMethodAccessMap))
+                    .ToList();
+                
+                chunkedSource.Add(resolvers);
+                
+                fetchedRows += resolvers.Count;
+                totalRowsProcessed += resolvers.Count;
+                _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                
+                if (repos.Count < perPage)
+                    break;
+                
+                page++;
+            }
+            
+            _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
+        }
+        catch
+        {
+            _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
+            throw;
+        }
+    }
+}

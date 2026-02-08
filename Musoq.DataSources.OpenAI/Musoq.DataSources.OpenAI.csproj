@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>5.4.1</Version>
+        <Version>5.4.2</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you call OpenAI models using SQL-style queries, so prompts, responses, and metadata can be treated like rows.</Description>
@@ -32,13 +32,13 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Converter" Version="7.0.2" />
-        <PackageReference Include="Musoq.Evaluator" Version="12.0.2" />
-        <PackageReference Include="Musoq.Parser" Version="7.0.0">
+        <PackageReference Include="Musoq.Converter" Version="8.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="13.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="8.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="10.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="12.0.0">
+        <PackageReference Include="Musoq.Plugins" Version="11.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="13.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="OpenAI" Version="2.1.0" />

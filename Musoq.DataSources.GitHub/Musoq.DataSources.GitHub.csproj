@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>1.0.0</Version>
+        <Authors>Jakub Puchała</Authors>
+        <Product>Musoq</Product>
+        <Description>Lets you query GitHub repositories, issues, pull requests, commits and other resources with SQL-style queries.</Description>
+        <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageTags>sql, github, repositories, issues, pull-requests, commits, musoq, plugin, datasource, dotnet</PackageTags>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageId>Musoq.DataSources.GitHub</PackageId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
+    </ItemGroup>
+
+    <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
+        <ItemGroup>
+            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="Octokit" Version="13.0.1" />
+        <PackageReference Include="Musoq.Converter" Version="8.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="13.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="8.0.0">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="Musoq.Plugins" Version="11.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="13.0.0">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="GitHubApi.cs">
+            <DependentUpon>IGitHubApi.cs</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+</Project>

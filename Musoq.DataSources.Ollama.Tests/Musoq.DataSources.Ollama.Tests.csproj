@@ -20,11 +20,11 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Converter" Version="7.0.2" />
-        <PackageReference Include="Musoq.Evaluator" Version="12.0.2" />
-        <PackageReference Include="Musoq.Parser" Version="7.0.0" />
-        <PackageReference Include="Musoq.Plugins" Version="10.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="12.0.0" />
+        <PackageReference Include="Musoq.Converter" Version="8.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="13.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="8.0.0" />
+        <PackageReference Include="Musoq.Plugins" Version="11.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="13.0.0" />
     </ItemGroup>
 
     <ItemGroup>

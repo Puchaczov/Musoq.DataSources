@@ -222,6 +222,11 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         throw new NotImplementedException();
     }
 
+    public void Visit(ArrayIndexNode node)
+    {
+        throw new NotImplementedException();
+    }
+
     public void Visit(PropertyValueNode node)
     {
         throw new NotImplementedException();

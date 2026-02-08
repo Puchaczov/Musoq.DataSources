@@ -3291,9 +3291,3 @@ Congratulations! You've completed the comprehensive Musoq plugin development tut
 - **Follow conventions** - consistent patterns make maintenance easier
 
 You're now equipped to create powerful, production-ready Musoq plugins that can query any data source using SQL syntax. Welcome to the Musoq plugin development community!
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

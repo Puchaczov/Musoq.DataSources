@@ -470,6 +470,7 @@ public class GitSchema : SchemaBase
         return base.GetTableByName(name, runtimeContext, parameters);
     }
 
+    /// <inheritdoc />
     public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
     {
         return methodName.ToLowerInvariant() switch
@@ -488,6 +489,7 @@ public class GitSchema : SchemaBase
         };
     }
 
+    /// <inheritdoc />
     public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
     {
         return [
