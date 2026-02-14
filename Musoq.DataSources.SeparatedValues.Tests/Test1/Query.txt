@@ -1,7 +1,7 @@
 ﻿table CsvFileTable {
-	fileName 'string',
-	intValue 'decimal',
-	stringValue 'string'
+	fileName string,
+	intValue decimal,
+	stringValue string
 };
 
 couple #separatedvalues.comma with table CsvFileTable as SourceOfRows;

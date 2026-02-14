@@ -401,6 +401,11 @@ public class RawTraverseVisitor<TExpressionVisitor> : IExpressionVisitor
         node.Accept(Visitor);
     }
 
+    public virtual void Visit(BetweenNode node)
+    {
+        node.Accept(Visitor);
+    }
+
     public virtual void Visit(FieldNode node)
     {
         node.Expression.Accept(this);

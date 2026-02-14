@@ -226,9 +226,9 @@ public class RepresentativeQueryTests
     {
         var query = """
             table Employees {
-               Id 'System.Int32',
-               Name 'System.String',
-               Department 'System.String'
+                    Id int,
+                    Name string,
+                    Department string
             };
             couple #separatedvalues.comma with table Employees as SourceOfEmployees;
             select Id, Name, Department 

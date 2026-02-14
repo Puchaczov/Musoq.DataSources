@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>2.4.2</Version>
+        <Version>2.4.3</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Shared plumbing for building async row-based data sources, including streaming row readers and scheduling helpers.</Description>
@@ -25,15 +25,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Converter" Version="8.0.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="13.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="8.0.0">
+        <PackageReference Include="Musoq.Converter" Version="9.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="14.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="9.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="11.0.0">
+        <PackageReference Include="Musoq.Plugins" Version="12.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Schema" Version="13.0.0">
+        <PackageReference Include="Musoq.Schema" Version="14.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>

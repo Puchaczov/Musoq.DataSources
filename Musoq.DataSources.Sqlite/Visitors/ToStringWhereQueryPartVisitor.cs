@@ -117,6 +117,11 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
         throw new NotImplementedException();
     }
 
+    public void Visit(BetweenNode node)
+    {
+        _builder.Append(" BETWEEN ");
+    }
+
     public void Visit(FieldNode node)
     {
         _builder.Append($" {node.FieldName} ");

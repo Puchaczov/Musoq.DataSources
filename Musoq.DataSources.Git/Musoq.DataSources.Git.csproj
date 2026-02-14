@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.8.2</Version>
+        <Version>1.8.3</Version>
         <Authors>Jakub Pucha�a</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query repos, commits, branches, and history with SQL-style queries for audits, metrics, and change tracking.</Description>
@@ -31,13 +31,13 @@
 
     <ItemGroup>
         <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
-        <PackageReference Include="Musoq.Converter" Version="8.0.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="13.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="8.0.0">
+        <PackageReference Include="Musoq.Converter" Version="9.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="14.0.0" />
+        <PackageReference Include="Musoq.Parser" Version="9.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="11.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="13.0.0">
+        <PackageReference Include="Musoq.Plugins" Version="12.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="14.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>

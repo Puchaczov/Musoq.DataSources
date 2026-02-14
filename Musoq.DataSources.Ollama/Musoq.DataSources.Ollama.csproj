@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>4.4.2</Version>
+        <Version>4.4.3</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you call Ollama models using SQL-style queries, making local LLM responses easy to filter and join.</Description>
@@ -34,16 +34,16 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-        <PackageReference Include="Musoq.Converter" Version="8.0.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="13.0.0" />
+        <PackageReference Include="Musoq.Converter" Version="9.0.0" />
+        <PackageReference Include="Musoq.Evaluator" Version="14.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="OllamaSharp" Version="5.0.4" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="8.0.0">
+        <PackageReference Include="Musoq.Parser" Version="9.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="11.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="13.0.0">
+        <PackageReference Include="Musoq.Plugins" Version="12.0.0" />
+        <PackageReference Include="Musoq.Schema" Version="14.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Polly" Version="8.5.1" />

@@ -17,6 +17,12 @@ namespace Musoq.DataSources.SeparatedValues.Tests
     [TestClass]
     public class CsvTests
     {
+        [TestInitialize]
+        public void SetCulture()
+        {
+            Culture.Apply(CultureInfo.GetCultureInfo("en-US"));
+        }
+
         [TestMethod]
         public void ReplaceNotValidCharacters()
         {
@@ -52,7 +58,7 @@ namespace Musoq.DataSources.SeparatedValues.Tests
         {
             var query = "" +
                 "table CsvFile {" +
-                "   Name 'System.String'" +
+                "   Name string" +
                 "};" +
                 "couple #separatedvalues.comma with table CsvFile as SourceCsvFile;" +
                 "select Name from SourceCsvFile('./Files/BankingTransactionsWithSkippedLines.csv', true, 2);";
@@ -79,8 +85,8 @@ namespace Musoq.DataSources.SeparatedValues.Tests
         {
             var query = "" +
                 "table Persons {" +
-                "   Id 'System.Int32'," +
-                "   Name 'System.String'" +
+                "   Id int," +
+                "   Name string" +
                 "};" +
                 "couple #separatedvalues.comma with table Persons as SourceOfPersons;" +
                 "select Id, Name from SourceOfPersons('./Files/Persons.csv', true, 0)";
@@ -127,8 +133,8 @@ namespace Musoq.DataSources.SeparatedValues.Tests
         {
             var query = "" +
                 "table BankingTransactions {" +
-                "   Category 'string'," +
-                "   Money 'decimal'" +
+                "   Category string," +
+                "   Money decimal" +
                 "};" +
                 "couple #separatedvalues.comma with table BankingTransactions as SourceOfBankingTransactions;" +
                 "select Category, Money from SourceOfBankingTransactions('./Files/BankingTransactionsNullValues.csv', true, 0) where (Category is null) or (Money is null)";
@@ -170,7 +176,7 @@ namespace Musoq.DataSources.SeparatedValues.Tests
         {
             var query = "" +
                 "table CsvFile {" +
-                "   Name 'System.String'" +
+                "   Name string" +
                 "};" +
                 "couple #separatedvalues.comma with table CsvFile as SourceCsvFile;" +
                 "with FilesToScan as (" +
@@ -200,7 +206,7 @@ namespace Musoq.DataSources.SeparatedValues.Tests
         {
             var query = "" +
                 "table CsvFile {" +
-                "   Name 'System.String'" +
+                "   Name string" +
                 "};" +
                 "couple #separatedvalues.comma with table CsvFile as SourceOfCsvFile;" +
                 "with FilesToScan as (" +
@@ -789,7 +795,7 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
 
         static CsvTests()
         {
-            Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
+            Culture.Apply(CultureInfo.GetCultureInfo("en-US"));
         }
     }
 }
