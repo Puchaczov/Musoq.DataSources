@@ -15,18 +15,15 @@ public class BuildMetadataAndInferTypesForTestsVisitor(
     ILogger<BuildMetadataAndInferTypesForTestsVisitor> logger)
     : BuildMetadataAndInferTypesVisitor(provider, columns, logger, compilationOptions)
 {
-    protected override IReadOnlyDictionary<string, string> RetrieveEnvironmentVariables(uint position, SchemaFromNode node)
-    {   
+    protected override IReadOnlyDictionary<string, string> RetrieveEnvironmentVariables(uint position,
+        SchemaFromNode node)
+    {
         var emptyEnvironmentVariables = new Dictionary<string, string>();
-        
+
         if (defaultEnvironmentVariables.TryGetValue(position, out var variables))
-        {
             foreach (var variable in variables)
-            {
                 emptyEnvironmentVariables.TryAdd(variable.Key, variable.Value);
-            }
-        }
-        
+
         InternalPositionalEnvironmentVariables.TryAdd(position, emptyEnvironmentVariables);
 
         return emptyEnvironmentVariables;

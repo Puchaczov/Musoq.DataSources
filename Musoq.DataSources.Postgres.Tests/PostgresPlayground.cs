@@ -9,33 +9,40 @@ namespace Musoq.DataSources.Postgres.Tests;
 [TestClass]
 public class PostgresPlayground
 {
+    static PostgresPlayground()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [Ignore]
     [TestMethod]
     public void Playground()
     {
-        var query = "select Id, Name, Description, Version, VersionHash, Path, UserId, Platform, ShortDescription, ProjectUrl, Architecture from #postgres.DataSources('toolbox') where Architecture > 1";
-        
+        var query =
+            "select Id, Name, Description, Version, VersionHash, Path, UserId, Platform, ShortDescription, ProjectUrl, Architecture from #postgres.DataSources('toolbox') where Architecture > 1";
+
         var vm = CreateAndRunVirtualMachineWithResponse(query);
         var table = vm.Run();
     }
-    
+
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
+            script,
+            Guid.NewGuid().ToString(),
             new PostgresSchemaProvider(),
-            new Dictionary<uint, IReadOnlyDictionary<string, string>>()
+            new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
-                {0, new Dictionary<string, string>
                 {
-                    { "NPGSQL_CONNECTION_STRING", Environment.GetEnvironmentVariable("PLAYGROUND_POSTGRES_CONNECTION_STRING") ?? throw new InvalidOperationException("No connection string provided.") }
-                }}
+                    0, new Dictionary<string, string>
+                    {
+                        {
+                            "NPGSQL_CONNECTION_STRING",
+                            Environment.GetEnvironmentVariable("PLAYGROUND_POSTGRES_CONNECTION_STRING") ??
+                            throw new InvalidOperationException("No connection string provided.")
+                        }
+                    }
+                }
             });
-    }
-
-    static PostgresPlayground()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

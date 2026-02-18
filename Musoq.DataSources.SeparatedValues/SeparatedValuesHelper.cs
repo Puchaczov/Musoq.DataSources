@@ -1,40 +1,39 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Musoq.DataSources.SeparatedValues
+namespace Musoq.DataSources.SeparatedValues;
+
+internal static class SeparatedValuesHelper
 {
-    internal static class SeparatedValuesHelper
+    public const string AutoColumnName = "Column{0}";
+
+    private static readonly Regex NonAlphaNumericCharacters = new("[^a-zA-Z0-9 -]");
+
+    public static string MakeHeaderNameValidColumnName(string header)
     {
-        public const string AutoColumnName = "Column{0}";
+        if (header.Length == 0)
+            return string.Empty;
 
-        private static readonly Regex NonAlphaNumericCharacters = new("[^a-zA-Z0-9 -]");
+        header = header.Replace(' ', '_');
 
-        public static string MakeHeaderNameValidColumnName(string header)
+        var newString = new StringBuilder();
+
+        newString.Append(header[0]);
+        var lastChar = header[0];
+
+        for (var i = 1; i < header.Length; i++)
         {
-            if (header.Length == 0)
-                return string.Empty;
+            var currentChar = header[i];
+            if (lastChar == '_' && char.IsLower(currentChar))
+                newString.Append(char.ToUpper(currentChar));
+            else
+                newString.Append(currentChar);
 
-            header = header.Replace(' ', '_');
-
-            var newString = new StringBuilder();
-
-            newString.Append(header[0]);
-            var lastChar = header[0];
-
-            for (var i = 1; i < header.Length; i++)
-            {
-                var currentChar = header[i];
-                if (lastChar == '_' && char.IsLower(currentChar))
-                    newString.Append(char.ToUpper(currentChar));
-                else
-                    newString.Append(currentChar);
-
-                lastChar = currentChar;
-            }
-
-            header = NonAlphaNumericCharacters.Replace(newString.ToString(), string.Empty);
-
-            return header;
+            lastChar = currentChar;
         }
+
+        header = NonAlphaNumericCharacters.Replace(newString.ToString(), string.Empty);
+
+        return header;
     }
 }

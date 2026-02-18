@@ -16,19 +16,21 @@ internal class SecretsSource : RowSourceBase<SecretEntity>
         _client = client;
         _runtimeContext = runtimeContext;
     }
-    
+
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(SecretsSourceName);
-        
+
         try
         {
             var secrets = _client.ListSecretsForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(SecretsSourceName, secrets.Items.Count);
 
             chunkedSource.Add(
-                secrets.Items.Select(c => new EntityResolver<SecretEntity>(MapV1SecretToSecretEntity(c), SecretsSourceHelper.SecretsNameToIndexMap, SecretsSourceHelper.SecretsIndexToMethodAccessMap)).ToList());
-            
+                secrets.Items.Select(c => new EntityResolver<SecretEntity>(MapV1SecretToSecretEntity(c),
+                        SecretsSourceHelper.SecretsNameToIndexMap, SecretsSourceHelper.SecretsIndexToMethodAccessMap))
+                    .ToList());
+
             _runtimeContext.ReportDataSourceEnd(SecretsSourceName, secrets.Items.Count);
         }
         catch
@@ -46,7 +48,7 @@ internal class SecretsSource : RowSourceBase<SecretEntity>
             Namespace = v1Secret.Metadata.NamespaceProperty,
             Type = v1Secret.Type,
             Immutable = v1Secret.Immutable,
-            Age = v1Secret.Metadata.CreationTimestamp,
+            Age = v1Secret.Metadata.CreationTimestamp
         };
     }
 }

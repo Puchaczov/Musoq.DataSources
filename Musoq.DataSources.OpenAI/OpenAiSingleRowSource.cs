@@ -16,7 +16,7 @@ internal class OpenAiSingleRowSource : RowSource
         _openAiRequestInfo = openAiRequestInfo;
         _runtimeContext = null;
     }
-    
+
     public OpenAiSingleRowSource(RuntimeContext runtimeContext, OpenAiRequestInfo openAiRequestInfo)
     {
         _openAiApi = new OpenAiApi(runtimeContext.EnvironmentVariables["OPENAI_API_KEY"]);
@@ -30,7 +30,7 @@ internal class OpenAiSingleRowSource : RowSource
         {
             _runtimeContext?.ReportDataSourceBegin(OpenAiSourceName);
             _runtimeContext?.ReportDataSourceRowsKnown(OpenAiSourceName, 1);
-            
+
             try
             {
                 yield return new EntityResolver<OpenAiEntity>(
@@ -42,7 +42,7 @@ internal class OpenAiSingleRowSource : RowSource
                         _openAiRequestInfo.PresencePenalty,
                         _openAiRequestInfo.Temperature,
                         _runtimeContext?.EndWorkToken ?? CancellationToken.None),
-                    OpenAiSchemaHelper.NameToIndexMap, 
+                    OpenAiSchemaHelper.NameToIndexMap,
                     OpenAiSchemaHelper.IndexToMethodAccessMap);
             }
             finally

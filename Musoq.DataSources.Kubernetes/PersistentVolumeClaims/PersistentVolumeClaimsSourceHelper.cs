@@ -5,25 +5,26 @@ namespace Musoq.DataSources.Kubernetes.PersistentVolumeClaims;
 
 internal static class PersistentVolumeClaimsSourceHelper
 {
-    internal static readonly IReadOnlyDictionary<string, int> PersistentVolumeClaimsNameToIndexMap = new Dictionary<string, int>
-    {
-        {nameof(PersistentVolumeClaimEntity.Namespace), 0},
-        {nameof(PersistentVolumeClaimEntity.Name), 1},
-        {nameof(PersistentVolumeClaimEntity.Capacity), 2},
-        {nameof(PersistentVolumeClaimEntity.Volume), 3},
-        {nameof(PersistentVolumeClaimEntity.Status), 4},
-        {nameof(PersistentVolumeClaimEntity.Age), 5}
-    };
+    internal static readonly IReadOnlyDictionary<string, int> PersistentVolumeClaimsNameToIndexMap =
+        new Dictionary<string, int>
+        {
+            { nameof(PersistentVolumeClaimEntity.Namespace), 0 },
+            { nameof(PersistentVolumeClaimEntity.Name), 1 },
+            { nameof(PersistentVolumeClaimEntity.Capacity), 2 },
+            { nameof(PersistentVolumeClaimEntity.Volume), 3 },
+            { nameof(PersistentVolumeClaimEntity.Status), 4 },
+            { nameof(PersistentVolumeClaimEntity.Age), 5 }
+        };
 
     internal static readonly IReadOnlyDictionary<int, Func<PersistentVolumeClaimEntity, object?>>
         PersistentVolumeClaimsIndexToMethodAccessMap = new Dictionary<int, Func<PersistentVolumeClaimEntity, object?>>
         {
-            {0, c => c.Namespace},
-            {1, c => c.Name},
-            {2, c => c.Capacity},
-            {3, c => c.Volume},
-            {4, c => c.Status},
-            {5, c => c.Age}
+            { 0, c => c.Namespace },
+            { 1, c => c.Name },
+            { 2, c => c.Capacity },
+            { 3, c => c.Volume },
+            { 4, c => c.Status },
+            { 5, c => c.Age }
         };
 
     internal static readonly ISchemaColumn[] PersistentVolumeClaimsColumns =

@@ -14,46 +14,46 @@ internal static class NetworksSourceHelper
     {
         NetworksNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(NetworkResponse.Name), 0},
-            {nameof(NetworkResponse.ID), 1},
-            {nameof(NetworkResponse.Created), 2},
-            {nameof(NetworkResponse.Scope), 3},
-            {nameof(NetworkResponse.Driver), 4},
-            {nameof(NetworkResponse.EnableIPv6), 5},
-            {nameof(NetworkResponse.IPAM), 6},
-            {nameof(NetworkResponse.Internal), 7},
-            {nameof(NetworkResponse.Attachable), 8},
-            {nameof(NetworkResponse.Ingress), 9},
-            {nameof(NetworkResponse.ConfigFrom), 10},
-            {nameof(NetworkResponse.ConfigOnly), 11},
-            {nameof(NetworkResponse.Containers), 12},
-            {nameof(NetworkResponse.Options), 13},
-            {nameof(NetworkResponse.Labels), 14},
-            {nameof(NetworkResponse.Peers), 15},
-            {nameof(NetworkResponse.Services), 16}
+            { nameof(NetworkResponse.Name), 0 },
+            { nameof(NetworkResponse.ID), 1 },
+            { nameof(NetworkResponse.Created), 2 },
+            { nameof(NetworkResponse.Scope), 3 },
+            { nameof(NetworkResponse.Driver), 4 },
+            { nameof(NetworkResponse.EnableIPv6), 5 },
+            { nameof(NetworkResponse.IPAM), 6 },
+            { nameof(NetworkResponse.Internal), 7 },
+            { nameof(NetworkResponse.Attachable), 8 },
+            { nameof(NetworkResponse.Ingress), 9 },
+            { nameof(NetworkResponse.ConfigFrom), 10 },
+            { nameof(NetworkResponse.ConfigOnly), 11 },
+            { nameof(NetworkResponse.Containers), 12 },
+            { nameof(NetworkResponse.Options), 13 },
+            { nameof(NetworkResponse.Labels), 14 },
+            { nameof(NetworkResponse.Peers), 15 },
+            { nameof(NetworkResponse.Services), 16 }
         };
-        
+
         NetworksIndexToMethodAccessMap = new Dictionary<int, Func<NetworkResponse, object>>
         {
-            {0, info => info.Name},
-            {1, info => info.ID},
-            {2, info => info.Created},
-            {3, info => info.Scope},
-            {4, info => info.Driver},
-            {5, info => info.EnableIPv6},
-            {6, info => info.IPAM},
-            {7, info => info.Internal},
-            {8, info => info.Attachable},
-            {9, info => info.Ingress},
-            {10, info => info.ConfigFrom},
-            {11, info => info.ConfigOnly},
-            {12, info => info.Containers},
-            {13, info => info.Options},
-            {14, info => info.Labels},
-            {15, info => info.Peers},
-            {16, info => info.Services}
+            { 0, info => info.Name },
+            { 1, info => info.ID },
+            { 2, info => info.Created },
+            { 3, info => info.Scope },
+            { 4, info => info.Driver },
+            { 5, info => info.EnableIPv6 },
+            { 6, info => info.IPAM },
+            { 7, info => info.Internal },
+            { 8, info => info.Attachable },
+            { 9, info => info.Ingress },
+            { 10, info => info.ConfigFrom },
+            { 11, info => info.ConfigOnly },
+            { 12, info => info.Containers },
+            { 13, info => info.Options },
+            { 14, info => info.Labels },
+            { 15, info => info.Peers },
+            { 16, info => info.Services }
         };
-        
+
         NetworksColumns =
         [
             new SchemaColumn(nameof(NetworkResponse.Name), 0, typeof(string)),

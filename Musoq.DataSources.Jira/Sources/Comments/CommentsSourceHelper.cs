@@ -14,32 +14,32 @@ internal static class CommentsSourceHelper
     {
         CommentsNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(IJiraComment.Id), 0},
-            {nameof(IJiraComment.IssueKey), 1},
-            {nameof(IJiraComment.Body), 2},
-            {nameof(IJiraComment.Author), 3},
-            {nameof(IJiraComment.AuthorDisplayName), 4},
-            {nameof(IJiraComment.UpdateAuthor), 5},
-            {nameof(IJiraComment.UpdateAuthorDisplayName), 6},
-            {nameof(IJiraComment.CreatedAt), 7},
-            {nameof(IJiraComment.UpdatedAt), 8},
-            {nameof(IJiraComment.VisibilityGroup), 9},
-            {nameof(IJiraComment.VisibilityRole), 10}
+            { nameof(IJiraComment.Id), 0 },
+            { nameof(IJiraComment.IssueKey), 1 },
+            { nameof(IJiraComment.Body), 2 },
+            { nameof(IJiraComment.Author), 3 },
+            { nameof(IJiraComment.AuthorDisplayName), 4 },
+            { nameof(IJiraComment.UpdateAuthor), 5 },
+            { nameof(IJiraComment.UpdateAuthorDisplayName), 6 },
+            { nameof(IJiraComment.CreatedAt), 7 },
+            { nameof(IJiraComment.UpdatedAt), 8 },
+            { nameof(IJiraComment.VisibilityGroup), 9 },
+            { nameof(IJiraComment.VisibilityRole), 10 }
         };
 
         CommentsIndexToMethodAccessMap = new Dictionary<int, Func<IJiraComment, object?>>
         {
-            {0, comment => comment.Id},
-            {1, comment => comment.IssueKey},
-            {2, comment => comment.Body},
-            {3, comment => comment.Author},
-            {4, comment => comment.AuthorDisplayName},
-            {5, comment => comment.UpdateAuthor},
-            {6, comment => comment.UpdateAuthorDisplayName},
-            {7, comment => comment.CreatedAt},
-            {8, comment => comment.UpdatedAt},
-            {9, comment => comment.VisibilityGroup},
-            {10, comment => comment.VisibilityRole}
+            { 0, comment => comment.Id },
+            { 1, comment => comment.IssueKey },
+            { 2, comment => comment.Body },
+            { 3, comment => comment.Author },
+            { 4, comment => comment.AuthorDisplayName },
+            { 5, comment => comment.UpdateAuthor },
+            { 6, comment => comment.UpdateAuthorDisplayName },
+            { 7, comment => comment.CreatedAt },
+            { 8, comment => comment.UpdatedAt },
+            { 9, comment => comment.VisibilityGroup },
+            { 10, comment => comment.VisibilityRole }
         };
 
         CommentsColumns =

@@ -8,7 +8,7 @@ using Musoq.Plugins.Attributes;
 namespace Musoq.DataSources.Roslyn.Entities;
 
 /// <summary>
-/// Represents a local function entity that provides information about a local function in the source code.
+///     Represents a local function entity that provides information about a local function in the source code.
 /// </summary>
 public class LocalFunctionEntity
 {
@@ -16,7 +16,7 @@ public class LocalFunctionEntity
     private readonly LocalFunctionStatementSyntax _syntax;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="LocalFunctionEntity"/> class.
+    ///     Initializes a new instance of the <see cref="LocalFunctionEntity" /> class.
     /// </summary>
     /// <param name="symbol">The method symbol representing the local function.</param>
     /// <param name="syntax">The local function statement syntax node.</param>
@@ -27,49 +27,49 @@ public class LocalFunctionEntity
     }
 
     /// <summary>
-    /// Gets the name of the local function.
+    ///     Gets the name of the local function.
     /// </summary>
     public string Name => _symbol.Name;
 
     /// <summary>
-    /// Gets the return type of the local function.
+    ///     Gets the return type of the local function.
     /// </summary>
     public string ReturnType => _symbol.ReturnType.Name;
 
     /// <summary>
-    /// Gets a value indicating whether the local function is async.
+    ///     Gets a value indicating whether the local function is async.
     /// </summary>
     public bool IsAsync => _symbol.IsAsync;
 
     /// <summary>
-    /// Gets a value indicating whether the local function is static.
+    ///     Gets a value indicating whether the local function is static.
     /// </summary>
     public bool IsStatic => _syntax.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword));
 
     /// <summary>
-    /// Gets the number of parameters.
+    ///     Gets the number of parameters.
     /// </summary>
     public int ParameterCount => _symbol.Parameters.Length;
 
     /// <summary>
-    /// Gets the parameters of the local function.
+    ///     Gets the parameters of the local function.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ParameterEntity> Parameters => 
+    public IEnumerable<ParameterEntity> Parameters =>
         _symbol.Parameters.Select(p => new ParameterEntity(p));
 
     /// <summary>
-    /// Gets a value indicating whether the local function has a body.
+    ///     Gets a value indicating whether the local function has a body.
     /// </summary>
     public bool HasBody => _syntax.Body != null || _syntax.ExpressionBody != null;
 
     /// <summary>
-    /// Gets the number of statements in the local function body.
+    ///     Gets the number of statements in the local function body.
     /// </summary>
     public int StatementsCount => _syntax.Body?.Statements.Count ?? 0;
 
     /// <summary>
-    /// Gets the lines of code for this local function.
+    ///     Gets the lines of code for this local function.
     /// </summary>
     public int LinesOfCode
     {
@@ -81,7 +81,7 @@ public class LocalFunctionEntity
     }
 
     /// <summary>
-    /// Gets the cyclomatic complexity of the local function.
+    ///     Gets the cyclomatic complexity of the local function.
     /// </summary>
     public int CyclomaticComplexity
     {
@@ -105,19 +105,19 @@ public class LocalFunctionEntity
     }
 
     /// <summary>
-    /// Gets the body text of the local function.
+    ///     Gets the body text of the local function.
     /// </summary>
     public string Text => _syntax.ToFullString();
 
     /// <summary>
-    /// Gets the attributes applied to the local function.
+    ///     Gets the attributes applied to the local function.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<AttributeEntity> Attributes => 
+    public IEnumerable<AttributeEntity> Attributes =>
         _symbol.GetAttributes().Select(attr => new AttributeEntity(attr));
 
     /// <summary>
-    /// Returns a string representation of the local function.
+    ///     Returns a string representation of the local function.
     /// </summary>
     /// <returns>A string representing the local function.</returns>
     public override string ToString()

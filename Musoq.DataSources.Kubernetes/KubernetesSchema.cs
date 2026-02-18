@@ -19,23 +19,22 @@ using Musoq.DataSources.Kubernetes.Services;
 using Musoq.DataSources.Kubernetes.StatefulSets;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Kubernetes;
 
 /// <description>
-/// Provides schema to work with Kubernetes.
+///     Provides schema to work with Kubernetes.
 /// </description>
 /// <short-description>
-/// Provides schema to work with Kubernetes.
+///     Provides schema to work with Kubernetes.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class KubernetesSchema : SchemaBase
 {
     private const string SchemaName = "kubernetes";
-    
+
     private const string PodsTableName = "pods";
     private const string ServicesTableName = "services";
     private const string DeploymentsTableName = "deployments";
@@ -53,18 +52,21 @@ public class KubernetesSchema : SchemaBase
     private const string PodContainersTableName = "podcontainers";
     private const string PodLogsTableName = "podlogs";
     private const string EventsTableName = "events";
-    
+
     private readonly Func<RuntimeContext, object[], IKubernetesApi> _clientFactory;
-    
+
     /// <virtual-constructors>
     ///     <virtual-constructor>
     ///         <examples>
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.deployments()
+    ///                     #kubernetes.deployments()
     ///                 </from>
     ///                 <description>Enumerate deployments</description>
     ///                 <columns>
@@ -87,9 +89,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                         #kubernetes.pods()
+    ///                     #kubernetes.pods()
     ///                 </from>
     ///                 <description>Enumerate pods</description>
     ///                 <columns>
@@ -112,9 +117,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.services()
+    ///                     #kubernetes.services()
     ///                 </from>
     ///                 <description>Enumerates services</description>
     ///                 <columns>
@@ -131,9 +139,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                         #kubernetes.nodes()
+    ///                     #kubernetes.nodes()
     ///                 </from>
     ///                 <description>Enumerates nodes</description>
     ///                 <columns>
@@ -157,9 +168,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.configmaps()
+    ///                     #kubernetes.configmaps()
     ///                 </from>
     ///                 <description>Enumerate configmaps</description>
     ///                 <columns>
@@ -175,9 +189,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.cronJobs()
+    ///                     #kubernetes.cronJobs()
     ///                 </from>
     ///                 <description>Enumerate cron jobs</description>
     ///                 <columns>
@@ -195,9 +212,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.daemonSets()
+    ///                     #kubernetes.daemonSets()
     ///                 </from>
     ///                 <description>Enumerate daemonsets</description>
     ///                 <columns>
@@ -218,9 +238,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.jobs()
+    ///                     #kubernetes.jobs()
     ///                 </from>
     ///                 <description>Enumerate jobs</description>
     ///                 <columns>
@@ -239,9 +262,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.persistentVolumeClaims()
+    ///                     #kubernetes.persistentVolumeClaims()
     ///                 </from>
     ///                 <description>Enumerate persistent volume claims</description>
     ///                 <columns>
@@ -260,9 +286,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.persistentVolumes()
+    ///                     #kubernetes.persistentVolumes()
     ///                 </from>
     ///                 <description>Enumerate persistent volumes</description>
     ///                 <columns>
@@ -284,9 +313,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.replicaSets()
+    ///                     #kubernetes.replicaSets()
     ///                 </from>
     ///                 <description>Enumerate replicasets</description>
     ///                 <columns>
@@ -304,9 +336,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.secretsData()
+    ///                     #kubernetes.secretsData()
     ///                 </from>
     ///                 <description>Enumerate secrets data</description>
     ///                 <columns>
@@ -323,9 +358,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.secrets()
+    ///                     #kubernetes.secrets()
     ///                 </from>
     ///                 <description>Enumerate secrets</description>
     ///                 <columns>
@@ -342,9 +380,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.statefulsets()
+    ///                     #kubernetes.statefulsets()
     ///                 </from>
     ///                 <description>Enumerate statefulsets</description>
     ///                 <columns>
@@ -361,9 +402,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.podcontainers()
+    ///                     #kubernetes.podcontainers()
     ///                 </from>
     ///                 <description>Enumerate pod containers</description>
     ///                 <columns>
@@ -385,9 +429,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.podlogs(string podName, string string containerName, string namespace)
+    ///                     #kubernetes.podlogs(string podName, string string containerName, string namespace)
     ///                 </from>
     ///                 <description>Enumerate pod containers</description>
     ///                 <columns>
@@ -404,9 +451,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.events()
+    ///                     #kubernetes.events()
     ///                 </from>
     ///                 <description>Enumerate events</description>
     ///                 <columns>
@@ -435,9 +485,12 @@ public class KubernetesSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables>
-    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">Kubernetes config file</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_KUBERNETES_CONFIG_FILE" isRequired="false">
+    ///                             Kubernetes config
+    ///                             file
+    ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                        #kubernetes.events(string namespace)
+    ///                     #kubernetes.events(string namespace)
     ///                 </from>
     ///                 <description>Enumerate events</description>
     ///                 <columns>
@@ -462,39 +515,39 @@ public class KubernetesSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     /// </virtual-constructors>
-    public KubernetesSchema() 
+    public KubernetesSchema()
         : base(SchemaName, CreateLibrary())
     {
         _clientFactory = (context, parameters) =>
         {
             KubernetesClientConfiguration clientConfiguration;
             k8s.Kubernetes client;
-            
+
             if (context.EnvironmentVariables.ContainsKey("MUSOQ_KUBERNETES_CONFIG_FILE"))
             {
                 var fileContent = context.EnvironmentVariables["MUSOQ_KUBERNETES_CONFIG_FILE"];
                 using var stream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
                 clientConfiguration = KubernetesClientConfiguration.BuildConfigFromConfigFile(stream);
                 client = new k8s.Kubernetes(clientConfiguration);
-            
+
                 return new KubernetesApi(client);
             }
-            
+
             clientConfiguration = KubernetesClientConfiguration.BuildConfigFromConfigFile();
             client = new k8s.Kubernetes(clientConfiguration);
-                    
+
             return new KubernetesApi(client);
         };
     }
-    
-    internal KubernetesSchema(IKubernetesApi client) 
+
+    internal KubernetesSchema(IKubernetesApi client)
         : base(SchemaName, CreateLibrary())
     {
         _clientFactory = (context, parameters) => client;
     }
 
     /// <summary>
-    /// Gets the table name based on the given data source and parameters.
+    ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
     /// <param name="runtimeContext">Runtime context</param>
@@ -524,9 +577,9 @@ public class KubernetesSchema : SchemaBase
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }
-    
+
     /// <summary>
-    /// Gets the data source based on the given data source and parameters.
+    ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
     /// <param name="runtimeContext">Runtime context</param>
@@ -553,16 +606,18 @@ public class KubernetesSchema : SchemaBase
             CronJobsTableName => new CronJobsSource(client, runtimeContext),
             DaemonSetsTableName => new DaemonSetsSource(client, runtimeContext),
             StatefulSetsTableName => new StatefulSetsSource(client, runtimeContext),
-            PodLogsTableName => new PodLogsSource(client, (string)parameters[0], (string)parameters[1], (string)parameters[2], runtimeContext),
-            EventsTableName => new EventsSource(client, 
-                parameters.Length == 0 ? 
-                    api => api.ListEvents() : api => api.ListNamespacedEvents((string)parameters[0]), runtimeContext),
+            PodLogsTableName => new PodLogsSource(client, (string)parameters[0], (string)parameters[1],
+                (string)parameters[2], runtimeContext),
+            EventsTableName => new EventsSource(client,
+                parameters.Length == 0
+                    ? api => api.ListEvents()
+                    : api => api.ListNamespacedEvents((string)parameters[0]), runtimeContext),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }
 
     /// <summary>
-    /// Gets raw constructor information for a specific data source method.
+    ///     Gets raw constructor information for a specific data source method.
     /// </summary>
     /// <param name="methodName">Name of the data source method</param>
     /// <param name="runtimeContext">Runtime context</param>
@@ -595,7 +650,7 @@ public class KubernetesSchema : SchemaBase
     }
 
     /// <summary>
-    /// Gets raw constructor information for all data source methods in the schema.
+    ///     Gets raw constructor information for all data source methods in the schema.
     /// </summary>
     /// <param name="runtimeContext">Runtime context</param>
     /// <returns>Array of constructor information for all methods</returns>
@@ -629,9 +684,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreatePodsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(PodsTableName, constructorInfo);
     }
@@ -639,9 +694,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateServicesMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(ServicesTableName, constructorInfo);
     }
@@ -649,9 +704,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateDeploymentsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(DeploymentsTableName, constructorInfo);
     }
@@ -659,9 +714,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateReplicaSetsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(ReplicaSetsTableName, constructorInfo);
     }
@@ -669,9 +724,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateNodesMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(NodesTableName, constructorInfo);
     }
@@ -679,9 +734,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateSecretsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(SecretsTableName, constructorInfo);
     }
@@ -689,9 +744,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateConfigMapsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(ConfigMapsTableName, constructorInfo);
     }
@@ -699,9 +754,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateIngressesMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(IngressesTableName, constructorInfo);
     }
@@ -709,9 +764,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreatePersistentVolumesMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(PersistentVolumesTableName, constructorInfo);
     }
@@ -719,9 +774,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreatePersistentVolumeClaimsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(PersistentVolumeClaimsTableName, constructorInfo);
     }
@@ -729,9 +784,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateJobsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(JobsTableName, constructorInfo);
     }
@@ -739,9 +794,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateCronJobsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(CronJobsTableName, constructorInfo);
     }
@@ -749,9 +804,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateStatefulSetsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(StatefulSetsTableName, constructorInfo);
     }
@@ -759,9 +814,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreateDaemonSetsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(DaemonSetsTableName, constructorInfo);
     }
@@ -769,9 +824,9 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreatePodContainersMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         return new SchemaMethodInfo(PodContainersTableName, constructorInfo);
     }
@@ -779,9 +834,8 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo CreatePodLogsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments:
+            null!,
+            false,
             [
                 ("podName", typeof(string)),
                 ("containerName", typeof(string)),
@@ -794,14 +848,13 @@ public class KubernetesSchema : SchemaBase
     private static SchemaMethodInfo[] CreateEventsMethodInfos()
     {
         var eventsInfo1 = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []);
+            null!,
+            false,
+            []);
 
         var eventsInfo2 = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments:
+            null!,
+            false,
             [
                 ("namespaceName", typeof(string))
             ]);

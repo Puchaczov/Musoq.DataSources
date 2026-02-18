@@ -16,6 +16,6 @@ internal class ImagesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => ImagesSourceHelper.ImagesColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(ImagesListResponse));
 }

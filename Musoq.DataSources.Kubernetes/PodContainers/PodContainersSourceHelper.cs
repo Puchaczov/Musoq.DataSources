@@ -8,39 +8,40 @@ internal static class PodContainersSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> PodContainersNameToIndexMap = new Dictionary<string, int>
     {
-        {nameof(PodContainerEntity.Namespace), 0},
-        {nameof(PodContainerEntity.Name), 1},
-        {nameof(PodContainerEntity.ContainerName), 2},
-        {nameof(PodContainerEntity.Image), 3},
-        {nameof(PodContainerEntity.ImagePullPolicy), 4},
-        {nameof(PodContainerEntity.Age), 5},
-        {nameof(PodContainerEntity.SecurityContext), 6},
-        {nameof(PodContainerEntity.Stdin), 7},
-        {nameof(PodContainerEntity.StdinOnce), 8},
-        {nameof(PodContainerEntity.TerminationMessagePath), 9},
-        {nameof(PodContainerEntity.TerminationMessagePolicy), 10},
-        {nameof(PodContainerEntity.Tty), 11},
-        {nameof(PodContainerEntity.WorkingDir), 12},
+        { nameof(PodContainerEntity.Namespace), 0 },
+        { nameof(PodContainerEntity.Name), 1 },
+        { nameof(PodContainerEntity.ContainerName), 2 },
+        { nameof(PodContainerEntity.Image), 3 },
+        { nameof(PodContainerEntity.ImagePullPolicy), 4 },
+        { nameof(PodContainerEntity.Age), 5 },
+        { nameof(PodContainerEntity.SecurityContext), 6 },
+        { nameof(PodContainerEntity.Stdin), 7 },
+        { nameof(PodContainerEntity.StdinOnce), 8 },
+        { nameof(PodContainerEntity.TerminationMessagePath), 9 },
+        { nameof(PodContainerEntity.TerminationMessagePolicy), 10 },
+        { nameof(PodContainerEntity.Tty), 11 },
+        { nameof(PodContainerEntity.WorkingDir), 12 }
     };
 
-    public static readonly IReadOnlyDictionary<int, Func<PodContainerEntity, object?>> PodContainersIndexToMethodAccessMap =
-        new Dictionary<int, Func<PodContainerEntity, object?>>
-        {
-            {0, f => f.Namespace},
-            {1, f => f.Name},
-            {2, f => f.ContainerName},
-            {3, f => f.Image},
-            {4, f => f.ImagePullPolicy},
-            {5, f => f.Age},
-            {6, f => f.SecurityContext},
-            {7, f => f.Stdin},
-            {8, f => f.StdinOnce},
-            {9, f => f.TerminationMessagePath},
-            {10, f => f.TerminationMessagePolicy},
-            {11, f => f.Tty},
-            {12, f => f.WorkingDir},
-        };
-    
+    public static readonly IReadOnlyDictionary<int, Func<PodContainerEntity, object?>>
+        PodContainersIndexToMethodAccessMap =
+            new Dictionary<int, Func<PodContainerEntity, object?>>
+            {
+                { 0, f => f.Namespace },
+                { 1, f => f.Name },
+                { 2, f => f.ContainerName },
+                { 3, f => f.Image },
+                { 4, f => f.ImagePullPolicy },
+                { 5, f => f.Age },
+                { 6, f => f.SecurityContext },
+                { 7, f => f.Stdin },
+                { 8, f => f.StdinOnce },
+                { 9, f => f.TerminationMessagePath },
+                { 10, f => f.TerminationMessagePolicy },
+                { 11, f => f.Tty },
+                { 12, f => f.WorkingDir }
+            };
+
     public static readonly ISchemaColumn[] PodContainersColumns =
     [
         new SchemaColumn(nameof(PodContainerEntity.Namespace), 0, typeof(string)),

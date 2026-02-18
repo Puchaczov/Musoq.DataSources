@@ -8,7 +8,7 @@ internal class MessagesTable : ISchemaTable
     public ISchemaColumn[] Columns => MessagesSourceHelper.Columns;
 
     public SchemaTableMetadata Metadata => new(typeof(MessageEntity));
-    
+
     public ISchemaColumn? GetColumnByName(string name)
     {
         return Columns.FirstOrDefault(column => column.ColumnName == name);

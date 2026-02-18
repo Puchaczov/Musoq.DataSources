@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LibGit2Sharp;
@@ -29,7 +28,7 @@ internal sealed class StatusRowsSource(
             if (cancellationToken.IsCancellationRequested)
                 break;
 
-            // Apply pushdown filter for State
+
             if (!string.IsNullOrEmpty(filters.State) &&
                 !string.Equals(entry.State.ToString(), filters.State, StringComparison.OrdinalIgnoreCase))
                 continue;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -13,20 +13,20 @@ using Musoq.DataSources.AsyncRowsSource;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Helpers;
+using IObjectResolver = Musoq.Schema.DataSources.IObjectResolver;
 
 namespace Musoq.DataSources.SeparatedValues;
 
 internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
 {
     private const string SeparatedValuesSourceName = "separated_values";
-    private readonly SeparatedValueInfo[] _files;
     private const int BufferSize = 65536;
     private const int ChunkSize = 100000;
+    private readonly SeparatedValueInfo[] _files;
     private long _totalRowsProcessed;
-        
-    public RuntimeContext? RuntimeContext { get; init; }
 
-    public SeparatedValuesFromFileRowsSource(string filePath, string separator, bool hasHeader, int skipLines, CancellationToken cancellationToken)
+    public SeparatedValuesFromFileRowsSource(string filePath, string separator, bool hasHeader, int skipLines,
+        CancellationToken cancellationToken)
         : base(cancellationToken)
     {
         _files =
@@ -41,7 +41,8 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
         ];
     }
 
-    public SeparatedValuesFromFileRowsSource(IReadOnlyTable table, string separator, CancellationToken cancellationToken)
+    public SeparatedValuesFromFileRowsSource(IReadOnlyTable table, string separator,
+        CancellationToken cancellationToken)
         : base(cancellationToken)
     {
         _files = new SeparatedValueInfo[table.Count];
@@ -59,14 +60,18 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
         }
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
+    public RuntimeContext? RuntimeContext { get; init; }
+
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        CancellationToken cancellationToken)
     {
         RuntimeContext?.ReportDataSourceBegin(SeparatedValuesSourceName);
         _totalRowsProcessed = 0;
-        
+
         try
         {
-            await Parallel.ForEachAsync(_files, cancellationToken, async (file, loopToken) => await ProcessFileAsync(file, chunkedSource, loopToken));
+            await Parallel.ForEachAsync(_files, cancellationToken,
+                async (file, loopToken) => await ProcessFileAsync(file, chunkedSource, loopToken));
         }
         finally
         {
@@ -74,7 +79,8 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
         }
     }
 
-    private async Task ProcessFileAsync(SeparatedValueInfo csvFile, BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
+    private async Task ProcessFileAsync(SeparatedValueInfo csvFile,
+        BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         if (RuntimeContext is null)
             throw new InvalidOperationException("Runtime context is not set.");
@@ -103,25 +109,28 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
             TextInfo = { ListSeparator = csvFile.Separator }
         };
 
-        // Process header
-        await ProcessHeaderAsync(file, csvFile, nameToIndexMap, indexToMethodAccessMap, indexToNameMap, modifiedCulture);
 
-        // Process data
-        await ProcessDataAsync(file, csvFile, chunkedSource, nameToIndexMap, indexToMethodAccessMap, indexToNameMap, modifiedCulture, endWorkToken);
+        await ProcessHeaderAsync(file, csvFile, nameToIndexMap, indexToMethodAccessMap, indexToNameMap,
+            modifiedCulture);
+
+
+        await ProcessDataAsync(file, csvFile, chunkedSource, nameToIndexMap, indexToMethodAccessMap, indexToNameMap,
+            modifiedCulture, endWorkToken);
     }
 
     private static async Task ProcessHeaderAsync(
-        FileInfo file, 
-        SeparatedValueInfo csvFile, 
-        Dictionary<string, int> nameToIndexMap, 
-        Dictionary<int, Func<object?[], object?>> indexToMethodAccess, 
-        Dictionary<int, string> indexToNameMap, 
+        FileInfo file,
+        SeparatedValueInfo csvFile,
+        Dictionary<string, int> nameToIndexMap,
+        Dictionary<int, Func<object?[], object?>> indexToMethodAccess,
+        Dictionary<int, string> indexToNameMap,
         CultureInfo modifiedCulture
     )
     {
-        await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, FileOptions.SequentialScan);
-        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, BufferSize);
-            
+        await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
+            BufferSize, FileOptions.SequentialScan);
+        using var reader = new StreamReader(stream, Encoding.UTF8, true, BufferSize);
+
         await SkipLinesAsync(reader, csvFile.SkipLines);
 
         using var csvReader = new CsvReader(reader, modifiedCulture);
@@ -134,7 +143,9 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
 
         for (var i = 0; i < header.Length; ++i)
         {
-            var headerName = csvFile.HasHeader ? SeparatedValuesHelper.MakeHeaderNameValidColumnName(header[i]) : string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
+            var headerName = csvFile.HasHeader
+                ? SeparatedValuesHelper.MakeHeaderNameValidColumnName(header[i])
+                : string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
             nameToIndexMap.Add(headerName, i);
             indexToNameMap.Add(i, headerName);
             var i1 = i;
@@ -142,30 +153,28 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
         }
     }
 
-    private async Task ProcessDataAsync(FileInfo file, SeparatedValueInfo csvFile, 
-        BlockingCollection<IReadOnlyList<Musoq.Schema.DataSources.IObjectResolver>> chunkedSource,
-        Dictionary<string, int> nameToIndexMap, Dictionary<int, Func<object?[], object?>> indexToMethodAccess, 
-        Dictionary<int, string> indexToNameMap, CultureInfo modifiedCulture,  CancellationToken endWorkToken
+    private async Task ProcessDataAsync(FileInfo file, SeparatedValueInfo csvFile,
+        BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        Dictionary<string, int> nameToIndexMap, Dictionary<int, Func<object?[], object?>> indexToMethodAccess,
+        Dictionary<int, string> indexToNameMap, CultureInfo modifiedCulture, CancellationToken endWorkToken
     )
     {
-        if (RuntimeContext is null)
-        {
-            throw new InvalidOperationException("Runtime context is not set.");
-        }
-            
+        if (RuntimeContext is null) throw new InvalidOperationException("Runtime context is not set.");
+
         var types = RuntimeContext.AllColumns.ToDictionary(
             col => col.ColumnName,
             col => col.ColumnType.GetUnderlyingNullable());
-            
-        await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, FileOptions.SequentialScan);
-        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, BufferSize);
-            
+
+        await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
+            BufferSize, FileOptions.SequentialScan);
+        using var reader = new StreamReader(stream, Encoding.UTF8, true, BufferSize);
+
         await SkipLinesAsync(reader, csvFile.SkipLines);
 
         using var csvReader = new CsvReader(reader, new CsvConfiguration(modifiedCulture) { BadDataFound = _ => { } });
 
         if (csvFile.HasHeader)
-            await csvReader.ReadAsync(); // Skip header
+            await csvReader.ReadAsync();
 
         var chunk = new List<EntityResolver<object?[]>>(ChunkSize);
 
@@ -175,33 +184,28 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object[]>
                 break;
 
             var rawRow = csvReader.Context.Parser!.Record;
-                
+
             if (rawRow is null)
                 continue;
-                
-            chunk.Add(new EntityResolver<object?[]>(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap), nameToIndexMap, indexToMethodAccess));
+
+            chunk.Add(new EntityResolver<object?[]>(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap),
+                nameToIndexMap, indexToMethodAccess));
             Interlocked.Increment(ref _totalRowsProcessed);
 
             if (chunk.Count < ChunkSize) continue;
-                
+
             chunkedSource.Add(chunk, endWorkToken);
             chunk = new List<EntityResolver<object?[]>>(ChunkSize);
         }
 
-        if (chunk.Count > 0)
-        {
-            chunkedSource.Add(chunk, endWorkToken);
-        }
+        if (chunk.Count > 0) chunkedSource.Add(chunk, endWorkToken);
     }
 
     private static async Task SkipLinesAsync(TextReader reader, int linesToSkip)
     {
-        for (var i = 0; i < linesToSkip; i++)
-        {
-            await reader.ReadLineAsync();
-        }
+        for (var i = 0; i < linesToSkip; i++) await reader.ReadLineAsync();
     }
-        
+
     private class SeparatedValueInfo
     {
         public string? FilePath { get; init; }

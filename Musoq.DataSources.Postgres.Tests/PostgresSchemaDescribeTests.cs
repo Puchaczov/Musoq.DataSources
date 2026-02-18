@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Postgres.Tests;
@@ -12,6 +11,11 @@ namespace Musoq.DataSources.Postgres.Tests;
 [TestClass]
 public class PostgresSchemaDescribeTests
 {
+    static PostgresSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         var mockSchemaProvider = new Mock<ISchemaProvider>();
@@ -24,11 +28,6 @@ public class PostgresSchemaDescribeTests
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
-    static PostgresSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
-    }
-
     [TestMethod]
     public void DescSchema_ShouldReturnEmptyResult()
     {
@@ -37,7 +36,8 @@ public class PostgresSchemaDescribeTests
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
-        Assert.AreEqual(0, table.Count, "Postgres schema has dynamic table names, so desc #postgres should return empty result");
+        Assert.AreEqual(0, table.Count,
+            "Postgres schema has dynamic table names, so desc #postgres should return empty result");
     }
 
     [TestMethod]
@@ -84,10 +84,8 @@ public class PostgresSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

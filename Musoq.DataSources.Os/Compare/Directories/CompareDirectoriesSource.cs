@@ -1,10 +1,10 @@
-﻿using Musoq.Schema.DataSources;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Musoq.DataSources.Os.Files;
 using Musoq.Schema;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Compare.Directories;
 
@@ -19,16 +19,19 @@ internal class CompareDirectoriesSource(string firstDirectory, string secondDire
     {
         runtimeContext.ReportDataSourceBegin(CompareDirectoriesSourceName);
         long totalRowsProcessed = 0;
-        
+
         try
         {
             var leftJoinedFiles = from firstDirFile in GetAllFiles(_firstDirectory)
-                join secondDirFile in GetAllFiles(_secondDirectory) on firstDirFile.FullPath.Replace(_firstDirectory.FullName, string.Empty) equals secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty) into files
+                join secondDirFile in GetAllFiles(_secondDirectory) on
+                    firstDirFile.FullPath.Replace(_firstDirectory.FullName, string.Empty) equals secondDirFile.FullPath
+                        .Replace(_secondDirectory.FullName, string.Empty) into files
                 from secondDirFile in files.DefaultIfEmpty()
                 select new SourceDestinationFilesPair([firstDirFile, secondDirFile]);
 
             var rightJoinedFiles = from secondDirFile in GetAllFiles(_secondDirectory)
-                where !File.Exists(Path.Combine(_firstDirectory.FullName, secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty).Trim('\\')))
+                where !File.Exists(Path.Combine(_firstDirectory.FullName,
+                    secondDirFile.FullPath.Replace(_secondDirectory.FullName, string.Empty).Trim('\\')))
                 select new SourceDestinationFilesPair([null, secondDirFile]);
 
             var allFiles = leftJoinedFiles.Concat(rightJoinedFiles);
@@ -36,40 +39,34 @@ internal class CompareDirectoriesSource(string firstDirectory, string secondDire
             var lib = new OsLibrary();
             var source = new List<IObjectResolver>();
 
-            foreach(var files in allFiles)
+            foreach (var files in allFiles)
             {
                 State result;
 
-                // 11
+
                 if (files.Source != null && files.Destination != null)
-                {
-                    result = lib.Sha256File(files.Source) != lib.Sha256File(files.Destination) ? State.Modified : State.TheSame;
-                }
-                // 10
+                    result = lib.Sha256File(files.Source) != lib.Sha256File(files.Destination)
+                        ? State.Modified
+                        : State.TheSame;
+
                 else if (files.Source != null)
-                {
                     result = State.Removed;
-                }
-                // 01
+
                 else if (files.Destination != null)
-                {
                     result = State.Added;
-                }
-                // 00
+
                 else
-                {
                     continue;
-                }
 
-                var value = new CompareDirectoriesResult(_firstDirectory, files.Source, _secondDirectory, files.Destination, result);
+                var value = new CompareDirectoriesResult(_firstDirectory, files.Source, _secondDirectory,
+                    files.Destination, result);
 
-                source.Add(new EntityResolver<CompareDirectoriesResult>(value, CompareDirectoriesHelper.CompareDirectoriesNameToIndexMap, CompareDirectoriesHelper.CompareDirectoriesIndexToMethodAccessMap));
+                source.Add(new EntityResolver<CompareDirectoriesResult>(value,
+                    CompareDirectoriesHelper.CompareDirectoriesNameToIndexMap,
+                    CompareDirectoriesHelper.CompareDirectoriesIndexToMethodAccessMap));
                 totalRowsProcessed++;
 
-                if (source.Count <= 100)
-                {
-                    continue;
-                }
+                if (source.Count <= 100) continue;
 
                 runtimeContext.EndWorkToken.ThrowIfCancellationRequested();
 

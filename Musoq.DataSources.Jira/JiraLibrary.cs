@@ -5,12 +5,12 @@ using Musoq.Plugins.Attributes;
 namespace Musoq.DataSources.Jira;
 
 /// <summary>
-/// Helper methods for use in Jira queries.
+///     Helper methods for use in Jira queries.
 /// </summary>
 public class JiraLibrary : LibraryBase
 {
     /// <summary>
-    /// Checks if labels contain a specific label.
+    ///     Checks if labels contain a specific label.
     /// </summary>
     /// <param name="entity">Issue entity</param>
     /// <param name="label">Label to search for</param>
@@ -21,12 +21,13 @@ public class JiraLibrary : LibraryBase
         if (string.IsNullOrEmpty(entity.Labels))
             return false;
 
-        var labelList = entity.Labels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var labelList =
+            entity.Labels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return labelList.Contains(label, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
-    /// Checks if components contain a specific component.
+    ///     Checks if components contain a specific component.
     /// </summary>
     /// <param name="entity">Issue entity</param>
     /// <param name="component">Component to search for</param>
@@ -37,12 +38,13 @@ public class JiraLibrary : LibraryBase
         if (string.IsNullOrEmpty(entity.Components))
             return false;
 
-        var componentList = entity.Components.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var componentList =
+            entity.Components.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return componentList.Contains(component, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
-    /// Checks if fix versions contain a specific version.
+    ///     Checks if fix versions contain a specific version.
     /// </summary>
     /// <param name="entity">Issue entity</param>
     /// <param name="version">Version to search for</param>
@@ -53,12 +55,13 @@ public class JiraLibrary : LibraryBase
         if (string.IsNullOrEmpty(entity.FixVersions))
             return false;
 
-        var versionList = entity.FixVersions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var versionList =
+            entity.FixVersions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return versionList.Contains(version, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
-    /// Gets a custom field value from an issue.
+    ///     Gets a custom field value from an issue.
     /// </summary>
     /// <param name="entity">Issue entity</param>
     /// <param name="fieldName">Custom field name</param>
@@ -78,7 +81,7 @@ public class JiraLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Checks if an issue is a subtask.
+    ///     Checks if an issue is a subtask.
     /// </summary>
     /// <param name="entity">Issue entity</param>
     /// <returns>True if the issue is a subtask</returns>
@@ -89,7 +92,7 @@ public class JiraLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Checks if an issue is overdue.
+    ///     Checks if an issue is overdue.
     /// </summary>
     /// <param name="entity">Issue entity</param>
     /// <returns>True if the issue is overdue</returns>
@@ -99,12 +102,12 @@ public class JiraLibrary : LibraryBase
         if (!entity.DueDate.HasValue)
             return false;
 
-        // Issue is overdue if it's past the due date and not resolved
+
         return entity.DueDate.Value < DateTime.Today && string.IsNullOrEmpty(entity.Resolution);
     }
 
     /// <summary>
-    /// Gets the age of an issue in days.
+    ///     Gets the age of an issue in days.
     /// </summary>
     /// <param name="entity">Issue entity</param>
     /// <returns>Age in days</returns>
@@ -118,7 +121,7 @@ public class JiraLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets the time to resolution in days.
+    ///     Gets the time to resolution in days.
     /// </summary>
     /// <param name="entity">Issue entity</param>
     /// <returns>Days to resolution, or null if not resolved</returns>
@@ -132,7 +135,7 @@ public class JiraLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Converts time in seconds to a formatted duration string.
+    ///     Converts time in seconds to a formatted duration string.
     /// </summary>
     /// <param name="seconds">Time in seconds</param>
     /// <returns>Formatted duration (e.g., "2h 30m")</returns>
@@ -143,22 +146,16 @@ public class JiraLibrary : LibraryBase
             return null;
 
         var timeSpan = TimeSpan.FromSeconds(seconds.Value);
-        
-        if (timeSpan.TotalDays >= 1)
-        {
-            return $"{(int)timeSpan.TotalDays}d {timeSpan.Hours}h {timeSpan.Minutes}m";
-        }
-        
-        if (timeSpan.TotalHours >= 1)
-        {
-            return $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m";
-        }
-        
+
+        if (timeSpan.TotalDays >= 1) return $"{(int)timeSpan.TotalDays}d {timeSpan.Hours}h {timeSpan.Minutes}m";
+
+        if (timeSpan.TotalHours >= 1) return $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m";
+
         return $"{(int)timeSpan.TotalMinutes}m";
     }
 
     /// <summary>
-    /// Extracts the project key from an issue key.
+    ///     Extracts the project key from an issue key.
     /// </summary>
     /// <param name="issueKey">Issue key (e.g., PROJ-123)</param>
     /// <returns>Project key (e.g., PROJ)</returns>
@@ -173,7 +170,7 @@ public class JiraLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Extracts the issue number from an issue key.
+    ///     Extracts the issue number from an issue key.
     /// </summary>
     /// <param name="issueKey">Issue key (e.g., PROJ-123)</param>
     /// <returns>Issue number (e.g., 123)</returns>

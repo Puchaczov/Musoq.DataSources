@@ -1,4 +1,5 @@
 ﻿// ReSharper disable InconsistentNaming
+
 namespace Musoq.DataSources.LLMHelpers;
 
 public interface ILargeLanguageModelFunctions<in TEntity>
@@ -8,7 +9,7 @@ public interface ILargeLanguageModelFunctions<in TEntity>
     string Sentiment(TEntity entity, string content, bool throwOnUnknown = false);
 
     string SummarizeContent(TEntity entity, string content);
-    
+
     string TranslateContent(TEntity entity, string content, string from, string to);
 
     string[] Entities(TEntity entity, string content, bool throwOnException = false);

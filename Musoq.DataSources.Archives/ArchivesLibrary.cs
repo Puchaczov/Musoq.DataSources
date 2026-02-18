@@ -7,14 +7,14 @@ using SharpCompress.Readers;
 namespace Musoq.DataSources.Archives;
 
 /// <summary>
-/// Archives helper methods
+///     Archives helper methods
 /// </summary>
 [BindableClass]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public class ArchivesLibrary : LibraryBase
 {
     /// <summary>
-    /// Gets the content of the entry as byte array.
+    ///     Gets the content of the entry as byte array.
     /// </summary>
     /// <param name="source" injectedByRuntime="true">the archive entry</param>
     /// <returns>Content of a file</returns>
@@ -25,9 +25,9 @@ public class ArchivesLibrary : LibraryBase
 
         return stream.ToArray();
     }
-    
+
     /// <summary>
-    /// Gets the content of the entry as string.
+    ///     Gets the content of the entry as string.
     /// </summary>
     /// <param name="source">the archive entry</param>
     /// <returns></returns>
@@ -39,9 +39,9 @@ public class ArchivesLibrary : LibraryBase
 
         return reader.ReadToEnd();
     }
-    
+
     /// <summary>
-    /// Gets the content of the entry as stream.
+    ///     Gets the content of the entry as stream.
     /// </summary>
     /// <param name="source" injectedByRuntime="true">the archive entry</param>
     /// <returns>Stream of a file</returns>
@@ -58,22 +58,22 @@ public class ArchivesLibrary : LibraryBase
         {
             LeaveStreamOpen = true
         });
-        
+
         var currentIndex = 0;
-        while(reader.MoveToNextEntry())
+        while (reader.MoveToNextEntry())
         {
             if (currentIndex == source.Index)
                 break;
-            
+
             currentIndex++;
         }
-        
+
         using var stream = reader.OpenEntryStream();
         var memoryStream = new MemoryStream();
         stream.CopyTo(memoryStream);
-        
+
         memoryStream.Position = 0;
-        
+
         return memoryStream;
     }
 }

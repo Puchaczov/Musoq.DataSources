@@ -17,34 +17,33 @@ internal sealed class CSharpInMemorySolutionRowsSource(
     SolutionEntity solution,
     IHttpClient? httpClient,
     IFileSystem? fileSystem,
-    string? nugetPropertiesResolveEndpoint, 
+    string? nugetPropertiesResolveEndpoint,
     INuGetPropertiesResolver nuGetPropertiesResolver,
-    ILogger logger, 
+    ILogger logger,
     RuntimeContext runtimeContext
 )
     : CSharpSolutionRowsSourceBase(runtimeContext)
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
+    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        CancellationToken cancellationToken)
     {
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
-        
+
         chunkedSource.Add(new List<IObjectResolver>
         {
             new EntityResolver<SolutionEntity>(
                 solution.CloneWith(
                     new NuGetPackageMetadataRetriever(
                         new NuGetCachePathResolver(
-                            solution.Path, 
-                            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 
-                                OSPlatform.Windows : 
-                                OSPlatform.Linux,
+                            solution.Path,
+                            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux,
                             logger
-                        ), 
+                        ),
                         nugetPropertiesResolveEndpoint,
                         new NuGetRetrievalService(
                             nuGetPropertiesResolver,
                             fileSystem,
-                            httpClient), 
+                            httpClient),
                         fileSystem,
                         packageVersionConcurrencyManager,
                         SolutionOperationsCommand.BannedPropertiesValues,
@@ -53,7 +52,7 @@ internal sealed class CSharpInMemorySolutionRowsSource(
                     RuntimeContext.EndWorkToken
                 ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)
         }, cancellationToken);
-        
+
         return Task.CompletedTask;
     }
 }

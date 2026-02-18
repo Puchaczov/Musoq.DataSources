@@ -1,11 +1,9 @@
 using System;
-using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.SeparatedValues.Tests;
@@ -146,9 +144,7 @@ public class SeparatedValuesSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 }

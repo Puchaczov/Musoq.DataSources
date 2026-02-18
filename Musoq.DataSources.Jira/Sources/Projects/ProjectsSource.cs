@@ -8,7 +8,7 @@ using Musoq.Schema.DataSources;
 namespace Musoq.DataSources.Jira.Sources.Projects;
 
 /// <summary>
-/// Row source for Jira projects.
+///     Row source for Jira projects.
 /// </summary>
 internal class ProjectsSource : AsyncRowsSourceBase<IJiraProject>
 {
@@ -23,7 +23,8 @@ internal class ProjectsSource : AsyncRowsSourceBase<IJiraProject>
         _runtimeContext = runtimeContext;
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;

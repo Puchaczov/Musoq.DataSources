@@ -3,13 +3,17 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using SharpCompress.Common;
 
 namespace Musoq.DataSources.Archives.Tests;
 
 [TestClass]
 public class ArchivesSchemaDescribeTests
 {
+    static ArchivesSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
@@ -17,11 +21,6 @@ public class ArchivesSchemaDescribeTests
             Guid.NewGuid().ToString(),
             new ArchivesSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static ArchivesSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -96,10 +95,8 @@ public class ArchivesSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -135,10 +132,8 @@ public class ArchivesSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

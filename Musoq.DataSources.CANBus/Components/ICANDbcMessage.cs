@@ -3,12 +3,12 @@
 namespace Musoq.DataSources.CANBus.Components;
 
 /// <summary>
-/// Represents a single CAN message.
+///     Represents a single CAN message.
 /// </summary>
 public interface ICANDbcMessage
 {
     /// <summary>
-    /// Gets the message.
+    ///     Gets the message.
     /// </summary>
     Message? Message { get; }
 }

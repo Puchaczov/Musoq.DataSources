@@ -7,26 +7,27 @@ internal static class JobsSourceHelper
 {
     internal static readonly IReadOnlyDictionary<string, int> JobsNameToIndexMap = new Dictionary<string, int>
     {
-        {nameof(JobEntity.Namespace), 0},
-        {nameof(JobEntity.Name), 1},
-        {nameof(JobEntity.Completions), 2},
-        {nameof(JobEntity.Duration), 3},
-        {nameof(JobEntity.Images), 4},
-        {nameof(JobEntity.Containers), 5},
-        {nameof(JobEntity.Age), 6}
+        { nameof(JobEntity.Namespace), 0 },
+        { nameof(JobEntity.Name), 1 },
+        { nameof(JobEntity.Completions), 2 },
+        { nameof(JobEntity.Duration), 3 },
+        { nameof(JobEntity.Images), 4 },
+        { nameof(JobEntity.Containers), 5 },
+        { nameof(JobEntity.Age), 6 }
     };
 
-    internal static readonly IReadOnlyDictionary<int, Func<JobEntity, object?>> JobsIndexToMethodAccessMap = new Dictionary<int, Func<JobEntity, object?>>
-    {
-        {0, c => c.Namespace},
-        {1, c => c.Name},
-        {2, c => c.Completions},
-        {3, c => c.Duration},
-        {4, c => c.Images},
-        {5, c => c.Containers},
-        {6, c => c.Age}
-    };
-    
+    internal static readonly IReadOnlyDictionary<int, Func<JobEntity, object?>> JobsIndexToMethodAccessMap =
+        new Dictionary<int, Func<JobEntity, object?>>
+        {
+            { 0, c => c.Namespace },
+            { 1, c => c.Name },
+            { 2, c => c.Completions },
+            { 3, c => c.Duration },
+            { 4, c => c.Images },
+            { 5, c => c.Containers },
+            { 6, c => c.Age }
+        };
+
     internal static readonly ISchemaColumn[] JobsColumns =
     [
         new SchemaColumn(nameof(JobEntity.Namespace), 0, typeof(string)),

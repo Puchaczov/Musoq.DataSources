@@ -3,185 +3,183 @@ using Atlassian.Jira;
 namespace Musoq.DataSources.Jira.Entities;
 
 /// <summary>
-/// Represents a Jira issue entity for querying.
+///     Represents a Jira issue entity for querying.
 /// </summary>
 public class IssueEntity : IJiraIssue
 {
-    private readonly Issue _issue;
-
     /// <summary>
-    /// Initializes a new instance of the IssueEntity class.
+    ///     Initializes a new instance of the IssueEntity class.
     /// </summary>
     /// <param name="issue">The underlying Atlassian.SDK issue.</param>
     public IssueEntity(Issue issue)
     {
-        _issue = issue;
+        UnderlyingIssue = issue;
     }
 
     /// <summary>
-    /// Gets the issue key (e.g., PROJ-123).
+    ///     Gets the underlying issue for custom field access.
     /// </summary>
-    public string Key => _issue.Key?.Value ?? string.Empty;
+    internal Issue UnderlyingIssue { get; }
 
     /// <summary>
-    /// Gets the issue ID (internal Jira ID).
+    ///     Gets the issue key (e.g., PROJ-123).
     /// </summary>
-    public string Id => _issue.JiraIdentifier ?? string.Empty;
+    public string Key => UnderlyingIssue.Key?.Value ?? string.Empty;
 
     /// <summary>
-    /// Gets the issue summary/title.
+    ///     Gets the issue ID (internal Jira ID).
     /// </summary>
-    public string Summary => _issue.Summary ?? string.Empty;
+    public string Id => UnderlyingIssue.JiraIdentifier ?? string.Empty;
 
     /// <summary>
-    /// Gets the issue description.
+    ///     Gets the issue summary/title.
     /// </summary>
-    public string? Description => _issue.Description;
+    public string Summary => UnderlyingIssue.Summary ?? string.Empty;
 
     /// <summary>
-    /// Gets the issue type name (e.g., Bug, Story, Task).
+    ///     Gets the issue description.
     /// </summary>
-    public string Type => _issue.Type?.Name ?? string.Empty;
+    public string? Description => UnderlyingIssue.Description;
 
     /// <summary>
-    /// Gets the issue status name.
+    ///     Gets the issue type name (e.g., Bug, Story, Task).
     /// </summary>
-    public string Status => _issue.Status?.Name ?? string.Empty;
+    public string Type => UnderlyingIssue.Type?.Name ?? string.Empty;
 
     /// <summary>
-    /// Gets the issue priority name.
+    ///     Gets the issue status name.
     /// </summary>
-    public string? Priority => _issue.Priority?.Name;
+    public string Status => UnderlyingIssue.Status?.Name ?? string.Empty;
 
     /// <summary>
-    /// Gets the issue resolution name.
+    ///     Gets the issue priority name.
     /// </summary>
-    public string? Resolution => _issue.Resolution?.Name;
+    public string? Priority => UnderlyingIssue.Priority?.Name;
 
     /// <summary>
-    /// Gets the assignee's username.
+    ///     Gets the issue resolution name.
     /// </summary>
-    public string? Assignee => _issue.Assignee;
+    public string? Resolution => UnderlyingIssue.Resolution?.Name;
 
     /// <summary>
-    /// Gets the assignee's display name.
+    ///     Gets the assignee's username.
     /// </summary>
-    public string? AssigneeDisplayName => _issue.AssigneeUser?.DisplayName;
+    public string? Assignee => UnderlyingIssue.Assignee;
 
     /// <summary>
-    /// Gets the reporter's username.
+    ///     Gets the assignee's display name.
     /// </summary>
-    public string? Reporter => _issue.Reporter;
+    public string? AssigneeDisplayName => UnderlyingIssue.AssigneeUser?.DisplayName;
 
     /// <summary>
-    /// Gets the reporter's display name.
+    ///     Gets the reporter's username.
     /// </summary>
-    public string? ReporterDisplayName => _issue.ReporterUser?.DisplayName;
+    public string? Reporter => UnderlyingIssue.Reporter;
 
     /// <summary>
-    /// Gets the project key.
+    ///     Gets the reporter's display name.
     /// </summary>
-    public string ProjectKey => _issue.Project ?? string.Empty;
+    public string? ReporterDisplayName => UnderlyingIssue.ReporterUser?.DisplayName;
 
     /// <summary>
-    /// Gets the creation date.
+    ///     Gets the project key.
     /// </summary>
-    public DateTimeOffset? CreatedAt => _issue.Created;
+    public string ProjectKey => UnderlyingIssue.Project ?? string.Empty;
 
     /// <summary>
-    /// Gets the last update date.
+    ///     Gets the creation date.
     /// </summary>
-    public DateTimeOffset? UpdatedAt => _issue.Updated;
+    public DateTimeOffset? CreatedAt => UnderlyingIssue.Created;
 
     /// <summary>
-    /// Gets the resolution date.
+    ///     Gets the last update date.
     /// </summary>
-    public DateTimeOffset? ResolvedAt => _issue.ResolutionDate;
+    public DateTimeOffset? UpdatedAt => UnderlyingIssue.Updated;
 
     /// <summary>
-    /// Gets the due date.
+    ///     Gets the resolution date.
     /// </summary>
-    public DateTime? DueDate => _issue.DueDate;
+    public DateTimeOffset? ResolvedAt => UnderlyingIssue.ResolutionDate;
 
     /// <summary>
-    /// Gets the labels as comma-separated string.
+    ///     Gets the due date.
     /// </summary>
-    public string Labels => _issue.Labels != null ? string.Join(", ", _issue.Labels) : string.Empty;
+    public DateTime? DueDate => UnderlyingIssue.DueDate;
 
     /// <summary>
-    /// Gets the components as comma-separated string.
+    ///     Gets the labels as comma-separated string.
     /// </summary>
-    public string Components => string.Join(", ", _issue.Components?.Select(c => c.Name) ?? []);
+    public string Labels => UnderlyingIssue.Labels != null ? string.Join(", ", UnderlyingIssue.Labels) : string.Empty;
 
     /// <summary>
-    /// Gets the fix versions as comma-separated string.
+    ///     Gets the components as comma-separated string.
     /// </summary>
-    public string FixVersions => string.Join(", ", _issue.FixVersions?.Select(v => v.Name) ?? []);
+    public string Components => string.Join(", ", UnderlyingIssue.Components?.Select(c => c.Name) ?? []);
 
     /// <summary>
-    /// Gets the affected versions as comma-separated string.
+    ///     Gets the fix versions as comma-separated string.
     /// </summary>
-    public string AffectsVersions => string.Join(", ", _issue.AffectsVersions?.Select(v => v.Name) ?? []);
+    public string FixVersions => string.Join(", ", UnderlyingIssue.FixVersions?.Select(v => v.Name) ?? []);
 
     /// <summary>
-    /// Gets the original time estimate in seconds.
+    ///     Gets the affected versions as comma-separated string.
     /// </summary>
-    public long? OriginalEstimateSeconds => _issue.TimeTrackingData?.OriginalEstimateInSeconds;
+    public string AffectsVersions => string.Join(", ", UnderlyingIssue.AffectsVersions?.Select(v => v.Name) ?? []);
 
     /// <summary>
-    /// Gets the remaining time estimate in seconds.
+    ///     Gets the original time estimate in seconds.
     /// </summary>
-    public long? RemainingEstimateSeconds => _issue.TimeTrackingData?.RemainingEstimateInSeconds;
+    public long? OriginalEstimateSeconds => UnderlyingIssue.TimeTrackingData?.OriginalEstimateInSeconds;
 
     /// <summary>
-    /// Gets the time spent in seconds.
+    ///     Gets the remaining time estimate in seconds.
     /// </summary>
-    public long? TimeSpentSeconds => _issue.TimeTrackingData?.TimeSpentInSeconds;
+    public long? RemainingEstimateSeconds => UnderlyingIssue.TimeTrackingData?.RemainingEstimateInSeconds;
 
     /// <summary>
-    /// Gets the original time estimate as formatted string.
+    ///     Gets the time spent in seconds.
     /// </summary>
-    public string? OriginalEstimate => _issue.TimeTrackingData?.OriginalEstimate;
+    public long? TimeSpentSeconds => UnderlyingIssue.TimeTrackingData?.TimeSpentInSeconds;
 
     /// <summary>
-    /// Gets the remaining time estimate as formatted string.
+    ///     Gets the original time estimate as formatted string.
     /// </summary>
-    public string? RemainingEstimate => _issue.TimeTrackingData?.RemainingEstimate;
+    public string? OriginalEstimate => UnderlyingIssue.TimeTrackingData?.OriginalEstimate;
 
     /// <summary>
-    /// Gets the time spent as formatted string.
+    ///     Gets the remaining time estimate as formatted string.
     /// </summary>
-    public string? TimeSpent => _issue.TimeTrackingData?.TimeSpent;
+    public string? RemainingEstimate => UnderlyingIssue.TimeTrackingData?.RemainingEstimate;
 
     /// <summary>
-    /// Gets the parent issue key (for subtasks).
+    ///     Gets the time spent as formatted string.
     /// </summary>
-    public string? ParentKey => _issue.ParentIssueKey;
+    public string? TimeSpent => UnderlyingIssue.TimeTrackingData?.TimeSpent;
 
     /// <summary>
-    /// Gets the environment description.
+    ///     Gets the parent issue key (for subtasks).
     /// </summary>
-    public string? Environment => _issue.Environment;
+    public string? ParentKey => UnderlyingIssue.ParentIssueKey;
 
     /// <summary>
-    /// Gets the number of votes.
+    ///     Gets the environment description.
     /// </summary>
-    public long? Votes => _issue.Votes;
+    public string? Environment => UnderlyingIssue.Environment;
 
     /// <summary>
-    /// Gets the security level name.
+    ///     Gets the number of votes.
     /// </summary>
-    public string? SecurityLevel => _issue.SecurityLevel?.Name;
+    public long? Votes => UnderlyingIssue.Votes;
 
     /// <summary>
-    /// Gets the issue URL.
+    ///     Gets the security level name.
     /// </summary>
-    public string Url => _issue.JiraIdentifier != null 
-        ? $"{_issue.Jira?.Url}/browse/{_issue.Key?.Value}" 
+    public string? SecurityLevel => UnderlyingIssue.SecurityLevel?.Name;
+
+    /// <summary>
+    ///     Gets the issue URL.
+    /// </summary>
+    public string Url => UnderlyingIssue.JiraIdentifier != null
+        ? $"{UnderlyingIssue.Jira?.Url}/browse/{UnderlyingIssue.Key?.Value}"
         : string.Empty;
-
-    /// <summary>
-    /// Gets the underlying issue for custom field access.
-    /// </summary>
-    internal Issue UnderlyingIssue => _issue;
 }

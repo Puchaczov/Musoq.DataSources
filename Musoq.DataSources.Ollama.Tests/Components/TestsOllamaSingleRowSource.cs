@@ -6,12 +6,13 @@ namespace Musoq.DataSources.Ollama.Tests.Components;
 
 internal class TestsOllamaSingleRowSource : OllamaSingleRowSource
 {
-    public TestsOllamaSingleRowSource(IOllamaApi openAiApi, OllamaRequestInfo openAiRequestInfo) 
+    public TestsOllamaSingleRowSource(IOllamaApi openAiApi, OllamaRequestInfo openAiRequestInfo)
         : base(openAiApi, openAiRequestInfo)
     {
     }
 
-    public TestsOllamaSingleRowSource(RuntimeContext runtimeContext, OllamaRequestInfo ollamaRequestInfo, IHttpClientFactory httpClientFactory) 
+    public TestsOllamaSingleRowSource(RuntimeContext runtimeContext, OllamaRequestInfo ollamaRequestInfo,
+        IHttpClientFactory httpClientFactory)
         : base(runtimeContext, ollamaRequestInfo, httpClientFactory)
     {
         throw new NotImplementedException();

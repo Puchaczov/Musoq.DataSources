@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -7,30 +7,30 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
-using Musoq.DataSources.Os;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Directories;
+
 internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 {
     private const string DirectoriesSourceName = "directories";
-    
+
+    private const int ChunkSize = 2000;
+
     // ReSharper disable once InconsistentNaming
     private static readonly int MaxDegreeOfParallelism = Environment.ProcessorCount * 2;
-    
-    private const int ChunkSize = 2000;
-    private readonly string _path;
-    private readonly bool _recursive;
     private readonly RuntimeContext _communicator;
     private readonly OsDirectoryFilterParameters _dirFilters;
+    private readonly string _path;
+    private readonly bool _recursive;
 
-    public DirectoriesSource(string path, bool recursive, RuntimeContext communicator) 
+    public DirectoriesSource(string path, bool recursive, RuntimeContext communicator)
         : base(communicator.EndWorkToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentNullException.ThrowIfNull(communicator);
-        
+
         _path = new DirectoryInfo(path).FullName;
         _recursive = recursive;
         _communicator = communicator;
@@ -43,17 +43,16 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
     {
         _communicator.ReportDataSourceBegin(DirectoriesSourceName);
         long totalRowsProcessed = 0;
-        
+
         try
         {
             if (!Directory.Exists(_path))
                 return;
 
             var pendingResolvers = new List<string>(ChunkSize);
-        
+
             await foreach (var dir in EnumerateDirectoriesAsync(_path, _recursive, cancellationToken))
             {
-                // Apply WHERE pushdown: skip directories whose name does not match the filter
                 if (_dirFilters.Name != null &&
                     !Path.GetFileName(dir).Equals(_dirFilters.Name, StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -61,7 +60,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
                 pendingResolvers.Add(dir);
 
                 if (pendingResolvers.Count < ChunkSize) continue;
-            
+
                 var processed = await ProcessResolverChunkAsync(pendingResolvers, chunkedSource, cancellationToken);
                 Interlocked.Add(ref totalRowsProcessed, processed);
                 pendingResolvers.Clear();
@@ -111,7 +110,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 
         if (!resolvers.IsEmpty)
             chunkedSource.Add(resolvers.ToList(), cancellationToken);
-        
+
         return resolvers.Count;
     }
 
@@ -127,7 +126,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         {
             var currentDir = pendingDirs.Dequeue();
             string[] subDirs;
-            
+
             try
             {
                 subDirs = Directory.GetDirectories(currentDir);
@@ -140,18 +139,20 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
             foreach (var dir in subDirs)
             {
                 yield return dir;
-                
+
                 if (recursive)
                     pendingDirs.Enqueue(dir);
             }
 
             if (pendingDirs.Count <= 0 || pendingDirs.Count % 100 != 0) continue;
-            
+
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
         }
     }
 
-    private static bool ExpectedDirectoryException(Exception ex) =>
-        ex is UnauthorizedAccessException or DirectoryNotFoundException or PathTooLongException;
+    private static bool ExpectedDirectoryException(Exception ex)
+    {
+        return ex is UnauthorizedAccessException or DirectoryNotFoundException or PathTooLongException;
+    }
 }

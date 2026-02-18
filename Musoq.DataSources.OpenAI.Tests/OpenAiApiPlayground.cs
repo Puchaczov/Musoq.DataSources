@@ -15,14 +15,15 @@ public class OpenAiApiPlayground
         var library = new OpenAiLibrary();
         var entity = new OpenAiEntity(
             new OpenAiApi(
-                Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new ApplicationException("Api key must be set")), 
-            Defaults.DefaultModel, 
-            0, 
-            20, 
-            0, 
-            0, 
+                Environment.GetEnvironmentVariable("OPENAI_API_KEY") ??
+                throw new ApplicationException("Api key must be set")),
+            Defaults.DefaultModel,
+            0,
+            20,
+            0,
+            0,
             CancellationToken.None);
-        
+
         var file = new FileInfo(@"D:\Photos\Piotruś\iphone\test\AARD3200.JPG");
         var base64 = library.ToBase64(File.ReadAllBytes(file.FullName));
 

@@ -7,20 +7,21 @@ internal static class StatefulSetsSourceHelper
 {
     internal static readonly IReadOnlyDictionary<string, int> StatefulSetsNameToIndexMap = new Dictionary<string, int>
     {
-        {nameof(StatefulSetEntity.Namespace), 0},
-        {nameof(StatefulSetEntity.Name), 1},
-        {nameof(StatefulSetEntity.Replicas), 2},
-        {nameof(StatefulSetEntity.Age), 3}
+        { nameof(StatefulSetEntity.Namespace), 0 },
+        { nameof(StatefulSetEntity.Name), 1 },
+        { nameof(StatefulSetEntity.Replicas), 2 },
+        { nameof(StatefulSetEntity.Age), 3 }
     };
 
-    internal static readonly IReadOnlyDictionary<int, Func<StatefulSetEntity, object?>> StatefulSetsIndexToMethodAccessMap =
-        new Dictionary<int, Func<StatefulSetEntity, object?>>
-        {
-            {0, c => c.Namespace},
-            {1, c => c.Name},
-            {2, c => c.Replicas},
-            {3, c => c.Age}
-        };
+    internal static readonly IReadOnlyDictionary<int, Func<StatefulSetEntity, object?>>
+        StatefulSetsIndexToMethodAccessMap =
+            new Dictionary<int, Func<StatefulSetEntity, object?>>
+            {
+                { 0, c => c.Namespace },
+                { 1, c => c.Name },
+                { 2, c => c.Replicas },
+                { 3, c => c.Age }
+            };
 
     internal static readonly ISchemaColumn[] StatefulSetsColumns =
     [

@@ -20,15 +20,16 @@ internal class VolumesSource : RowSourceBase<VolumeResponse>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(VolumesSourceName);
-        
+
         try
         {
             var volumes = _api.ListVolumesAsync().Result;
             _runtimeContext.ReportDataSourceRowsKnown(VolumesSourceName, volumes.Count);
 
             chunkedSource.Add(
-                volumes.Select(c => new EntityResolver<VolumeResponse>(c, VolumesSourceHelper.VolumesNameToIndexMap, VolumesSourceHelper.VolumesIndexToMethodAccessMap)).ToList());
-            
+                volumes.Select(c => new EntityResolver<VolumeResponse>(c, VolumesSourceHelper.VolumesNameToIndexMap,
+                    VolumesSourceHelper.VolumesIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(VolumesSourceName, volumes.Count);
         }
         catch

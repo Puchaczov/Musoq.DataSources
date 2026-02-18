@@ -11,6 +11,11 @@ namespace Musoq.DataSources.Os.Tests;
 [TestClass]
 public class ImagesTests
 {
+    static ImagesTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void WhenDirectoryPointed_ShouldReturnItsMetadata()
     {
@@ -18,10 +23,10 @@ public class ImagesTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
-        
+
         Assert.AreEqual(2, table.Count);
     }
-    
+
     [TestMethod]
     public void WhenImagePointed_ShouldReturnItsMetadata()
     {
@@ -29,10 +34,10 @@ public class ImagesTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
-        
+
         Assert.AreEqual(157, table.Count);
     }
-    
+
     [TestMethod]
     public void WhenImagePointedWrongFile_ShouldNotThrow()
     {
@@ -40,10 +45,10 @@ public class ImagesTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
-        
+
         Assert.AreEqual(0, table.Count);
     }
-    
+
     [TestMethod]
     public void WhenGetMetadataWithDirectoryCalled_ShouldReturnMetadata()
     {
@@ -51,13 +56,13 @@ public class ImagesTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
-        
+
         Assert.AreEqual(2, table.Count);
-        
+
         Assert.AreEqual("Inch", table[0][0]);
         Assert.AreEqual("Inch", table[1][0]);
     }
-    
+
     [TestMethod]
     public void WhenGetMetadataCalled_ShouldReturnMetadata()
     {
@@ -65,13 +70,13 @@ public class ImagesTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
-        
+
         Assert.AreEqual(2, table.Count);
-        
+
         Assert.AreEqual("Inch", table[0][0]);
         Assert.AreEqual("Inch", table[1][0]);
     }
-    
+
     [TestMethod]
     public void WhenHasMetadataCalled_ShouldReturnTrue()
     {
@@ -79,13 +84,13 @@ public class ImagesTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
-        
+
         Assert.AreEqual(2, table.Count);
-        
+
         Assert.AreEqual(1, table[0][0]);
         Assert.AreEqual(1, table[1][0]);
     }
-    
+
     [TestMethod]
     public void WhenHasMetadataTagCalled_ShouldReturnTrue()
     {
@@ -93,13 +98,13 @@ public class ImagesTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
-        
+
         Assert.AreEqual(2, table.Count);
-        
+
         Assert.AreEqual(1, table[0][0]);
         Assert.AreEqual(1, table[1][0]);
     }
-    
+
     [TestMethod]
     public void WhenAllMetadataJsonCalled_ShouldReturnJson()
     {
@@ -107,9 +112,9 @@ public class ImagesTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
-        
+
         Assert.AreEqual(2, table.Count);
-        
+
         Assert.IsTrue(IsValidJson((string)table[0][0]));
         Assert.IsTrue(IsValidJson((string)table[1][0]));
     }
@@ -117,26 +122,27 @@ public class ImagesTests
     [TestMethod]
     public void WhenRetrieveMetadataFromMultipleFiles_ShouldPass()
     {
-        var query = "select f.Name, m.DirectoryName, m.TagName, m.Description from #os.files('./Images', false) f cross apply #os.metadata(f.FullPath) m";
-        
+        var query =
+            "select f.Name, m.DirectoryName, m.TagName, m.Description from #os.files('./Images', false) f cross apply #os.metadata(f.FullPath) m";
+
         var vm = CreateAndRunVirtualMachine(query);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(4, table.Columns.Count());
-        
+
         Assert.AreEqual("f.Name", table.Columns.ElementAt(0).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
-        
+
         Assert.AreEqual("m.DirectoryName", table.Columns.ElementAt(1).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(1).ColumnType);
-        
+
         Assert.AreEqual("m.TagName", table.Columns.ElementAt(2).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(2).ColumnType);
-        
+
         Assert.AreEqual("m.Description", table.Columns.ElementAt(3).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(3).ColumnType);
-        
+
         Assert.IsTrue(table.Count() > 100);
     }
 
@@ -155,11 +161,7 @@ public class ImagesTests
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
-        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static ImagesTests()
-    {
-        Culture.ApplyWithDefaultCulture();
+        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new OsSchemaProvider(),
+            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 }

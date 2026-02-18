@@ -11,9 +11,9 @@ internal class BranchesSource : AsyncRowsSourceBase<BranchEntity>
 {
     private const string SourceName = "github_branches";
     private readonly IGitHubApi _api;
-    private readonly RuntimeContext _runtimeContext;
     private readonly string _owner;
     private readonly string _repo;
+    private readonly RuntimeContext _runtimeContext;
 
     public BranchesSource(IGitHubApi api, RuntimeContext runtimeContext, string owner, string repo)
         : base(runtimeContext.EndWorkToken)
@@ -24,7 +24,8 @@ internal class BranchesSource : AsyncRowsSourceBase<BranchEntity>
         _repo = repo;
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
@@ -33,45 +34,41 @@ internal class BranchesSource : AsyncRowsSourceBase<BranchEntity>
         {
             var takeValue = _runtimeContext.QueryHints.TakeValue;
             var skipValue = _runtimeContext.QueryHints.SkipValue;
-            
-            int page = 1;
-            int perPage = 100;
-            
-            if (skipValue.HasValue && skipValue.Value > 0)
-            {
-                page = (int)(skipValue.Value / perPage) + 1;
-            }
-            
+
+            var page = 1;
+            var perPage = 100;
+
+            if (skipValue.HasValue && skipValue.Value > 0) page = (int)(skipValue.Value / perPage) + 1;
+
             var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
             var fetchedRows = 0;
-            
+
             while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
             {
                 var branches = await _api.GetBranchesAsync(_owner, _repo, perPage, page);
-                
+
                 if (branches.Count == 0)
                     break;
-                
+
                 var resolvers = branches
                     .Take(maxRows - fetchedRows)
                     .Select(b => new EntityResolver<BranchEntity>(
-                        b, 
-                        BranchesSourceHelper.BranchesNameToIndexMap, 
+                        b,
+                        BranchesSourceHelper.BranchesNameToIndexMap,
                         BranchesSourceHelper.BranchesIndexToMethodAccessMap))
                     .ToList();
-                
+
                 chunkedSource.Add(resolvers);
-                
+
                 fetchedRows += resolvers.Count;
                 totalRowsProcessed += resolvers.Count;
                 _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
-                
+
                 if (branches.Count < perPage)
                     break;
-                
+
                 page++;
             }
-            
         }
         catch (Exception ex)
         {

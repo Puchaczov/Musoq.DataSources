@@ -20,15 +20,17 @@ internal class ConfigmapsSource : RowSourceBase<ConfigmapEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(ConfigmapsSourceName);
-        
+
         try
         {
             var configmaps = _client.ListConfigMapsForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(ConfigmapsSourceName, configmaps.Items.Count);
 
             chunkedSource.Add(
-                configmaps.Items.Select(c => new EntityResolver<ConfigmapEntity>(MapV1ConfigmapToConfigmapEntity(c), ConfigmapsSourceHelper.ConfigmapsNameToIndexMap, ConfigmapsSourceHelper.ConfigmapsIndexToMethodAccessMap)).ToList());
-            
+                configmaps.Items.Select(c => new EntityResolver<ConfigmapEntity>(MapV1ConfigmapToConfigmapEntity(c),
+                    ConfigmapsSourceHelper.ConfigmapsNameToIndexMap,
+                    ConfigmapsSourceHelper.ConfigmapsIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(ConfigmapsSourceName, configmaps.Items.Count);
         }
         catch

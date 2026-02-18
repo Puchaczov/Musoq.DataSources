@@ -9,9 +9,9 @@ namespace Musoq.DataSources.Postgres.Visitors;
 internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
 {
     private readonly StringBuilder _builder = new();
-    
+
     public string StringifiedWherePart => _builder.ToString();
-    
+
     public void Visit(Node node)
     {
         throw new NotImplementedException();

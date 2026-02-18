@@ -20,45 +20,45 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
     </ItemGroup>
 
     <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
         <ItemGroup>
-            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')"/>
         </ItemGroup>
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="CsvHelper" Version="33.0.1" />
-        <PackageReference Include="DbcParserLib" Version="1.7.0" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Converter" Version="9.0.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="14.0.0" />
+        <PackageReference Include="CsvHelper" Version="33.0.1"/>
+        <PackageReference Include="DbcParserLib" Version="1.7.0"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Musoq.Converter" Version="9.0.0"/>
+        <PackageReference Include="Musoq.Evaluator" Version="14.0.0"/>
         <PackageReference Include="Musoq.Parser" Version="9.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="12.0.0" />
+        <PackageReference Include="Musoq.Plugins" Version="12.0.0"/>
         <PackageReference Include="Musoq.Schema" Version="14.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Iot.Device.Bindings" Version="3.2.0" />
-        <PackageReference Include="System.Device.Gpio" Version="3.2.0" />
+        <PackageReference Include="Iot.Device.Bindings" Version="3.2.0"/>
+        <PackageReference Include="System.Device.Gpio" Version="3.2.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
+        <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Components\CANBusApi.cs">
-        <DependentUpon>ICANBusApi.cs</DependentUpon>
-      </Compile>
+        <Compile Update="Components\CANBusApi.cs">
+            <DependentUpon>ICANBusApi.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Exceptions\" />
-      <Folder Include="Helpers\" />
+        <Folder Include="Exceptions\"/>
+        <Folder Include="Helpers\"/>
     </ItemGroup>
 
 </Project>

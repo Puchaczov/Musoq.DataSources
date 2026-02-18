@@ -14,36 +14,34 @@ internal class SingleQueryCacheResponseHandler(HttpMessageHandler innerHandler) 
         : this(new HttpClientHandler())
     {
     }
-    
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         var requestUri = request.RequestUri;
-        
+
         if (requestUri is null)
             throw new InvalidOperationException("Request URL is null");
 
         var url = new Url(requestUri.ToString());
-        
+
         var cacheItem = await _responseCache.GetOrAddAsync(
             url,
-            async () => 
+            async () =>
             {
                 var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 return await response.ToCacheItemAsync();
             },
             _ => true,
             cancellationToken);
-        
+
         return await cacheItem.FromCacheItemAsync();
     }
-    
+
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
-        {
-            _responseCache.Dispose();
-        }
-        
+        if (disposing) _responseCache.Dispose();
+
         base.Dispose(disposing);
     }
 }

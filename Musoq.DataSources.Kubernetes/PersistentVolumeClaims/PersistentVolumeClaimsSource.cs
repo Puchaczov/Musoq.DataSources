@@ -21,7 +21,7 @@ internal class PersistentVolumeClaimsSource : RowSourceBase<PersistentVolumeClai
     {
         _runtimeContext.ReportDataSourceBegin(PersistentVolumeClaimsSourceName);
         long totalRowsProcessed = 0;
-        
+
         try
         {
             var pvcList = _kubernetesApi.ListPersistentVolumeClaimsForAllNamespaces();
@@ -43,7 +43,7 @@ internal class PersistentVolumeClaimsSource : RowSourceBase<PersistentVolumeClai
     private static PersistentVolumeClaimEntity MapV1PersistentVolumeClaimToPersistentVolumeClaimsEntity(
         V1PersistentVolumeClaim v1Pvc)
     {
-        return new PersistentVolumeClaimEntity()
+        return new PersistentVolumeClaimEntity
         {
             Namespace = v1Pvc.Metadata.NamespaceProperty,
             Name = v1Pvc.Metadata.Name,

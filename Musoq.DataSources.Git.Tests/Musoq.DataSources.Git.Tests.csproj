@@ -9,30 +9,30 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="coverlet.collector" Version="6.0.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-        <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
-        <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
-        <PackageReference Include="Musoq.Converter" Version="9.0.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="14.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="9.0.0" />
-        <PackageReference Include="Musoq.Plugins" Version="12.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="14.0.0" />
+        <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0"/>
+        <PackageReference Include="MSTest.TestAdapter" Version="3.8.2"/>
+        <PackageReference Include="MSTest.TestFramework" Version="3.8.2"/>
+        <PackageReference Include="Musoq.Converter" Version="9.0.0"/>
+        <PackageReference Include="Musoq.Evaluator" Version="14.0.0"/>
+        <PackageReference Include="Musoq.Parser" Version="9.0.0"/>
+        <PackageReference Include="Musoq.Plugins" Version="12.0.0"/>
+        <PackageReference Include="Musoq.Schema" Version="14.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Musoq.DataSources.Git\Musoq.DataSources.Git.csproj" />
-        <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj" />
+        <ProjectReference Include="..\Musoq.DataSources.Git\Musoq.DataSources.Git.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="Repositories\**">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+        <Content Include="Repositories\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

@@ -14,16 +14,16 @@ internal static class AirtableBasesHelper
     {
         BasesNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(AirtableBase.Id), 0},
-            {nameof(AirtableBase.Name), 1},
-            {nameof(AirtableBase.PermissionLevel), 2},
+            { nameof(AirtableBase.Id), 0 },
+            { nameof(AirtableBase.Name), 1 },
+            { nameof(AirtableBase.PermissionLevel), 2 }
         };
 
         BasesIndexToMethodAccessMap = new Dictionary<int, Func<AirtableBase, object>>
         {
-            {0, @base => @base.Id},
-            {1, @base => @base.Name},
-            {2, @base => @base.PermissionLevel},
+            { 0, @base => @base.Id },
+            { 1, @base => @base.Name },
+            { 2, @base => @base.PermissionLevel }
         };
 
         BasesColumns =

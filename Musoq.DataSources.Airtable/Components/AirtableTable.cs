@@ -12,19 +12,14 @@ internal class AirtableTable
         Description = description;
         Fields = [];
     }
-    
-    [JsonPropertyName("fields")]
-    public AirtableField[] Fields { get; set; }
-    
-    [JsonPropertyName("id")]
-    public string Id { get; set; }
-    
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-    
-    [JsonPropertyName("primaryFieldId")]
-    public string PrimaryFieldId { get; set; }
-    
-    [JsonPropertyName("description")]
-    public string Description { get; set; }
+
+    [JsonPropertyName("fields")] public AirtableField[] Fields { get; set; }
+
+    [JsonPropertyName("id")] public string Id { get; set; }
+
+    [JsonPropertyName("name")] public string Name { get; set; }
+
+    [JsonPropertyName("primaryFieldId")] public string PrimaryFieldId { get; set; }
+
+    [JsonPropertyName("description")] public string Description { get; set; }
 }

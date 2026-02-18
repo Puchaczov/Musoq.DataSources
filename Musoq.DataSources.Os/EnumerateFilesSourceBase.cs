@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -16,38 +16,40 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
     RuntimeContext communicator)
     : AsyncRowsSourceBase<TEntity>(communicator.EndWorkToken)
 {
+    private readonly OsFileFilterParameters _fileFilters =
+        OsWhereNodeHelper.ExtractFileParameters(communicator.QuerySourceInfo.WhereNode);
+
     private readonly DirectorySourceSearchOptions[] _source =
     [
         new(new DirectoryInfo(path).FullName, useSubDirectories)
     ];
 
-    private readonly OsFileFilterParameters _fileFilters = OsWhereNodeHelper.ExtractFileParameters(communicator.QuerySourceInfo.WhereNode);
-
     protected virtual string DataSourceName => "files";
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        CancellationToken cancellationToken)
     {
         communicator.ReportDataSourceBegin(DataSourceName);
         long totalRowsProcessed = 0;
-        
+
         try
         {
             await Parallel.ForEachAsync(
-                _source, 
+                _source,
                 cancellationToken,
-                (source, token) => 
+                (source, token) =>
                 {
                     var sources = new Stack<DirectorySourceSearchOptions>();
 
                     if (!Directory.Exists(source.Path))
                         return ValueTask.CompletedTask;
-                    
+
                     sources.Push(source);
 
                     while (sources.Count > 0)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        
+
                         var currentSource = sources.Pop();
                         var dir = new DirectoryInfo(currentSource.Path);
                         var dirFiles = new List<EntityResolver<TEntity>>();
@@ -57,7 +59,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
                             foreach (var file in GetFiles(dir))
                             {
                                 cancellationToken.ThrowIfCancellationRequested();
-                                
+
                                 ProcessFile(file, source, dirFiles);
                             }
                         }
@@ -74,9 +76,10 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
 
                         if (currentSource.WithSubDirectories)
                             foreach (var subDir in dir.GetDirectories())
-                                sources.Push(new DirectorySourceSearchOptions(subDir.FullName, currentSource.WithSubDirectories));
+                                sources.Push(new DirectorySourceSearchOptions(subDir.FullName,
+                                    currentSource.WithSubDirectories));
                     }
-                
+
                     return ValueTask.CompletedTask;
                 });
         }
@@ -88,13 +91,11 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
 
     protected virtual FileInfo[] GetFiles(DirectoryInfo directoryInfo)
     {
-        // Apply WHERE pushdown: if Extension or Name filter is set, use OS-level pattern matching
         if (_fileFilters.Name != null)
             return directoryInfo.GetFiles(_fileFilters.Name);
 
         if (_fileFilters.Extension != null)
         {
-            // Convert ".txt" → "*.txt", already-glob patterns like "*.txt" pass through unchanged
             var pattern = _fileFilters.Extension.StartsWith('*')
                 ? _fileFilters.Extension
                 : $"*{_fileFilters.Extension}";
@@ -104,13 +105,17 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
         return directoryInfo.GetFiles();
     }
 
-    protected virtual void ProcessFile(FileInfo file, DirectorySourceSearchOptions source, List<EntityResolver<TEntity>> dirFiles)
+    protected virtual void ProcessFile(FileInfo file, DirectorySourceSearchOptions source,
+        List<EntityResolver<TEntity>> dirFiles)
     {
         var entity = CreateBasedOnFile(file, source.Path);
-        
+
         if (entity != null)
             dirFiles.Add(entity);
     }
 
-    protected virtual EntityResolver<TEntity>? CreateBasedOnFile(FileInfo file, string rootDirectory) => null;
+    protected virtual EntityResolver<TEntity>? CreateBasedOnFile(FileInfo file, string rootDirectory)
+    {
+        return null;
+    }
 }

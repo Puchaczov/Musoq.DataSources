@@ -18,9 +18,9 @@ internal sealed class DefaultHttpClient(Func<HttpClient> createHttpClient) : IHt
     public IHttpClient? NewInstance(Action<HttpClient> configure)
     {
         var httpClient = createHttpClient();
-        
+
         configure(httpClient);
-        
+
         return new DefaultHttpClient(() => httpClient);
     }
 
@@ -29,24 +29,25 @@ internal sealed class DefaultHttpClient(Func<HttpClient> createHttpClient) : IHt
         return await _httpClient.GetAsync(requestUrl, cancellationToken);
     }
 
-    public Task<HttpResponseMessage?> GetAsync(string requestUrl, Action<HttpClient> configure, CancellationToken cancellationToken)
+    public Task<HttpResponseMessage?> GetAsync(string requestUrl, Action<HttpClient> configure,
+        CancellationToken cancellationToken)
     {
         configure(_httpClient);
-        
+
         return GetAsync(requestUrl, cancellationToken);
     }
 
-    public async Task<TOut?> PostAsync<T, TOut>(string requestUrl, T obj, CancellationToken cancellationToken) 
+    public async Task<TOut?> PostAsync<T, TOut>(string requestUrl, T obj, CancellationToken cancellationToken)
         where T : class
         where TOut : class
     {
         var content = new StringContent(JsonSerializer.Serialize(obj));
         var response = await _httpClient.PostAsync(requestUrl, content, cancellationToken);
         var result = await response.Content.ReadAsStringAsync(cancellationToken);
-        
+
         if (string.IsNullOrEmpty(result))
             return null;
-        
+
         return JsonSerializer.Deserialize<TOut>(result);
     }
 
@@ -55,10 +56,10 @@ internal sealed class DefaultHttpClient(Func<HttpClient> createHttpClient) : IHt
     {
         var response = await _httpClient.PostAsync(requestUrl, multipartFormDataContent, cancellationToken);
         var result = await response.Content.ReadAsStringAsync(cancellationToken);
-        
+
         if (string.IsNullOrEmpty(result))
             return null;
-        
+
         return JsonSerializer.Deserialize<TOut>(result);
     }
 
@@ -66,10 +67,10 @@ internal sealed class DefaultHttpClient(Func<HttpClient> createHttpClient) : IHt
     {
         var response = await _httpClient.SendAsync(request, cancellationToken);
         var result = await response.Content.ReadAsStringAsync(cancellationToken);
-        
+
         if (string.IsNullOrEmpty(result))
             return default;
-        
+
         return JsonSerializer.Deserialize<TOut>(result);
     }
 }

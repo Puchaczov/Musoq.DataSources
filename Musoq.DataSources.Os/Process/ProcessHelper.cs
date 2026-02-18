@@ -9,53 +9,56 @@ namespace Musoq.DataSources.Os.Process;
 internal static class ProcessHelper
 {
     public static readonly IReadOnlyDictionary<string, int> ProcessNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<System.Diagnostics.Process, object>> ProcessIndexToMethodAccessMap;
+
+    public static readonly IReadOnlyDictionary<int, Func<System.Diagnostics.Process, object>>
+        ProcessIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] ProcessColumns;
 
     static ProcessHelper()
     {
         ProcessNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(System.Diagnostics.Process.BasePriority), 0},
-            {nameof(System.Diagnostics.Process.EnableRaisingEvents), 1},
-            {nameof(System.Diagnostics.Process.ExitCode), 2},
-            {nameof(System.Diagnostics.Process.ExitTime), 3},
-            {nameof(System.Diagnostics.Process.Handle), 4},
-            {nameof(System.Diagnostics.Process.HandleCount), 5},
-            {nameof(System.Diagnostics.Process.HasExited), 6},
-            {nameof(System.Diagnostics.Process.Id), 7},
-            {nameof(System.Diagnostics.Process.MachineName), 8},
-            {nameof(System.Diagnostics.Process.MainWindowTitle), 9},
-            {nameof(System.Diagnostics.Process.PagedMemorySize64), 10},
-            {nameof(System.Diagnostics.Process.ProcessName), 11},
-            {nameof(System.Diagnostics.Process.ProcessorAffinity), 12},
-            {nameof(System.Diagnostics.Process.Responding), 13},
-            {nameof(System.Diagnostics.Process.StartTime), 14},
-            {nameof(System.Diagnostics.Process.TotalProcessorTime), 15},
-            {nameof(System.Diagnostics.Process.UserProcessorTime), 16},
-            {"Directory", 17},
-            {"FileName", 18}
+            { nameof(System.Diagnostics.Process.BasePriority), 0 },
+            { nameof(System.Diagnostics.Process.EnableRaisingEvents), 1 },
+            { nameof(System.Diagnostics.Process.ExitCode), 2 },
+            { nameof(System.Diagnostics.Process.ExitTime), 3 },
+            { nameof(System.Diagnostics.Process.Handle), 4 },
+            { nameof(System.Diagnostics.Process.HandleCount), 5 },
+            { nameof(System.Diagnostics.Process.HasExited), 6 },
+            { nameof(System.Diagnostics.Process.Id), 7 },
+            { nameof(System.Diagnostics.Process.MachineName), 8 },
+            { nameof(System.Diagnostics.Process.MainWindowTitle), 9 },
+            { nameof(System.Diagnostics.Process.PagedMemorySize64), 10 },
+            { nameof(System.Diagnostics.Process.ProcessName), 11 },
+            { nameof(System.Diagnostics.Process.ProcessorAffinity), 12 },
+            { nameof(System.Diagnostics.Process.Responding), 13 },
+            { nameof(System.Diagnostics.Process.StartTime), 14 },
+            { nameof(System.Diagnostics.Process.TotalProcessorTime), 15 },
+            { nameof(System.Diagnostics.Process.UserProcessorTime), 16 },
+            { "Directory", 17 },
+            { "FileName", 18 }
         };
 
         ProcessIndexToMethodAccessMap = new Dictionary<int, Func<System.Diagnostics.Process, object>>
         {
-            {0, info => info.BasePriority},
-            {1, info => info.EnableRaisingEvents},
-            {2, info => info.ExitCode},
-            {3, info => info.ExitTime},
-            {4, info => info.Handle},
-            {5, info => info.HandleCount},
-            {6, info => info.HasExited},
-            {7, info => info.Id},
-            {8, info => info.MachineName},
-            {9, info => info.MainWindowTitle},
-            {10, info => info.PagedMemorySize64},
-            {11, info => info.ProcessName},
-            {12, info => info.ProcessorAffinity},
-            {13, info => info.Responding},
-            {14, info => info.StartTime},
-            {15, info => info.TotalProcessorTime},
-            {16, info => info.UserProcessorTime},
+            { 0, info => info.BasePriority },
+            { 1, info => info.EnableRaisingEvents },
+            { 2, info => info.ExitCode },
+            { 3, info => info.ExitTime },
+            { 4, info => info.Handle },
+            { 5, info => info.HandleCount },
+            { 6, info => info.HasExited },
+            { 7, info => info.Id },
+            { 8, info => info.MachineName },
+            { 9, info => info.MainWindowTitle },
+            { 10, info => info.PagedMemorySize64 },
+            { 11, info => info.ProcessName },
+            { 12, info => info.ProcessorAffinity },
+            { 13, info => info.Responding },
+            { 14, info => info.StartTime },
+            { 15, info => info.TotalProcessorTime },
+            { 16, info => info.UserProcessorTime },
             {
                 17, info =>
                 {

@@ -11,8 +11,9 @@ internal class PostgresRowSource : DatabaseRowSource
 {
     private readonly RuntimeContext _runtimeContext;
     private readonly string _schema;
-    
-    public PostgresRowSource(RuntimeContext runtimeContext, string schema, Func<IEnumerable<dynamic>>? returnQuery = null) 
+
+    public PostgresRowSource(RuntimeContext runtimeContext, string schema,
+        Func<IEnumerable<dynamic>>? returnQuery = null)
         : base(runtimeContext, returnQuery)
     {
         _runtimeContext = runtimeContext;
@@ -29,18 +30,19 @@ internal class PostgresRowSource : DatabaseRowSource
         var queryBuilder = new StringBuilder();
 
         queryBuilder.Append("SELECT");
-        queryBuilder.Append(string.Join(",", _runtimeContext.QuerySourceInfo.Columns.Select(f => $" \"{f.ColumnName}\"")));
+        queryBuilder.Append(string.Join(",",
+            _runtimeContext.QuerySourceInfo.Columns.Select(f => $" \"{f.ColumnName}\"")));
         queryBuilder.Append(" FROM ");
         queryBuilder.Append($"{_schema}.\"{_runtimeContext.QuerySourceInfo.FromNode.Method}\"");
         queryBuilder.Append(" WHERE ");
-        
+
         var visitor = new ToStringWhereQueryPartVisitor();
         var traverser = new ToStringWhereQueryPartTraverseVisitor(visitor);
-        
+
         _runtimeContext.QuerySourceInfo.WhereNode.Accept(traverser);
-        
+
         queryBuilder.Append(visitor.StringifiedWherePart);
-        
+
         return queryBuilder.ToString();
     }
 }

@@ -10,18 +10,18 @@ public class EventEntity
 
     public int? Count { get; set; }
 
-    public System.DateTime? EventTime { get; set; }
+    public DateTime? EventTime { get; set; }
 
-    public System.DateTime? FirstTimestamp { get; set; }
+    public DateTime? FirstTimestamp { get; set; }
 
     public V1ObjectReference InvolvedObject { get; set; }
 
     public string Kind { get; set; }
 
-    public System.DateTime? LastTimestamp { get; set; }
+    public DateTime? LastTimestamp { get; set; }
 
     public string Message { get; set; }
-    
+
     public V1ObjectMeta Metadata { get; set; }
 
     public string Reason { get; set; }

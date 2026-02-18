@@ -9,19 +9,19 @@ using Musoq.Schema.DataSources;
 namespace Musoq.DataSources.Jira.Sources.Issues;
 
 /// <summary>
-/// Row source for Jira issues with predicate pushdown support.
-/// Extracts filter conditions from WHERE clause and builds JQL for efficient querying.
+///     Row source for Jira issues with predicate pushdown support.
+///     Extracts filter conditions from WHERE clause and builds JQL for efficient querying.
 /// </summary>
 internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
 {
     private const string SourceName = "jira_issues";
     private readonly IJiraApi _api;
-    private readonly RuntimeContext _runtimeContext;
-    private readonly string? _projectKey;
     private readonly string? _jql;
+    private readonly string? _projectKey;
+    private readonly RuntimeContext _runtimeContext;
 
     /// <summary>
-    /// Creates an issues source for a specific project.
+    ///     Creates an issues source for a specific project.
     /// </summary>
     public IssuesSource(IJiraApi api, RuntimeContext runtimeContext, string projectKey)
         : base(runtimeContext.EndWorkToken)
@@ -33,7 +33,7 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
     }
 
     /// <summary>
-    /// Creates an issues source with a custom JQL query.
+    ///     Creates an issues source with a custom JQL query.
     /// </summary>
     public IssuesSource(IJiraApi api, RuntimeContext runtimeContext, string? projectKey, string? jql)
         : base(runtimeContext.EndWorkToken)
@@ -44,39 +44,37 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
         _jql = jql;
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
         try
         {
-            // Extract filter parameters from WHERE clause for predicate pushdown
             var filterParameters = JqlBuilder.ExtractParameters(_runtimeContext.QuerySourceInfo.WhereNode);
-            
-            // Build base JQL from project key if specified
-            var baseJql = !string.IsNullOrEmpty(_projectKey) 
-                ? $"project = {_projectKey}" 
+
+
+            var baseJql = !string.IsNullOrEmpty(_projectKey)
+                ? $"project = {_projectKey}"
                 : _jql;
-            
-            // Build final JQL with WHERE clause filters
+
+
             var finalJql = JqlBuilder.BuildJql(baseJql, filterParameters);
-            
-            // Apply ordering if not already in JQL
+
+
             if (!finalJql.Contains("order by", StringComparison.OrdinalIgnoreCase))
-            {
                 finalJql += " ORDER BY created DESC";
-            }
 
             var takeValue = _runtimeContext.QueryHints.TakeValue;
             var skipValue = _runtimeContext.QueryHints.SkipValue;
 
-            int startAt = skipValue.HasValue ? (int)skipValue.Value : 0;
-            int maxResults = 50;
+            var startAt = skipValue.HasValue ? (int)skipValue.Value : 0;
+            var maxResults = 50;
             var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
             var fetchedRows = 0;
 
-            // Fetch issues with pagination
+
             while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
             {
                 var issues = await _api.GetIssuesAsync(finalJql, maxResults, startAt);
@@ -97,7 +95,7 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
                 fetchedRows += resolvers.Count;
                 totalRowsProcessed += resolvers.Count;
                 startAt += issues.Count;
-                
+
                 _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
 
                 if (issues.Count < maxResults)

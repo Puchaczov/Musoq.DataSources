@@ -11,6 +11,11 @@ namespace Musoq.DataSources.Jira.Tests;
 [TestClass]
 public class JiraIssuesTests
 {
+    static JiraIssuesTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void WhenIssuesQueried_ShouldReturnValues()
     {
@@ -19,8 +24,8 @@ public class JiraIssuesTests
         api.Setup(f => f.GetIssuesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(new List<IJiraIssue>
             {
-                MockEntityFactory.CreateIssue(key: "TEST-1", summary: "First issue", status: "Open"),
-                MockEntityFactory.CreateIssue(key: "TEST-2", summary: "Second issue", status: "In Progress")
+                MockEntityFactory.CreateIssue("TEST-1", summary: "First issue", status: "Open"),
+                MockEntityFactory.CreateIssue("TEST-2", summary: "Second issue", status: "In Progress")
             });
 
         var query = "select Key, Summary, Status from #jira.issues('TEST')";
@@ -42,8 +47,8 @@ public class JiraIssuesTests
         api.Setup(f => f.GetIssuesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(new List<IJiraIssue>
             {
-                MockEntityFactory.CreateIssue(key: "TEST-1", summary: "Open issue", status: "Open"),
-                MockEntityFactory.CreateIssue(key: "TEST-2", summary: "Closed issue", status: "Closed")
+                MockEntityFactory.CreateIssue("TEST-1", summary: "Open issue", status: "Open"),
+                MockEntityFactory.CreateIssue("TEST-2", summary: "Closed issue", status: "Closed")
             });
 
         var query = "select Key, Summary, Status from #jira.issues('TEST') where Status = 'Open'";
@@ -64,8 +69,8 @@ public class JiraIssuesTests
         api.Setup(f => f.GetIssuesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(new List<IJiraIssue>
             {
-                MockEntityFactory.CreateIssue(key: "TEST-1", assignee: "john.doe"),
-                MockEntityFactory.CreateIssue(key: "TEST-2", assignee: "jane.doe")
+                MockEntityFactory.CreateIssue("TEST-1", assignee: "john.doe"),
+                MockEntityFactory.CreateIssue("TEST-2", assignee: "jane.doe")
             });
 
         var query = "select Key, Assignee from #jira.issues('TEST') where Assignee = 'john.doe'";
@@ -85,8 +90,8 @@ public class JiraIssuesTests
         api.Setup(f => f.GetIssuesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(new List<IJiraIssue>
             {
-                MockEntityFactory.CreateIssue(key: "TEST-1", type: "Bug"),
-                MockEntityFactory.CreateIssue(key: "TEST-2", type: "Story")
+                MockEntityFactory.CreateIssue("TEST-1", type: "Bug"),
+                MockEntityFactory.CreateIssue("TEST-2", type: "Story")
             });
 
         var query = "select Key, Type from #jira.issues('TEST') where Type = 'Bug'";
@@ -106,9 +111,9 @@ public class JiraIssuesTests
         api.Setup(f => f.GetIssuesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(new List<IJiraIssue>
             {
-                MockEntityFactory.CreateIssue(key: "TEST-1", status: "Open", priority: "High"),
-                MockEntityFactory.CreateIssue(key: "TEST-2", status: "Open", priority: "Low"),
-                MockEntityFactory.CreateIssue(key: "TEST-3", status: "Closed", priority: "High")
+                MockEntityFactory.CreateIssue("TEST-1", status: "Open", priority: "High"),
+                MockEntityFactory.CreateIssue("TEST-2", status: "Open", priority: "Low"),
+                MockEntityFactory.CreateIssue("TEST-3", status: "Closed", priority: "High")
             });
 
         var query = "select Key from #jira.issues('TEST') where Status = 'Open' and Priority = 'High'";
@@ -132,13 +137,13 @@ public class JiraIssuesTests
             .ReturnsAsync(new List<IJiraIssue>
             {
                 MockEntityFactory.CreateIssue(
-                    key: "TEST-123",
-                    id: "10001",
-                    summary: "Test summary",
-                    description: "Test description",
-                    type: "Story",
-                    status: "In Progress",
-                    priority: "High",
+                    "TEST-123",
+                    "10001",
+                    "Test summary",
+                    "Test description",
+                    "Story",
+                    "In Progress",
+                    "High",
                     assignee: "developer",
                     reporter: "product.owner",
                     projectKey: "TEST",
@@ -217,16 +222,11 @@ public class JiraIssuesTests
                 {
                     0, new Dictionary<string, string>
                     {
-                        {"JIRA_URL", "https://test.atlassian.net"},
-                        {"JIRA_USERNAME", "test@example.com"},
-                        {"JIRA_API_TOKEN", "test_token"}
+                        { "JIRA_URL", "https://test.atlassian.net" },
+                        { "JIRA_USERNAME", "test@example.com" },
+                        { "JIRA_API_TOKEN", "test_token" }
                     }
                 }
             });
-    }
-
-    static JiraIssuesTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

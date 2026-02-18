@@ -7,22 +7,21 @@ using Musoq.DataSources.Os.Directories;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.Os.Tests.Utils
+namespace Musoq.DataSources.Os.Tests.Utils;
+
+internal class TestDirectoriesSource(string path, bool recursive, RuntimeContext context)
+    : DirectoriesSource(path, recursive, context)
 {
-    class TestDirectoriesSource(string path, bool recursive, RuntimeContext context)
-        : DirectoriesSource(path, recursive, context)
+    public IReadOnlyList<EntityResolver<DirectoryInfo>> GetDirectories()
     {
-        public IReadOnlyList<EntityResolver<DirectoryInfo>> GetDirectories()
-        {
-            var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
-            CollectChunksAsync(collection, CancellationToken.None).Wait();
+        var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
+        CollectChunksAsync(collection, CancellationToken.None).Wait();
 
-            var list = new List<EntityResolver<DirectoryInfo>>();
+        var list = new List<EntityResolver<DirectoryInfo>>();
 
-            foreach (var item in collection)
-                list.AddRange(item.Select(dir => (EntityResolver<DirectoryInfo>)dir));
+        foreach (var item in collection)
+            list.AddRange(item.Select(dir => (EntityResolver<DirectoryInfo>)dir));
 
-            return list;
-        }
+        return list;
     }
 }

@@ -1,5 +1,5 @@
-using Spectre.Console.Cli;
 using Musoq.DataSources.Roslyn.CommandLineArguments.Commands;
+using Spectre.Console.Cli;
 
 namespace Musoq.DataSources.Roslyn.CommandLineArguments;
 
@@ -37,11 +37,13 @@ public static class SpectreArguments
                 solution.AddBranch("resolve-value-strategy", resolveValueStrategy =>
                 {
                     resolveValueStrategy.AddCommand<GetResolveValueStrategyCommand>("get")
-                        .WithDescription("Gets resolve value strategy. Will be equal to UseNugetOrgApiOnly | UseCustomApiOnly | UseNugetOrgApiAndCustomApi")
+                        .WithDescription(
+                            "Gets resolve value strategy. Will be equal to UseNugetOrgApiOnly | UseCustomApiOnly | UseNugetOrgApiAndCustomApi")
                         .WithData(invokeAsync);
 
                     resolveValueStrategy.AddCommand<SetResolveValueStrategyCommand>("set")
-                        .WithDescription("Sets resolve value strategy. Must be equal to UseNugetOrgApiOnly | UseCustomApiOnly | UseNugetOrgApiAndCustomApi")
+                        .WithDescription(
+                            "Sets resolve value strategy. Must be equal to UseNugetOrgApiOnly | UseCustomApiOnly | UseNugetOrgApiAndCustomApi")
                         .WithData(invokeAsync);
                 });
             });

@@ -1,23 +1,42 @@
-using System;
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Parser.Helpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Musoq.DataSources.Git.Tests;
 
 [TestClass]
 public class GitWhereNodeOptimizationTests
 {
+    static GitWhereNodeOptimizationTests()
+    {
+        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
+    }
+
+    private static string Repository2ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository2.zip");
+
+    private static string Repository3ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository3.zip");
+
+    private static string StartDirectory
+    {
+        get
+        {
+            var filePath = typeof(GitWhereNodeOptimizationTests).Assembly.Location;
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Directory is empty.");
+
+            return directory;
+        }
+    }
+
     [TestMethod]
-    public async System.Threading.Tasks.Task WhenCommitsFilteredByAuthor_ShouldReturnMatchingCommits()
+    public async Task WhenCommitsFilteredByAuthor_ShouldReturnMatchingCommits()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
 
@@ -33,11 +52,12 @@ public class GitWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(5, result.Count, "All 5 commits in Repository2 are by 'anonymous'");
-        Assert.IsTrue(result.All(r => (string)r[1] == "anonymous"), "Every returned commit should have Author = 'anonymous'");
+        Assert.IsTrue(result.All(r => (string)r[1] == "anonymous"),
+            "Every returned commit should have Author = 'anonymous'");
     }
 
     [TestMethod]
-    public async System.Threading.Tasks.Task WhenCommitsFilteredByNonExistentAuthor_ShouldReturnNoCommits()
+    public async Task WhenCommitsFilteredByNonExistentAuthor_ShouldReturnNoCommits()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
 
@@ -56,7 +76,7 @@ public class GitWhereNodeOptimizationTests
     }
 
     [TestMethod]
-    public async System.Threading.Tasks.Task WhenCommitsFilteredBySha_ShouldReturnSingleCommit()
+    public async Task WhenCommitsFilteredBySha_ShouldReturnSingleCommit()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
 
@@ -79,7 +99,7 @@ public class GitWhereNodeOptimizationTests
     }
 
     [TestMethod]
-    public async System.Threading.Tasks.Task WhenTagsFilteredByIsAnnotatedTrue_ShouldReturnAnnotatedTagsOnly()
+    public async Task WhenTagsFilteredByIsAnnotatedTrue_ShouldReturnAnnotatedTagsOnly()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository3ZipPath);
 
@@ -100,7 +120,7 @@ public class GitWhereNodeOptimizationTests
     }
 
     [TestMethod]
-    public async System.Threading.Tasks.Task WhenTagsFilteredByIsAnnotatedFalse_ShouldReturnNonAnnotatedTagsOnly()
+    public async Task WhenTagsFilteredByIsAnnotatedFalse_ShouldReturnNonAnnotatedTagsOnly()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository3ZipPath);
 
@@ -121,7 +141,7 @@ public class GitWhereNodeOptimizationTests
     }
 
     [TestMethod]
-    public async System.Threading.Tasks.Task WhenTagsFilteredByFriendlyName_ShouldReturnMatchingTag()
+    public async Task WhenTagsFilteredByFriendlyName_ShouldReturnMatchingTag()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository3ZipPath);
 
@@ -142,7 +162,7 @@ public class GitWhereNodeOptimizationTests
     }
 
     [TestMethod]
-    public async System.Threading.Tasks.Task WhenBranchesFilteredByFriendlyName_ShouldReturnMatchingBranch()
+    public async Task WhenBranchesFilteredByFriendlyName_ShouldReturnMatchingBranch()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
 
@@ -163,7 +183,7 @@ public class GitWhereNodeOptimizationTests
     }
 
     [TestMethod]
-    public async System.Threading.Tasks.Task WhenBranchesFilteredByIsRemoteFalse_ShouldReturnLocalBranchesOnly()
+    public async Task WhenBranchesFilteredByIsRemoteFalse_ShouldReturnLocalBranchesOnly()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository2ZipPath);
 
@@ -181,15 +201,11 @@ public class GitWhereNodeOptimizationTests
         Assert.AreEqual(2, result.Count, "Both branches in Repository2 are local");
         Assert.IsTrue(result.All(r => !(bool)r[1]), "All returned branches should have IsRemote = false");
         Assert.IsTrue(result.Any(r => (string)r[0] == "master"), "master branch should be in results");
-        Assert.IsTrue(result.Any(r => (string)r[0] == "feature/feature_a"), "feature/feature_a branch should be in results");
+        Assert.IsTrue(result.Any(r => (string)r[0] == "feature/feature_a"),
+            "feature/feature_a branch should be in results");
     }
 
-    static GitWhereNodeOptimizationTests()
-    {
-        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
-    }
-
-    private System.Threading.Tasks.Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath,
+    private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath,
         [CallerMemberName] string? testName = null)
     {
         if (testName is null)
@@ -215,31 +231,13 @@ public class GitWhereNodeOptimizationTests
 
         var fileName = Path.GetFileNameWithoutExtension(zippedRepositoryPath);
         var fullPath = Path.Combine(repositoryPath, fileName);
-        return System.Threading.Tasks.Task.FromResult(new UnpackedRepository(fullPath));
+        return Task.FromResult(new UnpackedRepository(fullPath));
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new GitSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    private static string Repository2ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository2.zip");
-
-    private static string Repository3ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository3.zip");
-
-    private static string StartDirectory
-    {
-        get
-        {
-            var filePath = typeof(GitWhereNodeOptimizationTests).Assembly.Location;
-            var directory = Path.GetDirectoryName(filePath);
-
-            if (string.IsNullOrEmpty(directory))
-                throw new InvalidOperationException("Directory is empty.");
-
-            return directory;
-        }
     }
 
     private class UnpackedRepository : IDisposable
@@ -259,13 +257,9 @@ public class GitWhereNodeOptimizationTests
             if (!IsCounter.TryGetValue(Path, out var value)) return;
 
             if (value == 1)
-            {
                 IsCounter.TryRemove(Path, out _);
-            }
             else
-            {
                 IsCounter.AddOrUpdate(Path, value - 1, (_, _) => value - 1);
-            }
         }
 
         public static implicit operator string(UnpackedRepository unpackedRepository)

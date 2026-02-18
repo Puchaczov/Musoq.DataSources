@@ -1,8 +1,8 @@
-﻿using Musoq.Schema.DataSources;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using Musoq.Schema;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Dlls;
 
@@ -20,7 +20,7 @@ internal class DllSource(string path, bool useSubDirectories, RuntimeContext com
         {
             asm = null;
         }
-        
+
         if (asm == null)
             return null;
 

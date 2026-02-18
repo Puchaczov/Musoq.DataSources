@@ -20,15 +20,16 @@ internal class NetworksSource : RowSourceBase<NetworkResponse>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(NetworksSourceName);
-        
+
         try
         {
             var networks = _api.ListNetworksAsync().Result;
             _runtimeContext.ReportDataSourceRowsKnown(NetworksSourceName, networks.Count);
-        
+
             chunkedSource.Add(
-                networks.Select(c => new EntityResolver<NetworkResponse>(c, NetworksSourceHelper.NetworksNameToIndexMap, NetworksSourceHelper.NetworksIndexToMethodAccessMap)).ToList());
-            
+                networks.Select(c => new EntityResolver<NetworkResponse>(c, NetworksSourceHelper.NetworksNameToIndexMap,
+                    NetworksSourceHelper.NetworksIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(NetworksSourceName, networks.Count);
         }
         catch

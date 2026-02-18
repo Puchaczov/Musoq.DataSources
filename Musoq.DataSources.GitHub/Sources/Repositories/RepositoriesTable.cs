@@ -16,6 +16,6 @@ internal class RepositoriesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => RepositoriesSourceHelper.RepositoriesColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(RepositoryEntity));
 }

@@ -16,6 +16,6 @@ internal class CommentsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => CommentsSourceHelper.CommentsColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(IJiraComment));
 }

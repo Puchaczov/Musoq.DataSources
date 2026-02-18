@@ -15,40 +15,40 @@ internal static class SchemaFilesHelper
     {
         FilesNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(FileEntity.Name), 0},
-            {nameof(FileEntity.FileName), 1},
-            {nameof(FileEntity.CreationTime), 2},
-            {nameof(FileEntity.CreationTimeUtc), 3},
-            {nameof(FileEntity.LastAccessTime), 4},
-            {nameof(FileEntity.LastAccessTimeUtc), 5},
-            {nameof(FileEntity.LastWriteTime), 6},
-            {nameof(FileEntity.LastWriteTimeUtc), 7},
-            {nameof(FileEntity.DirectoryName), 8},
-            {nameof(FileEntity.DirectoryPath), 9},
-            {nameof(FileEntity.Extension), 10},
-            {nameof(FileEntity.FullPath), 11},
-            {nameof(FileEntity.Exists), 12},
-            {nameof(FileEntity.IsReadOnly), 13},
-            {nameof(FileEntity.Length), 14},
+            { nameof(FileEntity.Name), 0 },
+            { nameof(FileEntity.FileName), 1 },
+            { nameof(FileEntity.CreationTime), 2 },
+            { nameof(FileEntity.CreationTimeUtc), 3 },
+            { nameof(FileEntity.LastAccessTime), 4 },
+            { nameof(FileEntity.LastAccessTimeUtc), 5 },
+            { nameof(FileEntity.LastWriteTime), 6 },
+            { nameof(FileEntity.LastWriteTimeUtc), 7 },
+            { nameof(FileEntity.DirectoryName), 8 },
+            { nameof(FileEntity.DirectoryPath), 9 },
+            { nameof(FileEntity.Extension), 10 },
+            { nameof(FileEntity.FullPath), 11 },
+            { nameof(FileEntity.Exists), 12 },
+            { nameof(FileEntity.IsReadOnly), 13 },
+            { nameof(FileEntity.Length), 14 }
         };
 
         FilesIndexToMethodAccessMap = new Dictionary<int, Func<FileEntity, object?>>
         {
-            {0, entity => entity.Name},
-            {1, entity => entity.FileName},
-            {2, entity => entity.CreationTime},
-            {3, entity => entity.CreationTimeUtc},
-            {4, entity => entity.LastAccessTime},
-            {5, entity => entity.LastAccessTimeUtc},
-            {6, entity => entity.LastWriteTime},
-            {7, entity => entity.LastWriteTimeUtc},
-            {8, entity => entity.DirectoryName},
-            {9, entity => entity.DirectoryPath},
-            {10, entity => entity.Extension},
-            {11, entity => entity.FullPath},
-            {12, entity => entity.Exists},
-            {13, entity => entity.IsReadOnly},
-            {14, entity => entity.Length}
+            { 0, entity => entity.Name },
+            { 1, entity => entity.FileName },
+            { 2, entity => entity.CreationTime },
+            { 3, entity => entity.CreationTimeUtc },
+            { 4, entity => entity.LastAccessTime },
+            { 5, entity => entity.LastAccessTimeUtc },
+            { 6, entity => entity.LastWriteTime },
+            { 7, entity => entity.LastWriteTimeUtc },
+            { 8, entity => entity.DirectoryName },
+            { 9, entity => entity.DirectoryPath },
+            { 10, entity => entity.Extension },
+            { 11, entity => entity.FullPath },
+            { 12, entity => entity.Exists },
+            { 13, entity => entity.IsReadOnly },
+            { 14, entity => entity.Length }
         };
 
         FilesColumns =

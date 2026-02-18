@@ -11,6 +11,11 @@ namespace Musoq.DataSources.Jira.Tests;
 [TestClass]
 public class JiraProjectsTests
 {
+    static JiraProjectsTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void WhenProjectsQueried_ShouldReturnValues()
     {
@@ -43,12 +48,12 @@ public class JiraProjectsTests
             .ReturnsAsync(new List<IJiraProject>
             {
                 MockEntityFactory.CreateProject(
-                    id: "10000",
-                    key: "TEST",
-                    name: "Test Project",
-                    description: "A test project description",
-                    lead: "projectlead",
-                    category: "Development"
+                    "10000",
+                    "TEST",
+                    "Test Project",
+                    "A test project description",
+                    "projectlead",
+                    "Development"
                 )
             });
 
@@ -121,16 +126,11 @@ public class JiraProjectsTests
                 {
                     0, new Dictionary<string, string>
                     {
-                        {"JIRA_URL", "https://test.atlassian.net"},
-                        {"JIRA_USERNAME", "test@example.com"},
-                        {"JIRA_API_TOKEN", "test_token"}
+                        { "JIRA_URL", "https://test.atlassian.net" },
+                        { "JIRA_USERNAME", "test@example.com" },
+                        { "JIRA_API_TOKEN", "test_token" }
                     }
                 }
             });
-    }
-
-    static JiraProjectsTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

@@ -1,20 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
-  <metadata>
-    <id>Musoq.Schema</id>
-    <version>7.3.5</version>
-    <authors>Jakub Puchała</authors>
-    <licenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</licenseUrl>
-    <projectUrl>https://github.com/Puchaczov/Musoq</projectUrl>
-    <description>Package Description</description>
-    <tags>sql, dotnet-core</tags>
-    <repository type="git" url="https://github.com/Puchaczov/Musoq" commit="ce111f62070ec918007e87a591eae76cdebc2901" />
-    <dependencies>
-      <group targetFramework="net8.0">
-        <dependency id="Musoq.Parser" version="4.1.1" exclude="Build,Analyzers" />
-        <dependency id="Musoq.Plugins" version="6.7.0" exclude="Runtime,Build,Analyzers" />
-        <dependency id="System.Reflection.Emit.Lightweight" version="4.7.0" exclude="Build,Analyzers" />
-      </group>
-    </dependencies>
-  </metadata>
+    <metadata>
+        <id>Musoq.Schema</id>
+        <version>7.3.5</version>
+        <authors>Jakub Puchała</authors>
+        <licenseUrl>https://github.com/Puchaczov/Musoq/blob/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/Puchaczov/Musoq</projectUrl>
+        <description>Package Description</description>
+        <tags>sql, dotnet-core</tags>
+        <repository type="git" url="https://github.com/Puchaczov/Musoq"
+                    commit="ce111f62070ec918007e87a591eae76cdebc2901"/>
+        <dependencies>
+            <group targetFramework="net8.0">
+                <dependency id="Musoq.Parser" version="4.1.1" exclude="Build,Analyzers"/>
+                <dependency id="Musoq.Plugins" version="6.7.0" exclude="Runtime,Build,Analyzers"/>
+                <dependency id="System.Reflection.Emit.Lightweight" version="4.7.0" exclude="Build,Analyzers"/>
+            </group>
+        </dependencies>
+    </metadata>
 </package>

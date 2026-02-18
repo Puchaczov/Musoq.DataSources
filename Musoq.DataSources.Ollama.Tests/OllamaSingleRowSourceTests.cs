@@ -20,10 +20,10 @@ public class OllamaSingleRowSourceTests
     {
         var mockHttpClientFactory = new Mock<IHttpClientFactory>();
         var mockLogger = new Mock<ILogger>();
-        
+
         mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(() => new HttpClient());
-        
+
         var source = new OllamaSingleRowSource(
             new RuntimeContext(
                 "test",
@@ -38,7 +38,7 @@ public class OllamaSingleRowSourceTests
             }, mockHttpClientFactory.Object);
 
         var fired = source.Rows.Count();
-        
+
         Assert.AreEqual(1, fired);
     }
 
@@ -50,11 +50,11 @@ public class OllamaSingleRowSourceTests
         var result = library.Sentiment(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
-                CancellationToken.None), 
+                "test-model",
+                0,
+                CancellationToken.None),
             "NICELY LOOKING SOMETHING");
-        
+
         Assert.AreEqual("POSITIVE", result);
     }
 
@@ -66,14 +66,14 @@ public class OllamaSingleRowSourceTests
         var result = library.Sentiment(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
+                "test-model",
+                0,
                 CancellationToken.None),
             "BADLY LOOKING SOMETHING");
-        
+
         Assert.AreEqual("NEGATIVE", result);
     }
-    
+
     [TestMethod]
     public void WhenSentimentIsNeutral_ShouldPass()
     {
@@ -82,14 +82,14 @@ public class OllamaSingleRowSourceTests
         var result = library.Sentiment(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
-                CancellationToken.None), 
+                "test-model",
+                0,
+                CancellationToken.None),
             "NEUTRALLY LOOKING SOMETHING");
-        
+
         Assert.AreEqual("NEUTRAL", result);
     }
-    
+
     [TestMethod]
     public void WhenSentimentIsGarbage_ShouldPass()
     {
@@ -98,14 +98,14 @@ public class OllamaSingleRowSourceTests
         var result = library.Sentiment(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
-                CancellationToken.None), 
+                "test-model",
+                0,
+                CancellationToken.None),
             "some garbage");
-        
+
         Assert.AreEqual("UNKNOWN", result);
     }
-    
+
     [TestMethod]
     public void WhenSummarizeContent_ShouldPass()
     {
@@ -114,14 +114,14 @@ public class OllamaSingleRowSourceTests
         var result = library.SummarizeContent(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
+                "test-model",
+                0,
                 CancellationToken.None),
             "some content");
-        
+
         Assert.AreEqual("SUMMARIZED", result);
     }
-    
+
     [TestMethod]
     public void WhenIsContentAbout_ShouldPass()
     {
@@ -130,15 +130,15 @@ public class OllamaSingleRowSourceTests
         var result = library.IsContentAbout(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
-                CancellationToken.None), 
+                "test-model",
+                0,
+                CancellationToken.None),
             "content",
             "question");
-        
+
         Assert.AreEqual(true, result);
     }
-    
+
     [TestMethod]
     public void WhenIsContentNotAbout_ShouldPass()
     {
@@ -147,15 +147,15 @@ public class OllamaSingleRowSourceTests
         var result = library.IsContentAbout(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
-                CancellationToken.None), 
+                "test-model",
+                0,
+                CancellationToken.None),
             "content",
             "question");
-        
+
         Assert.AreEqual(false, result);
     }
-    
+
     [TestMethod]
     public void WhenTranslateContent_ShouldPass()
     {
@@ -164,16 +164,16 @@ public class OllamaSingleRowSourceTests
         var result = library.TranslateContent(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
-                CancellationToken.None), 
+                "test-model",
+                0,
+                CancellationToken.None),
             "content",
             "pl",
             "en");
-        
+
         Assert.AreEqual("translated", result);
     }
-    
+
     [TestMethod]
     public void WhenExtractEntities_ShouldPass()
     {
@@ -182,15 +182,15 @@ public class OllamaSingleRowSourceTests
         var result = library.Entities(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
+                "test-model",
+                0,
                 CancellationToken.None),
             "content");
-        
+
         Assert.AreEqual(1, result.Length);
         Assert.AreEqual("extracted", result[0]);
     }
-    
+
     [TestMethod]
     public void WhenExtractEntitiesReturnsMalformedJson_ShouldPass()
     {
@@ -199,11 +199,11 @@ public class OllamaSingleRowSourceTests
         var result = library.Entities(
             new OllamaEntity(
                 mockOpenAiApi.Object,
-                "test-model", 
-                0, 
-                CancellationToken.None), 
+                "test-model",
+                0,
+                CancellationToken.None),
             "content");
-        
+
         Assert.AreEqual(0, result.Length);
     }
 

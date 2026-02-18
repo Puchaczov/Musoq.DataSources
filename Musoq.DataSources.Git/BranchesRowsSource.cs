@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LibGit2Sharp;
@@ -29,7 +28,7 @@ internal sealed class BranchesRowsSource(
             if (cancellationToken.IsCancellationRequested)
                 break;
 
-            // Apply pushdown filters
+
             if (!string.IsNullOrEmpty(filters.FriendlyName) &&
                 !string.Equals(branch.FriendlyName, filters.FriendlyName, StringComparison.OrdinalIgnoreCase))
                 continue;
@@ -41,7 +40,8 @@ internal sealed class BranchesRowsSource(
             if (filters.IsRemote.HasValue && branch.IsRemote != filters.IsRemote.Value)
                 continue;
 
-            if (filters.IsCurrentRepositoryHead.HasValue && branch.IsCurrentRepositoryHead != filters.IsCurrentRepositoryHead.Value)
+            if (filters.IsCurrentRepositoryHead.HasValue &&
+                branch.IsCurrentRepositoryHead != filters.IsCurrentRepositoryHead.Value)
                 continue;
 
             if (filters.IsTracking.HasValue && branch.IsTracking != filters.IsTracking.Value)
@@ -61,10 +61,7 @@ internal sealed class BranchesRowsSource(
             }
         }
 
-        if (chunk.Count > 0)
-        {
-            chunkedSource.Add(chunk.ToArray(), cancellationToken);
-        }
+        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
 
         return Task.CompletedTask;
     }

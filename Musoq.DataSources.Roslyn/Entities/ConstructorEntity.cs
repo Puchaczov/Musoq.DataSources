@@ -8,7 +8,7 @@ using Musoq.Plugins.Attributes;
 namespace Musoq.DataSources.Roslyn.Entities;
 
 /// <summary>
-/// Represents a constructor entity that provides information about a constructor in the source code.
+///     Represents a constructor entity that provides information about a constructor in the source code.
 /// </summary>
 public class ConstructorEntity
 {
@@ -16,7 +16,7 @@ public class ConstructorEntity
     private readonly ConstructorDeclarationSyntax? _syntax;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ConstructorEntity"/> class.
+    ///     Initializes a new instance of the <see cref="ConstructorEntity" /> class.
     /// </summary>
     /// <param name="constructorSymbol">The method symbol representing the constructor.</param>
     /// <param name="syntax">The constructor declaration syntax node.</param>
@@ -27,44 +27,44 @@ public class ConstructorEntity
     }
 
     /// <summary>
-    /// Gets the name of the containing type (class name).
+    ///     Gets the name of the containing type (class name).
     /// </summary>
     public string Name => _constructorSymbol.ContainingType.Name;
 
     /// <summary>
-    /// Gets a value indicating whether this is a static constructor.
+    ///     Gets a value indicating whether this is a static constructor.
     /// </summary>
     public bool IsStatic => _constructorSymbol.IsStatic;
 
     /// <summary>
-    /// Gets a value indicating whether this constructor is implicitly declared (default constructor).
+    ///     Gets a value indicating whether this constructor is implicitly declared (default constructor).
     /// </summary>
     public bool IsImplicitlyDeclared => _constructorSymbol.IsImplicitlyDeclared;
 
     /// <summary>
-    /// Gets a value indicating whether this is a primary constructor.
+    ///     Gets a value indicating whether this is a primary constructor.
     /// </summary>
     public bool IsPrimary => _syntax == null && !_constructorSymbol.IsImplicitlyDeclared;
 
     /// <summary>
-    /// Gets the accessibility of the constructor (public, private, etc.).
+    ///     Gets the accessibility of the constructor (public, private, etc.).
     /// </summary>
     public string Accessibility => _constructorSymbol.DeclaredAccessibility.ToString().ToLowerInvariant();
 
     /// <summary>
-    /// Gets the number of parameters.
+    ///     Gets the number of parameters.
     /// </summary>
     public int ParameterCount => _constructorSymbol.Parameters.Length;
 
     /// <summary>
-    /// Gets the parameters of the constructor.
+    ///     Gets the parameters of the constructor.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ParameterEntity> Parameters => 
+    public IEnumerable<ParameterEntity> Parameters =>
         _constructorSymbol.Parameters.Select(p => new ParameterEntity(p));
 
     /// <summary>
-    /// Gets the modifiers of the constructor.
+    ///     Gets the modifiers of the constructor.
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<string> Modifiers
@@ -75,7 +75,7 @@ public class ConstructorEntity
                 return [];
 
             return _syntax.Modifiers
-                .Where(token => 
+                .Where(token =>
                     token.IsKind(SyntaxKind.PublicKeyword) ||
                     token.IsKind(SyntaxKind.PrivateKeyword) ||
                     token.IsKind(SyntaxKind.ProtectedKeyword) ||
@@ -86,29 +86,29 @@ public class ConstructorEntity
     }
 
     /// <summary>
-    /// Gets the attributes applied to the constructor.
+    ///     Gets the attributes applied to the constructor.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<AttributeEntity> Attributes => 
+    public IEnumerable<AttributeEntity> Attributes =>
         _constructorSymbol.GetAttributes().Select(attr => new AttributeEntity(attr));
 
     /// <summary>
-    /// Gets a value indicating whether the constructor has a body.
+    ///     Gets a value indicating whether the constructor has a body.
     /// </summary>
     public bool HasBody => _syntax?.Body != null || _syntax?.ExpressionBody != null;
 
     /// <summary>
-    /// Gets the number of statements in the constructor body.
+    ///     Gets the number of statements in the constructor body.
     /// </summary>
     public int StatementsCount => _syntax?.Body?.Statements.Count ?? 0;
 
     /// <summary>
-    /// Gets the body text of the constructor.
+    ///     Gets the body text of the constructor.
     /// </summary>
     public string? Text => _syntax?.ToFullString();
 
     /// <summary>
-    /// Gets the lines of code for this constructor.
+    ///     Gets the lines of code for this constructor.
     /// </summary>
     public int LinesOfCode
     {
@@ -123,12 +123,12 @@ public class ConstructorEntity
     }
 
     /// <summary>
-    /// Gets a value indicating whether this constructor calls another constructor (this() or base()).
+    ///     Gets a value indicating whether this constructor calls another constructor (this() or base()).
     /// </summary>
     public bool HasInitializer => _syntax?.Initializer != null;
 
     /// <summary>
-    /// Gets the kind of initializer if present ("this" or "base").
+    ///     Gets the kind of initializer if present ("this" or "base").
     /// </summary>
     public string? InitializerKind
     {
@@ -142,7 +142,7 @@ public class ConstructorEntity
     }
 
     /// <summary>
-    /// Returns a string representation of the constructor entity.
+    ///     Returns a string representation of the constructor entity.
     /// </summary>
     /// <returns>A string representing the constructor.</returns>
     public override string ToString()

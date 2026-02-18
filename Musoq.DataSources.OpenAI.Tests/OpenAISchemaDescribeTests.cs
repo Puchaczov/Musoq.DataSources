@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.OpenAI.Tests;
@@ -12,6 +11,11 @@ namespace Musoq.DataSources.OpenAI.Tests;
 [TestClass]
 public class OpenAISchemaDescribeTests
 {
+    static OpenAISchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         var mockSchemaProvider = new Mock<ISchemaProvider>();
@@ -22,11 +26,6 @@ public class OpenAISchemaDescribeTests
             Guid.NewGuid().ToString(),
             mockSchemaProvider.Object,
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static OpenAISchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -129,10 +128,8 @@ public class OpenAISchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

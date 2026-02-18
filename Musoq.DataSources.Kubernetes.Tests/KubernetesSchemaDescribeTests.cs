@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Kubernetes.Tests;
@@ -12,6 +11,11 @@ namespace Musoq.DataSources.Kubernetes.Tests;
 [TestClass]
 public class KubernetesSchemaDescribeTests
 {
+    static KubernetesSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         var kubernetesApiMock = new Mock<IKubernetesApi>();
@@ -25,11 +29,6 @@ public class KubernetesSchemaDescribeTests
             Guid.NewGuid().ToString(),
             mockSchemaProvider.Object,
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static KubernetesSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -46,7 +45,8 @@ public class KubernetesSchemaDescribeTests
         Assert.AreEqual("Param 1", table.Columns.ElementAt(2).ColumnName);
         Assert.AreEqual("Param 2", table.Columns.ElementAt(3).ColumnName);
 
-        Assert.AreEqual(18, table.Count, "Should have 18 rows (15 no-param methods + 1 podlogs with 3 params + 2 events overloads)");
+        Assert.AreEqual(18, table.Count,
+            "Should have 18 rows (15 no-param methods + 1 podlogs with 3 params + 2 events overloads)");
 
         var methodNames = table.Select(row => (string)row[0]).ToList();
 
@@ -58,15 +58,18 @@ public class KubernetesSchemaDescribeTests
         Assert.AreEqual(1, methodNames.Count(m => m == "secrets"), "Should contain 'secrets' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "configmaps"), "Should contain 'configmaps' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "ingresses"), "Should contain 'ingresses' method once");
-        Assert.AreEqual(1, methodNames.Count(m => m == "persistentvolumes"), "Should contain 'persistentvolumes' method once");
-        Assert.AreEqual(1, methodNames.Count(m => m == "persistentvolumeclaims"), "Should contain 'persistentvolumeclaims' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "persistentvolumes"),
+            "Should contain 'persistentvolumes' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "persistentvolumeclaims"),
+            "Should contain 'persistentvolumeclaims' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "jobs"), "Should contain 'jobs' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "cronjobs"), "Should contain 'cronjobs' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "statefulsets"), "Should contain 'statefulsets' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "daemonsets"), "Should contain 'daemonsets' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "podcontainers"), "Should contain 'podcontainers' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "podlogs"), "Should contain 'podlogs' method once");
-        Assert.AreEqual(2, methodNames.Count(m => m == "events"), "Should contain 'events' method 2 times (2 overloads)");
+        Assert.AreEqual(2, methodNames.Count(m => m == "events"),
+            "Should contain 'events' method 2 times (2 overloads)");
 
         var podsRow = table.First(row => (string)row[0] == "pods");
         Assert.IsNull(podsRow[1], "Pods should have no parameters");
@@ -203,10 +206,8 @@ public class KubernetesSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

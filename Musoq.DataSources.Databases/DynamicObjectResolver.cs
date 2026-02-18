@@ -4,8 +4,8 @@ namespace Musoq.DataSources.Databases;
 
 internal class DynamicObjectResolver : IObjectResolver
 {
-    private readonly IDictionary<string, object> _obj;
     private readonly IDictionary<int, string> _indexToNameMap;
+    private readonly IDictionary<string, object> _obj;
 
     public DynamicObjectResolver(IDictionary<string, object> obj, IDictionary<int, string> indexToNameMap)
     {
@@ -13,7 +13,10 @@ internal class DynamicObjectResolver : IObjectResolver
         _indexToNameMap = indexToNameMap;
     }
 
-    public bool HasColumn(string name) => _obj.ContainsKey(name);
+    public bool HasColumn(string name)
+    {
+        return _obj.ContainsKey(name);
+    }
 
     public object[] Contexts => [_obj];
 

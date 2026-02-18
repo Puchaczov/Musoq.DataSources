@@ -11,6 +11,11 @@ namespace Musoq.DataSources.Docker.Tests;
 [TestClass]
 public class DockerPlaygroundTests
 {
+    static DockerPlaygroundTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void ContainersPlaygroundDesc_ShouldBeIgnored()
     {
@@ -20,7 +25,7 @@ public class DockerPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ContainersPlayground_ShouldBeIgnored()
     {
@@ -30,7 +35,7 @@ public class DockerPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ImagesPlaygroundDesc_ShouldBeIgnored()
     {
@@ -40,7 +45,7 @@ public class DockerPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ImagesPlayground_ShouldBeIgnored()
     {
@@ -50,7 +55,7 @@ public class DockerPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void NetworksPlaygroundDesc_ShouldBeIgnored()
     {
@@ -60,7 +65,7 @@ public class DockerPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void NetworksPlayground_ShouldBeIgnored()
     {
@@ -70,7 +75,7 @@ public class DockerPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void VolumesPlaygroundDesc_ShouldBeIgnored()
     {
@@ -80,7 +85,7 @@ public class DockerPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void VolumesPlayground_ShouldBeIgnored()
     {
@@ -94,7 +99,8 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void JoinContainersWithImages_ShouldPass()
     {
-        const string query = "select containers.ID, containers.Command, containers.Status, images.ID, images.Size from #docker.containers() containers inner join #docker.images() images on containers.ImageID = images.ID";
+        const string query =
+            "select containers.ID, containers.Command, containers.Status, images.ID, images.Size from #docker.containers() containers inner join #docker.images() images on containers.ImageID = images.ID";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -104,18 +110,13 @@ public class DockerPlaygroundTests
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
-            new PlaygroundSchemaProvider(), 
-            new Dictionary<uint, IReadOnlyDictionary<string, string>>()
+            script,
+            Guid.NewGuid().ToString(),
+            new PlaygroundSchemaProvider(),
+            new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
-                {0, new Dictionary<string, string>()},
-                {1, new Dictionary<string, string>()}
+                { 0, new Dictionary<string, string>() },
+                { 1, new Dictionary<string, string>() }
             });
-    }
-
-    static DockerPlaygroundTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

@@ -20,15 +20,17 @@ internal class ContainersSource : RowSourceBase<ContainerListResponse>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(ContainersSourceName);
-        
+
         try
         {
             var containers = _api.ListContainersAsync().Result;
             _runtimeContext.ReportDataSourceRowsKnown(ContainersSourceName, containers.Count);
 
             chunkedSource.Add(
-                containers.Select(c => new EntityResolver<ContainerListResponse>(c, ContainersSourceHelper.ContainersNameToIndexMap, ContainersSourceHelper.ContainersIndexToMethodAccessMap)).ToList());
-            
+                containers.Select(c => new EntityResolver<ContainerListResponse>(c,
+                    ContainersSourceHelper.ContainersNameToIndexMap,
+                    ContainersSourceHelper.ContainersIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(ContainersSourceName, containers.Count);
         }
         catch

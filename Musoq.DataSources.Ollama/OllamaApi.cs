@@ -10,18 +10,17 @@ namespace Musoq.DataSources.Ollama;
 
 internal class OllamaApi : IOllamaApi
 {
-    private readonly string _address;
-    private readonly TimeSpan _timeout = TimeSpan.FromMinutes(5);
-    private readonly AsyncRetryPolicy<CompletionResponse> _retryPolicy;
-    private readonly IHttpClientFactory _httpClientFactory;
-    
     public const string DefaultAddress = "http://localhost:11434";
+    private readonly string _address;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly AsyncRetryPolicy<CompletionResponse> _retryPolicy;
+    private readonly TimeSpan _timeout = TimeSpan.FromMinutes(5);
 
     public OllamaApi(IHttpClientFactory httpClientFactory)
         : this(DefaultAddress, httpClientFactory)
     {
     }
-    
+
     public OllamaApi(string address, IHttpClientFactory httpClientFactory)
     {
         _address = address;
@@ -34,15 +33,15 @@ internal class OllamaApi : IOllamaApi
                 5,
                 retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
     }
-    
+
     public async Task<CompletionResponse> GetImageCompletionAsync(OllamaEntityBase entity, Message message)
-    {   
+    {
         return await _retryPolicy.ExecuteAsync(async () =>
         {
             entity.CancellationToken.ThrowIfCancellationRequested();
-            
+
             var chatRequest = CreateChatRequest(entity, new List<Message> { message });
-            
+
             return await ProcessChatRequestAsync(chatRequest, entity.CancellationToken);
         });
     }
@@ -57,9 +56,9 @@ internal class OllamaApi : IOllamaApi
         return await _retryPolicy.ExecuteAsync(async () =>
         {
             entity.CancellationToken.ThrowIfCancellationRequested();
-            
+
             var chatRequest = CreateChatRequest(entity, messages);
-            
+
             return await ProcessChatRequestAsync(chatRequest, entity.CancellationToken);
         });
     }
@@ -79,28 +78,29 @@ internal class OllamaApi : IOllamaApi
         };
     }
 
-    private async Task<CompletionResponse> ProcessChatRequestAsync(ChatRequest chatRequest, CancellationToken cancellationToken)
+    private async Task<CompletionResponse> ProcessChatRequestAsync(ChatRequest chatRequest,
+        CancellationToken cancellationToken)
     {
         StringBuilder modelResponse = new();
-        
+
         var client = _httpClientFactory.CreateClient();
-        
+
         client.BaseAddress = new Uri(_address);
         client.Timeout = _timeout;
-    
+
         var api = new OllamaApiClient(client);
-    
+
         await foreach (var token in api.ChatAsync(chatRequest, cancellationToken))
         {
             if (token is null)
                 continue;
-        
+
             if (token.Done)
                 break;
-        
+
             modelResponse.Append(token.Message.Content);
         }
-    
+
         return new CompletionResponse(modelResponse.ToString());
     }
 }

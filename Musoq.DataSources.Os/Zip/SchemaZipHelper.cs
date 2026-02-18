@@ -16,24 +16,24 @@ internal static class SchemaZipHelper
     {
         NameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(ZipArchiveEntry.Name), 0},
-            {nameof(ZipArchiveEntry.FullName), 1},
-            {nameof(ZipArchiveEntry.CompressedLength), 2},
-            {nameof(ZipArchiveEntry.LastWriteTime), 3},
-            {nameof(ZipArchiveEntry.Length), 4},
-            {"IsDirectory", 5},
-            {"Level", 6}
+            { nameof(ZipArchiveEntry.Name), 0 },
+            { nameof(ZipArchiveEntry.FullName), 1 },
+            { nameof(ZipArchiveEntry.CompressedLength), 2 },
+            { nameof(ZipArchiveEntry.LastWriteTime), 3 },
+            { nameof(ZipArchiveEntry.Length), 4 },
+            { "IsDirectory", 5 },
+            { "Level", 6 }
         };
 
         IndexToMethodAccessMap = new Dictionary<int, Func<ZipArchiveEntry, object>>
         {
-            {0, info => info.Name},
-            {1, info => info.FullName},
-            {2, info => info.CompressedLength},
-            {3, info => info.LastWriteTime},
-            {4, info => info.Length},
-            {5, info => info.Name == string.Empty},
-            {6, info => info.FullName.Trim('/').Split('/').Length - 1}
+            { 0, info => info.Name },
+            { 1, info => info.FullName },
+            { 2, info => info.CompressedLength },
+            { 3, info => info.LastWriteTime },
+            { 4, info => info.Length },
+            { 5, info => info.Name == string.Empty },
+            { 6, info => info.FullName.Trim('/').Split('/').Length - 1 }
         };
 
         SchemaColumns =

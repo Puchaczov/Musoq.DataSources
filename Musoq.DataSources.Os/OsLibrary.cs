@@ -17,7 +17,7 @@ using Directory = System.IO.Directory;
 namespace Musoq.DataSources.Os;
 
 /// <summary>
-/// Operating system schema helper methods
+///     Operating system schema helper methods
 /// </summary>
 [BindableClass]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
@@ -113,48 +113,48 @@ public partial class OsLibrary : LibraryBase
     [
         // Common web and general-purpose formats
         ".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif",
-    
+
         // Raw camera formats
-        ".arw",    // Sony
-        ".cr2",    // Canon
-        ".cr3",    // Canon
-        ".dng",    // Adobe Digital Negative
-        ".nef",    // Nikon
-        ".orf",    // Olympus
-        ".raf",    // Fujifilm
-        ".rw2",    // Panasonic
-    
+        ".arw", // Sony
+        ".cr2", // Canon
+        ".cr3", // Canon
+        ".dng", // Adobe Digital Negative
+        ".nef", // Nikon
+        ".orf", // Olympus
+        ".raf", // Fujifilm
+        ".rw2", // Panasonic
+
         // Professional/Design formats
-        ".psd",    // Adobe Photoshop
-        ".psb",    // Adobe Photoshop Big
-        ".tiff",   // Tagged Image File Format
-        ".tif",    // Alternative extension for TIFF
-    
+        ".psd", // Adobe Photoshop
+        ".psb", // Adobe Photoshop Big
+        ".tiff", // Tagged Image File Format
+        ".tif", // Alternative extension for TIFF
+
         // Vector formats
-        ".svg",    // Scalable Vector Graphics
-        ".ai",     // Adobe Illustrator
-        ".eps",    // Encapsulated PostScript
-    
+        ".svg", // Scalable Vector Graphics
+        ".ai", // Adobe Illustrator
+        ".eps", // Encapsulated PostScript
+
         // Bitmap formats
-        ".bmp",    // Bitmap
-        ".ico",    // Icon
-    
+        ".bmp", // Bitmap
+        ".ico", // Icon
+
         // High efficiency formats
-        ".heic",   // High Efficiency Image Format
-        ".heif",   // High Efficiency Image Format
-    
+        ".heic", // High Efficiency Image Format
+        ".heif", // High Efficiency Image Format
+
         // Special purpose formats
-        ".pbm",    // Portable Bitmap
-        ".pgm",    // Portable Graymap
-        ".ppm",    // Portable Pixmap
-        ".pnm",    // Portable Anymap
-    
+        ".pbm", // Portable Bitmap
+        ".pgm", // Portable Graymap
+        ".ppm", // Portable Pixmap
+        ".pnm", // Portable Anymap
+
         // Animation-capable formats
-        ".apng",   // Animated PNG
-    
+        ".apng", // Animated PNG
+
         // HDR formats
-        ".hdr",    // Radiance HDR
-        ".exr"     // OpenEXR
+        ".hdr", // Radiance HDR
+        ".exr" // OpenEXR
     ];
 
     private static readonly HashSet<string> IsSourceSet =
@@ -219,135 +219,187 @@ public partial class OsLibrary : LibraryBase
     ];
 
     /// <summary>
-    /// Determines whether the extension is zip archive.
+    ///     Determines whether the extension is zip archive.
     /// </summary>
     /// <param name="extension">Extension that needs to be examined</param>
-    /// <returns><see langword="true" />if the specified extension is zip archive; otherwise, <see langword="false" /></returns>
+    /// <returns>
+    ///     <see langword="true" />if the specified extension is zip archive; otherwise, <see langword="false" />
+    /// </returns>
     [BindableMethod]
-    public bool IsZipArchive(string extension) => IsZipArchiveSet.Contains(extension);
+    public bool IsZipArchive(string extension)
+    {
+        return IsZipArchiveSet.Contains(extension);
+    }
 
     /// <summary>
-    /// Determines whether the extension is zip archive.
+    ///     Determines whether the extension is zip archive.
     /// </summary>
     /// <param name="fileInfo">FileInfo that must be examined whether is zip or not</param>
-    /// <returns><see langword="true" />if the specified extension is zip archive; otherwise, <see langword="false" /></returns>
+    /// <returns>
+    ///     <see langword="true" />if the specified extension is zip archive; otherwise, <see langword="false" />
+    /// </returns>
     [BindableMethod]
-    public bool IsZipArchive([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsZipArchiveSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    public bool IsZipArchive([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    {
+        return IsZipArchiveSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    }
 
     /// <summary>
-    /// Determine whether the extension is archive.
+    ///     Determine whether the extension is archive.
     /// </summary>
     /// <param name="extension">The extension</param>
     /// <returns>True if archive; otherwise false</returns>
     [BindableMethod]
-    public bool IsArchive(string extension) => IsArchiveSet.Contains(extension);
+    public bool IsArchive(string extension)
+    {
+        return IsArchiveSet.Contains(extension);
+    }
 
     /// <summary>
-    /// Determines whether the file is archive.
+    ///     Determines whether the file is archive.
     /// </summary>
     /// <param name="fileInfo">FileInfo that must be examined whether is archive or not</param>
     /// <returns><see langword="true" />if the specified extension is archive; otherwise, <see langword="false" /></returns>
     [BindableMethod]
-    public bool IsArchive([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsArchiveSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    public bool IsArchive([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    {
+        return IsArchiveSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    }
 
     /// <summary>
-    /// Determine whether the extension is audio.
+    ///     Determine whether the extension is audio.
     /// </summary>
     /// <param name="extension">The extension</param>
     /// <returns>True if specified extension is audio; otherwise false</returns>
     [BindableMethod]
-    public bool IsAudio(string extension) => IsAudioSet.Contains(extension);
-        
+    public bool IsAudio(string extension)
+    {
+        return IsAudioSet.Contains(extension);
+    }
+
     /// <summary>
-    /// Determine whether the extension is audio.
+    ///     Determine whether the extension is audio.
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if audio; otherwise false</returns>
     [BindableMethod]
-    public bool IsAudio([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsAudioSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    public bool IsAudio([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    {
+        return IsAudioSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    }
 
     /// <summary>
-    /// Determine whether the extension is book.
+    ///     Determine whether the extension is book.
     /// </summary>
     /// <param name="extension">The extension</param>
     /// <returns>True if specified extension is book; otherwise false</returns>
     [BindableMethod]
-    public bool IsBook(string extension) => IsBookSet.Contains(extension);
+    public bool IsBook(string extension)
+    {
+        return IsBookSet.Contains(extension);
+    }
 
     /// <summary>
-    /// Determine whether the extension is book.
+    ///     Determine whether the extension is book.
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if book; otherwise false</returns>
     [BindableMethod]
-    public bool IsBook([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsBookSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    public bool IsBook([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    {
+        return IsBookSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    }
 
     /// <summary>
-    /// Determine whether the extension is document.
+    ///     Determine whether the extension is document.
     /// </summary>
     /// <param name="extension">The extension</param>
     /// <returns>True if specified extension is document; otherwise false</returns>
     [BindableMethod]
-    public bool IsDoc(string extension) => IsDocSet.Contains(extension);
+    public bool IsDoc(string extension)
+    {
+        return IsDocSet.Contains(extension);
+    }
 
     /// <summary>
-    /// Determine whether the extension is document.
+    ///     Determine whether the extension is document.
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if document; otherwise false</returns>
     [BindableMethod]
-    public bool IsDoc([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsDocSet.Contains(fileInfo.Extension.ToLowerInvariant());
-        
+    public bool IsDoc([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    {
+        return IsDocSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    }
+
     /// <summary>
-    /// Determine whether the extension is image.
+    ///     Determine whether the extension is image.
     /// </summary>
     /// <param name="extension">The extension</param>
     /// <returns>True if specified extension is image; otherwise false</returns>
     [BindableMethod]
-    public bool IsImage(string extension) => IsImageSet.Contains(extension);
-        
+    public bool IsImage(string extension)
+    {
+        return IsImageSet.Contains(extension);
+    }
+
     /// <summary>
-    /// Determine whether the extension is image.
+    ///     Determine whether the extension is image.
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if image; otherwise false</returns>
     [BindableMethod]
-    public bool IsImage([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsImageSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    public bool IsImage([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    {
+        return IsImageSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    }
 
     /// <summary>
-    /// Determine whether the extension is source.
+    ///     Determine whether the extension is source.
     /// </summary>
     /// <param name="extension">The extension</param>
     /// <returns>True if specified extension is source; otherwise false</returns>
     [BindableMethod]
-    public bool IsSource(string extension) => IsSourceSet.Contains(extension);
-        
+    public bool IsSource(string extension)
+    {
+        return IsSourceSet.Contains(extension);
+    }
+
     /// <summary>
-    /// Determine whether the extension is source.
+    ///     Determine whether the extension is source.
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if source; otherwise false</returns>
     [BindableMethod]
-    public bool IsSource([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsSourceSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    public bool IsSource([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    {
+        return IsSourceSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    }
 
     /// <summary>
-    /// Determine whether the extension is video.
+    ///     Determine whether the extension is video.
     /// </summary>
     /// <param name="extension">The extension</param>
     /// <returns>True if specified extension is video; otherwise false</returns>
     [BindableMethod]
-    public bool IsVideo(string extension) => IsVideoSet.Contains(extension);
+    public bool IsVideo(string extension)
+    {
+        return IsVideoSet.Contains(extension);
+    }
 
     /// <summary>
-    /// Determine whether the extension is video.
+    ///     Determine whether the extension is video.
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>True if video; otherwise false</returns>
     [BindableMethod]
-    public bool IsVideo([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo) => IsVideoSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    public bool IsVideo([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo)
+    {
+        return IsVideoSet.Contains(fileInfo.Extension.ToLowerInvariant());
+    }
 
     /// <summary>
-    /// Gets the file content
+    ///     Gets the file content
     /// </summary>
     /// <param name="extendedFileInfo">The extendedFileInfo</param>
     /// <returns>String content of a file</returns>
@@ -370,7 +422,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets the relative path of a file
+    ///     Gets the relative path of a file
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>Relative file path to ComputationRootDirectoryPath</returns>
@@ -381,7 +433,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets the relative path of a file
+    ///     Gets the relative path of a file
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <param name="basePath">The basePath</param>
@@ -401,7 +453,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets head bytes of a file
+    ///     Gets head bytes of a file
     /// </summary>
     /// <param name="file">The file</param>
     /// <param name="length">The length</param>
@@ -411,7 +463,7 @@ public partial class OsLibrary : LibraryBase
     {
         try
         {
-            return GetFileBytes(file, length, 0);
+            return GetFileBytes(file, length);
         }
         catch
         {
@@ -420,7 +472,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets tail bytes of a file
+    ///     Gets tail bytes of a file
     /// </summary>
     /// <param name="file">The file</param>
     /// <param name="length">The length</param>
@@ -452,14 +504,15 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets file bytes of a file
+    ///     Gets file bytes of a file
     /// </summary>
     /// <param name="file">The file</param>
     /// <param name="bytesCount">The bytesCount</param>
     /// <param name="offset">The offset</param>
     /// <returns>Bytes of a file</returns>
     [BindableMethod]
-    public byte[]? GetFileBytes([InjectSpecificSource(typeof(FileEntity))] FileEntity file, long bytesCount = long.MaxValue, long offset = 0)
+    public byte[]? GetFileBytes([InjectSpecificSource(typeof(FileEntity))] FileEntity file,
+        long bytesCount = long.MaxValue, long offset = 0)
     {
         try
         {
@@ -487,7 +540,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Computes Sha1 hash of a file
+    ///     Computes Sha1 hash of a file
     /// </summary>
     /// <param name="file">The file</param>
     /// <returns>Sha1 of a file</returns>
@@ -509,7 +562,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Computes Sha256 hash of a file
+    ///     Computes Sha256 hash of a file
     /// </summary>
     /// <param name="file">The file</param>
     /// <returns>Sha256 of a file</returns>
@@ -528,9 +581,9 @@ public partial class OsLibrary : LibraryBase
             return null;
         }
     }
-        
+
     /// <summary>
-    /// Computes Sha256 hash of a file
+    ///     Computes Sha256 hash of a file
     /// </summary>
     /// <param name="file">The file</param>
     /// <returns>Sha1 of a file</returns>
@@ -551,7 +604,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Computes Md5 hash of a file
+    ///     Computes Md5 hash of a file
     /// </summary>
     /// <param name="file">The file</param>
     /// <returns>Md5 of a file</returns>
@@ -571,9 +624,9 @@ public partial class OsLibrary : LibraryBase
             return null;
         }
     }
-    
+
     /// <summary>
-    /// Turns file into base64 string
+    ///     Turns file into base64 string
     /// </summary>
     /// <param name="file"></param>
     /// <returns></returns>
@@ -598,7 +651,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Determine whether file has specific content
+    ///     Determine whether file has specific content
     /// </summary>
     /// <param name="file">The file</param>
     /// <param name="pattern">The pattern</param>
@@ -623,7 +676,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Determine whether file has attribute
+    ///     Determine whether file has attribute
     /// </summary>
     /// <param name="file">The file</param>
     /// <param name="flags">The flags</param>
@@ -635,7 +688,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets lines containing word
+    ///     Gets lines containing word
     /// </summary>
     /// <param name="file">The file</param>
     /// <param name="word">The word</param>
@@ -675,17 +728,19 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets the file length
+    ///     Gets the file length
     /// </summary>
     /// <param name="context">The context</param>
     /// <param name="unit">The unit</param>
     /// <returns>File length</returns>
     [BindableMethod]
     public long GetFileLength([InjectSpecificSource(typeof(FileEntity))] FileEntity context, string unit = "b")
-        => GetLengthOfFile(context, unit);
+    {
+        return GetLengthOfFile(context, unit);
+    }
 
     /// <summary>
-    /// Gets the file length
+    ///     Gets the file length
     /// </summary>
     /// <param name="context">The context</param>
     /// <param name="unit">The unit</param>
@@ -707,37 +762,43 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets the SubPath from the path
+    ///     Gets the SubPath from the path
     /// </summary>
     /// <param name="context">The context</param>
     /// <param name="nesting">The nesting</param>
     /// <returns>SubPath based on nesting</returns>
     [BindableMethod]
     public string? SubPath([InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo context, int nesting)
-        => SubPath(context.FullName, nesting);
+    {
+        return SubPath(context.FullName, nesting);
+    }
 
     /// <summary>
-    /// Gets the SubPath from the path
+    ///     Gets the SubPath from the path
     /// </summary>
     /// <param name="context">The context</param>
     /// <param name="nesting">The nesting</param>
     /// <returns>SubPath based on nesting</returns>
     [BindableMethod]
     public string? SubPath([InjectSpecificSource(typeof(FileEntity))] FileEntity context, int nesting)
-        => SubPath(context.Directory.FullName, nesting);
+    {
+        return SubPath(context.Directory.FullName, nesting);
+    }
 
     /// <summary>
-    /// Gets the relative SubPath from the path
+    ///     Gets the relative SubPath from the path
     /// </summary>
     /// <param name="context">The context</param>
     /// <param name="nesting">The nesting</param>
     /// <returns>Relative subPath based on nesting</returns>
     [BindableMethod]
     public string? RelativeSubPath([InjectSpecificSource(typeof(FileEntity))] FileEntity context, int nesting)
-        => SubPath(GetRelativePath(context, context.ComputationRootDirectoryPath), nesting);
+    {
+        return SubPath(GetRelativePath(context, context.ComputationRootDirectoryPath), nesting);
+    }
 
     /// <summary>
-    /// Gets the relative SubPath from the path
+    ///     Gets the relative SubPath from the path
     /// </summary>
     /// <param name="directoryPath">The directoryPath</param>
     /// <param name="nesting">The nesting</param>
@@ -763,7 +824,7 @@ public partial class OsLibrary : LibraryBase
         {
             subPathBuilder.Append(Path.DirectorySeparatorChar);
 
-            for (int i = 1; i < nesting && i < splitDirs.Length - 1; ++i)
+            for (var i = 1; i < nesting && i < splitDirs.Length - 1; ++i)
             {
                 subPathBuilder.Append(splitDirs[i]);
                 subPathBuilder.Append(Path.DirectorySeparatorChar);
@@ -776,17 +837,19 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets the length of the file
+    ///     Gets the length of the file
     /// </summary>
     /// <param name="context">The context</param>
     /// <param name="unit">The unit</param>
     /// <returns>Length of a file</returns>
     [BindableMethod]
     public long Length([InjectSpecificSource(typeof(FileEntity))] FileEntity context, string unit = "b")
-        => GetLengthOfFile(context, unit);
+    {
+        return GetLengthOfFile(context, unit);
+    }
 
     /// <summary>
-    /// Gets the file info
+    ///     Gets the file info
     /// </summary>
     /// <param name="fullPath">The fullPath</param>
     /// <returns>ExtendedFileInfo</returns>
@@ -796,13 +859,13 @@ public partial class OsLibrary : LibraryBase
         try
         {
             var fileInfo = new FileInfo(fullPath);
-            
+
             if (!fileInfo.Exists)
                 return null;
-            
+
             if (fileInfo.DirectoryName == null)
                 throw new InvalidOperationException("Directory name is null.");
-            
+
             return new FileEntity(fileInfo, fileInfo.DirectoryName);
         }
         catch
@@ -812,16 +875,18 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets extended file info
+    ///     Gets extended file info
     /// </summary>
     /// <param name="context">The context</param>
     /// <returns>ExtendedFileInfo</returns>
     [BindableMethod]
     public FileEntity GetExtendedFileInfo([InjectSpecificSource(typeof(FileEntity))] FileEntity context)
-        => context;
+    {
+        return context;
+    }
 
     /// <summary>
-    /// Gets the count of lines of a file
+    ///     Gets the count of lines of a file
     /// </summary>
     /// <param name="context">The context</param>
     /// <returns>ExtendedFileInfo</returns>
@@ -850,7 +915,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Gets the count of non empty lines of a file
+    ///     Gets the count of non empty lines of a file
     /// </summary>
     /// <param name="context">The context</param>
     /// <returns>Count of non empty lines</returns>
@@ -883,7 +948,7 @@ public partial class OsLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Combines the paths
+    ///     Combines the paths
     /// </summary>
     /// <param name="path1">The path1</param>
     /// <param name="path2">The path2</param>
@@ -893,9 +958,9 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.Combine(path1, path2);
     }
-        
+
     /// <summary>
-    /// Combines the paths
+    ///     Combines the paths
     /// </summary>
     /// <param name="path1">The path1</param>
     /// <param name="path2">The path2</param>
@@ -906,9 +971,9 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.Combine(path1, path2, path3);
     }
-        
+
     /// <summary>
-    /// Combines the paths
+    ///     Combines the paths
     /// </summary>
     /// <param name="path1">The path1</param>
     /// <param name="path2">The path2</param>
@@ -920,9 +985,9 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.Combine(path1, path2, path3, path4);
     }
-        
+
     /// <summary>
-    /// Combines the paths
+    ///     Combines the paths
     /// </summary>
     /// <param name="path1">The path1</param>
     /// <param name="path2">The path2</param>
@@ -935,9 +1000,9 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.Combine(path1, path2, path3, path4, path5);
     }
-        
+
     /// <summary>
-    /// Combines the paths
+    ///     Combines the paths
     /// </summary>
     /// <param name="paths">The paths</param>
     /// <returns>Combined paths</returns>
@@ -946,9 +1011,9 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.Combine(paths);
     }
-    
+
     /// <summary>
-    /// Gets the directory name
+    ///     Gets the directory name
     /// </summary>
     /// <param name="path">The path</param>
     /// <returns>Directory name</returns>
@@ -957,9 +1022,9 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.GetDirectoryName(path);
     }
-    
+
     /// <summary>
-    /// Gets the file name
+    ///     Gets the file name
     /// </summary>
     /// <param name="path">The path</param>
     /// <returns>File name</returns>
@@ -968,9 +1033,9 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.GetFileName(path);
     }
-    
+
     /// <summary>
-    /// Gets the file name without extension
+    ///     Gets the file name without extension
     /// </summary>
     /// <param name="path">The path</param>
     /// <returns>File name without extension</returns>
@@ -979,9 +1044,9 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.GetFileNameWithoutExtension(path);
     }
-    
+
     /// <summary>
-    /// Gets the extension
+    ///     Gets the extension
     /// </summary>
     /// <param name="path">The path</param>
     /// <returns>Extension</returns>
@@ -990,33 +1055,32 @@ public partial class OsLibrary : LibraryBase
     {
         return Path.GetExtension(path);
     }
-    
+
     /// <summary>
-    /// Gets the metadata of a file
+    ///     Gets the metadata of a file
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <param name="directoryName">The directoryName</param>
     /// <param name="tagName">The tagName</param>
     /// <returns>Metadata of a file</returns>
     [BindableMethod]
-    public string? GetMetadata([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo, string directoryName, string tagName)
+    public string? GetMetadata([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo, string directoryName,
+        string tagName)
     {
         foreach (var directory in fileInfo.Metadata)
         {
             if (directory.Name != directoryName) continue;
-            
+
             foreach (var tag in directory.Tags)
-            {
                 if (tag.Name == tagName)
                     return tag.Description;
-            }
         }
-        
+
         return null;
     }
-    
+
     /// <summary>
-    /// Gets the metadata of a file
+    ///     Gets the metadata of a file
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <param name="tagName">The tagName</param>
@@ -1025,55 +1089,51 @@ public partial class OsLibrary : LibraryBase
     public string? GetMetadata([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo, string tagName)
     {
         foreach (var directory in fileInfo.Metadata)
-        {
-            foreach (var tag in directory.Tags)
-            {
-                if (tag.Name == tagName)
-                    return tag.Description;
-            }
-        }
-        
+        foreach (var tag in directory.Tags)
+            if (tag.Name == tagName)
+                return tag.Description;
+
         return null;
     }
-    
+
     /// <summary>
-    /// Checks whether file has metadata directory
+    ///     Checks whether file has metadata directory
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <param name="directoryName">The directoryName</param>
     /// <returns>True if has metadata directory; otherwise false</returns>
     [BindableMethod]
-    public bool HasMetadataDirectory([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo, string directoryName)
+    public bool HasMetadataDirectory([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo,
+        string directoryName)
     {
         return fileInfo.Metadata.Any(directory => directory.Name == directoryName);
     }
-    
+
     /// <summary>
-    /// Checks whether file has metadata tag
+    ///     Checks whether file has metadata tag
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <param name="directoryName">The directoryName</param>
     /// <param name="tagName">The tagName</param>
     /// <returns>True if has metadata tag; otherwise false</returns>
     [BindableMethod]
-    public bool HasMetadataTag([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo, string directoryName, string tagName)
+    public bool HasMetadataTag([InjectSpecificSource(typeof(FileEntity))] FileEntity fileInfo, string directoryName,
+        string tagName)
     {
         foreach (var directory in fileInfo.Metadata)
         {
             if (directory.Name != directoryName) continue;
-            
+
             foreach (var tag in directory.Tags)
-            {
                 if (tag.Name == tagName)
                     return true;
-            }
         }
-        
+
         return false;
     }
-    
+
     /// <summary>
-    /// Checks whether file has metadata tag
+    ///     Checks whether file has metadata tag
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <param name="tagName">The tagName</param>
@@ -1083,9 +1143,9 @@ public partial class OsLibrary : LibraryBase
     {
         return fileInfo.Metadata.Any(directory => directory.Tags.Any(tag => tag.Name == tagName));
     }
-    
+
     /// <summary>
-    /// Gets all metadata of a file and returns it as json
+    ///     Gets all metadata of a file and returns it as json
     /// </summary>
     /// <param name="fileInfo">The fileInfo</param>
     /// <returns>All metadata of a file in a json format</returns>

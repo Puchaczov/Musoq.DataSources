@@ -18,7 +18,9 @@ internal class TestsOpenAiSchema(IOpenAiApi openAiApi) : OpenAiSchema
     {
         return new TestsOpenAiSingleRowSource(openAiApi, new OpenAiRequestInfo
         {
-            Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? Defaults.DefaultModel : Defaults.DefaultModel,
+            Model = parameters.Length > 0
+                ? Convert.ToString(parameters[0]) ?? Defaults.DefaultModel
+                : Defaults.DefaultModel,
             MaxTokens = parameters.Length > 1 ? Convert.ToInt32(parameters[1]) : 4000,
             Temperature = parameters.Length > 2 ? Convert.ToSingle(parameters[2]) : 0,
             FrequencyPenalty = parameters.Length > 3 ? Convert.ToSingle(parameters[3]) : 0,

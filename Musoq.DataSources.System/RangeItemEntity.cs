@@ -1,10 +1,8 @@
 ﻿using Musoq.Schema.Attributes;
 
-namespace Musoq.DataSources.System
+namespace Musoq.DataSources.System;
+
+internal class RangeItemEntity
 {
-    internal class RangeItemEntity
-    {
-        [EntityProperty]
-        public long Value { get; set; }
-    }
+    [EntityProperty] public long Value { get; set; }
 }

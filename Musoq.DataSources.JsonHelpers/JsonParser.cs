@@ -1,15 +1,15 @@
-﻿using System.Dynamic;
+using System.Dynamic;
 using Newtonsoft.Json;
 
 namespace Musoq.DataSources.JsonHelpers;
 
 /// <summary>
-/// Provides methods for parsing JSON data into dynamic objects.
+///     Provides methods for parsing JSON data into dynamic objects.
 /// </summary>
 public static class JsonParser
 {
     /// <summary>
-    /// Parses a JSON array from the specified reader.
+    ///     Parses a JSON array from the specified reader.
     /// </summary>
     /// <param name="reader">The JSON reader.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -20,17 +20,14 @@ public static class JsonParser
 
         var result = new List<ExpandoObject>();
         while (reader.Read() && reader.TokenType != JsonToken.EndArray)
-        {
             if (reader.TokenType == JsonToken.StartObject)
-            {
                 result.Add(ParseObject(reader, cancellationToken));
-            }
-        }
+
         return result;
     }
 
     /// <summary>
-    /// Parses a JSON object from the specified reader.
+    ///     Parses a JSON object from the specified reader.
     /// </summary>
     /// <param name="reader">The JSON reader.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -75,22 +72,16 @@ public static class JsonParser
                     break;
             }
         }
+
         return obj;
     }
 
-    /// <summary>
-    /// Parses a JSON array from the specified reader.
-    /// </summary>
-    /// <param name="reader">The JSON reader.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A list of objects representing the JSON array.</returns>
     private static List<object> ParseInnerArray(JsonTextReader reader, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         var result = new List<object>();
         while (reader.Read() && reader.TokenType != JsonToken.EndArray)
-        {
             switch (reader.TokenType)
             {
                 case JsonToken.StartObject:
@@ -103,7 +94,7 @@ public static class JsonParser
                     result.Add(reader.Value!);
                     break;
             }
-        }
+
         return result;
     }
 }

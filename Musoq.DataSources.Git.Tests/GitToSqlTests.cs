@@ -12,6 +12,35 @@ namespace Musoq.DataSources.Git.Tests;
 [TestClass]
 public class GitToSqlTests
 {
+    static GitToSqlTests()
+    {
+        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
+    }
+
+    private static string Repository1ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository1.zip");
+
+    private static string Repository2ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository2.zip");
+
+    private static string Repository3ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository3.zip");
+
+    private static string Repository4ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository4.zip");
+
+    private static string Repository5ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository5.zip");
+
+    private static string StartDirectory
+    {
+        get
+        {
+            var filePath = typeof(GitToSqlTests).Assembly.Location;
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Directory is empty.");
+
+            return directory;
+        }
+    }
+
     [TestMethod]
     public void WhenNonExistentPathPassed_ShouldThrow()
     {
@@ -84,25 +113,29 @@ public class GitToSqlTests
             var row = result[0];
             var repoPath = unpackedRepositoryPath.Path;
 
-            Assert.IsTrue(((string)row[0]).TrimEnd(Path.DirectorySeparatorChar) == Path.Combine(repoPath, ".git").TrimEnd(Path.DirectorySeparatorChar));
-            Assert.IsTrue(((string)row[1]).TrimEnd(Path.DirectorySeparatorChar) == repoPath.TrimEnd(Path.DirectorySeparatorChar));
-            Assert.IsTrue((string) row[2] == "master");
-            Assert.IsTrue((string) row[3] == "refs/heads/master");
-            Assert.IsTrue((bool) row[4] == false);
-            Assert.IsTrue((bool) row[5] == false);
-            Assert.IsTrue((bool) row[6]);
-            Assert.IsNull((string) row[7]);
-            Assert.IsTrue((string) row[8] == "789f584ce162424f61b33e020e2138aad47e60ba");
-            Assert.IsTrue((string) row[9] == "initial commit\n");
-            Assert.IsTrue((string) row[10] == "initial commit");
-            Assert.IsTrue((string) row[11] == "anonymous");
-            Assert.IsTrue((string) row[12] == "anonymous");
-            Assert.IsTrue(((string)row[13]).TrimEnd(Path.DirectorySeparatorChar) == Path.Combine(repoPath, ".git").TrimEnd(Path.DirectorySeparatorChar));
-            Assert.IsTrue(((string)row[14]).TrimEnd(Path.DirectorySeparatorChar) == repoPath.TrimEnd(Path.DirectorySeparatorChar));
-            Assert.IsTrue((bool) row[15] == false);
-            Assert.IsTrue((bool) row[16] == false);
-            Assert.IsTrue((bool) row[17] == false);
-            Assert.IsTrue((bool) row[18] == false);
+            Assert.IsTrue(((string)row[0]).TrimEnd(Path.DirectorySeparatorChar) ==
+                          Path.Combine(repoPath, ".git").TrimEnd(Path.DirectorySeparatorChar));
+            Assert.IsTrue(((string)row[1]).TrimEnd(Path.DirectorySeparatorChar) ==
+                          repoPath.TrimEnd(Path.DirectorySeparatorChar));
+            Assert.IsTrue((string)row[2] == "master");
+            Assert.IsTrue((string)row[3] == "refs/heads/master");
+            Assert.IsTrue(!(bool)row[4]);
+            Assert.IsTrue(!(bool)row[5]);
+            Assert.IsTrue((bool)row[6]);
+            Assert.IsNull((string)row[7]);
+            Assert.IsTrue((string)row[8] == "789f584ce162424f61b33e020e2138aad47e60ba");
+            Assert.IsTrue((string)row[9] == "initial commit\n");
+            Assert.IsTrue((string)row[10] == "initial commit");
+            Assert.IsTrue((string)row[11] == "anonymous");
+            Assert.IsTrue((string)row[12] == "anonymous");
+            Assert.IsTrue(((string)row[13]).TrimEnd(Path.DirectorySeparatorChar) ==
+                          Path.Combine(repoPath, ".git").TrimEnd(Path.DirectorySeparatorChar));
+            Assert.IsTrue(((string)row[14]).TrimEnd(Path.DirectorySeparatorChar) ==
+                          repoPath.TrimEnd(Path.DirectorySeparatorChar));
+            Assert.IsTrue(!(bool)row[15]);
+            Assert.IsTrue(!(bool)row[16]);
+            Assert.IsTrue(!(bool)row[17]);
+            Assert.IsTrue(!(bool)row[18]);
         }
     }
 
@@ -134,16 +167,16 @@ public class GitToSqlTests
         var vm = CreateAndRunVirtualMachine(query);
 
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 2, "Result should have 2 entries");
 
-        // First row assertions
-        Assert.IsTrue(result.Any(row => 
+
+        Assert.IsTrue(result.Any(row =>
             (string)row[0] == "feature/feature_a" &&
             (string)row[1] == "refs/heads/feature/feature_a" &&
-            (bool)row[2] == false &&
-            (bool)row[3] == false &&
-            (bool)row[4] == false &&
+            !(bool)row[2] &&
+            !(bool)row[3] &&
+            !(bool)row[4] &&
             row[5] == null &&
             row[6] == null &&
             row[7] == null &&
@@ -156,13 +189,13 @@ public class GitToSqlTests
             row[14] == null
         ), "First row should match feature/feature_a details");
 
-        // Second row assertions
-        Assert.IsTrue(result.Any(row => 
+
+        Assert.IsTrue(result.Any(row =>
             (string)row[0] == "master" &&
             (string)row[1] == "refs/heads/master" &&
-            (bool)row[2] == false &&
-            (bool)row[3] == false &&
-            (bool)row[4] == true &&
+            !(bool)row[2] &&
+            !(bool)row[3] &&
+            (bool)row[4] &&
             row[5] == null &&
             row[6] == null &&
             row[7] == null &&
@@ -192,10 +225,10 @@ public class GitToSqlTests
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 5, "Result should have 5 entries");
 
-        Assert.IsTrue(result.Any(row => 
+        Assert.IsTrue(result.Any(row =>
             (string)row[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
             (string)row[1] == "add documentation index\n" &&
             (string)row[2] == "add documentation index" &&
@@ -203,7 +236,7 @@ public class GitToSqlTests
             (string)row[4] == "anonymous"
         ), "First row should match first commit details");
 
-        Assert.IsTrue(result.Any(row => 
+        Assert.IsTrue(result.Any(row =>
             (string)row[0] == "3250d89501e0569115a5cda34807e15ba7de0aa6" &&
             (string)row[1] == "modified library_1\n" &&
             (string)row[2] == "modified library_1" &&
@@ -211,7 +244,7 @@ public class GitToSqlTests
             (string)row[4] == "anonymous"
         ), "Second row should match second commit details");
 
-        Assert.IsTrue(result.Any(row => 
+        Assert.IsTrue(result.Any(row =>
             (string)row[0] == "02c2e53d8712210a4254fc9bd6ee5548a0f1d211" &&
             (string)row[1] == "add first library\n" &&
             (string)row[2] == "add first library" &&
@@ -219,7 +252,7 @@ public class GitToSqlTests
             (string)row[4] == "anonymous"
         ), "Third row should match third commit details");
 
-        Assert.IsTrue(result.Any(row => 
+        Assert.IsTrue(result.Any(row =>
             (string)row[0] == "595b3f0f51071f84909861e5abc15225a4ef4555" &&
             (string)row[1] == "first commit\n" &&
             (string)row[2] == "first commit" &&
@@ -227,7 +260,7 @@ public class GitToSqlTests
             (string)row[4] == "anonymous"
         ), "Fourth row should match fourth commit details");
 
-        Assert.IsTrue(result.Any(row => 
+        Assert.IsTrue(result.Any(row =>
             (string)row[0] == "789f584ce162424f61b33e020e2138aad47e60ba" &&
             (string)row[1] == "initial commit\n" &&
             (string)row[2] == "initial commit" &&
@@ -257,10 +290,10 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string) row[0] == "v0.1");
-        Assert.IsTrue((string) row[1] == "refs/tags/v0.1");
-        Assert.IsNull((string) row[2]);
-        Assert.IsFalse((bool) row[3]);
+        Assert.IsTrue((string)row[0] == "v0.1");
+        Assert.IsTrue((string)row[1] == "refs/tags/v0.1");
+        Assert.IsNull((string)row[2]);
+        Assert.IsFalse((bool)row[3]);
 
         query = @"
             select
@@ -285,16 +318,16 @@ public class GitToSqlTests
 
         row = result[0];
 
-        Assert.IsTrue((string) row[0] == "v0.0");
-        Assert.IsTrue((string) row[1] == "refs/tags/v0.0");
-        Assert.IsTrue((string) row[2] == "Initial release of repository\n");
-        Assert.IsTrue((bool) row[3]);
-        Assert.IsTrue((string) row[4] == "Initial release of repository\n");
-        Assert.IsTrue((string) row[5] == "v0.0");
-        Assert.IsTrue((string) row[6] == "c834c069c0cbed7ba309bcd6bf530e36f3e77344");
-        Assert.IsTrue((string) row[7] == "anonymous");
-        Assert.IsTrue((string) row[8] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[9] == new DateTimeOffset(2024, 11, 02, 9, 39, 40, TimeSpan.FromHours(1)));
+        Assert.IsTrue((string)row[0] == "v0.0");
+        Assert.IsTrue((string)row[1] == "refs/tags/v0.0");
+        Assert.IsTrue((string)row[2] == "Initial release of repository\n");
+        Assert.IsTrue((bool)row[3]);
+        Assert.IsTrue((string)row[4] == "Initial release of repository\n");
+        Assert.IsTrue((string)row[5] == "v0.0");
+        Assert.IsTrue((string)row[6] == "c834c069c0cbed7ba309bcd6bf530e36f3e77344");
+        Assert.IsTrue((string)row[7] == "anonymous");
+        Assert.IsTrue((string)row[8] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset)row[9] == new DateTimeOffset(2024, 11, 02, 9, 39, 40, TimeSpan.FromHours(1)));
     }
 
     [TestMethod]
@@ -350,7 +383,7 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string) row[0] == "WIP on master: bf85425 add documentation index");
+        Assert.IsTrue((string)row[0] == "WIP on master: bf85425 add documentation index");
     }
 
     [TestMethod]
@@ -377,13 +410,13 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string) row[0] == "documentation/index.md");
-        Assert.IsTrue((string) row[1] == "Deleted");
-        Assert.IsTrue((string) row[2] == "documentation/index.md");
-        Assert.IsTrue((string) row[3] == "NonExecutableFile");
-        Assert.IsTrue((string) row[4] == "Nonexistent");
-        Assert.IsTrue((string) row[5] == "0293f650617fe1ca2c99d4f6dad995b472120843");
-        Assert.IsTrue((string) row[6] == "0000000000000000000000000000000000000000");
+        Assert.IsTrue((string)row[0] == "documentation/index.md");
+        Assert.IsTrue((string)row[1] == "Deleted");
+        Assert.IsTrue((string)row[2] == "documentation/index.md");
+        Assert.IsTrue((string)row[3] == "NonExecutableFile");
+        Assert.IsTrue((string)row[4] == "Nonexistent");
+        Assert.IsTrue((string)row[5] == "0293f650617fe1ca2c99d4f6dad995b472120843");
+        Assert.IsTrue((string)row[6] == "0000000000000000000000000000000000000000");
     }
 
     [TestMethod]
@@ -410,20 +443,20 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string) row[0] == "documentation/index.md");
-        Assert.IsTrue((string) row[1] == "Deleted");
-        Assert.IsTrue((string) row[2] == "documentation/index.md");
-        Assert.IsTrue((string) row[3] == "NonExecutableFile");
-        Assert.IsTrue((string) row[4] == "Nonexistent");
-        Assert.IsTrue((string) row[5] == "0293f650617fe1ca2c99d4f6dad995b472120843");
-        Assert.IsTrue((string) row[6] == "0000000000000000000000000000000000000000");
+        Assert.IsTrue((string)row[0] == "documentation/index.md");
+        Assert.IsTrue((string)row[1] == "Deleted");
+        Assert.IsTrue((string)row[2] == "documentation/index.md");
+        Assert.IsTrue((string)row[3] == "NonExecutableFile");
+        Assert.IsTrue((string)row[4] == "Nonexistent");
+        Assert.IsTrue((string)row[5] == "0293f650617fe1ca2c99d4f6dad995b472120843");
+        Assert.IsTrue((string)row[6] == "0000000000000000000000000000000000000000");
     }
-    
+
     [TestMethod]
     public async Task WhenBranchSpecificCommitsFromBranchToMaster_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtm1");
-        
+
         var query = @"
             with BranchInfo as (
                 select
@@ -436,27 +469,28 @@ public class GitToSqlTests
                 cross apply r.SearchForBranches('feature/branch_1') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
             )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-        
+            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
+            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
+
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 1);
-        
+
         var row = result[0];
-        
-        Assert.IsTrue((string) row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
-        Assert.IsTrue((string) row[1] == "finished implementation for branch_1\n");
-        Assert.IsTrue((string) row[2] == "anonymous");
-        Assert.IsTrue((string) row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset) row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
+
+        Assert.IsTrue((string)row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
+        Assert.IsTrue((string)row[1] == "finished implementation for branch_1\n");
+        Assert.IsTrue((string)row[2] == "anonymous");
+        Assert.IsTrue((string)row[3] == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset)row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
     }
-    
+
     [TestMethod]
     public async Task WhenBranchSpecificCommitsFromBranchToMaster_ExcludeMergeBaseFalse_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtm2");
-        
+
         var query = @"
             with BranchInfo as (
                 select
@@ -469,14 +503,15 @@ public class GitToSqlTests
                 cross apply r.SearchForBranches('feature/branch_1') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-        
+            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
+            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
+
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
                 (string)r[1] == "finished implementation for branch_1\n" &&
                 (string)r[2] == "anonymous" &&
@@ -484,7 +519,7 @@ public class GitToSqlTests
                 (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 (string)r[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
                 (string)r[1] == "add documentation index\n" &&
                 (string)r[2] == "anonymous" &&
@@ -492,12 +527,12 @@ public class GitToSqlTests
                 (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 02, 8, 43, 41, TimeSpan.FromHours(1))),
             "Missing second commit record");
     }
-    
+
     [TestMethod]
     public async Task WhenBranchSpecificCommitsFromBranchToAnotherBranch_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtab3");
-        
+
         var query = @"
             with BranchInfo as (
                 select
@@ -510,14 +545,15 @@ public class GitToSqlTests
                 cross apply r.SearchForBranches('feature/branch_2') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-        
+            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
+            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
+
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 3, "Result should contain exactly 3 records");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 (string)r[0] == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
                 (string)r[1] == "modified main.py\n" &&
                 (string)r[2] == "anonymous" &&
@@ -525,7 +561,7 @@ public class GitToSqlTests
                 (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 (string)r[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
                 (string)r[1] == "add file_branch_2.py\n" &&
                 (string)r[2] == "anonymous" &&
@@ -533,7 +569,7 @@ public class GitToSqlTests
                 (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
             "Missing second commit record");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
                 (string)r[1] == "finished implementation for branch_1\n" &&
                 (string)r[2] == "anonymous" &&
@@ -541,12 +577,12 @@ public class GitToSqlTests
                 (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
             "Missing third commit record");
     }
-    
+
     [TestMethod]
     public async Task WhenBranchSpecificCommitsFromBranchToAnotherBranch_ExcludeMergeBaseFalse_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtab4");
-        
+
         var query = @"
             with BranchInfo as (
                 select
@@ -559,14 +595,15 @@ public class GitToSqlTests
                 cross apply r.SearchForBranches('feature/branch_2') b
                 cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
             )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-        
+            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
+            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
+
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 3, "Result should contain exactly 3 records");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 (string)r[0] == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
                 (string)r[1] == "modified main.py\n" &&
                 (string)r[2] == "anonymous" &&
@@ -574,7 +611,7 @@ public class GitToSqlTests
                 (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 (string)r[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
                 (string)r[1] == "add file_branch_2.py\n" &&
                 (string)r[2] == "anonymous" &&
@@ -582,7 +619,7 @@ public class GitToSqlTests
                 (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
             "Missing second commit record");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
                 (string)r[1] == "finished implementation for branch_1\n" &&
                 (string)r[2] == "anonymous" &&
@@ -595,7 +632,7 @@ public class GitToSqlTests
     public async Task WhenMinMaxCommitsFromMaster_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wmmcfm");
-        
+
         var query = @"
             with Commits as (
                 select
@@ -612,13 +649,13 @@ public class GitToSqlTests
 
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 1);
-        
+
         var row = result[0];
-        
-        Assert.IsTrue((string) row[0] == "789f584ce162424f61b33e020e2138aad47e60ba");
-        Assert.IsTrue((string) row[1] == "389642ba15392c4540e82628bdff9c99dc6f7923");
+
+        Assert.IsTrue((string)row[0] == "789f584ce162424f61b33e020e2138aad47e60ba");
+        Assert.IsTrue((string)row[1] == "389642ba15392c4540e82628bdff9c99dc6f7923");
     }
 
     [TestMethod]
@@ -638,7 +675,7 @@ public class GitToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count > 0);
-        
+
         var row = result[0];
         Assert.IsNotNull((string)row[0]);
         Assert.IsTrue((string)row[1] == "anonymous");
@@ -661,7 +698,7 @@ public class GitToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count > 0);
-        
+
         var masterBranch = result.FirstOrDefault(r => ((string)r[0])?.Contains("master") == true);
         Assert.IsNotNull(masterBranch);
         Assert.IsNotNull((string)masterBranch[2]);
@@ -687,7 +724,7 @@ public class GitToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 0);
-        
+
         var row = result[0];
         Assert.IsNotNull(row[0]);
         Assert.IsNotNull(row[1]);
@@ -713,7 +750,7 @@ public class GitToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 0);
-        
+
         foreach (var row in result)
         {
             var filePath = row[1] as string;
@@ -802,13 +839,12 @@ public class GitToSqlTests
                 CommitSha
             from #git.filehistory('{RepositoryPath}', '*')";
 
-        var vmAll = CreateAndRunVirtualMachine(queryAll.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var vmAll = CreateAndRunVirtualMachine(queryAll.Replace("{RepositoryPath}",
+            unpackedRepositoryPath.Path.Escape()));
         var allResults = vmAll.Run();
-        
+
         if (allResults.Count <= 1)
-        {
             Assert.Inconclusive("Repository does not have enough file changes to test skip/take");
-        }
 
         var query = @"
             select
@@ -821,7 +857,7 @@ public class GitToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should return exactly 1 change");
-        
+
         var secondCommitSha = (string)allResults[1][0];
         Assert.AreEqual(secondCommitSha, (string)result[0][0], "Should return the second commit");
     }
@@ -836,9 +872,10 @@ public class GitToSqlTests
                 CommitSha
             from #git.filehistory('{RepositoryPath}', '*')";
 
-        var vmAll = CreateAndRunVirtualMachine(queryAll.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var vmAll = CreateAndRunVirtualMachine(queryAll.Replace("{RepositoryPath}",
+            unpackedRepositoryPath.Path.Escape()));
         var allResults = vmAll.Run();
-        
+
         Assert.IsTrue(allResults.Count >= 1, "Should have at least 1 change");
         var oldestCommitSha = (string)allResults[allResults.Count - 1][0];
 
@@ -849,16 +886,12 @@ public class GitToSqlTests
                 FilePath
             from #git.filehistory('{RepositoryPath}', '*', -1)";
 
-        var vm = CreateAndRunVirtualMachine(queryOldest.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var vm = CreateAndRunVirtualMachine(queryOldest.Replace("{RepositoryPath}",
+            unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should return exactly 1 change (oldest)");
         Assert.AreEqual(oldestCommitSha, (string)result[0][0], "Should return the oldest commit");
-    }
-
-    static GitToSqlTests()
-    {
-        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 
     private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath,
@@ -896,30 +929,6 @@ public class GitToSqlTests
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
-    private static string Repository1ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository1.zip");
-
-    private static string Repository2ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository2.zip");
-
-    private static string Repository3ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository3.zip");
-
-    private static string Repository4ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository4.zip");
-
-    private static string Repository5ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository5.zip");
-
-    private static string StartDirectory
-    {
-        get
-        {
-            var filePath = typeof(GitToSqlTests).Assembly.Location;
-            var directory = Path.GetDirectoryName(filePath);
-
-            if (string.IsNullOrEmpty(directory))
-                throw new InvalidOperationException("Directory is empty.");
-
-            return directory;
-        }
-    }
-
     private class UnpackedRepository : IDisposable
     {
         private static readonly ConcurrentDictionary<string, int> IsCounter = new();
@@ -937,15 +946,9 @@ public class GitToSqlTests
             if (!IsCounter.TryGetValue(Path, out var value)) return;
 
             if (value == 1)
-            {
-                //I'm going to skip it until the proper implementation within runtime will be done.
-                //Directory.Delete(Path, true);
                 IsCounter.TryRemove(Path, out _);
-            }
             else
-            {
                 IsCounter.AddOrUpdate(Path, value - 1, (_, _) => value - 1);
-            }
         }
 
         public static implicit operator string(UnpackedRepository unpackedRepository)

@@ -7,10 +7,10 @@ namespace Musoq.DataSources.Roslyn;
 internal static class RoslynAsyncHelper
 {
     /// <summary>
-    /// Default timeout for reference finding operations (30 seconds).
+    ///     Default timeout for reference finding operations (30 seconds).
     /// </summary>
     public static readonly TimeSpan DefaultReferenceTimeout = TimeSpan.FromSeconds(30);
-    
+
     public static T RunSync<T>(Task<T> task)
     {
         try
@@ -34,16 +34,17 @@ internal static class RoslynAsyncHelper
             throw RoslynVersionHelper.CreateVersionMismatchException(ex, "RoslynAsyncHelper.RunSync");
         }
     }
-    
+
     /// <summary>
-    /// Runs an async task synchronously with a timeout. Returns the default value if the operation times out.
+    ///     Runs an async task synchronously with a timeout. Returns the default value if the operation times out.
     /// </summary>
     /// <typeparam name="T">The return type.</typeparam>
     /// <param name="taskFactory">A factory function that creates the task with a cancellation token.</param>
     /// <param name="timeout">The timeout duration.</param>
     /// <param name="defaultValue">The default value to return on timeout.</param>
     /// <returns>The task result, or the default value if timed out.</returns>
-    public static T RunSyncWithTimeout<T>(Func<CancellationToken, Task<T>> taskFactory, TimeSpan timeout, T defaultValue)
+    public static T RunSyncWithTimeout<T>(Func<CancellationToken, Task<T>> taskFactory, TimeSpan timeout,
+        T defaultValue)
     {
         try
         {
@@ -65,4 +66,3 @@ internal static class RoslynAsyncHelper
         }
     }
 }
-

@@ -7,24 +7,25 @@ internal static class ReplicaSetsSourceHelper
 {
     internal static readonly IReadOnlyDictionary<string, int> ReplicaSetsNameToIndexMap = new Dictionary<string, int>
     {
-        {nameof(ReplicaSetEntity.Namespace), 0},
-        {nameof(ReplicaSetEntity.Name), 1},
-        {nameof(ReplicaSetEntity.Desired), 2},
-        {nameof(ReplicaSetEntity.Current), 3},
-        {nameof(ReplicaSetEntity.Ready), 4},
-        {nameof(ReplicaSetEntity.Age), 5}
+        { nameof(ReplicaSetEntity.Namespace), 0 },
+        { nameof(ReplicaSetEntity.Name), 1 },
+        { nameof(ReplicaSetEntity.Desired), 2 },
+        { nameof(ReplicaSetEntity.Current), 3 },
+        { nameof(ReplicaSetEntity.Ready), 4 },
+        { nameof(ReplicaSetEntity.Age), 5 }
     };
 
-    internal static readonly IReadOnlyDictionary<int, Func<ReplicaSetEntity, object?>> ReplicaSetsIndexToMethodAccessMap = new Dictionary<int, Func<ReplicaSetEntity, object?>>
-    {
-        {0, t => t.Namespace},
-        {1, t => t.Name},
-        {2, t => t.Desired},
-        {3, t => t.Current},
-        {4, t => t.Ready},
-        {5, t => t.Age}
-    };
-    
+    internal static readonly IReadOnlyDictionary<int, Func<ReplicaSetEntity, object?>>
+        ReplicaSetsIndexToMethodAccessMap = new Dictionary<int, Func<ReplicaSetEntity, object?>>
+        {
+            { 0, t => t.Namespace },
+            { 1, t => t.Name },
+            { 2, t => t.Desired },
+            { 3, t => t.Current },
+            { 4, t => t.Ready },
+            { 5, t => t.Age }
+        };
+
     internal static readonly ISchemaColumn[] ReplicaSetsColumns =
     [
         new SchemaColumn(nameof(ReplicaSetEntity.Namespace), 0, typeof(string)),

@@ -5,11 +5,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-    
+
     <ItemGroup>
-        <PackageReference Include="Musoq.Converter" Version="5.3.1" />
-        <PackageReference Include="Musoq.Evaluator" Version="10.3.0" />
-        <PackageReference Include="Musoq.Schema" Version="10.3.0" />
+        <PackageReference Include="Musoq.Converter" Version="5.3.1"/>
+        <PackageReference Include="Musoq.Evaluator" Version="10.3.0"/>
+        <PackageReference Include="Musoq.Schema" Version="10.3.0"/>
     </ItemGroup>
 
 </Project>

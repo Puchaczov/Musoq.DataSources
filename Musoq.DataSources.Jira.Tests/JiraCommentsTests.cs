@@ -11,6 +11,11 @@ namespace Musoq.DataSources.Jira.Tests;
 [TestClass]
 public class JiraCommentsTests
 {
+    static JiraCommentsTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void WhenCommentsQueried_ShouldReturnValues()
     {
@@ -19,8 +24,8 @@ public class JiraCommentsTests
         api.Setup(f => f.GetCommentsAsync("TEST-123"))
             .ReturnsAsync(new List<IJiraComment>
             {
-                MockEntityFactory.CreateComment(id: "1", issueKey: "TEST-123", body: "First comment", author: "user1"),
-                MockEntityFactory.CreateComment(id: "2", issueKey: "TEST-123", body: "Second comment", author: "user2")
+                MockEntityFactory.CreateComment("1", "TEST-123", "First comment", "user1"),
+                MockEntityFactory.CreateComment("2", "TEST-123", "Second comment", "user2")
             });
 
         var query = "select Id, IssueKey, Body, Author from #jira.comments('TEST-123')";
@@ -58,9 +63,9 @@ public class JiraCommentsTests
         api.Setup(f => f.GetCommentsAsync("TEST-123"))
             .ReturnsAsync(new List<IJiraComment>
             {
-                MockEntityFactory.CreateComment(id: "1", body: "Comment by user1", author: "user1"),
-                MockEntityFactory.CreateComment(id: "2", body: "Comment by user2", author: "user2"),
-                MockEntityFactory.CreateComment(id: "3", body: "Another by user1", author: "user1")
+                MockEntityFactory.CreateComment("1", body: "Comment by user1", author: "user1"),
+                MockEntityFactory.CreateComment("2", body: "Comment by user2", author: "user2"),
+                MockEntityFactory.CreateComment("3", body: "Another by user1", author: "user1")
             });
 
         var query = "select Id, Body, Author from #jira.comments('TEST-123') where Author = 'user1'";
@@ -88,16 +93,11 @@ public class JiraCommentsTests
                 {
                     0, new Dictionary<string, string>
                     {
-                        {"JIRA_URL", "https://test.atlassian.net"},
-                        {"JIRA_USERNAME", "test@example.com"},
-                        {"JIRA_API_TOKEN", "test_token"}
+                        { "JIRA_URL", "https://test.atlassian.net" },
+                        { "JIRA_USERNAME", "test@example.com" },
+                        { "JIRA_API_TOKEN", "test_token" }
                     }
                 }
             });
-    }
-
-    static JiraCommentsTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

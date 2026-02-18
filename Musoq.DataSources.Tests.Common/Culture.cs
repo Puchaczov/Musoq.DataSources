@@ -1,19 +1,21 @@
 ﻿using System.Globalization;
 
-namespace Musoq.DataSources.Tests.Common
+namespace Musoq.DataSources.Tests.Common;
+
+public static class Culture
 {
-    public static class Culture
+    public static CultureInfo DefaultCulture { get; } = CultureInfo.GetCultureInfo("pl-PL");
+
+    public static void ApplyWithDefaultCulture()
     {
-        public static CultureInfo DefaultCulture { get; } = CultureInfo.GetCultureInfo("pl-PL");
+        Apply(DefaultCulture);
+    }
 
-        public static void ApplyWithDefaultCulture() => Apply(DefaultCulture);
-
-        public static void Apply(CultureInfo culture)
-        {
-            CultureInfo.CurrentCulture
-                = CultureInfo.CurrentUICulture =
-                    CultureInfo.DefaultThreadCurrentCulture =
-                        CultureInfo.DefaultThreadCurrentUICulture = culture;
-        }
+    public static void Apply(CultureInfo culture)
+    {
+        CultureInfo.CurrentCulture
+            = CultureInfo.CurrentUICulture =
+                CultureInfo.DefaultThreadCurrentCulture =
+                    CultureInfo.DefaultThreadCurrentUICulture = culture;
     }
 }

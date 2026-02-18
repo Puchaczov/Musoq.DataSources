@@ -1,19 +1,21 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using LibGit2Sharp;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
+using Group = Musoq.Plugins.Group;
 
 namespace Musoq.DataSources.Git;
 
 /// <summary>
-/// Represents a Git library with various methods for querying Git repositories.
+///     Represents a Git library with various methods for querying Git repositories.
 /// </summary>
 public class GitLibrary : LibraryBase
 {
     /// <summary>
-    /// Gets the differences between two commits.
+    ///     Gets the differences between two commits.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="first">The first commit entity.</param>
@@ -21,30 +23,30 @@ public class GitLibrary : LibraryBase
     /// <returns>An enumerable of difference entities.</returns>
     [BindableMethod]
     public IEnumerable<DifferenceEntity> DifferenceBetween(
-        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))]
+        RepositoryEntity repository,
         CommitEntity first,
         CommitEntity second)
     {
         var firstLibGitCommit = first.LibGitCommit;
-        
+
         if (firstLibGitCommit == null)
             yield break;
-        
+
         var secondLibGitCommit = second.LibGitCommit;
-        
+
         if (secondLibGitCommit == null)
             yield break;
-        
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(firstLibGitCommit.Tree, secondLibGitCommit.Tree);
-        
+
+        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(firstLibGitCommit.Tree,
+            secondLibGitCommit.Tree);
+
         foreach (var treeEntryChange in diff)
-        {
             yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
-        }
     }
 
     /// <summary>
-    /// Gets the differences between two branches.
+    ///     Gets the differences between two branches.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="first">The first branch entity.</param>
@@ -61,16 +63,15 @@ public class GitLibrary : LibraryBase
         var secondLibGitBranch = second.LibGitBranch;
         var firstLibGitCommit = firstLibGitBranch.Tip;
         var secondLibGitCommit = secondLibGitBranch.Tip;
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(firstLibGitCommit.Tree, secondLibGitCommit.Tree);
+        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(firstLibGitCommit.Tree,
+            secondLibGitCommit.Tree);
 
         foreach (var treeEntryChange in diff)
-        {
             yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
-        }
     }
 
     /// <summary>
-    /// Gets the differences between the current branch and a specified branch.
+    ///     Gets the differences between the current branch and a specified branch.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="branch">The branch entity.</param>
@@ -85,16 +86,15 @@ public class GitLibrary : LibraryBase
         var branchLibGitBranch = branch.LibGitBranch;
         var currentLibGitCommit = currentBranch.Tip;
         var branchLibGitCommit = branchLibGitBranch.Tip;
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(currentLibGitCommit.Tree, branchLibGitCommit.Tree);
+        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(currentLibGitCommit.Tree,
+            branchLibGitCommit.Tree);
 
         foreach (var treeEntryChange in diff)
-        {
             yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
-        }
     }
 
     /// <summary>
-    /// Gets the differences between a commit and a branch.
+    ///     Gets the differences between a commit and a branch.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="commit">The commit entity.</param>
@@ -102,27 +102,27 @@ public class GitLibrary : LibraryBase
     /// <returns>An enumerable of difference entities.</returns>
     [BindableMethod]
     public IEnumerable<DifferenceEntity> DifferenceBetweenCommitAndBranch(
-        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))]
+        RepositoryEntity repository,
         CommitEntity commit,
         BranchEntity branch)
     {
         var branchLibGitBranch = branch.LibGitBranch;
         var commitLibGitCommit = commit.LibGitCommit;
-        
+
         if (commitLibGitCommit == null)
             yield break;
-        
+
         var branchLibGitCommit = branchLibGitBranch.Tip;
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(commitLibGitCommit.Tree, branchLibGitCommit.Tree);
+        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(commitLibGitCommit.Tree,
+            branchLibGitCommit.Tree);
 
         foreach (var treeEntryChange in diff)
-        {
             yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
-        }
     }
 
     /// <summary>
-    /// Gets the differences between a branch and a commit.
+    ///     Gets the differences between a branch and a commit.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="branch">The branch entity.</param>
@@ -137,47 +137,48 @@ public class GitLibrary : LibraryBase
     {
         var branchLibGitBranch = branch.LibGitBranch;
         var commitLibGitCommit = commit.LibGitCommit;
-        
+
         if (commitLibGitCommit == null)
             yield break;
-        
+
         var branchLibGitCommit = branchLibGitBranch.Tip;
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(branchLibGitCommit.Tree, commitLibGitCommit.Tree);
+        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(branchLibGitCommit.Tree,
+            commitLibGitCommit.Tree);
 
         foreach (var treeEntryChange in diff)
-        {
             yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
-        }
     }
 
     /// <summary>
-    /// Gets a commit entity from a SHA.
+    ///     Gets a commit entity from a SHA.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="sha">The SHA of the commit.</param>
     /// <returns>The commit entity.</returns>
     [BindableMethod]
-    public CommitEntity CommitFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository, string sha)
+    public CommitEntity CommitFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
+        string sha)
     {
         var commit = repository.LibGitRepository.Lookup<Commit>(sha);
         return new CommitEntity(commit, repository.LibGitRepository);
     }
 
     /// <summary>
-    /// Gets a branch entity from a canonical name.
+    ///     Gets a branch entity from a canonical name.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="canonicalName">The canonical name of the branch.</param>
     /// <returns>The branch entity.</returns>
     [BindableMethod]
-    public BranchEntity BranchFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository, string canonicalName)
+    public BranchEntity BranchFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
+        string canonicalName)
     {
         var branch = repository.LibGitRepository.Branches[canonicalName];
         return new BranchEntity(branch, repository.LibGitRepository);
     }
-    
+
     /// <summary>
-    /// Gets the patch between two commits.
+    ///     Gets the patch between two commits.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="first">The first commit entity.</param>
@@ -185,48 +186,48 @@ public class GitLibrary : LibraryBase
     /// <returns>The patch entity.</returns>
     [BindableMethod]
     public IEnumerable<PatchEntity> PatchBetween(
-        [InjectSpecificSource(typeof(RepositoryEntity))] 
+        [InjectSpecificSource(typeof(RepositoryEntity))]
         RepositoryEntity repository,
         CommitEntity first,
         CommitEntity second)
     {
         var firstLibGitCommit = first.LibGitCommit;
-        
+
         if (firstLibGitCommit == null)
             yield break;
-        
+
         var secondLibGitCommit = second.LibGitCommit;
-        
+
         if (secondLibGitCommit == null)
             yield break;
-        
-        yield return new PatchEntity(repository.LibGitRepository.Diff.Compare<Patch>(firstLibGitCommit.Tree, secondLibGitCommit.Tree), repository.LibGitRepository);
+
+        yield return new PatchEntity(
+            repository.LibGitRepository.Diff.Compare<Patch>(firstLibGitCommit.Tree, secondLibGitCommit.Tree),
+            repository.LibGitRepository);
     }
-    
+
     /// <summary>
-    /// Gets the branches that match a search pattern.
+    ///     Gets the branches that match a search pattern.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="searchPatternRegex">The search pattern regex.</param>
     /// <returns>An enumerable of branch entities.</returns>
     [BindableMethod]
     public IEnumerable<BranchEntity> SearchForBranches(
-        [InjectSpecificSource(typeof(RepositoryEntity))] 
-        RepositoryEntity repository, 
+        [InjectSpecificSource(typeof(RepositoryEntity))]
+        RepositoryEntity repository,
         string searchPatternRegex)
     {
         var branches = repository.LibGitRepository.Branches;
-        
+
         foreach (var branch in branches)
-        {
-            if (System.Text.RegularExpressions.Regex.IsMatch(branch.FriendlyName, searchPatternRegex))
+            if (Regex.IsMatch(branch.FriendlyName, searchPatternRegex))
                 yield return new BranchEntity(branch, repository.LibGitRepository);
-        }
     }
-    
+
 
     /// <summary>
-    /// Gets commits unique to this branch since it diverged from its parent.
+    ///     Gets commits unique to this branch since it diverged from its parent.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="branch">The branch entity.</param>
@@ -235,19 +236,19 @@ public class GitLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<CommitEntity> GetBranchSpecificCommits(
         [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository, 
-        BranchEntity branch, 
+        RepositoryEntity repository,
+        BranchEntity branch,
         bool excludeMergeBase = true)
     {
         var mergeBase = FindMergeBase(repository, branch);
-        
+
         if (mergeBase == null)
             return [];
-        
+
         var filter = new CommitFilter
         {
             IncludeReachableFrom = branch.LibGitBranch.Tip,
-            ExcludeReachableFrom = excludeMergeBase 
+            ExcludeReachableFrom = excludeMergeBase
                 ? mergeBase.MergeBaseCommit.LibGitCommit
                 : mergeBase.MergeBaseCommit.LibGitCommit?.Parents.FirstOrDefault(),
             SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
@@ -258,14 +259,14 @@ public class GitLibrary : LibraryBase
     }
 
     /// <summary>
-    /// Finds the merge base between this branch and another branch.
+    ///     Finds the merge base between this branch and another branch.
     /// </summary>
     /// <param name="repository">The repository entity.</param>
     /// <param name="branch">The branch entity.</param>
     /// <returns>Merge base result or null if no merge base found</returns>
     [BindableMethod]
     public MergeBaseEntity? FindMergeBase(
-        RepositoryEntity? repository, 
+        RepositoryEntity? repository,
         BranchEntity? branch
     )
     {
@@ -273,7 +274,7 @@ public class GitLibrary : LibraryBase
 
         if (first == null)
             return null;
-        
+
         var second = branch!.ParentBranch;
 
         if (second == null)
@@ -291,15 +292,15 @@ public class GitLibrary : LibraryBase
             return null;
 
         return new MergeBaseEntity(
-            new CommitEntity(mergeBase, repository.LibGitRepository), 
-            first, 
+            new CommitEntity(mergeBase, repository.LibGitRepository),
+            first,
             second,
             repository.LibGitRepository
         );
     }
-    
+
     /// <summary>
-    /// Gets the max commit from a given group.
+    ///     Gets the max commit from a given group.
     /// </summary>
     /// <param name="group">The group to retrieve the value from.</param>
     /// <param name="name">The name of the value to retrieve.</param>
@@ -311,9 +312,9 @@ public class GitLibrary : LibraryBase
         var parentGroup = GetParentGroup(group, parent);
         return parentGroup.GetValue<CommitEntity>(name);
     }
-    
+
     /// <summary>
-    /// Gets the max commit from a given group.
+    ///     Gets the max commit from a given group.
     /// </summary>
     /// <param name="group">The group to retrieve the value from.</param>
     /// <param name="name">The name of the value to retrieve.</param>
@@ -324,9 +325,9 @@ public class GitLibrary : LibraryBase
         var parentGroup = GetParentGroup(group, 0);
         return parentGroup.GetValue<CommitEntity>(name);
     }
-    
+
     /// <summary>
-    /// Sets the max commit in the specified group.
+    ///     Sets the max commit in the specified group.
     /// </summary>
     /// <param name="group">The group to set the value in.</param>
     /// <param name="name">The name of the value to set.</param>
@@ -342,16 +343,19 @@ public class GitLibrary : LibraryBase
             parentGroup.GetOrCreateValue<CommitEntity>(name);
             return;
         }
-        
+
         if (value.LibGitCommit == null)
             return;
 
         var currentValue = parentGroup.GetOrCreateValue<CommitEntity>(name);
-        parentGroup.SetValue(name, currentValue is null || value.LibGitCommit.Committer.When > currentValue.LibGitCommit!.Committer.When ? value : currentValue);
+        parentGroup.SetValue(name,
+            currentValue is null || value.LibGitCommit.Committer.When > currentValue.LibGitCommit!.Committer.When
+                ? value
+                : currentValue);
     }
-    
+
     /// <summary>
-    /// Gets the min commit from a given group.
+    ///     Gets the min commit from a given group.
     /// </summary>
     /// <param name="group">The group to retrieve the value from.</param>
     /// <param name="name">The name of the value to retrieve.</param>
@@ -363,10 +367,10 @@ public class GitLibrary : LibraryBase
         var parentGroup = GetParentGroup(group, parent);
         return parentGroup.GetValue<CommitEntity>(name);
     }
-    
-    
+
+
     /// <summary>
-    /// Gets the min commit from a given group.
+    ///     Gets the min commit from a given group.
     /// </summary>
     /// <param name="group">The group to retrieve the value from.</param>
     /// <param name="name">The name of the value to retrieve.</param>
@@ -377,9 +381,9 @@ public class GitLibrary : LibraryBase
         var parentGroup = GetParentGroup(group, 0);
         return parentGroup.GetValue<CommitEntity>(name);
     }
-    
+
     /// <summary>
-    /// Sets the min commit in the specified group.
+    ///     Sets the min commit in the specified group.
     /// </summary>
     /// <param name="group">The group to set the value in.</param>
     /// <param name="name">The name of the value to set.</param>
@@ -395,11 +399,14 @@ public class GitLibrary : LibraryBase
             parentGroup.GetOrCreateValue<CommitEntity>(name);
             return;
         }
-        
+
         if (value.LibGitCommit == null)
             return;
 
         var currentValue = parentGroup.GetOrCreateValue<CommitEntity>(name);
-        parentGroup.SetValue(name, currentValue is null || value.LibGitCommit.Committer.When < currentValue.LibGitCommit!.Committer.When ? value : currentValue);
+        parentGroup.SetValue(name,
+            currentValue is null || value.LibGitCommit.Committer.When < currentValue.LibGitCommit!.Committer.When
+                ? value
+                : currentValue);
     }
 }

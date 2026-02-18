@@ -16,6 +16,6 @@ internal class ReleasesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => ReleasesSourceHelper.ReleasesColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(ReleaseEntity));
 }

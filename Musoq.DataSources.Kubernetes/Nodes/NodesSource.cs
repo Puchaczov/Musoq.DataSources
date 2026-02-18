@@ -20,16 +20,17 @@ internal class NodesSource : RowSourceBase<NodeEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(NodesSourceName);
-        
+
         try
         {
             var nodes = _client.ListNodes();
             _runtimeContext.ReportDataSourceRowsKnown(NodesSourceName, nodes.Items.Count);
 
             chunkedSource.Add(
-                nodes.Items.Select(c => 
-                    new EntityResolver<NodeEntity>(MapV1NodeToNodeEntity(c), NodesSourceHelper.NodesNameToIndexMap, NodesSourceHelper.NodesIndexToMethodAccessMap)).ToList());
-            
+                nodes.Items.Select(c =>
+                    new EntityResolver<NodeEntity>(MapV1NodeToNodeEntity(c), NodesSourceHelper.NodesNameToIndexMap,
+                        NodesSourceHelper.NodesIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(NodesSourceName, nodes.Items.Count);
         }
         catch
@@ -40,7 +41,7 @@ internal class NodesSource : RowSourceBase<NodeEntity>
     }
 
     private static NodeEntity MapV1NodeToNodeEntity(V1Node v1Node)
-    {     
+    {
         return new NodeEntity
         {
             Name = v1Node.Metadata.Name,

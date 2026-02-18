@@ -20,15 +20,17 @@ internal class ReplicaSetsSource : RowSourceBase<ReplicaSetEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(ReplicaSetsSourceName);
-        
+
         try
         {
             var replicaSets = _client.ListReplicaSetsForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(ReplicaSetsSourceName, replicaSets.Items.Count);
 
             chunkedSource.Add(
-                replicaSets.Items.Select(c => new EntityResolver<ReplicaSetEntity>(MapV1ReplicaSetToReplicasetEntity(c), ReplicaSetsSourceHelper.ReplicaSetsNameToIndexMap, ReplicaSetsSourceHelper.ReplicaSetsIndexToMethodAccessMap)).ToList());
-            
+                replicaSets.Items.Select(c => new EntityResolver<ReplicaSetEntity>(MapV1ReplicaSetToReplicasetEntity(c),
+                    ReplicaSetsSourceHelper.ReplicaSetsNameToIndexMap,
+                    ReplicaSetsSourceHelper.ReplicaSetsIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(ReplicaSetsSourceName, replicaSets.Items.Count);
         }
         catch

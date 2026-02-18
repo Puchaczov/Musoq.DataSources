@@ -1,16 +1,19 @@
+using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
-using System;
-using System.IO;
-using System.Linq;
 
 namespace Musoq.DataSources.Json.Tests;
 
 [TestClass]
 public class JsonSchemaDescribeTests
 {
+    static JsonSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
@@ -18,11 +21,6 @@ public class JsonSchemaDescribeTests
             Guid.NewGuid().ToString(),
             new JsonSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static JsonSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -82,7 +80,7 @@ public class JsonSchemaDescribeTests
         Assert.IsTrue(table.Count > 0, "Should have rows describing the table columns");
 
         var columnNames = table.Select(row => (string)row[0]).ToList();
-        
+
         Assert.IsTrue(columnNames.Contains("Name"), "Should have 'Name' column from JSON");
         Assert.IsTrue(columnNames.Contains("Age"), "Should have 'Age' column from JSON");
         Assert.IsTrue(columnNames.Contains("Books"), "Should have 'Books' column from JSON");
@@ -121,10 +119,8 @@ public class JsonSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

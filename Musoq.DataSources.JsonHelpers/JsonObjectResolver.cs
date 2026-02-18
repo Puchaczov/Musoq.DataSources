@@ -9,7 +9,10 @@ public class JsonObjectResolver(IDictionary<string, object?> obj, IDictionary<in
     private readonly IDictionary<string, object?> _obj = obj ?? throw new InvalidOperationException();
 
     /// <inheritdoc />
-    public bool HasColumn(string name) => _obj.ContainsKey(name);
+    public bool HasColumn(string name)
+    {
+        return _obj.ContainsKey(name);
+    }
 
     /// <inheritdoc />
     public object[] Contexts => [_obj];

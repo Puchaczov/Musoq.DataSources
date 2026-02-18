@@ -1,5 +1,24 @@
 [
-  {"Name": "Alice", "Age": 28, "Skills": ["Python", "SQL"]},
-  {"Name": "Bob", "Age": 35, "Skills": ["JavaScript", "React", "Node"]},
-  {"Name": "Charlie", "Age": 42, "Skills": []}
+  {
+    "Name": "Alice",
+    "Age": 28,
+    "Skills": [
+      "Python",
+      "SQL"
+    ]
+  },
+  {
+    "Name": "Bob",
+    "Age": 35,
+    "Skills": [
+      "JavaScript",
+      "React",
+      "Node"
+    ]
+  },
+  {
+    "Name": "Charlie",
+    "Age": 42,
+    "Skills": []
+  }
 ]

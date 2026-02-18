@@ -11,6 +11,11 @@ namespace Musoq.DataSources.CANBus.Tests;
 [TestClass]
 public class CANBusSchemaDescribeTests
 {
+    static CANBusSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
@@ -18,11 +23,6 @@ public class CANBusSchemaDescribeTests
             Guid.NewGuid().ToString(),
             new CANBusSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static CANBusSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -46,7 +46,8 @@ public class CANBusSchemaDescribeTests
 
         Assert.AreEqual(1, methodNames.Count(m => m == "messages"), "Should contain 'messages' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "signals"), "Should contain 'signals' method once");
-        Assert.AreEqual(3, methodNames.Count(m => m == "separatedvalues"), "Should contain 'separatedvalues' method 3 times (3 overloads)");
+        Assert.AreEqual(3, methodNames.Count(m => m == "separatedvalues"),
+            "Should contain 'separatedvalues' method 3 times (3 overloads)");
 
         var messagesRow = table.First(row => (string)row[0] == "messages");
         Assert.AreEqual("dbc: System.String", (string)messagesRow[1]);
@@ -107,7 +108,8 @@ public class CANBusSchemaDescribeTests
         Assert.AreEqual(3, table.Count, "Should have 3 rows for 3 overloads");
 
         var methodNames = table.Select(row => (string)row[0]).ToList();
-        Assert.IsTrue(methodNames.All(name => name == "separatedvalues"), "All rows should be for separatedvalues method");
+        Assert.IsTrue(methodNames.All(name => name == "separatedvalues"),
+            "All rows should be for separatedvalues method");
 
         var overload1 = table.ElementAt(0);
         Assert.AreEqual("separatedvalues", (string)overload1[0]);
@@ -156,10 +158,8 @@ public class CANBusSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -197,10 +197,8 @@ public class CANBusSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -236,10 +234,8 @@ public class CANBusSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

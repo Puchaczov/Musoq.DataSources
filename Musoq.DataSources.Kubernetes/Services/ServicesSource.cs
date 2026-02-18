@@ -20,16 +20,18 @@ internal class ServicesSource : RowSourceBase<ServiceEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(ServicesSourceName);
-        
+
         try
         {
             var services = _client.ListServicesForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(ServicesSourceName, services.Items.Count);
 
             chunkedSource.Add(
-                services.Items.Select(c => 
-                    new EntityResolver<ServiceEntity>(MapV1ServiceToServiceEntity(c), ServicesSourceHelper.ServicesNameToIndexMap, ServicesSourceHelper.ServicesIndexToMethodAccessMap)).ToList());
-            
+                services.Items.Select(c =>
+                    new EntityResolver<ServiceEntity>(MapV1ServiceToServiceEntity(c),
+                        ServicesSourceHelper.ServicesNameToIndexMap,
+                        ServicesSourceHelper.ServicesIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(ServicesSourceName, services.Items.Count);
         }
         catch

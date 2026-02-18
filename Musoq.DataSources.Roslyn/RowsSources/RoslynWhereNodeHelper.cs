@@ -52,7 +52,7 @@ internal static class RoslynWhereNodeHelper
                 break;
 
             case OrNode:
-                // OR conditions are complex - skip for pushdown
+                
                 break;
 
             case EqualityNode equalityNode:
@@ -68,7 +68,7 @@ internal static class RoslynWhereNodeHelper
         if (fieldName == null || value == null)
             return;
 
-        // Strip any table-alias prefix (e.g. "p.AssemblyName" → "assemblyname")
+        
         var bareFieldName = fieldName.Contains('.')
             ? fieldName[(fieldName.LastIndexOf('.') + 1)..]
             : fieldName;

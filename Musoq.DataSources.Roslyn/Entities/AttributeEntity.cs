@@ -7,7 +7,7 @@ using Musoq.Plugins.Attributes;
 namespace Musoq.DataSources.Roslyn.Entities;
 
 /// <summary>
-/// Represents an attribute entity that provides information about an attribute in the source code.
+///     Represents an attribute entity that provides information about an attribute in the source code.
 /// </summary>
 public class AttributeEntity
 {
@@ -15,7 +15,7 @@ public class AttributeEntity
     private readonly AttributeData _attributeData;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="AttributeEntity"/> class.
+    ///     Initializes a new instance of the <see cref="AttributeEntity" /> class.
     /// </summary>
     /// <param name="attributeData">The attribute data from Roslyn.</param>
     public AttributeEntity(AttributeData attributeData)
@@ -24,7 +24,7 @@ public class AttributeEntity
     }
 
     /// <summary>
-    /// Gets the name of the attribute.
+    ///     Gets the name of the attribute.
     /// </summary>
     public string? Name
     {
@@ -32,22 +32,20 @@ public class AttributeEntity
         {
             var name = _attributeData.AttributeClass?.Name;
             if (name?.EndsWith(AttributeSuffix) == true && name.Length > AttributeSuffix.Length)
-            {
                 return name.Substring(0, name.Length - AttributeSuffix.Length);
-            }
             return name;
         }
     }
 
     /// <summary>
-    /// Gets the constructor arguments of the attribute as strings.
+    ///     Gets the constructor arguments of the attribute as strings.
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<string> ConstructorArguments =>
         _attributeData.ConstructorArguments.Select(arg => arg.ToCSharpString());
 
     /// <summary>
-    /// Gets the named arguments of the attribute as key-value pairs.
+    ///     Gets the named arguments of the attribute as key-value pairs.
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<KeyValuePair<string, string>> NamedArguments =>
@@ -55,7 +53,7 @@ public class AttributeEntity
             new KeyValuePair<string, string>(na.Key, na.Value.ToCSharpString()));
 
     /// <summary>
-    /// Returns a string representation of the attribute entity.
+    ///     Returns a string representation of the attribute entity.
     /// </summary>
     /// <returns>A string that represents the attribute entity.</returns>
     public override string ToString()

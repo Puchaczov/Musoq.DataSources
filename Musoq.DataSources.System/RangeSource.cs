@@ -2,43 +2,43 @@
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.System
+namespace Musoq.DataSources.System;
+
+internal class RangeSource : RowSource
 {
-    internal class RangeSource : RowSource
+    private const string RangeSourceName = "range";
+    private readonly long _max;
+    private readonly long _min;
+    private readonly RuntimeContext _runtimeContext;
+
+    public RangeSource(long min, long max, RuntimeContext runtimeContext)
     {
-        private const string RangeSourceName = "range";
-        private readonly long _min;
-        private readonly long _max;
-        private readonly RuntimeContext _runtimeContext;
+        _min = min;
+        _max = max;
+        _runtimeContext = runtimeContext;
+    }
 
-        public RangeSource(long min, long max, RuntimeContext runtimeContext)
+    public override IEnumerable<IObjectResolver> Rows
+    {
+        get
         {
-            _min = min;
-            _max = max;
-            _runtimeContext = runtimeContext;
-        }
+            _runtimeContext.ReportDataSourceBegin(RangeSourceName);
+            var totalRows = _max - _min;
+            _runtimeContext.ReportDataSourceRowsKnown(RangeSourceName, totalRows);
+            long totalRowsProcessed = 0;
 
-        public override IEnumerable<IObjectResolver> Rows
-        {
-            get
+            try
             {
-                _runtimeContext.ReportDataSourceBegin(RangeSourceName);
-                var totalRows = _max - _min;
-                _runtimeContext.ReportDataSourceRowsKnown(RangeSourceName, totalRows);
-                long totalRowsProcessed = 0;
-                
-                try
+                for (var i = _min; i < _max; ++i)
                 {
-                    for (var i = _min; i < _max; ++i)
-                    {
-                        totalRowsProcessed++;
-                        yield return new EntityResolver<RangeItemEntity>(new RangeItemEntity() { Value = i }, RangeHelper.RangeToIndexMap, RangeHelper.RangeToMethodAccessMap);
-                    }
+                    totalRowsProcessed++;
+                    yield return new EntityResolver<RangeItemEntity>(new RangeItemEntity { Value = i },
+                        RangeHelper.RangeToIndexMap, RangeHelper.RangeToMethodAccessMap);
                 }
-                finally
-                {
-                    _runtimeContext.ReportDataSourceEnd(RangeSourceName, totalRowsProcessed);
-                }
+            }
+            finally
+            {
+                _runtimeContext.ReportDataSourceEnd(RangeSourceName, totalRowsProcessed);
             }
         }
     }

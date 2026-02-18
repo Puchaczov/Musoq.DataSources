@@ -14,6 +14,11 @@ namespace Musoq.DataSources.Airtable.Tests;
 [TestClass]
 public class AirtableSchemaDescribeTests
 {
+    static AirtableSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script, IAirtableApi api)
     {
         var mockSchemaProvider = new Mock<ISchemaProvider>();
@@ -25,19 +30,16 @@ public class AirtableSchemaDescribeTests
             script,
             Guid.NewGuid().ToString(),
             mockSchemaProvider.Object,
-            new Dictionary<uint, IReadOnlyDictionary<string, string>>()
+            new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
-                {0, new Dictionary<string, string>
                 {
-                    {"MUSOQ_AIRTABLE_API_KEY", "test_key"},
-                    {"MUSOQ_AIRTABLE_BASE_ID", "test_base_id"}
-                }}
+                    0, new Dictionary<string, string>
+                    {
+                        { "MUSOQ_AIRTABLE_API_KEY", "test_key" },
+                        { "MUSOQ_AIRTABLE_BASE_ID", "test_base_id" }
+                    }
+                }
             });
-    }
-
-    static AirtableSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -158,10 +160,8 @@ public class AirtableSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -195,10 +195,8 @@ public class AirtableSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -236,10 +234,8 @@ public class AirtableSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

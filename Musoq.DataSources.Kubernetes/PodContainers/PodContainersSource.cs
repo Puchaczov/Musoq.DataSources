@@ -20,22 +20,22 @@ internal class PodContainersSource : RowSourceBase<PodContainerEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(PodContainersSourceName);
-        
+
         try
         {
             var pods = _kubernetesApi.ListPodsForAllNamespaces();
             var containers = pods.Items.SelectMany(c =>
                     c.Spec.Containers
-                        .Select(f => new {c.Metadata, Container = f}))
+                        .Select(f => new { c.Metadata, Container = f }))
                 .Select(c => new EntityResolver<PodContainerEntity>(
                     MapV1MetadataAndV1ContainerToPodContainerEntity(c.Metadata, c.Container),
                     PodContainersSourceHelper.PodContainersNameToIndexMap,
                     PodContainersSourceHelper.PodContainersIndexToMethodAccessMap)).ToList();
-            
+
             _runtimeContext.ReportDataSourceRowsKnown(PodContainersSourceName, containers.Count);
-        
+
             chunkedSource.Add(containers);
-            
+
             _runtimeContext.ReportDataSourceEnd(PodContainersSourceName, containers.Count);
         }
         catch
@@ -45,7 +45,8 @@ internal class PodContainersSource : RowSourceBase<PodContainerEntity>
         }
     }
 
-    private static PodContainerEntity MapV1MetadataAndV1ContainerToPodContainerEntity(V1ObjectMeta metadata, V1Container container)
+    private static PodContainerEntity MapV1MetadataAndV1ContainerToPodContainerEntity(V1ObjectMeta metadata,
+        V1Container container)
     {
         return new PodContainerEntity(metadata, container)
         {

@@ -7,7 +7,7 @@ namespace Musoq.DataSources.Sqlite;
 
 internal class SqliteTable : DatabaseTable
 {
-    public SqliteTable(RuntimeContext runtimeContext) 
+    public SqliteTable(RuntimeContext runtimeContext)
         : base(runtimeContext)
     {
         Init();
@@ -17,7 +17,7 @@ internal class SqliteTable : DatabaseTable
     {
         return new SqliteConnection(runtimeContext.EnvironmentVariables["SQLITE_CONNECTION_STRING"]);
     }
-    
+
     protected override string CreateQueryCommand(string name)
     {
         return $"PRAGMA table_info('{name}')";

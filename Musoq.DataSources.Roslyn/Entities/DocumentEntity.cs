@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -11,19 +10,19 @@ using Musoq.Plugins.Attributes;
 namespace Musoq.DataSources.Roslyn.Entities;
 
 /// <summary>
-/// Represents a document entity that provides access to various types of declarations
-/// within a Roslyn document, such as classes, interfaces, and enums.
+///     Represents a document entity that provides access to various types of declarations
+///     within a Roslyn document, such as classes, interfaces, and enums.
 /// </summary>
 public class DocumentEntity
 {
     private readonly Document _document;
     private readonly Solution _solution;
-    private SyntaxTree? _syntaxTree;
     private SemanticModel? _semanticModel;
+    private SyntaxTree? _syntaxTree;
     private bool _wasInitialized;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DocumentEntity"/> class.
+    ///     Initializes a new instance of the <see cref="DocumentEntity" /> class.
     /// </summary>
     /// <param name="document">The Roslyn document to be represented by this entity.</param>
     /// <param name="solution">The Roslyn solution that contains the document.</param>
@@ -32,9 +31,9 @@ public class DocumentEntity
         _document = document;
         _solution = solution;
     }
-    
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="DocumentEntity"/> class.
+    ///     Initializes a new instance of the <see cref="DocumentEntity" /> class.
     /// </summary>
     /// <param name="document">The Roslyn document to be represented by this entity.</param>
     /// <param name="solution">The Roslyn solution that contains the document.</param>
@@ -50,34 +49,31 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the name of the document.
+    ///     Gets the name of the document.
     /// </summary>
     public string Name => _document.Name;
 
     /// <summary>
-    /// Gets the text content of the document.
+    ///     Gets the text content of the document.
     /// </summary>
     public string? Text
     {
         get
         {
-            if (_document.TryGetText(out var text))
-            {
-                return text.ToString();
-            }
+            if (_document.TryGetText(out var text)) return text.ToString();
 
             return null;
         }
     }
 
     /// <summary>
-    /// Gets the absolute file path of the document on disk.
-    /// Returns null for in-memory or generated documents without a physical file.
+    ///     Gets the absolute file path of the document on disk.
+    ///     Returns null for in-memory or generated documents without a physical file.
     /// </summary>
     public string? FilePath => _document.FilePath;
 
     /// <summary>
-    /// Gets the count of class declarations in the document.
+    ///     Gets the count of class declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int ClassCount
@@ -92,7 +88,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the count of interface declarations in the document.
+    ///     Gets the count of interface declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int InterfaceCount
@@ -107,7 +103,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the count of enum declarations in the document.
+    ///     Gets the count of enum declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int EnumCount
@@ -122,7 +118,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the class declarations in the document.
+    ///     Gets the class declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public IEnumerable<ClassEntity> Classes
@@ -137,7 +133,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the interface declarations in the document.
+    ///     Gets the interface declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public IEnumerable<InterfaceEntity> Interfaces
@@ -152,7 +148,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the enum declarations in the document.
+    ///     Gets the enum declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public IEnumerable<EnumEntity> Enums
@@ -167,7 +163,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the struct declarations in the document.
+    ///     Gets the struct declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public IEnumerable<StructEntity> Structs
@@ -192,7 +188,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the count of struct declarations in the document.
+    ///     Gets the count of struct declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int StructCount
@@ -207,7 +203,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the using directives in the document.
+    ///     Gets the using directives in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public IEnumerable<UsingDirectiveEntity> UsingDirectives
@@ -228,7 +224,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the count of using directives in the document.
+    ///     Gets the count of using directives in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int UsingDirectiveCount
@@ -243,22 +239,19 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the total lines of code in the document.
+    ///     Gets the total lines of code in the document.
     /// </summary>
     public int LinesOfCode
     {
         get
         {
-            if (_document.TryGetText(out var text))
-            {
-                return text.Lines.Count;
-            }
+            if (_document.TryGetText(out var text)) return text.Lines.Count;
             return 0;
         }
     }
 
     /// <summary>
-    /// Gets the count of total type declarations (classes, interfaces, enums, structs) in the document.
+    ///     Gets the count of total type declarations (classes, interfaces, enums, structs) in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int TotalTypeCount
@@ -273,8 +266,8 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the distinct types referenced in this document.
-    /// Returns the names of all types that are used in this document.
+    ///     Gets the distinct types referenced in this document.
+    ///     Returns the names of all types that are used in this document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
@@ -286,17 +279,18 @@ public class DocumentEntity
                 throw new InvalidOperationException("Document is not initialized.");
 
             var types = new HashSet<(string Name, string Namespace, string Kind)>();
-            
+
             foreach (var identifier in _syntaxTree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>())
             {
                 var symbolInfo = _semanticModel.GetSymbolInfo(identifier);
                 if (symbolInfo.Symbol is INamedTypeSymbol typeSymbol)
                 {
                     var kind = typeSymbol.TypeKind.ToString();
-                    types.Add((typeSymbol.Name, typeSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty, kind));
+                    types.Add(
+                        (typeSymbol.Name, typeSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty, kind));
                 }
             }
-            
+
             foreach (var typeSyntax in _syntaxTree.GetRoot().DescendantNodes().OfType<TypeSyntax>())
             {
                 var typeInfo = _semanticModel.GetTypeInfo(typeSyntax);
@@ -312,7 +306,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the count of distinct types referenced in this document.
+    ///     Gets the count of distinct types referenced in this document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int ReferencedTypeCount
@@ -327,7 +321,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the distinct namespaces referenced in this document.
+    ///     Gets the distinct namespaces referenced in this document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
@@ -339,15 +333,13 @@ public class DocumentEntity
                 throw new InvalidOperationException("Document is not initialized.");
 
             var namespaces = new HashSet<string>();
-            
+
             foreach (var identifier in _syntaxTree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>())
             {
                 var symbolInfo = _semanticModel.GetSymbolInfo(identifier);
-                if (symbolInfo.Symbol?.ContainingNamespace != null && 
+                if (symbolInfo.Symbol?.ContainingNamespace != null &&
                     !symbolInfo.Symbol.ContainingNamespace.IsGlobalNamespace)
-                {
                     namespaces.Add(symbolInfo.Symbol.ContainingNamespace.ToDisplayString());
-                }
             }
 
             return namespaces.OrderBy(n => n);
@@ -355,7 +347,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the count of distinct namespaces referenced in this document.
+    ///     Gets the count of distinct namespaces referenced in this document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int ReferencedNamespaceCount
@@ -370,7 +362,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the external assemblies referenced in this document (non-project references).
+    ///     Gets the external assemblies referenced in this document (non-project references).
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
@@ -382,15 +374,12 @@ public class DocumentEntity
                 throw new InvalidOperationException("Document is not initialized.");
 
             var assemblies = new HashSet<string>();
-            
+
             foreach (var identifier in _syntaxTree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>())
             {
                 var symbolInfo = _semanticModel.GetSymbolInfo(identifier);
                 var containingAssembly = symbolInfo.Symbol?.ContainingAssembly;
-                if (containingAssembly != null)
-                {
-                    assemblies.Add(containingAssembly.Name);
-                }
+                if (containingAssembly != null) assemblies.Add(containingAssembly.Name);
             }
 
             return assemblies.OrderBy(a => a);
@@ -398,7 +387,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the count of external assemblies referenced in this document.
+    ///     Gets the count of external assemblies referenced in this document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     public int ReferencedAssemblyCount
@@ -413,7 +402,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Initializes the document entity by loading the syntax tree and semantic model.
+    ///     Initializes the document entity by loading the syntax tree and semantic model.
     /// </summary>
     /// <returns>A task that represents the asynchronous initialization operation.</returns>
     public async Task InitializeAsync(CancellationToken cancellationToken)
@@ -431,7 +420,7 @@ public class DocumentEntity
     }
 
     /// <summary>
-    /// Gets the type entities of the specified syntax and entity types.
+    ///     Gets the type entities of the specified syntax and entity types.
     /// </summary>
     /// <typeparam name="TSyntax">The type of the syntax node.</typeparam>
     /// <typeparam name="TEntity">The type of the entity.</typeparam>
@@ -447,26 +436,12 @@ public class DocumentEntity
         return FilterNodes<TSyntax>(_syntaxTree.GetRoot()).Select(CreateEntity<TEntity>);
     }
 
-    /// <summary>
-    /// Filters the nodes of the specified type from the syntax tree root.
-    /// </summary>
-    /// <typeparam name="T">The type of the syntax node to filter.</typeparam>
-    /// <param name="root">The root syntax node.</param>
-    /// <returns>A list of filtered syntax nodes.</returns>
     private static List<T> FilterNodes<T>(SyntaxNode root)
     {
         var interfaces = root.DescendantNodes().OfType<T>().ToList();
         return interfaces;
     }
 
-    /// <summary>
-    /// Creates an entity of the specified type from the given syntax node.
-    /// </summary>
-    /// <typeparam name="TEntity">The type of the entity to create.</typeparam>
-    /// <param name="node">The syntax node representing the type declaration.</param>
-    /// <returns>The created entity.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the semantic model is not initialized or the symbol could not be retrieved.</exception>
-    /// <exception cref="ArgumentException">Thrown if the entity type is unsupported.</exception>
     private TEntity CreateEntity<TEntity>(BaseTypeDeclarationSyntax node) where TEntity : TypeEntity
     {
         if (_semanticModel is null)
@@ -478,11 +453,14 @@ public class DocumentEntity
             throw new InvalidOperationException("Could not get symbol for type declaration.");
 
         if (typeof(TEntity) == typeof(ClassEntity))
-            return (TEntity)(object)new ClassEntity((INamedTypeSymbol)symbol, (ClassDeclarationSyntax)node, _semanticModel, _solution, this);
+            return (TEntity)(object)new ClassEntity((INamedTypeSymbol)symbol, (ClassDeclarationSyntax)node,
+                _semanticModel, _solution, this);
         if (typeof(TEntity) == typeof(InterfaceEntity))
-            return (TEntity)(object)new InterfaceEntity((INamedTypeSymbol)symbol, (InterfaceDeclarationSyntax)node, _semanticModel, _solution, this);
+            return (TEntity)(object)new InterfaceEntity((INamedTypeSymbol)symbol, (InterfaceDeclarationSyntax)node,
+                _semanticModel, _solution, this);
         if (typeof(TEntity) == typeof(EnumEntity))
-            return (TEntity)(object)new EnumEntity((INamedTypeSymbol)symbol, (EnumDeclarationSyntax)node, _semanticModel, _solution, this);
+            return (TEntity)(object)new EnumEntity((INamedTypeSymbol)symbol, (EnumDeclarationSyntax)node,
+                _semanticModel, _solution, this);
 
         throw new ArgumentException($"Unsupported entity type: {typeof(TEntity)}");
     }

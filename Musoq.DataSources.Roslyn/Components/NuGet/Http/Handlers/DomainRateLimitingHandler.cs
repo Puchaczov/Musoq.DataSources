@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.RateLimiting;
@@ -13,11 +14,11 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet.Http.Handlers;
 
 internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
 {
-    private readonly ConcurrentDictionary<string, TokenBucketRateLimiter> _limiters = new();
-    private readonly IReadOnlyDictionary<string, DomainRateLimitConfig> _domainConfigs;
     private readonly DomainRateLimitConfig _defaultConfig;
-    private readonly TimeSpan _millisecondsTimeout;
+    private readonly IReadOnlyDictionary<string, DomainRateLimitConfig> _domainConfigs;
+    private readonly ConcurrentDictionary<string, TokenBucketRateLimiter> _limiters = new();
     private readonly ILogger _logger;
+    private readonly TimeSpan _millisecondsTimeout;
     private readonly bool _rejectWhenNotAcquired;
     private int _concurrentRequests;
 
@@ -33,7 +34,7 @@ internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
         _millisecondsTimeout = TimeSpan.FromMilliseconds(50);
         _rejectWhenNotAcquired = rejectWhenNotAcquired;
         _logger = logger ?? NullLogger.Instance;
-        
+
         InnerHandler = new HttpClientHandler();
     }
 
@@ -47,35 +48,29 @@ internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        if (request.RequestUri == null)
-        {
-            throw new InvalidOperationException("Request URI is null.");
-        }
+        if (request.RequestUri == null) throw new InvalidOperationException("Request URI is null.");
 
         var domain = request.RequestUri.Host;
 
         var limiter = _limiters.GetOrAdd(domain, _ => CreateRateLimiter(domain));
-        
+
         await AcquireAsync(limiter, domain, cancellationToken);
-        
+
         Interlocked.Increment(ref _concurrentRequests);
 
         var sendResult = await RetryWhenRateLimitingOccured(request, domain, cancellationToken);
-        
+
         Interlocked.Decrement(ref _concurrentRequests);
 
-        if (sendResult is null)
-        {
-            throw new HttpRequestException("Response is null.");
-        }
-        
+        if (sendResult is null) throw new HttpRequestException("Response is null.");
+
         return sendResult;
     }
 
     private TokenBucketRateLimiter CreateRateLimiter(string domain)
     {
         var config = GetConfigForDomain(domain);
-        
+
         return new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
         {
             TokenLimit = config.PermitsPerPeriod,
@@ -86,24 +81,21 @@ internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
             AutoReplenishment = true
         });
     }
-    
+
     private DomainRateLimitConfig GetConfigForDomain(string domain)
     {
         var normalizedDomain = domain.ToLowerInvariant();
-        
+
         foreach (var entry in _domainConfigs)
-        {
             if (string.Equals(entry.Key, normalizedDomain, StringComparison.OrdinalIgnoreCase))
-            {
                 return entry.Value;
-            }
-        }
-        
+
         var wildcardMatches = _domainConfigs.Keys
-            .Where(key => key.StartsWith("*.") && normalizedDomain.EndsWith(key[1..], StringComparison.OrdinalIgnoreCase))
+            .Where(key =>
+                key.StartsWith("*.") && normalizedDomain.EndsWith(key[1..], StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(key => key.Length)
             .ToList();
-            
+
         return wildcardMatches.Count > 0 ? _domainConfigs[wildcardMatches[0]] : _defaultConfig;
     }
 
@@ -112,7 +104,7 @@ internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
         if (_rejectWhenNotAcquired)
         {
             using var lease = await limiter.AcquireAsync(1, cancellationToken);
-            
+
             if (!lease.IsAcquired)
             {
                 _logger.LogWarning("Rate limit exceeded for domain {Domain}. Won't retry.", domain);
@@ -126,28 +118,30 @@ internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
             {
                 using var lease = await limiter.AcquireAsync(1, cancellationToken);
                 hasSuccessfullyLease = lease.IsAcquired;
-            
+
                 if (!hasSuccessfullyLease)
                     await Task.Delay(_millisecondsTimeout, cancellationToken);
             }
         }
     }
 
-    private async Task<HttpResponseMessage?> RetryWhenRateLimitingOccured(HttpRequestMessage request, string domain, CancellationToken cancellationToken)
+    private async Task<HttpResponseMessage?> RetryWhenRateLimitingOccured(HttpRequestMessage request, string domain,
+        CancellationToken cancellationToken)
     {
         HttpResponseMessage? sendResult = null;
         var isSuccess = false;
-        
+
         while (!isSuccess)
         {
             sendResult = await base.SendAsync(request, cancellationToken);
-            
-            if (sendResult.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+
+            if (sendResult.StatusCode == HttpStatusCode.TooManyRequests)
             {
                 var waitTime = sendResult.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(1);
-                
-                _logger.LogWarning("Rate limit exceeded for domain {Domain}, retrying in {WaitTime}s.", domain, waitTime.TotalSeconds);
-                
+
+                _logger.LogWarning("Rate limit exceeded for domain {Domain}, retrying in {WaitTime}s.", domain,
+                    waitTime.TotalSeconds);
+
                 await Task.Delay(waitTime, cancellationToken);
                 isSuccess = false;
                 continue;
@@ -155,16 +149,13 @@ internal class DomainRateLimitingHandler : DelegatingHandler, IAsyncDisposable
 
             isSuccess = true;
         }
-        
+
         return sendResult;
     }
 
     private async ValueTask DisposeAsyncCore()
     {
-        foreach (var limiter in _limiters.Values)
-        {
-            await limiter.DisposeAsync();
-        }
+        foreach (var limiter in _limiters.Values) await limiter.DisposeAsync();
 
         _limiters.Clear();
     }

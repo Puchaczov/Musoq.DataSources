@@ -5,9 +5,9 @@ namespace Musoq.DataSources.Kubernetes.PodContainers;
 internal class PodContainersTable : ISchemaTable
 {
     public ISchemaColumn[] Columns => PodContainersSourceHelper.PodContainersColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(PodContainerEntity));
-    
+
     public ISchemaColumn? GetColumnByName(string name)
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);

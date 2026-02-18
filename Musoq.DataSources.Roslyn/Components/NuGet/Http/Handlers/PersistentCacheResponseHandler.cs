@@ -1,6 +1,9 @@
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -18,8 +21,8 @@ internal class PersistentCacheResponseHandler : DelegatingHandler
     {
         _monitoredDirectory = new AlwaysUpdateDirectoryView<Url, HttpResponseMessageCacheItem>(
             cacheDirectory,
-            GetDestinationValue, 
-            ConvertKeyToPath, 
+            GetDestinationValue,
+            ConvertKeyToPath,
             UpdateDirectory,
             null,
             null,
@@ -29,19 +32,21 @@ internal class PersistentCacheResponseHandler : DelegatingHandler
         InnerHandler = handler;
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         var requestUri = request.RequestUri;
-        
+
         if (requestUri is null)
             throw new InvalidOperationException("Request URL is null");
 
         var url = new Url(requestUri.ToString());
         var cacheUrl = url;
         var appendToPersistentCacheKeyHeader = request.Headers
-            .FirstOrDefault(h => h.Key.Equals("Musoq-Append-Url-Part-To-Persistent-Cache-Key", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(h =>
+                h.Key.Equals("Musoq-Append-Url-Part-To-Persistent-Cache-Key", StringComparison.OrdinalIgnoreCase));
 
-        if (appendToPersistentCacheKeyHeader.Key is not null && appendToPersistentCacheKeyHeader.Value.Any()) 
+        if (appendToPersistentCacheKeyHeader.Key is not null && appendToPersistentCacheKeyHeader.Value.Any())
             cacheUrl = new Url(requestUri + "/" + appendToPersistentCacheKeyHeader.Value.First());
 
         if (_monitoredDirectory.TryGetValue(cacheUrl, out var responseMessage) && responseMessage is not null)
@@ -60,11 +65,8 @@ internal class PersistentCacheResponseHandler : DelegatingHandler
                 var cacheFailedResponseString = cacheFiledResponseHeader.Value?.FirstOrDefault() ?? "false";
                 var cacheFailedResponse = bool.TryParse(cacheFailedResponseString, out var result) && result;
 
-                if (!cacheFailedResponse)
-                {
-                    response.EnsureSuccessStatusCode();
-                }
-                
+                if (!cacheFailedResponse) response.EnsureSuccessStatusCode();
+
                 response.RequestMessage ??= request;
 
                 if (!response.IsSuccessStatusCode && !cacheFailedResponse)
@@ -76,29 +78,24 @@ internal class PersistentCacheResponseHandler : DelegatingHandler
 
                 return cacheItem;
             }, cancellationToken: cancellationToken);
-            
+
         return await cacheItem.FromCacheItemAsync();
     }
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
-        {
-            _monitoredDirectory.Dispose();
-        }
-        
+        if (disposing) _monitoredDirectory.Dispose();
+
         base.Dispose(disposing);
     }
 
-    private static HttpResponseMessageCacheItem GetDestinationValue(string filePath, IFileSystem fileSystem, CancellationToken cancellationToken)
+    private static HttpResponseMessageCacheItem GetDestinationValue(string filePath, IFileSystem fileSystem,
+        CancellationToken cancellationToken)
     {
         var content = fileSystem.ReadAllText(filePath, cancellationToken);
-        var item = System.Text.Json.JsonSerializer.Deserialize<HttpResponseMessageCacheItem>(content);
-        
-        if (item == null)
-        {
-            throw new InvalidOperationException($"Failed to deserialize cached item from {filePath}");
-        }
+        var item = JsonSerializer.Deserialize<HttpResponseMessageCacheItem>(content);
+
+        if (item == null) throw new InvalidOperationException($"Failed to deserialize cached item from {filePath}");
 
         return item;
     }
@@ -109,19 +106,20 @@ internal class PersistentCacheResponseHandler : DelegatingHandler
         return $"{fileName}.json";
     }
 
-    private static void UpdateDirectory(string filePath, HttpResponseMessageCacheItem responseMessage, IFileSystem fileSystem, CancellationToken token)
+    private static void UpdateDirectory(string filePath, HttpResponseMessageCacheItem responseMessage,
+        IFileSystem fileSystem, CancellationToken token)
     {
         if (fileSystem.IsFileExists(filePath))
             return;
 
-        var fileContent = System.Text.Json.JsonSerializer.Serialize(responseMessage);
+        var fileContent = JsonSerializer.Serialize(responseMessage);
         fileSystem.WriteAllText(filePath, fileContent, token);
     }
 
     private static string UrlToFileName(Url url)
     {
-        var urlHash = System.Security.Cryptography.MD5.HashData(
-            System.Text.Encoding.UTF8.GetBytes(url.Value));
+        var urlHash = MD5.HashData(
+            Encoding.UTF8.GetBytes(url.Value));
 
         return string.Concat(
                 urlHash.Select(b => b.ToString("x2"))

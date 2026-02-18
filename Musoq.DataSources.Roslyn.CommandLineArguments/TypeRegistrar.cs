@@ -33,12 +33,9 @@ public sealed class TypeRegistrar : ITypeRegistrar
             if (type == null)
                 return null;
 
-            if (registrations.TryGetValue(type, out var factory))
-            {
-                return factory();
-            }
+            if (registrations.TryGetValue(type, out var factory)) return factory();
 
-            // Try to create instance with available constructors
+
             var constructors = type.GetConstructors();
             if (constructors.Length == 0)
                 return null;
@@ -47,10 +44,7 @@ public sealed class TypeRegistrar : ITypeRegistrar
             var parameters = constructor.GetParameters();
             var parameterInstances = new object[parameters.Length];
 
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                parameterInstances[i] = Resolve(parameters[i].ParameterType)!;
-            }
+            for (var i = 0; i < parameters.Length; i++) parameterInstances[i] = Resolve(parameters[i].ParameterType)!;
 
             return Activator.CreateInstance(type, parameterInstances);
         }

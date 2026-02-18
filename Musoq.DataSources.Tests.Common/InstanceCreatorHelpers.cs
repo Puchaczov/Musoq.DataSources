@@ -15,7 +15,8 @@ public static class InstanceCreatorHelpers
 {
     private static ILoggerResolver DefaultLoggerResolver => new VoidLoggerResolver();
 
-    private static CompilationOptions CompilationOptions { get; } = new(ParallelizationMode.Full, usePrimitiveTypeValidation: false);
+    private static CompilationOptions CompilationOptions { get; } =
+        new(ParallelizationMode.Full, usePrimitiveTypeValidation: false);
 
     public static CompiledQuery CompileForExecution(
         string script,
@@ -34,20 +35,21 @@ public static class InstanceCreatorHelpers
             () => new CreateTree(
                 new TransformTree(
                     new TurnQueryIntoRunnableCode(null), loggerResolver)),
-                items =>
-                {
-                    items.PositionalEnvironmentVariables = environmentVariables;
-                    items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns, _, _) =>
-                        new BuildMetadataAndInferTypesForTestsVisitor(provider, columns, environmentVariables, CompilationOptions, loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>());
-                });
-        
+            items =>
+            {
+                items.PositionalEnvironmentVariables = environmentVariables;
+                items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns, _, _) =>
+                    new BuildMetadataAndInferTypesForTestsVisitor(provider, columns, environmentVariables,
+                        CompilationOptions, loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>());
+            });
+
         var runnableField = compiledQuery.GetType().GetRuntimeFields().FirstOrDefault(f => f.Name.Contains("runnable"));
 
         var runnable = (IRunnable)runnableField?.GetValue(compiledQuery);
-        
+
         if (runnable == null)
             throw new InvalidOperationException("Runnable is null.");
-        
+
         runnable.Logger = loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>();
 
         return compiledQuery;
@@ -58,14 +60,14 @@ public static class InstanceCreatorHelpers
         public ILogger ResolveLogger()
         {
             var logger = new Mock<ILogger>();
-            
+
             return logger.Object;
         }
 
         public ILogger<T> ResolveLogger<T>()
         {
             var logger = new Mock<ILogger<T>>();
-            
+
             return logger.Object;
         }
     }

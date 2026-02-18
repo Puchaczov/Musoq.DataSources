@@ -25,41 +25,37 @@ internal sealed class FileHistoryRowsSource(
     {
         var repository = createRepository(repositoryPath);
         var chunk = new List<IObjectResolver>(100);
-        
+
         var fromOldest = take < 0;
         var actualTake = Math.Abs(take);
-        
+
         var filter = new CommitFilter
         {
             SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
         };
 
         var normalizedPattern = NormalizePathToRepositoryRelative(filePattern, repositoryPath);
-        
+
         var isFullPathPattern = normalizedPattern.Contains('/') || normalizedPattern.Contains('\\');
         var isWildcardPattern = normalizedPattern.Contains('*') || normalizedPattern.Contains('?');
-        
+
         List<string> matchingPaths;
-        
+
         if (!isWildcardPattern && isFullPathPattern)
-        {
             matchingPaths = [normalizedPattern.Replace('\\', '/')];
-        }
         else
-        {
             matchingPaths = FindMatchingPaths(repository, normalizedPattern, isFullPathPattern, isWildcardPattern);
-        }
 
         var skipped = 0;
         var taken = 0;
-        
+
         foreach (var fullPath in matchingPaths)
         {
             if (cancellationToken.IsCancellationRequested || taken >= actualTake)
                 break;
-            
+
             IEnumerable<LogEntry> fileHistory;
-            
+
             if (fromOldest)
             {
                 var allEntries = new List<LogEntry>(repository.Commits.QueryBy(fullPath, filter));
@@ -70,48 +66,46 @@ internal sealed class FileHistoryRowsSource(
             {
                 fileHistory = repository.Commits.QueryBy(fullPath, filter);
             }
-            
+
             foreach (var entry in fileHistory)
             {
                 if (cancellationToken.IsCancellationRequested || taken >= actualTake)
                     break;
-                
+
                 if (skipped < skip)
                 {
                     skipped++;
                     continue;
                 }
-                
+
                 var entity = new FileHistoryEntity(entry.Commit, entry.Path, ChangeKind.Modified);
                 chunk.Add(new EntityResolver<FileHistoryEntity>(
                     entity,
                     FileHistoryEntity.NameToIndexMap,
                     FileHistoryEntity.IndexToObjectAccessMap
                 ));
-                
+
                 taken++;
 
-                if (chunk.Count < 100) 
+                if (chunk.Count < 100)
                     continue;
-                
+
                 chunkedSource.Add(chunk.ToArray(), cancellationToken);
                 chunk.Clear();
             }
         }
-        
-        if (chunk.Count > 0)
-        {
-            chunkedSource.Add(chunk.ToArray(), cancellationToken);
-        }
+
+        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
 
         return Task.CompletedTask;
     }
-    
-    private static List<string> FindMatchingPaths(Repository repository, string pattern, bool isFullPathPattern, bool isWildcardPattern)
+
+    private static List<string> FindMatchingPaths(Repository repository, string pattern, bool isFullPathPattern,
+        bool isWildcardPattern)
     {
         var matchingPaths = new List<string>();
         var headCommit = repository.Head.Tip;
-        
+
         if (headCommit?.Tree == null)
             return matchingPaths;
 
@@ -124,14 +118,14 @@ internal sealed class FileHistoryRowsSource(
                 .Replace("\\?", ".") + "$";
             compiledRegex = new Regex(regexPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
-        
+
         var stack = new Stack<(Tree Tree, string Path)>();
         stack.Push((headCommit.Tree, string.Empty));
-        
+
         while (stack.Count > 0)
         {
             var (tree, currentPath) = stack.Pop();
-            
+
             foreach (var entry in tree)
             {
                 var entryPath = string.IsNullOrEmpty(currentPath) ? entry.Name : $"{currentPath}/{entry.Name}";
@@ -141,17 +135,18 @@ internal sealed class FileHistoryRowsSource(
                     case TreeEntryTargetType.Tree:
                         stack.Push(((Tree)entry.Target, entryPath));
                         break;
-                    case TreeEntryTargetType.Blob when IsMatch(entryPath, entry.Name, pattern, isFullPathPattern, isWildcardPattern, compiledRegex):
+                    case TreeEntryTargetType.Blob when IsMatch(entryPath, entry.Name, pattern, isFullPathPattern,
+                        isWildcardPattern, compiledRegex):
                         matchingPaths.Add(entryPath);
                         break;
                 }
             }
         }
-        
+
         return matchingPaths;
     }
-    
-    private static bool IsMatch(string fullPath, string fileName, string pattern, bool isFullPathPattern, 
+
+    private static bool IsMatch(string fullPath, string fileName, string pattern, bool isFullPathPattern,
         bool isWildcardPattern, Regex? compiledRegex)
     {
         if (isWildcardPattern && compiledRegex != null)
@@ -159,31 +154,32 @@ internal sealed class FileHistoryRowsSource(
             var matchTarget = isFullPathPattern ? fullPath : fileName;
             return compiledRegex.IsMatch(matchTarget);
         }
-        
+
         if (isFullPathPattern)
         {
             var normalizedPattern = pattern.Replace('\\', '/');
             return fullPath.Equals(normalizedPattern, StringComparison.OrdinalIgnoreCase);
         }
-        
+
         return fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase);
     }
-    
+
     private static string NormalizePathToRepositoryRelative(string pattern, string repositoryPath)
     {
         if (!Path.IsPathRooted(pattern))
             return pattern;
-        
-        var normalizedRepoPath = Path.GetFullPath(repositoryPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        var normalizedRepoPath = Path.GetFullPath(repositoryPath)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var normalizedPattern = Path.GetFullPath(pattern);
-        
+
         if (normalizedPattern.StartsWith(normalizedRepoPath, StringComparison.OrdinalIgnoreCase))
         {
             var relativePath = normalizedPattern.Substring(normalizedRepoPath.Length)
                 .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             return relativePath;
         }
-        
+
         return pattern;
     }
 }

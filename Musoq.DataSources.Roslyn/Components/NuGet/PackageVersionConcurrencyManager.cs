@@ -8,8 +8,9 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet;
 internal class PackageVersionConcurrencyManager : IPackageVersionConcurrencyManager
 {
     private readonly ConcurrentDictionary<(string PackageId, string Version), SemaphoreSlim> _locks = new();
-    
-    public async Task<IDisposable> AcquireLockAsync(string packageId, string version, CancellationToken cancellationToken)
+
+    public async Task<IDisposable> AcquireLockAsync(string packageId, string version,
+        CancellationToken cancellationToken)
     {
         var key = (packageId, version);
         SemaphoreSlim semaphore;
@@ -18,9 +19,9 @@ internal class PackageVersionConcurrencyManager : IPackageVersionConcurrencyMana
         {
             semaphore = _locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
         }
-        
+
         await semaphore.WaitAsync(cancellationToken);
-        
+
         return new Releaser(this, semaphore, key);
     }
 
@@ -29,14 +30,11 @@ internal class PackageVersionConcurrencyManager : IPackageVersionConcurrencyMana
         lock (_locks)
         {
             semaphore.Release();
-        
-            if (semaphore.CurrentCount == 1)
-            {
-                _locks.TryRemove(key, out _);
-            }
+
+            if (semaphore.CurrentCount == 1) _locks.TryRemove(key, out _);
         }
     }
-    
+
     private class Releaser(
         PackageVersionConcurrencyManager manager,
         SemaphoreSlim semaphore,
@@ -44,14 +42,11 @@ internal class PackageVersionConcurrencyManager : IPackageVersionConcurrencyMana
         : IDisposable
     {
         private bool _disposed;
-        
+
         public void Dispose()
         {
-            if (_disposed)
-            {
-                return;
-            }
-            
+            if (_disposed) return;
+
             manager.ReleaseLock(semaphore, key);
             _disposed = true;
         }

@@ -1,18 +1,17 @@
-using Atlassian.Jira;
 using Musoq.DataSources.Jira.Entities;
 
 namespace Musoq.DataSources.Jira;
 
 /// <summary>
-/// Jira API implementation using Atlassian.SDK.
+///     Jira API implementation using Atlassian.SDK.
 /// </summary>
 internal class JiraApi : IJiraApi
 {
-    private readonly Atlassian.Jira.Jira _jira;
     private const int DefaultMaxResults = 50;
+    private readonly Atlassian.Jira.Jira _jira;
 
     /// <summary>
-    /// Initializes a new instance of the JiraApi class.
+    ///     Initializes a new instance of the JiraApi class.
     /// </summary>
     /// <param name="jiraUrl">Jira instance URL</param>
     /// <param name="username">Username for authentication</param>
@@ -23,8 +22,8 @@ internal class JiraApi : IJiraApi
     }
 
     /// <summary>
-    /// Initializes a new instance of the JiraApi class with a pre-configured Jira client.
-    /// For testing purposes.
+    ///     Initializes a new instance of the JiraApi class with a pre-configured Jira client.
+    ///     For testing purposes.
     /// </summary>
     /// <param name="jira">Pre-configured Jira client</param>
     internal JiraApi(Atlassian.Jira.Jira jira)
@@ -33,7 +32,8 @@ internal class JiraApi : IJiraApi
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<IJiraIssue>> GetIssuesAsync(string jql, int maxResults = DefaultMaxResults, int startAt = 0)
+    public async Task<IReadOnlyList<IJiraIssue>> GetIssuesAsync(string jql, int maxResults = DefaultMaxResults,
+        int startAt = 0)
     {
         var issues = await _jira.Issues.GetIssuesFromJqlAsync(jql, maxResults, startAt);
         return issues.Select(i => (IJiraIssue)new IssueEntity(i)).ToList();
@@ -41,17 +41,14 @@ internal class JiraApi : IJiraApi
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<IJiraIssue>> GetIssuesForProjectAsync(
-        string projectKey, 
-        string? additionalJql = null, 
-        int maxResults = DefaultMaxResults, 
+        string projectKey,
+        string? additionalJql = null,
+        int maxResults = DefaultMaxResults,
         int startAt = 0)
     {
         var jql = $"project = {projectKey}";
-        
-        if (!string.IsNullOrEmpty(additionalJql))
-        {
-            jql += $" AND ({additionalJql})";
-        }
+
+        if (!string.IsNullOrEmpty(additionalJql)) jql += $" AND ({additionalJql})";
 
         return await GetIssuesAsync(jql, maxResults, startAt);
     }

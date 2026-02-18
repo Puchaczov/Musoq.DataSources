@@ -10,8 +10,8 @@ namespace Musoq.DataSources.Databases;
 public abstract class DatabaseRowSource : RowSourceBase<dynamic>
 {
     private const string DatabaseSourceName = "database";
-    private readonly RuntimeContext _runtimeContext;
     private readonly Func<IEnumerable<dynamic>>? _returnQuery;
+    private readonly RuntimeContext _runtimeContext;
 
     protected DatabaseRowSource(RuntimeContext runtimeContext, Func<IEnumerable<dynamic>>? returnQuery)
     {
@@ -23,7 +23,7 @@ public abstract class DatabaseRowSource : RowSourceBase<dynamic>
     {
         _runtimeContext.ReportDataSourceBegin(DatabaseSourceName);
         long totalRowsProcessed = 0;
-        
+
         try
         {
             totalRowsProcessed = DatabaseHelpers.GetDataFromDatabase(

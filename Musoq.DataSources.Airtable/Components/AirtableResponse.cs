@@ -4,6 +4,5 @@ namespace Musoq.DataSources.Airtable.Components;
 
 internal class AirtableResponse
 {
-    [JsonPropertyName("tables")]
-    public AirtableTable[] Tables { get; set; }
+    [JsonPropertyName("tables")] public AirtableTable[] Tables { get; set; }
 }

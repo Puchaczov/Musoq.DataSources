@@ -20,15 +20,17 @@ internal class DaemonSetsSource : RowSourceBase<DaemonSetEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(DaemonSetsSourceName);
-        
+
         try
         {
             var daemonSets = _kubernetesApi.ListDaemonSetsForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(DaemonSetsSourceName, daemonSets.Items.Count);
-            
+
             chunkedSource.Add(
-                daemonSets.Items.Select(c => new EntityResolver<DaemonSetEntity>(MapV1DaemonSetToDaemonSetEntity(c), DaemonSetsSourceHelper.DaemonSetsNameToIndexMap, DaemonSetsSourceHelper.DaemonSetsIndexToMethodAccessMap)).ToList());
-            
+                daemonSets.Items.Select(c => new EntityResolver<DaemonSetEntity>(MapV1DaemonSetToDaemonSetEntity(c),
+                    DaemonSetsSourceHelper.DaemonSetsNameToIndexMap,
+                    DaemonSetsSourceHelper.DaemonSetsIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(DaemonSetsSourceName, daemonSets.Items.Count);
         }
         catch

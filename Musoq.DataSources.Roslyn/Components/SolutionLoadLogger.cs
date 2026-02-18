@@ -1,9 +1,10 @@
 using Microsoft.Build.Framework;
 using Microsoft.Extensions.Logging;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Musoq.DataSources.Roslyn.Components;
 
-internal class SolutionLoadLogger(Microsoft.Extensions.Logging.ILogger logger) : Microsoft.Build.Framework.ILogger
+internal class SolutionLoadLogger(ILogger logger) : Microsoft.Build.Framework.ILogger
 {
     public void Initialize(IEventSource eventSource)
     {
@@ -17,10 +18,7 @@ internal class SolutionLoadLogger(Microsoft.Extensions.Logging.ILogger logger) :
             logger.LogTrace("Project finished: {project}", args.ProjectFile);
         };
 
-        eventSource.MessageRaised += (sender, args) =>
-        {
-            logger.LogTrace(args.Message);
-        };
+        eventSource.MessageRaised += (sender, args) => { logger.LogTrace(args.Message); };
     }
 
     public void Shutdown()

@@ -1,35 +1,39 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Docker.DotNet.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Musoq.DataSources.Docker.Tests;
 
 [TestClass]
 public class DockerSchemaDescribeTests
 {
+    static DockerSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         var dockerApiMock = new Mock<IDockerApi>();
-        
+
         dockerApiMock
             .Setup(api => api.ListContainersAsync())
             .ReturnsAsync(new List<ContainerListResponse>());
-        
+
         dockerApiMock
             .Setup(api => api.ListImagesAsync())
             .ReturnsAsync(new List<ImagesListResponse>());
-        
+
         dockerApiMock
             .Setup(api => api.ListNetworksAsync())
             .ReturnsAsync(new List<NetworkResponse>());
-        
+
         dockerApiMock
             .Setup(api => api.ListVolumesAsync())
             .ReturnsAsync(new List<VolumeResponse>());
@@ -43,11 +47,6 @@ public class DockerSchemaDescribeTests
             Guid.NewGuid().ToString(),
             mockSchemaProvider.Object,
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static DockerSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -163,10 +162,8 @@ public class DockerSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -196,10 +193,8 @@ public class DockerSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -236,10 +231,8 @@ public class DockerSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -268,10 +261,8 @@ public class DockerSchemaDescribeTests
         };
 
         foreach (var expectedColumn in expectedColumns)
-        {
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
-        }
     }
 
     [TestMethod]
@@ -307,10 +298,8 @@ public class DockerSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

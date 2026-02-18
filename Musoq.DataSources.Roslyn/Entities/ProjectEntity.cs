@@ -4,33 +4,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
-using Musoq.Plugins.Attributes;
 using System.Xml.Linq;
+using Microsoft.CodeAnalysis;
 using Musoq.DataSources.Roslyn.Components.NuGet;
+using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
 /// <summary>
-/// Represents a project entity in the Roslyn data source.
+///     Represents a project entity in the Roslyn data source.
 /// </summary>
 public class ProjectEntity
 {
     private readonly INuGetPackageMetadataRetriever _nuGetPackageMetadataRetriever;
+    internal readonly CancellationToken CancellationToken;
+    internal readonly Project Project;
 
     private DocumentEntity[] _documents;
     private bool _wasLoaded;
-    internal readonly Project Project;   
-    internal readonly CancellationToken CancellationToken;
     internal IReadOnlyList<NugetPackageEntity>? NugetPackageEntities;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProjectEntity"/> class.
+    ///     Initializes a new instance of the <see cref="ProjectEntity" /> class.
     /// </summary>
     /// <param name="project">The project.</param>
     /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public ProjectEntity(Project project, INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, CancellationToken cancellationToken)
+    public ProjectEntity(Project project, INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever,
+        CancellationToken cancellationToken)
     {
         Project = project;
         _nuGetPackageMetadataRetriever = nuGetPackageMetadataRetriever;
@@ -40,57 +41,57 @@ public class ProjectEntity
     }
 
     /// <summary>
-    /// Gets the project ID.
+    ///     Gets the project ID.
     /// </summary>
     public string Id => Project.Id.Id.ToString();
 
     /// <summary>
-    /// Gets the file path of the project.
+    ///     Gets the file path of the project.
     /// </summary>
     public string? FilePath => Project.FilePath;
 
     /// <summary>
-    /// Gets the output file path of the project.
+    ///     Gets the output file path of the project.
     /// </summary>
     public string? OutputFilePath => Project.OutputFilePath;
 
     /// <summary>
-    /// Gets the output reference file path of the project.
+    ///     Gets the output reference file path of the project.
     /// </summary>
     public string? OutputRefFilePath => Project.OutputRefFilePath;
 
     /// <summary>
-    /// Gets the default namespace of the project.
+    ///     Gets the default namespace of the project.
     /// </summary>
     public string? DefaultNamespace => Project.DefaultNamespace;
 
     /// <summary>
-    /// Gets the language of the project.
+    ///     Gets the language of the project.
     /// </summary>
     public string Language => Project.Language;
 
     /// <summary>
-    /// Gets the assembly name of the project.
+    ///     Gets the assembly name of the project.
     /// </summary>
     public string AssemblyName => Project.AssemblyName;
 
     /// <summary>
-    /// Gets the name of the project.
+    ///     Gets the name of the project.
     /// </summary>
     public string Name => Project.Name;
 
     /// <summary>
-    /// Gets a value indicating whether the project is a submission.
+    ///     Gets a value indicating whether the project is a submission.
     /// </summary>
     public bool IsSubmission => Project.IsSubmission;
 
     /// <summary>
-    /// Gets the version of the project.
+    ///     Gets the version of the project.
     /// </summary>
     public string Version => Project.Version.ToString();
 
     /// <summary>
-    /// Gets the documents in the project.
+    ///     Gets the documents in the project.
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<DocumentEntity> Documents
@@ -105,19 +106,19 @@ public class ProjectEntity
             return _documents;
         }
     }
-    
+
     /// <summary>
-    /// Gets the references of the project.
+    ///     Gets the references of the project.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ProjectReferenceEntity> ProjectReferences => 
+    public IEnumerable<ProjectReferenceEntity> ProjectReferences =>
         Project.ProjectReferences.Select(reference => new ProjectReferenceEntity(reference, Project.Solution));
-    
+
     /// <summary>
-    /// Gets the library references of the project.
+    ///     Gets the library references of the project.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<LibraryReferenceEntity> LibraryReferences => 
+    public IEnumerable<LibraryReferenceEntity> LibraryReferences =>
         Project
             .MetadataReferences
             .OfType<PortableExecutableReference>()
@@ -125,7 +126,7 @@ public class ProjectEntity
             .Select(reference => new LibraryReferenceEntity(reference));
 
     /// <summary>
-    /// Gets the Project types.
+    ///     Gets the Project types.
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<TypeEntity> Types
@@ -146,46 +147,50 @@ public class ProjectEntity
     }
 
     internal async Task<List<NugetPackageEntity>> GetNugetPackagesAsync(Project project, bool withTransitivePackages)
-    {   
+    {
         if (string.IsNullOrEmpty(project.FilePath))
             return [];
 
         try
         {
             var projectXml = XDocument.Load(project.FilePath);
-            
-            return await ExtractFromProjectMetadataAsync(projectXml, _nuGetPackageMetadataRetriever, withTransitivePackages, CancellationToken);
+
+            return await ExtractFromProjectMetadataAsync(projectXml, _nuGetPackageMetadataRetriever,
+                withTransitivePackages, CancellationToken);
         }
         catch (Exception ex)
         {
-            return [
+            return
+            [
                 new NugetPackageEntity(
-                "error",
-                "error",
-                $"error: {ex.Message}",
-                null,
-                null,
-                null,
-                null,
-                false,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null)
+                    "error",
+                    "error",
+                    $"error: {ex.Message}",
+                    null,
+                    null,
+                    null,
+                    null,
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null)
             ];
         }
     }
 
-    internal static async Task<List<NugetPackageEntity>> ExtractFromProjectMetadataAsync(XDocument projectXml, INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, bool withTransitivePackages, CancellationToken cancellationToken)
+    internal static async Task<List<NugetPackageEntity>> ExtractFromProjectMetadataAsync(XDocument projectXml,
+        INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever, bool withTransitivePackages,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         var nugetPackages = new ConcurrentQueue<NugetPackageEntity>();
         var packageRefs = projectXml.Descendants("PackageReference");
 
@@ -198,46 +203,47 @@ public class ProjectEntity
         }, async (packageRef, token) =>
         {
             token.ThrowIfCancellationRequested();
-            
+
             var id = packageRef.Attribute("Include")?.Value ?? string.Empty;
             var version = packageRef.Attribute("Version")?.Value ?? string.Empty;
-            var packagesToResolve = new BlockingCollection<(string PackageId, string VersionRange, bool IsTransistive, uint Level)>();
+            var packagesToResolve =
+                new BlockingCollection<(string PackageId, string VersionRange, bool IsTransistive, uint Level)>();
 
             packagesToResolve.Add((id, version, false, 0), token);
 
-            var processPackagesExtractionTask = Task.Run(async () => await ProcessPackagesExtractionAsync(nuGetPackageMetadataRetriever, packagesToResolve, nugetPackages, token), token);
+            var processPackagesExtractionTask =
+                Task.Run(
+                    async () => await ProcessPackagesExtractionAsync(nuGetPackageMetadataRetriever, packagesToResolve,
+                        nugetPackages, token), token);
 
             if (withTransitivePackages)
-            {
                 await foreach (var dependency in nuGetPackageMetadataRetriever.GetDependenciesAsync(id, version, token))
-                {
-                    packagesToResolve.Add((dependency.PackageId, dependency.VersionRange, true, dependency.Level), token);
-                }
-            }
-            
+                    packagesToResolve.Add((dependency.PackageId, dependency.VersionRange, true, dependency.Level),
+                        token);
+
             packagesToResolve.CompleteAdding();
-            
+
             await processPackagesExtractionTask;
         });
-        
+
         return nugetPackages.ToList();
     }
 
     private static async Task ProcessPackagesExtractionAsync(
         INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever,
-        BlockingCollection<(string PackageId, string VersionRange, bool IsTransistive, uint Level)> packagesToResolve, 
+        BlockingCollection<(string PackageId, string VersionRange, bool IsTransistive, uint Level)> packagesToResolve,
         ConcurrentQueue<NugetPackageEntity> nugetPackages,
         CancellationToken token
     )
     {
         while ((!packagesToResolve.IsCompleted || packagesToResolve.Count > 0) && !token.IsCancellationRequested)
-        {
             try
             {
-                if (!packagesToResolve.TryTake(out var packageIdVersionPair, Timeout.Infinite, token)) 
+                if (!packagesToResolve.TryTake(out var packageIdVersionPair, Timeout.Infinite, token))
                     continue;
-                
-                await foreach (var metadata in nuGetPackageMetadataRetriever.GetMetadataAsync(packageIdVersionPair.PackageId, packageIdVersionPair.VersionRange, token))
+
+                await foreach (var metadata in nuGetPackageMetadataRetriever.GetMetadataAsync(
+                                   packageIdVersionPair.PackageId, packageIdVersionPair.VersionRange, token))
                 {
                     var requireLicenseAcceptanceString =
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.RequireLicenseAcceptance));
@@ -246,7 +252,7 @@ public class ProjectEntity
                         : requireLicenseAcceptanceString;
 
                     nugetPackages.Enqueue(new NugetPackageEntity(
-                        packageIdVersionPair.PackageId, 
+                        packageIdVersionPair.PackageId,
                         packageIdVersionPair.VersionRange,
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.LicenseUrl)),
                         metadata.GetValueOrDefault(nameof(NugetPackageEntity.ProjectUrl)),
@@ -271,6 +277,5 @@ public class ProjectEntity
             {
                 break;
             }
-        }
     }
 }

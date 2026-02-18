@@ -13,28 +13,28 @@ internal static class PodsSourceHelper
     {
         PodsNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(PodEntity.Namespace), 0},
-            {nameof(PodEntity.Name), 1},
-            {nameof(PodEntity.ContainersNames), 2},
-            {nameof(PodEntity.PF), 3},
-            {nameof(PodEntity.Ready), 4},
-            {nameof(PodEntity.Restarts), 5},
-            {nameof(PodEntity.Statuses), 6},
-            {nameof(PodEntity.IP), 7}
+            { nameof(PodEntity.Namespace), 0 },
+            { nameof(PodEntity.Name), 1 },
+            { nameof(PodEntity.ContainersNames), 2 },
+            { nameof(PodEntity.PF), 3 },
+            { nameof(PodEntity.Ready), 4 },
+            { nameof(PodEntity.Restarts), 5 },
+            { nameof(PodEntity.Statuses), 6 },
+            { nameof(PodEntity.IP), 7 }
         };
-        
+
         PodsIndexToMethodAccessMap = new Dictionary<int, Func<PodEntity, object?>>
         {
-            {0, info => info.Namespace},
-            {1, info => info.Name},
-            {2, info => info.ContainersNames},
-            {3, info => info.PF},
-            {4, info => info.Ready},
-            {5, info => info.Restarts},
-            {6, info => info.Statuses},
-            {7, info => info.IP}
+            { 0, info => info.Namespace },
+            { 1, info => info.Name },
+            { 2, info => info.ContainersNames },
+            { 3, info => info.PF },
+            { 4, info => info.Ready },
+            { 5, info => info.Restarts },
+            { 6, info => info.Statuses },
+            { 7, info => info.IP }
         };
-        
+
         PodsColumns =
         [
             new SchemaColumn(nameof(PodEntity.Namespace), 0, typeof(string)),
@@ -47,5 +47,4 @@ internal static class PodsSourceHelper
             new SchemaColumn(nameof(PodEntity.IP), 7, typeof(string))
         ];
     }
-    
 }

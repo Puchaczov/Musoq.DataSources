@@ -7,7 +7,7 @@ internal class ReplicaSetsTable : ISchemaTable
     public SchemaTableMetadata Metadata { get; } = new(typeof(ReplicaSetEntity));
 
     public ISchemaColumn[] Columns => ReplicaSetsSourceHelper.ReplicaSetsColumns;
-    
+
     public ISchemaColumn? GetColumnByName(string name)
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);

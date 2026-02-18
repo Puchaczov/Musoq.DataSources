@@ -3,12 +3,12 @@
 namespace Musoq.DataSources.CANBus;
 
 /// <summary>
-/// Provides the schema for CAN bus data.
+///     Provides the schema for CAN bus data.
 /// </summary>
 public class CANBusSchemaProvider : ISchemaProvider
 {
     /// <summary>
-    /// Gets the schema to work with CAN bus data.
+    ///     Gets the schema to work with CAN bus data.
     /// </summary>
     /// <param name="schema">Requested schema</param>
     /// <returns>Requested schema</returns>

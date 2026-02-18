@@ -11,7 +11,7 @@ internal class AirtableField
         Type = string.Empty;
         Description = string.Empty;
     }
-    
+
     public AirtableField(string id, string name, string type, string description)
     {
         Id = id;
@@ -19,16 +19,12 @@ internal class AirtableField
         Type = type;
         Description = description;
     }
-    
-    [JsonPropertyName("description")]
-    public string Description { get; set; }
-    
-    [JsonPropertyName("id")]
-    public string Id { get; set; }
-    
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-    
-    [JsonPropertyName("type")]
-    public string Type { get; set; }
+
+    [JsonPropertyName("description")] public string Description { get; set; }
+
+    [JsonPropertyName("id")] public string Id { get; set; }
+
+    [JsonPropertyName("name")] public string Name { get; set; }
+
+    [JsonPropertyName("type")] public string Type { get; set; }
 }

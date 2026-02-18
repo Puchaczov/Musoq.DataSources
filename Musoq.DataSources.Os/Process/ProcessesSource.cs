@@ -8,13 +8,13 @@ namespace Musoq.DataSources.Os.Process;
 internal class ProcessesSource(RuntimeContext communicator) : RowSourceBase<System.Diagnostics.Process>
 {
     private const string ProcessesSourceName = "processes";
-    
+
     protected override void CollectChunks(
         BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         communicator.ReportDataSourceBegin(ProcessesSourceName);
         long totalRowsProcessed = 0;
-        
+
         try
         {
             var list = new List<EntityResolver<System.Diagnostics.Process>>();

@@ -15,29 +15,29 @@ namespace Musoq.DataSources.OpenAI.Tests;
 public class OpenAiSingleRowSourceTests
 {
     private static string ModelName => Defaults.DefaultModel;
-    
+
     [TestMethod]
     public void WhenRowsCalled_ShouldRetrieveSingle()
     {
         var mockLogger = new Mock<ILogger>();
-        
+
         var source = new OpenAiSingleRowSource(
             new RuntimeContext(
                 "test",
                 CancellationToken.None,
                 Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>()
+                new Dictionary<string, string>
                 {
-                    {"OPENAI_API_KEY", "OPENAI_API_KEY"}
+                    { "OPENAI_API_KEY", "OPENAI_API_KEY" }
                 },
                 QuerySourceInfo.Empty,
-                mockLogger.Object), new OpenAiRequestInfo()
+                mockLogger.Object), new OpenAiRequestInfo
             {
                 Model = ModelName
             });
 
         var fired = source.Rows.Count();
-        
+
         Assert.AreEqual(1, fired);
     }
 
@@ -48,15 +48,15 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.Sentiment(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
                 0,
-                CancellationToken.None), 
+                0,
+                0,
+                0,
+                CancellationToken.None),
             "NICELY LOOKING SOMETHING");
-        
+
         Assert.AreEqual("POSITIVE", result);
     }
 
@@ -67,18 +67,18 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.Sentiment(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
                 0,
-                CancellationToken.None), 
+                0,
+                0,
+                0,
+                CancellationToken.None),
             "BADLY LOOKING SOMETHING");
-        
+
         Assert.AreEqual("NEGATIVE", result);
     }
-    
+
     [TestMethod]
     public void WhenSentimentIsNeutral_ShouldPass()
     {
@@ -86,18 +86,18 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.Sentiment(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
                 0,
-                CancellationToken.None), 
+                0,
+                0,
+                0,
+                CancellationToken.None),
             "NEUTRALLY LOOKING SOMETHING");
-        
+
         Assert.AreEqual("NEUTRAL", result);
     }
-    
+
     [TestMethod]
     public void WhenSentimentIsGarbage_ShouldPass()
     {
@@ -105,18 +105,18 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.Sentiment(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
                 0,
-                CancellationToken.None), 
+                0,
+                0,
+                0,
+                CancellationToken.None),
             "some garbage");
-        
+
         Assert.AreEqual("UNKNOWN", result);
     }
-    
+
     [TestMethod]
     public void WhenSummarizeContent_ShouldPass()
     {
@@ -124,18 +124,18 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.SummarizeContent(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
                 0,
-                CancellationToken.None), 
+                0,
+                0,
+                0,
+                CancellationToken.None),
             "some content");
-        
+
         Assert.AreEqual("SUMMARIZED", result);
     }
-    
+
     [TestMethod]
     public void WhenIsContentAbout_ShouldPass()
     {
@@ -143,19 +143,19 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.IsContentAbout(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
+                0,
+                0,
+                0,
                 0,
                 CancellationToken.None),
             "content",
             "question");
-        
+
         Assert.AreEqual(true, result);
     }
-    
+
     [TestMethod]
     public void WhenIsContentNotAbout_ShouldPass()
     {
@@ -163,19 +163,19 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.IsContentAbout(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
+                0,
+                0,
+                0,
                 0,
                 CancellationToken.None),
             "content",
             "question");
-        
+
         Assert.AreEqual(false, result);
     }
-    
+
     [TestMethod]
     public void WhenTranslateContent_ShouldPass()
     {
@@ -183,20 +183,20 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.TranslateContent(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
+                0,
+                0,
+                0,
                 0,
                 CancellationToken.None),
             "content",
             "pl",
             "en");
-        
+
         Assert.AreEqual("translated", result);
     }
-    
+
     [TestMethod]
     public void WhenExtractEntities_ShouldPass()
     {
@@ -204,19 +204,19 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.Entities(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
+                0,
+                0,
+                0,
                 0,
                 CancellationToken.None),
             "content");
-        
+
         Assert.AreEqual(1, result.Length);
         Assert.AreEqual("extracted", result[0]);
     }
-    
+
     [TestMethod]
     public void WhenExtractEntitiesReturnsMalformedJson_ShouldPass()
     {
@@ -224,15 +224,15 @@ public class OpenAiSingleRowSourceTests
         var library = new OpenAiLibrary();
         var result = library.Entities(
             new OpenAiEntity(
-                mockOpenAiApi.Object, 
-                ModelName, 
-                0, 
-                0, 
-                0, 
+                mockOpenAiApi.Object,
+                ModelName,
+                0,
+                0,
+                0,
                 0,
                 CancellationToken.None),
             "content");
-        
+
         Assert.AreEqual(0, result.Length);
     }
 

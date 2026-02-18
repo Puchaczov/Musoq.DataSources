@@ -3,54 +3,54 @@ using LibGit2Sharp;
 namespace Musoq.DataSources.Git.Entities;
 
 /// <summary>
-/// Represents the differences between two tree entries in a Git repository.
+///     Represents the differences between two tree entries in a Git repository.
 /// </summary>
 /// <param name="changes">The tree entry changes object.</param>
 /// <param name="repository">The Git repository object.</param>
 public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
 {
     /// <summary>
-    /// Gets the path of the changed file.
+    ///     Gets the path of the changed file.
     /// </summary>
     public string Path => changes.Path;
-    
+
     /// <summary>
-    /// The file exists in the new side of the diff.
+    ///     The file exists in the new side of the diff.
     /// </summary>
     public bool Exists => changes.Exists;
 
     /// <summary>
-    /// Gets the kind of change (e.g., Added, Deleted, Modified).
+    ///     Gets the kind of change (e.g., Added, Deleted, Modified).
     /// </summary>
     public string ChangeKind => changes.Status.ToString();
 
     /// <summary>
-    /// Gets the old path of the file before the change.
+    ///     Gets the old path of the file before the change.
     /// </summary>
     public string OldPath => changes.OldPath;
 
     /// <summary>
-    /// Gets the old file mode before the change.
+    ///     Gets the old file mode before the change.
     /// </summary>
     public string OldMode => changes.OldMode.ToString();
 
     /// <summary>
-    /// Gets the new file mode after the change.
+    ///     Gets the new file mode after the change.
     /// </summary>
     public string NewMode => changes.Mode.ToString();
 
     /// <summary>
-    /// Gets the SHA of the old file before the change.
+    ///     Gets the SHA of the old file before the change.
     /// </summary>
     public string OldSha => changes.OldOid.Sha;
 
     /// <summary>
-    /// Gets the SHA of the new file after the change.
+    ///     Gets the SHA of the new file after the change.
     /// </summary>
     public string NewSha => changes.Oid.Sha;
 
     /// <summary>
-    /// Gets the content of the old file as a string.
+    ///     Gets the content of the old file as a string.
     /// </summary>
     public string? OldContent
     {
@@ -60,16 +60,16 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
                 return null;
 
             var blob = repository.Lookup<Blob>(changes.OldOid);
-            
+
             if (blob == null)
                 return null;
-            
+
             return blob.GetContentText();
         }
     }
-    
+
     /// <summary>
-    /// Gets the content of the old file as a byte array.
+    ///     Gets the content of the old file as a byte array.
     /// </summary>
     public byte[]? OldContentBytes
     {
@@ -95,7 +95,7 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
     }
 
     /// <summary>
-    /// Gets the content of the new file as a string.
+    ///     Gets the content of the new file as a string.
     /// </summary>
     public string? NewContent
     {
@@ -103,12 +103,12 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
         {
             if (changes.Status == LibGit2Sharp.ChangeKind.Deleted)
                 return null;
-            
+
             var blob = repository.Lookup<Blob>(changes.Oid);
 
             if (blob == null)
                 return null;
-            
+
             var contentText = blob.GetContentText();
 
             return contentText;
@@ -116,7 +116,7 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
     }
 
     /// <summary>
-    /// Gets the content of the new file as a byte array.
+    ///     Gets the content of the new file as a byte array.
     /// </summary>
     public byte[]? NewContentBytes
     {
@@ -124,12 +124,12 @@ public class DifferenceEntity(TreeEntryChanges changes, Repository repository)
         {
             if (changes.Status == LibGit2Sharp.ChangeKind.Deleted)
                 return null;
-            
+
             var blob = repository.Lookup<Blob>(changes.Oid);
-            
+
             if (blob == null)
                 return null;
-            
+
             using var contentStream = blob.GetContentStream();
 
             var buffer = new byte[contentStream.Length];

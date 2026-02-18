@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Postgres.Visitors;
 
 internal class ToStringWhereQueryPartTraverseVisitor : TraverseVisitor
 {
-    public ToStringWhereQueryPartTraverseVisitor(IExpressionVisitor visitor) 
+    public ToStringWhereQueryPartTraverseVisitor(IExpressionVisitor visitor)
         : base(visitor)
     {
     }

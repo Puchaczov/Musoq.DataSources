@@ -6,10 +6,10 @@ namespace Musoq.DataSources.Kubernetes.PodLogs;
 public class PodLogsEntity
 {
     public string Namespace { get; init; }
-    
+
     public string Name { get; init; }
-    
+
     public string ContainerName { get; init; }
-    
+
     public string Line { get; init; }
 }

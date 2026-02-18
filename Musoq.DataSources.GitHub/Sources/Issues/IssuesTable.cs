@@ -16,6 +16,6 @@ internal class IssuesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => IssuesSourceHelper.IssuesColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(IssueEntity));
 }

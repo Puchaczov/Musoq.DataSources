@@ -1,47 +1,48 @@
-﻿using System;
-using Musoq.Schema;
+﻿using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Postgres;
 
 /// <description>
-/// Provides schema to work with postgres database
+///     Provides schema to work with postgres database
 /// </description>
 /// <short-description>
-/// Provides schema to work with postgres database
+///     Provides schema to work with postgres database
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class PostgresSchema : SchemaBase
 {
     private const string SchemaName = "postgres";
-    
+
     /// <virtual-constructors>
-    /// <virtual-constructor>
-    /// <virtual-param>Schema the table belongs to</virtual-param>
-    /// <examples>
-    /// <example>
-    /// <from>
-    /// <environmentVariables>
-    /// <environmentVariable name="NPGSQL_CONNECTION_STRING" isRequired="true">Postgres connections string</environmentVariable>
-    /// </environmentVariables>
-    /// #postgres.tableName('schemaName')
-    /// </from>
-    /// <description>Gives ability to process sqlite table</description>
-    /// <columns isDynamic="true"></columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param>Schema the table belongs to</virtual-param>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="NPGSQL_CONNECTION_STRING" isRequired="true">
+    ///                             Postgres connections
+    ///                             string
+    ///                         </environmentVariable>
+    ///                     </environmentVariables>
+    ///                     #postgres.tableName('schemaName')
+    ///                 </from>
+    ///                 <description>Gives ability to process sqlite table</description>
+    ///                 <columns isDynamic="true"></columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
     /// </virtual-constructors>
-    public PostgresSchema() 
+    public PostgresSchema()
         : base(SchemaName, CreateLibrary())
     {
     }
-    
+
     /// <summary>
-    /// Retrieves an ISchemaTable instance for the specified table name.
+    ///     Retrieves an ISchemaTable instance for the specified table name.
     /// </summary>
     /// <param name="name">The name of the table.</param>
     /// <param name="runtimeContext">The runtime context to be used.</param>
@@ -53,7 +54,7 @@ public class PostgresSchema : SchemaBase
     }
 
     /// <summary>
-    /// Retrieves a RowSource instance for the specified table name.
+    ///     Retrieves a RowSource instance for the specified table name.
     /// </summary>
     /// <param name="name">The name of the table.</param>
     /// <param name="runtimeContext">The runtime context to be used.</param>
@@ -65,7 +66,7 @@ public class PostgresSchema : SchemaBase
     }
 
     /// <summary>
-    /// Gets raw information's about specific method in the schema.
+    ///     Gets raw information's about specific method in the schema.
     /// </summary>
     /// <param name="methodName">Method name</param>
     /// <param name="runtimeContext">Runtime context</param>
@@ -73,9 +74,8 @@ public class PostgresSchema : SchemaBase
     public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments:
+            null!,
+            false,
             [
                 ("schemaName", typeof(string))
             ]);
@@ -87,7 +87,7 @@ public class PostgresSchema : SchemaBase
     }
 
     /// <summary>
-    /// Gets raw information's about all tables in the schema.
+    ///     Gets raw information's about all tables in the schema.
     /// </summary>
     /// <param name="runtimeContext">Runtime context</param>
     /// <returns>Data sources constructors</returns>
@@ -95,7 +95,7 @@ public class PostgresSchema : SchemaBase
     {
         return [];
     }
-    
+
     private static MethodsAggregator CreateLibrary()
     {
         var methodsManager = new MethodsManager();

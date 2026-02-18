@@ -3,12 +3,12 @@
 public class SecretEntity
 {
     public string Namespace { get; set; }
-    
+
     public string Name { get; set; }
-    
+
     public string Type { get; set; }
-    
+
     public bool? Immutable { get; set; }
-    
+
     public DateTime? Age { get; set; }
 }

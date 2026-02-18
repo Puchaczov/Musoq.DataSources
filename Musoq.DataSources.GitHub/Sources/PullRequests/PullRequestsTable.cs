@@ -16,6 +16,6 @@ internal class PullRequestsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => PullRequestsSourceHelper.PullRequestsColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(PullRequestEntity));
 }

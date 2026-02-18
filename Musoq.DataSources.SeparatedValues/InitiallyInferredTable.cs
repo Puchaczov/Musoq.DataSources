@@ -9,7 +9,7 @@ internal class InitiallyInferredTable(IReadOnlyCollection<ISchemaColumn> columns
     public ISchemaColumn[] Columns { get; } = columns.ToArray();
 
     public SchemaTableMetadata Metadata => new(typeof(object));
-    
+
     public ISchemaColumn? GetColumnByName(string name)
     {
         return Columns.SingleOrDefault(column => column.ColumnName == name);

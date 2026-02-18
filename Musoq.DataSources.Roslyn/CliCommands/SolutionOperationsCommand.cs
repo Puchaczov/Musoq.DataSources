@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -19,36 +18,50 @@ namespace Musoq.DataSources.Roslyn.CliCommands;
 internal class SolutionOperationsCommand(ILogger logger)
 {
     private static readonly object Locker = new();
-    
+
     // This cannot be AppContext.BaseDirectory as it must point to the plugin directory
-    private static readonly string RateLimitingOptionsFilePath = IFileSystem.Combine(new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "RateLimitingOptions.json");
-    private static readonly string BannedPropertiesValuesFilePath = IFileSystem.Combine(new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "BannedPropertiesValues.json");
-    
+    private static readonly string RateLimitingOptionsFilePath = IFileSystem.Combine(
+        new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "RateLimitingOptions.json");
+
+    private static readonly string BannedPropertiesValuesFilePath = IFileSystem.Combine(
+        new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!,
+        "BannedPropertiesValues.json");
+
     internal static readonly ConcurrentDictionary<string, Solution> Solutions = new();
-    internal static IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>? RateLimitingOptions;
-    internal static readonly IReadOnlyDictionary<string, HashSet<string>> BannedPropertiesValues = ReadBannedPropertiesValues();
-    internal static string DefaultCacheDirectoryPath { get; set; } = Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn");
+
+    internal static
+        IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey,
+            DomainRateLimitingHandler.DomainRateLimitConfig>? RateLimitingOptions;
+
+    internal static readonly IReadOnlyDictionary<string, HashSet<string>> BannedPropertiesValues =
+        ReadBannedPropertiesValues();
+
     internal static readonly ConcurrentDictionary<string, PersistentCacheResponseHandler> HttpResponseCache = new();
+
+    internal static string DefaultCacheDirectoryPath { get; set; } =
+        Path.Combine(Path.GetTempPath(), "DataSourcesCache", "Musoq.DataSources.Roslyn");
+
     internal static ResolveValueStrategy ResolveValueStrategy { get; set; } = ResolveValueStrategy.UseNugetOrgApiOnly;
-    
+
     public async Task LoadAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         logger.LogTrace("Loading solution file: {solutionFilePath}", solutionFilePath);
-     
+
         if (Solutions.ContainsKey(solutionFilePath))
         {
             logger.LogTrace("Solution already loaded: {solutionFilePath}", solutionFilePath);
             return;
         }
-        
+
         var workspace = MSBuildWorkspace.Create();
         var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
-        var solution = await workspace.OpenSolutionAsync(solutionFilePath, projectLoadProgressLogger, cancellationToken: cancellationToken);
-        
+        var solution =
+            await workspace.OpenSolutionAsync(solutionFilePath, projectLoadProgressLogger, cancellationToken);
+
         logger.LogTrace("Initializing solution");
-        
+
         try
         {
             await Parallel.ForEachAsync(solution.Projects, cancellationToken, async (project, outerToken) =>
@@ -62,7 +75,8 @@ internal class SolutionOperationsCommand(ILogger logger)
         }
         catch (MissingMethodException ex)
         {
-            throw RoslynVersionHelper.CreateVersionMismatchException(ex, "SolutionOperationsCommand.InitializeSolutionAsync");
+            throw RoslynVersionHelper.CreateVersionMismatchException(ex,
+                "SolutionOperationsCommand.InitializeSolutionAsync");
         }
 
         Solutions.TryAdd(solutionFilePath, solution);
@@ -70,26 +84,25 @@ internal class SolutionOperationsCommand(ILogger logger)
 
         logger.LogTrace("Solution initialized.");
     }
-    
+
     public Task UnloadAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         logger.LogTrace("Unloading solution file: {solutionFilePath}", solutionFilePath);
-        
+
         Solutions.TryRemove(solutionFilePath, out _);
-        
+
         logger.LogTrace("Solution unloaded.");
-            
+
         return Task.CompletedTask;
     }
 
     public Task ClearCacheAsync(string cacheDirectoryPath, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         foreach (var file in Directory.EnumerateFiles(cacheDirectoryPath, "*", SearchOption.AllDirectories))
-        {
             try
             {
                 File.Delete(file);
@@ -98,10 +111,8 @@ internal class SolutionOperationsCommand(ILogger logger)
             {
                 logger.LogError(ex, "Failed to delete cache file: {file}", file);
             }
-        }
-        
+
         foreach (var directory in Directory.EnumerateDirectories(cacheDirectoryPath, "*", SearchOption.AllDirectories))
-        {
             try
             {
                 Directory.Delete(directory, true);
@@ -110,43 +121,43 @@ internal class SolutionOperationsCommand(ILogger logger)
             {
                 logger.LogError(ex, "Failed to delete cache directory: {directory}", directory);
             }
-        }
-        
+
         HttpResponseCache.Clear();
-        
+
         return Task.CompletedTask;
     }
-    
+
     public void SetCacheDirectoryPath(string cacheDirectoryPath)
     {
         lock (Locker)
         {
             if (string.IsNullOrEmpty(cacheDirectoryPath))
-                throw new ArgumentException("Cache directory path cannot be null or empty.", nameof(cacheDirectoryPath));
-        
+                throw new ArgumentException("Cache directory path cannot be null or empty.",
+                    nameof(cacheDirectoryPath));
+
             DefaultCacheDirectoryPath = cacheDirectoryPath;
-        
+
             if (!Directory.Exists(DefaultCacheDirectoryPath))
                 Directory.CreateDirectory(DefaultCacheDirectoryPath);
         }
     }
-    
+
     public string GetCacheDirectoryPath()
     {
         lock (Locker)
         {
             if (string.IsNullOrEmpty(DefaultCacheDirectoryPath))
                 throw new InvalidOperationException("Cache directory path is not set.");
-            
+
             return DefaultCacheDirectoryPath;
         }
     }
-    
+
     public void SetResolveValueStrategy(string value)
     {
         if (string.IsNullOrEmpty(value))
             throw new ArgumentException("Resolve value strategy cannot be null or empty.", nameof(value));
-        
+
         ResolveValueStrategy = Enum.Parse<ResolveValueStrategy>(value, true);
     }
 
@@ -154,7 +165,7 @@ internal class SolutionOperationsCommand(ILogger logger)
     {
         if (string.IsNullOrEmpty(ResolveValueStrategy.ToString()))
             throw new InvalidOperationException("Resolve value strategy is not set.");
-        
+
         return ResolveValueStrategy.ToString();
     }
 
@@ -165,33 +176,39 @@ internal class SolutionOperationsCommand(ILogger logger)
         RateLimitingOptions ??= ReadDomainRateLimitingOptionsAsync(cts.Token).GetAwaiter().GetResult();
     }
 
-    private static Task<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>> ReadDomainRateLimitingOptionsAsync(CancellationToken cancellationToken)
+    private static
+        Task<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey,
+            DomainRateLimitingHandler.DomainRateLimitConfig>> ReadDomainRateLimitingOptionsAsync(
+            CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         var configuration = new ConfigurationBuilder()
             .AddJsonFile(RateLimitingOptionsFilePath);
-        
+
         var rateLimitingOptions = configuration.Build();
         var unauthorizedSection = rateLimitingOptions.GetSection("Unauthorized");
         var authorizedSection = rateLimitingOptions.GetSection("Authorized");
-        
-        (string Name, bool WhenApiKeyPresent)[] domains = 
+
+        (string Name, bool WhenApiKeyPresent)[] domains =
             unauthorizedSection.GetChildren().Select(f => (f.Key, false))
                 .Concat(authorizedSection.GetChildren().Select(f => (f.Key, true))).ToArray();
-        
-        var domainRateLimitingOptions = new Dictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>();
-        
+
+        var domainRateLimitingOptions =
+            new Dictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey,
+                DomainRateLimitingHandler.DomainRateLimitConfig>();
+
         foreach (var domain in domains)
         {
-            var domainRateLimitConfig = domain.WhenApiKeyPresent 
-                ? ReadDomainRateLimitConfig("Authorized") 
+            var domainRateLimitConfig = domain.WhenApiKeyPresent
+                ? ReadDomainRateLimitConfig("Authorized")
                 : ReadDomainRateLimitConfig("Unauthorized");
 
             if (domainRateLimitConfig != null)
-            {
-                domainRateLimitingOptions[new DomainRateLimitingHandler.DomainRateLimitingConfigKey(domain.Name, domain.WhenApiKeyPresent)] = domainRateLimitConfig;
-            }
+                domainRateLimitingOptions[
+                        new DomainRateLimitingHandler.DomainRateLimitingConfigKey(domain.Name,
+                            domain.WhenApiKeyPresent)] =
+                    domainRateLimitConfig;
 
             continue;
 
@@ -199,37 +216,41 @@ internal class SolutionOperationsCommand(ILogger logger)
             {
                 var domainRateLimitingOptionsSection = rateLimitingOptions.GetSection($"{sectionName}:{domain.Name}");
 
-                if (!domainRateLimitingOptionsSection.Exists()) 
+                if (!domainRateLimitingOptionsSection.Exists())
                     return null;
-                
+
                 var permitsPerPeriod = domainRateLimitingOptionsSection.GetValue<int>("PermitsPerPeriod");
                 var replenishmentPeriod = domainRateLimitingOptionsSection.GetValue<TimeSpan>("ReplenishmentPeriod");
                 var queueLimit = domainRateLimitingOptionsSection.GetValue<int>("QueueLimit");
 
-                return new DomainRateLimitingHandler.DomainRateLimitConfig(permitsPerPeriod, replenishmentPeriod, queueLimit);
+                return new DomainRateLimitingHandler.DomainRateLimitConfig(permitsPerPeriod, replenishmentPeriod,
+                    queueLimit);
             }
         }
-        
-        return Task.FromResult<IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey, DomainRateLimitingHandler.DomainRateLimitConfig>>(domainRateLimitingOptions);
+
+        return Task
+            .FromResult<
+                IReadOnlyDictionary<DomainRateLimitingHandler.DomainRateLimitingConfigKey,
+                    DomainRateLimitingHandler.DomainRateLimitConfig>>(domainRateLimitingOptions);
     }
-    
+
     private static IReadOnlyDictionary<string, HashSet<string>> ReadBannedPropertiesValues()
     {
         var configuration = new ConfigurationBuilder()
             .AddJsonFile(BannedPropertiesValuesFilePath);
-        
+
         var bannedPropertiesValues = configuration.Build();
         var propertiesArray = bannedPropertiesValues.GetSection("BannedPropertiesValues").GetChildren();
         var result = new Dictionary<string, HashSet<string>>();
-    
+
         foreach (var property in propertiesArray)
         {
             var propertyName = property.GetValue<string>("propertyName");
             var propertyValue = property.GetValue<string>("propertyValue");
 
-            if (string.IsNullOrEmpty(propertyName) || string.IsNullOrEmpty(propertyValue)) 
+            if (string.IsNullOrEmpty(propertyName) || string.IsNullOrEmpty(propertyValue))
                 continue;
-            
+
             if (!result.TryGetValue(propertyName, out var value))
             {
                 value = [];
@@ -238,7 +259,7 @@ internal class SolutionOperationsCommand(ILogger logger)
 
             value.Add(propertyValue);
         }
-        
+
         return result;
     }
 }

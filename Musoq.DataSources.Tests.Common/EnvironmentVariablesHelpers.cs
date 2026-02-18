@@ -5,7 +5,7 @@ namespace Musoq.DataSources.Tests.Common;
 
 public static class EnvironmentVariablesHelpers
 {
-    public static IReadOnlyDictionary<uint,IReadOnlyDictionary<string,string>> CreateMockedEnvironmentVariables()
+    public static IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> CreateMockedEnvironmentVariables()
     {
         var environmentVariablesMock = new Mock<IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>>>();
         environmentVariablesMock.Setup(f => f[It.IsAny<uint>()]).Returns(new Dictionary<string, string>());
@@ -13,15 +13,13 @@ public static class EnvironmentVariablesHelpers
         return environmentVariablesMock.Object;
     }
 
-    public static IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> CreateMockedEnvironmentVariables(IReadOnlyDictionary<string, string> variables)
+    public static IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> CreateMockedEnvironmentVariables(
+        IReadOnlyDictionary<string, string> variables)
     {
         var environmentVariablesMock = new Mock<IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>>>();
         var data = new Dictionary<uint, IReadOnlyDictionary<string, string>>();
 
-        for (uint i = 0; i <= 100; i++)
-        {
-            data[i] = variables;
-        }
+        for (uint i = 0; i <= 100; i++) data[i] = variables;
 
         environmentVariablesMock
             .Setup(x => x.GetEnumerator())

@@ -14,6 +14,11 @@ namespace Musoq.DataSources.Kubernetes.Tests;
 [TestClass]
 public class KubernetesTests
 {
+    static KubernetesTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void WhenDeploymentsQueried_ShouldReturnValues()
     {
@@ -32,7 +37,7 @@ public class KubernetesTests
                             NamespaceProperty = "Namespace",
                             CreationTimestamp = DateTime.MinValue,
                             Generation = 1,
-                            ResourceVersion = "ResourceVersion",
+                            ResourceVersion = "ResourceVersion"
                         },
                         Spec = new V1DeploymentSpec
                         {
@@ -68,15 +73,16 @@ public class KubernetesTests
                     }
                 }
             });
-        
-        var query = "select Name, Namespace, CreationTimestamp, Generation, ResourceVersion, Images, ImagePullPolicies, RestartPolicy, ContainersNames, Status from #kubernetes.deployments()";
-        
+
+        var query =
+            "select Name, Namespace, CreationTimestamp, Generation, ResourceVersion, Images, ImagePullPolicies, RestartPolicy, ContainersNames, Status from #kubernetes.deployments()";
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual(DateTime.MinValue, table[0][2]);
@@ -87,10 +93,10 @@ public class KubernetesTests
         Assert.AreEqual("Always", table[0][7]);
         Assert.AreEqual("Name", table[0][8]);
         Assert.AreEqual("True", table[0][9]);
-        
+
         Assert.AreEqual(10, table[0].Count);
     }
-    
+
     [TestMethod]
     public void WhenPodsQueried_ShouldReturnValues()
     {
@@ -150,15 +156,16 @@ public class KubernetesTests
                     }
                 }
             });
-        
-        var query = "select Name, Namespace, ContainersNames, PF, Ready, Restarts, Statuses, IP from #kubernetes.pods()";
-        
+
+        var query =
+            "select Name, Namespace, ContainersNames, PF, Ready, Restarts, Statuses, IP from #kubernetes.pods()";
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual("Name", table[0][2]);
@@ -167,10 +174,10 @@ public class KubernetesTests
         Assert.AreEqual("0", table[0][5]);
         Assert.AreEqual("Running", table[0][6]);
         Assert.AreEqual("1.2.3.4", table[0][7]);
-        
+
         Assert.AreEqual(8, table[0].Count);
     }
-    
+
     [TestMethod]
     public void WhenServicesQueried_ShouldReturnValues()
     {
@@ -225,16 +232,17 @@ public class KubernetesTests
                     }
                 }
             });
-        
-        var query = "select Metadata is not null, Spec is not null, Kind, Status is not null from #kubernetes.services()";
-        
-        
+
+        var query =
+            "select Metadata is not null, Spec is not null, Kind, Status is not null from #kubernetes.services()";
+
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.IsTrue((bool)table[0][0]);
         Assert.IsTrue((bool)table[0][1]);
         Assert.AreEqual("Kind", table[0][2]);
@@ -245,7 +253,7 @@ public class KubernetesTests
     public void WhenNodesQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListNodes())
             .Returns(new V1NodeList
             {
@@ -257,7 +265,7 @@ public class KubernetesTests
                         {
                             Name = "Name",
                             NamespaceProperty = "Namespace",
-                            CreationTimestamp = DateTime.MinValue,
+                            CreationTimestamp = DateTime.MinValue
                         },
                         Spec = new V1NodeSpec
                         {
@@ -283,8 +291,8 @@ public class KubernetesTests
                             },
                             Allocatable = new Dictionary<string, ResourceQuantity>
                             {
-                                {"cpu", new ResourceQuantity("1")},
-                                {"memory", new ResourceQuantity("2")}
+                                { "cpu", new ResourceQuantity("1") },
+                                { "memory", new ResourceQuantity("2") }
                             },
                             Conditions = new List<V1NodeCondition>
                             {
@@ -315,21 +323,22 @@ public class KubernetesTests
                                 OperatingSystem = "OperatingSystem",
                                 SystemUUID = "SystemUUID"
                             },
-                            Phase = "Phase",
-                        },
+                            Phase = "Phase"
+                        }
                     }
                 }
             });
-        
-        var query = "select Name, Status, Roles, Age, Version, Kernel, OS, Architecture, ContainerRuntime, Cpu, Memory from #kubernetes.nodes()";
-        
-        
+
+        var query =
+            "select Name, Status, Roles, Age, Version, Kernel, OS, Architecture, ContainerRuntime, Cpu, Memory from #kubernetes.nodes()";
+
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("True", table[0][1]);
         Assert.AreEqual("Key", table[0][2]);
@@ -341,7 +350,7 @@ public class KubernetesTests
         Assert.AreEqual("ContainerRuntimeVersion", table[0][8]);
         Assert.AreEqual("1", table[0][9]);
         Assert.AreEqual("2", table[0][10]);
-        
+
         Assert.AreEqual(11, table[0].Count);
     }
 
@@ -349,7 +358,7 @@ public class KubernetesTests
     public void WhenConfigmapsQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListConfigMapsForAllNamespaces())
             .Returns(new V1ConfigMapList
             {
@@ -361,25 +370,25 @@ public class KubernetesTests
                         {
                             Name = "Name",
                             NamespaceProperty = "Namespace",
-                            CreationTimestamp = DateTime.MinValue,
-                        },
+                            CreationTimestamp = DateTime.MinValue
+                        }
                     }
                 }
             });
-        
+
         var query = "select Name, Namespace, Age from #kubernetes.configmaps()";
-        
-        
+
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual(DateTime.MinValue, table[0][2]);
-        
+
         Assert.AreEqual(3, table[0].Count);
     }
 
@@ -387,7 +396,7 @@ public class KubernetesTests
     public void WhenCronJobsRequested_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListCronJobsForAllNamespaces())
             .Returns(new V1CronJobList
             {
@@ -399,7 +408,7 @@ public class KubernetesTests
                         {
                             Name = "Name",
                             NamespaceProperty = "Namespace",
-                            CreationTimestamp = DateTime.MinValue,
+                            CreationTimestamp = DateTime.MinValue
                         },
                         Spec = new V1CronJobSpec
                         {
@@ -420,22 +429,22 @@ public class KubernetesTests
                     }
                 }
             });
-        
+
         var query = "select Name, Namespace, Schedule, Statuses, LastScheduleTime from #kubernetes.cronjobs()";
-        
-        
+
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual("Schedule", table[0][2]);
         Assert.AreEqual("Status1", table[0][3]);
         Assert.AreEqual(DateTime.MinValue, table[0][4]);
-        
+
         Assert.AreEqual(5, table[0].Count);
     }
 
@@ -443,7 +452,7 @@ public class KubernetesTests
     public void WhenDaemonSetsQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListDaemonSetsForAllNamespaces())
             .Returns(new V1DaemonSetList
             {
@@ -455,7 +464,7 @@ public class KubernetesTests
                         {
                             Name = "Name",
                             NamespaceProperty = "Namespace",
-                            CreationTimestamp = DateTime.MinValue,
+                            CreationTimestamp = DateTime.MinValue
                         },
                         Spec = new V1DaemonSetSpec
                         {
@@ -463,7 +472,7 @@ public class KubernetesTests
                             {
                                 MatchLabels = new Dictionary<string, string>
                                 {
-                                    {"Key", "Value"}
+                                    { "Key", "Value" }
                                 }
                             },
                             Template = new V1PodTemplateSpec
@@ -497,15 +506,16 @@ public class KubernetesTests
                     }
                 }
             });
-        
-        var query = "select Name, Namespace, Desired, Current, Ready, UpToDate, Available, Age from #kubernetes.daemonsets()";
-        
+
+        var query =
+            "select Name, Namespace, Desired, Current, Ready, UpToDate, Available, Age from #kubernetes.daemonsets()";
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual(1, table[0][2]);
@@ -514,7 +524,7 @@ public class KubernetesTests
         Assert.AreEqual(1, table[0][5]);
         Assert.AreEqual(1, table[0][6]);
         Assert.AreEqual(DateTime.MinValue, table[0][7]);
-        
+
         Assert.AreEqual(8, table[0].Count);
     }
 
@@ -522,7 +532,7 @@ public class KubernetesTests
     public void WhenIngressesQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListIngressesForAllNamespaces())
             .Returns(new V1IngressList
             {
@@ -534,7 +544,7 @@ public class KubernetesTests
                         {
                             Name = "Name",
                             NamespaceProperty = "Namespace",
-                            CreationTimestamp = DateTime.MinValue,
+                            CreationTimestamp = DateTime.MinValue
                         },
                         Spec = new V1IngressSpec
                         {
@@ -556,11 +566,11 @@ public class KubernetesTests
                                     }
                                 }
                             },
-                            Tls = new List<V1IngressTLS>()
+                            Tls = new List<V1IngressTLS>
                             {
                                 new()
                                 {
-                                    Hosts = new List<string>()
+                                    Hosts = new List<string>
                                     {
                                         "Hosts"
                                     }
@@ -584,15 +594,15 @@ public class KubernetesTests
                     }
                 }
             });
-        
+
         var query = "select Name, Namespace, Class, Hosts, Address, Ports, Age from #kubernetes.ingresses()";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual("Class", table[0][2]);
@@ -600,15 +610,15 @@ public class KubernetesTests
         Assert.AreEqual("Hostname", table[0][4]);
         Assert.AreEqual("Hosts", table[0][5]);
         Assert.AreEqual(DateTime.MinValue, table[0][6]);
-        
+
         Assert.AreEqual(7, table[0].Count);
     }
-    
+
     [TestMethod]
     public void WhenJobsQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListJobsForAllNamespaces())
             .Returns(new V1JobList
             {
@@ -620,7 +630,7 @@ public class KubernetesTests
                         {
                             Name = "Name",
                             NamespaceProperty = "Namespace",
-                            CreationTimestamp = DateTime.MinValue,
+                            CreationTimestamp = DateTime.MinValue
                         },
                         Spec = new V1JobSpec
                         {
@@ -665,15 +675,15 @@ public class KubernetesTests
                     }
                 }
             });
-        
+
         var query = "select Name, Namespace, Completions, Duration, Images, Containers, Age from #kubernetes.jobs()";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual(1, table[0][2]);
@@ -681,15 +691,15 @@ public class KubernetesTests
         Assert.AreEqual("Image", table[0][4]);
         Assert.AreEqual("Name", table[0][5]);
         Assert.AreEqual(DateTime.MinValue, table[0][6]);
-        
+
         Assert.AreEqual(7, table[0].Count);
     }
-    
+
     [TestMethod]
     public void WhenPersistentVolumeClaimsQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListPersistentVolumeClaimsForAllNamespaces())
             .Returns(new V1PersistentVolumeClaimList
             {
@@ -701,7 +711,7 @@ public class KubernetesTests
                         {
                             Name = "Name",
                             NamespaceProperty = "Namespace",
-                            CreationTimestamp = DateTime.MinValue,
+                            CreationTimestamp = DateTime.MinValue
                         },
                         Spec = new V1PersistentVolumeClaimSpec
                         {
@@ -716,7 +726,7 @@ public class KubernetesTests
                             {
                                 Requests = new Dictionary<string, ResourceQuantity>
                                 {
-                                    {"Key", new ResourceQuantity("5")}
+                                    { "Key", new ResourceQuantity("5") }
                                 }
                             }
                         },
@@ -729,28 +739,28 @@ public class KubernetesTests
                             },
                             Capacity = new Dictionary<string, ResourceQuantity>
                             {
-                                {"Key", new ResourceQuantity("3")}
+                                { "Key", new ResourceQuantity("3") }
                             }
                         }
                     }
                 }
             });
-        
+
         var query = "select Namespace, Name, Capacity, Volume, Status, Age from #kubernetes.persistentvolumeclaims()";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Namespace", table[0][0]);
         Assert.AreEqual("Name", table[0][1]);
         Assert.AreEqual("3", table[0][2]);
         Assert.AreEqual("VolumeName", table[0][3]);
         Assert.AreEqual("Phase", table[0][4]);
         Assert.AreEqual(DateTime.MinValue, table[0][5]);
-        
+
         Assert.AreEqual(6, table[0].Count);
     }
 
@@ -758,7 +768,7 @@ public class KubernetesTests
     public void WhenPersistentVolumesQueries_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListPersistentVolumes())
             .Returns(new V1PersistentVolumeList
             {
@@ -776,7 +786,7 @@ public class KubernetesTests
                         {
                             Capacity = new Dictionary<string, ResourceQuantity>
                             {
-                                {"Key", new ResourceQuantity("3")}
+                                { "Key", new ResourceQuantity("3") }
                             },
                             AccessModes = new List<string>
                             {
@@ -800,15 +810,16 @@ public class KubernetesTests
                     }
                 }
             });
-        
-        var query = "select Name, Namespace, AccessModes, ReclaimPolicy, Status, Claim, StorageClass, Reason, Age from #kubernetes.persistentvolumes()";
-        
+
+        var query =
+            "select Name, Namespace, AccessModes, ReclaimPolicy, Status, Claim, StorageClass, Reason, Age from #kubernetes.persistentvolumes()";
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual("AccessModes", table[0][2]);
@@ -818,7 +829,7 @@ public class KubernetesTests
         Assert.AreEqual("StorageClassName", table[0][6]);
         Assert.AreEqual("Reason", table[0][7]);
         Assert.AreEqual(DateTime.MinValue, table[0][8]);
-        
+
         Assert.AreEqual(9, table[0].Count);
     }
 
@@ -826,7 +837,7 @@ public class KubernetesTests
     public void WhenReplicaSetsQueried_ShouldReturnValue()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListReplicaSetsForAllNamespaces())
             .Returns(new V1ReplicaSetList
             {
@@ -847,7 +858,7 @@ public class KubernetesTests
                             {
                                 MatchLabels = new Dictionary<string, string>
                                 {
-                                    {"Key", "Value"}
+                                    { "Key", "Value" }
                                 }
                             },
                             Template = new V1PodTemplateSpec
@@ -878,13 +889,13 @@ public class KubernetesTests
                     }
                 }
             });
-        
+
         var query = "select Name, Namespace, Desired, Current, Ready, Age from #kubernetes.replicasets()";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
 
         Assert.AreEqual("Name", table[0][0]);
@@ -893,7 +904,7 @@ public class KubernetesTests
         Assert.AreEqual(1, table[0][3]);
         Assert.AreEqual(1, table[0][4]);
         Assert.AreEqual(DateTime.MinValue, table[0][5]);
-        
+
         Assert.AreEqual(6, table[0].Count);
     }
 
@@ -901,7 +912,7 @@ public class KubernetesTests
     public void WhenSecretsQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListSecretsForAllNamespaces())
             .Returns(new V1SecretList
             {
@@ -918,25 +929,25 @@ public class KubernetesTests
                         Type = "Type",
                         Data = new Dictionary<string, byte[]>
                         {
-                            {"Key", [1, 2, 3]}
+                            { "Key", [1, 2, 3] }
                         }
                     }
                 }
             });
-        
+
         var query = "select Name, Namespace, Type, Age from #kubernetes.secrets()";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
 
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual("Type", table[0][2]);
         Assert.AreEqual(DateTime.MinValue, table[0][3]);
-        
+
         Assert.AreEqual(4, table[0].Count);
     }
 
@@ -944,7 +955,7 @@ public class KubernetesTests
     public void WhenStatefulSetsQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListStatefulSetsForAllNamespaces())
             .Returns(new V1StatefulSetList
             {
@@ -965,7 +976,7 @@ public class KubernetesTests
                             {
                                 MatchLabels = new Dictionary<string, string>
                                 {
-                                    {"Key", "Value"}
+                                    { "Key", "Value" }
                                 }
                             },
                             Template = new V1PodTemplateSpec
@@ -997,20 +1008,20 @@ public class KubernetesTests
                     }
                 }
             });
-        
+
         var query = "select Name, Namespace, Replicas, Age from #kubernetes.statefulsets()";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
 
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual(1, table[0][2]);
         Assert.AreEqual(DateTime.MinValue, table[0][3]);
-        
+
         Assert.AreEqual(4, table[0].Count);
     }
 
@@ -1018,7 +1029,7 @@ public class KubernetesTests
     public void WhenPodContainersQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ListPodsForAllNamespaces())
             .Returns(new V1PodList
             {
@@ -1033,7 +1044,7 @@ public class KubernetesTests
                             NamespaceProperty = "Namespace",
                             Labels = new Dictionary<string, string>
                             {
-                                {"name", "PodName"}
+                                { "name", "PodName" }
                             }
                         },
                         Spec = new V1PodSpec
@@ -1076,41 +1087,43 @@ public class KubernetesTests
                     }
                 }
             });
-        
-        var query = "select Name, Namespace, ContainerName, Image, ImagePullPolicy, Age from #kubernetes.podcontainers()";
-        
+
+        var query =
+            "select Name, Namespace, ContainerName, Image, ImagePullPolicy, Age from #kubernetes.podcontainers()";
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Name", table[0][0]);
         Assert.AreEqual("Namespace", table[0][1]);
         Assert.AreEqual("ContainerName", table[0][2]);
         Assert.AreEqual("Image", table[0][3]);
         Assert.AreEqual("ImagePullPolicy", table[0][4]);
         Assert.AreEqual(DateTime.MinValue, table[0][5]);
-        
+
         Assert.AreEqual(6, table[0].Count);
     }
-    
+
     [TestMethod]
     public void WhenPodLogsQueried_ShouldReturnValues()
     {
         var api = new Mock<IKubernetesApi>();
-        
+
         api.Setup(f => f.ReadNamespacedPodLogs(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns(() => new MemoryStream(Encoding.UTF8.GetBytes("Test")));
-        
-        var query = "select Name, Namespace, ContainerName, Line from #kubernetes.podlogs('podName', 'containerName', 'namespace')";
-        
+
+        var query =
+            "select Name, Namespace, ContainerName, Line from #kubernetes.podlogs('podName', 'containerName', 'namespace')";
+
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
-        
+
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("podName", table[0][0]);
         Assert.AreEqual("namespace", table[0][1]);
         Assert.AreEqual("containerName", table[0][2]);
@@ -1125,7 +1138,7 @@ public class KubernetesTests
         api.Setup(f => f.ListEvents())
             .Returns(new Corev1EventList
             {
-                Items = new List<Corev1Event>()
+                Items = new List<Corev1Event>
                 {
                     new()
                     {
@@ -1174,7 +1187,7 @@ public class KubernetesTests
                             Count = 1,
                             LastObservedTime = DateTime.MinValue
                         },
-                        Source = new V1EventSource()
+                        Source = new V1EventSource
                         {
                             Component = "Component",
                             Host = "Host"
@@ -1227,9 +1240,9 @@ from #kubernetes.events()";
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
         var table = vm.Run();
-        
+
         Assert.AreEqual(1, table.Count);
-        
+
         Assert.AreEqual("Action", table[0][0]);
         Assert.AreEqual("ApiVersion", table[0][1]);
         Assert.AreEqual(1, table[0][2]);
@@ -1274,23 +1287,20 @@ from #kubernetes.events()";
 
         mockSchemaProvider.Setup(f => f.GetSchema(It.IsAny<string>())).Returns(
             new KubernetesSchema(api));
-        
+
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
-            mockSchemaProvider.Object, 
+            script,
+            Guid.NewGuid().ToString(),
+            mockSchemaProvider.Object,
             new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
-                {0, new Dictionary<string, string>
                 {
-                    {"MUSOQ_AIRTABLE_API_KEY", "NOPE"},
-                    {"MUSOQ_AIRTABLE_BASE_ID", "NOPE x2"}
-                }}
+                    0, new Dictionary<string, string>
+                    {
+                        { "MUSOQ_AIRTABLE_API_KEY", "NOPE" },
+                        { "MUSOQ_AIRTABLE_BASE_ID", "NOPE x2" }
+                    }
+                }
             });
-    }
-
-    static KubernetesTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

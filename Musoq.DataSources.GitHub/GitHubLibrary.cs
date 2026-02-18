@@ -4,12 +4,12 @@ using Musoq.Plugins.Attributes;
 namespace Musoq.DataSources.GitHub;
 
 /// <summary>
-/// GitHub helper methods for use in queries.
+///     GitHub helper methods for use in queries.
 /// </summary>
 public class GitHubLibrary : LibraryBase
 {
     /// <summary>
-    /// Parses owner and repository name from a full repository name (owner/repo format).
+    ///     Parses owner and repository name from a full repository name (owner/repo format).
     /// </summary>
     /// <param name="fullName">The full repository name in owner/repo format.</param>
     /// <returns>A tuple containing the owner and repository name.</returns>
@@ -18,16 +18,16 @@ public class GitHubLibrary : LibraryBase
     {
         if (string.IsNullOrEmpty(fullName))
             return (string.Empty, string.Empty);
-        
+
         var parts = fullName.Split('/');
         if (parts.Length != 2)
             return (string.Empty, string.Empty);
-        
+
         return (parts[0], parts[1]);
     }
-    
+
     /// <summary>
-    /// Checks if a label list contains a specific label.
+    ///     Checks if a label list contains a specific label.
     /// </summary>
     /// <param name="labels">Comma-separated list of labels.</param>
     /// <param name="label">Label to search for.</param>
@@ -37,13 +37,13 @@ public class GitHubLibrary : LibraryBase
     {
         if (string.IsNullOrEmpty(labels))
             return false;
-        
+
         var labelList = labels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return labelList.Contains(label, StringComparer.OrdinalIgnoreCase);
     }
-    
+
     /// <summary>
-    /// Counts the number of labels.
+    ///     Counts the number of labels.
     /// </summary>
     /// <param name="labels">Comma-separated list of labels.</param>
     /// <returns>The number of labels.</returns>
@@ -52,12 +52,12 @@ public class GitHubLibrary : LibraryBase
     {
         if (string.IsNullOrEmpty(labels))
             return 0;
-        
+
         return labels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
     }
-    
+
     /// <summary>
-    /// Calculates the time between two dates in days.
+    ///     Calculates the time between two dates in days.
     /// </summary>
     /// <param name="start">Start date.</param>
     /// <param name="end">End date (optional, defaults to now).</param>
@@ -68,9 +68,9 @@ public class GitHubLibrary : LibraryBase
         var endDate = end ?? DateTimeOffset.UtcNow;
         return (endDate - start).TotalDays;
     }
-    
+
     /// <summary>
-    /// Calculates the age of an item in days since creation.
+    ///     Calculates the age of an item in days since creation.
     /// </summary>
     /// <param name="createdAt">Creation date.</param>
     /// <returns>Number of days since creation.</returns>
@@ -79,9 +79,9 @@ public class GitHubLibrary : LibraryBase
     {
         return (DateTimeOffset.UtcNow - createdAt).TotalDays;
     }
-    
+
     /// <summary>
-    /// Checks if an issue/PR is stale (not updated in specified days).
+    ///     Checks if an issue/PR is stale (not updated in specified days).
     /// </summary>
     /// <param name="updatedAt">Last update date.</param>
     /// <param name="staleDays">Number of days after which to consider stale.</param>
@@ -91,12 +91,12 @@ public class GitHubLibrary : LibraryBase
     {
         if (!updatedAt.HasValue)
             return false;
-        
+
         return (DateTimeOffset.UtcNow - updatedAt.Value).TotalDays > staleDays;
     }
-    
+
     /// <summary>
-    /// Gets a short version of a SHA hash.
+    ///     Gets a short version of a SHA hash.
     /// </summary>
     /// <param name="sha">Full SHA hash.</param>
     /// <param name="length">Desired length (default 7).</param>
@@ -106,7 +106,7 @@ public class GitHubLibrary : LibraryBase
     {
         if (string.IsNullOrEmpty(sha))
             return string.Empty;
-        
+
         return sha.Length > length ? sha[..length] : sha;
     }
 }

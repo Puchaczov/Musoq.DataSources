@@ -16,6 +16,6 @@ internal class ProjectsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => ProjectsSourceHelper.ProjectsColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(IJiraProject));
 }

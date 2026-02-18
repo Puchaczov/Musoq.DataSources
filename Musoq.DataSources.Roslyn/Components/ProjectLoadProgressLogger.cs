@@ -8,10 +8,10 @@ internal class ProjectLoadProgressLogger(ILogger logger) : IProgress<ProjectLoad
 {
     public void Report(ProjectLoadProgress value)
     {
-        logger.LogTrace("Project load progress: {filePath}, {operation}, {targetFramework}, {elapsedTime}", 
-            value.FilePath, 
-            value.Operation, 
-            value.TargetFramework, 
+        logger.LogTrace("Project load progress: {filePath}, {operation}, {targetFramework}, {elapsedTime}",
+            value.FilePath,
+            value.Operation,
+            value.TargetFramework,
             value.ElapsedTime);
     }
 }

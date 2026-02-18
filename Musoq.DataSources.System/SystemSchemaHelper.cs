@@ -1,24 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Musoq.DataSources.System
+namespace Musoq.DataSources.System;
+
+internal static class SystemSchemaHelper
 {
-    internal static class SystemSchemaHelper
+    public static readonly IReadOnlyDictionary<string, int> FlatNameToIndexMap;
+    public static readonly IReadOnlyDictionary<int, Func<DualEntity, object>> FlatIndexToMethodAccessMap;
+
+    static SystemSchemaHelper()
     {
-        public static readonly IReadOnlyDictionary<string, int> FlatNameToIndexMap;
-        public static readonly IReadOnlyDictionary<int, Func<DualEntity, object>> FlatIndexToMethodAccessMap;
-
-        static SystemSchemaHelper()
+        FlatNameToIndexMap = new Dictionary<string, int>
         {
-            FlatNameToIndexMap = new Dictionary<string, int>
-            {
-                {nameof(DualEntity.Dummy), 0}
-            };
+            { nameof(DualEntity.Dummy), 0 }
+        };
 
-            FlatIndexToMethodAccessMap = new Dictionary<int, Func<DualEntity, object>>
-            {
-                {0, info => info.Dummy}
-            };
-        }
+        FlatIndexToMethodAccessMap = new Dictionary<int, Func<DualEntity, object>>
+        {
+            { 0, info => info.Dummy }
+        };
     }
 }

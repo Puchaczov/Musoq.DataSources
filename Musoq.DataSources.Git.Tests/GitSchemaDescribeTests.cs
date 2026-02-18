@@ -1,8 +1,4 @@
-using System;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
@@ -13,6 +9,27 @@ namespace Musoq.DataSources.Git.Tests;
 [TestClass]
 public class GitSchemaDescribeTests
 {
+    static GitSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
+    private static string Repository1ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository1.zip");
+
+    private static string StartDirectory
+    {
+        get
+        {
+            var filePath = typeof(GitSchemaDescribeTests).Assembly.Location;
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Directory is empty.");
+
+            return directory;
+        }
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
@@ -20,11 +37,6 @@ public class GitSchemaDescribeTests
             Guid.NewGuid().ToString(),
             new GitSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static GitSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -38,23 +50,24 @@ public class GitSchemaDescribeTests
         Assert.IsTrue(table.Columns.Count() >= 2, "Should have at least 2 columns");
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
 
-        Assert.AreEqual(11, table.Count, "Should have 11 rows (repository, tags, commits, branches, filehistory x3, status, remotes, blame x2)");
+        Assert.AreEqual(11, table.Count,
+            "Should have 11 rows (repository, tags, commits, branches, filehistory x3, status, remotes, blame x2)");
 
         var repositoryRow = table.FirstOrDefault(r => (string)r[0] == "repository");
         Assert.IsNotNull(repositoryRow);
 
         var tagsRow = table.FirstOrDefault(r => (string)r[0] == "tags");
         Assert.IsNotNull(tagsRow);
-        
+
         var commitsRow = table.FirstOrDefault(r => (string)r[0] == "commits");
         Assert.IsNotNull(commitsRow);
-        
+
         var branchesRow = table.FirstOrDefault(r => (string)r[0] == "branches");
         Assert.IsNotNull(branchesRow);
-        
+
         var remotesRow = table.FirstOrDefault(r => (string)r[0] == "remotes");
         Assert.IsNotNull(remotesRow);
-        
+
         var blameRows = table.Where(r => ((string)r[0]).StartsWith("blame")).ToList();
         Assert.AreEqual(2, blameRows.Count, "Should have 2 blame method signatures");
     }
@@ -109,17 +122,12 @@ public class GitSchemaDescribeTests
             };
 
             foreach (var expectedColumn in expectedColumns)
-            {
                 Assert.IsTrue(columnNames.Contains(expectedColumn),
                     $"Should have '{expectedColumn}' column");
-            }
         }
         finally
         {
-            if (Directory.Exists(repositoryPath))
-            {
-                Directory.Delete(repositoryPath, true);
-            }
+            if (Directory.Exists(repositoryPath)) Directory.Delete(repositoryPath, true);
         }
     }
 
@@ -156,10 +164,8 @@ public class GitSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]
@@ -190,26 +196,7 @@ public class GitSchemaDescribeTests
         }
         finally
         {
-            if (Directory.Exists(repositoryPath))
-            {
-                Directory.Delete(repositoryPath, true);
-            }
-        }
-    }
-
-    private static string Repository1ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository1.zip");
-
-    private static string StartDirectory
-    {
-        get
-        {
-            var filePath = typeof(GitSchemaDescribeTests).Assembly.Location;
-            var directory = Path.GetDirectoryName(filePath);
-
-            if (string.IsNullOrEmpty(directory))
-                throw new InvalidOperationException("Directory is empty.");
-
-            return directory;
+            if (Directory.Exists(repositoryPath)) Directory.Delete(repositoryPath, true);
         }
     }
 

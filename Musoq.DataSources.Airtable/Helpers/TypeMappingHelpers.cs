@@ -7,7 +7,7 @@ namespace Musoq.DataSources.Airtable.Helpers;
 
 internal static class TypeMappingHelpers
 {
-    public static readonly IReadOnlyDictionary<AirtableType, Type> Mapping = new Dictionary<AirtableType, Type>()
+    public static readonly IReadOnlyDictionary<AirtableType, Type> Mapping = new Dictionary<AirtableType, Type>
     {
         { AirtableType.SingleLineText, typeof(string) },
         { AirtableType.Email, typeof(string) },
@@ -30,7 +30,7 @@ internal static class TypeMappingHelpers
         { AirtableType.Rollup, typeof(object) }, // depends on the result of the rollup
         { AirtableType.Count, typeof(int) },
         { AirtableType.Lookup, typeof(object) }, // typically a List of a certain type
-        { AirtableType.MultipleAttachments, typeof(List<ExpandoObject>)},
+        { AirtableType.MultipleAttachments, typeof(List<ExpandoObject>) },
         { AirtableType.MultipleLookupValues, typeof(List<ExpandoObject>) }, // depends on the lookup value type
         { AirtableType.AutoNumber, typeof(int) },
         { AirtableType.Barcode, typeof(string) },
@@ -41,7 +41,7 @@ internal static class TypeMappingHelpers
         { AirtableType.Button, typeof(object) }, // depends on the usage
         { AirtableType.CreatedBy, typeof(string) },
         { AirtableType.LastModifiedBy, typeof(string) },
-        { AirtableType.ExternalSyncSource, typeof(object) }, // depends on the external source
+        { AirtableType.ExternalSyncSource, typeof(object) } // depends on the external source
     };
 
     public static void MapFromJsonElement(IDictionary<string, object> fields, string key, JsonElement element)

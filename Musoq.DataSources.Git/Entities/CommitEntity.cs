@@ -8,37 +8,22 @@ using Musoq.Schema.DataSources;
 namespace Musoq.DataSources.Git.Entities;
 
 /// <summary>
-/// Represents a Git commit entity.
+///     Represents a Git commit entity.
 /// </summary>
 public class CommitEntity
 {
-    private readonly Commit? _commit;
-    
-    internal readonly Repository LibGitRepository;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="CommitEntity"/> class.
-    /// </summary>
-    /// <param name="commit">The LibGit2Sharp commit object.</param>
-    /// <param name="repository">The repository the commit belongs to.</param>
-    public CommitEntity(Commit? commit, Repository repository)
-    {
-        _commit = commit;
-        LibGitRepository = repository;
-    }
-
-    /// <summary>
-    /// A read-only dictionary mapping column names to their respective indices.
+    ///     A read-only dictionary mapping column names to their respective indices.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>
-    /// A read-only dictionary mapping column indices to functions that access the corresponding properties.
+    ///     A read-only dictionary mapping column indices to functions that access the corresponding properties.
     /// </summary>
     public static readonly IReadOnlyDictionary<int, Func<CommitEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>
-    /// An array of schema columns representing the structure of the commit entity.
+    ///     An array of schema columns representing the structure of the commit entity.
     /// </summary>
     public static readonly ISchemaColumn[] Columns =
     [
@@ -54,92 +39,106 @@ public class CommitEntity
         new SchemaColumn(nameof(Self), 9, typeof(CommitEntity))
     ];
 
+    internal readonly Repository LibGitRepository;
+
     /// <summary>
-    /// Static constructor to initialize the static read-only dictionaries.
+    ///     Static constructor to initialize the static read-only dictionaries.
     /// </summary>
     static CommitEntity()
     {
         NameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(Sha), 0},
-            {nameof(Message), 1},
-            {nameof(MessageShort), 2},
-            {nameof(Author), 3},
-            {nameof(AuthorEmail), 4},
-            {nameof(Committer), 5},
-            {nameof(CommitterEmail), 6},
-            {nameof(CommittedWhen), 7},
-            {nameof(Parents), 8},
-            {nameof(Self), 9}
+            { nameof(Sha), 0 },
+            { nameof(Message), 1 },
+            { nameof(MessageShort), 2 },
+            { nameof(Author), 3 },
+            { nameof(AuthorEmail), 4 },
+            { nameof(Committer), 5 },
+            { nameof(CommitterEmail), 6 },
+            { nameof(CommittedWhen), 7 },
+            { nameof(Parents), 8 },
+            { nameof(Self), 9 }
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<CommitEntity, object?>>
         {
-            {0, entity => entity.Sha},
-            {1, entity => entity.Message},
-            {2, entity => entity.MessageShort},
-            {3, entity => entity.Author},
-            {4, entity => entity.AuthorEmail},
-            {5, entity => entity.Committer},
-            {6, entity => entity.CommitterEmail},
-            {7, entity => entity.CommittedWhen},
-            {8, entity => entity.Parents},
-            {9, entity => entity.Self}
+            { 0, entity => entity.Sha },
+            { 1, entity => entity.Message },
+            { 2, entity => entity.MessageShort },
+            { 3, entity => entity.Author },
+            { 4, entity => entity.AuthorEmail },
+            { 5, entity => entity.Committer },
+            { 6, entity => entity.CommitterEmail },
+            { 7, entity => entity.CommittedWhen },
+            { 8, entity => entity.Parents },
+            { 9, entity => entity.Self }
         };
     }
 
     /// <summary>
-    /// Gets the SHA hash of the commit.
+    ///     Initializes a new instance of the <see cref="CommitEntity" /> class.
     /// </summary>
-    public string? Sha => _commit?.Sha;
+    /// <param name="commit">The LibGit2Sharp commit object.</param>
+    /// <param name="repository">The repository the commit belongs to.</param>
+    public CommitEntity(Commit? commit, Repository repository)
+    {
+        LibGitCommit = commit;
+        LibGitRepository = repository;
+    }
 
     /// <summary>
-    /// Gets the full commit message.
+    ///     Gets the SHA hash of the commit.
     /// </summary>
-    public string? Message => _commit?.Message;
+    public string? Sha => LibGitCommit?.Sha;
 
     /// <summary>
-    /// Gets the short commit message.
+    ///     Gets the full commit message.
     /// </summary>
-    public string? MessageShort => _commit?.MessageShort;
+    public string? Message => LibGitCommit?.Message;
 
     /// <summary>
-    /// Gets the name of the author of the commit.
+    ///     Gets the short commit message.
     /// </summary>
-    public string? Author => _commit?.Author?.Name;
-    
-    /// <summary>
-    /// Gets the email of the author of the commit.
-    /// </summary>
-    public string? AuthorEmail => _commit?.Author?.Email;
+    public string? MessageShort => LibGitCommit?.MessageShort;
 
     /// <summary>
-    /// Gets the name of the committer of the commit.
+    ///     Gets the name of the author of the commit.
     /// </summary>
-    public string? Committer => _commit?.Committer?.Name;
+    public string? Author => LibGitCommit?.Author?.Name;
 
     /// <summary>
-    /// Gets the email of the committer.
+    ///     Gets the email of the author of the commit.
     /// </summary>
-    public string? CommitterEmail => _commit?.Committer?.Email;
+    public string? AuthorEmail => LibGitCommit?.Author?.Email;
 
     /// <summary>
-    /// Gets the date and time when the commit was made.
+    ///     Gets the name of the committer of the commit.
     /// </summary>
-    public DateTimeOffset? CommittedWhen => _commit?.Committer?.When;
-    
+    public string? Committer => LibGitCommit?.Committer?.Name;
+
     /// <summary>
-    /// Gets the parent commits of this commit.
+    ///     Gets the email of the committer.
     /// </summary>
-    public IEnumerable<CommitEntity> Parents => _commit?.Parents?.Select(p => new CommitEntity(p, LibGitRepository)) ?? Enumerable.Empty<CommitEntity>();
-    
+    public string? CommitterEmail => LibGitCommit?.Committer?.Email;
+
     /// <summary>
-    /// Gets the commit itself.
+    ///     Gets the date and time when the commit was made.
+    /// </summary>
+    public DateTimeOffset? CommittedWhen => LibGitCommit?.Committer?.When;
+
+    /// <summary>
+    ///     Gets the parent commits of this commit.
+    /// </summary>
+    public IEnumerable<CommitEntity> Parents =>
+        LibGitCommit?.Parents?.Select(p => new CommitEntity(p, LibGitRepository)) ?? Enumerable.Empty<CommitEntity>();
+
+    /// <summary>
+    ///     Gets the commit itself.
     /// </summary>
     public CommitEntity Self => this;
 
     /// <summary>
-    /// Gets the underlying LibGit2Sharp commit object.
+    ///     Gets the underlying LibGit2Sharp commit object.
     /// </summary>
-    internal Commit? LibGitCommit => _commit;
+    internal Commit? LibGitCommit { get; }
 }

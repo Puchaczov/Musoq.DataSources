@@ -13,10 +13,10 @@ namespace Musoq.DataSources.Git;
 
 internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
 {
-    private readonly string _repositoryPath;
-    private readonly string _filePath;
-    private readonly string _revision;
     private readonly Func<string, Repository> _createRepository;
+    private readonly string _filePath;
+    private readonly string _repositoryPath;
+    private readonly string _revision;
 
     public BlameRowsSource(
         string repositoryPath,
@@ -37,32 +37,24 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
         CancellationToken cancellationToken)
     {
         if (!Directory.Exists(_repositoryPath))
-        {
             throw new DirectoryNotFoundException($"Repository path '{_repositoryPath}' does not exist");
-        }
 
         var repository = _createRepository(_repositoryPath);
-        
+
         Commit? commit = null;
-        
+
         try
         {
             var gitObject = repository.Lookup(_revision);
-            
+
             if (gitObject == null)
-            {
                 throw new ArgumentException($"Invalid revision '{_revision}': not found", "revision");
-            }
-            
+
             var peeledCommit = gitObject.Peel<Commit>();
             if (peeledCommit != null)
-            {
                 commit = peeledCommit;
-            }
             else
-            {
                 throw new ArgumentException($"Invalid revision '{_revision}': does not point to a commit", "revision");
-            }
         }
         catch (Exception ex) when (ex is not ArgumentException)
         {
@@ -71,17 +63,12 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
 
         var treeEntry = commit[_filePath];
         if (treeEntry == null)
-        {
             throw new FileNotFoundException($"File '{_filePath}' does not exist at revision '{_revision}'");
-        }
 
         if (treeEntry.TargetType == TreeEntryTargetType.Blob)
         {
             var blob = (Blob)treeEntry.Target;
-            if (blob.IsBinary)
-            {
-                return Task.CompletedTask;
-            }
+            if (blob.IsBinary) return Task.CompletedTask;
         }
 
         BlameHunkCollection blameHunks;
@@ -115,10 +102,7 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
             }
         }
 
-        if (chunk.Count > 0)
-        {
-            chunkedSource.Add(chunk.ToArray(), cancellationToken);
-        }
+        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
 
         return Task.CompletedTask;
     }

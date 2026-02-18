@@ -13,7 +13,8 @@ internal class EventsSource : RowSourceBase<DeploymentEntity>
     private readonly Func<IKubernetesApi, Corev1EventList> _retrieve;
     private readonly RuntimeContext _runtimeContext;
 
-    public EventsSource(IKubernetesApi client, Func<IKubernetesApi, Corev1EventList> retrieve, RuntimeContext runtimeContext)
+    public EventsSource(IKubernetesApi client, Func<IKubernetesApi, Corev1EventList> retrieve,
+        RuntimeContext runtimeContext)
     {
         _client = client;
         _retrieve = retrieve;
@@ -23,16 +24,17 @@ internal class EventsSource : RowSourceBase<DeploymentEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(EventsSourceName);
-        
+
         try
         {
             var eventsList = _retrieve(_client);
             _runtimeContext.ReportDataSourceRowsKnown(EventsSourceName, eventsList.Items.Count);
-        
+
             chunkedSource.Add(
-                eventsList.Items.Select(c => 
-                    new EntityResolver<EventEntity>(MapV1EventToEventEntity(c), EventsSourceHelper.EventsNameToIndexMap, EventsSourceHelper.EventsIndexToMethodAccessMap)).ToList());
-            
+                eventsList.Items.Select(c =>
+                    new EntityResolver<EventEntity>(MapV1EventToEventEntity(c), EventsSourceHelper.EventsNameToIndexMap,
+                        EventsSourceHelper.EventsIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(EventsSourceName, eventsList.Items.Count);
         }
         catch

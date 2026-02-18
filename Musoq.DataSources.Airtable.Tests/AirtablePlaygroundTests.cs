@@ -11,16 +11,21 @@ namespace Musoq.DataSources.Airtable.Tests;
 [TestClass]
 public class AirtablePlaygroundTests
 {
+    static AirtablePlaygroundTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void BasesPlaygroundDesc_ShouldBeIgnored()
     {
         const string query = "desc #airtable.bases()";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void BasesPlaygroundFields_ShouldBeIgnored()
     {
@@ -35,12 +40,12 @@ public class AirtablePlaygroundTests
     public void BasePlaygroundDesc_ShouldBeIgnored()
     {
         const string query = "desc #airtable.base()";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void BasePlaygroundFields_ShouldBeIgnored()
     {
@@ -60,11 +65,12 @@ public class AirtablePlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void TablePlaygroundFields_ShouldBeIgnored()
     {
-        const string query = "select Name, SingleLineText, LongText, Checkbox, Currency, Percent, Email, Date from #airtable.records('Testy')";
+        const string query =
+            "select Name, SingleLineText, LongText, Checkbox, Currency, Percent, Email, Date from #airtable.records('Testy')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -74,21 +80,26 @@ public class AirtablePlaygroundTests
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
-            new PlaygroundSchemaProvider(), 
-            new Dictionary<uint, IReadOnlyDictionary<string, string>>()
+            script,
+            Guid.NewGuid().ToString(),
+            new PlaygroundSchemaProvider(),
+            new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
-                {0, new Dictionary<string, string>
                 {
-                    {"MUSOQ_AIRTABLE_API_KEY", System.Environment.GetEnvironmentVariable("AIRTABLE_API_KEY") ?? throw new InvalidOperationException()},
-                    {"MUSOQ_AIRTABLE_BASE_ID", System.Environment.GetEnvironmentVariable("AIRTABLE_BASE_ID") ?? throw new InvalidOperationException()}
-                }}
+                    0, new Dictionary<string, string>
+                    {
+                        {
+                            "MUSOQ_AIRTABLE_API_KEY",
+                            Environment.GetEnvironmentVariable("AIRTABLE_API_KEY") ??
+                            throw new InvalidOperationException()
+                        },
+                        {
+                            "MUSOQ_AIRTABLE_BASE_ID",
+                            Environment.GetEnvironmentVariable("AIRTABLE_BASE_ID") ??
+                            throw new InvalidOperationException()
+                        }
+                    }
+                }
             });
-    }
-
-    static AirtablePlaygroundTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

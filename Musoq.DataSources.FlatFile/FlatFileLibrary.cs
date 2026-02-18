@@ -1,11 +1,10 @@
 ﻿using Musoq.Plugins;
 
-namespace Musoq.DataSources.FlatFile
+namespace Musoq.DataSources.FlatFile;
+
+/// <summary>
+///     Flat file helper methods
+/// </summary>
+public class FlatFileLibrary : LibraryBase
 {
-    /// <summary>
-    /// Flat file helper methods
-    /// </summary>
-    public class FlatFileLibrary : LibraryBase
-    {
-    }
 }

@@ -7,17 +7,10 @@ using Musoq.Schema.DataSources;
 namespace Musoq.DataSources.Git.Entities;
 
 /// <summary>
-/// Represents the status of a file in the working directory.
+///     Represents the status of a file in the working directory.
 /// </summary>
 public class StatusEntity
 {
-    private readonly StatusEntry _entry;
-
-    public StatusEntity(StatusEntry entry)
-    {
-        _entry = entry;
-    }
-
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
     public static readonly IReadOnlyDictionary<int, Func<StatusEntity, object?>> IndexToObjectAccessMap;
 
@@ -29,27 +22,48 @@ public class StatusEntity
         new SchemaColumn(nameof(WorkDirStatus), 3, typeof(string))
     ];
 
+    private readonly StatusEntry _entry;
+
     static StatusEntity()
     {
         NameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(FilePath), 0},
-            {nameof(State), 1},
-            {nameof(IndexStatus), 2},
-            {nameof(WorkDirStatus), 3}
+            { nameof(FilePath), 0 },
+            { nameof(State), 1 },
+            { nameof(IndexStatus), 2 },
+            { nameof(WorkDirStatus), 3 }
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<StatusEntity, object?>>
         {
-            {0, entity => entity.FilePath},
-            {1, entity => entity.State},
-            {2, entity => entity.IndexStatus},
-            {3, entity => entity.WorkDirStatus}
+            { 0, entity => entity.FilePath },
+            { 1, entity => entity.State },
+            { 2, entity => entity.IndexStatus },
+            { 3, entity => entity.WorkDirStatus }
         };
+    }
+
+    public StatusEntity(StatusEntry entry)
+    {
+        _entry = entry;
     }
 
     public string FilePath => _entry.FilePath;
     public string State => _entry.State.ToString();
-    public string IndexStatus => _entry.State.HasFlag(FileStatus.NewInIndex) || _entry.State.HasFlag(FileStatus.ModifiedInIndex) || _entry.State.HasFlag(FileStatus.DeletedFromIndex) || _entry.State.HasFlag(FileStatus.RenamedInIndex) || _entry.State.HasFlag(FileStatus.TypeChangeInIndex) ? "Staged" : "NotStaged";
-    public string WorkDirStatus => _entry.State.HasFlag(FileStatus.NewInWorkdir) || _entry.State.HasFlag(FileStatus.ModifiedInWorkdir) || _entry.State.HasFlag(FileStatus.DeletedFromWorkdir) || _entry.State.HasFlag(FileStatus.RenamedInWorkdir) || _entry.State.HasFlag(FileStatus.TypeChangeInWorkdir) ? "Modified" : "Unmodified";
+
+    public string IndexStatus => _entry.State.HasFlag(FileStatus.NewInIndex) ||
+                                 _entry.State.HasFlag(FileStatus.ModifiedInIndex) ||
+                                 _entry.State.HasFlag(FileStatus.DeletedFromIndex) ||
+                                 _entry.State.HasFlag(FileStatus.RenamedInIndex) ||
+                                 _entry.State.HasFlag(FileStatus.TypeChangeInIndex)
+        ? "Staged"
+        : "NotStaged";
+
+    public string WorkDirStatus => _entry.State.HasFlag(FileStatus.NewInWorkdir) ||
+                                   _entry.State.HasFlag(FileStatus.ModifiedInWorkdir) ||
+                                   _entry.State.HasFlag(FileStatus.DeletedFromWorkdir) ||
+                                   _entry.State.HasFlag(FileStatus.RenamedInWorkdir) ||
+                                   _entry.State.HasFlag(FileStatus.TypeChangeInWorkdir)
+        ? "Modified"
+        : "Unmodified";
 }

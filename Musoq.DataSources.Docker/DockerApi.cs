@@ -30,7 +30,7 @@ internal class DockerApi : IDockerApi
     public async Task<IList<VolumeResponse>> ListVolumesAsync()
     {
         var volumes = await _client.Volumes.ListAsync();
-        
+
         return volumes.Volumes;
     }
 }

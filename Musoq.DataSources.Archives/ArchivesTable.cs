@@ -30,7 +30,7 @@ internal class ArchivesTable : ISchemaTable
     ];
 
     public SchemaTableMetadata Metadata { get; } = new(typeof(EntryWrapper));
-    
+
     public ISchemaColumn GetColumnByName(string name)
     {
         return Columns.FirstOrDefault(column => column.ColumnName == name);

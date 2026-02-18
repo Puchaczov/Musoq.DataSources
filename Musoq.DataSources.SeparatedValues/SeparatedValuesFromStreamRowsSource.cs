@@ -13,22 +13,24 @@ using IObjectResolver = Musoq.Schema.DataSources.IObjectResolver;
 
 namespace Musoq.DataSources.SeparatedValues;
 
-internal class SeparatedValuesFromStreamRowsSource(Stream stream, string separator, bool hasHeader, int skipLines, RuntimeContext runtimeContext) : RowSource
-{   
+internal class SeparatedValuesFromStreamRowsSource(
+    Stream stream,
+    string separator,
+    bool hasHeader,
+    int skipLines,
+    RuntimeContext runtimeContext) : RowSource
+{
     private readonly CultureInfo _modifiedCulture = new(CultureInfo.CurrentCulture.Name)
     {
         TextInfo = { ListSeparator = separator }
     };
-    
+
     public override IEnumerable<IObjectResolver> Rows
     {
         get
         {
-            if (runtimeContext is null)
-            {
-                throw new InvalidOperationException("Runtime context is not set.");
-            }
-            
+            if (runtimeContext is null) throw new InvalidOperationException("Runtime context is not set.");
+
             var types = runtimeContext.AllColumns.ToDictionary(
                 col => col.ColumnName,
                 col => col.ColumnType.GetUnderlyingNullable());
@@ -44,26 +46,23 @@ internal class SeparatedValuesFromStreamRowsSource(Stream stream, string separat
                 col => col.ColumnName);
 
             using var reader = new StreamReader(stream, Encoding.UTF8, true, 1024);
-            
+
             SkipLines(reader, hasHeader ? skipLines + 1 : skipLines);
-            
+
             using var csvReader = new CsvReader(reader, new CsvConfiguration(_modifiedCulture));
 
             while (csvReader.Read())
             {
-                if (runtimeContext.EndWorkToken.IsCancellationRequested)
-                {
-                    yield break;
-                }
+                if (runtimeContext.EndWorkToken.IsCancellationRequested) yield break;
 
                 var rawRow = csvReader.Context.Parser!.Record;
-                
+
                 if (rawRow is null)
                     continue;
 
                 var row = new EntityResolver<object?[]>(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap),
                     nameToIndexMap, indexToMethodAccessMap);
-                
+
                 yield return row;
             }
         }
@@ -71,9 +70,6 @@ internal class SeparatedValuesFromStreamRowsSource(Stream stream, string separat
 
     private static void SkipLines(TextReader reader, int linesToSkip)
     {
-        for (var i = 0; i < linesToSkip; i++)
-        {
-            reader.ReadLine();
-        }
+        for (var i = 0; i < linesToSkip; i++) reader.ReadLine();
     }
 }

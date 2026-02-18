@@ -11,14 +11,14 @@ using Musoq.Plugins.Attributes;
 namespace Musoq.DataSources.CANBus.Messages;
 
 /// <summary>
-/// Represents a single CAN message.
+///     Represents a single CAN message.
 /// </summary>
 public class MessageEntity : ICANDbcMessage
 {
     private SignalEntity[]? _signals;
-    
+
     /// <summary>
-    /// Creates a new instance of <see cref="MessageEntity"/>.
+    ///     Creates a new instance of <see cref="MessageEntity" />.
     /// </summary>
     /// <param name="message">The message.</param>
     public MessageEntity(Message message)
@@ -27,48 +27,49 @@ public class MessageEntity : ICANDbcMessage
     }
 
     /// <summary>
-    /// Gets the message.
-    /// </summary>
-    public Message Message { get; }
-    
-    /// <summary>
-    /// Gets the can message id.
+    ///     Gets the can message id.
     /// </summary>
     public uint Id => Message.ID;
-    
+
     /// <summary>
-    /// Determine whether the can message is extended.
+    ///     Determine whether the can message is extended.
     /// </summary>
     public bool IsExtId => Message.IsExtID;
-    
+
     /// <summary>
-    /// Gets the can message name.
+    ///     Gets the can message name.
     /// </summary>
     public string Name => Message.Name;
-    
+
     /// <summary>
-    /// Gets the can message data length code.
+    ///     Gets the can message data length code.
     /// </summary>
     public ushort DLC => Message.DLC;
-    
+
     /// <summary>
-    /// Gets the can message transmitter.
+    ///     Gets the can message transmitter.
     /// </summary>
     public string Transmitter => Message.Transmitter;
-    
+
     /// <summary>
-    /// Gets the can message comment.
+    ///     Gets the can message comment.
     /// </summary>
     public string Comment => Message.Comment;
 
     /// <summary>
-    /// Gets the can message cycle time.
+    ///     Gets the can message cycle time.
     /// </summary>
     public int CycleTime => Message.CycleTime(out var cycleTime) ? cycleTime : 0;
 
     /// <summary>
-    /// Gets the can message signals.
+    ///     Gets the can message signals.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<SignalEntity> Signals => _signals ??= Message.Signals.Select((f, i) => new SignalEntity(f, Message, i)).ToArray();
+    public IEnumerable<SignalEntity> Signals =>
+        _signals ??= Message.Signals.Select((f, i) => new SignalEntity(f, Message, i)).ToArray();
+
+    /// <summary>
+    ///     Gets the message.
+    /// </summary>
+    public Message Message { get; }
 }

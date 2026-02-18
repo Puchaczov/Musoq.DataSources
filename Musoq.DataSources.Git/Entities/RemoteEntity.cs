@@ -7,17 +7,10 @@ using Musoq.Schema.DataSources;
 namespace Musoq.DataSources.Git.Entities;
 
 /// <summary>
-/// Represents a Git remote.
+///     Represents a Git remote.
 /// </summary>
 public class RemoteEntity
 {
-    private readonly Remote _remote;
-
-    public RemoteEntity(Remote remote)
-    {
-        _remote = remote;
-    }
-
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
     public static readonly IReadOnlyDictionary<int, Func<RemoteEntity, object?>> IndexToObjectAccessMap;
 
@@ -28,21 +21,28 @@ public class RemoteEntity
         new SchemaColumn(nameof(PushUrl), 2, typeof(string))
     ];
 
+    private readonly Remote _remote;
+
     static RemoteEntity()
     {
         NameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(Name), 0},
-            {nameof(Url), 1},
-            {nameof(PushUrl), 2}
+            { nameof(Name), 0 },
+            { nameof(Url), 1 },
+            { nameof(PushUrl), 2 }
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<RemoteEntity, object?>>
         {
-            {0, entity => entity.Name},
-            {1, entity => entity.Url},
-            {2, entity => entity.PushUrl}
+            { 0, entity => entity.Name },
+            { 1, entity => entity.Url },
+            { 2, entity => entity.PushUrl }
         };
+    }
+
+    public RemoteEntity(Remote remote)
+    {
+        _remote = remote;
     }
 
     public string Name => _remote.Name;

@@ -10,7 +10,7 @@ internal class OrVersionRange(VersionRange left, VersionRange right) : VersionRa
     {
         var leftResolved = left.ResolveVersions(availableVersions);
         var rightResolved = right.ResolveVersions(availableVersions);
-        
+
         return leftResolved.Union(rightResolved);
     }
 }

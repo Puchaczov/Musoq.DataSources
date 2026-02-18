@@ -1,16 +1,20 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.DataSources.Tests.Common;
-using Musoq.Evaluator;
-using Musoq.Plugins;
 using System;
 using System.IO;
 using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Musoq.DataSources.Tests.Common;
+using Musoq.Evaluator;
 
 namespace Musoq.DataSources.FlatFile.Tests;
 
 [TestClass]
 public class FlatFileSchemaDescribeTests
 {
+    static FlatFileSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
@@ -18,11 +22,6 @@ public class FlatFileSchemaDescribeTests
             Guid.NewGuid().ToString(),
             new FlatFileSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static FlatFileSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -90,10 +89,8 @@ public class FlatFileSchemaDescribeTests
             };
 
             foreach (var expectedColumn in expectedColumns)
-            {
                 Assert.IsTrue(columnNames.Contains(expectedColumn),
                     $"Should have '{expectedColumn}' column");
-            }
         }
         finally
         {
@@ -135,10 +132,8 @@ public class FlatFileSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

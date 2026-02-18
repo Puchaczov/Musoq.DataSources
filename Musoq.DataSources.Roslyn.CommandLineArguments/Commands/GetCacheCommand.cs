@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
-using Spectre.Console.Cli;
-using Musoq.DataSources.Roslyn.CommandLineArguments.Settings;
 using Musoq.DataSources.Roslyn.CommandLineArguments.Dtos;
+using Musoq.DataSources.Roslyn.CommandLineArguments.Settings;
+using Spectre.Console.Cli;
 
 namespace Musoq.DataSources.Roslyn.CommandLineArguments.Commands;
 

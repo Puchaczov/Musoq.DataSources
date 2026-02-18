@@ -8,7 +8,6 @@ internal class ExactVersionRange(string version) : VersionRange
 {
     public override IEnumerable<string> ResolveVersions(IEnumerable<string> availableVersions)
     {
-        // Return just the exact version if it's available
         return availableVersions.Where(v => v == version);
     }
 }

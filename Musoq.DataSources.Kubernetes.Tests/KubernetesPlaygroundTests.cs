@@ -11,6 +11,11 @@ namespace Musoq.DataSources.Kubernetes.Tests;
 [TestClass]
 public class KubernetesPlaygroundTests
 {
+    static KubernetesPlaygroundTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void DeploymentsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -20,7 +25,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void DeploymentsPlayground_ShouldBeIgnored()
     {
@@ -30,7 +35,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PodsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -40,7 +45,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PodsPlayground_ShouldBeIgnored()
     {
@@ -50,7 +55,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ServicesPlaygroundDesc_ShouldBeIgnored()
     {
@@ -60,7 +65,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ServicesPlayground_ShouldBeIgnored()
     {
@@ -70,7 +75,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void SecretsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -80,7 +85,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void SecretsPlayground_ShouldBeIgnored()
     {
@@ -90,7 +95,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ConfigMapsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -100,7 +105,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ConfigMapsPlayground_ShouldBeIgnored()
     {
@@ -110,7 +115,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void IngressesPlaygroundDesc_ShouldBeIgnored()
     {
@@ -120,7 +125,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void IngressesPlayground_ShouldBeIgnored()
     {
@@ -130,7 +135,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PersistentVolumesPlaygroundDesc_ShouldBeIgnored()
     {
@@ -140,7 +145,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PersistentVolumesPlayground_ShouldBeIgnored()
     {
@@ -150,7 +155,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PersistentVolumeClaimsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -160,7 +165,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PersistentVolumeClaimsPlayground_ShouldBeIgnored()
     {
@@ -170,7 +175,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void JobsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -180,7 +185,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void JobsPlayground_ShouldBeIgnored()
     {
@@ -190,7 +195,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void CronJobsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -200,7 +205,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void CronJobsPlayground_ShouldBeIgnored()
     {
@@ -210,7 +215,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ReplicaSetsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -220,7 +225,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void ReplicaSetsPlayground_ShouldBeIgnored()
     {
@@ -230,7 +235,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void DaemonSetsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -240,7 +245,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void DaemonSetsPlayground_ShouldBeIgnored()
     {
@@ -250,7 +255,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void StatefulSetsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -260,7 +265,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void StatefulSetsPlayground_ShouldBeIgnored()
     {
@@ -280,7 +285,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void NodesPlayground_ShouldBeIgnored()
     {
@@ -290,7 +295,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PodContainersPlaygroundDesc_ShouldBeIgnored()
     {
@@ -300,7 +305,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PodContainersPlayground_ShouldBeIgnored()
     {
@@ -310,7 +315,7 @@ public class KubernetesPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void DeploymentPodsAndContainersJoined_ShouldBeIgnored()
     {
@@ -329,7 +334,7 @@ from #kubernetes.deployments() deployments
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void DeploymentPodsAndContainersJoinedWithWhere_ShouldBeIgnored()
     {
@@ -342,12 +347,12 @@ from #kubernetes.deployments() deployments
     inner join #kubernetes.pods() pods on deployments.Name = pods.GetLabelOrDefault('name') 
     inner join #kubernetes.podcontainers() containers on pods.GetLabelOrDefault('name') = containers.GetLabelOrDefault('name')
     where deployments.Namespace = 'musoq' and containers.SecurityContext is not null";
-        
+
         var vm = CreateAndRunVirtualMachineWithResponse(query);
-        
+
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PodLogsPlaygroundDesc_ShouldBeIgnored()
     {
@@ -357,23 +362,24 @@ from #kubernetes.deployments() deployments
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void PodLogsPlayground_ShouldBeIgnored()
     {
-        const string query = "select Name, ContainerName, Namespace from #kubernetes.podcontainers() where Namespace = 'musoq' and ContainerName = 'rabbitmq'";
+        const string query =
+            "select Name, ContainerName, Namespace from #kubernetes.podcontainers() where Namespace = 'musoq' and ContainerName = 'rabbitmq'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
         var table = vm.Run();
-        
+
         var query2 = $"select * from #kubernetes.podlogs('{table[0][0]}', '{table[0][1]}', '{table[0][2]}')";
-        
+
         var vm2 = CreateAndRunVirtualMachineWithResponse(query2);
-        
+
         var table2 = vm2.Run();
     }
-    
+
     [TestMethod]
     public void EventsPlayground_ShouldBeIgnored()
     {
@@ -383,7 +389,7 @@ from #kubernetes.deployments() deployments
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void EventsNamespacedPlayground_ShouldBeIgnored()
     {
@@ -397,19 +403,14 @@ from #kubernetes.deployments() deployments
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
-            new PlaygroundSchemaProvider(), 
+            script,
+            Guid.NewGuid().ToString(),
+            new PlaygroundSchemaProvider(),
             new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
-                {0, new Dictionary<string, string>()},
-                {1, new Dictionary<string, string>()},
-                {2, new Dictionary<string, string>()}
+                { 0, new Dictionary<string, string>() },
+                { 1, new Dictionary<string, string>() },
+                { 2, new Dictionary<string, string>() }
             });
-    }
-
-    static KubernetesPlaygroundTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

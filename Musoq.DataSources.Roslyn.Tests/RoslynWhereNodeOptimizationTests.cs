@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Tests.Components;
@@ -16,6 +11,28 @@ namespace Musoq.DataSources.Roslyn.Tests;
 [TestClass]
 public class RoslynWhereNodeOptimizationTests
 {
+    static RoslynWhereNodeOptimizationTests()
+    {
+        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
+    }
+
+    private static string Solution1SolutionPath =>
+        Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
+
+    private static string StartDirectory
+    {
+        get
+        {
+            var filePath = typeof(RoslynWhereNodeOptimizationTests).Assembly.Location;
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Directory is empty.");
+
+            return directory;
+        }
+    }
+
     [TestMethod]
     public void WhenProjectsFilteredByAssemblyName_ShouldReturnMatchingProject()
     {
@@ -28,7 +45,8 @@ public class RoslynWhereNodeOptimizationTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.AreEqual(1, result.Count, "Exactly one project with AssemblyName = 'Solution1.ClassLibrary1' should be returned");
+        Assert.AreEqual(1, result.Count,
+            "Exactly one project with AssemblyName = 'Solution1.ClassLibrary1' should be returned");
         Assert.AreEqual("Solution1.ClassLibrary1", result[0][0]?.ToString());
         Assert.AreEqual("C#", result[0][1]?.ToString());
     }
@@ -47,8 +65,10 @@ public class RoslynWhereNodeOptimizationTests
 
         Assert.AreEqual(2, result.Count, "Both projects in Solution1 are C# and should be returned");
         Assert.IsTrue(result.All(r => r[1]?.ToString() == "C#"), "All returned projects should have Language = C#");
-        Assert.IsTrue(result.Any(r => r[0]?.ToString() == "Solution1.ClassLibrary1"), "Solution1.ClassLibrary1 should be in results");
-        Assert.IsTrue(result.Any(r => r[0]?.ToString() == "Solution1.ClassLibrary1.Tests"), "Solution1.ClassLibrary1.Tests should be in results");
+        Assert.IsTrue(result.Any(r => r[0]?.ToString() == "Solution1.ClassLibrary1"),
+            "Solution1.ClassLibrary1 should be in results");
+        Assert.IsTrue(result.Any(r => r[0]?.ToString() == "Solution1.ClassLibrary1.Tests"),
+            "Solution1.ClassLibrary1.Tests should be in results");
     }
 
     [TestMethod]
@@ -78,14 +98,10 @@ public class RoslynWhereNodeOptimizationTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.AreEqual(1, result.Count, "Exactly one project named 'Solution1.ClassLibrary1.Tests' should be returned");
+        Assert.AreEqual(1, result.Count,
+            "Exactly one project named 'Solution1.ClassLibrary1.Tests' should be returned");
         Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[0][0]?.ToString());
         Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[0][1]?.ToString());
-    }
-
-    static RoslynWhereNodeOptimizationTests()
-    {
-        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 
     private CompiledQuery CompileQuery(string script)
@@ -100,21 +116,5 @@ public class RoslynWhereNodeOptimizationTests
                     { "MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists" },
                     { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
                 }));
-    }
-
-    private static string Solution1SolutionPath => Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
-
-    private static string StartDirectory
-    {
-        get
-        {
-            var filePath = typeof(RoslynWhereNodeOptimizationTests).Assembly.Location;
-            var directory = Path.GetDirectoryName(filePath);
-
-            if (string.IsNullOrEmpty(directory))
-                throw new InvalidOperationException("Directory is empty.");
-
-            return directory;
-        }
     }
 }

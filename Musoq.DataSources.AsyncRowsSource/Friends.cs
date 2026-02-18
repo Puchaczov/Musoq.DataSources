@@ -1,3 +1,3 @@
 using System.Runtime.CompilerServices;
 
-[assembly:InternalsVisibleTo("Musoq.DataSources.AsyncRowsSource.Tests")]
+[assembly: InternalsVisibleTo("Musoq.DataSources.AsyncRowsSource.Tests")]

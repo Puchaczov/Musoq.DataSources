@@ -16,38 +16,38 @@ internal static class SchemaDirectoriesHelper
     {
         DirectoriesNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(DirectoryInfo.FullName), 0},
-            {nameof(DirectoryInfo.Attributes), 1},
-            {nameof(DirectoryInfo.CreationTime), 2},
-            {nameof(DirectoryInfo.CreationTimeUtc), 3},
-            {nameof(DirectoryInfo.LastAccessTime), 4},
-            {nameof(DirectoryInfo.LastAccessTimeUtc), 5},
-            {nameof(DirectoryInfo.LastWriteTime), 6},
-            {nameof(DirectoryInfo.LastWriteTimeUtc), 7},
-            {nameof(DirectoryInfo.Exists), 8},
-            {nameof(DirectoryInfo.Extension), 9},
-            {nameof(DirectoryInfo.Name), 10},
-            {nameof(DirectoryInfo.Parent), 11},
-            {nameof(DirectoryInfo.Root), 12},
-            {nameof(DirectoryInfo), 13}
+            { nameof(DirectoryInfo.FullName), 0 },
+            { nameof(DirectoryInfo.Attributes), 1 },
+            { nameof(DirectoryInfo.CreationTime), 2 },
+            { nameof(DirectoryInfo.CreationTimeUtc), 3 },
+            { nameof(DirectoryInfo.LastAccessTime), 4 },
+            { nameof(DirectoryInfo.LastAccessTimeUtc), 5 },
+            { nameof(DirectoryInfo.LastWriteTime), 6 },
+            { nameof(DirectoryInfo.LastWriteTimeUtc), 7 },
+            { nameof(DirectoryInfo.Exists), 8 },
+            { nameof(DirectoryInfo.Extension), 9 },
+            { nameof(DirectoryInfo.Name), 10 },
+            { nameof(DirectoryInfo.Parent), 11 },
+            { nameof(DirectoryInfo.Root), 12 },
+            { nameof(DirectoryInfo), 13 }
         };
 
         DirectoriesIndexToMethodAccessMap = new Dictionary<int, Func<DirectoryInfo, object?>>
         {
-            {0, info => info.FullName},
-            {1, info => info.Attributes},
-            {2, info => info.CreationTime},
-            {3, info => info.CreationTimeUtc},
-            {4, info => info.LastAccessTime},
-            {5, info => info.LastAccessTimeUtc},
-            {6, info => info.LastWriteTime},
-            {7, info => info.LastWriteTimeUtc},
-            {8, info => info.Exists},
-            {9, info => info.Extension},
-            {10, info => info.Name},
-            {11, info => info.Parent},
-            {12, info => info.Root},
-            {13, info => info}
+            { 0, info => info.FullName },
+            { 1, info => info.Attributes },
+            { 2, info => info.CreationTime },
+            { 3, info => info.CreationTimeUtc },
+            { 4, info => info.LastAccessTime },
+            { 5, info => info.LastAccessTimeUtc },
+            { 6, info => info.LastWriteTime },
+            { 7, info => info.LastWriteTimeUtc },
+            { 8, info => info.Exists },
+            { 9, info => info.Extension },
+            { 10, info => info.Name },
+            { 11, info => info.Parent },
+            { 12, info => info.Root },
+            { 13, info => info }
         };
 
         DirectoriesColumns =

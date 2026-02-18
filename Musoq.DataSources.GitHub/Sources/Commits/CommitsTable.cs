@@ -16,6 +16,6 @@ internal class CommitsTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => CommitsSourceHelper.CommitsColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(CommitEntity));
 }

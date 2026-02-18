@@ -21,15 +21,17 @@ internal class AirtableBasesRowSource : RowSourceBase<AirtableBase>
     {
         _runtimeContext.ReportDataSourceBegin(AirtableBasesSourceName);
         long totalRowsProcessed = 0;
-        
+
         try
         {
-            foreach (var bases in _airtableApi.GetBases(_runtimeContext.QuerySourceInfo.Columns.Select(f => f.ColumnName)))
+            foreach (var bases in _airtableApi.GetBases(
+                         _runtimeContext.QuerySourceInfo.Columns.Select(f => f.ColumnName)))
             {
                 var chunk = bases
-                    .Select(@base => new EntityResolver<AirtableBase>(@base, AirtableBasesHelper.BasesNameToIndexMap, AirtableBasesHelper.BasesIndexToMethodAccessMap))
+                    .Select(@base => new EntityResolver<AirtableBase>(@base, AirtableBasesHelper.BasesNameToIndexMap,
+                        AirtableBasesHelper.BasesIndexToMethodAccessMap))
                     .ToList();
-            
+
                 totalRowsProcessed += chunk.Count;
                 chunkedSource.Add(chunk);
             }

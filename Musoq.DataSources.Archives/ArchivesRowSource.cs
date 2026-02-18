@@ -17,7 +17,7 @@ internal class ArchivesRowSource(string path, RuntimeContext runtimeContext) : R
         {
             runtimeContext.ReportDataSourceBegin(ArchivesSourceName);
             long totalRowsProcessed = 0;
-            
+
             try
             {
                 using var stream = _stream;
@@ -27,12 +27,12 @@ internal class ArchivesRowSource(string path, RuntimeContext runtimeContext) : R
                 });
 
                 var index = 0;
-            
+
                 while (reader.MoveToNextEntry())
                 {
                     totalRowsProcessed++;
                     yield return new EntityResolver<EntryWrapper>(
-                        new EntryWrapper(reader.Entry, path, index++), 
+                        new EntryWrapper(reader.Entry, path, index++),
                         EntryWrapper.NameToIndexMap,
                         EntryWrapper.IndexToMethodAccessMap);
                 }

@@ -16,8 +16,9 @@ internal class OllamaSingleRowSource : RowSource
         _openAiRequestInfo = openAiRequestInfo;
         _runtimeContext = null;
     }
-    
-    public OllamaSingleRowSource(RuntimeContext runtimeContext, OllamaRequestInfo openAiRequestInfo, IHttpClientFactory httpClientFactory)
+
+    public OllamaSingleRowSource(RuntimeContext runtimeContext, OllamaRequestInfo openAiRequestInfo,
+        IHttpClientFactory httpClientFactory)
     {
         _openAiApi = new OllamaApi(openAiRequestInfo.OllamaBaseUrl, httpClientFactory);
         _openAiRequestInfo = openAiRequestInfo;
@@ -30,7 +31,7 @@ internal class OllamaSingleRowSource : RowSource
         {
             _runtimeContext?.ReportDataSourceBegin(OllamaSourceName);
             _runtimeContext?.ReportDataSourceRowsKnown(OllamaSourceName, 1);
-            
+
             try
             {
                 yield return new EntityResolver<OllamaEntity>(
@@ -39,7 +40,7 @@ internal class OllamaSingleRowSource : RowSource
                         _openAiRequestInfo.Model,
                         _openAiRequestInfo.Temperature,
                         _runtimeContext?.EndWorkToken ?? CancellationToken.None),
-                    OllamaSchemaHelper.NameToIndexMap, 
+                    OllamaSchemaHelper.NameToIndexMap,
                     OllamaSchemaHelper.IndexToMethodAccessMap);
             }
             finally

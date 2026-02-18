@@ -20,18 +20,19 @@ internal static class MessagesSourceHelper
         { nameof(MessageEntity.Signals), 7 }
     };
 
-    internal static readonly IReadOnlyDictionary<int, Func<MessageEntity, object>> MessagesIndexToMethodAccessMap = new Dictionary<int, Func<MessageEntity, object>>
-    {
-        { 0, f => f.Id },
-        { 1, f => f.IsExtId },
-        { 2, f => f.Name },
-        { 3, f => f.DLC },
-        { 4, f => f.Transmitter },
-        { 5, f => f.Comment },
-        { 6, f => f.CycleTime },
-        { 7, f => f.Signals }
-    };
-    
+    internal static readonly IReadOnlyDictionary<int, Func<MessageEntity, object>> MessagesIndexToMethodAccessMap =
+        new Dictionary<int, Func<MessageEntity, object>>
+        {
+            { 0, f => f.Id },
+            { 1, f => f.IsExtId },
+            { 2, f => f.Name },
+            { 3, f => f.DLC },
+            { 4, f => f.Transmitter },
+            { 5, f => f.Comment },
+            { 6, f => f.CycleTime },
+            { 7, f => f.Signals }
+        };
+
     internal static ISchemaColumn[] Columns =>
     [
         new SchemaColumn(nameof(MessageEntity.Id), 0, typeof(uint)),

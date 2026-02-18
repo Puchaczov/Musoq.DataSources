@@ -16,6 +16,6 @@ internal class ContainersTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => ContainersSourceHelper.ContainersColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(ContainerListResponse));
 }

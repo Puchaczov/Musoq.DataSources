@@ -13,32 +13,32 @@ internal static class DeploymentsSourceHelper
     {
         DeploymentsNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(DeploymentEntity.Namespace), 0},
-            {nameof(DeploymentEntity.Name), 1},
-            {nameof(DeploymentEntity.CreationTimestamp), 2},
-            {nameof(DeploymentEntity.Generation), 3},
-            {nameof(DeploymentEntity.ResourceVersion), 4},
-            {nameof(DeploymentEntity.Images), 5},
-            {nameof(DeploymentEntity.ImagePullPolicies), 6},
-            {nameof(DeploymentEntity.RestartPolicy), 7},
-            {nameof(DeploymentEntity.ContainersNames), 8},
-            {nameof(DeploymentEntity.Status), 9},
+            { nameof(DeploymentEntity.Namespace), 0 },
+            { nameof(DeploymentEntity.Name), 1 },
+            { nameof(DeploymentEntity.CreationTimestamp), 2 },
+            { nameof(DeploymentEntity.Generation), 3 },
+            { nameof(DeploymentEntity.ResourceVersion), 4 },
+            { nameof(DeploymentEntity.Images), 5 },
+            { nameof(DeploymentEntity.ImagePullPolicies), 6 },
+            { nameof(DeploymentEntity.RestartPolicy), 7 },
+            { nameof(DeploymentEntity.ContainersNames), 8 },
+            { nameof(DeploymentEntity.Status), 9 }
         };
-        
+
         DeploymentsIndexToMethodAccessMap = new Dictionary<int, Func<DeploymentEntity, object?>>
         {
-            {0, info => info.Namespace},
-            {1, info => info.Name},
-            {2, info => info.CreationTimestamp},
-            {3, info => info.Generation},
-            {4, info => info.ResourceVersion},
-            {5, info => info.Images},
-            {6, info => info.ImagePullPolicies},
-            {7, info => info.RestartPolicy},
-            {8, info => info.ContainersNames},
-            {9, info => info.Status},
+            { 0, info => info.Namespace },
+            { 1, info => info.Name },
+            { 2, info => info.CreationTimestamp },
+            { 3, info => info.Generation },
+            { 4, info => info.ResourceVersion },
+            { 5, info => info.Images },
+            { 6, info => info.ImagePullPolicies },
+            { 7, info => info.RestartPolicy },
+            { 8, info => info.ContainersNames },
+            { 9, info => info.Status }
         };
-        
+
         DeploymentsColumns =
         [
             new SchemaColumn(nameof(DeploymentEntity.Namespace), 0, typeof(string)),

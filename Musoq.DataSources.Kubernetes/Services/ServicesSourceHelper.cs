@@ -14,20 +14,20 @@ internal static class ServicesSourceHelper
     {
         ServicesNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(ServiceEntity.Metadata), 0},
-            {nameof(ServiceEntity.Spec), 1},
-            {nameof(ServiceEntity.Kind), 2},
-            {nameof(ServiceEntity.Status), 3}
+            { nameof(ServiceEntity.Metadata), 0 },
+            { nameof(ServiceEntity.Spec), 1 },
+            { nameof(ServiceEntity.Kind), 2 },
+            { nameof(ServiceEntity.Status), 3 }
         };
-        
+
         ServicesIndexToMethodAccessMap = new Dictionary<int, Func<ServiceEntity, object?>>
         {
-            {0, t => t.Metadata},
-            {1, t => t.Spec},
-            {2, t => t.Kind},
-            {3, t => t.Status}
+            { 0, t => t.Metadata },
+            { 1, t => t.Spec },
+            { 2, t => t.Kind },
+            { 3, t => t.Status }
         };
-        
+
         ServicesColumns =
         [
             new SchemaColumn(nameof(ServiceEntity.Metadata), 0, typeof(V1ObjectMeta)),

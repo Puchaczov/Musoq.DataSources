@@ -1,30 +1,30 @@
 using System;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 
 namespace Musoq.DataSources.Roslyn;
 
 /// <summary>
-/// Helper class to diagnose Microsoft.CodeAnalysis version conflicts.
+///     Helper class to diagnose Microsoft.CodeAnalysis version conflicts.
 /// </summary>
 internal static class RoslynVersionHelper
 {
     private const string ExpectedVersion = "4.14.0";
 
     /// <summary>
-    /// Wraps a MissingMethodException with detailed version information.
+    ///     Wraps a MissingMethodException with detailed version information.
     /// </summary>
     /// <param name="ex">The original exception.</param>
     /// <param name="context">Additional context about where the error occurred.</param>
     /// <returns>An InvalidOperationException with detailed diagnostics.</returns>
-    public static InvalidOperationException CreateVersionMismatchException(MissingMethodException ex, string context = "")
+    public static InvalidOperationException CreateVersionMismatchException(MissingMethodException ex,
+        string context = "")
     {
         var workspacesAssembly = typeof(Document).Assembly;
         var loadedVersion = workspacesAssembly.GetName().Version;
         var assemblyLocation = workspacesAssembly.Location;
-        
+
         var contextInfo = string.IsNullOrEmpty(context) ? "" : $" Context: {context}.";
-        
+
         return new InvalidOperationException(
             $"Microsoft.CodeAnalysis version mismatch detected.{contextInfo} " +
             $"Expected version: {ExpectedVersion}, " +
@@ -38,7 +38,7 @@ internal static class RoslynVersionHelper
     }
 
     /// <summary>
-    /// Gets diagnostic information about the currently loaded Microsoft.CodeAnalysis version.
+    ///     Gets diagnostic information about the currently loaded Microsoft.CodeAnalysis version.
     /// </summary>
     /// <returns>A string with version diagnostics.</returns>
     public static string GetVersionDiagnostics()
@@ -46,7 +46,8 @@ internal static class RoslynVersionHelper
         var workspacesAssembly = typeof(Document).Assembly;
         var loadedVersion = workspacesAssembly.GetName().Version;
         var assemblyLocation = workspacesAssembly.Location;
-        
-        return $"Microsoft.CodeAnalysis version: {loadedVersion} (Expected: {ExpectedVersion}), Location: {assemblyLocation}";
+
+        return
+            $"Microsoft.CodeAnalysis version: {loadedVersion} (Expected: {ExpectedVersion}), Location: {assemblyLocation}";
     }
 }

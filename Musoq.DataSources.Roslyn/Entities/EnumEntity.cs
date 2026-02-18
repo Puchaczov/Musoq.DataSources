@@ -4,32 +4,30 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
-using Musoq.DataSources.Roslyn;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
 /// <summary>
-/// Represents an enumeration entity derived from a type entity.
+///     Represents an enumeration entity derived from a type entity.
 /// </summary>
 public class EnumEntity : TypeEntity
 {
     internal readonly SemanticModel SemanticModel;
 
     internal readonly Solution Solution;
-    
+
     internal readonly INamedTypeSymbol Symbol;
 
-    internal EnumDeclarationSyntax Syntax { get; }
-
     /// <summary>
-    /// Represents an enumeration entity derived from a type entity.
+    ///     Represents an enumeration entity derived from a type entity.
     /// </summary>
     /// <param name="symbol">The symbol representing the named type.</param>
     /// <param name="syntax">The syntax node of the enumeration.</param>
     /// <param name="semanticModel">The semantic model of the enumeration.</param>
     /// <param name="solution">The solution that contains the enumeration.</param>
     /// <param name="document">The document that contains the enumeration.</param>
-    public EnumEntity(INamedTypeSymbol symbol, EnumDeclarationSyntax syntax, SemanticModel semanticModel, Solution solution, DocumentEntity document) 
+    public EnumEntity(INamedTypeSymbol symbol, EnumDeclarationSyntax syntax, SemanticModel semanticModel,
+        Solution solution, DocumentEntity document)
         : base(symbol)
     {
         Syntax = syntax;
@@ -38,17 +36,19 @@ public class EnumEntity : TypeEntity
         Document = document;
         Symbol = symbol;
     }
-    
+
+    internal EnumDeclarationSyntax Syntax { get; }
+
     /// <summary>
-    /// Gets the document that contains the class.
+    ///     Gets the document that contains the class.
     /// </summary>
     public DocumentEntity Document { get; }
-    
+
     /// <summary>
-    /// Gets the members of the enumeration.
+    ///     Gets the members of the enumeration.
     /// </summary>
     /// <value>
-    /// An enumerable collection of member names.
+    ///     An enumerable collection of member names.
     /// </value>
     [BindablePropertyAsTable]
     public IEnumerable<string> Members => Symbol
@@ -56,26 +56,26 @@ public class EnumEntity : TypeEntity
         .OfType<IFieldSymbol>()
         .Where(f => f.ConstantValue != null)
         .Select(f => f.Name);
-    
+
     /// <summary>
-    /// Gets itself.
+    ///     Gets itself.
     /// </summary>
     public EnumEntity Self => this;
 
 
     /// <summary>
-    /// Gets the properties of the type.
+    ///     Gets the properties of the type.
     /// </summary>
     public override IEnumerable<MethodEntity> Methods => [];
 
     /// <summary>
-    /// Gets the properties of the type.
+    ///     Gets the properties of the type.
     /// </summary>
     public override IEnumerable<PropertyEntity> Properties => [];
 
     /// <summary>
-    /// Gets the number of references to this enum in the solution.
-    /// Returns -1 if the operation times out.
+    ///     Gets the number of references to this enum in the solution.
+    ///     Returns -1 if the operation times out.
     /// </summary>
     public int ReferenceCount
     {
@@ -84,14 +84,14 @@ public class EnumEntity : TypeEntity
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
                 ct => SymbolFinder.FindReferencesAsync(Symbol, Solution, ct)!,
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                defaultValue: null);
-            
+                null);
+
             return references?.Sum(r => r.Locations.Count()) ?? -1;
         }
     }
 
     /// <summary>
-    /// Gets a value indicating whether the enum is used (referenced) in the solution.
+    ///     Gets a value indicating whether the enum is used (referenced) in the solution.
     /// </summary>
     public bool IsUsed => ReferenceCount > 0;
 }

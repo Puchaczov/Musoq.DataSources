@@ -6,17 +6,17 @@ using DbcParserLib.Model;
 namespace Musoq.DataSources.CANBus.Components;
 
 /// <summary>
-/// Represents a message frame. It is a dynamic object that allows to access signals as properties.
+///     Represents a message frame. It is a dynamic object that allows to access signals as properties.
 /// </summary>
 public class MessageFrameEntity : DynamicObject, ICANDbcMessage
 {
     private const string Timestamp = nameof(Timestamp);
-
-    private readonly Dictionary<string, Func<object?>> _memberToValueMap;
     private readonly HashSet<string> _allMessagesSet;
 
+    private readonly Dictionary<string, Func<object?>> _memberToValueMap;
+
     /// <summary>
-    /// Creates a new instance of <see cref="MessageFrameEntity"/> class.
+    ///     Creates a new instance of <see cref="MessageFrameEntity" /> class.
     /// </summary>
     /// <param name="timestamp">Timestamp of the frame.</param>
     /// <param name="frame">CAN frame.</param>
@@ -25,9 +25,9 @@ public class MessageFrameEntity : DynamicObject, ICANDbcMessage
     public MessageFrameEntity(ulong timestamp, CANFrame frame, Message? message, HashSet<string> allMessagesSet)
     {
         _allMessagesSet = allMessagesSet;
-        
+
         var uint64Value = ConvertToUInt64(frame.Data);
-        
+
         _memberToValueMap = new Dictionary<string, Func<object?>>
         {
             { "ID", () => frame.Id },
@@ -44,12 +44,12 @@ public class MessageFrameEntity : DynamicObject, ICANDbcMessage
             _memberToValueMap.Add("UnknownMessage", () => expandoObject);
             return;
         }
-        
+
         _memberToValueMap.Add(message.Name, () => expandoObject);
     }
-    
+
     /// <summary>
-    /// Gets the message.
+    ///     Gets the message.
     /// </summary>
     public Message? Message => (Message?)_memberToValueMap[nameof(Message)]();
 
@@ -61,26 +61,26 @@ public class MessageFrameEntity : DynamicObject, ICANDbcMessage
             result = value();
             return true;
         }
-        
+
         if (_allMessagesSet.Contains(binder.Name))
         {
             result = null;
             return true;
         }
-        
+
         result = null;
         return false;
     }
-    
+
     /// <summary>
-    /// Creates a map of message names to their indexes.
+    ///     Creates a map of message names to their indexes.
     /// </summary>
     /// <returns></returns>
     public IReadOnlyDictionary<string, int> CreateMessageNameToIndexMap()
     {
         var index = 0;
         var map = new Dictionary<string, int>();
-        
+
         foreach (var member in _memberToValueMap)
         {
             map.Add(member.Key, index);
@@ -89,16 +89,16 @@ public class MessageFrameEntity : DynamicObject, ICANDbcMessage
 
         return map;
     }
-    
+
     /// <summary>
-    /// Creates a map of message indexes to their access methods.
+    ///     Creates a map of message indexes to their access methods.
     /// </summary>
     /// <returns></returns>
     public IReadOnlyDictionary<int, Func<MessageFrameEntity, object?>> CreateMessageIndexToMethodAccessMap()
     {
         var index = 0;
         var map = new Dictionary<int, Func<MessageFrameEntity, object?>>();
-        
+
         foreach (var member in _memberToValueMap)
         {
             map.Add(index, frame => frame._memberToValueMap[member.Key]());

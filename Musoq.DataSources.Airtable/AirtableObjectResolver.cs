@@ -4,18 +4,22 @@ namespace Musoq.DataSources.Airtable;
 
 internal class AirtableObjectResolver : IObjectResolver
 {
-    private readonly IDictionary<string, object> _obj;
-    private readonly IDictionary<int, string> _indexToNameMap;
     private readonly HashSet<string> _columns;
+    private readonly IDictionary<int, string> _indexToNameMap;
+    private readonly IDictionary<string, object> _obj;
 
-    public AirtableObjectResolver(IDictionary<string, object> obj, IDictionary<int, string> indexToNameMap, HashSet<string> columns)
+    public AirtableObjectResolver(IDictionary<string, object> obj, IDictionary<int, string> indexToNameMap,
+        HashSet<string> columns)
     {
         _obj = obj ?? throw new InvalidOperationException();
         _indexToNameMap = indexToNameMap;
         _columns = columns;
     }
 
-    public bool HasColumn(string name) => _obj.ContainsKey(name);
+    public bool HasColumn(string name)
+    {
+        return _obj.ContainsKey(name);
+    }
 
     public object[] Contexts => [_obj];
 

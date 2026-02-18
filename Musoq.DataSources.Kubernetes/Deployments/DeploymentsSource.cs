@@ -20,16 +20,18 @@ internal class DeploymentsSource : RowSourceBase<DeploymentEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(DeploymentsSourceName);
-        
+
         try
         {
             var deployments = _client.ListDeploymentsForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(DeploymentsSourceName, deployments.Items.Count);
-        
+
             chunkedSource.Add(
-                deployments.Items.Select(c => 
-                    new EntityResolver<DeploymentEntity>(MapV1DeploymentToDeploymentEntity(c), DeploymentsSourceHelper.DeploymentsNameToIndexMap, DeploymentsSourceHelper.DeploymentsIndexToMethodAccessMap)).ToList());
-            
+                deployments.Items.Select(c =>
+                    new EntityResolver<DeploymentEntity>(MapV1DeploymentToDeploymentEntity(c),
+                        DeploymentsSourceHelper.DeploymentsNameToIndexMap,
+                        DeploymentsSourceHelper.DeploymentsIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(DeploymentsSourceName, deployments.Items.Count);
         }
         catch
@@ -49,10 +51,13 @@ internal class DeploymentsSource : RowSourceBase<DeploymentEntity>
             Generation = v1Deployment.Metadata.Generation,
             ResourceVersion = v1Deployment.Metadata.ResourceVersion,
             Images = string.Join(',', v1Deployment.Spec.Template.Spec.Containers.Select(f => f.Image)),
-            ImagePullPolicies = string.Join(',', v1Deployment.Spec.Template.Spec.Containers.Select(f => f.ImagePullPolicy)),
+            ImagePullPolicies =
+                string.Join(',', v1Deployment.Spec.Template.Spec.Containers.Select(f => f.ImagePullPolicy)),
             RestartPolicy = v1Deployment.Spec.Template.Spec.RestartPolicy,
             ContainersNames = string.Join(',', v1Deployment.Spec.Template.Spec.Containers.Select(f => f.Name)),
-            Status = v1Deployment.Status.Conditions != null ? v1Deployment.Status.Conditions.Select(f => f.Status).ElementAt(0) : string.Empty
+            Status = v1Deployment.Status.Conditions != null
+                ? v1Deployment.Status.Conditions.Select(f => f.Status).ElementAt(0)
+                : string.Empty
         };
     }
 }

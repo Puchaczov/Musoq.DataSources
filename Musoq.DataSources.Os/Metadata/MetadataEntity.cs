@@ -1,12 +1,12 @@
 namespace Musoq.DataSources.Os.Metadata;
 
 /// <summary>
-/// Metadata entity
+///     Metadata entity
 /// </summary>
 public class MetadataEntity
 {
     /// <summary>
-    /// Initializes a new instance of metadata entity
+    ///     Initializes a new instance of metadata entity
     /// </summary>
     /// <param name="fullName">The full path</param>
     /// <param name="directoryName">The directory name</param>
@@ -19,24 +19,24 @@ public class MetadataEntity
         Description = description;
         FullName = fullName;
     }
-    
+
     /// <summary>
-    /// Full path to the file
+    ///     Full path to the file
     /// </summary>
     public string FullName { get; }
 
     /// <summary>
-    /// Directory name
+    ///     Directory name
     /// </summary>
     public string DirectoryName { get; }
-    
+
     /// <summary>
-    /// Tag name
+    ///     Tag name
     /// </summary>
     public string TagName { get; }
-    
+
     /// <summary>
-    /// Description
+    ///     Description
     /// </summary>
     public string? Description { get; }
 }

@@ -4,7 +4,7 @@ using System.IO;
 namespace Musoq.DataSources.Os.Exceptions;
 
 /// <summary>
-/// Exception thrown when metadata could not be read from file.
+///     Exception thrown when metadata could not be read from file.
 /// </summary>
 /// <param name="fileInfo">The file info.</param>
 /// <param name="innerException">The inner exception.</param>

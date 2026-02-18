@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Plugins;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Ollama.Tests;
@@ -12,6 +11,11 @@ namespace Musoq.DataSources.Ollama.Tests;
 [TestClass]
 public class OllamaSchemaDescribeTests
 {
+    static OllamaSchemaDescribeTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         var mockSchemaProvider = new Mock<ISchemaProvider>();
@@ -22,11 +26,6 @@ public class OllamaSchemaDescribeTests
             Guid.NewGuid().ToString(),
             mockSchemaProvider.Object,
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    static OllamaSchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 
     [TestMethod]
@@ -116,10 +115,8 @@ public class OllamaSchemaDescribeTests
         var table = vm.Run();
 
         foreach (var column in table.Columns)
-        {
             Assert.AreEqual(typeof(string), column.ColumnType,
                 $"Column '{column.ColumnName}' should be of type string");
-        }
     }
 
     [TestMethod]

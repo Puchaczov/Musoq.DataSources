@@ -10,7 +10,7 @@ namespace Musoq.DataSources.Os;
 public partial class OsLibrary
 {
     /// <summary>
-    /// Gets the aggregated average value from the given group name
+    ///     Gets the aggregated average value from the given group name
     /// </summary>
     /// <param name="group" injectedByRuntime="true">The group object</param>
     /// <param name="name">The name of the group</param>
@@ -22,12 +22,12 @@ public partial class OsLibrary
     }
 
     /// <summary>
-    /// Sets the value to average aggregation from the given group name
+    ///     Sets the value to average aggregation from the given group name
     /// </summary>
     /// <param name="group" injectedByRuntime="true">The group object</param>
     /// <param name="name">The name of the group</param>
     /// <param name="file">The value to set</param>
-    /// <returns>Aggregated value</returns>    
+    /// <returns>Aggregated value</returns>
     [AggregationSetMethod]
     public void SetAggregateFiles([InjectGroup] Group group, string name, FileEntity file)
     {
@@ -37,17 +37,18 @@ public partial class OsLibrary
     }
 
     /// <summary>
-    /// Sets the value to average aggregation from the given group name
+    ///     Sets the value to average aggregation from the given group name
     /// </summary>
     /// <param name="group" injectedByRuntime="true">The group object</param>
     /// <param name="name">The name of the group</param>
     /// <param name="file">The value to set</param>
-    /// <returns>Aggregated value</returns>   
+    /// <returns>Aggregated value</returns>
     [AggregationSetMethod]
-    public void SetAggregateFiles([InjectGroup] Group group, [InjectSpecificSource(typeof(FileEntity))] FileEntity file, string name)
+    public void SetAggregateFiles([InjectGroup] Group group, [InjectSpecificSource(typeof(FileEntity))] FileEntity file,
+        string name)
     {
         var list = group.GetOrCreateValue(name, new List<FileEntity>());
-        
+
         if (list == null)
             throw new InvalidOperationException("List is null");
 
@@ -55,7 +56,7 @@ public partial class OsLibrary
     }
 
     /// <summary>
-    /// Gets the aggregated average value from the given group name
+    ///     Gets the aggregated average value from the given group name
     /// </summary>
     /// <param name="group" injectedByRuntime="true">The group object</param>
     /// <param name="name">The name of the group</param>
@@ -67,17 +68,18 @@ public partial class OsLibrary
     }
 
     /// <summary>
-    /// Sets the value to average aggregation from the given group name
+    ///     Sets the value to average aggregation from the given group name
     /// </summary>
     /// <param name="group" injectedByRuntime="true">The group object</param>
     /// <param name="directory">The value to set</param>
     /// <param name="name">The name of the group</param>
-    /// <returns>Aggregated value</returns>   
+    /// <returns>Aggregated value</returns>
     [AggregationSetMethod]
-    public void SetAggregateDirectories([InjectGroup] Group group, [InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo directory, string name)
+    public void SetAggregateDirectories([InjectGroup] Group group,
+        [InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo directory, string name)
     {
         var list = group.GetOrCreateValue(name, new List<DirectoryInfo>());
-        
+
         if (list == null)
             throw new InvalidOperationException("List is null");
 

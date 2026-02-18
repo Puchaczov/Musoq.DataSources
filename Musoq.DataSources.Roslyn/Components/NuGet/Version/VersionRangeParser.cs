@@ -6,51 +6,48 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet.Version;
 
 internal class VersionRangeParser
 {
+    private const int MaxRecursionDepth = 1000;
     private readonly IEnumerator<Token> _tokenEnumerator;
+    private int _currentRecursionDepth;
     private Token _currentToken;
     private Token _nextToken;
-    private const int MaxRecursionDepth = 1000;
-    private int _currentRecursionDepth = 0;
-    
+
     public VersionRangeParser(IEnumerable<Token> tokens)
     {
-        if (tokens == null) 
+        if (tokens == null)
             throw new ArgumentNullException(nameof(tokens));
-        
+
         _tokenEnumerator = tokens.GetEnumerator();
         Advance(); // Sets _currentToken
         Advance(); // Sets _nextToken
 
         _currentToken ??= new Token(TokenType.Unknown, string.Empty, -1);
         _nextToken ??= _currentToken;
-        
+
         // Check if we started with a valid token
         if (_currentToken.Type == TokenType.Unknown && string.IsNullOrEmpty(_currentToken.Value))
-        {
             throw new InvalidOperationException("Empty or invalid version range expression");
-        }
     }
-    
+
     private void Advance()
     {
         _currentToken = _nextToken;
 
-        _nextToken = _tokenEnumerator.MoveNext() ? 
-            _tokenEnumerator.Current : 
-            new Token(TokenType.Eof, string.Empty, -1);
+        _nextToken = _tokenEnumerator.MoveNext()
+            ? _tokenEnumerator.Current
+            : new Token(TokenType.Eof, string.Empty, -1);
     }
-    
+
     public VersionRange Parse()
     {
         try
         {
             var result = ParseExpression();
-            
+
             if (_currentToken.Type != TokenType.Eof)
-            {
-                throw new InvalidOperationException($"Unexpected token: {_currentToken.Type} at position {_currentToken.Position}");
-            }
-            
+                throw new InvalidOperationException(
+                    $"Unexpected token: {_currentToken.Type} at position {_currentToken.Position}");
+
             return result;
         }
         catch (StackOverflowException)
@@ -58,23 +55,23 @@ internal class VersionRangeParser
             throw new InvalidOperationException("Expression is too complex or nested too deeply");
         }
     }
-    
+
     private VersionRange ParseExpression()
     {
         CheckRecursionDepth();
         _currentRecursionDepth++;
-        
+
         try
         {
             var left = ParseRange();
-            
+
             while (_currentToken.Type == TokenType.Or)
             {
-                Advance(); // Consume Or token
+                Advance();
                 var right = ParseRange();
                 left = new OrVersionRange(left, right);
             }
-            
+
             return left;
         }
         finally
@@ -82,84 +79,78 @@ internal class VersionRangeParser
             _currentRecursionDepth--;
         }
     }
-    
+
     private VersionRange ParseRange()
     {
         CheckRecursionDepth();
         _currentRecursionDepth++;
-        
+
         try
         {
-            // Handle exact version or wildcard version
             if (_currentToken.Type == TokenType.VersionNumber)
             {
                 var version = _currentToken.Value;
-                Advance(); // Consume version number
-                
-                // Check if there's a wildcard following the version
+                Advance();
+
+
                 if (_currentToken.Type == TokenType.Wildcard)
                 {
-                    Advance(); // Consume wildcard
+                    Advance();
                     return new WildcardVersionRange(version);
                 }
-                
-                // Otherwise it's a regular exact version
+
+
                 if (_currentToken.Type != TokenType.LeftBracket &&
                     _currentToken.Type != TokenType.LeftParenthesis)
-                {
                     return new ExactVersionRange(version);
-                }
             }
-            
-            // Handle bracketed ranges
+
+
             var inclusiveMin = _currentToken.Type == TokenType.LeftBracket;
             if (_currentToken.Type != TokenType.LeftBracket && _currentToken.Type != TokenType.LeftParenthesis)
-            {
-                throw new InvalidOperationException($"Expected [ or (, got {_currentToken.Type} at position {_currentToken.Position}");
-            }
-            
-            Advance(); // Consume [ or (
-            
+                throw new InvalidOperationException(
+                    $"Expected [ or (, got {_currentToken.Type} at position {_currentToken.Position}");
+
+            Advance();
+
             string? minVersion = null;
             if (_currentToken.Type == TokenType.VersionNumber)
             {
                 minVersion = _currentToken.Value;
-                Advance(); // Consume version number
+                Advance();
             }
 
             bool inclusiveMax;
-            // Handle [2.0.323] format (single version with no comma)
+
             if (_currentToken.Type == TokenType.RightBracket || _currentToken.Type == TokenType.RightParenthesis)
             {
                 inclusiveMax = _currentToken.Type == TokenType.RightBracket;
-                Advance(); // Consume ] or )
-                
-                // Use the same version for both min and max
+                Advance();
+
+
                 return new RangeVersionRange(minVersion, inclusiveMin, minVersion, inclusiveMax);
             }
-            
+
             if (_currentToken.Type != TokenType.Comma)
-            {
-                throw new InvalidOperationException($"Expected comma, got {_currentToken.Type} at position {_currentToken.Position}");
-            }
-            
-            Advance(); // Consume comma
-            
+                throw new InvalidOperationException(
+                    $"Expected comma, got {_currentToken.Type} at position {_currentToken.Position}");
+
+            Advance();
+
             string? maxVersion = null;
             if (_currentToken.Type == TokenType.VersionNumber)
             {
                 maxVersion = _currentToken.Value;
-                Advance(); // Consume version number
+                Advance();
             }
-            
+
             inclusiveMax = _currentToken.Type == TokenType.RightBracket;
             if (_currentToken.Type != TokenType.RightBracket && _currentToken.Type != TokenType.RightParenthesis)
-            {
-                throw new InvalidOperationException($"Expected ] or ), got {_currentToken.Type} at position {_currentToken.Position}");
-            }
-            
-            Advance(); // Consume ] or )
-            
+                throw new InvalidOperationException(
+                    $"Expected ] or ), got {_currentToken.Type} at position {_currentToken.Position}");
+
+            Advance();
+
             return new RangeVersionRange(minVersion, inclusiveMin, maxVersion, inclusiveMax);
         }
         finally
@@ -167,12 +158,10 @@ internal class VersionRangeParser
             _currentRecursionDepth--;
         }
     }
-    
+
     private void CheckRecursionDepth()
     {
         if (_currentRecursionDepth >= MaxRecursionDepth)
-        {
             throw new InvalidOperationException("Expression is too complex or nested too deeply");
-        }
     }
 }

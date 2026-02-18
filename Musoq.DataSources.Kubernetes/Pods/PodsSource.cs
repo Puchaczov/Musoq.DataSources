@@ -20,20 +20,20 @@ internal class PodsSource : RowSourceBase<PodEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(PodsSourceName);
-        
+
         try
         {
             var pods = _client.ListPodsForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(PodsSourceName, pods.Items.Count);
 
             chunkedSource.Add(
-                pods.Items.Select(c => 
-                    new EntityResolver<PodEntity>(
-                        MapV1PodToPodEntity(c), 
-                        PodsSourceHelper.PodsNameToIndexMap, 
-                        PodsSourceHelper.PodsIndexToMethodAccessMap))
+                pods.Items.Select(c =>
+                        new EntityResolver<PodEntity>(
+                            MapV1PodToPodEntity(c),
+                            PodsSourceHelper.PodsNameToIndexMap,
+                            PodsSourceHelper.PodsIndexToMethodAccessMap))
                     .ToList());
-            
+
             _runtimeContext.ReportDataSourceEnd(PodsSourceName, pods.Items.Count);
         }
         catch
@@ -47,13 +47,13 @@ internal class PodsSource : RowSourceBase<PodEntity>
     {
         if (v1Pod is null)
             throw new NullReferenceException(nameof(v1Pod));
-        
+
         var hasAnyStatus = v1Pod.Status.ContainerStatuses?.Any() ?? false;
         var hasAnyContainer = v1Pod.Spec.Containers?.Any() ?? false;
-        
+
         if (v1Pod.Spec.Containers is null)
             throw new NullReferenceException(nameof(v1Pod.Spec.Containers));
-        
+
         if (v1Pod.Status.ContainerStatuses is null)
             throw new NullReferenceException(nameof(v1Pod.Status.ContainerStatuses));
 
@@ -64,9 +64,12 @@ internal class PodsSource : RowSourceBase<PodEntity>
             ContainersNames = hasAnyContainer ? string.Join(",", v1Pod.Spec.Containers.Select(f => f.Name)) : "--",
             PF = v1Pod.Status.Phase,
             Ready = hasAnyStatus && v1Pod.Status.ContainerStatuses.All(f => f.Ready),
-            Restarts = hasAnyStatus ? string.Join(",", v1Pod.Status.ContainerStatuses.Select(f => f.RestartCount)) : "--",
+            Restarts = hasAnyStatus
+                ? string.Join(",", v1Pod.Status.ContainerStatuses.Select(f => f.RestartCount))
+                : "--",
             Statuses = hasAnyStatus
-                ? string.Join(",", v1Pod.Status.ContainerStatuses.Select(f => f.State.Running != null ? "Running" : "Not Running"))
+                ? string.Join(",",
+                    v1Pod.Status.ContainerStatuses.Select(f => f.State.Running != null ? "Running" : "Not Running"))
                 : "Empty",
             IP = v1Pod.Status.PodIP
         };

@@ -1,35 +1,35 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <IsPackable>false</IsPackable>
-    <RootNamespace>Musoq.Schema.FlatFile.Tests</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>Musoq.Schema.FlatFile.Tests</RootNamespace>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="TestMultilineFile.txt" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Remove="TestMultilineFile.txt"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="TestMultilineFile.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <ItemGroup>
+        <Content Include="TestMultilineFile.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
-    <PackageReference Include="Musoq.Converter" Version="9.0.0" />
-    <PackageReference Include="Musoq.Evaluator" Version="14.0.0" />
-    <PackageReference Include="Musoq.Parser" Version="9.0.0" />
-    <PackageReference Include="Musoq.Plugins" Version="12.0.0" />
-    <PackageReference Include="Musoq.Schema" Version="14.0.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0"/>
+        <PackageReference Include="MSTest.TestAdapter" Version="3.8.2"/>
+        <PackageReference Include="MSTest.TestFramework" Version="3.8.2"/>
+        <PackageReference Include="Musoq.Converter" Version="9.0.0"/>
+        <PackageReference Include="Musoq.Evaluator" Version="14.0.0"/>
+        <PackageReference Include="Musoq.Parser" Version="9.0.0"/>
+        <PackageReference Include="Musoq.Plugins" Version="12.0.0"/>
+        <PackageReference Include="Musoq.Schema" Version="14.0.0"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj" />
-    <ProjectReference Include="..\Musoq.DataSources.FlatFile\Musoq.DataSources.FlatFile.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.FlatFile\Musoq.DataSources.FlatFile.csproj"/>
+    </ItemGroup>
 
 </Project>

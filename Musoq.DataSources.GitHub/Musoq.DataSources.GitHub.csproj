@@ -21,31 +21,31 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
     </ItemGroup>
 
     <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
         <ItemGroup>
-            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')"/>
         </ItemGroup>
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Octokit" Version="13.0.1" />
-        <PackageReference Include="Musoq.Converter" Version="9.0.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="14.0.0" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Octokit" Version="13.0.1"/>
+        <PackageReference Include="Musoq.Converter" Version="9.0.0"/>
+        <PackageReference Include="Musoq.Evaluator" Version="14.0.0"/>
         <PackageReference Include="Musoq.Parser" Version="9.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="12.0.0" />
+        <PackageReference Include="Musoq.Plugins" Version="12.0.0"/>
         <PackageReference Include="Musoq.Schema" Version="14.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
+        <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

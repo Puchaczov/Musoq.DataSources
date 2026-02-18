@@ -9,8 +9,8 @@ internal class WildcardVersionRange(string versionPrefix) : VersionRange
     public override IEnumerable<string> ResolveVersions(IEnumerable<string> availableVersions)
     {
         var prefixToMatch = versionPrefix.TrimEnd('*', '.');
-        
-        // Return all versions that start with the specified prefix
+
+
         return availableVersions.Where(v => v.StartsWith(prefixToMatch));
     }
 }

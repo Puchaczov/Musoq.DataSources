@@ -10,7 +10,7 @@ internal class FilesSource(string path, bool useSubDirectories, RuntimeContext c
     protected override EntityResolver<FileEntity> CreateBasedOnFile(FileInfo file, string rootDirectory)
     {
         return new EntityResolver<FileEntity>(
-            new FileEntity(file, rootDirectory), 
+            new FileEntity(file, rootDirectory),
             SchemaFilesHelper.FilesNameToIndexMap,
             SchemaFilesHelper.FilesIndexToMethodAccessMap
         );

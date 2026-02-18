@@ -7,7 +7,7 @@ namespace Musoq.DataSources.Postgres.Tests.Components;
 
 internal class TestsPostgresTable : PostgresTable
 {
-    public TestsPostgresTable(RuntimeContext runtimeContext, string schema, IEnumerable<dynamic> returnedEntities) 
+    public TestsPostgresTable(RuntimeContext runtimeContext, string schema, IEnumerable<dynamic> returnedEntities)
         : base(runtimeContext, schema, () => returnedEntities)
     {
     }
@@ -15,10 +15,10 @@ internal class TestsPostgresTable : PostgresTable
     protected override IDbConnection CreateConnection(RuntimeContext runtimeContext)
     {
         var mock = new Mock<IDbConnection>();
-        
+
         mock.Setup(connection => connection.Open());
         mock.Setup(connection => connection.Close());
-        
+
         return mock.Object;
     }
 }

@@ -23,8 +23,8 @@ internal sealed class RepositoryRowsSource(
         chunkedSource.Add(
         [
             new EntityResolver<RepositoryEntity>(
-                repositoryEntity, 
-                RepositoryEntity.NameToIndexMap, 
+                repositoryEntity,
+                RepositoryEntity.NameToIndexMap,
                 RepositoryEntity.IndexToObjectAccessMap
             )
         ], cancellationToken);

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -11,7 +10,12 @@ namespace Musoq.DataSources.Git.Tests;
 public class GitPlaygroundTests
 {
     private const string RepositoryPath = @"D:\repos\Musoq.DataSources";
-    
+
+    static GitPlaygroundTests()
+    {
+        Culture.ApplyWithDefaultCulture();
+    }
+
     [TestMethod]
     public void FileHistoryPlayground_ShouldBeIgnored()
     {
@@ -21,7 +25,7 @@ public class GitPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void FileHistoryTakePlayground_ShouldBeIgnored()
     {
@@ -31,11 +35,12 @@ public class GitPlaygroundTests
 
         var table = vm.Run();
     }
-    
+
     [TestMethod]
     public void FileHistorySkipTakePlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj', 1, 2)";
+        var query =
+            $"select * from #git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj', 1, 2)";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -125,18 +130,13 @@ public class GitPlaygroundTests
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
-            new GitSchemaProvider(), 
-            new Dictionary<uint, IReadOnlyDictionary<string, string>>()
+            script,
+            Guid.NewGuid().ToString(),
+            new GitSchemaProvider(),
+            new Dictionary<uint, IReadOnlyDictionary<string, string>>
             {
-                {0, new Dictionary<string, string>()},
-                {1, new Dictionary<string, string>()}
+                { 0, new Dictionary<string, string>() },
+                { 1, new Dictionary<string, string>() }
             });
-    }
-
-    static GitPlaygroundTests()
-    {
-        Culture.ApplyWithDefaultCulture();
     }
 }

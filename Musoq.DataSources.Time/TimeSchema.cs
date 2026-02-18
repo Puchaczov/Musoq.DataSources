@@ -9,45 +9,45 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Time;
 
 /// <description>
-/// Provides schema to work with time.
+///     Provides schema to work with time.
 /// </description>
 /// <short-description>
-/// Provides schema to work with time.
+///     Provides schema to work with time.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class TimeSchema : SchemaBase
 {
     /// <virtual-constructors>
-    /// <virtual-constructor>
-    /// <virtual-param>Start datetime</virtual-param>
-    /// <virtual-param>Stop datetime</virtual-param>
-    /// <virtual-param>interval</virtual-param>
-    /// <examples>
-    /// <example>
-    /// <from>#time.interval(string startDateTime, string stopDateTime, string interval)</from>
-    /// <description>Compute dates between two ranges</description>
-    /// <columns>
-    /// <column name="DateTime" type="DateTime">Gets the DateTime object</column>
-    /// <column name="Second" type="int">Gets second of current computed DateTime</column>
-    /// <column name="Minute" type="int">Gets minute of current computed DateTime</column>
-    /// <column name="Hour" type="int">Gets the hour of current computed DateTime</column>
-    /// <column name="Day" type="int">Gets the day of current computed DateTime</column>
-    /// <column name="Month" type="int">Gets the month of current computed DateTime</column>
-    /// <column name="Year" type="int">Gets the year of current computed DateTime</column>
-    /// <column name="DayOfWeek" type="int">Gets the day of week of current computed DateTime</column>
-    /// <column name="DayOfYear" type="int">Gets the day of year of current computed DateTime</column>
-    /// <column name="TimeOfDay" type="TimeSpan">Gets the time of day of current computed DateTime</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param>Start datetime</virtual-param>
+    ///         <virtual-param>Stop datetime</virtual-param>
+    ///         <virtual-param>interval</virtual-param>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>#time.interval(string startDateTime, string stopDateTime, string interval)</from>
+    ///                 <description>Compute dates between two ranges</description>
+    ///                 <columns>
+    ///                     <column name="DateTime" type="DateTime">Gets the DateTime object</column>
+    ///                     <column name="Second" type="int">Gets second of current computed DateTime</column>
+    ///                     <column name="Minute" type="int">Gets minute of current computed DateTime</column>
+    ///                     <column name="Hour" type="int">Gets the hour of current computed DateTime</column>
+    ///                     <column name="Day" type="int">Gets the day of current computed DateTime</column>
+    ///                     <column name="Month" type="int">Gets the month of current computed DateTime</column>
+    ///                     <column name="Year" type="int">Gets the year of current computed DateTime</column>
+    ///                     <column name="DayOfWeek" type="int">Gets the day of week of current computed DateTime</column>
+    ///                     <column name="DayOfYear" type="int">Gets the day of year of current computed DateTime</column>
+    ///                     <column name="TimeOfDay" type="TimeSpan">Gets the time of day of current computed DateTime</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
     /// </virtual-constructors>
     public TimeSchema() : base("time", CreateLibrary())
     {
     }
 
     /// <summary>
-    /// Gets the table name based on the given data source and parameters.
+    ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
     /// <param name="runtimeContext">Runtime context</param>
@@ -65,7 +65,7 @@ public class TimeSchema : SchemaBase
     }
 
     /// <summary>
-    /// Gets the data source based on the given data source and parameters.
+    ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
     /// <param name="interCommunicator">Runtime context</param>
@@ -77,17 +77,17 @@ public class TimeSchema : SchemaBase
         {
             case "interval":
                 return new TimeSource(
-                    DateTimeOffset.Parse((string)parameters[0]), 
+                    DateTimeOffset.Parse((string)parameters[0]),
                     DateTimeOffset.Parse((string)parameters[1]),
-                    (string)parameters[2], 
+                    (string)parameters[2],
                     interCommunicator);
         }
 
         throw new NotSupportedException($"Table {name} not found.");
     }
-        
+
     /// <summary>
-    /// Gets information's about all tables in the schema.
+    ///     Gets information's about all tables in the schema.
     /// </summary>
     /// <returns>Data sources constructors</returns>
     public override SchemaMethodInfo[] GetConstructors()
@@ -100,7 +100,7 @@ public class TimeSchema : SchemaBase
     }
 
     /// <summary>
-    /// Gets the constructor information for a specific data source method.
+    ///     Gets the constructor information for a specific data source method.
     /// </summary>
     /// <param name="methodName">The name of the method to get constructor information for.</param>
     /// <param name="runtimeContext">The runtime context.</param>
@@ -117,7 +117,7 @@ public class TimeSchema : SchemaBase
     }
 
     /// <summary>
-    /// Gets constructor information for all data source methods.
+    ///     Gets constructor information for all data source methods.
     /// </summary>
     /// <param name="runtimeContext">The runtime context.</param>
     /// <returns>An array of all SchemaMethodInfo objects.</returns>

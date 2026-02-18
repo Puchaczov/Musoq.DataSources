@@ -144,8 +144,8 @@ public class JqlBuilderTests
     {
         var start = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var end = new DateTimeOffset(2024, 12, 31, 23, 59, 0, TimeSpan.Zero);
-        var parameters = new JiraFilterParameters 
-        { 
+        var parameters = new JiraFilterParameters
+        {
             UpdatedAfter = start,
             UpdatedBefore = end
         };
@@ -176,8 +176,8 @@ public class JqlBuilderTests
     [TestMethod]
     public void BuildJql_WithMultipleParameters_ShouldCombineWithAnd()
     {
-        var parameters = new JiraFilterParameters 
-        { 
+        var parameters = new JiraFilterParameters
+        {
             Status = "Open",
             Type = "Bug",
             Priority = "Critical",

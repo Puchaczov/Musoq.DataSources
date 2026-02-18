@@ -4,68 +4,78 @@ using Octokit;
 namespace Musoq.DataSources.GitHub;
 
 /// <summary>
-/// Interface for GitHub API operations. Abstracted for testability.
+///     Interface for GitHub API operations. Abstracted for testability.
 /// </summary>
 internal interface IGitHubApi
 {
     /// <summary>
-    /// Gets repositories for the authenticated user.
+    ///     Gets repositories for the authenticated user.
     /// </summary>
-    Task<IReadOnlyList<RepositoryEntity>> GetUserRepositoriesAsync(RepositoryRequest? request = null, int? perPage = null, int? page = null);
-    
+    Task<IReadOnlyList<RepositoryEntity>> GetUserRepositoriesAsync(RepositoryRequest? request = null,
+        int? perPage = null, int? page = null);
+
     /// <summary>
-    /// Gets repositories for a specific owner.
+    ///     Gets repositories for a specific owner.
     /// </summary>
-    Task<IReadOnlyList<RepositoryEntity>> GetRepositoriesForOwnerAsync(string owner, int? perPage = null, int? page = null);
-    
+    Task<IReadOnlyList<RepositoryEntity>> GetRepositoriesForOwnerAsync(string owner, int? perPage = null,
+        int? page = null);
+
     /// <summary>
-    /// Gets a specific repository.
+    ///     Gets a specific repository.
     /// </summary>
     Task<RepositoryEntity> GetRepositoryAsync(string owner, string name);
-    
+
     /// <summary>
-    /// Searches repositories with optional query.
+    ///     Searches repositories with optional query.
     /// </summary>
-    Task<IReadOnlyList<RepositoryEntity>> SearchRepositoriesAsync(SearchRepositoriesRequest request, int? perPage = null, int? page = null);
-    
+    Task<IReadOnlyList<RepositoryEntity>> SearchRepositoriesAsync(SearchRepositoriesRequest request,
+        int? perPage = null, int? page = null);
+
     /// <summary>
-    /// Gets issues for a repository.
+    ///     Gets issues for a repository.
     /// </summary>
-    Task<IReadOnlyList<IssueEntity>> GetIssuesAsync(string owner, string repo, RepositoryIssueRequest? request = null, int? perPage = null, int? page = null);
-    
+    Task<IReadOnlyList<IssueEntity>> GetIssuesAsync(string owner, string repo, RepositoryIssueRequest? request = null,
+        int? perPage = null, int? page = null);
+
     /// <summary>
-    /// Searches issues with optional query.
+    ///     Searches issues with optional query.
     /// </summary>
-    Task<IReadOnlyList<IssueEntity>> SearchIssuesAsync(SearchIssuesRequest request, int? perPage = null, int? page = null);
-    
+    Task<IReadOnlyList<IssueEntity>> SearchIssuesAsync(SearchIssuesRequest request, int? perPage = null,
+        int? page = null);
+
     /// <summary>
-    /// Gets pull requests for a repository.
+    ///     Gets pull requests for a repository.
     /// </summary>
-    Task<IReadOnlyList<PullRequestEntity>> GetPullRequestsAsync(string owner, string repo, PullRequestRequest? request = null, int? perPage = null, int? page = null);
-    
+    Task<IReadOnlyList<PullRequestEntity>> GetPullRequestsAsync(string owner, string repo,
+        PullRequestRequest? request = null, int? perPage = null, int? page = null);
+
     /// <summary>
-    /// Gets a specific pull request with full details.
+    ///     Gets a specific pull request with full details.
     /// </summary>
     Task<PullRequestEntity> GetPullRequestAsync(string owner, string repo, int number);
-    
+
     /// <summary>
-    /// Gets commits for a repository.
+    ///     Gets commits for a repository.
     /// </summary>
-    Task<IReadOnlyList<CommitEntity>> GetCommitsAsync(string owner, string repo, CommitRequest? request = null, int? perPage = null, int? page = null);
-    
+    Task<IReadOnlyList<CommitEntity>> GetCommitsAsync(string owner, string repo, CommitRequest? request = null,
+        int? perPage = null, int? page = null);
+
     /// <summary>
-    /// Gets commits that are in <paramref name="head"/> but not in <paramref name="base"/> (branch-specific commits).
-    /// Uses the GitHub compare API (base...head). Limited to 250 commits by the GitHub API.
+    ///     Gets commits that are in <paramref name="head" /> but not in <paramref name="base" /> (branch-specific commits).
+    ///     Uses the GitHub compare API (base...head). Limited to 250 commits by the GitHub API.
     /// </summary>
-    Task<IReadOnlyList<CommitEntity>> GetBranchSpecificCommitsAsync(string owner, string repo, string @base, string head);
-    
+    Task<IReadOnlyList<CommitEntity>> GetBranchSpecificCommitsAsync(string owner, string repo, string @base,
+        string head);
+
     /// <summary>
-    /// Gets branches for a repository.
+    ///     Gets branches for a repository.
     /// </summary>
-    Task<IReadOnlyList<BranchEntity>> GetBranchesAsync(string owner, string repo, int? perPage = null, int? page = null);
-    
+    Task<IReadOnlyList<BranchEntity>>
+        GetBranchesAsync(string owner, string repo, int? perPage = null, int? page = null);
+
     /// <summary>
-    /// Gets releases for a repository.
+    ///     Gets releases for a repository.
     /// </summary>
-    Task<IReadOnlyList<ReleaseEntity>> GetReleasesAsync(string owner, string repo, int? perPage = null, int? page = null);
+    Task<IReadOnlyList<ReleaseEntity>> GetReleasesAsync(string owner, string repo, int? perPage = null,
+        int? page = null);
 }

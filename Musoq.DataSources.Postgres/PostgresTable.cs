@@ -8,8 +8,8 @@ namespace Musoq.DataSources.Postgres;
 internal class PostgresTable : DatabaseTable
 {
     private readonly string _schema;
-    
-    public PostgresTable(RuntimeContext runtimeContext, string schema, Func<IEnumerable<dynamic>>? returnQuery = null) 
+
+    public PostgresTable(RuntimeContext runtimeContext, string schema, Func<IEnumerable<dynamic>>? returnQuery = null)
         : base(runtimeContext)
     {
         _schema = schema;
@@ -20,18 +20,16 @@ internal class PostgresTable : DatabaseTable
     {
         return new NpgsqlConnection(runtimeContext.EnvironmentVariables["NPGSQL_CONNECTION_STRING"]);
     }
-    
+
     protected override string CreateQueryCommand(string name)
     {
-        return $"SELECT column_name as name, data_type as type FROM information_schema.columns WHERE table_schema = '{_schema}' AND table_name = '{name}'";
+        return
+            $"SELECT column_name as name, data_type as type FROM information_schema.columns WHERE table_schema = '{_schema}' AND table_name = '{name}'";
     }
 
     protected override Type GetClrType(string type)
     {
-        if (string.IsNullOrEmpty(type))
-        {
-            throw new ArgumentNullException(nameof(type));
-        }
+        if (string.IsNullOrEmpty(type)) throw new ArgumentNullException(nameof(type));
 
         switch (type.ToLowerInvariant())
         {
@@ -64,7 +62,7 @@ internal class PostgresTable : DatabaseTable
                 return typeof(Guid);
             case "varchar":
                 return typeof(string);
-            // Add more PostgreSQL type to CLR type mappings here as needed.
+
             default:
                 throw new NotSupportedException($"The PostgreSQL type '{type}' is not supported.");
         }

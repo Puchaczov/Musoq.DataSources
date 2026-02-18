@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 namespace Musoq.DataSources.Roslyn.Entities;
 
 /// <summary>
-/// Represents a project reference entity in the Roslyn data source.
+///     Represents a project reference entity in the Roslyn data source.
 /// </summary>
 /// <param name="reference">The project reference.</param>
 /// <param name="solution">The solution that contains the project reference.</param>
@@ -12,7 +12,7 @@ public class ProjectReferenceEntity(ProjectReference reference, Solution solutio
     private Project? _project;
 
     /// <summary>
-    /// Gets the display name of the project reference.
+    ///     Gets the display name of the project reference.
     /// </summary>
     public string? Name
     {

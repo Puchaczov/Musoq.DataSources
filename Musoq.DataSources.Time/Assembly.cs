@@ -1,3 +1,3 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly:InternalsVisibleTo("Musoq.DataSources.Time.Tests")]
+[assembly: InternalsVisibleTo("Musoq.DataSources.Time.Tests")]

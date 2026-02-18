@@ -8,32 +8,31 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
 internal class NuGetResource
 {
-    private readonly object _syncRoot = new();
-    
     private readonly Dictionary<string, HtmlDocument> _htmlDocuments = new();
-    private readonly string? _packageName;
-    private readonly string? _packageVersion;
-    private readonly string? _packagePath;
     private readonly List<NuGetLicense> _licenses = [];
-    
-    private string? _projectUrl;
+    private readonly string? _packageName;
+    private readonly string? _packagePath;
+    private readonly string? _packageVersion;
+    private readonly object _syncRoot = new();
 
     private string? _authors;
+    private string? _copyright;
 
-    private string? _title;
+    private string? _description;
+    private string? _language;
+    private string? _lookingForLicense;
+    private int? _lookingForLicenseIndex;
     private string? _owners;
+
+    private string? _projectUrl;
+    private string? _releaseNotes;
 
     private bool? _requireLicenseAcceptance;
 
-    private string? _description;
-
     private string? _summary;
-    private string? _releaseNotes;
-    private string? _copyright;
-    private string? _language;
     private string? _tags;
-    private string? _lookingForLicense;
-    private int? _lookingForLicenseIndex;
+
+    private string? _title;
 
     public string? PackageName
     {
@@ -53,7 +52,7 @@ internal class NuGetResource
             }
         }
     }
-    
+
     public string? PackageVersion
     {
         get
@@ -85,7 +84,7 @@ internal class NuGetResource
         init
         {
             if (value == null) return;
-            
+
             lock (_syncRoot)
             {
                 _packagePath ??= value;
@@ -212,6 +211,7 @@ internal class NuGetResource
             }
         }
     }
+
     public string? Summary
     {
         get

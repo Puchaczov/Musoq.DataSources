@@ -14,16 +14,16 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
     public async Task Playground_GetDependenciesAsync()
     {
         // Assert
-        var client = new DefaultHttpClient(
-            () => new HttpClient(
+        var client = new DefaultHttpClient(() => new HttpClient(
                 new SingleQueryCacheResponseHandler()
             )
         );
         var fileSystem = new DefaultFileSystem();
-        
+
         // Arrange
         var retriever = new NuGetPackageMetadataRetriever(
-            new NuGetCachePathResolver(@"D:\repos\Musoq.Cloud\src\dotnet\Musoq.Cloud.sln", OSPlatform.Windows, NullLogger.Instance),
+            new NuGetCachePathResolver(@"D:\repos\Musoq.Cloud\src\dotnet\Musoq.Cloud.sln", OSPlatform.Windows,
+                NullLogger.Instance),
             null,
             new NuGetRetrievalService(
                 new NuGetPropertiesResolver("https://localhost:7137", client),
@@ -45,18 +45,15 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
         var deps = new List<DependencyInfo>();
         // Act
         await foreach (var metadata in retriever.GetDependenciesAsync(packageName, version, CancellationToken.None))
-        {
             deps.Add(metadata);
-        }
     }
-    
+
     [Ignore]
     [TestMethod]
     public async Task Playground_GetMetadataAsync()
     {
         // Assert
-        var client = new DefaultHttpClient(
-            () => new HttpClient(
+        var client = new DefaultHttpClient(() => new HttpClient(
                 new PersistentCacheResponseHandler(
                     "C:\\Users\\Jakub\\AppData\\Local\\Temp\\DataSourcesCache\\Musoq.DataSources.Roslyn\\NuGet",
                     new SingleQueryCacheResponseHandler(),
@@ -65,10 +62,11 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
             )
         );
         var fileSystem = new DefaultFileSystem();
-        
+
         // Arrange
         var retriever = new NuGetPackageMetadataRetriever(
-            new NuGetCachePathResolver(@"D:\repos\Musoq.Cloud\src\dotnet\Musoq.Cloud.sln", OSPlatform.Windows, NullLogger.Instance),
+            new NuGetCachePathResolver(@"D:\repos\Musoq.Cloud\src\dotnet\Musoq.Cloud.sln", OSPlatform.Windows,
+                NullLogger.Instance),
             null,
             new NuGetRetrievalService(
                 new NuGetPropertiesResolver("https://localhost:7137", client),
@@ -88,11 +86,9 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
         var version = "2.1.6";
 
         var metadata = new List<IReadOnlyDictionary<string, string?>>();
-        
+
         // Act
         await foreach (var row in retriever.GetMetadataAsync(packageName, version, CancellationToken.None))
-        {
             metadata.Add(row);
-        }
     }
 }

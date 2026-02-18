@@ -10,9 +10,9 @@ internal class ReleasesSource : RowSourceBase<ReleaseEntity>
 {
     private const string SourceName = "github_releases";
     private readonly IGitHubApi _api;
-    private readonly RuntimeContext _runtimeContext;
     private readonly string _owner;
     private readonly string _repo;
+    private readonly RuntimeContext _runtimeContext;
 
     public ReleasesSource(IGitHubApi api, RuntimeContext runtimeContext, string owner, string repo)
     {
@@ -31,45 +31,41 @@ internal class ReleasesSource : RowSourceBase<ReleaseEntity>
         {
             var takeValue = _runtimeContext.QueryHints.TakeValue;
             var skipValue = _runtimeContext.QueryHints.SkipValue;
-            
-            int page = 1;
-            int perPage = 100;
-            
-            if (skipValue.HasValue && skipValue.Value > 0)
-            {
-                page = (int)(skipValue.Value / perPage) + 1;
-            }
-            
+
+            var page = 1;
+            var perPage = 100;
+
+            if (skipValue.HasValue && skipValue.Value > 0) page = (int)(skipValue.Value / perPage) + 1;
+
             var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
             var fetchedRows = 0;
-            
+
             while (fetchedRows < maxRows && !_runtimeContext.EndWorkToken.IsCancellationRequested)
             {
                 var releases = _api.GetReleasesAsync(_owner, _repo, perPage, page).Result;
-                
+
                 if (releases.Count == 0)
                     break;
-                
+
                 var resolvers = releases
                     .Take(maxRows - fetchedRows)
                     .Select(r => new EntityResolver<ReleaseEntity>(
-                        r, 
-                        ReleasesSourceHelper.ReleasesNameToIndexMap, 
+                        r,
+                        ReleasesSourceHelper.ReleasesNameToIndexMap,
                         ReleasesSourceHelper.ReleasesIndexToMethodAccessMap))
                     .ToList();
-                
+
                 chunkedSource.Add(resolvers);
-                
+
                 fetchedRows += resolvers.Count;
                 totalRowsProcessed += resolvers.Count;
                 _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
-                
+
                 if (releases.Count < perPage)
                     break;
-                
+
                 page++;
             }
-            
         }
         catch (Exception ex)
         {

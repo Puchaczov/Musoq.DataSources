@@ -4,8 +4,8 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet.Version;
 
 internal class VersionRangeLexer(string input)
 {
-    private int _position;
     private const int MaxTokenLength = 1024; // Prevent excessive token lengths
+    private int _position;
 
     public IEnumerable<Token> Tokenize()
     {
@@ -16,30 +16,20 @@ internal class VersionRangeLexer(string input)
             yield break;
         }
 
-        while (_position < input.Length)
-        {
-            yield return NextToken();
-        }
-        
+        while (_position < input.Length) yield return NextToken();
+
         yield return new Token(TokenType.Eof, string.Empty, _position);
     }
-    
+
     private Token NextToken()
     {
-        // Skip whitespace
-        while (_position < input.Length && char.IsWhiteSpace(input[_position]))
-        {
-            _position++;
-        }
-        
-        if (_position >= input.Length)
-        {
-            return new Token(TokenType.Eof, string.Empty, _position);
-        }
-        
+        while (_position < input.Length && char.IsWhiteSpace(input[_position])) _position++;
+
+        if (_position >= input.Length) return new Token(TokenType.Eof, string.Empty, _position);
+
         var current = input[_position];
         var tokenStart = _position;
-        
+
         switch (current)
         {
             case '[':
@@ -66,7 +56,7 @@ internal class VersionRangeLexer(string input)
                     _position += 2;
                     return new Token(TokenType.Or, "||", tokenStart);
                 }
-                // Handle unexpected character
+
                 _position++;
                 return new Token(TokenType.Unknown, input[tokenStart].ToString(), tokenStart);
             default:
@@ -74,35 +64,30 @@ internal class VersionRangeLexer(string input)
                 {
                     var startPos = _position;
                     var length = 0;
-                    
-                    while (_position < input.Length && 
-                          length < MaxTokenLength &&
-                          (char.IsDigit(input[_position]) || 
-                           input[_position] == '.' || 
-                           input[_position] == '-' || 
-                           char.IsLetter(input[_position])))
+
+                    while (_position < input.Length &&
+                           length < MaxTokenLength &&
+                           (char.IsDigit(input[_position]) ||
+                            input[_position] == '.' ||
+                            input[_position] == '-' ||
+                            char.IsLetter(input[_position])))
                     {
                         _position++;
                         length++;
                     }
-                    
-                    // If we reached max length but there's still more to the token,
-                    // consume the rest but don't include it in the token
+
+
                     if (length >= MaxTokenLength)
-                    {
                         while (_position < input.Length &&
-                              (char.IsDigit(input[_position]) || 
-                               input[_position] == '.' || 
-                               input[_position] == '-' || 
-                               char.IsLetter(input[_position])))
-                        {
+                               (char.IsDigit(input[_position]) ||
+                                input[_position] == '.' ||
+                                input[_position] == '-' ||
+                                char.IsLetter(input[_position])))
                             _position++;
-                        }
-                    }
-                    
+
                     return new Token(TokenType.VersionNumber, input.Substring(startPos, length), tokenStart);
                 }
-                // Handle unexpected character
+
                 _position++;
                 return new Token(TokenType.Unknown, input[tokenStart].ToString(), tokenStart);
         }

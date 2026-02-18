@@ -1,12 +1,12 @@
 namespace Musoq.DataSources.Ollama;
 
 /// <summary>
-/// Completion response
+///     Completion response
 /// </summary>
 public class CompletionResponse
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="CompletionResponse"/> class.
+    ///     Initializes a new instance of the <see cref="CompletionResponse" /> class.
     /// </summary>
     /// <param name="text">The text</param>
     public CompletionResponse(string text)
@@ -15,7 +15,7 @@ public class CompletionResponse
     }
 
     /// <summary>
-    /// Gets or sets the text
+    ///     Gets or sets the text
     /// </summary>
     public string Text { get; }
 }

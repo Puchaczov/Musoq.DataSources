@@ -13,7 +13,7 @@ public class ArchivesOrSeparatedValuesSchemaProvider : ISchemaProvider
 
         if (schema == "#archives")
             return new ArchivesSchema();
-        
+
         throw new NotSupportedException($"There is no schema with name '{schema}'.");
     }
 }

@@ -6,12 +6,12 @@ namespace Musoq.DataSources.Kubernetes;
 internal class KubernetesApi : IKubernetesApi
 {
     private readonly k8s.Kubernetes _client;
-    
+
     public KubernetesApi(k8s.Kubernetes client)
     {
         _client = client;
     }
-    
+
     public V1PodList ListPodsForAllNamespaces()
     {
         return _client.ListPodForAllNamespaces();
@@ -26,17 +26,17 @@ internal class KubernetesApi : IKubernetesApi
     {
         return _client.ListServiceForAllNamespaces();
     }
-    
+
     public V1DeploymentList ListDeploymentsForAllNamespaces()
     {
         return _client.ListDeploymentForAllNamespaces();
     }
-    
+
     public V1ReplicaSetList ListReplicaSetsForAllNamespaces()
     {
         return _client.ListReplicaSetForAllNamespaces();
     }
-    
+
     public V1NodeList ListNodes()
     {
         return _client.ListNode();

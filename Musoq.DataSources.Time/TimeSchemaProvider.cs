@@ -1,20 +1,19 @@
 ﻿using Musoq.Schema;
 
-namespace Musoq.DataSources.Time
+namespace Musoq.DataSources.Time;
+
+/// <summary>
+///     Provides the requested schema
+/// </summary>
+public class TimeSchemaProvider : ISchemaProvider
 {
     /// <summary>
-    /// Provides the requested schema
+    ///     Get schema based on provided name
     /// </summary>
-    public class TimeSchemaProvider : ISchemaProvider
+    /// <param name="schema">Schema name</param>
+    /// <returns>Requested schema</returns>
+    public ISchema GetSchema(string schema)
     {
-        /// <summary>
-        /// Get schema based on provided name
-        /// </summary>
-        /// <param name="schema">Schema name</param>
-        /// <returns>Requested schema</returns>
-        public ISchema GetSchema(string schema)
-        {
-            return new TimeSchema();
-        }
+        return new TimeSchema();
     }
 }

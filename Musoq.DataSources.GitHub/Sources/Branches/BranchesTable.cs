@@ -16,6 +16,6 @@ internal class BranchesTable : ISchemaTable
     }
 
     public ISchemaColumn[] Columns => BranchesSourceHelper.BranchesColumns;
-    
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(BranchEntity));
 }

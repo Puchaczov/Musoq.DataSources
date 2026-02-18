@@ -21,21 +21,21 @@
         <Nullable>enable</Nullable>
         <IsFinalBuild>false</IsFinalBuild>
     </PropertyGroup>
-    
+
     <ItemGroup>
-        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
+        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
     </ItemGroup>
-    
+
     <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
         <ItemGroup>
-            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')"/>
         </ItemGroup>
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Build.Locator" Version="1.10.2" />
-        <PackageReference Include="ConsoleAppFramework" Version="5.2.4" />
-        <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
+        <PackageReference Include="Microsoft.Build.Locator" Version="1.10.2"/>
+        <PackageReference Include="ConsoleAppFramework" Version="5.2.4"/>
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.72"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
@@ -45,10 +45,10 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.10" />
-        <PackageReference Include="Musoq.Converter" Version="9.0.0" />
-        <PackageReference Include="Musoq.Evaluator" Version="14.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.10"/>
+        <PackageReference Include="Musoq.Converter" Version="9.0.0"/>
+        <PackageReference Include="Musoq.Evaluator" Version="14.0.0"/>
         <PackageReference Include="Musoq.Parser" Version="9.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
@@ -58,48 +58,48 @@
         <PackageReference Include="Musoq.Schema" Version="14.0.0">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
+        <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
-      <ProjectReference Include="..\Musoq.DataSources.Roslyn.CommandLineArguments\Musoq.DataSources.Roslyn.CommandLineArguments.csproj" />
+        <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.Roslyn.CommandLineArguments\Musoq.DataSources.Roslyn.CommandLineArguments.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Components\DefaultHttpClient.cs">
-        <DependentUpon>IHttpClient.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Components\DefaultFileSystem.cs">
-        <DependentUpon>IFileSystem.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Components\NuGet\NuGetCachePathResolver.cs">
-        <DependentUpon>INuGetCachePathResolver.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Components\NuGet\NuGetPackageMetadataRetriever.cs">
-        <DependentUpon>INuGetPackageMetadataRetriever.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Components\NuGet\NuGetRetrievalService.cs">
-        <DependentUpon>INuGetRetrievalService.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Components\NuGet\NuGetPropertiesResolver.cs">
-        <DependentUpon>INuGetPropertiesResolver.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Components\NuGet\NuGetResourceVisitor.cs">
-        <DependentUpon>INuGetResourceVisitor.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Components\NuGet\PackageVersionConcurrencyManager.cs">
-        <DependentUpon>IPackageVersionConcurrencyManager.cs</DependentUpon>
-      </Compile>
+        <Compile Update="Components\DefaultHttpClient.cs">
+            <DependentUpon>IHttpClient.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Components\DefaultFileSystem.cs">
+            <DependentUpon>IFileSystem.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Components\NuGet\NuGetCachePathResolver.cs">
+            <DependentUpon>INuGetCachePathResolver.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Components\NuGet\NuGetPackageMetadataRetriever.cs">
+            <DependentUpon>INuGetPackageMetadataRetriever.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Components\NuGet\NuGetRetrievalService.cs">
+            <DependentUpon>INuGetRetrievalService.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Components\NuGet\NuGetPropertiesResolver.cs">
+            <DependentUpon>INuGetPropertiesResolver.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Components\NuGet\NuGetResourceVisitor.cs">
+            <DependentUpon>INuGetResourceVisitor.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Components\NuGet\PackageVersionConcurrencyManager.cs">
+            <DependentUpon>IPackageVersionConcurrencyManager.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="RateLimitingOptions.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="BannedPropertiesValues.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="RateLimitingOptions.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="BannedPropertiesValues.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

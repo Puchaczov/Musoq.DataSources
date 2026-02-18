@@ -9,18 +9,18 @@ using Musoq.Schema.DataSources;
 namespace Musoq.DataSources.Jira.Sources.Comments;
 
 /// <summary>
-/// Row source for Jira comments.
+///     Row source for Jira comments.
 /// </summary>
 internal class CommentsSource : AsyncRowsSourceBase<IJiraComment>
 {
     private const string SourceName = "jira_comments";
     private readonly IJiraApi _api;
-    private readonly RuntimeContext _runtimeContext;
     private readonly string? _issueKey;
     private readonly string? _projectKey;
+    private readonly RuntimeContext _runtimeContext;
 
     /// <summary>
-    /// Creates a comments source for a specific issue.
+    ///     Creates a comments source for a specific issue.
     /// </summary>
     public CommentsSource(IJiraApi api, RuntimeContext runtimeContext, string issueKey)
         : base(runtimeContext.EndWorkToken)
@@ -32,7 +32,7 @@ internal class CommentsSource : AsyncRowsSourceBase<IJiraComment>
     }
 
     /// <summary>
-    /// Creates a comments source for issues in a project.
+    ///     Creates a comments source for issues in a project.
     /// </summary>
     public CommentsSource(IJiraApi api, RuntimeContext runtimeContext, string? issueKey, string? projectKey)
         : base(runtimeContext.EndWorkToken)
@@ -43,7 +43,8 @@ internal class CommentsSource : AsyncRowsSourceBase<IJiraComment>
         _projectKey = projectKey;
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
@@ -57,15 +58,13 @@ internal class CommentsSource : AsyncRowsSourceBase<IJiraComment>
 
             if (!string.IsNullOrEmpty(_issueKey))
             {
-                // Fetch comments for a specific issue
                 comments = await _api.GetCommentsAsync(_issueKey);
             }
             else if (!string.IsNullOrEmpty(_projectKey))
             {
-                // Fetch comments for all issues in a project
                 var filterParameters = JqlBuilder.ExtractParameters(_runtimeContext.QuerySourceInfo.WhereNode);
                 var jql = JqlBuilder.BuildJql($"project = {_projectKey}", filterParameters);
-                comments = await _api.GetCommentsForIssuesAsync(jql, 100);
+                comments = await _api.GetCommentsForIssuesAsync(jql);
             }
             else
             {

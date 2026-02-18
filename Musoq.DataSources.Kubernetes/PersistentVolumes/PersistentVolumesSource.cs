@@ -21,7 +21,7 @@ internal class PersistentVolumesSource : RowSourceBase<PersistentVolumeEntity>
     {
         _runtimeContext.ReportDataSourceBegin(PersistentVolumesSourceName);
         long totalRowsProcessed = 0;
-        
+
         try
         {
             var volumes = _kubernetesApi.ListPersistentVolumes();
@@ -29,7 +29,10 @@ internal class PersistentVolumesSource : RowSourceBase<PersistentVolumeEntity>
             _runtimeContext.ReportDataSourceRowsKnown(PersistentVolumesSourceName, totalRowsProcessed);
 
             chunkedSource.Add(
-                volumes.Items.Select(c => new EntityResolver<PersistentVolumeEntity>(MapV1PersistentVolumeToPersistentVolumeEntity(c), PersistentVolumesSourceHelper.PersistentVolumesNameToIndexMap, PersistentVolumesSourceHelper.PersistentVolumesIndexToMethodAccessMap)).ToList());
+                volumes.Items.Select(c => new EntityResolver<PersistentVolumeEntity>(
+                    MapV1PersistentVolumeToPersistentVolumeEntity(c),
+                    PersistentVolumesSourceHelper.PersistentVolumesNameToIndexMap,
+                    PersistentVolumesSourceHelper.PersistentVolumesIndexToMethodAccessMap)).ToList());
         }
         finally
         {
@@ -37,7 +40,8 @@ internal class PersistentVolumesSource : RowSourceBase<PersistentVolumeEntity>
         }
     }
 
-    private static PersistentVolumeEntity MapV1PersistentVolumeToPersistentVolumeEntity(V1PersistentVolume v1PersistentVolume)
+    private static PersistentVolumeEntity MapV1PersistentVolumeToPersistentVolumeEntity(
+        V1PersistentVolume v1PersistentVolume)
     {
         return new PersistentVolumeEntity
         {

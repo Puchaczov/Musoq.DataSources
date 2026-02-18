@@ -13,16 +13,16 @@ internal static class AirtableBaseHelper
     {
         BasesNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(AirtableTable.Id), 0},
-            {nameof(AirtableTable.Name), 1},
-            {nameof(AirtableTable.PrimaryFieldId), 2},
+            { nameof(AirtableTable.Id), 0 },
+            { nameof(AirtableTable.Name), 1 },
+            { nameof(AirtableTable.PrimaryFieldId), 2 }
         };
 
         BasesIndexToMethodAccessMap = new Dictionary<int, Func<AirtableTable, object>>
         {
-            {0, @base => @base.Id},
-            {1, @base => @base.Name},
-            {2, @base => @base.PrimaryFieldId},
+            { 0, @base => @base.Id },
+            { 1, @base => @base.Name },
+            { 2, @base => @base.PrimaryFieldId }
         };
 
         BaseColumns =

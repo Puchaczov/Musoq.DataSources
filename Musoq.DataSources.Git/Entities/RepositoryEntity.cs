@@ -9,45 +9,22 @@ using Musoq.Schema.DataSources;
 namespace Musoq.DataSources.Git.Entities;
 
 /// <summary>
-/// Represents a Git repository entity, providing access to various repository properties and collections.
+///     Represents a Git repository entity, providing access to various repository properties and collections.
 /// </summary>
 public class RepositoryEntity
 {
-    private readonly Repository _repository;
-    
-    ~RepositoryEntity()
-    {
-        try
-        {
-            _repository.Dispose();   
-        }
-        catch
-        {
-            // ignored
-        }
-    }
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="RepositoryEntity"/> class.
-    /// </summary>
-    /// <param name="repository">The Git repository.</param>
-    public RepositoryEntity(Repository repository)
-    {
-        _repository = repository;
-    }
-
-    /// <summary>
-    /// A read-only dictionary mapping column names to their respective indices.
+    ///     A read-only dictionary mapping column names to their respective indices.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>
-    /// A read-only dictionary mapping column indices to functions that access the corresponding properties.
+    ///     A read-only dictionary mapping column indices to functions that access the corresponding properties.
     /// </summary>
     public static readonly IReadOnlyDictionary<int, Func<RepositoryEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>
-    /// An array of schema columns representing the structure of the solution entity.
+    ///     An array of schema columns representing the structure of the solution entity.
     /// </summary>
     public static readonly ISchemaColumn[] Columns =
     [
@@ -64,96 +41,121 @@ public class RepositoryEntity
     ];
 
     /// <summary>
-    /// Static constructor to initialize the static read-only dictionaries.
+    ///     Static constructor to initialize the static read-only dictionaries.
     /// </summary>
     static RepositoryEntity()
     {
         NameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(Path), 0},
-            {nameof(WorkingDirectory), 1},
-            {nameof(Branches), 2},
-            {nameof(Tags), 3},
-            {nameof(Commits), 4},
-            {nameof(Head), 5},
-            {nameof(Configuration), 6},
-            {nameof(Information), 7},
-            {nameof(Stashes), 8},
-            {nameof(Self), 9}
+            { nameof(Path), 0 },
+            { nameof(WorkingDirectory), 1 },
+            { nameof(Branches), 2 },
+            { nameof(Tags), 3 },
+            { nameof(Commits), 4 },
+            { nameof(Head), 5 },
+            { nameof(Configuration), 6 },
+            { nameof(Information), 7 },
+            { nameof(Stashes), 8 },
+            { nameof(Self), 9 }
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<RepositoryEntity, object?>>
         {
-            {0, entity => entity.Path},
-            {1, entity => entity.WorkingDirectory},
-            {2, entity => entity.Branches},
-            {3, entity => entity.Tags},
-            {4, entity => entity.Commits},
-            {5, entity => entity.Head},
-            {6, entity => entity.Configuration},
-            {7, entity => entity.Information},
-            {8, entity => entity.Stashes},
-            {9, entity => entity.Self}
+            { 0, entity => entity.Path },
+            { 1, entity => entity.WorkingDirectory },
+            { 2, entity => entity.Branches },
+            { 3, entity => entity.Tags },
+            { 4, entity => entity.Commits },
+            { 5, entity => entity.Head },
+            { 6, entity => entity.Configuration },
+            { 7, entity => entity.Information },
+            { 8, entity => entity.Stashes },
+            { 9, entity => entity.Self }
         };
     }
 
     /// <summary>
-    /// Gets the path of the repository.
+    ///     Initializes a new instance of the <see cref="RepositoryEntity" /> class.
     /// </summary>
-    public string Path => _repository.Info.Path;
+    /// <param name="repository">The Git repository.</param>
+    public RepositoryEntity(Repository repository)
+    {
+        LibGitRepository = repository;
+    }
 
     /// <summary>
-    /// Gets the working directory of the repository.
+    ///     Gets the path of the repository.
     /// </summary>
-    public string WorkingDirectory => _repository.Info.WorkingDirectory;
+    public string Path => LibGitRepository.Info.Path;
 
     /// <summary>
-    /// Gets the branches in the repository.
+    ///     Gets the working directory of the repository.
+    /// </summary>
+    public string WorkingDirectory => LibGitRepository.Info.WorkingDirectory;
+
+    /// <summary>
+    ///     Gets the branches in the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<BranchEntity> Branches => _repository.Branches.Select(branch => new BranchEntity(branch, _repository));
+    public IEnumerable<BranchEntity> Branches =>
+        LibGitRepository.Branches.Select(branch => new BranchEntity(branch, LibGitRepository));
 
     /// <summary>
-    /// Gets the tags in the repository.
+    ///     Gets the tags in the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<TagEntity> Tags => _repository.Tags.Select(tag => new TagEntity(tag, _repository));
+    public IEnumerable<TagEntity> Tags => LibGitRepository.Tags.Select(tag => new TagEntity(tag, LibGitRepository));
 
     /// <summary>
-    /// Gets the commits in the repository.
+    ///     Gets the commits in the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<CommitEntity> Commits => _repository.Commits.Select(commit => new CommitEntity(commit, _repository));
+    public IEnumerable<CommitEntity> Commits =>
+        LibGitRepository.Commits.Select(commit => new CommitEntity(commit, LibGitRepository));
 
     /// <summary>
-    /// Gets the head branch of the repository.
+    ///     Gets the head branch of the repository.
     /// </summary>
-    public BranchEntity Head => new(_repository.Head, _repository);
+    public BranchEntity Head => new(LibGitRepository.Head, LibGitRepository);
 
     /// <summary>
-    /// Gets the configuration key-value pairs of the repository.
-    /// </summary>
-    [BindablePropertyAsTable]
-    public IEnumerable<ConfigurationEntityKeyValue> Configuration => _repository.Config.Select(f => new ConfigurationEntityKeyValue(f, _repository));
-
-    /// <summary>
-    /// Gets the information about the repository.
-    /// </summary>
-    public RepositoryInformationEntity Information => new(_repository.Info, _repository);
-
-    /// <summary>
-    /// Gets the stashes in the repository.
+    ///     Gets the configuration key-value pairs of the repository.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<StashEntity> Stashes => _repository.Stashes.Select(stash => new StashEntity(stash, _repository));
-    
+    public IEnumerable<ConfigurationEntityKeyValue> Configuration =>
+        LibGitRepository.Config.Select(f => new ConfigurationEntityKeyValue(f, LibGitRepository));
+
     /// <summary>
-    /// Gets the repository entity itself.
+    ///     Gets the information about the repository.
+    /// </summary>
+    public RepositoryInformationEntity Information => new(LibGitRepository.Info, LibGitRepository);
+
+    /// <summary>
+    ///     Gets the stashes in the repository.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<StashEntity> Stashes =>
+        LibGitRepository.Stashes.Select(stash => new StashEntity(stash, LibGitRepository));
+
+    /// <summary>
+    ///     Gets the repository entity itself.
     /// </summary>
     public RepositoryEntity Self => this;
 
     /// <summary>
-    /// Gets the underlying LibGit2Sharp repository.
+    ///     Gets the underlying LibGit2Sharp repository.
     /// </summary>
-    internal Repository LibGitRepository => _repository;
+    internal Repository LibGitRepository { get; }
+
+    ~RepositoryEntity()
+    {
+        try
+        {
+            LibGitRepository.Dispose();
+        }
+        catch
+        {
+            // ignored
+        }
+    }
 }

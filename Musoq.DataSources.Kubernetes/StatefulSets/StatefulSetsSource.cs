@@ -20,17 +20,18 @@ internal class StatefulSetsSource : RowSourceBase<StatefulSetEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(StatefulSetsSourceName);
-        
+
         try
         {
             var statefulSets = _kubernetesApi.ListStatefulSetsForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(StatefulSetsSourceName, statefulSets.Items.Count);
 
             chunkedSource.Add(
-                statefulSets.Items.Select(c => new EntityResolver<StatefulSetEntity>(MapV1StatefulSetToStatefulSetEntity(c),
+                statefulSets.Items.Select(c => new EntityResolver<StatefulSetEntity>(
+                    MapV1StatefulSetToStatefulSetEntity(c),
                     StatefulSetsSourceHelper.StatefulSetsNameToIndexMap,
                     StatefulSetsSourceHelper.StatefulSetsIndexToMethodAccessMap)).ToList());
-            
+
             _runtimeContext.ReportDataSourceEnd(StatefulSetsSourceName, statefulSets.Items.Count);
         }
         catch

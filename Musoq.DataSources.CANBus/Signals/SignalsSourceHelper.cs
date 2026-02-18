@@ -29,27 +29,28 @@ internal static class SignalsSourceHelper
         { nameof(SignalEntity.MessageOrder), 17 }
     };
 
-    internal static readonly IReadOnlyDictionary<int, Func<SignalEntity, object>> SignalsIndexToMethodAccessMap = new Dictionary<int, Func<SignalEntity, object>>
-    {
-        { 0, f => f.Id },
-        { 1, f => f.Name },
-        { 2, f => f.StartBit },
-        { 3, f => f.Length },
-        { 4, f => f.ByteOrder },
-        { 5, f => f.InitialValue },
-        { 6, f => f.Factor },
-        { 7, f => f.IsInteger },
-        { 8, f => f.Offset },
-        { 9, f => f.Minimum },
-        { 10, f => f.Maximum },
-        { 11, f => f.Unit },
-        { 12, f => f.Receiver },
-        { 13, f => f.Comment },
-        { 14, f => f.Multiplexing },
-        { 15, f => f.MessageName },
-        { 16, f => f.ValueMap },
-        { 17, f => f.MessageOrder }
-    };
+    internal static readonly IReadOnlyDictionary<int, Func<SignalEntity, object>> SignalsIndexToMethodAccessMap =
+        new Dictionary<int, Func<SignalEntity, object>>
+        {
+            { 0, f => f.Id },
+            { 1, f => f.Name },
+            { 2, f => f.StartBit },
+            { 3, f => f.Length },
+            { 4, f => f.ByteOrder },
+            { 5, f => f.InitialValue },
+            { 6, f => f.Factor },
+            { 7, f => f.IsInteger },
+            { 8, f => f.Offset },
+            { 9, f => f.Minimum },
+            { 10, f => f.Maximum },
+            { 11, f => f.Unit },
+            { 12, f => f.Receiver },
+            { 13, f => f.Comment },
+            { 14, f => f.Multiplexing },
+            { 15, f => f.MessageName },
+            { 16, f => f.ValueMap },
+            { 17, f => f.MessageOrder }
+        };
 
     internal static ISchemaColumn[] Columns =>
     [

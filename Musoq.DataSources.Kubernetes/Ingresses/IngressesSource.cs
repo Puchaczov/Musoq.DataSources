@@ -20,15 +20,17 @@ internal class IngressesSource : RowSourceBase<IngressEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(IngressesSourceName);
-        
+
         try
         {
             var ingresses = _kubernetesApi.ListIngressesForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(IngressesSourceName, ingresses.Items.Count);
 
             chunkedSource.Add(
-                ingresses.Items.Select(c => new EntityResolver<IngressEntity>(MapV1IngressToIngressEntity(c), IngressesSourceHelper.IngressesNameToIndexMap, IngressesSourceHelper.IngressesIndexToMethodAccessMap)).ToList());
-            
+                ingresses.Items.Select(c => new EntityResolver<IngressEntity>(MapV1IngressToIngressEntity(c),
+                    IngressesSourceHelper.IngressesNameToIndexMap,
+                    IngressesSourceHelper.IngressesIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(IngressesSourceName, ingresses.Items.Count);
         }
         catch

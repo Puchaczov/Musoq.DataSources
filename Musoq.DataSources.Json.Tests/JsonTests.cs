@@ -9,144 +9,144 @@ using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.Json.Tests
+namespace Musoq.DataSources.Json.Tests;
+
+[TestClass]
+public class JsonTests
 {
-    [TestClass]
-    public class JsonTests
+    static JsonTests()
     {
-        [TestMethod]
-        public void SimpleSelectTest()
-        {
-            var query =
-                @"select Name, Age from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
+        Culture.ApplyWithDefaultCulture();
+    }
 
-            var vm = CreateAndRunVirtualMachine(query);
-            var table = vm.Run();
+    [TestMethod]
+    public void SimpleSelectTest()
+    {
+        var query =
+            @"select Name, Age from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
 
-            Assert.AreEqual(2, table.Columns.Count());
-            Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
-            Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
-            Assert.AreEqual("Age", table.Columns.ElementAt(1).ColumnName);
-            Assert.AreEqual(typeof(long), table.Columns.ElementAt(1).ColumnType);
-            
-            Assert.IsTrue(table.Count == 3, "Table should have 3 entries");
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
 
-            Assert.IsTrue(table.Any(row => 
-                (string)row.Values[0] == "Aleksander" && 
-                (long)row.Values[1] == 24L
-            ), "First entry should be Aleksander, 24");
+        Assert.AreEqual(2, table.Columns.Count());
+        Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
+        Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
+        Assert.AreEqual("Age", table.Columns.ElementAt(1).ColumnName);
+        Assert.AreEqual(typeof(long), table.Columns.ElementAt(1).ColumnType);
 
-            Assert.IsTrue(table.Any(row => 
-                (string)row.Values[0] == "Mikolaj" && 
-                (long)row.Values[1] == 11L
-            ), "Second entry should be Mikolaj, 11");
+        Assert.IsTrue(table.Count == 3, "Table should have 3 entries");
 
-            Assert.IsTrue(table.Any(row => 
-                (string)row.Values[0] == "Marek" && 
-                (long)row.Values[1] == 45L
-            ), "Third entry should be Marek, 45");
-        }
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == "Aleksander" &&
+            (long)row.Values[1] == 24L
+        ), "First entry should be Aleksander, 24");
 
-        [TestMethod]
-        public void SelectWithArrayLengthTest()
-        {
-            var query =
-                @"select Name, Length(Books) from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == "Mikolaj" &&
+            (long)row.Values[1] == 11L
+        ), "Second entry should be Mikolaj, 11");
 
-            var vm = CreateAndRunVirtualMachine(query);
-            var table = vm.Run();
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == "Marek" &&
+            (long)row.Values[1] == 45L
+        ), "Third entry should be Marek, 45");
+    }
 
-            Assert.AreEqual(2, table.Columns.Count());
-            Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
-            Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
-            Assert.AreEqual("Length(Books)", table.Columns.ElementAt(1).ColumnName);
-            Assert.AreEqual(typeof(int), table.Columns.ElementAt(1).ColumnType);
+    [TestMethod]
+    public void SelectWithArrayLengthTest()
+    {
+        var query =
+            @"select Name, Length(Books) from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
 
-            Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
 
-            Assert.IsTrue(table.Any(r => 
-                    (string)r.Values[0] == "Aleksander" && (int)r.Values[1] == 2),
-                "Missing record for Aleksander with value 2");
+        Assert.AreEqual(2, table.Columns.Count());
+        Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
+        Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
+        Assert.AreEqual("Length(Books)", table.Columns.ElementAt(1).ColumnName);
+        Assert.AreEqual(typeof(int), table.Columns.ElementAt(1).ColumnType);
 
-            Assert.IsTrue(table.Any(r => 
-                    (string)r.Values[0] == "Mikolaj" && (int)r.Values[1] == 0),
-                "Missing record for Mikolaj with value 0");
+        Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
 
-            Assert.IsTrue(table.Any(r => 
-                    (string)r.Values[0] == "Marek" && (int)r.Values[1] == 0),
-                "Missing record for Marek with value 0");
-        }
+        Assert.IsTrue(table.Any(r =>
+                (string)r.Values[0] == "Aleksander" && (int)r.Values[1] == 2),
+            "Missing record for Aleksander with value 2");
 
-        [TestMethod]
-        public void MakeFlatArrayTest()
-        {
-            var query =
-                @"select MakeFlat(Array) from #json.file('./JsonTestFile_MakeFlatArray.json', './JsonTestFile_MakeFlatArray.schema.json')";
+        Assert.IsTrue(table.Any(r =>
+                (string)r.Values[0] == "Mikolaj" && (int)r.Values[1] == 0),
+            "Missing record for Mikolaj with value 0");
 
-            var vm = CreateAndRunVirtualMachine(query);
-            var table = vm.Run();
+        Assert.IsTrue(table.Any(r =>
+                (string)r.Values[0] == "Marek" && (int)r.Values[1] == 0),
+            "Missing record for Marek with value 0");
+    }
 
-            Assert.AreEqual(1, table.Columns.Count());
-            Assert.AreEqual("MakeFlat(Array)", table.Columns.ElementAt(0).ColumnName);
-            Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
-            
-            Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
+    [TestMethod]
+    public void MakeFlatArrayTest()
+    {
+        var query =
+            @"select MakeFlat(Array) from #json.file('./JsonTestFile_MakeFlatArray.json', './JsonTestFile_MakeFlatArray.schema.json')";
 
-            Assert.IsTrue(table.Any(row => 
-                (string)row.Values[0] == "1, 2, 3"
-            ), "First entry should be '1, 2, 3'");
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
 
-            Assert.IsTrue(table.Any(row => 
-                (string)row.Values[0] == string.Empty
-            ), "Second entry should be an empty string");
-        }
+        Assert.AreEqual(1, table.Columns.Count());
+        Assert.AreEqual("MakeFlat(Array)", table.Columns.ElementAt(0).ColumnName);
+        Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
-        [TestMethod]
-        public void JsonSource_Cancelled_ShouldBeEmpty()
-        {
-            var mockLogger = new Mock<ILogger>();
-            using var tokenSource = new CancellationTokenSource();
-            tokenSource.Cancel();
-            var runtimeContext = new RuntimeContext(
-                "test",
-                tokenSource.Token,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object);
-            var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
+        Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
-            var fired = source.Rows.Count();
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == "1, 2, 3"
+        ), "First entry should be '1, 2, 3'");
 
-            Assert.AreEqual(0, fired);
-        }
+        Assert.IsTrue(table.Any(row =>
+            (string)row.Values[0] == string.Empty
+        ), "Second entry should be an empty string");
+    }
 
-        [TestMethod]
-        public void JsonSource_FullLoadTest()
-        {
-            var mockLogger = new Mock<ILogger>();
-            var runtimeContext = new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object);
-            var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
+    [TestMethod]
+    public void JsonSource_Cancelled_ShouldBeEmpty()
+    {
+        var mockLogger = new Mock<ILogger>();
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.Cancel();
+        var runtimeContext = new RuntimeContext(
+            "test",
+            tokenSource.Token,
+            Array.Empty<ISchemaColumn>(),
+            new Dictionary<string, string>(),
+            QuerySourceInfo.Empty,
+            mockLogger.Object);
+        var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
 
-            var fired = source.Rows.Count();
+        var fired = source.Rows.Count();
 
-            Assert.AreEqual(3, fired);
-        }
+        Assert.AreEqual(0, fired);
+    }
 
-        private CompiledQuery CreateAndRunVirtualMachine(string script)
-        {
-            return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new JsonSchemaProvider(), EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-        }
+    [TestMethod]
+    public void JsonSource_FullLoadTest()
+    {
+        var mockLogger = new Mock<ILogger>();
+        var runtimeContext = new RuntimeContext(
+            "test",
+            CancellationToken.None,
+            Array.Empty<ISchemaColumn>(),
+            new Dictionary<string, string>(),
+            QuerySourceInfo.Empty,
+            mockLogger.Object);
+        var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
 
-        static JsonTests()
-        {
-            Culture.ApplyWithDefaultCulture();
-        }
+        var fired = source.Rows.Count();
+
+        Assert.AreEqual(3, fired);
+    }
+
+    private CompiledQuery CreateAndRunVirtualMachine(string script)
+    {
+        return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new JsonSchemaProvider(),
+            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 }

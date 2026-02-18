@@ -6,9 +6,9 @@
       "QueueLimit": 0
     },
     "api.gitlab.com": {
-        "PermitsPerPeriod": 60,
-        "ReplenishmentPeriod": "00:01:00",
-        "QueueLimit": 0
+      "PermitsPerPeriod": 60,
+      "ReplenishmentPeriod": "00:01:00",
+      "QueueLimit": 0
     },
     "api.nuget.org": {
       "PermitsPerPeriod": 60,
@@ -28,9 +28,9 @@
       "QueueLimit": 0
     },
     "api.gitlab.com": {
-        "PermitsPerPeriod": 15000,
-        "ReplenishmentPeriod": "01:00:00",
-        "QueueLimit": 0
+      "PermitsPerPeriod": 15000,
+      "ReplenishmentPeriod": "01:00:00",
+      "QueueLimit": 0
     },
     "api.nuget.org": {
       "PermitsPerPeriod": 15000,

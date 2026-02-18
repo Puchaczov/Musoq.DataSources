@@ -10,8 +10,8 @@ namespace Musoq.DataSources.Sqlite;
 internal class SqliteRowSource : DatabaseRowSource
 {
     private readonly RuntimeContext _runtimeContext;
-    
-    public SqliteRowSource(RuntimeContext runtimeContext) 
+
+    public SqliteRowSource(RuntimeContext runtimeContext)
         : base(runtimeContext, null)
     {
         _runtimeContext = runtimeContext;
@@ -31,14 +31,14 @@ internal class SqliteRowSource : DatabaseRowSource
         queryBuilder.Append(" FROM ");
         queryBuilder.Append(_runtimeContext.QuerySourceInfo.FromNode.Method);
         queryBuilder.Append(" WHERE ");
-        
+
         var visitor = new ToStringWhereQueryPartVisitor();
         var traverser = new ToStringWhereQueryPartTraverseVisitor(visitor);
-        
+
         _runtimeContext.QuerySourceInfo.WhereNode.Accept(traverser);
-        
+
         queryBuilder.Append(visitor.StringifiedWherePart);
-        
+
         return queryBuilder.ToString();
     }
 }

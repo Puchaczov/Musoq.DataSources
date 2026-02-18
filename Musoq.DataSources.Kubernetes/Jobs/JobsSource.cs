@@ -20,15 +20,16 @@ internal class JobsSource : RowSourceBase<JobEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(JobsSourceName);
-        
+
         try
         {
             var jobs = _kubernetesApi.ListJobsForAllNamespaces();
             _runtimeContext.ReportDataSourceRowsKnown(JobsSourceName, jobs.Items.Count);
 
             chunkedSource.Add(
-                jobs.Items.Select(c => new EntityResolver<JobEntity>(MapV1JobToJobEntity(c), JobsSourceHelper.JobsNameToIndexMap, JobsSourceHelper.JobsIndexToMethodAccessMap)).ToList());
-            
+                jobs.Items.Select(c => new EntityResolver<JobEntity>(MapV1JobToJobEntity(c),
+                    JobsSourceHelper.JobsNameToIndexMap, JobsSourceHelper.JobsIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(JobsSourceName, jobs.Items.Count);
         }
         catch

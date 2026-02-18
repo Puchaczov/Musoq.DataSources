@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LibGit2Sharp;
@@ -29,7 +28,7 @@ internal sealed class RemotesRowsSource(
             if (cancellationToken.IsCancellationRequested)
                 break;
 
-            // Apply pushdown filters
+
             if (!string.IsNullOrEmpty(filters.RemoteName) &&
                 !string.Equals(remote.Name, filters.RemoteName, StringComparison.OrdinalIgnoreCase))
                 continue;
@@ -52,10 +51,7 @@ internal sealed class RemotesRowsSource(
             }
         }
 
-        if (chunk.Count > 0)
-        {
-            chunkedSource.Add(chunk.ToArray(), cancellationToken);
-        }
+        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
 
         return Task.CompletedTask;
     }

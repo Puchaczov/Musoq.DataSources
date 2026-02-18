@@ -8,14 +8,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatform, ILogger logger) : INuGetCachePathResolver
+internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatform, ILogger logger)
+    : INuGetCachePathResolver
 {
     private static readonly string UserProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-    
-    private static readonly string CommonApplicationDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
 
-    private static readonly string LocalApplicationDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    
+    private static readonly string CommonApplicationDataFolder =
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+    private static readonly string LocalApplicationDataFolder =
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
     public IEnumerable<string> ResolveAll()
     {
         var cache = new HashSet<string>();
@@ -43,29 +46,28 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
     private IEnumerable<string> CollectNuGetConfigPaths()
     {
         IEnumerable<string> configPaths = new List<string?>
-        {
-            solutionPath != null ? Path.Combine(new FileInfo(solutionPath).DirectoryName!, "nuget.config") : null,
-            Path.Combine(UserProfileFolder, ".nuget", "NuGet.Config"),
-            Path.Combine(CommonApplicationDataFolder, "NuGet", "NuGet.Config")
-        }
-        .Where(p => p is not null)!;
+            {
+                solutionPath != null ? Path.Combine(new FileInfo(solutionPath).DirectoryName!, "nuget.config") : null,
+                Path.Combine(UserProfileFolder, ".nuget", "NuGet.Config"),
+                Path.Combine(CommonApplicationDataFolder, "NuGet", "NuGet.Config")
+            }
+            .Where(p => p is not null)!;
 
         if (osPlatform.Equals(OSPlatform.Windows)) return configPaths;
-        
+
         var home = Environment.GetEnvironmentVariable("HOME");
-        
+
         if (string.IsNullOrEmpty(home)) return configPaths;
-        
+
         var linuxConfig = Path.Combine(home, ".nuget", "NuGet.Config");
         configPaths = configPaths.Append(linuxConfig).ToList();
-        
+
         return configPaths;
     }
 
     private void ProcessNuGetConfigs(IEnumerable<string> configPaths, HashSet<string> cache)
     {
         foreach (var configPath in configPaths)
-        {
             try
             {
                 if (!IFileSystem.FileExists(configPath))
@@ -107,7 +109,6 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
             {
                 logger.LogError(exc, "Failed to process nuget config file");
             }
-        }
     }
 
     private void AddSolutionPackages(HashSet<string> cache)
@@ -119,7 +120,7 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
     private void AddHttpCache(HashSet<string> cache)
     {
         var envHttpCache = Environment.GetEnvironmentVariable("NUGET_HTTP_CACHE_PATH");
-        
+
         if (!string.IsNullOrEmpty(envHttpCache))
         {
             cache.Add(Path.GetFullPath(envHttpCache));
@@ -128,7 +129,8 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
         {
             if (osPlatform.Equals(OSPlatform.Windows))
             {
-                var winV3 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NuGet", "v3-cache");
+                var winV3 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "NuGet", "v3-cache");
                 cache.Add(winV3);
             }
             else
@@ -144,7 +146,9 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
     {
         var envPluginsCache = Environment.GetEnvironmentVariable("NUGET_PLUGINS_CACHE_PATH");
         if (!string.IsNullOrEmpty(envPluginsCache))
+        {
             cache.Add(Path.GetFullPath(envPluginsCache));
+        }
         else
         {
             if (osPlatform.Equals(OSPlatform.Windows))

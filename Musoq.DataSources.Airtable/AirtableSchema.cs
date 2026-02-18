@@ -5,16 +5,14 @@ using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Reflection;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Musoq.DataSources.Airtable;
 
 /// <description>
-/// Provides interface to work with Airtable API.
+///     Provides interface to work with Airtable API.
 /// </description>
 /// <short-description>
-/// Provides interface to work with Airtable API.
+///     Provides interface to work with Airtable API.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class AirtableSchema : SchemaBase
@@ -23,65 +21,65 @@ public class AirtableSchema : SchemaBase
     private const string BasesTable = "bases";
     private const string BaseTable = "base";
     private const string RecordsTable = "records";
-    
+
     private readonly IAirtableApi? _api;
-    
+
     /// <virtual-constructors>
-    /// <virtual-constructor>
-    /// <examples>
-    /// <example>
-    /// <from>
-    /// <environmentVariables>
-    /// <environmentVariable name="MUSOQ_AIRTABLE_API_KEY" isRequired="true">Airtable API key</environmentVariable>
-    /// </environmentVariables>
-    /// #airtable.bases()
-    /// </from>
-    /// <description>Enumerate bases from Airtable API</description>
-    /// <columns>
-    /// <column name="Id" type="string">Base id</column>
-    /// <column name="Name" type="string">Base name</column>
-    /// <column name="PermissionLevel" type="string">Base description</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// <virtual-constructor>
-    /// <examples>
-    /// <example>
-    /// <from>
-    /// <environmentVariables>
-    /// <environmentVariable name="MUSOQ_AIRTABLE_API_KEY" isRequired="true">Airtable API key</environmentVariable>
-    /// <environmentVariable name="MUSOQ_AIRTABLE_BASE_ID" isRequired="true">Airtable base id</environmentVariable>
-    /// </environmentVariables>
-    /// #airtable.base()
-    /// </from>
-    /// <description>Enumerate base tables for Airtable API</description>
-    /// <columns>
-    /// <column name="Id" type="string">Base id</column>
-    /// <column name="Name" type="string">Base name</column>
-    /// <column name="PrimaryFieldId" type="string">Base description</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// <virtual-constructor>
-    /// <virtual-param>Table name</virtual-param>
-    /// <examples>
-    /// <example>
-    /// <from>
-    /// <environmentVariables>
-    /// <environmentVariable name="MUSOQ_AIRTABLE_API_KEY" isRequired="true">Airtable API key</environmentVariable>
-    /// <environmentVariable name="MUSOQ_AIRTABLE_BASE_ID" isRequired="true">Airtable base id</environmentVariable>
-    /// </environmentVariables>
-    /// #airtable.records(string tableName)
-    /// </from>
-    /// <description>Enumerate records for specific table</description>
-    /// <columns isDynamic="true"></columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="MUSOQ_AIRTABLE_API_KEY" isRequired="true">Airtable API key</environmentVariable>
+    ///                     </environmentVariables>
+    ///                     #airtable.bases()
+    ///                 </from>
+    ///                 <description>Enumerate bases from Airtable API</description>
+    ///                 <columns>
+    ///                     <column name="Id" type="string">Base id</column>
+    ///                     <column name="Name" type="string">Base name</column>
+    ///                     <column name="PermissionLevel" type="string">Base description</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="MUSOQ_AIRTABLE_API_KEY" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_AIRTABLE_BASE_ID" isRequired="true">Airtable base id</environmentVariable>
+    ///                     </environmentVariables>
+    ///                     #airtable.base()
+    ///                 </from>
+    ///                 <description>Enumerate base tables for Airtable API</description>
+    ///                 <columns>
+    ///                     <column name="Id" type="string">Base id</column>
+    ///                     <column name="Name" type="string">Base name</column>
+    ///                     <column name="PrimaryFieldId" type="string">Base description</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param>Table name</virtual-param>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables>
+    ///                         <environmentVariable name="MUSOQ_AIRTABLE_API_KEY" isRequired="true">Airtable API key</environmentVariable>
+    ///                         <environmentVariable name="MUSOQ_AIRTABLE_BASE_ID" isRequired="true">Airtable base id</environmentVariable>
+    ///                     </environmentVariables>
+    ///                     #airtable.records(string tableName)
+    ///                 </from>
+    ///                 <description>Enumerate records for specific table</description>
+    ///                 <columns isDynamic="true"></columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
     /// </virtual-constructors>
-    public AirtableSchema() 
+    public AirtableSchema()
         : base(SchemaName, CreateLibrary())
     {
         _api = null;
@@ -92,9 +90,9 @@ public class AirtableSchema : SchemaBase
     {
         _api = api;
     }
-    
+
     /// <summary>
-    /// Gets the data source based on the given data source and parameters.
+    ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
     /// <param name="runtimeContext">Runtime context</param>
@@ -109,7 +107,7 @@ public class AirtableSchema : SchemaBase
             BaseTable => new AirtableBaseSchemaTable(),
             RecordsTable => new AirtableTableSchemaTable(
                 _api ?? new AirtableApi(
-                    runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"], 
+                    runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"],
                     runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_BASE_ID"],
                     Convert.ToString(parameters[0])), runtimeContext),
             _ => throw new NotSupportedException($"Table {name} is not supported.")
@@ -142,9 +140,9 @@ public class AirtableSchema : SchemaBase
     private static SchemaMethodInfo CreateBasesMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []
+            null!,
+            false,
+            []
         );
 
         return new SchemaMethodInfo(BasesTable, constructorInfo);
@@ -153,9 +151,9 @@ public class AirtableSchema : SchemaBase
     private static SchemaMethodInfo CreateBaseMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments: []
+            null!,
+            false,
+            []
         );
 
         return new SchemaMethodInfo(BaseTable, constructorInfo);
@@ -164,9 +162,8 @@ public class AirtableSchema : SchemaBase
     private static SchemaMethodInfo CreateRecordsMethodInfo()
     {
         var constructorInfo = new ConstructorInfo(
-            originConstructorInfo: null!,
-            supportsInterCommunicator: false,
-            arguments:
+            null!,
+            false,
             [
                 ("tableName", typeof(string))
             ]
@@ -176,7 +173,7 @@ public class AirtableSchema : SchemaBase
     }
 
     /// <summary>
-    /// Gets the data source based on the given data source and parameters.
+    ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
     /// <param name="runtimeContext">Runtime context</param>
@@ -190,10 +187,11 @@ public class AirtableSchema : SchemaBase
             BasesTable => new AirtableBasesRowSource(
                 _api ?? new AirtableApi(runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"]), runtimeContext),
             BaseTable => new AirtableBaseRowSource(
-                _api ?? new AirtableApi(runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"], runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_BASE_ID"]), runtimeContext),
+                _api ?? new AirtableApi(runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"],
+                    runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_BASE_ID"]), runtimeContext),
             RecordsTable => new AirtableTableRowSource(
                 _api ?? new AirtableApi(
-                    runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"], 
+                    runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_API_KEY"],
                     runtimeContext.EnvironmentVariables["MUSOQ_AIRTABLE_BASE_ID"],
                     Convert.ToString(parameters[0])), runtimeContext),
             _ => throw new NotSupportedException($"Table {name} is not supported.")

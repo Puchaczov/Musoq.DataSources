@@ -3,12 +3,12 @@ using Musoq.DataSources.Jira.Entities;
 namespace Musoq.DataSources.Jira.Tests.TestHelpers;
 
 /// <summary>
-/// Factory for creating mock Jira entities for testing.
+///     Factory for creating mock Jira entities for testing.
 /// </summary>
 internal static class MockEntityFactory
 {
     /// <summary>
-    /// Creates a mock IssueEntity for testing.
+    ///     Creates a mock IssueEntity for testing.
     /// </summary>
     public static IJiraIssue CreateIssue(
         string key = "TEST-123",
@@ -52,7 +52,7 @@ internal static class MockEntityFactory
     }
 
     /// <summary>
-    /// Creates a mock ProjectEntity for testing.
+    ///     Creates a mock ProjectEntity for testing.
     /// </summary>
     public static IJiraProject CreateProject(
         string id = "10000",
@@ -66,7 +66,7 @@ internal static class MockEntityFactory
     }
 
     /// <summary>
-    /// Creates a mock CommentEntity for testing.
+    ///     Creates a mock CommentEntity for testing.
     /// </summary>
     public static IJiraComment CreateComment(
         string id = "10001",
@@ -81,7 +81,7 @@ internal static class MockEntityFactory
 }
 
 /// <summary>
-/// Mock implementation of IssueEntity for testing without actual Jira SDK dependency.
+///     Mock implementation of IssueEntity for testing without actual Jira SDK dependency.
 /// </summary>
 public class MockIssueEntity : IJiraIssue
 {
@@ -162,7 +162,7 @@ public class MockIssueEntity : IJiraIssue
 }
 
 /// <summary>
-/// Mock implementation of ProjectEntity for testing.
+///     Mock implementation of ProjectEntity for testing.
 /// </summary>
 public class MockProjectEntity : IJiraProject
 {
@@ -194,7 +194,7 @@ public class MockProjectEntity : IJiraProject
 }
 
 /// <summary>
-/// Mock implementation of CommentEntity for testing.
+///     Mock implementation of CommentEntity for testing.
 /// </summary>
 public class MockCommentEntity : IJiraComment
 {

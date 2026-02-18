@@ -14,22 +14,22 @@ internal static class BranchesSourceHelper
     {
         BranchesNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(BranchEntity.Name), 0},
-            {nameof(BranchEntity.CommitSha), 1},
-            {nameof(BranchEntity.CommitUrl), 2},
-            {nameof(BranchEntity.Protected), 3},
-            {nameof(BranchEntity.RepositoryOwner), 4},
-            {nameof(BranchEntity.RepositoryName), 5}
+            { nameof(BranchEntity.Name), 0 },
+            { nameof(BranchEntity.CommitSha), 1 },
+            { nameof(BranchEntity.CommitUrl), 2 },
+            { nameof(BranchEntity.Protected), 3 },
+            { nameof(BranchEntity.RepositoryOwner), 4 },
+            { nameof(BranchEntity.RepositoryName), 5 }
         };
 
         BranchesIndexToMethodAccessMap = new Dictionary<int, Func<BranchEntity, object?>>
         {
-            {0, branch => branch.Name},
-            {1, branch => branch.CommitSha},
-            {2, branch => branch.CommitUrl},
-            {3, branch => branch.Protected},
-            {4, branch => branch.RepositoryOwner},
-            {5, branch => branch.RepositoryName}
+            { 0, branch => branch.Name },
+            { 1, branch => branch.CommitSha },
+            { 2, branch => branch.CommitUrl },
+            { 3, branch => branch.Protected },
+            { 4, branch => branch.RepositoryOwner },
+            { 5, branch => branch.RepositoryName }
         };
 
         BranchesColumns =

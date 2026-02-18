@@ -14,7 +14,7 @@ public static class DatabaseHelpers
         CancellationToken cancellationToken = default)
     {
         long totalRowsProcessed = 0;
-        
+
         using var connection = createConnection();
 
         connection.Open();
@@ -60,7 +60,7 @@ public static class DatabaseHelpers
         }
 
         chunkedSource.Add(list, cancellationToken);
-        
+
         return totalRowsProcessed;
     }
 }

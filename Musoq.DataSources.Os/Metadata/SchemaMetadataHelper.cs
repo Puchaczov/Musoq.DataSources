@@ -15,18 +15,18 @@ internal static class SchemaMetadataHelper
     {
         MetadataNameToIndexMap = new Dictionary<string, int>
         {
-            {nameof(MetadataEntity.FullName), 0},
-            {nameof(MetadataEntity.DirectoryName), 1},
-            {nameof(MetadataEntity.TagName), 2},
-            {nameof(MetadataEntity.Description), 3}
+            { nameof(MetadataEntity.FullName), 0 },
+            { nameof(MetadataEntity.DirectoryName), 1 },
+            { nameof(MetadataEntity.TagName), 2 },
+            { nameof(MetadataEntity.Description), 3 }
         };
 
         MetadataIndexToMethodAccessMap = new Dictionary<int, Func<MetadataEntity, object?>>
         {
-            {0, entity => entity.FullName},
-            {1, entity => entity.DirectoryName},
-            {2, entity => entity.TagName},
-            {3, entity => entity.Description}
+            { 0, entity => entity.FullName },
+            { 1, entity => entity.DirectoryName },
+            { 2, entity => entity.TagName },
+            { 3, entity => entity.Description }
         };
 
         MetadataColumns =

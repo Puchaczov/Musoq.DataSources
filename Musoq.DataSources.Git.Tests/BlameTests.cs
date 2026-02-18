@@ -1,10 +1,6 @@
-using System;
 using System.Globalization;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -18,6 +14,24 @@ public class BlameTests
     static BlameTests()
     {
         Culture.Apply(CultureInfo.GetCultureInfo("en-US"));
+    }
+
+    private static string Repository2ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository2.zip");
+
+    private static string BlameTestRepoZipPath => Path.Combine(StartDirectory, "Repositories", "BlameTestRepo.zip");
+
+    private static string StartDirectory
+    {
+        get
+        {
+            var filePath = typeof(BlameTests).Assembly.Location;
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Directory is empty.");
+
+            return directory;
+        }
     }
 
     [TestMethod]
@@ -40,7 +54,7 @@ public class BlameTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count > 0, "Should return at least one hunk");
-        
+
         var firstRow = result[0];
         Assert.IsTrue((int)firstRow[0] >= 1, "StartLineNumber should be 1-based");
         Assert.IsTrue((int)firstRow[1] >= (int)firstRow[0], "EndLineNumber should be >= StartLineNumber");
@@ -49,7 +63,7 @@ public class BlameTests
         Assert.AreEqual("Test User", (string)firstRow[4], "Author should be 'Test User'");
         Assert.AreEqual("test@example.com", (string)firstRow[5], "AuthorEmail should be 'test@example.com'");
         Assert.IsNotNull(firstRow[6], "Summary should not be null");
-        
+
         var totalLines = result.Sum(row => (int)row[2]);
         Assert.AreEqual(4, totalLines, "Total lines across all hunks should be 4");
     }
@@ -65,18 +79,20 @@ public class BlameTests
                 Author
             from #git.blame('{RepositoryPath}', 'test_file.txt', 'HEAD')";
 
-        var vmHead = CreateAndRunVirtualMachine(queryHead.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var vmHead =
+            CreateAndRunVirtualMachine(queryHead.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var resultHead = vmHead.Run();
 
         Assert.IsTrue(resultHead.Count > 0, "Should return at least one hunk for HEAD");
-        
+
         var queryTag = @"
             select
                 CommitSha,
                 Author
             from #git.blame('{RepositoryPath}', 'test_file.txt', 'v1.0')";
 
-        var vmTag = CreateAndRunVirtualMachine(queryTag.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var vmTag = CreateAndRunVirtualMachine(queryTag.Replace("{RepositoryPath}",
+            unpackedRepositoryPath.Path.Escape()));
         var resultTag = vmTag.Run();
 
         Assert.IsTrue(resultTag.Count > 0, "Should return at least one hunk for v1.0 tag");
@@ -127,7 +143,7 @@ public class BlameTests
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
-        
+
         Assert.AreEqual(0, result.Count, "Binary files (UTF-16) should return empty result");
     }
 
@@ -150,7 +166,7 @@ public class BlameTests
 
         Assert.IsTrue(result.Count > 0, "Should return line content");
         Assert.AreEqual(4, result.Count, "test_file.txt has 4 lines");
-        
+
         var firstLine = result[0];
         Assert.AreEqual(1, (int)firstLine[0], "First line number should be 1");
         Assert.IsNotNull(firstLine[1], "Line content should not be null");
@@ -195,7 +211,7 @@ public class BlameTests
 
         Assert.IsTrue(result.Count > 0, "Should return at least one line");
         Assert.AreEqual(4, result.Count, "Should return 4 lines total");
-        
+
         foreach (var row in result)
         {
             Assert.IsNotNull(row[0], "CommitSha should not be null");
@@ -203,7 +219,7 @@ public class BlameTests
             Assert.IsNotNull(row[2], "LineNumber should not be null");
             Assert.IsNotNull(row[3], "Content should not be null");
         }
-        
+
         var firstLine = result[0];
         Assert.AreEqual(1, (int)firstLine[2], "First line number should be 1");
         Assert.IsTrue(((string)firstLine[3]).Contains("line 1"), "First line content should contain 'line 1'");
@@ -226,7 +242,7 @@ public class BlameTests
 
         Assert.IsTrue(result.Count > 0, "Should have at least one author");
         Assert.AreEqual(1, result.Count, "Should have exactly 1 author (Test User)");
-        
+
         var row = result[0];
         Assert.AreEqual("Test User", (string)row[0], "Author should be 'Test User'");
         Assert.AreEqual(4L, Convert.ToInt64(row[1]), "Total lines should be 4");
@@ -267,24 +283,6 @@ public class BlameTests
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
-    private static string Repository2ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository2.zip");
-
-    private static string BlameTestRepoZipPath => Path.Combine(StartDirectory, "Repositories", "BlameTestRepo.zip");
-
-    private static string StartDirectory
-    {
-        get
-        {
-            var filePath = typeof(BlameTests).Assembly.Location;
-            var directory = Path.GetDirectoryName(filePath);
-
-            if (string.IsNullOrEmpty(directory))
-                throw new InvalidOperationException("Directory is empty.");
-
-            return directory;
-        }
-    }
-
     private class UnpackedRepository : IDisposable
     {
         public UnpackedRepository(string path)
@@ -298,6 +296,9 @@ public class BlameTests
         {
         }
 
-        public static implicit operator string(UnpackedRepository unpackedRepository) => unpackedRepository.Path;
+        public static implicit operator string(UnpackedRepository unpackedRepository)
+        {
+            return unpackedRepository.Path;
+        }
     }
 }

@@ -1,102 +1,12 @@
 namespace Musoq.DataSources.Roslyn.Entities;
 
 /// <summary>
-/// Represents a NuGet package entity with its basic properties.
+///     Represents a NuGet package entity with its basic properties.
 /// </summary>
 public class NugetPackageEntity
 {
     /// <summary>
-    /// Gets the ID of the NuGet package.
-    /// </summary>
-    public string Id { get; }
-
-    /// <summary>
-    /// Gets the version of the NuGet package.
-    /// </summary>
-    public string Version { get; }
-
-    /// <summary>
-    /// Gets the license URL of the NuGet package.
-    /// </summary>
-    public string? LicenseUrl { get; }
-
-    /// <summary>
-    /// Gets the project URL of the NuGet package.
-    /// </summary>
-    public string? ProjectUrl { get; }
-
-    /// <summary>
-    /// Gets the title of the NuGet package.
-    /// </summary>
-    public string? Title { get; }
-
-    /// <summary>
-    /// Gets the authors of the NuGet package.
-    /// </summary>
-    public string? Authors { get; }
-
-    /// <summary>
-    /// Gets the owners of the NuGet package.
-    /// </summary>
-    public string? Owners { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether the NuGet package requires license acceptance.
-    /// </summary>
-    public bool? RequireLicenseAcceptance { get; }
-
-    /// <summary>
-    /// Gets the description of the NuGet package.
-    /// </summary>
-    public string? Description { get; }
-
-    /// <summary>
-    /// Gets the summary of the NuGet package.
-    /// </summary>
-    public string? Summary { get; }
-
-    /// <summary>
-    /// Gets the release notes of the NuGet package.
-    /// </summary>
-    public string? ReleaseNotes { get; }
-
-    /// <summary>
-    /// Gets the copyright information of the NuGet package.
-    /// </summary>
-    public string? Copyright { get; }
-
-    /// <summary>
-    /// Gets the language of the NuGet package.
-    /// </summary>
-    public string? Language { get; }
-
-    /// <summary>
-    /// Gets the tags of the NuGet package.
-    /// </summary>
-    public string? Tags { get; }
-    
-    /// <summary>
-    /// Gets the license content of the NuGet package.
-    /// </summary>
-    public string? LicenseContent { get; }
-    
-    /// <summary>
-    /// Gets the license of the NuGet package.
-    /// </summary>
-    public string? License { get; }
-    
-    /// <summary>
-    /// Determines whether the NuGet package is transitive.
-    /// </summary>
-    public bool? IsTransitive { get; }
-    
-    /// <summary>
-    /// Gets the level of transitivity in the dependency graph.
-    /// </summary>
-    public uint? TransitivityLevel { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NugetPackageEntity"/> class.
+    ///     Initializes a new instance of the <see cref="NugetPackageEntity" /> class.
     /// </summary>
     /// <param name="id">The ID of the NuGet package.</param>
     /// <param name="version">The version of the NuGet package.</param>
@@ -117,19 +27,19 @@ public class NugetPackageEntity
     /// <param name="isTransitive">A value indicating whether the NuGet package is transitive.</param>
     /// <param name="level">The level of transitivity in the dependency graph.</param>
     public NugetPackageEntity(
-        string id, 
-        string version, 
-        string? licenseUrl, 
-        string? projectUrl, 
-        string? title, 
-        string? authors, 
-        string? owners, 
-        bool? requireLicenseAcceptance, 
-        string? description, 
-        string? summary, 
-        string? releaseNotes, 
-        string? copyright, 
-        string? language, 
+        string id,
+        string version,
+        string? licenseUrl,
+        string? projectUrl,
+        string? title,
+        string? authors,
+        string? owners,
+        bool? requireLicenseAcceptance,
+        string? description,
+        string? summary,
+        string? releaseNotes,
+        string? copyright,
+        string? language,
         string? tags,
         string? licenseContent,
         string? license,
@@ -155,4 +65,94 @@ public class NugetPackageEntity
         IsTransitive = isTransitive;
         TransitivityLevel = level;
     }
+
+    /// <summary>
+    ///     Gets the ID of the NuGet package.
+    /// </summary>
+    public string Id { get; }
+
+    /// <summary>
+    ///     Gets the version of the NuGet package.
+    /// </summary>
+    public string Version { get; }
+
+    /// <summary>
+    ///     Gets the license URL of the NuGet package.
+    /// </summary>
+    public string? LicenseUrl { get; }
+
+    /// <summary>
+    ///     Gets the project URL of the NuGet package.
+    /// </summary>
+    public string? ProjectUrl { get; }
+
+    /// <summary>
+    ///     Gets the title of the NuGet package.
+    /// </summary>
+    public string? Title { get; }
+
+    /// <summary>
+    ///     Gets the authors of the NuGet package.
+    /// </summary>
+    public string? Authors { get; }
+
+    /// <summary>
+    ///     Gets the owners of the NuGet package.
+    /// </summary>
+    public string? Owners { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the NuGet package requires license acceptance.
+    /// </summary>
+    public bool? RequireLicenseAcceptance { get; }
+
+    /// <summary>
+    ///     Gets the description of the NuGet package.
+    /// </summary>
+    public string? Description { get; }
+
+    /// <summary>
+    ///     Gets the summary of the NuGet package.
+    /// </summary>
+    public string? Summary { get; }
+
+    /// <summary>
+    ///     Gets the release notes of the NuGet package.
+    /// </summary>
+    public string? ReleaseNotes { get; }
+
+    /// <summary>
+    ///     Gets the copyright information of the NuGet package.
+    /// </summary>
+    public string? Copyright { get; }
+
+    /// <summary>
+    ///     Gets the language of the NuGet package.
+    /// </summary>
+    public string? Language { get; }
+
+    /// <summary>
+    ///     Gets the tags of the NuGet package.
+    /// </summary>
+    public string? Tags { get; }
+
+    /// <summary>
+    ///     Gets the license content of the NuGet package.
+    /// </summary>
+    public string? LicenseContent { get; }
+
+    /// <summary>
+    ///     Gets the license of the NuGet package.
+    /// </summary>
+    public string? License { get; }
+
+    /// <summary>
+    ///     Determines whether the NuGet package is transitive.
+    /// </summary>
+    public bool? IsTransitive { get; }
+
+    /// <summary>
+    ///     Gets the level of transitivity in the dependency graph.
+    /// </summary>
+    public uint? TransitivityLevel { get; }
 }

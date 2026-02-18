@@ -20,15 +20,16 @@ internal class ImagesSource : RowSourceBase<ImagesListResponse>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(ImagesSourceName);
-        
+
         try
         {
             var images = _api.ListImagesAsync().Result;
             _runtimeContext.ReportDataSourceRowsKnown(ImagesSourceName, images.Count);
 
             chunkedSource.Add(
-                images.Select(c => new EntityResolver<ImagesListResponse>(c, ImagesSourceHelper.ImagesNameToIndexMap, ImagesSourceHelper.ImagesIndexToMethodAccessMap)).ToList());
-            
+                images.Select(c => new EntityResolver<ImagesListResponse>(c, ImagesSourceHelper.ImagesNameToIndexMap,
+                    ImagesSourceHelper.ImagesIndexToMethodAccessMap)).ToList());
+
             _runtimeContext.ReportDataSourceEnd(ImagesSourceName, images.Count);
         }
         catch

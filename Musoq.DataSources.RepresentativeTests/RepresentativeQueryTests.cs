@@ -8,8 +8,8 @@ using Musoq.Evaluator;
 namespace Musoq.DataSources.RepresentativeTests;
 
 /// <summary>
-/// Representative query tests showcasing the power and versatility of Musoq.
-/// These tests serve as working examples for documentation and can be used in README files.
+///     Representative query tests showcasing the power and versatility of Musoq.
+///     These tests serve as working examples for documentation and can be used in README files.
 /// </summary>
 [TestClass]
 public class RepresentativeQueryTests
@@ -17,18 +17,18 @@ public class RepresentativeQueryTests
     #region File System Queries (#os)
 
     /// <summary>
-    /// Demonstrates listing files with their sizes.
-    /// Query: SELECT files from a directory with size information.
+    ///     Demonstrates listing files with their sizes.
+    ///     Query: SELECT files from a directory with size information.
     /// </summary>
     [TestMethod]
     public void FileSystem_ListFilesWithSize_ShouldReturnFilesWithSizeInformation()
     {
         var query = """
-            select 
-                Name,
-                Length as SizeInBytes
-            from #os.files('./Files', false)
-            """;
+                    select 
+                        Name,
+                        Length as SizeInBytes
+                    from #os.files('./Files', false)
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -40,17 +40,17 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates filtering files by extension.
-    /// Query: Find all CSV files in a directory.
+    ///     Demonstrates filtering files by extension.
+    ///     Query: Find all CSV files in a directory.
     /// </summary>
     [TestMethod]
     public void FileSystem_FilterByExtension_ShouldReturnOnlyMatchingFiles()
     {
         var query = """
-            select Name, Extension
-            from #os.files('./Files', false)
-            where Extension = '.csv'
-            """;
+                    select Name, Extension
+                    from #os.files('./Files', false)
+                    where Extension = '.csv'
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -60,19 +60,19 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates calculating SHA256 hash of files.
-    /// Query: Compute file hashes for integrity verification.
+    ///     Demonstrates calculating SHA256 hash of files.
+    ///     Query: Compute file hashes for integrity verification.
     /// </summary>
     [TestMethod]
     public void FileSystem_Sha256Hash_ShouldComputeFileHashes()
     {
         var query = """
-            select 
-                Name,
-                Sha256File() as Hash
-            from #os.files('./Files', false)
-            where Name = 'Transactions.csv'
-            """;
+                    select 
+                        Name,
+                        Sha256File() as Hash
+                    from #os.files('./Files', false)
+                    where Name = 'Transactions.csv'
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -83,16 +83,16 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates listing directories.
-    /// Query: Find all subdirectories.
+    ///     Demonstrates listing directories.
+    ///     Query: Find all subdirectories.
     /// </summary>
     [TestMethod]
     public void FileSystem_ListDirectories_ShouldReturnDirectories()
     {
         var query = """
-            select Name
-            from #os.directories('./', false)
-            """;
+                    select Name
+                    from #os.directories('./', false)
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -105,16 +105,16 @@ public class RepresentativeQueryTests
     #region CSV/Separated Values Queries (#separatedvalues)
 
     /// <summary>
-    /// Demonstrates basic CSV querying.
-    /// Query: Select specific columns from a CSV file.
+    ///     Demonstrates basic CSV querying.
+    ///     Query: Select specific columns from a CSV file.
     /// </summary>
     [TestMethod]
     public void Csv_BasicSelect_ShouldReturnColumns()
     {
         var query = """
-            select Date, Description, Amount
-            from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
-            """;
+                    select Date, Description, Amount
+                    from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -124,19 +124,19 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates aggregation on CSV data.
-    /// Query: Calculate total income and expenses.
+    ///     Demonstrates aggregation on CSV data.
+    ///     Query: Calculate total income and expenses.
     /// </summary>
     [TestMethod]
     public void Csv_Aggregation_ShouldCalculateTotals()
     {
         var query = """
-            select 
-                SumIncome(ToDecimal(Amount)) as TotalIncome,
-                SumOutcome(ToDecimal(Amount)) as TotalExpenses,
-                SumIncome(ToDecimal(Amount)) + SumOutcome(ToDecimal(Amount)) as NetBalance
-            from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
-            """;
+                    select 
+                        SumIncome(ToDecimal(Amount)) as TotalIncome,
+                        SumOutcome(ToDecimal(Amount)) as TotalExpenses,
+                        SumIncome(ToDecimal(Amount)) + SumOutcome(ToDecimal(Amount)) as NetBalance
+                    from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -148,17 +148,17 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates filtering on CSV data.
-    /// Query: Find transactions above a certain amount.
+    ///     Demonstrates filtering on CSV data.
+    ///     Query: Find transactions above a certain amount.
     /// </summary>
     [TestMethod]
     public void Csv_Filtering_ShouldReturnMatchingRows()
     {
         var query = """
-            select Description, ToDecimal(Amount) as Amount
-            from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
-            where ToDecimal(Amount) > 0
-            """;
+                    select Description, ToDecimal(Amount) as Amount
+                    from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
+                    where ToDecimal(Amount) > 0
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -168,23 +168,23 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates joining two CSV files.
-    /// Query: Join employees with their project assignments.
+    ///     Demonstrates joining two CSV files.
+    ///     Query: Join employees with their project assignments.
     /// </summary>
     [TestMethod]
     public void Csv_JoinTables_ShouldCombineData()
     {
         var query = """
-            select 
-                emp.Name,
-                emp.Department,
-                proj.ProjectName,
-                proj.Hours
-            from #separatedvalues.comma('./Files/Employees.csv', true, 0) emp
-            inner join #separatedvalues.comma('./Files/Projects.csv', true, 0) proj 
-                on emp.Id = proj.EmployeeId
-            order by emp.Name
-            """;
+                    select 
+                        emp.Name,
+                        emp.Department,
+                        proj.ProjectName,
+                        proj.Hours
+                    from #separatedvalues.comma('./Files/Employees.csv', true, 0) emp
+                    inner join #separatedvalues.comma('./Files/Projects.csv', true, 0) proj 
+                        on emp.Id = proj.EmployeeId
+                    order by emp.Name
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -194,47 +194,47 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates grouping and counting.
-    /// Query: Count employees per department.
+    ///     Demonstrates grouping and counting.
+    ///     Query: Count employees per department.
     /// </summary>
     [TestMethod]
     public void Csv_GroupByCount_ShouldCountPerGroup()
     {
         var query = """
-            select 
-                Department,
-                Count(Name) as EmployeeCount
-            from #separatedvalues.comma('./Files/Employees.csv', true, 0)
-            group by Department
-            """;
+                    select 
+                        Department,
+                        Count(Name) as EmployeeCount
+                    from #separatedvalues.comma('./Files/Employees.csv', true, 0)
+                    group by Department
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(3, table.Count, "Should have 3 departments");
-        
+
         var engineeringRow = table.First(r => (string)r[0] == "Engineering");
         Assert.AreEqual(3, engineeringRow[1], "Engineering should have 3 employees");
     }
 
     /// <summary>
-    /// Demonstrates typed CSV with schema definition.
-    /// Query: Read CSV with explicit column types.
+    ///     Demonstrates typed CSV with schema definition.
+    ///     Query: Read CSV with explicit column types.
     /// </summary>
     [TestMethod]
     public void Csv_TypedQuery_ShouldUseCorrectTypes()
     {
         var query = """
-            table Employees {
-                    Id int,
-                    Name string,
-                    Department string
-            };
-            couple #separatedvalues.comma with table Employees as SourceOfEmployees;
-            select Id, Name, Department 
-            from SourceOfEmployees('./Files/Employees.csv', true, 0)
-            where Id > 2
-            """;
+                    table Employees {
+                            Id int,
+                            Name string,
+                            Department string
+                    };
+                    couple #separatedvalues.comma with table Employees as SourceOfEmployees;
+                    select Id, Name, Department 
+                    from SourceOfEmployees('./Files/Employees.csv', true, 0)
+                    where Id > 2
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -248,18 +248,17 @@ public class RepresentativeQueryTests
     #region Time Queries (#time)
 
     /// <summary>
-    /// Demonstrates generating a date range.
-    /// Query: Generate all days in a month.
+    ///     Demonstrates generating a date range.
+    ///     Query: Generate all days in a month.
     /// </summary>
     [TestMethod]
     public void Time_GenerateDateRange_ShouldCreateSequence()
     {
-        // Using ISO 8601 format which works across cultures
         var query = """
-            select Day, Month, Year
-            from #time.interval('2024-01-01 00:00:00', '2024-01-31 00:00:00', 'days')
-            order by Day
-            """;
+                    select Day, Month, Year
+                    from #time.interval('2024-01-01 00:00:00', '2024-01-31 00:00:00', 'days')
+                    order by Day
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -270,20 +269,17 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates filtering time intervals.
-    /// Query: Find weekend days (Saturday=6, Sunday=0 in DayOfWeek enum).
+    ///     Demonstrates filtering time intervals.
+    ///     Query: Find weekend days (Saturday=6, Sunday=0 in DayOfWeek enum).
     /// </summary>
     [TestMethod]
     public void Time_FilterWeekends_ShouldReturnOnlySaturdaysAndSundays()
     {
-        // DayOfWeek is an int: Sunday=0, Monday=1, ..., Saturday=6
-        // Using ISO 8601 format which works across cultures
-        // January 1, 2024 was a Monday, so we get: Mon(1), Tue(2), Wed(3), Thu(4), Fri(5), Sat(6), Sun(7)
         var query = """
-            select Day, DayOfWeek
-            from #time.interval('2024-01-01 00:00:00', '2024-01-07 00:00:00', 'days')
-            where DayOfWeek = 0 or DayOfWeek = 6
-            """;
+                    select Day, DayOfWeek
+                    from #time.interval('2024-01-01 00:00:00', '2024-01-07 00:00:00', 'days')
+                    where DayOfWeek = 0 or DayOfWeek = 6
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -298,17 +294,17 @@ public class RepresentativeQueryTests
     #region System Queries (#system)
 
     /// <summary>
-    /// Demonstrates number range generation.
-    /// Query: Generate sequence of numbers.
+    ///     Demonstrates number range generation.
+    ///     Query: Generate sequence of numbers.
     /// </summary>
     [TestMethod]
     public void System_Range_ShouldGenerateSequence()
     {
         var query = """
-            select Value 
-            from #system.range(1, 11)
-            where Value % 2 = 0
-            """;
+                    select Value 
+                    from #system.range(1, 11)
+                    where Value % 2 = 0
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -318,19 +314,19 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates dual table for calculations.
-    /// Query: Perform single-row calculations.
+    ///     Demonstrates dual table for calculations.
+    ///     Query: Perform single-row calculations.
     /// </summary>
     [TestMethod]
     public void System_Dual_ShouldPerformCalculations()
     {
         var query = """
-            select 
-                2 + 2 as Addition,
-                10 * 5 as Multiplication,
-                ToDecimal(7) / 3 as Division
-            from #system.dual()
-            """;
+                    select 
+                        2 + 2 as Addition,
+                        10 * 5 as Multiplication,
+                        ToDecimal(7) / 3 as Division
+                    from #system.dual()
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -338,23 +334,24 @@ public class RepresentativeQueryTests
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual(4, table[0][0], "2+2 should equal 4");
         Assert.AreEqual(50, table[0][1], "10*5 should equal 50");
-        Assert.IsTrue((decimal)table[0][2] > 2.33m && (decimal)table[0][2] < 2.34m, "7/3 should be approximately 2.333");
+        Assert.IsTrue((decimal)table[0][2] > 2.33m && (decimal)table[0][2] < 2.34m,
+            "7/3 should be approximately 2.333");
     }
 
     /// <summary>
-    /// Demonstrates union with dual table.
-    /// Query: Combine multiple single-row results.
+    ///     Demonstrates union with dual table.
+    ///     Query: Combine multiple single-row results.
     /// </summary>
     [TestMethod]
     public void System_DualUnion_ShouldCombineRows()
     {
         var query = """
-            select 'Option A' as Option, 100 as Value from #system.dual()
-            union (Option)
-            select 'Option B' as Option, 200 as Value from #system.dual()
-            union (Option)
-            select 'Option C' as Option, 300 as Value from #system.dual()
-            """;
+                    select 'Option A' as Option, 100 as Value from #system.dual()
+                    union (Option)
+                    select 'Option B' as Option, 200 as Value from #system.dual()
+                    union (Option)
+                    select 'Option C' as Option, 300 as Value from #system.dual()
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -367,16 +364,16 @@ public class RepresentativeQueryTests
     #region JSON Queries (#json)
 
     /// <summary>
-    /// Demonstrates basic JSON querying.
-    /// Query: Extract data from JSON array.
+    ///     Demonstrates basic JSON querying.
+    ///     Query: Extract data from JSON array.
     /// </summary>
     [TestMethod]
     public void Json_BasicQuery_ShouldExtractData()
     {
         var query = """
-            select Name, Age
-            from #json.file('./Files/People.json', './Files/People.schema.json')
-            """;
+                    select Name, Age
+                    from #json.file('./Files/People.json', './Files/People.schema.json')
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -386,17 +383,17 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates filtering JSON data.
-    /// Query: Find people above a certain age.
+    ///     Demonstrates filtering JSON data.
+    ///     Query: Find people above a certain age.
     /// </summary>
     [TestMethod]
     public void Json_Filtering_ShouldReturnMatchingRecords()
     {
         var query = """
-            select Name, Age
-            from #json.file('./Files/People.json', './Files/People.schema.json')
-            where Age > 30
-            """;
+                    select Name, Age
+                    from #json.file('./Files/People.json', './Files/People.schema.json')
+                    where Age > 30
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -406,25 +403,25 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates array length in JSON.
-    /// Query: Count skills per person.
+    ///     Demonstrates array length in JSON.
+    ///     Query: Count skills per person.
     /// </summary>
     [TestMethod]
     public void Json_ArrayLength_ShouldCountItems()
     {
         var query = """
-            select Name, Length(Skills) as SkillCount
-            from #json.file('./Files/People.json', './Files/People.schema.json')
-            """;
+                    select Name, Length(Skills) as SkillCount
+                    from #json.file('./Files/People.json', './Files/People.schema.json')
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(3, table.Count);
-        
+
         var bobRow = table.First(r => (string)r[0] == "Bob");
         Assert.AreEqual(3, bobRow[1], "Bob should have 3 skills");
-        
+
         var charlieRow = table.First(r => (string)r[0] == "Charlie");
         Assert.AreEqual(0, charlieRow[1], "Charlie should have 0 skills");
     }
@@ -434,18 +431,18 @@ public class RepresentativeQueryTests
     #region Archive Queries (#archives)
 
     /// <summary>
-    /// Demonstrates reading archive contents.
-    /// Query: List files in a ZIP archive with their content.
+    ///     Demonstrates reading archive contents.
+    ///     Query: List files in a ZIP archive with their content.
     /// </summary>
     [TestMethod]
     public void Archive_ListContents_ShouldReturnArchiveFiles()
     {
         var query = """
-            select 
-                Key as FileName,
-                IsDirectory
-            from #archives.file('./Files/TestArchive.zip')
-            """;
+                    select 
+                        Key as FileName,
+                        IsDirectory
+                    from #archives.file('./Files/TestArchive.zip')
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -456,26 +453,27 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates reading text content from archive files.
-    /// Query: Extract text content from archive entries.
+    ///     Demonstrates reading text content from archive files.
+    ///     Query: Extract text content from archive entries.
     /// </summary>
     [TestMethod]
     public void Archive_ReadTextContent_ShouldExtractFileContent()
     {
         var query = """
-            select 
-                Key as FileName,
-                GetTextContent() as Content
-            from #archives.file('./Files/TestArchive.zip')
-            where IsDirectory = false
-            """;
+                    select 
+                        Key as FileName,
+                        GetTextContent() as Content
+                    from #archives.file('./Files/TestArchive.zip')
+                    where IsDirectory = false
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "Should have 2 files");
         Assert.IsTrue(table.Any(r => r[1].ToString()!.Contains("Hello World")), "Should contain Hello World content");
-        Assert.IsTrue(table.Any(r => r[1].ToString()!.Contains("Second file content")), "Should contain second file content");
+        Assert.IsTrue(table.Any(r => r[1].ToString()!.Contains("Second file content")),
+            "Should contain second file content");
     }
 
     #endregion
@@ -483,20 +481,20 @@ public class RepresentativeQueryTests
     #region Combined Queries (Multiple Data Sources)
 
     /// <summary>
-    /// Demonstrates combining file system with CSV.
-    /// Query: Read CSV files discovered in a directory.
+    ///     Demonstrates combining file system with CSV.
+    ///     Query: Read CSV files discovered in a directory.
     /// </summary>
     [TestMethod]
     public void Combined_FileSystemWithCsv_ShouldWorkTogether()
     {
         var query = """
-            select 
-                Name as FileName,
-                Extension
-            from #os.files('./Files', false)
-            where Extension = '.csv'
-            order by Name
-            """;
+                    select 
+                        Name as FileName,
+                        Extension
+                    from #os.files('./Files', false)
+                    where Extension = '.csv'
+                    order by Name
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -505,25 +503,25 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates Common Table Expression (CTE).
-    /// Query: Use CTE for data transformation.
+    ///     Demonstrates Common Table Expression (CTE).
+    ///     Query: Use CTE for data transformation.
     /// </summary>
     [TestMethod]
     public void Combined_CteQuery_ShouldWorkCorrectly()
     {
         var query = """
-            with DepartmentStats as (
-                select 
-                    Department,
-                    Count(Name) as EmpCount
-                from #separatedvalues.comma('./Files/Employees.csv', true, 0)
-                group by Department
-            )
-            select Department, EmpCount
-            from DepartmentStats
-            where EmpCount > 1
-            order by EmpCount desc
-            """;
+                    with DepartmentStats as (
+                        select 
+                            Department,
+                            Count(Name) as EmpCount
+                        from #separatedvalues.comma('./Files/Employees.csv', true, 0)
+                        group by Department
+                    )
+                    select Department, EmpCount
+                    from DepartmentStats
+                    where EmpCount > 1
+                    order by EmpCount desc
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -533,30 +531,30 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates nested CTEs with aggregation.
-    /// Query: Multi-level data aggregation.
+    ///     Demonstrates nested CTEs with aggregation.
+    ///     Query: Multi-level data aggregation.
     /// </summary>
     [TestMethod]
     public void Combined_NestedCte_ShouldPerformMultiLevelAggregation()
     {
         var query = """
-            with ProjectHours as (
-                select 
-                    EmployeeId,
-                    Sum(ToDecimal(Hours)) as TotalHours
-                from #separatedvalues.comma('./Files/Projects.csv', true, 0)
-                group by EmployeeId
-            ), EmployeeProjectSummary as (
-                select 
-                    e.Name as EmpName,
-                    e.Department as EmpDepartment,
-                    p.TotalHours as EmpTotalHours
-                from #separatedvalues.comma('./Files/Employees.csv', true, 0) e
-                inner join ProjectHours p on e.Id = p.EmployeeId
-            )
-            select EmpName, EmpDepartment, EmpTotalHours
-            from EmployeeProjectSummary
-            """;
+                    with ProjectHours as (
+                        select 
+                            EmployeeId,
+                            Sum(ToDecimal(Hours)) as TotalHours
+                        from #separatedvalues.comma('./Files/Projects.csv', true, 0)
+                        group by EmployeeId
+                    ), EmployeeProjectSummary as (
+                        select 
+                            e.Name as EmpName,
+                            e.Department as EmpDepartment,
+                            p.TotalHours as EmpTotalHours
+                        from #separatedvalues.comma('./Files/Employees.csv', true, 0) e
+                        inner join ProjectHours p on e.Id = p.EmployeeId
+                    )
+                    select EmpName, EmpDepartment, EmpTotalHours
+                    from EmployeeProjectSummary
+                    """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -570,8 +568,8 @@ public class RepresentativeQueryTests
     #region Git Repository Queries (#git)
 
     /// <summary>
-    /// Demonstrates querying commits from a git repository.
-    /// Query: List commits with author information.
+    ///     Demonstrates querying commits from a git repository.
+    ///     Query: List commits with author information.
     /// </summary>
     [TestMethod]
     public async Task Git_ListCommits_ShouldReturnCommitHistory()
@@ -596,8 +594,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying branches from a git repository.
-    /// Query: List all branches with their tip commit.
+    ///     Demonstrates querying branches from a git repository.
+    ///     Query: List all branches with their tip commit.
     /// </summary>
     [TestMethod]
     public async Task Git_ListBranches_ShouldReturnBranchInformation()
@@ -620,8 +618,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying tags from a git repository.
-    /// Query: List all tags with annotations.
+    ///     Demonstrates querying tags from a git repository.
+    ///     Query: List all tags with annotations.
     /// </summary>
     [TestMethod]
     public async Task Git_ListTags_ShouldReturnTagInformation()
@@ -643,8 +641,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates comparing differences between branches.
-    /// Query: Find files changed between two branches.
+    ///     Demonstrates comparing differences between branches.
+    ///     Query: Find files changed between two branches.
     /// </summary>
     [TestMethod]
     public async Task Git_DifferenceBetweenBranches_ShouldShowChanges()
@@ -670,8 +668,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying file history in a repository.
-    /// Query: Track changes to a specific file over time.
+    ///     Demonstrates querying file history in a repository.
+    ///     Query: Track changes to a specific file over time.
     /// </summary>
     [TestMethod]
     public async Task Git_FileHistory_ShouldTrackFileChanges()
@@ -693,8 +691,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates finding branch-specific commits.
-    /// Query: Find commits unique to a feature branch.
+    ///     Demonstrates finding branch-specific commits.
+    ///     Query: Find commits unique to a feature branch.
     /// </summary>
     [TestMethod]
     public async Task Git_BranchSpecificCommits_ShouldFindUniqueCommits()
@@ -721,8 +719,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying commit parents.
-    /// Query: Find parent commits for merge analysis.
+    ///     Demonstrates querying commit parents.
+    ///     Query: Find parent commits for merge analysis.
     /// </summary>
     [TestMethod]
     public async Task Git_CommitParents_ShouldShowParentRelationships()
@@ -739,7 +737,7 @@ public class RepresentativeQueryTests
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
-        // Query executes successfully - not all commits have parents (initial commit)
+
         Assert.IsNotNull(table, "Query should execute and return a table");
     }
 
@@ -748,8 +746,8 @@ public class RepresentativeQueryTests
     #region C# Roslyn Code Analysis Queries (#csharp)
 
     /// <summary>
-    /// Demonstrates listing all types in a solution project.
-    /// Query: Access types quickly via project.Types.
+    ///     Demonstrates listing all types in a solution project.
+    ///     Query: Access types quickly via project.Types.
     /// </summary>
     [TestMethod]
     public void Roslyn_ListTypes_ShouldReturnAllTypes()
@@ -765,14 +763,15 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count >= 3, "Should find at least 3 types");
-        Assert.IsTrue(table.Any(r => r[0].ToString() == "Class1" && (bool)r[1] == true), "Should find Class1 as a class");
-        Assert.IsTrue(table.Any(r => r[0].ToString() == "Interface1" && (bool)r[3] == true), "Should find Interface1 as an interface");
-        Assert.IsTrue(table.Any(r => r[0].ToString() == "Enum1" && (bool)r[2] == true), "Should find Enum1 as an enum");
+        Assert.IsTrue(table.Any(r => r[0].ToString() == "Class1" && (bool)r[1]), "Should find Class1 as a class");
+        Assert.IsTrue(table.Any(r => r[0].ToString() == "Interface1" && (bool)r[3]),
+            "Should find Interface1 as an interface");
+        Assert.IsTrue(table.Any(r => r[0].ToString() == "Enum1" && (bool)r[2]), "Should find Enum1 as an enum");
     }
 
     /// <summary>
-    /// Demonstrates querying class metrics.
-    /// Query: Get class information with method and property counts.
+    ///     Demonstrates querying class metrics.
+    ///     Query: Get class information with method and property counts.
     /// </summary>
     [TestMethod]
     public void Roslyn_ClassMetrics_ShouldReturnClassInfo()
@@ -800,8 +799,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying method body properties.
-    /// Query: Check if methods have bodies, are empty, or have statements.
+    ///     Demonstrates querying method body properties.
+    ///     Query: Check if methods have bodies, are empty, or have statements.
     /// </summary>
     [TestMethod]
     public void Roslyn_MethodBodyProperties_ShouldReturnCorrectValues()
@@ -823,8 +822,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should find methods in TestFeatures class");
-        
-        // Find the EmptyMethod
+
+
         var emptyMethod = table.FirstOrDefault(r => r[0].ToString() == "EmptyMethod");
         Assert.IsNotNull(emptyMethod, "Should find EmptyMethod");
         Assert.AreEqual(true, emptyMethod[1], "EmptyMethod HasBody should be true");
@@ -833,8 +832,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying property accessor features.
-    /// Query: Check auto-properties, getters, setters, and init setters.
+    ///     Demonstrates querying property accessor features.
+    ///     Query: Check auto-properties, getters, setters, and init setters.
     /// </summary>
     [TestMethod]
     public void Roslyn_PropertyAccessors_ShouldReturnAccessorInfo()
@@ -857,23 +856,23 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should find properties in TestFeatures class");
-        
-        // Find the AutoProperty
+
+
         var autoProperty = table.FirstOrDefault(r => r[0].ToString() == "AutoProperty");
         Assert.IsNotNull(autoProperty, "Should find AutoProperty");
         Assert.AreEqual(true, autoProperty[1], "AutoProperty IsAutoProperty should be true");
         Assert.AreEqual(true, autoProperty[2], "AutoProperty HasGetter should be true");
         Assert.AreEqual(true, autoProperty[3], "AutoProperty HasSetter should be true");
-        
-        // Find the AutoPropertyWithInit
+
+
         var initProperty = table.FirstOrDefault(r => r[0].ToString() == "AutoPropertyWithInit");
         Assert.IsNotNull(initProperty, "Should find AutoPropertyWithInit");
         Assert.AreEqual(true, initProperty[4], "AutoPropertyWithInit HasInitSetter should be true");
     }
 
     /// <summary>
-    /// Demonstrates querying cyclomatic complexity.
-    /// Query: Find methods with their complexity metrics.
+    ///     Demonstrates querying cyclomatic complexity.
+    ///     Query: Find methods with their complexity metrics.
     /// </summary>
     [TestMethod]
     public void Roslyn_CyclomaticComplexity_ShouldReturnComplexityMetrics()
@@ -892,16 +891,16 @@ public class RepresentativeQueryTests
 
         Assert.IsTrue(table.Count > 0, "Should find methods");
         Assert.IsTrue(table.All(r => r[1] != null), "CyclomaticComplexity should not be null");
-        
-        // CyclomaticComplexityMethod1 should have complexity 1 (no branches)
+
+
         var method1 = table.FirstOrDefault(r => r[0].ToString() == "CyclomaticComplexityMethod1");
         Assert.IsNotNull(method1, "Should find CyclomaticComplexityMethod1");
         Assert.AreEqual(1, method1[1], "CyclomaticComplexityMethod1 should have complexity 1");
     }
 
     /// <summary>
-    /// Demonstrates querying interface definitions.
-    /// Query: List interfaces with their methods.
+    ///     Demonstrates querying interface definitions.
+    ///     Query: List interfaces with their methods.
     /// </summary>
     [TestMethod]
     public void Roslyn_QueryInterfaces_ShouldReturnInterfaceDetails()
@@ -926,8 +925,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying enums with their members.
-    /// Query: List enums and their values.
+    ///     Demonstrates querying enums with their members.
+    ///     Query: List enums and their values.
     /// </summary>
     [TestMethod]
     public void Roslyn_QueryEnums_ShouldReturnEnumDetails()
@@ -948,15 +947,15 @@ public class RepresentativeQueryTests
 
         Assert.AreEqual(1, table.Count, "Should find Enum1");
         Assert.AreEqual("Enum1", table[0][0].ToString());
-        
+
         var members = (table[0][2] as IEnumerable<string> ?? Array.Empty<string>()).ToList();
         Assert.IsTrue(members.Contains("Value1"), "Should contain Value1");
         Assert.IsTrue(members.Contains("Value2"), "Should contain Value2");
     }
 
     /// <summary>
-    /// Demonstrates finding references to a class.
-    /// Query: Locate all usages of a specific class.
+    ///     Demonstrates finding references to a class.
+    ///     Query: Locate all usages of a specific class.
     /// </summary>
     [TestMethod]
     public void Roslyn_FindReferences_ShouldLocateClassUsages()
@@ -975,8 +974,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying method parameters.
-    /// Query: Analyze method parameters with their properties.
+    ///     Demonstrates querying method parameters.
+    ///     Query: Analyze method parameters with their properties.
     /// </summary>
     [TestMethod]
     public void Roslyn_MethodParameters_ShouldReturnParameterInfo()
@@ -1005,8 +1004,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying class attributes.
-    /// Query: Find classes with their attribute information.
+    ///     Demonstrates querying class attributes.
+    ///     Query: Find classes with their attribute information.
     /// </summary>
     [TestMethod]
     public void Roslyn_ClassAttributes_ShouldReturnAttributeInfo()
@@ -1030,8 +1029,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying class metrics for design analysis.
-    /// Query: Analyze class design with inheritance and cohesion metrics.
+    ///     Demonstrates querying class metrics for design analysis.
+    ///     Query: Analyze class design with inheritance and cohesion metrics.
     /// </summary>
     [TestMethod]
     public void Roslyn_ClassDesignMetrics_ShouldReturnMetrics()
@@ -1059,8 +1058,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying project references.
-    /// Query: List all project-to-project references.
+    ///     Demonstrates querying project references.
+    ///     Query: List all project-to-project references.
     /// </summary>
     [TestMethod]
     public void Roslyn_ProjectReferences_ShouldReturnReferences()
@@ -1079,8 +1078,8 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    /// Demonstrates querying library references.
-    /// Query: List all library/assembly references in projects.
+    ///     Demonstrates querying library references.
+    ///     Query: List all library/assembly references in projects.
     /// </summary>
     [TestMethod]
     public void Roslyn_LibraryReferences_ShouldReturnLibraries()
@@ -1097,7 +1096,7 @@ public class RepresentativeQueryTests
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
-        // ClassLibrary1 should have some library references (System.*) 
+
         Assert.IsTrue(table.Count >= 0, "Query should execute successfully");
     }
 
@@ -1108,8 +1107,8 @@ public class RepresentativeQueryTests
     private CompiledQuery CreateAndRunVirtualMachine(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
+            script,
+            Guid.NewGuid().ToString(),
             new RepresentativeSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
@@ -1117,14 +1116,14 @@ public class RepresentativeQueryTests
     private CompiledQuery CreateAndRunVirtualMachineWithRoslynEnv(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
+            script,
+            Guid.NewGuid().ToString(),
             new RepresentativeSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
                 new Dictionary<string, string>
                 {
-                    {"MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists"},
-                    {"EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists"}
+                    { "MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists" },
+                    { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
                 }));
     }
 
@@ -1177,7 +1176,9 @@ public class RepresentativeQueryTests
     private static string Repository3ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository3.zip");
     private static string Repository4ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository4.zip");
     private static string Repository5ZipPath => Path.Combine(StartDirectory, "Repositories", "Repository5.zip");
-    private static string Solution1SolutionPath => Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
+
+    private static string Solution1SolutionPath =>
+        Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
 
     private class UnpackedRepository : IDisposable
     {
@@ -1190,8 +1191,6 @@ public class RepresentativeQueryTests
 
         public void Dispose()
         {
-            // Git tests share repository state, cleanup is deferred to avoid conflicts
-            // The test framework handles cleanup at the end of test runs
         }
     }
 

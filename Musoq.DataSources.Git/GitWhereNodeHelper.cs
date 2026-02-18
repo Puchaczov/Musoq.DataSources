@@ -4,7 +4,7 @@ using Musoq.Parser.Nodes;
 namespace Musoq.DataSources.Git;
 
 /// <summary>
-/// Filter parameters extracted from WHERE clause for Git queries.
+///     Filter parameters extracted from WHERE clause for Git queries.
 /// </summary>
 internal class GitFilterParameters
 {
@@ -58,12 +58,12 @@ internal class GitFilterParameters
 }
 
 /// <summary>
-/// Helper class to extract filter parameters from WHERE clause nodes for Git queries.
+///     Helper class to extract filter parameters from WHERE clause nodes for Git queries.
 /// </summary>
 internal static class GitWhereNodeHelper
 {
     /// <summary>
-    /// Extracts Git filter parameters from a WHERE node.
+    ///     Extracts Git filter parameters from a WHERE node.
     /// </summary>
     public static GitFilterParameters ExtractParameters(WhereNode? whereNode)
     {
@@ -87,7 +87,7 @@ internal static class GitWhereNodeHelper
                 break;
 
             case OrNode:
-                // OR conditions are complex - skip for pushdown
+
                 break;
 
             case EqualityNode equalityNode:
@@ -212,6 +212,7 @@ internal static class GitWhereNodeHelper
                     else if (op is "<=" or "<")
                         parameters.Until = date;
                 }
+
                 break;
         }
     }

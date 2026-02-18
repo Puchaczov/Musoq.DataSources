@@ -3,7 +3,7 @@ using Musoq.Parser.Nodes;
 namespace Musoq.DataSources.Os;
 
 /// <summary>
-/// Filter parameters extracted from WHERE clause for Os file/directory queries.
+///     Filter parameters extracted from WHERE clause for Os file/directory queries.
 /// </summary>
 internal class OsFileFilterParameters
 {
@@ -15,7 +15,7 @@ internal class OsFileFilterParameters
 }
 
 /// <summary>
-/// Filter parameters extracted from WHERE clause for Os directory queries.
+///     Filter parameters extracted from WHERE clause for Os directory queries.
 /// </summary>
 internal class OsDirectoryFilterParameters
 {
@@ -24,12 +24,12 @@ internal class OsDirectoryFilterParameters
 }
 
 /// <summary>
-/// Helper class to extract filter parameters from WHERE clause nodes for Os queries.
+///     Helper class to extract filter parameters from WHERE clause nodes for Os queries.
 /// </summary>
 internal static class OsWhereNodeHelper
 {
     /// <summary>
-    /// Extracts Os file filter parameters from a WHERE node.
+    ///     Extracts Os file filter parameters from a WHERE node.
     /// </summary>
     public static OsFileFilterParameters ExtractFileParameters(WhereNode? whereNode)
     {
@@ -44,7 +44,7 @@ internal static class OsWhereNodeHelper
     }
 
     /// <summary>
-    /// Extracts Os directory filter parameters from a WHERE node.
+    ///     Extracts Os directory filter parameters from a WHERE node.
     /// </summary>
     public static OsDirectoryFilterParameters ExtractDirectoryParameters(WhereNode? whereNode)
     {
@@ -68,7 +68,7 @@ internal static class OsWhereNodeHelper
                 break;
 
             case OrNode:
-                // OR conditions are complex - skip for pushdown
+
                 break;
 
             case EqualityNode equalityNode:
@@ -87,7 +87,7 @@ internal static class OsWhereNodeHelper
                 break;
 
             case OrNode:
-                // OR conditions are complex - skip for pushdown
+
                 break;
 
             case EqualityNode equalityNode:

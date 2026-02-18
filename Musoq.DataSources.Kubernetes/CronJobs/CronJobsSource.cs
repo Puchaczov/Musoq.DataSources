@@ -20,7 +20,7 @@ internal class CronJobsSource : RowSourceBase<CronJobEntity>
     protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
     {
         _runtimeContext.ReportDataSourceBegin(CronJobsSourceName);
-        
+
         try
         {
             var cronJobs = _kubernetesApi.ListCronJobsForAllNamespaces();
@@ -28,9 +28,10 @@ internal class CronJobsSource : RowSourceBase<CronJobEntity>
 
             chunkedSource.Add(
                 cronJobs.Items.Select(cj => new EntityResolver<CronJobEntity>(MapV1CronJobToCronJobEntity(cj),
-                        CronJobsSourceHelper.CronJobsNameToIndexMap, CronJobsSourceHelper.CronJobsIndexToMethodAccessMap))
+                        CronJobsSourceHelper.CronJobsNameToIndexMap,
+                        CronJobsSourceHelper.CronJobsIndexToMethodAccessMap))
                     .ToList());
-            
+
             _runtimeContext.ReportDataSourceEnd(CronJobsSourceName, cronJobs.Items.Count);
         }
         catch
@@ -47,7 +48,9 @@ internal class CronJobsSource : RowSourceBase<CronJobEntity>
             Name = v1CronJob.Metadata.Name,
             Namespace = v1CronJob.Metadata.NamespaceProperty,
             Schedule = v1CronJob.Spec.Schedule,
-            Statuses = v1CronJob.Status.Active != null ? string.Join(",", v1CronJob.Status.Active.Select(f => f.Name)) : string.Empty,
+            Statuses = v1CronJob.Status.Active != null
+                ? string.Join(",", v1CronJob.Status.Active.Select(f => f.Name))
+                : string.Empty,
             LastScheduleTime = v1CronJob.Status.LastScheduleTime
         };
     }

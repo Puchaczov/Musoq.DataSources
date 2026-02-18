@@ -27,7 +27,7 @@ public class RepresentativeSchemaProvider : ISchemaProvider
             _ => throw new Exception($"Schema '{schema}' not found")
         };
     }
-    
+
     private static ISchema CreateCSharpSchema()
     {
         LifecycleHooks.LoadRequiredDependencies();

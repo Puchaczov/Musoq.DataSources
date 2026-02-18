@@ -12,31 +12,54 @@ namespace Musoq.DataSources.Roslyn.Tests;
 [TestClass]
 public class RoslynToSqlTests
 {
+    static RoslynToSqlTests()
+    {
+        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
+    }
+
+    private static string Solution1SolutionPath =>
+        Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
+
+    private static string StartDirectory
+    {
+        get
+        {
+            var filePath = typeof(RoslynToSqlTests).Assembly.Location;
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Directory is empty.");
+
+            return directory;
+        }
+    }
+
     [TestMethod]
     public void WhenSolutionQueried_ShouldPass()
     {
         var query = $"select s.Id from #csharp.solution('{Solution1SolutionPath.Escape()}') s";
-        
+
         var vm = CompileQuery(query);
 
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
         Assert.IsTrue(Guid.TryParse(result[0][0].ToString(), out _));
     }
-    
+
     [TestMethod]
     public void WhenProjectQueried_ShouldPass()
     {
-        var query = $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p";
-        
+        var query =
+            $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p";
+
         var vm = CompileQuery(query);
 
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 2, "Result should have 2 entries");
 
-        Assert.IsTrue(result.Any(row => 
+        Assert.IsTrue(result.Any(row =>
             Guid.TryParse(row[0].ToString(), out _) &&
             ValidateIsValidPathFor(row[1].ToString(), ".csproj") &&
             ValidateIsValidPathFor(row[2].ToString(), ".dll", false) &&
@@ -48,7 +71,7 @@ public class RoslynToSqlTests
             row[8] != null
         ), "First entry does not match expected details");
 
-        Assert.IsTrue(result.Any(row => 
+        Assert.IsTrue(result.Any(row =>
             Guid.TryParse(row[0].ToString(), out _) &&
             ValidateIsValidPathFor(row[1].ToString(), ".csproj") &&
             ValidateIsValidPathFor(row[2].ToString(), ".dll", false) &&
@@ -64,30 +87,39 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenQuickAccessForTypes_ShouldPass()
     {
-        var query = $"select t.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t";
-        
+        var query =
+            $"select t.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t";
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
-        // We now have 20 types (structs are counted separately via d.Structs)
+
+
         Assert.IsTrue(result.Count >= 20, $"Result should contain at least 20 types, but got {result.Count}");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1") == 1, "Class1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1") == 1, "Interface1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface2") == 1, "Interface2 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Enum1") == 1, "Enum1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "Tests") == 1, "Tests should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "PartialTestClass") == 2, "PartialTestClass should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "CyclomaticComplexityClass1") == 1, "CyclomaticComplexityClass1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "PartialTestClass") == 2,
+            "PartialTestClass should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "CyclomaticComplexityClass1") == 1,
+            "CyclomaticComplexityClass1 should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "TestFeatures") == 1, "TestFeatures should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "AbstractClassWithAbstractMethod") == 1, "AbstractClassWithAbstractMethod should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "IInterfaceWithMethods") == 1, "IInterfaceWithMethods should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "InterfaceImplementor") == 1, "InterfaceImplementor should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "UnusedCodeTestClass") == 1, "UnusedCodeTestClass should be present");
-        // New types for testing unused code detection
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "IUnusedInterface") == 1, "IUnusedInterface should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "AbstractClassWithAbstractMethod") == 1,
+            "AbstractClassWithAbstractMethod should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "IInterfaceWithMethods") == 1,
+            "IInterfaceWithMethods should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "InterfaceImplementor") == 1,
+            "InterfaceImplementor should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "UnusedCodeTestClass") == 1,
+            "UnusedCodeTestClass should be present");
+
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "IUnusedInterface") == 1,
+            "IUnusedInterface should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "IUsedInterface") == 1, "IUsedInterface should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "UsedInterfaceImplementor") == 1, "UsedInterfaceImplementor should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "UsedInterfaceImplementor") == 1,
+            "UsedInterfaceImplementor should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "UnusedEnum") == 1, "UnusedEnum should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "UsedEnum") == 1, "UsedEnum should be present");
         Assert.IsTrue(result.Count(r => r[0].ToString() == "EnumUser") == 1, "EnumUser should be present");
@@ -96,40 +128,52 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenChecksKindOfType_ShouldPass()
     {
-        var query = $"select t.Name, t.IsClass, t.IsEnum, t.IsInterface from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t where t.Name in ('Class1', 'Interface1', 'Enum1', 'Tests', 'PartialTestClass', 'CyclomaticComplexityClass1')";
-        
+        var query =
+            $"select t.Name, t.IsClass, t.IsEnum, t.IsInterface from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t where t.Name in ('Class1', 'Interface1', 'Enum1', 'Tests', 'PartialTestClass', 'CyclomaticComplexityClass1')";
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 7, "Result must contain 6 records");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1, "Class1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1" && !(bool)r[1] && !(bool)r[2] && (bool)r[3]) == 1, "Interface1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Enum1" && !(bool)r[1] && (bool)r[2] && !(bool)r[3]) == 1, "Enum1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Tests" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1, "Tests should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "PartialTestClass" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 2, "PartialTestClass should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "CyclomaticComplexityClass1" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1, "CyclomaticComplexityClass1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1,
+            "Class1 should be present");
+        Assert.IsTrue(
+            result.Count(r => r[0].ToString() == "Interface1" && !(bool)r[1] && !(bool)r[2] && (bool)r[3]) == 1,
+            "Interface1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Enum1" && !(bool)r[1] && (bool)r[2] && !(bool)r[3]) == 1,
+            "Enum1 should be present");
+        Assert.IsTrue(result.Count(r => r[0].ToString() == "Tests" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1,
+            "Tests should be present");
+        Assert.IsTrue(
+            result.Count(r => r[0].ToString() == "PartialTestClass" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 2,
+            "PartialTestClass should be present");
+        Assert.IsTrue(
+            result.Count(r =>
+                r[0].ToString() == "CyclomaticComplexityClass1" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1,
+            "CyclomaticComplexityClass1 should be present");
     }
 
     [TestMethod]
     public void WhenDocumentQueries_ShouldPass()
     {
-        var query = $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
-        
+        var query =
+            $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("Class1.cs", result[0][0].ToString());
 
         var documentContent = result[0][1].ToString();
 
         Assert.IsNotNull(documentContent);
         Assert.IsTrue(
-            documentContent.Contains("class Class1") && 
-            documentContent.Contains("interface Interface1") && 
+            documentContent.Contains("class Class1") &&
+            documentContent.Contains("interface Interface1") &&
             documentContent.Contains("enum Enum1")
         );
         Assert.AreEqual(2, result[0][2]);
@@ -141,63 +185,63 @@ public class RoslynToSqlTests
     public void WhenClassQueried_ShouldPass()
     {
         var query = """
-select 
-    c.IsAbstract, 
-    c.IsSealed, 
-    c.IsStatic, 
-    c.BaseTypes, 
-    c.Interfaces, 
-    c.TypeParameters, 
-    c.MemberNames, 
-    c.Attributes,
-    c.Name,
-    c.FullName,
-    c.Namespace,
-    c.MethodsCount,
-    c.PropertiesCount,
-    c.FieldsCount,
-    c.InheritanceDepth,
-    c.ConstructorsCount,
-    c.NestedClassesCount,
-    c.NestedInterfacesCount,
-    c.InterfacesCount,
-    c.LackOfCohesion
-from #csharp.solution('{Solution1SolutionPath}') s 
-cross apply s.Projects p 
-cross apply p.Documents d 
-cross apply d.Classes c
-where c.Name = 'Class1'
-""".Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+                    select 
+                        c.IsAbstract, 
+                        c.IsSealed, 
+                        c.IsStatic, 
+                        c.BaseTypes, 
+                        c.Interfaces, 
+                        c.TypeParameters, 
+                        c.MemberNames, 
+                        c.Attributes,
+                        c.Name,
+                        c.FullName,
+                        c.Namespace,
+                        c.MethodsCount,
+                        c.PropertiesCount,
+                        c.FieldsCount,
+                        c.InheritanceDepth,
+                        c.ConstructorsCount,
+                        c.NestedClassesCount,
+                        c.NestedInterfacesCount,
+                        c.InterfacesCount,
+                        c.LackOfCohesion
+                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    cross apply s.Projects p 
+                    cross apply p.Documents d 
+                    cross apply d.Classes c
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual(false, result[0][0]);
         Assert.AreEqual(false, result[0][1]);
         Assert.AreEqual(false, result[0][2]);
-        
+
         var baseTypes = (result[0][3] as IEnumerable<string> ?? []).ToList();
-        
+
         Assert.IsNotNull(baseTypes);
         Assert.AreEqual(1, baseTypes.Count);
         Assert.AreEqual("Object", baseTypes.First());
-        
+
         var interfaces = (result[0][4] as IEnumerable<string> ?? []).ToList();
-        
+
         Assert.IsNotNull(interfaces);
         Assert.AreEqual(1, interfaces.Count);
         Assert.AreEqual("Interface1", interfaces.First());
-        
+
         var typeParameters = (result[0][5] as IEnumerable<string> ?? []).ToList();
-        
+
         Assert.IsNotNull(typeParameters);
         Assert.AreEqual(0, typeParameters.Count);
-        
+
         var memberNames = (result[0][6] as IEnumerable<string> ?? []).ToList();
-        
+
         Assert.IsNotNull(memberNames);
         Assert.AreEqual(8, memberNames.Count);
         Assert.IsTrue(memberNames.Contains("Method1Async"));
@@ -207,12 +251,12 @@ where c.Name = 'Class1'
         Assert.IsTrue(memberNames.Contains(".ctor"));
         Assert.IsTrue(memberNames.Contains("Property1"));
         Assert.IsTrue(memberNames.Contains("get_Property1"));
-        
+
         var attributes = (result[0][7] as IEnumerable<string> ?? []).ToList();
-        
+
         Assert.IsNotNull(attributes);
         Assert.AreEqual(0, attributes.Count);
-        
+
         Assert.AreEqual("Class1", result[0][8].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1.Class1", result[0][9].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1", result[0][10].ToString());
@@ -239,18 +283,18 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     where c.Name = 'Tests'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         var attributes = (result[0][0] as IEnumerable<AttributeEntity> ?? []).ToList();
-        
+
         Assert.IsNotNull(attributes);
         Assert.AreEqual(1, attributes.Count);
-        
+
         Assert.AreEqual("ExcludeFromCodeCoverage", attributes.First().Name);
     }
 
@@ -272,15 +316,15 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'Class1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 5, "Result should contain exactly 5 records");
 
-        Assert.IsTrue(result.Any(r => 
-                r[0].ToString() == "Method1Async" && 
+        Assert.IsTrue(result.Any(r =>
+                r[0].ToString() == "Method1Async" &&
                 r[1].ToString() == "Task" &&
                 !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
                 (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
@@ -288,8 +332,8 @@ where c.Name = 'Class1'
                 !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
             "Missing or invalid Method1Async record");
 
-        Assert.IsTrue(result.Any(r => 
-                r[0].ToString() == "Method2" && 
+        Assert.IsTrue(result.Any(r =>
+                r[0].ToString() == "Method2" &&
                 r[1].ToString() == "Void" &&
                 !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
                 (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
@@ -297,8 +341,8 @@ where c.Name = 'Class1'
                 !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
             "Missing or invalid Method2 record");
 
-        Assert.IsTrue(result.Any(r => 
-                r[0].ToString() == "Method3" && 
+        Assert.IsTrue(result.Any(r =>
+                r[0].ToString() == "Method3" &&
                 r[1].ToString() == "Class1" &&
                 !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
                 (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
@@ -306,8 +350,8 @@ where c.Name = 'Class1'
                 !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
             "Missing or invalid first Method3 record");
 
-        Assert.IsTrue(result.Any(r => 
-                r[0].ToString() == "Method3" && 
+        Assert.IsTrue(result.Any(r =>
+                r[0].ToString() == "Method3" &&
                 r[1].ToString() == "Class1" &&
                 (r[2] as IEnumerable<ParameterEntity> ?? []).Count() == 1 &&
                 (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
@@ -315,8 +359,8 @@ where c.Name = 'Class1'
                 !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
             "Missing or invalid second Method3 record");
 
-        Assert.IsTrue(result.Any(r => 
-                r[0].ToString() == "Method4" && 
+        Assert.IsTrue(result.Any(r =>
+                r[0].ToString() == "Method4" &&
                 r[1].ToString() == "Enum1" &&
                 !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
                 (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
@@ -348,7 +392,8 @@ where c.Name = 'Class1'
 
         Assert.IsFalse(string.IsNullOrWhiteSpace(methodText), "Method text should not be empty");
         Assert.IsFalse(methodText.Contains("///"), "Method text should not include XML doc comments");
-        Assert.IsTrue(methodText.TrimStart().StartsWith("public int RecursiveMethod"), "Method text should start with method signature");
+        Assert.IsTrue(methodText.TrimStart().StartsWith("public int RecursiveMethod"),
+            "Method text should start with method signature");
     }
 
     [TestMethod]
@@ -364,13 +409,13 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'Class1' and m.Name = 'Method1Async'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual(4, result[0][0]);
     }
 
@@ -390,21 +435,21 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'PartialTestClass'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "PartialTestClass_1.cs" &&
                 r[1].ToString() == "PartialTestClass" &&
                 (int)r[2] == 1 &&
                 r[3].ToString() == "Method1"),
             "Missing PartialTestClass_1.cs record");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "PartialTestClass_2.cs" &&
                 r[1].ToString() == "PartialTestClass" &&
                 (int)r[2] == 1 &&
@@ -428,21 +473,21 @@ where c.Name = 'Class1'
                     cross apply c.Properties pr
                     where c.Name = 'PartialTestClass'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "PartialTestClass_1.cs" &&
                 r[1].ToString() == "PartialTestClass" &&
                 (int)r[2] == 1 &&
                 r[3].ToString() == "Property1"),
             "Missing PartialTestClass_1.cs record");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "PartialTestClass_2.cs" &&
                 r[1].ToString() == "PartialTestClass" &&
                 (int)r[2] == 1 &&
@@ -462,16 +507,16 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     where c.Name = 'Class1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual(29, result[0][0]);
     }
-    
+
     [TestMethod]
     public void WhenClassPropertiesQueried_ShouldPass()
     {
@@ -497,13 +542,13 @@ where c.Name = 'Class1'
                     cross apply c.Properties p
                     where c.Name = 'Class1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("Property1", result[0][0].ToString());
         Assert.AreEqual("Int32", result[0][1].ToString());
         Assert.AreEqual(false, result[0][2]);
@@ -518,7 +563,7 @@ where c.Name = 'Class1'
         Assert.AreEqual(false, result[0][11]);
         Assert.AreEqual(1, (result[0][12] as IEnumerable<string> ?? []).Count());
     }
-    
+
     [TestMethod]
     public void WhenMethodParametersQueried_ShouldPass()
     {
@@ -543,13 +588,13 @@ where c.Name = 'Class1'
                     cross apply m.Parameters p
                     where c.Name = 'Class1' and m.Name = 'Method3'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("a", result[0][0].ToString());
         Assert.AreEqual("Int32", result[0][1].ToString());
         Assert.AreEqual(false, result[0][2]);
@@ -562,7 +607,7 @@ where c.Name = 'Class1'
         Assert.AreEqual(false, result[0][9]);
         Assert.AreEqual(true, result[0][10]);
     }
-    
+
     [TestMethod]
     public void WhenEnumQueried_ShouldPass()
     {
@@ -579,22 +624,22 @@ where c.Name = 'Class1'
                     cross apply d.Enums e
                     where e.Name = 'Enum1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("Enum1", result[0][0].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1.Enum1", result[0][1].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1", result[0][2].ToString());
         Assert.AreEqual(1, (result[0][3] as IEnumerable<string> ?? []).Count());
-        
+
         var members = (result[0][4] as IEnumerable<string> ?? []).ToList();
-        
+
         Assert.IsNotNull(members);
-        
+
         Assert.AreEqual(2, members.Count);
         Assert.IsTrue(members.Contains("Value1"));
         Assert.IsTrue(members.Contains("Value2"));
@@ -618,38 +663,38 @@ where c.Name = 'Class1'
                     cross apply d.Interfaces i
                     where i.Name = 'Interface1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("Interface1", result[0][0].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1.Interface1", result[0][1].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1", result[0][2].ToString());
         Assert.AreEqual(1, (result[0][3] as IEnumerable<string> ?? []).Count());
-        
+
         var baseInterfaces = (result[0][4] as IEnumerable<string> ?? []).ToList();
-        
+
         Assert.IsNotNull(baseInterfaces);
-        
+
         Assert.AreEqual(0, baseInterfaces.Count);
-        
+
         var methods = (result[0][5] as IEnumerable<MethodEntity> ?? []).ToList();
-        
+
         Assert.IsNotNull(methods);
-        
+
         Assert.AreEqual(4, methods.Count);
         Assert.IsTrue(methods.Any(m => m.Name == "Method1Async"));
         Assert.IsTrue(methods.Any(m => m.Name == "Method2"));
         Assert.IsTrue(methods.Any(m => m.Name == "Method3"));
         Assert.IsTrue(methods.Any(m => m.Name == "Method4"));
-        
+
         var properties = (result[0][6] as IEnumerable<PropertyEntity> ?? []).ToList();
-        
+
         Assert.IsNotNull(properties);
-        
+
         Assert.AreEqual(0, properties.Count);
     }
 
@@ -667,13 +712,13 @@ where c.Name = 'Class1'
                     cross apply c.Attributes a
                     where c.Name = 'Tests'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
         Assert.AreEqual(0, (result[0][1] as IEnumerable<string> ?? []).Count());
     }
@@ -689,11 +734,11 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual(1, result[0][0]);
     }
@@ -709,11 +754,11 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod2'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual(2, result[0][0]);
     }
@@ -729,11 +774,11 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod3'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual(3, result[0][0]);
     }
@@ -747,14 +792,14 @@ where c.Name = 'Class1'
                     cross apply s.FindReferences(c.Self) rd
                     cross apply rd.ReferencedClasses r
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Class1" &&
                 (int)r[1] == 16 &&
                 (int)r[2] == 11 &&
@@ -762,7 +807,7 @@ where c.Name = 'Class1'
                 (int)r[4] == 17),
             "Missing first Class1 location record");
 
-        Assert.IsTrue(result.Any(r => 
+        Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Class1" &&
                 (int)r[1] == 21 &&
                 (int)r[2] == 11 &&
@@ -770,7 +815,7 @@ where c.Name = 'Class1'
                 (int)r[4] == 17),
             "Missing second Class1 location record");
     }
-    
+
     [TestMethod]
     public void WhenLookingForReferenceToInterface_ShouldFind()
     {
@@ -780,20 +825,20 @@ where c.Name = 'Class1'
                     cross apply s.FindReferences(c.Self) rd
                     cross apply rd.ReferencedInterfaces r
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("Interface2", result[0][0].ToString());
         Assert.AreEqual(70, result[0][1]);
         Assert.AreEqual(30, result[0][2]);
         Assert.AreEqual(70, result[0][3]);
         Assert.AreEqual(40, result[0][4]);
     }
-    
+
     [TestMethod]
     public void WhenLookingForReferenceToEnum_WithinClass_ShouldFind()
     {
@@ -803,20 +848,20 @@ where c.Name = 'Class1'
                     cross apply s.FindReferences(c.Self) rd
                     cross apply rd.ReferencedClasses r
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("Class1", result[0][0].ToString());
         Assert.AreEqual(26, result[0][1]);
         Assert.AreEqual(11, result[0][2]);
         Assert.AreEqual(26, result[0][3]);
         Assert.AreEqual(16, result[0][4]);
     }
-    
+
     [TestMethod]
     public void WhenLookingForReferenceToEnum_WithinInterface_ShouldFind()
     {
@@ -826,13 +871,13 @@ where c.Name = 'Class1'
                     cross apply s.FindReferences(c.Self) rd
                     cross apply rd.ReferencedInterfaces r
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
-        
+
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         Assert.AreEqual("Interface1", result[0][0].ToString());
         Assert.AreEqual(67, result[0][1]);
         Assert.AreEqual(11, result[0][2]);
@@ -843,14 +888,15 @@ where c.Name = 'Class1'
     [TestMethod]
     public void WhenDocumentFilePathQueried_ShouldReturnFilePath()
     {
-        var query = $"select d.Name, d.FilePath from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
-        
+        var query =
+            $"select d.Name, d.FilePath from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual("Class1.cs", result[0][0].ToString());
-        
+
         var filePath = result[0][1]?.ToString();
         Assert.IsNotNull(filePath);
         Assert.IsTrue(filePath.EndsWith("Class1.cs"));
@@ -874,57 +920,57 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'TestFeatures'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // EmptyMethod test
+
+
         var emptyMethod = result.FirstOrDefault(r => r[0].ToString() == "EmptyMethod");
         Assert.IsNotNull(emptyMethod);
-        Assert.AreEqual(true, emptyMethod[1]); // HasBody
-        Assert.AreEqual(true, emptyMethod[2]); // IsEmpty
-        Assert.AreEqual(0, emptyMethod[3]); // StatementsCount
-        Assert.AreEqual(true, emptyMethod[4]); // BodyContainsOnlyTrivia
-        
-        // MethodWithOnlyComments test
+        Assert.AreEqual(true, emptyMethod[1]);
+        Assert.AreEqual(true, emptyMethod[2]);
+        Assert.AreEqual(0, emptyMethod[3]);
+        Assert.AreEqual(true, emptyMethod[4]);
+
+
         var methodWithComments = result.FirstOrDefault(r => r[0].ToString() == "MethodWithOnlyComments");
         Assert.IsNotNull(methodWithComments);
-        Assert.AreEqual(true, methodWithComments[1]); // HasBody
-        Assert.AreEqual(true, methodWithComments[2]); // IsEmpty
-        Assert.AreEqual(0, methodWithComments[3]); // StatementsCount
-        Assert.AreEqual(true, methodWithComments[4]); // BodyContainsOnlyTrivia
-        
-        // SingleStatementMethod test
+        Assert.AreEqual(true, methodWithComments[1]);
+        Assert.AreEqual(true, methodWithComments[2]);
+        Assert.AreEqual(0, methodWithComments[3]);
+        Assert.AreEqual(true, methodWithComments[4]);
+
+
         var singleStatementMethod = result.FirstOrDefault(r => r[0].ToString() == "SingleStatementMethod");
         Assert.IsNotNull(singleStatementMethod);
-        Assert.AreEqual(true, singleStatementMethod[1]); // HasBody
-        Assert.AreEqual(false, singleStatementMethod[2]); // IsEmpty
-        Assert.AreEqual(1, singleStatementMethod[3]); // StatementsCount
-        Assert.AreEqual(false, singleStatementMethod[4]); // BodyContainsOnlyTrivia
-        
-        // MultipleStatementsMethod test
+        Assert.AreEqual(true, singleStatementMethod[1]);
+        Assert.AreEqual(false, singleStatementMethod[2]);
+        Assert.AreEqual(1, singleStatementMethod[3]);
+        Assert.AreEqual(false, singleStatementMethod[4]);
+
+
         var multipleStatementsMethod = result.FirstOrDefault(r => r[0].ToString() == "MultipleStatementsMethod");
         Assert.IsNotNull(multipleStatementsMethod);
-        Assert.AreEqual(true, multipleStatementsMethod[1]); // HasBody
-        Assert.AreEqual(false, multipleStatementsMethod[2]); // IsEmpty
-        Assert.AreEqual(3, multipleStatementsMethod[3]); // StatementsCount
-        Assert.AreEqual(false, multipleStatementsMethod[4]); // BodyContainsOnlyTrivia
-        
-        // ExpressionBodiedMethod test
+        Assert.AreEqual(true, multipleStatementsMethod[1]);
+        Assert.AreEqual(false, multipleStatementsMethod[2]);
+        Assert.AreEqual(3, multipleStatementsMethod[3]);
+        Assert.AreEqual(false, multipleStatementsMethod[4]);
+
+
         var expressionBodiedMethod = result.FirstOrDefault(r => r[0].ToString() == "ExpressionBodiedMethod");
         Assert.IsNotNull(expressionBodiedMethod);
-        Assert.AreEqual(true, expressionBodiedMethod[1]); // HasBody
-        Assert.AreEqual(false, expressionBodiedMethod[2]); // IsEmpty (expression bodies are never empty)
-        Assert.AreEqual(0, expressionBodiedMethod[3]); // StatementsCount (no block body)
-        Assert.AreEqual(false, expressionBodiedMethod[4]); // BodyContainsOnlyTrivia
-        
-        // MethodWithNestedBlocks test - should count only direct statements
+        Assert.AreEqual(true, expressionBodiedMethod[1]);
+        Assert.AreEqual(false, expressionBodiedMethod[2]);
+        Assert.AreEqual(0, expressionBodiedMethod[3]);
+        Assert.AreEqual(false, expressionBodiedMethod[4]);
+
+
         var methodWithNestedBlocks = result.FirstOrDefault(r => r[0].ToString() == "MethodWithNestedBlocks");
         Assert.IsNotNull(methodWithNestedBlocks);
-        Assert.AreEqual(true, methodWithNestedBlocks[1]); // HasBody
-        Assert.AreEqual(false, methodWithNestedBlocks[2]); // IsEmpty
-        Assert.AreEqual(2, methodWithNestedBlocks[3]); // StatementsCount (if statement and var y = 2)
-        Assert.AreEqual(false, methodWithNestedBlocks[4]); // BodyContainsOnlyTrivia
+        Assert.AreEqual(true, methodWithNestedBlocks[1]);
+        Assert.AreEqual(false, methodWithNestedBlocks[2]);
+        Assert.AreEqual(2, methodWithNestedBlocks[3]);
+        Assert.AreEqual(false, methodWithNestedBlocks[4]);
     }
 
     [TestMethod]
@@ -944,65 +990,65 @@ where c.Name = 'Class1'
                     cross apply c.Properties p
                     where c.Name = 'TestFeatures'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // AutoProperty test
+
+
         var autoProperty = result.FirstOrDefault(r => r[0].ToString() == "AutoProperty");
         Assert.IsNotNull(autoProperty);
-        Assert.AreEqual(true, autoProperty[1]); // IsAutoProperty
-        Assert.AreEqual(true, autoProperty[2]); // HasGetter
-        Assert.AreEqual(true, autoProperty[3]); // HasSetter
-        Assert.AreEqual(false, autoProperty[4]); // HasInitSetter
-        
-        // AutoPropertyWithInit test
+        Assert.AreEqual(true, autoProperty[1]);
+        Assert.AreEqual(true, autoProperty[2]);
+        Assert.AreEqual(true, autoProperty[3]);
+        Assert.AreEqual(false, autoProperty[4]);
+
+
         var autoPropertyWithInit = result.FirstOrDefault(r => r[0].ToString() == "AutoPropertyWithInit");
         Assert.IsNotNull(autoPropertyWithInit);
-        Assert.AreEqual(true, autoPropertyWithInit[1]); // IsAutoProperty
-        Assert.AreEqual(true, autoPropertyWithInit[2]); // HasGetter
-        Assert.AreEqual(true, autoPropertyWithInit[3]); // HasSetter (init counts as setter)
-        Assert.AreEqual(true, autoPropertyWithInit[4]); // HasInitSetter
-        
-        // AutoPropertyReadOnly test
+        Assert.AreEqual(true, autoPropertyWithInit[1]);
+        Assert.AreEqual(true, autoPropertyWithInit[2]);
+        Assert.AreEqual(true, autoPropertyWithInit[3]);
+        Assert.AreEqual(true, autoPropertyWithInit[4]);
+
+
         var autoPropertyReadOnly = result.FirstOrDefault(r => r[0].ToString() == "AutoPropertyReadOnly");
         Assert.IsNotNull(autoPropertyReadOnly);
-        Assert.AreEqual(true, autoPropertyReadOnly[1]); // IsAutoProperty
-        Assert.AreEqual(true, autoPropertyReadOnly[2]); // HasGetter
-        Assert.AreEqual(false, autoPropertyReadOnly[3]); // HasSetter
-        Assert.AreEqual(false, autoPropertyReadOnly[4]); // HasInitSetter
-        
-        // PropertyWithCustomGetter test
+        Assert.AreEqual(true, autoPropertyReadOnly[1]);
+        Assert.AreEqual(true, autoPropertyReadOnly[2]);
+        Assert.AreEqual(false, autoPropertyReadOnly[3]);
+        Assert.AreEqual(false, autoPropertyReadOnly[4]);
+
+
         var propertyWithCustomGetter = result.FirstOrDefault(r => r[0].ToString() == "PropertyWithCustomGetter");
         Assert.IsNotNull(propertyWithCustomGetter);
-        Assert.AreEqual(false, propertyWithCustomGetter[1]); // IsAutoProperty
-        Assert.AreEqual(true, propertyWithCustomGetter[2]); // HasGetter
-        Assert.AreEqual(true, propertyWithCustomGetter[3]); // HasSetter
-        Assert.AreEqual(false, propertyWithCustomGetter[4]); // HasInitSetter
-        
-        // ExpressionBodiedProperty test
+        Assert.AreEqual(false, propertyWithCustomGetter[1]);
+        Assert.AreEqual(true, propertyWithCustomGetter[2]);
+        Assert.AreEqual(true, propertyWithCustomGetter[3]);
+        Assert.AreEqual(false, propertyWithCustomGetter[4]);
+
+
         var expressionBodiedProperty = result.FirstOrDefault(r => r[0].ToString() == "ExpressionBodiedProperty");
         Assert.IsNotNull(expressionBodiedProperty);
-        Assert.AreEqual(false, expressionBodiedProperty[1]); // IsAutoProperty
-        Assert.AreEqual(true, expressionBodiedProperty[2]); // HasGetter
-        Assert.AreEqual(false, expressionBodiedProperty[3]); // HasSetter
-        Assert.AreEqual(false, expressionBodiedProperty[4]); // HasInitSetter
-        
-        // GetterOnly test
+        Assert.AreEqual(false, expressionBodiedProperty[1]);
+        Assert.AreEqual(true, expressionBodiedProperty[2]);
+        Assert.AreEqual(false, expressionBodiedProperty[3]);
+        Assert.AreEqual(false, expressionBodiedProperty[4]);
+
+
         var getterOnly = result.FirstOrDefault(r => r[0].ToString() == "GetterOnly");
         Assert.IsNotNull(getterOnly);
-        Assert.AreEqual(true, getterOnly[1]); // IsAutoProperty
-        Assert.AreEqual(true, getterOnly[2]); // HasGetter
-        Assert.AreEqual(false, getterOnly[3]); // HasSetter
-        Assert.AreEqual(false, getterOnly[4]); // HasInitSetter
-        
-        // InitOnly test
+        Assert.AreEqual(true, getterOnly[1]);
+        Assert.AreEqual(true, getterOnly[2]);
+        Assert.AreEqual(false, getterOnly[3]);
+        Assert.AreEqual(false, getterOnly[4]);
+
+
         var initOnly = result.FirstOrDefault(r => r[0].ToString() == "InitOnly");
         Assert.IsNotNull(initOnly);
-        Assert.AreEqual(true, initOnly[1]); // IsAutoProperty
-        Assert.AreEqual(false, initOnly[2]); // HasGetter
-        Assert.AreEqual(true, initOnly[3]); // HasSetter (init counts as setter)
-        Assert.AreEqual(true, initOnly[4]); // HasInitSetter
+        Assert.AreEqual(true, initOnly[1]);
+        Assert.AreEqual(false, initOnly[2]);
+        Assert.AreEqual(true, initOnly[3]);
+        Assert.AreEqual(true, initOnly[4]);
     }
 
     [TestMethod]
@@ -1021,15 +1067,15 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'AbstractClassWithAbstractMethod' and m.Name = 'AbstractMethod'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual("AbstractMethod", result[0][0].ToString());
-        Assert.AreEqual(false, result[0][1]); // HasBody
-        Assert.AreEqual(false, result[0][2]); // IsEmpty
-        Assert.AreEqual(0, result[0][3]); // StatementsCount
+        Assert.AreEqual(false, result[0][1]);
+        Assert.AreEqual(false, result[0][2]);
+        Assert.AreEqual(0, result[0][3]);
     }
 
     [TestMethod]
@@ -1048,15 +1094,15 @@ where c.Name = 'Class1'
                     cross apply i.Methods m
                     where i.Name = 'IInterfaceWithMethods' and m.Name = 'InterfaceMethod'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual("InterfaceMethod", result[0][0].ToString());
-        Assert.AreEqual(false, result[0][1]); // HasBody
-        Assert.AreEqual(false, result[0][2]); // IsEmpty
-        Assert.AreEqual(0, result[0][3]); // StatementsCount
+        Assert.AreEqual(false, result[0][1]);
+        Assert.AreEqual(false, result[0][2]);
+        Assert.AreEqual(0, result[0][3]);
     }
 
     [TestMethod]
@@ -1078,35 +1124,35 @@ where c.Name = 'Class1'
                     cross apply c.Fields f
                     where c.Name = 'TestFeatures'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // Should have _readonlyField, _staticField, ConstField, _volatileField, _backingField
+
+
         Assert.IsTrue(result.Count >= 4, $"Should have at least 4 fields, got {result.Count}");
-        
-        // Check readonly field
+
+
         var readonlyField = result.FirstOrDefault(r => r[0].ToString() == "_readonlyField");
         Assert.IsNotNull(readonlyField);
         Assert.AreEqual("Int32", readonlyField[1].ToString());
-        Assert.AreEqual(true, readonlyField[2]); // IsReadOnly
-        Assert.AreEqual(false, readonlyField[3]); // IsConst
-        Assert.AreEqual(false, readonlyField[4]); // IsStatic
-        
-        // Check const field
+        Assert.AreEqual(true, readonlyField[2]);
+        Assert.AreEqual(false, readonlyField[3]);
+        Assert.AreEqual(false, readonlyField[4]);
+
+
         var constField = result.FirstOrDefault(r => r[0].ToString() == "ConstField");
         Assert.IsNotNull(constField);
-        Assert.AreEqual(true, constField[3]); // IsConst
-        
-        // Check static field
+        Assert.AreEqual(true, constField[3]);
+
+
         var staticField = result.FirstOrDefault(r => r[0].ToString() == "_staticField");
         Assert.IsNotNull(staticField);
-        Assert.AreEqual(true, staticField[4]); // IsStatic
-        
-        // Check volatile field
+        Assert.AreEqual(true, staticField[4]);
+
+
         var volatileField = result.FirstOrDefault(r => r[0].ToString() == "_volatileField");
         Assert.IsNotNull(volatileField);
-        Assert.AreEqual(true, volatileField[5]); // IsVolatile
+        Assert.AreEqual(true, volatileField[5]);
     }
 
     [TestMethod]
@@ -1126,24 +1172,24 @@ where c.Name = 'Class1'
                     cross apply cls.Constructors c
                     where cls.Name = 'TestFeatures'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // Should have 3 constructors
+
+
         Assert.AreEqual(3, result.Count);
-        
-        // Check default constructor
+
+
         var defaultCtor = result.FirstOrDefault(r => (int)r[1] == 0);
         Assert.IsNotNull(defaultCtor);
-        Assert.AreEqual(true, defaultCtor[2]); // HasBody
-        Assert.AreEqual(false, defaultCtor[3]); // HasInitializer
-        
-        // Check constructor with initializer (calls this())
+        Assert.AreEqual(true, defaultCtor[2]);
+        Assert.AreEqual(false, defaultCtor[3]);
+
+
         var ctorWithInit = result.FirstOrDefault(r => (int)r[1] == 2);
         Assert.IsNotNull(ctorWithInit);
-        Assert.AreEqual(true, ctorWithInit[3]); // HasInitializer
-        Assert.AreEqual("this", ctorWithInit[4]?.ToString()); // InitializerKind
+        Assert.AreEqual(true, ctorWithInit[3]);
+        Assert.AreEqual("this", ctorWithInit[4]?.ToString());
     }
 
     [TestMethod]
@@ -1163,25 +1209,25 @@ where c.Name = 'Class1'
                     cross apply d.Structs s
                     where s.Name = 'TestStruct' or s.Name = 'ReadOnlyTestStruct'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
-        // Check TestStruct
+
+
         var testStruct = result.FirstOrDefault(r => r[0].ToString() == "TestStruct");
         Assert.IsNotNull(testStruct);
-        Assert.AreEqual(false, testStruct[1]); // IsReadOnly
-        Assert.AreEqual(1, testStruct[2]); // MethodsCount
-        Assert.AreEqual(2, testStruct[3]); // PropertiesCount
-        Assert.AreEqual(1, testStruct[4]); // FieldsCount
-        Assert.AreEqual(1, testStruct[5]); // ConstructorsCount
-        
-        // Check ReadOnlyTestStruct
+        Assert.AreEqual(false, testStruct[1]);
+        Assert.AreEqual(1, testStruct[2]);
+        Assert.AreEqual(2, testStruct[3]);
+        Assert.AreEqual(1, testStruct[4]);
+        Assert.AreEqual(1, testStruct[5]);
+
+
         var readonlyStruct = result.FirstOrDefault(r => r[0].ToString() == "ReadOnlyTestStruct");
         Assert.IsNotNull(readonlyStruct);
-        Assert.AreEqual(true, readonlyStruct[1]); // IsReadOnly
+        Assert.AreEqual(true, readonlyStruct[1]);
     }
 
     [TestMethod]
@@ -1200,14 +1246,14 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'TestFeatures' and m.Name = 'AsyncMethodWithAwaits'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]); // IsAsync
-        Assert.AreEqual(true, result[0][2]); // ContainsAwait
-        Assert.AreEqual(2, result[0][3]); // AwaitCount (2 awaits)
+        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0][2]);
+        Assert.AreEqual(2, result[0][3]);
     }
 
     [TestMethod]
@@ -1225,13 +1271,13 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'TestFeatures' and m.Name = 'MethodWithLambda'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]); // ContainsLambda
-        Assert.AreEqual(2, result[0][2]); // LambdaCount (2 lambdas)
+        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(2, result[0][2]);
     }
 
     [TestMethod]
@@ -1248,12 +1294,12 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'TestFeatures' and m.Name = 'DeeplyNestedMethod'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(3, result[0][1]); // MaxNestingDepth (3 levels of if)
+        Assert.AreEqual(3, result[0][1]);
     }
 
     [TestMethod]
@@ -1271,11 +1317,11 @@ where c.Name = 'Class1'
                     cross apply d.UsingDirectives u
                     where d.Name = 'Class1.cs'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // Should have at least one using directive
+
+
         Assert.IsTrue(result.Count >= 0, "Should have using directives (or none if implicit usings)");
     }
 
@@ -1295,15 +1341,15 @@ where c.Name = 'Class1'
                     cross apply c.Events e
                     where c.Name = 'TestFeatures'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual("SimpleEvent", result[0][0].ToString());
         Assert.AreEqual("EventHandler", result[0][1].ToString());
-        Assert.AreEqual(false, result[0][2]); // IsStatic
-        Assert.AreEqual(true, result[0][3]); // IsFieldLike
+        Assert.AreEqual(false, result[0][2]);
+        Assert.AreEqual(true, result[0][3]);
     }
 
     [TestMethod]
@@ -1323,14 +1369,14 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     where c.Name = 'Class1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue((int)result[0][1] >= 0); // EfferentCoupling
-        Assert.IsTrue((double)result[0][2] >= 0 && (double)result[0][2] <= 1); // Instability
-        Assert.IsTrue((int)result[0][3] >= 0); // WeightedMethodsPerClass
+        Assert.IsTrue((int)result[0][1] >= 0);
+        Assert.IsTrue((double)result[0][2] >= 0 && (double)result[0][2] <= 1);
+        Assert.IsTrue((int)result[0][3] >= 0);
     }
 
     [TestMethod]
@@ -1348,14 +1394,14 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     where c.Name = 'TestFeatures'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]); // HasDocumentation (TestFeatures has XML doc)
-        Assert.IsTrue((double)result[0][2] >= 0 && (double)result[0][2] <= 100); // MethodDocumentationCoverage
-        Assert.IsTrue((double)result[0][3] >= 0 && (double)result[0][3] <= 100); // PropertyDocumentationCoverage
+        Assert.AreEqual(true, result[0][1]);
+        Assert.IsTrue((double)result[0][2] >= 0 && (double)result[0][2] <= 100);
+        Assert.IsTrue((double)result[0][3] >= 0 && (double)result[0][3] <= 100);
     }
 
     [TestMethod]
@@ -1368,13 +1414,13 @@ where c.Name = 'Class1'
                     from #csharp.solution('{Solution1SolutionPath}') s 
                     cross apply s.GetStructsByNames('TestStruct', 'ReadOnlyTestStruct') st
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "TestStruct" && (bool)r[1] == false));
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "ReadOnlyTestStruct" && (bool)r[1] == true));
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "TestStruct" && !(bool)r[1]));
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "ReadOnlyTestStruct" && (bool)r[1]));
     }
 
     [TestMethod]
@@ -1394,21 +1440,21 @@ where c.Name = 'Class1'
                     cross apply m.Parameters param
                     where c.Name = 'UnusedCodeTestClass' and m.Name = 'MethodWithUnusedParameter'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
-        // usedParam should be used (true)
+
+
         var usedParam = result.FirstOrDefault(r => r[1].ToString() == "usedParam");
         Assert.IsNotNull(usedParam);
-        Assert.AreEqual(true, usedParam[3]); // IsUsed
-        
-        // unusedParam should be unused (false)
+        Assert.AreEqual(true, usedParam[3]);
+
+
         var unusedParam = result.FirstOrDefault(r => r[1].ToString() == "unusedParam");
         Assert.IsNotNull(unusedParam);
-        Assert.AreEqual(false, unusedParam[3]); // IsUsed
+        Assert.AreEqual(false, unusedParam[3]);
     }
 
     [TestMethod]
@@ -1428,21 +1474,21 @@ where c.Name = 'Class1'
                     cross apply m.LocalVariables v
                     where c.Name = 'UnusedCodeTestClass' and m.Name = 'MethodWithUnusedVariable'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
-        // usedVar should be used (true)
+
+
         var usedVar = result.FirstOrDefault(r => r[1].ToString() == "usedVar");
         Assert.IsNotNull(usedVar);
-        Assert.AreEqual(true, usedVar[3]); // IsUsed
-        
-        // unusedVar should be unused (false)
+        Assert.AreEqual(true, usedVar[3]);
+
+
         var unusedVar = result.FirstOrDefault(r => r[1].ToString() == "unusedVar");
         Assert.IsNotNull(unusedVar);
-        Assert.AreEqual(false, unusedVar[3]); // IsUsed
+        Assert.AreEqual(false, unusedVar[3]);
     }
 
     [TestMethod]
@@ -1463,32 +1509,32 @@ where c.Name = 'Class1'
                     cross apply m.LocalFunctions lf
                     where c.Name = 'CallGraphTestClass' and m.Name = 'MethodWithLocalFunctions'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(3, result.Count);
-        
-        // LocalAdd should be present
+
+
         var localAdd = result.FirstOrDefault(r => r[1].ToString() == "LocalAdd");
         Assert.IsNotNull(localAdd);
-        Assert.AreEqual("Int32", localAdd[2].ToString()); // ReturnType
-        Assert.AreEqual(false, localAdd[3]); // IsAsync
-        Assert.AreEqual(false, localAdd[4]); // IsStatic
-        
-        // LocalAsyncFunction should be present
+        Assert.AreEqual("Int32", localAdd[2].ToString());
+        Assert.AreEqual(false, localAdd[3]);
+        Assert.AreEqual(false, localAdd[4]);
+
+
         var localAsync = result.FirstOrDefault(r => r[1].ToString() == "LocalAsyncFunction");
         Assert.IsNotNull(localAsync);
-        Assert.AreEqual("Task", localAsync[2].ToString()); // ReturnType (just the name, not generic args)
-        Assert.AreEqual(true, localAsync[3]); // IsAsync
-        Assert.AreEqual(false, localAsync[4]); // IsStatic
-        
-        // LocalStaticFunction should be present
+        Assert.AreEqual("Task", localAsync[2].ToString());
+        Assert.AreEqual(true, localAsync[3]);
+        Assert.AreEqual(false, localAsync[4]);
+
+
         var localStatic = result.FirstOrDefault(r => r[1].ToString() == "LocalStaticFunction");
         Assert.IsNotNull(localStatic);
-        Assert.AreEqual("Int32", localStatic[2].ToString()); // ReturnType
-        Assert.AreEqual(false, localStatic[3]); // IsAsync
-        Assert.AreEqual(true, localStatic[4]); // IsStatic
+        Assert.AreEqual("Int32", localStatic[2].ToString());
+        Assert.AreEqual(false, localStatic[3]);
+        Assert.AreEqual(true, localStatic[4]);
     }
 
     [TestMethod]
@@ -1506,23 +1552,23 @@ where c.Name = 'Class1'
                     where c.Name = 'UnusedCodeTestClass' 
                       and (m.Name = 'MethodWithUnusedParameter' or m.Name = 'MethodWithMultipleUnusedParams' or m.Name = 'MethodWithAllParamsUsed')
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(3, result.Count);
-        
-        // MethodWithUnusedParameter has 1 unused param
+
+
         var oneUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithUnusedParameter");
         Assert.IsNotNull(oneUnused);
         Assert.AreEqual(1, oneUnused[1]);
-        
-        // MethodWithMultipleUnusedParams has 3 unused params
+
+
         var threeUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithMultipleUnusedParams");
         Assert.IsNotNull(threeUnused);
         Assert.AreEqual(3, threeUnused[1]);
-        
-        // MethodWithAllParamsUsed has 0 unused params
+
+
         var noneUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithAllParamsUsed");
         Assert.IsNotNull(noneUnused);
         Assert.AreEqual(0, noneUnused[1]);
@@ -1543,13 +1589,13 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where c.Name = 'UnusedCodeTestClass' and m.Name = 'MethodWithUnusedVariable'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(2, result[0][1]); // LocalVariableCount
-        Assert.AreEqual(1, result[0][2]); // UnusedVariableCount
+        Assert.AreEqual(2, result[0][1]);
+        Assert.AreEqual(1, result[0][2]);
     }
 
     [TestMethod]
@@ -1563,11 +1609,11 @@ where c.Name = 'Class1'
                     cross apply s.GetMethodsWithUnusedParameters() m
                     where m.Name like 'MethodWith%Unused%'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // Should find at least MethodWithUnusedParameter and MethodWithMultipleUnusedParams
+
+
         Assert.IsTrue(result.Count >= 2);
     }
 
@@ -1586,24 +1632,24 @@ where c.Name = 'Class1'
                     cross apply c.Fields f
                     where c.Name = 'UnusedCodeTestClass'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // Should have _unusedField and _usedField
+
+
         Assert.IsTrue(result.Count >= 2);
-        
-        // _usedField should be used
+
+
         var usedField = result.FirstOrDefault(r => r[0].ToString() == "_usedField");
         Assert.IsNotNull(usedField);
-        Assert.AreEqual(true, usedField[1]); // IsUsed
-        Assert.IsTrue((int)usedField[2] > 0); // ReferenceCount > 0
-        
-        // _unusedField should not be used
+        Assert.AreEqual(true, usedField[1]);
+        Assert.IsTrue((int)usedField[2] > 0);
+
+
         var unusedField = result.FirstOrDefault(r => r[0].ToString() == "_unusedField");
         Assert.IsNotNull(unusedField);
-        Assert.AreEqual(false, unusedField[1]); // IsUsed
-        Assert.AreEqual(0, unusedField[2]); // ReferenceCount == 0
+        Assert.AreEqual(false, unusedField[1]);
+        Assert.AreEqual(0, unusedField[2]);
     }
 
     [TestMethod]
@@ -1620,16 +1666,16 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     where c.Name = 'UsedInterfaceImplementor' or c.Name = 'Class1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
-        // Class1 should be used (referenced in Tests.cs)
+
+
         var class1 = result.FirstOrDefault(r => r[0].ToString() == "Class1");
         Assert.IsNotNull(class1);
-        Assert.IsNotNull(class1[1]); // IsUsed should not be null
+        Assert.IsNotNull(class1[1]);
     }
 
     [TestMethod]
@@ -1646,23 +1692,23 @@ where c.Name = 'Class1'
                     cross apply d.Interfaces i
                     where i.Name = 'IUsedInterface' or i.Name = 'IUnusedInterface'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
-        // IUsedInterface should be used (implemented by UsedInterfaceImplementor)
+
+
         var usedInterface = result.FirstOrDefault(r => r[0].ToString() == "IUsedInterface");
         Assert.IsNotNull(usedInterface);
-        Assert.AreEqual(true, usedInterface[1]); // IsUsed
-        Assert.IsTrue((int)usedInterface[2] > 0); // ReferenceCount > 0
-        
-        // IUnusedInterface should not be used
+        Assert.AreEqual(true, usedInterface[1]);
+        Assert.IsTrue((int)usedInterface[2] > 0);
+
+
         var unusedInterface = result.FirstOrDefault(r => r[0].ToString() == "IUnusedInterface");
         Assert.IsNotNull(unusedInterface);
-        Assert.AreEqual(false, unusedInterface[1]); // IsUsed
-        Assert.AreEqual(0, unusedInterface[2]); // ReferenceCount == 0
+        Assert.AreEqual(false, unusedInterface[1]);
+        Assert.AreEqual(0, unusedInterface[2]);
     }
 
     [TestMethod]
@@ -1679,23 +1725,23 @@ where c.Name = 'Class1'
                     cross apply d.Enums e
                     where e.Name = 'UsedEnum' or e.Name = 'UnusedEnum'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
-        // UsedEnum should be used (referenced in EnumUser)
+
+
         var usedEnum = result.FirstOrDefault(r => r[0].ToString() == "UsedEnum");
         Assert.IsNotNull(usedEnum);
-        Assert.AreEqual(true, usedEnum[1]); // IsUsed
-        Assert.IsTrue((int)usedEnum[2] > 0); // ReferenceCount > 0
-        
-        // UnusedEnum should not be used
+        Assert.AreEqual(true, usedEnum[1]);
+        Assert.IsTrue((int)usedEnum[2] > 0);
+
+
         var unusedEnum = result.FirstOrDefault(r => r[0].ToString() == "UnusedEnum");
         Assert.IsNotNull(unusedEnum);
-        Assert.AreEqual(false, unusedEnum[1]); // IsUsed
-        Assert.AreEqual(0, unusedEnum[2]); // ReferenceCount == 0
+        Assert.AreEqual(false, unusedEnum[1]);
+        Assert.AreEqual(0, unusedEnum[2]);
     }
 
     [TestMethod]
@@ -1712,23 +1758,23 @@ where c.Name = 'Class1'
                     cross apply d.Structs st
                     where st.Name = 'UsedStruct' or st.Name = 'UnusedStruct'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
-        // UsedStruct should be used (referenced in StructUser)
+
+
         var usedStruct = result.FirstOrDefault(r => r[0].ToString() == "UsedStruct");
         Assert.IsNotNull(usedStruct);
-        Assert.AreEqual(true, usedStruct[1]); // IsUsed
-        Assert.IsTrue((int)usedStruct[2] > 0); // ReferenceCount > 0
-        
-        // UnusedStruct should not be used
+        Assert.AreEqual(true, usedStruct[1]);
+        Assert.IsTrue((int)usedStruct[2] > 0);
+
+
         var unusedStruct = result.FirstOrDefault(r => r[0].ToString() == "UnusedStruct");
         Assert.IsNotNull(unusedStruct);
-        Assert.AreEqual(false, unusedStruct[1]); // IsUsed
-        Assert.AreEqual(0, unusedStruct[2]); // ReferenceCount == 0
+        Assert.AreEqual(false, unusedStruct[1]);
+        Assert.AreEqual(0, unusedStruct[2]);
     }
 
     [TestMethod]
@@ -1746,17 +1792,17 @@ where c.Name = 'Class1'
                     cross apply c.Methods m
                     where m.Name = 'GetUsedField' or m.Name = 'UnusedPrivateMethod'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
+
         var usedMethod = result.FirstOrDefault(r => r[0].ToString() == "GetUsedField");
         Assert.IsNotNull(usedMethod);
         Assert.AreEqual(true, usedMethod[1]);
         Assert.IsTrue((int)usedMethod[2] > 0);
-        
+
         var unusedMethod = result.FirstOrDefault(r => r[0].ToString() == "UnusedPrivateMethod");
         Assert.IsNotNull(unusedMethod);
         Assert.AreEqual(false, unusedMethod[1]);
@@ -1773,11 +1819,11 @@ where c.Name = 'Class1'
                     cross apply s.GetUnusedFields() f
                     where f.Name = '_unusedField'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // Should find _unusedField
+
+
         Assert.IsTrue(result.Count >= 1);
         Assert.IsTrue(result.Any(r => r[0].ToString() == "_unusedField"));
     }
@@ -1799,11 +1845,11 @@ where c.Name = 'Class1'
                     cross apply m.Callees c
                     where m.Name = 'CallerMethod'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
-        // CallerMethod calls HelperMethod1, HelperMethod2, and WriteLine
+
+
         Assert.IsTrue(result.Count >= 2, "CallerMethod should call at least 2 methods");
         Assert.IsTrue(result.Any(r => r[2].ToString() == "HelperMethod1"), "Should call HelperMethod1");
         Assert.IsTrue(result.Any(r => r[2].ToString() == "HelperMethod2"), "Should call HelperMethod2");
@@ -1824,17 +1870,18 @@ where c.Name = 'Class1'
                     cross apply cls.Methods m
                     where m.Name = 'RecursiveMethod' or m.Name = 'NonRecursiveMethod'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
+
         var recursiveMethod = result.FirstOrDefault(r => r[0].ToString() == "RecursiveMethod");
         Assert.IsNotNull(recursiveMethod);
-        Assert.IsTrue((int)recursiveMethod[2] >= 1, $"RecursiveMethod should have at least one callee (itself), has {recursiveMethod[2]}");
+        Assert.IsTrue((int)recursiveMethod[2] >= 1,
+            $"RecursiveMethod should have at least one callee (itself), has {recursiveMethod[2]}");
         Assert.AreEqual(true, recursiveMethod[1], "RecursiveMethod should be marked as recursive");
-        
+
         var nonRecursiveMethod = result.FirstOrDefault(r => r[0].ToString() == "NonRecursiveMethod");
         Assert.IsNotNull(nonRecursiveMethod);
         Assert.AreEqual(0, (int)nonRecursiveMethod[2], "NonRecursiveMethod should not have callees");
@@ -1857,12 +1904,12 @@ where c.Name = 'Class1'
                     cross apply cls.Methods m
                     where cls.Name = 'DerivedClassWithOverride' and m.IsOverride = true
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count >= 1, "Should find at least one overridden method");
-        
+
         var virtualMethod = result.FirstOrDefault(r => r[0].ToString() == "VirtualMethod");
         Assert.IsNotNull(virtualMethod);
         Assert.AreEqual("VirtualMethod", virtualMethod[2], "Should override VirtualMethod");
@@ -1886,10 +1933,10 @@ where c.Name = 'Class1'
                     cross apply m.ImplementedInterfaceMethods i
                     where cls.Name = 'InterfaceImplementorClass'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count >= 1, "Should find interface implementations");
         Assert.IsTrue(result.Any(r => r[2].ToString() == "ITestInterface"), "Should implement ITestInterface");
     }
@@ -1910,17 +1957,17 @@ where c.Name = 'Class1'
                     cross apply cls.Methods m
                     where cls.Name = 'AsyncTestClass'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count >= 4, "Should find async test methods");
-        
+
         var asyncVoidMethod = result.FirstOrDefault(r => r[0].ToString() == "AsyncVoidMethod");
         Assert.IsNotNull(asyncVoidMethod);
         Assert.AreEqual(true, asyncVoidMethod[1], "AsyncVoidMethod should return Task");
         Assert.AreEqual(true, asyncVoidMethod[2], "AsyncVoidMethod should be async");
-        
+
         var syncMethod = result.FirstOrDefault(r => r[0].ToString() == "SyncMethod");
         Assert.IsNotNull(syncMethod);
         Assert.AreEqual(false, syncMethod[1], "SyncMethod should not return Task");
@@ -1941,16 +1988,16 @@ where c.Name = 'Class1'
                     cross apply cls.Methods m
                     where m.Name = 'NullableReturnMethod' or m.Name = 'NonNullableReturnMethod'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
+
         var nullableMethod = result.FirstOrDefault(r => r[0].ToString() == "NullableReturnMethod");
         Assert.IsNotNull(nullableMethod);
         Assert.AreEqual(true, nullableMethod[1], "NullableReturnMethod should have nullable return");
-        
+
         var nonNullableMethod = result.FirstOrDefault(r => r[0].ToString() == "NonNullableReturnMethod");
         Assert.IsNotNull(nonNullableMethod);
         Assert.AreEqual(false, nonNullableMethod[1], "NonNullableReturnMethod should not have nullable return");
@@ -1971,16 +2018,16 @@ where c.Name = 'Class1'
                     cross apply cls.Methods m
                     where cls.Name = 'PublicApiClass'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count >= 3, "Should find methods in PublicApiClass");
-        
+
         var publicMethod = result.FirstOrDefault(r => r[0].ToString() == "PublicMethod");
         Assert.IsNotNull(publicMethod);
         Assert.AreEqual(true, publicMethod[1], "PublicMethod should be part of public API");
-        
+
         var protectedMethod = result.FirstOrDefault(r => r[0].ToString() == "ProtectedMethod");
         Assert.IsNotNull(protectedMethod);
         Assert.AreEqual(true, protectedMethod[1], "ProtectedMethod should be part of public API");
@@ -2004,12 +2051,12 @@ where c.Name = 'Class1'
                     cross apply cls.Methods m
                     where m.Name = 'CallerMethod'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         var method = result[0];
         Assert.IsTrue((int)method[1] > 0, "StartLine should be positive");
         Assert.IsTrue((int)method[2] > (int)method[1], "EndLine should be greater than StartLine");
@@ -2033,17 +2080,17 @@ where c.Name = 'Class1'
                     cross apply d.Classes c
                     where c.Name = 'PublicApiClass' or c.Name = 'InternalApiClass'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(2, result.Count);
-        
+
         var publicClass = result.FirstOrDefault(r => r[0].ToString() == "PublicApiClass");
         Assert.IsNotNull(publicClass);
         Assert.AreEqual(true, publicClass[1], "PublicApiClass should be part of public API");
         Assert.IsTrue((int)publicClass[2] >= 1, "Should have at least 1 public method");
-        
+
         var internalClass = result.FirstOrDefault(r => r[0].ToString() == "InternalApiClass");
         Assert.IsNotNull(internalClass);
         Assert.AreEqual(false, internalClass[1], "InternalApiClass should not be part of public API");
@@ -2063,12 +2110,12 @@ where c.Name = 'Class1'
                     cross apply proj.Documents d 
                     where d.Name = 'TestFeatures.cs'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.AreEqual(1, result.Count);
-        
+
         var doc = result[0];
         Assert.IsTrue((int)doc[1] > 0, "Should reference some types");
         Assert.IsTrue((int)doc[2] > 0, "Should reference some namespaces");
@@ -2087,30 +2134,25 @@ where c.Name = 'Class1'
                     cross apply proj.Documents d 
                     where d.Name = 'TestFeatures.cs'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-        
+
         var vm = CompileQuery(query);
         var result = vm.Run();
-        
+
         Assert.IsTrue(result.Count > 0, "Should find document");
         Assert.IsTrue((int)result[0][1] > 0, "Should reference some namespaces");
-    }
-
-    static RoslynToSqlTests()
-    {
-        Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 
     private CompiledQuery CompileQuery(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(
-            script, 
-            Guid.NewGuid().ToString(), 
+            script,
+            Guid.NewGuid().ToString(),
             new RoslynSchemaProvider((_, _) => new Mock<INuGetPropertiesResolver>().Object),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
                 new Dictionary<string, string>
                 {
-                    {"MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists"},
-                    {"EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists"}
+                    { "MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists" },
+                    { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
                 }));
     }
 
@@ -2118,29 +2160,13 @@ where c.Name = 'Class1'
     {
         if (string.IsNullOrEmpty(toString))
             return false;
-        
+
         if (!toString.EndsWith(extension))
             return false;
-        
+
         if (checkFileExists && !File.Exists(toString))
             return false;
-        
+
         return true;
-    }
-
-    private static string Solution1SolutionPath => Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
-
-    private static string StartDirectory
-    {
-        get
-        {
-            var filePath = typeof(RoslynToSqlTests).Assembly.Location;
-            var directory = Path.GetDirectoryName(filePath);
-            
-            if (string.IsNullOrEmpty(directory))
-                throw new InvalidOperationException("Directory is empty.");
-            
-            return directory;
-        }
     }
 }

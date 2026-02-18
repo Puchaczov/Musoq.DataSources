@@ -10,13 +10,13 @@ internal class OpenAiApi(string apiKey) : IOpenAiApi
     public async Task<CompletionResponse> GetCompletionAsync(OpenAiEntityBase entity, IList<ChatMessage> messages)
     {
         entity.CancellationToken.ThrowIfCancellationRequested();
-        
+
         var clientChat = _api.GetChatClient(entity.Model);
         var clientResult = await clientChat.CompleteChatAsync(
-            messages: messages,
+            messages,
             new ChatCompletionOptions
-            { 
-                Temperature = entity.Temperature, 
+            {
+                Temperature = entity.Temperature,
                 MaxOutputTokenCount = entity.MaxTokens,
                 FrequencyPenalty = entity.FrequencyPenalty,
                 PresencePenalty = entity.PresencePenalty
