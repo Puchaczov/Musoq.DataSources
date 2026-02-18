@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.DataSources.GitHub.Helpers;
 using Musoq.Schema;
@@ -8,25 +9,26 @@ using Octokit;
 
 namespace Musoq.DataSources.GitHub.Sources.Commits;
 
-internal class CommitsSource : RowSourceBase<CommitEntity>
+internal class CommitsSource : AsyncRowsSourceBase<CommitEntity>
 {
     private const string SourceName = "github_commits";
     private readonly IGitHubApi _api;
     private readonly RuntimeContext _runtimeContext;
     private readonly string _owner;
     private readonly string _repo;
-    private readonly string? _sha;
+    private readonly string? _branchOrSha;
 
-    public CommitsSource(IGitHubApi api, RuntimeContext runtimeContext, string owner, string repo, string? sha = null)
+    public CommitsSource(IGitHubApi api, RuntimeContext runtimeContext, string owner, string repo, string? branchOrSha = null)
+        : base(runtimeContext.EndWorkToken)
     {
         _api = api;
         _runtimeContext = runtimeContext;
         _owner = owner;
         _repo = repo;
-        _sha = sha;
+        _branchOrSha = branchOrSha;
     }
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
@@ -51,10 +53,10 @@ internal class CommitsSource : RowSourceBase<CommitEntity>
             // Build request with filters from WHERE clause
             var request = new CommitRequest();
             
-            // Use SHA from parameter or WHERE clause
-            if (!string.IsNullOrEmpty(_sha))
+            // Use branch name or SHA from constructor parameter, or WHERE clause Sha filter
+            if (!string.IsNullOrEmpty(_branchOrSha))
             {
-                request.Sha = _sha;
+                request.Sha = _branchOrSha;
             }
             else if (!string.IsNullOrEmpty(parameters.Sha))
             {
@@ -76,9 +78,9 @@ internal class CommitsSource : RowSourceBase<CommitEntity>
                 request.Since = parameters.Since.Value;
             }
             
-            while (fetchedRows < maxRows && !_runtimeContext.EndWorkToken.IsCancellationRequested)
+            while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
             {
-                var commits = _api.GetCommitsAsync(_owner, _repo, request, perPage, page).Result;
+                var commits = await _api.GetCommitsAsync(_owner, _repo, request, perPage, page);
                 
                 if (commits.Count == 0)
                     break;

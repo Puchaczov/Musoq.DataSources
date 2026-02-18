@@ -8,6 +8,7 @@ using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.RowsSources;
@@ -19,12 +20,10 @@ internal sealed class CSharpInMemorySolutionRowsSource(
     string? nugetPropertiesResolveEndpoint, 
     INuGetPropertiesResolver nuGetPropertiesResolver,
     ILogger logger, 
-    CancellationToken queryCancelledToken
+    RuntimeContext runtimeContext
 )
-    : CSharpSolutionRowsSourceBase(queryCancelledToken)
+    : CSharpSolutionRowsSourceBase(runtimeContext)
 {
-    private readonly CancellationToken _queryCancelledToken = queryCancelledToken;
-
     protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
@@ -51,7 +50,7 @@ internal sealed class CSharpInMemorySolutionRowsSource(
                         SolutionOperationsCommand.BannedPropertiesValues,
                         SolutionOperationsCommand.ResolveValueStrategy,
                         logger),
-                    _queryCancelledToken
+                    RuntimeContext.EndWorkToken
                 ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)
         }, cancellationToken);
         

@@ -54,6 +54,12 @@ internal interface IGitHubApi
     Task<IReadOnlyList<CommitEntity>> GetCommitsAsync(string owner, string repo, CommitRequest? request = null, int? perPage = null, int? page = null);
     
     /// <summary>
+    /// Gets commits that are in <paramref name="head"/> but not in <paramref name="base"/> (branch-specific commits).
+    /// Uses the GitHub compare API (base...head). Limited to 250 commits by the GitHub API.
+    /// </summary>
+    Task<IReadOnlyList<CommitEntity>> GetBranchSpecificCommitsAsync(string owner, string repo, string @base, string head);
+    
+    /// <summary>
     /// Gets branches for a repository.
     /// </summary>
     Task<IReadOnlyList<BranchEntity>> GetBranchesAsync(string owner, string repo, int? perPage = null, int? page = null);

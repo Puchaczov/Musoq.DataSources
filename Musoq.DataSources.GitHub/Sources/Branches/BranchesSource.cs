@@ -1,12 +1,13 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.GitHub.Sources.Branches;
 
-internal class BranchesSource : RowSourceBase<BranchEntity>
+internal class BranchesSource : AsyncRowsSourceBase<BranchEntity>
 {
     private const string SourceName = "github_branches";
     private readonly IGitHubApi _api;
@@ -15,6 +16,7 @@ internal class BranchesSource : RowSourceBase<BranchEntity>
     private readonly string _repo;
 
     public BranchesSource(IGitHubApi api, RuntimeContext runtimeContext, string owner, string repo)
+        : base(runtimeContext.EndWorkToken)
     {
         _api = api;
         _runtimeContext = runtimeContext;
@@ -22,7 +24,7 @@ internal class BranchesSource : RowSourceBase<BranchEntity>
         _repo = repo;
     }
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
@@ -43,9 +45,9 @@ internal class BranchesSource : RowSourceBase<BranchEntity>
             var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
             var fetchedRows = 0;
             
-            while (fetchedRows < maxRows && !_runtimeContext.EndWorkToken.IsCancellationRequested)
+            while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
             {
-                var branches = _api.GetBranchesAsync(_owner, _repo, perPage, page).Result;
+                var branches = await _api.GetBranchesAsync(_owner, _repo, perPage, page);
                 
                 if (branches.Count == 0)
                     break;

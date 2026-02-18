@@ -521,7 +521,7 @@ public class CSharpSchema : SchemaBase
                         externalNugetPropertiesResolveEndpoint,
                         _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
                         runtimeContext.Logger,
-                        runtimeContext.EndWorkToken
+                        runtimeContext
                     );
                 }
                 
@@ -532,7 +532,7 @@ public class CSharpSchema : SchemaBase
                     externalNugetPropertiesResolveEndpoint,
                     _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
                     runtimeContext.Logger,
-                    runtimeContext.EndWorkToken
+                    runtimeContext
                 );
             }
         }

@@ -7,11 +7,11 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
+using Musoq.DataSources.Os;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Os.Directories;
-
 internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 {
     private const string DirectoriesSourceName = "directories";
@@ -23,6 +23,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
     private readonly string _path;
     private readonly bool _recursive;
     private readonly RuntimeContext _communicator;
+    private readonly OsDirectoryFilterParameters _dirFilters;
 
     public DirectoriesSource(string path, bool recursive, RuntimeContext communicator) 
         : base(communicator.EndWorkToken)
@@ -33,6 +34,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         _path = new DirectoryInfo(path).FullName;
         _recursive = recursive;
         _communicator = communicator;
+        _dirFilters = OsWhereNodeHelper.ExtractDirectoryParameters(communicator.QuerySourceInfo.WhereNode);
     }
 
     protected override async Task CollectChunksAsync(
@@ -51,6 +53,11 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         
             await foreach (var dir in EnumerateDirectoriesAsync(_path, _recursive, cancellationToken))
             {
+                // Apply WHERE pushdown: skip directories whose name does not match the filter
+                if (_dirFilters.Name != null &&
+                    !Path.GetFileName(dir).Equals(_dirFilters.Name, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 pendingResolvers.Add(dir);
 
                 if (pendingResolvers.Count < ChunkSize) continue;

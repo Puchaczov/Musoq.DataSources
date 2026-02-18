@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Jira.Entities;
 using Musoq.DataSources.Jira.Helpers;
 using Musoq.Schema;
@@ -11,7 +12,7 @@ namespace Musoq.DataSources.Jira.Sources.Issues;
 /// Row source for Jira issues with predicate pushdown support.
 /// Extracts filter conditions from WHERE clause and builds JQL for efficient querying.
 /// </summary>
-internal class IssuesSource : RowSourceBase<IJiraIssue>
+internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
 {
     private const string SourceName = "jira_issues";
     private readonly IJiraApi _api;
@@ -23,6 +24,7 @@ internal class IssuesSource : RowSourceBase<IJiraIssue>
     /// Creates an issues source for a specific project.
     /// </summary>
     public IssuesSource(IJiraApi api, RuntimeContext runtimeContext, string projectKey)
+        : base(runtimeContext.EndWorkToken)
     {
         _api = api;
         _runtimeContext = runtimeContext;
@@ -34,6 +36,7 @@ internal class IssuesSource : RowSourceBase<IJiraIssue>
     /// Creates an issues source with a custom JQL query.
     /// </summary>
     public IssuesSource(IJiraApi api, RuntimeContext runtimeContext, string? projectKey, string? jql)
+        : base(runtimeContext.EndWorkToken)
     {
         _api = api;
         _runtimeContext = runtimeContext;
@@ -41,7 +44,7 @@ internal class IssuesSource : RowSourceBase<IJiraIssue>
         _jql = jql;
     }
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
@@ -74,9 +77,9 @@ internal class IssuesSource : RowSourceBase<IJiraIssue>
             var fetchedRows = 0;
 
             // Fetch issues with pagination
-            while (fetchedRows < maxRows && !_runtimeContext.EndWorkToken.IsCancellationRequested)
+            while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
             {
-                var issues = _api.GetIssuesAsync(finalJql, maxResults, startAt).Result;
+                var issues = await _api.GetIssuesAsync(finalJql, maxResults, startAt);
 
                 if (issues.Count == 0)
                     break;

@@ -689,19 +689,19 @@ public class GitSchema : SchemaBase
             case RepositoryTable:
                 return new RepositoryRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
             case TagsTable:
-                return new TagsRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+                return new TagsRowsSource((string) parameters[0], _createRepository, runtimeContext);
             case CommitsTable:
-                return new CommitsRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+                return new CommitsRowsSource((string) parameters[0], _createRepository, runtimeContext);
             case BranchesTable:
-                return new BranchesRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+                return new BranchesRowsSource((string) parameters[0], _createRepository, runtimeContext);
             case FileHistoryTable:
                 var skip = parameters.Length > 3 ? (int) parameters[2] : 0;
                 var take = parameters.Length > 3 ? (int) parameters[3] : (parameters.Length > 2 ? (int) parameters[2] : int.MaxValue);
                 return new FileHistoryRowsSource((string) parameters[0], (string) parameters[1], skip, take, _createRepository, runtimeContext.EndWorkToken);
             case StatusTable:
-                return new StatusRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+                return new StatusRowsSource((string) parameters[0], _createRepository, runtimeContext);
             case RemotesTable:
-                return new RemotesRowsSource((string) parameters[0], _createRepository, runtimeContext.EndWorkToken);
+                return new RemotesRowsSource((string) parameters[0], _createRepository, runtimeContext);
             case BlameTable:
                 var repositoryPath = (string) parameters[0];
                 var filePath = (string) parameters[1];

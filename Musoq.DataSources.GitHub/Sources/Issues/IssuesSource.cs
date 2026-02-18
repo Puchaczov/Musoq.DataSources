@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.DataSources.GitHub.Helpers;
 using Musoq.Schema;
@@ -8,7 +9,7 @@ using Octokit;
 
 namespace Musoq.DataSources.GitHub.Sources.Issues;
 
-internal class IssuesSource : RowSourceBase<IssueEntity>
+internal class IssuesSource : AsyncRowsSourceBase<IssueEntity>
 {
     private const string SourceName = "github_issues";
     private readonly IGitHubApi _api;
@@ -17,6 +18,7 @@ internal class IssuesSource : RowSourceBase<IssueEntity>
     private readonly string _repo;
 
     public IssuesSource(IGitHubApi api, RuntimeContext runtimeContext, string owner, string repo)
+        : base(runtimeContext.EndWorkToken)
     {
         _api = api;
         _runtimeContext = runtimeContext;
@@ -24,7 +26,7 @@ internal class IssuesSource : RowSourceBase<IssueEntity>
         _repo = repo;
     }
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
@@ -87,9 +89,9 @@ internal class IssuesSource : RowSourceBase<IssueEntity>
                 }
             }
             
-            while (fetchedRows < maxRows && !_runtimeContext.EndWorkToken.IsCancellationRequested)
+            while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
             {
-                var issues = _api.GetIssuesAsync(_owner, _repo, request, perPage, page).Result;
+                var issues = await _api.GetIssuesAsync(_owner, _repo, request, perPage, page);
                 
                 if (issues.Count == 0)
                     break;

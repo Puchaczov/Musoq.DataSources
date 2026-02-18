@@ -21,6 +21,8 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
         new(new DirectoryInfo(path).FullName, useSubDirectories)
     ];
 
+    private readonly OsFileFilterParameters _fileFilters = OsWhereNodeHelper.ExtractFileParameters(communicator.QuerySourceInfo.WhereNode);
+
     protected virtual string DataSourceName => "files";
 
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
@@ -84,7 +86,23 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
         }
     }
 
-    protected virtual FileInfo[] GetFiles(DirectoryInfo directoryInfo) => directoryInfo.GetFiles();
+    protected virtual FileInfo[] GetFiles(DirectoryInfo directoryInfo)
+    {
+        // Apply WHERE pushdown: if Extension or Name filter is set, use OS-level pattern matching
+        if (_fileFilters.Name != null)
+            return directoryInfo.GetFiles(_fileFilters.Name);
+
+        if (_fileFilters.Extension != null)
+        {
+            // Convert ".txt" → "*.txt", already-glob patterns like "*.txt" pass through unchanged
+            var pattern = _fileFilters.Extension.StartsWith('*')
+                ? _fileFilters.Extension
+                : $"*{_fileFilters.Extension}";
+            return directoryInfo.GetFiles(pattern);
+        }
+
+        return directoryInfo.GetFiles();
+    }
 
     protected virtual void ProcessFile(FileInfo file, DirectorySourceSearchOptions source, List<EntityResolver<TEntity>> dirFiles)
     {

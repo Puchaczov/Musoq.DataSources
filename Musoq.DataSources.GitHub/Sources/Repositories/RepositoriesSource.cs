@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.DataSources.GitHub.Helpers;
 using Musoq.Schema;
@@ -8,7 +9,7 @@ using Octokit;
 
 namespace Musoq.DataSources.GitHub.Sources.Repositories;
 
-internal class RepositoriesSource : RowSourceBase<RepositoryEntity>
+internal class RepositoriesSource : AsyncRowsSourceBase<RepositoryEntity>
 {
     private const string SourceName = "github_repositories";
     private readonly IGitHubApi _api;
@@ -16,13 +17,14 @@ internal class RepositoriesSource : RowSourceBase<RepositoryEntity>
     private readonly string? _owner;
 
     public RepositoriesSource(IGitHubApi api, RuntimeContext runtimeContext, string? owner = null)
+        : base(runtimeContext.EndWorkToken)
     {
         _api = api;
         _runtimeContext = runtimeContext;
         _owner = owner;
     }
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
@@ -45,7 +47,7 @@ internal class RepositoriesSource : RowSourceBase<RepositoryEntity>
             var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
             var fetchedRows = 0;
             
-            while (fetchedRows < maxRows && !_runtimeContext.EndWorkToken.IsCancellationRequested)
+            while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
             {
                 IReadOnlyList<RepositoryEntity> repos;
                 
@@ -66,11 +68,11 @@ internal class RepositoriesSource : RowSourceBase<RepositoryEntity>
                     if (parameters.IsArchived.HasValue)
                         searchRequest.Archived = parameters.IsArchived.Value;
                     
-                    repos = _api.SearchRepositoriesAsync(searchRequest, perPage, page).Result;
+                    repos = await _api.SearchRepositoriesAsync(searchRequest, perPage, page);
                 }
                 else if (!string.IsNullOrEmpty(_owner))
                 {
-                    repos = _api.GetRepositoriesForOwnerAsync(_owner, perPage, page).Result;
+                    repos = await _api.GetRepositoriesForOwnerAsync(_owner, perPage, page);
                 }
                 else
                 {
@@ -87,7 +89,7 @@ internal class RepositoriesSource : RowSourceBase<RepositoryEntity>
                         };
                     }
                     
-                    repos = _api.GetUserRepositoriesAsync(request, perPage, page).Result;
+                    repos = await _api.GetUserRepositoriesAsync(request, perPage, page);
                 }
                 
                 if (repos.Count == 0)

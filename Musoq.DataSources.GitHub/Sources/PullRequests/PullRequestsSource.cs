@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.DataSources.GitHub.Helpers;
 using Musoq.Schema;
@@ -8,7 +9,7 @@ using Octokit;
 
 namespace Musoq.DataSources.GitHub.Sources.PullRequests;
 
-internal class PullRequestsSource : RowSourceBase<PullRequestEntity>
+internal class PullRequestsSource : AsyncRowsSourceBase<PullRequestEntity>
 {
     private const string SourceName = "github_pullrequests";
     private readonly IGitHubApi _api;
@@ -17,6 +18,7 @@ internal class PullRequestsSource : RowSourceBase<PullRequestEntity>
     private readonly string _repo;
 
     public PullRequestsSource(IGitHubApi api, RuntimeContext runtimeContext, string owner, string repo)
+        : base(runtimeContext.EndWorkToken)
     {
         _api = api;
         _runtimeContext = runtimeContext;
@@ -24,7 +26,7 @@ internal class PullRequestsSource : RowSourceBase<PullRequestEntity>
         _repo = repo;
     }
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         _runtimeContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
@@ -69,9 +71,9 @@ internal class PullRequestsSource : RowSourceBase<PullRequestEntity>
                 request.Base = parameters.Base;
             }
             
-            while (fetchedRows < maxRows && !_runtimeContext.EndWorkToken.IsCancellationRequested)
+            while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
             {
-                var pullRequests = _api.GetPullRequestsAsync(_owner, _repo, request, perPage, page).Result;
+                var pullRequests = await _api.GetPullRequestsAsync(_owner, _repo, request, perPage, page);
                 
                 if (pullRequests.Count == 0)
                     break;

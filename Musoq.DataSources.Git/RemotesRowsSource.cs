@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using LibGit2Sharp;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git;
@@ -14,18 +15,28 @@ namespace Musoq.DataSources.Git;
 internal sealed class RemotesRowsSource(
     string repositoryPath,
     Func<string, Repository> createRepository,
-    CancellationToken cancellationToken) : AsyncRowsSourceBase<RemoteEntity>(cancellationToken)
+    RuntimeContext runtimeContext) : AsyncRowsSourceBase<RemoteEntity>(runtimeContext.EndWorkToken)
 {
     protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
         CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
         var chunk = new List<IObjectResolver>(100);
+        var filters = GitWhereNodeHelper.ExtractParameters(runtimeContext.QuerySourceInfo.WhereNode);
 
         foreach (var remote in repository.Network.Remotes)
         {
             if (cancellationToken.IsCancellationRequested)
                 break;
+
+            // Apply pushdown filters
+            if (!string.IsNullOrEmpty(filters.RemoteName) &&
+                !string.Equals(remote.Name, filters.RemoteName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (!string.IsNullOrEmpty(filters.Url) &&
+                !string.Equals(remote.Url, filters.Url, StringComparison.OrdinalIgnoreCase))
+                continue;
 
             var entity = new RemoteEntity(remote);
             chunk.Add(new EntityResolver<RemoteEntity>(

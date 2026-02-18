@@ -144,6 +144,12 @@ internal class GitHubApi : IGitHubApi
         return commits.Select(c => new CommitEntity(c)).ToList();
     }
 
+    public async Task<IReadOnlyList<CommitEntity>> GetBranchSpecificCommitsAsync(string owner, string repo, string @base, string head)
+    {
+        var comparison = await _client.Repository.Commit.Compare(owner, repo, @base, head);
+        return comparison.Commits.Select(c => new CommitEntity(c)).ToList();
+    }
+
     public async Task<IReadOnlyList<BranchEntity>> GetBranchesAsync(string owner, string repo, int? perPage = null, int? page = null)
     {
         var options = new ApiOptions

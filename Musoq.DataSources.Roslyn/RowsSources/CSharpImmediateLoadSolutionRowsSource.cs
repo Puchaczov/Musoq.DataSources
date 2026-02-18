@@ -9,6 +9,7 @@ using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.RowsSources;
@@ -20,12 +21,10 @@ internal class CSharpImmediateLoadSolutionRowsSource(
     string? nugetPropertiesResolveEndpoint, 
     INuGetPropertiesResolver nuGetPropertiesResolver,
     ILogger logger, 
-    CancellationToken queryCancelledToken
+    RuntimeContext runtimeContext
 )
-    : CSharpSolutionRowsSourceBase(queryCancelledToken)
+    : CSharpSolutionRowsSourceBase(runtimeContext)
 {
-    private readonly CancellationToken _queryCancelledToken = queryCancelledToken;
-
     protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -56,12 +55,18 @@ internal class CSharpImmediateLoadSolutionRowsSource(
             SolutionOperationsCommand.ResolveValueStrategy,
             logger
         );
-        var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, _queryCancelledToken);
+        var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, RuntimeContext.EndWorkToken);
         
         logger.LogTrace("Initializing solution");
+
+        var filters = RoslynWhereNodeHelper.ExtractParameters(RuntimeContext.QuerySourceInfo.WhereNode);
         
         await Parallel.ForEachAsync(solutionEntity.Projects, cancellationToken, async (project, token) =>
         {
+            // Apply WHERE pushdown: skip document initialization for projects that don't match the filter
+            if (!ProjectMatchesFilter(project, filters))
+                return;
+
             foreach (var document in project.Documents)
             {
                 await document.InitializeAsync(token);
@@ -74,5 +79,27 @@ internal class CSharpImmediateLoadSolutionRowsSource(
         {
             new EntityResolver<SolutionEntity>(solutionEntity, SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)
         }, cancellationToken);
+    }
+
+    private static bool ProjectMatchesFilter(ProjectEntity project, RoslynFilterParameters filters)
+    {
+        if (filters.AssemblyName != null &&
+            !project.AssemblyName.Equals(filters.AssemblyName, System.StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (filters.Name != null &&
+            !project.Name.Equals(filters.Name, System.StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (filters.Language != null &&
+            !project.Language.Equals(filters.Language, System.StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (filters.DefaultNamespace != null &&
+            (project.DefaultNamespace == null ||
+             !project.DefaultNamespace.Equals(filters.DefaultNamespace, System.StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        return true;
     }
 }

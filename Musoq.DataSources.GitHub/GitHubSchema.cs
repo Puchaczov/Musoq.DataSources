@@ -1,4 +1,5 @@
 using Musoq.DataSources.GitHub.Sources.Branches;
+using Musoq.DataSources.GitHub.Sources.BranchCommits;
 using Musoq.DataSources.GitHub.Sources.Commits;
 using Musoq.DataSources.GitHub.Sources.Issues;
 using Musoq.DataSources.GitHub.Sources.PullRequests;
@@ -26,6 +27,7 @@ public class GitHubSchema : SchemaBase
     private const string IssuesTableName = "issues";
     private const string PullRequestsTableName = "pullrequests";
     private const string CommitsTableName = "commits";
+    private const string BranchCommitsTableName = "branchcommits";
     private const string BranchesTableName = "branches";
     private const string ReleasesTableName = "releases";
 
@@ -176,7 +178,7 @@ public class GitHubSchema : SchemaBase
     /// </environmentVariables>
     /// #github.commits(string owner, string repo)
     /// </from>
-    /// <description>Gets commits for a repository. Supports predicate pushdown for SHA, Author, and Since filters.</description>
+    /// <description>Gets commits for a repository. Supports predicate pushdown for Branch, SHA, Author, and Since filters. Use WHERE Branch = 'branch-name' to filter commits from a specific branch.</description>
     /// <columns>
     /// <column name="Sha" type="string">Commit SHA</column>
     /// <column name="ShortSha" type="string">Short SHA (7 chars)</column>
@@ -198,21 +200,53 @@ public class GitHubSchema : SchemaBase
     /// <virtual-constructor>
     /// <virtual-param>Repository owner</virtual-param>
     /// <virtual-param>Repository name</virtual-param>
-    /// <virtual-param>SHA or branch name (optional)</virtual-param>
+    /// <virtual-param>Branch name or SHA to start from</virtual-param>
     /// <examples>
     /// <example>
     /// <from>
     /// <environmentVariables>
     /// <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     /// </environmentVariables>
-    /// #github.commits(string owner, string repo, string sha)
+    /// #github.commits(string owner, string repo, string branch)
     /// </from>
-    /// <description>Gets commits for a specific branch or starting from a SHA</description>
+    /// <description>Gets commits starting from a specific branch or SHA</description>
     /// <columns>
     /// <column name="Sha" type="string">Commit SHA</column>
     /// <column name="Message" type="string">Commit message</column>
     /// <column name="AuthorName" type="string">Author name</column>
     /// <column name="AuthorDate" type="DateTimeOffset?">Author date</column>
+    /// </columns>
+    /// </example>
+    /// </examples>
+    /// </virtual-constructor>
+    /// <virtual-constructor>
+    /// <virtual-param>Repository owner</virtual-param>
+    /// <virtual-param>Repository name</virtual-param>
+    /// <virtual-param>Base branch or SHA (the branch you branched off from, e.g. 'main')</virtual-param>
+    /// <virtual-param>Head branch or SHA (your feature branch, e.g. 'feature/my-feature')</virtual-param>
+    /// <examples>
+    /// <example>
+    /// <from>
+    /// <environmentVariables>
+    /// <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
+    /// </environmentVariables>
+    /// #github.branchcommits(string owner, string repo, string base, string head)
+    /// </from>
+    /// <description>Gets commits that exist in the head branch but not in the base branch (branch-specific commits only). Uses the GitHub compare API (base...head). Limited to 250 commits.</description>
+    /// <columns>
+    /// <column name="Sha" type="string">Commit SHA</column>
+    /// <column name="ShortSha" type="string">Short SHA (7 chars)</column>
+    /// <column name="Message" type="string">Commit message</column>
+    /// <column name="Url" type="string">Commit URL</column>
+    /// <column name="AuthorName" type="string">Author name</column>
+    /// <column name="AuthorEmail" type="string">Author email</column>
+    /// <column name="AuthorLogin" type="string">Author's GitHub login</column>
+    /// <column name="AuthorDate" type="DateTimeOffset?">Author date</column>
+    /// <column name="CommitterName" type="string">Committer name</column>
+    /// <column name="CommitterDate" type="DateTimeOffset?">Committer date</column>
+    /// <column name="Additions" type="int">Lines added</column>
+    /// <column name="Deletions" type="int">Lines deleted</column>
+    /// <column name="Verified" type="bool?">Whether commit is verified</column>
     /// </columns>
     /// </example>
     /// </examples>
@@ -285,6 +319,9 @@ public class GitHubSchema : SchemaBase
         AddSource<CommitsSource>(CommitsTableName);
         AddTable<CommitsTable>(CommitsTableName);
         
+        AddSource<BranchCommitsSource>(BranchCommitsTableName);
+        AddTable<CommitsTable>(BranchCommitsTableName);
+        
         AddSource<BranchesSource>(BranchesTableName);
         AddTable<BranchesTable>(BranchesTableName);
         
@@ -309,6 +346,9 @@ public class GitHubSchema : SchemaBase
         AddSource<CommitsSource>(CommitsTableName);
         AddTable<CommitsTable>(CommitsTableName);
         
+        AddSource<BranchCommitsSource>(BranchCommitsTableName);
+        AddTable<CommitsTable>(BranchCommitsTableName);
+        
         AddSource<BranchesSource>(BranchesTableName);
         AddTable<BranchesTable>(BranchesTableName);
         
@@ -331,6 +371,7 @@ public class GitHubSchema : SchemaBase
             IssuesTableName => new IssuesTable(),
             PullRequestsTableName => new PullRequestsTable(),
             CommitsTableName => new CommitsTable(),
+            BranchCommitsTableName => new CommitsTable(),
             BranchesTableName => new BranchesTable(),
             ReleasesTableName => new ReleasesTable(),
             _ => throw new NotSupportedException($"Table {name} not supported.")
@@ -373,6 +414,11 @@ public class GitHubSchema : SchemaBase
                     Convert.ToString(parameters[2])),
                 _ => throw new ArgumentException($"Invalid number of parameters for {name}")
             },
+            BranchCommitsTableName => new BranchCommitsSource(api, runtimeContext,
+                Convert.ToString(parameters[0])!,
+                Convert.ToString(parameters[1])!,
+                Convert.ToString(parameters[2])!,
+                Convert.ToString(parameters[3])!),
             BranchesTableName => new BranchesSource(api, runtimeContext, 
                 Convert.ToString(parameters[0])!, 
                 Convert.ToString(parameters[1])!),
@@ -397,11 +443,12 @@ public class GitHubSchema : SchemaBase
             IssuesTableName => [CreateIssuesMethodInfo()],
             PullRequestsTableName => [CreatePullRequestsMethodInfo()],
             CommitsTableName => [CreateCommitsMethodInfo(), CreateCommitsWithShaMethodInfo()],
+            BranchCommitsTableName => [CreateBranchCommitsMethodInfo()],
             BranchesTableName => [CreateBranchesMethodInfo()],
             ReleasesTableName => [CreateReleasesMethodInfo()],
             _ => throw new NotSupportedException(
                 $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {string.Join(", ", RepositoriesTableName, IssuesTableName, PullRequestsTableName, CommitsTableName, BranchesTableName, ReleasesTableName)}")
+                $"Available data sources: {string.Join(", ", RepositoriesTableName, IssuesTableName, PullRequestsTableName, CommitsTableName, BranchCommitsTableName, BranchesTableName, ReleasesTableName)}")
         };
     }
 
@@ -420,6 +467,7 @@ public class GitHubSchema : SchemaBase
             CreatePullRequestsMethodInfo(),
             CreateCommitsMethodInfo(),
             CreateCommitsWithShaMethodInfo(),
+            CreateBranchCommitsMethodInfo(),
             CreateBranchesMethodInfo(),
             CreateReleasesMethodInfo()
         ];
@@ -492,10 +540,25 @@ public class GitHubSchema : SchemaBase
             arguments: [
                 ("owner", typeof(string)),
                 ("repo", typeof(string)),
-                ("sha", typeof(string))
+                ("branch", typeof(string))
             ]);
 
         return new SchemaMethodInfo(CommitsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateBranchCommitsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            originConstructorInfo: null!,
+            supportsInterCommunicator: false,
+            arguments: [
+                ("owner", typeof(string)),
+                ("repo", typeof(string)),
+                ("base", typeof(string)),
+                ("head", typeof(string))
+            ]);
+
+        return new SchemaMethodInfo(BranchCommitsTableName, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateBranchesMethodInfo()
