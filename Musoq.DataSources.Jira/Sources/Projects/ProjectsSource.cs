@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Jira.Entities;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -47,6 +48,11 @@ internal class ProjectsSource : RowSourceBase<IJiraProject>
             }
 
             _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+        }
+        catch (Exception ex)
+        {
+            _runtimeContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
+            throw;
         }
         finally
         {

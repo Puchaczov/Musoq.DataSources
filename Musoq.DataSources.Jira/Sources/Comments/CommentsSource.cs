@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Jira.Entities;
 using Musoq.DataSources.Jira.Helpers;
 using Musoq.Schema;
@@ -83,6 +84,11 @@ internal class CommentsSource : RowSourceBase<IJiraComment>
             }
 
             _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+        }
+        catch (Exception ex)
+        {
+            _runtimeContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
+            throw;
         }
         finally
         {

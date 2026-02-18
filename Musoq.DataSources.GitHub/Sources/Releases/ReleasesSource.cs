@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -69,12 +70,15 @@ internal class ReleasesSource : RowSourceBase<ReleaseEntity>
                 page++;
             }
             
-            _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
         }
-        catch
+        catch (Exception ex)
+        {
+            _runtimeContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
+            throw;
+        }
+        finally
         {
             _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
-            throw;
         }
     }
 }

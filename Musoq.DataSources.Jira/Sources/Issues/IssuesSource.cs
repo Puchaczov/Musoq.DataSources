@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Jira.Entities;
 using Musoq.DataSources.Jira.Helpers;
 using Musoq.Schema;
@@ -99,6 +100,11 @@ internal class IssuesSource : RowSourceBase<IJiraIssue>
                 if (issues.Count < maxResults)
                     break;
             }
+        }
+        catch (Exception ex)
+        {
+            _runtimeContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
+            throw;
         }
         finally
         {

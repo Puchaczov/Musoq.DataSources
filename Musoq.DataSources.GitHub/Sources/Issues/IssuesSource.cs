@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.DataSources.GitHub.Helpers;
 using Musoq.Schema;
@@ -113,12 +114,15 @@ internal class IssuesSource : RowSourceBase<IssueEntity>
                 page++;
             }
             
-            _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
         }
-        catch
+        catch (Exception ex)
+        {
+            _runtimeContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
+            throw;
+        }
+        finally
         {
             _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
-            throw;
         }
     }
 }
