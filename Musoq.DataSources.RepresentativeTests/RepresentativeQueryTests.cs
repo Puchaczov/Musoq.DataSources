@@ -1132,12 +1132,7 @@ public class RepresentativeQueryTests
         if (!File.Exists(zippedRepositoryPath))
             throw new InvalidOperationException($"File does not exist: {zippedRepositoryPath}");
 
-        var directory = Path.GetDirectoryName(zippedRepositoryPath);
-
-        if (string.IsNullOrEmpty(directory))
-            throw new InvalidOperationException("Directory is empty.");
-
-        var repositoryPath = Path.Combine(directory, ".TestsExecutions", testName);
+        var repositoryPath = Path.Combine(Path.GetTempPath(), "mqrq", testName);
 
         if (Directory.Exists(repositoryPath))
             Directory.Delete(repositoryPath, true);

@@ -1,3 +1,4 @@
+using Musoq.DataSources.GitHub.Sources.BranchCommits;
 using Musoq.DataSources.GitHub.Sources.Branches;
 using Musoq.DataSources.GitHub.Sources.Commits;
 using Musoq.DataSources.GitHub.Sources.Issues;
@@ -26,6 +27,7 @@ public class GitHubSchema : SchemaBase
     private const string IssuesTableName = "issues";
     private const string PullRequestsTableName = "pullrequests";
     private const string CommitsTableName = "commits";
+    private const string BranchCommitsTableName = "branchcommits";
     private const string BranchesTableName = "branches";
     private const string ReleasesTableName = "releases";
 
@@ -294,6 +296,9 @@ public class GitHubSchema : SchemaBase
         AddSource<CommitsSource>(CommitsTableName);
         AddTable<CommitsTable>(CommitsTableName);
 
+        AddSource<BranchCommitsSource>(BranchCommitsTableName);
+        AddTable<CommitsTable>(BranchCommitsTableName);
+
         AddSource<BranchesSource>(BranchesTableName);
         AddTable<BranchesTable>(BranchesTableName);
 
@@ -318,6 +323,9 @@ public class GitHubSchema : SchemaBase
         AddSource<CommitsSource>(CommitsTableName);
         AddTable<CommitsTable>(CommitsTableName);
 
+        AddSource<BranchCommitsSource>(BranchCommitsTableName);
+        AddTable<CommitsTable>(BranchCommitsTableName);
+
         AddSource<BranchesSource>(BranchesTableName);
         AddTable<BranchesTable>(BranchesTableName);
 
@@ -340,6 +348,7 @@ public class GitHubSchema : SchemaBase
             IssuesTableName => new IssuesTable(),
             PullRequestsTableName => new PullRequestsTable(),
             CommitsTableName => new CommitsTable(),
+            BranchCommitsTableName => new CommitsTable(),
             BranchesTableName => new BranchesTable(),
             ReleasesTableName => new ReleasesTable(),
             _ => throw new NotSupportedException($"Table {name} not supported.")
@@ -385,6 +394,11 @@ public class GitHubSchema : SchemaBase
             BranchesTableName => new BranchesSource(api, runtimeContext,
                 Convert.ToString(parameters[0])!,
                 Convert.ToString(parameters[1])!),
+            BranchCommitsTableName => new BranchCommitsSource(api, runtimeContext,
+                Convert.ToString(parameters[0])!,
+                Convert.ToString(parameters[1])!,
+                Convert.ToString(parameters[2])!,
+                Convert.ToString(parameters[3])!),
             ReleasesTableName => new ReleasesSource(api, runtimeContext,
                 Convert.ToString(parameters[0])!,
                 Convert.ToString(parameters[1])!),
@@ -406,11 +420,12 @@ public class GitHubSchema : SchemaBase
             IssuesTableName => [CreateIssuesMethodInfo()],
             PullRequestsTableName => [CreatePullRequestsMethodInfo()],
             CommitsTableName => [CreateCommitsMethodInfo(), CreateCommitsWithShaMethodInfo()],
+            BranchCommitsTableName => [CreateBranchCommitsMethodInfo()],
             BranchesTableName => [CreateBranchesMethodInfo()],
             ReleasesTableName => [CreateReleasesMethodInfo()],
             _ => throw new NotSupportedException(
                 $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {string.Join(", ", RepositoriesTableName, IssuesTableName, PullRequestsTableName, CommitsTableName, BranchesTableName, ReleasesTableName)}")
+                $"Available data sources: {string.Join(", ", RepositoriesTableName, IssuesTableName, PullRequestsTableName, CommitsTableName, BranchCommitsTableName, BranchesTableName, ReleasesTableName)}")
         };
     }
 
@@ -429,6 +444,7 @@ public class GitHubSchema : SchemaBase
             CreatePullRequestsMethodInfo(),
             CreateCommitsMethodInfo(),
             CreateCommitsWithShaMethodInfo(),
+            CreateBranchCommitsMethodInfo(),
             CreateBranchesMethodInfo(),
             CreateReleasesMethodInfo()
         ];
@@ -505,6 +521,21 @@ public class GitHubSchema : SchemaBase
             ]);
 
         return new SchemaMethodInfo(CommitsTableName, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateBranchCommitsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("owner", typeof(string)),
+                ("repo", typeof(string)),
+                ("base", typeof(string)),
+                ("head", typeof(string))
+            ]);
+
+        return new SchemaMethodInfo(BranchCommitsTableName, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateBranchesMethodInfo()

@@ -148,12 +148,7 @@ public class OsAndGitToSqlTests
         if (!File.Exists(zippedRepositoryPath))
             throw new InvalidOperationException("File does not exist.");
 
-        var directory = Path.GetDirectoryName(zippedRepositoryPath);
-
-        if (string.IsNullOrEmpty(directory))
-            throw new InvalidOperationException("Directory is empty.");
-
-        var repositoryPath = Path.Combine(directory, "Repositories", ".TestsExecutions", method.ToString(), testName);
+        var repositoryPath = Path.Combine(Path.GetTempPath(), "mqogt", method.ToString(), testName);
 
         if (Directory.Exists(repositoryPath))
             Directory.Delete(repositoryPath, true);
