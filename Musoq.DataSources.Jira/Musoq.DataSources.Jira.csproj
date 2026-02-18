@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query Jira issues, projects, sprints and other resources with SQL-style queries. Supports predicate pushdown for efficient filtering via JQL.</Description>
