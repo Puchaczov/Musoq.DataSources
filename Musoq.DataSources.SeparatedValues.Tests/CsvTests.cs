@@ -67,7 +67,7 @@ public class CsvTests
     {
         var query = "" +
                     "table CsvFile {" +
-                    "   Name string" +
+                    "   Name: string" +
                     "};" +
                     "couple #separatedvalues.comma with table CsvFile as SourceCsvFile;" +
                     "select Name from SourceCsvFile('./Files/BankingTransactionsWithSkippedLines.csv', true, 2);";
@@ -97,8 +97,8 @@ public class CsvTests
     {
         var query = "" +
                     "table Persons {" +
-                    "   Id int," +
-                    "   Name string" +
+                    "   Id: int," +
+                    "   Name: string" +
                     "};" +
                     "couple #separatedvalues.comma with table Persons as SourceOfPersons;" +
                     "select Id, Name from SourceOfPersons('./Files/Persons.csv', true, 0)";
@@ -145,8 +145,8 @@ public class CsvTests
     {
         var query = "" +
                     "table BankingTransactions {" +
-                    "   Category string," +
-                    "   Money decimal" +
+                    "   Category: string," +
+                    "   Money: decimal" +
                     "};" +
                     "couple #separatedvalues.comma with table BankingTransactions as SourceOfBankingTransactions;" +
                     "select Category, Money from SourceOfBankingTransactions('./Files/BankingTransactionsNullValues.csv', true, 0) where (Category is null) or (Money is null)";
@@ -188,7 +188,7 @@ public class CsvTests
     {
         var query = "" +
                     "table CsvFile {" +
-                    "   Name string" +
+                    "   Name: string" +
                     "};" +
                     "couple #separatedvalues.comma with table CsvFile as SourceCsvFile;" +
                     "with FilesToScan as (" +
@@ -221,7 +221,7 @@ public class CsvTests
     {
         var query = "" +
                     "table CsvFile {" +
-                    "   Name string" +
+                    "   Name: string" +
                     "};" +
                     "couple #separatedvalues.comma with table CsvFile as SourceOfCsvFile;" +
                     "with FilesToScan as (" +

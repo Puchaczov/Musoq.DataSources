@@ -21,9 +21,9 @@ public class ArchivesAndSeparatedValuesTests
         const string query =
             """
             table PeopleDetails {
-                Name string,
-                Surname string,
-                Age int
+                Name: string,
+                Surname: string,
+                Age: int
             };
             couple #separatedvalues.comma with table PeopleDetails as SourceOfPeopleDetails;
             select 
@@ -104,9 +104,9 @@ public class ArchivesAndSeparatedValuesTests
         const string query =
             """
             table PeopleDetails {
-                Name string,
-                Surname string,
-                Age int
+                Name: string,
+                Surname: string,
+                Age: int
             };
             couple #separatedvalues.comma with table PeopleDetails as SourceOfPeopleDetails;
             select 
@@ -173,9 +173,9 @@ public class ArchivesAndSeparatedValuesTests
         const string query =
             """
             table PeopleDetails {
-                Name string,
-                Surname string,
-                Age int
+                Name: string,
+                Surname: string,
+                Age: int
             };
             couple #separatedvalues.comma with table PeopleDetails as SourceOfPeopleDetails;
             with Files as (
