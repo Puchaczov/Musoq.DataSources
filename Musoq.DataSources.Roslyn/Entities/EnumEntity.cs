@@ -52,10 +52,10 @@ public class EnumEntity : TypeEntity
     ///     An enumerable collection of member names.
     /// </value>
     [BindablePropertyAsTable]
-    public IEnumerable<string> Members => Symbol
-        .GetMembers()
+    public IEnumerable<string> Members => Syntax.Members
+        .Select(member => SemanticModel.GetDeclaredSymbol(member))
         .OfType<IFieldSymbol>()
-        .Where(f => f.ConstantValue != null)
+        .Where(f => f.HasConstantValue)
         .Select(f => f.Name);
 
     /// <summary>
@@ -118,10 +118,10 @@ public class EnumEntity : TypeEntity
     ///     Gets the enum members with their names and values.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<EnumMemberEntity> EnumMembers => Symbol
-        .GetMembers()
+    public IEnumerable<EnumMemberEntity> EnumMembers => Syntax.Members
+        .Select(member => SemanticModel.GetDeclaredSymbol(member))
         .OfType<IFieldSymbol>()
-        .Where(f => f.ConstantValue != null)
+        .Where(f => f.HasConstantValue)
         .Select(f => new EnumMemberEntity(f));
 
     /// <summary>

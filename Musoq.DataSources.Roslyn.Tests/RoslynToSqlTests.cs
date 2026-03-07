@@ -4510,8 +4510,13 @@ public class RoslynToSqlTests
     public void WhenEnumMembersQueried_ShouldReturnNameAndValue()
     {
         var query =
-            $@"select em.Name, em.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
-            cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
+            $@"select 
+                em.Name, 
+                em.Value 
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Enums e
             cross apply e.EnumMembers em
             where e.Name = 'FlagsEnum'";
 

@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -26,7 +28,9 @@ public class EnumMemberEntity
     /// <summary>
     ///     Gets the constant value of the enum member as a string.
     /// </summary>
-    public string? Value => _fieldSymbol.ConstantValue?.ToString();
+    public string? Value => !_fieldSymbol.HasConstantValue
+        ? null
+        : FormatConstantValue(_fieldSymbol.ConstantValue);
 
     /// <summary>
     ///     Gets the constant value of the enum member as an object.
@@ -40,5 +44,22 @@ public class EnumMemberEntity
     public override string ToString()
     {
         return $"{Name} = {Value}";
+    }
+
+    private static string? FormatConstantValue(object? constantValue)
+    {
+        return constantValue switch
+        {
+            null => null,
+            sbyte value => value.ToString(CultureInfo.InvariantCulture),
+            byte value => value.ToString(CultureInfo.InvariantCulture),
+            short value => value.ToString(CultureInfo.InvariantCulture),
+            ushort value => value.ToString(CultureInfo.InvariantCulture),
+            int value => value.ToString(CultureInfo.InvariantCulture),
+            uint value => value.ToString(CultureInfo.InvariantCulture),
+            long value => value.ToString(CultureInfo.InvariantCulture),
+            ulong value => value.ToString(CultureInfo.InvariantCulture),
+            _ => Convert.ToString(constantValue, CultureInfo.InvariantCulture)
+        };
     }
 }
