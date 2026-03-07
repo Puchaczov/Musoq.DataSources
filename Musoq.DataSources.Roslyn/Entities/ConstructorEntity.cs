@@ -13,6 +13,7 @@ namespace Musoq.DataSources.Roslyn.Entities;
 public class ConstructorEntity
 {
     private readonly IMethodSymbol _constructorSymbol;
+    private readonly SemanticModel? _semanticModel;
     private readonly ConstructorDeclarationSyntax? _syntax;
 
     /// <summary>
@@ -24,6 +25,20 @@ public class ConstructorEntity
     {
         _constructorSymbol = constructorSymbol;
         _syntax = syntax;
+        _semanticModel = null;
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ConstructorEntity" /> class with semantic model.
+    /// </summary>
+    /// <param name="constructorSymbol">The method symbol representing the constructor.</param>
+    /// <param name="syntax">The constructor declaration syntax node.</param>
+    /// <param name="semanticModel">The semantic model for analyzing type references.</param>
+    public ConstructorEntity(IMethodSymbol constructorSymbol, ConstructorDeclarationSyntax syntax, SemanticModel semanticModel)
+    {
+        _constructorSymbol = constructorSymbol;
+        _syntax = syntax;
+        _semanticModel = semanticModel;
     }
 
     /// <summary>
@@ -150,5 +165,72 @@ public class ConstructorEntity
         var parameters = string.Join(", ", Parameters.Select(p => $"{p.Type} {p.Name}"));
         var modifiers = string.Join(" ", Modifiers);
         return $"{modifiers} {Name}({parameters})".Trim();
+    }
+
+    /// <summary>
+    ///     Gets the types referenced within this constructor body, including usage context
+    ///     (casts, is/as operators, pattern matching, local variable types, generic arguments, etc.).
+    ///     Returns an empty collection if the semantic model is not available or the constructor has no body.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<TypeReferenceEntity> ReferencedTypes
+    {
+        get
+        {
+            if (_semanticModel == null || _syntax == null)
+                return Enumerable.Empty<TypeReferenceEntity>();
+
+            var body = (SyntaxNode?)_syntax.Body ?? _syntax.ExpressionBody;
+            if (body == null)
+                return Enumerable.Empty<TypeReferenceEntity>();
+
+            var references = new List<TypeReferenceEntity>();
+            var tree = _syntax.SyntaxTree;
+
+            TypeReferenceHelper.CollectTypeReferences(references, body, _semanticModel, tree);
+
+            return references;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the local variables declared in the constructor body.
+    ///     Returns an empty collection if the semantic model is not available or the constructor has no body.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<VariableEntity> LocalVariables
+    {
+        get
+        {
+            if (_semanticModel == null || _syntax?.Body == null)
+                return Enumerable.Empty<VariableEntity>();
+
+            var variables = new List<VariableEntity>();
+
+            foreach (var declaration in _syntax.Body.DescendantNodes()
+                         .OfType<LocalDeclarationStatementSyntax>())
+            foreach (var variable in declaration.Declaration.Variables)
+                if (_semanticModel.GetDeclaredSymbol(variable) is ILocalSymbol symbol)
+                    variables.Add(new VariableEntity(symbol, variable, _semanticModel, _syntax.Body));
+
+            return variables;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the count of local variables in the constructor body.
+    /// </summary>
+    public int LocalVariableCount
+    {
+        get
+        {
+            if (_syntax?.Body == null)
+                return 0;
+
+            return _syntax.Body.DescendantNodes()
+                .OfType<LocalDeclarationStatementSyntax>()
+                .SelectMany(d => d.Declaration.Variables)
+                .Count();
+        }
     }
 }

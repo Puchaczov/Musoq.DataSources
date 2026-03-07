@@ -128,7 +128,8 @@ public class DocumentEntity
             if (!_wasInitialized)
                 throw new InvalidOperationException("Document is not initialized.");
 
-            return GetTypeEntities<ClassDeclarationSyntax, ClassEntity>();
+            return GetTypeEntities<ClassDeclarationSyntax, ClassEntity>()
+                .Concat(GetTypeEntities<RecordDeclarationSyntax, ClassEntity>());
         }
     }
 
@@ -203,6 +204,48 @@ public class DocumentEntity
     }
 
     /// <summary>
+    ///     Gets the delegate declarations in the document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public IEnumerable<DelegateEntity> Delegates
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            if (_syntaxTree is null || _semanticModel is null)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return _syntaxTree.GetRoot()
+                .DescendantNodes()
+                .OfType<DelegateDeclarationSyntax>()
+                .Select(node =>
+                {
+                    var symbol = _semanticModel.GetDeclaredSymbol(node);
+                    if (symbol is null)
+                        throw new InvalidOperationException("Could not get symbol for delegate declaration.");
+                    return new DelegateEntity((INamedTypeSymbol)symbol, node);
+                });
+        }
+    }
+
+    /// <summary>
+    ///     Gets the count of delegate declarations in the document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int DelegateCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return Delegates.Count();
+        }
+    }
+
+    /// <summary>
     ///     Gets the using directives in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
@@ -262,6 +305,68 @@ public class DocumentEntity
                 throw new InvalidOperationException("Document is not initialized.");
 
             return ClassCount + InterfaceCount + EnumCount + StructCount;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the compiler diagnostics (errors, warnings, info) for this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
+    public IEnumerable<DiagnosticEntity> Diagnostics
+    {
+        get
+        {
+            if (!_wasInitialized || _semanticModel == null)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return _semanticModel.GetDiagnostics()
+                .Select(d => new DiagnosticEntity(d));
+        }
+    }
+
+    /// <summary>
+    ///     Gets the count of compiler diagnostics in this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int DiagnosticCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return Diagnostics.Count();
+        }
+    }
+
+    /// <summary>
+    ///     Gets the count of error diagnostics in this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int ErrorCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return Diagnostics.Count(d => d.IsError);
+        }
+    }
+
+    /// <summary>
+    ///     Gets the count of warning diagnostics in this document.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    public int WarningCount
+    {
+        get
+        {
+            if (!_wasInitialized)
+                throw new InvalidOperationException("Document is not initialized.");
+
+            return Diagnostics.Count(d => d.IsWarning);
         }
     }
 
@@ -453,7 +558,7 @@ public class DocumentEntity
             throw new InvalidOperationException("Could not get symbol for type declaration.");
 
         if (typeof(TEntity) == typeof(ClassEntity))
-            return (TEntity)(object)new ClassEntity((INamedTypeSymbol)symbol, (ClassDeclarationSyntax)node,
+            return (TEntity)(object)new ClassEntity((INamedTypeSymbol)symbol, (TypeDeclarationSyntax)node,
                 _semanticModel, _solution, this);
         if (typeof(TEntity) == typeof(InterfaceEntity))
             return (TEntity)(object)new InterfaceEntity((INamedTypeSymbol)symbol, (InterfaceDeclarationSyntax)node,

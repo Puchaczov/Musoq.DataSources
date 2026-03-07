@@ -28,7 +28,7 @@ public class ClassEntity : TypeEntity
     /// <param name="semanticModel">Semantic model of the class.</param>
     /// <param name="solution">Solution that contains the class.</param>
     /// <param name="document">The document that contains the class.</param>
-    public ClassEntity(INamedTypeSymbol symbol, ClassDeclarationSyntax syntax, SemanticModel semanticModel,
+    public ClassEntity(INamedTypeSymbol symbol, TypeDeclarationSyntax syntax, SemanticModel semanticModel,
         Solution solution, DocumentEntity document)
         : base(symbol)
     {
@@ -39,7 +39,7 @@ public class ClassEntity : TypeEntity
         Document = document;
     }
 
-    internal ClassDeclarationSyntax Syntax { get; }
+    internal TypeDeclarationSyntax Syntax { get; }
 
     /// <summary>
     ///     Gets the document that contains the class.
@@ -76,16 +76,35 @@ public class ClassEntity : TypeEntity
     public IEnumerable<string> BaseTypes => Symbol.BaseType != null ? [Symbol.BaseType.Name] : [];
 
     /// <summary>
-    ///     Gets the interfaces implemented by the class.
+    ///     Gets the interfaces directly implemented by the class (short names).
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<string> Interfaces => Symbol.Interfaces.Select(i => i.Name);
+
+    /// <summary>
+    ///     Gets all interfaces implemented by the class, including those inherited
+    ///     transitively through base classes and interface inheritance chains.
+    ///     Returns fully qualified names.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<string> AllInterfaces => Symbol.AllInterfaces.Select(i => i.ToDisplayString());
 
     /// <summary>
     ///     Gets the type parameters of the class.
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<string> TypeParameters => Symbol.TypeParameters.Select(p => p.Name);
+
+    /// <summary>
+    ///     Gets the type parameter constraints of the class.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<TypeParameterConstraintEntity> TypeParameterConstraints =>
+        Symbol.TypeParameters
+            .Where(tp => tp.HasReferenceTypeConstraint || tp.HasValueTypeConstraint ||
+                         tp.HasUnmanagedTypeConstraint || tp.HasNotNullConstraint ||
+                         tp.HasConstructorConstraint || tp.ConstraintTypes.Length > 0)
+            .Select(tp => new TypeParameterConstraintEntity(tp));
 
     /// <summary>
     ///     Gets the names of the members of the class.
@@ -219,7 +238,7 @@ public class ClassEntity : TypeEntity
     /// </summary>
     public override IEnumerable<PropertyEntity> Properties => Syntax.Members
         .OfType<PropertyDeclarationSyntax>()
-        .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!));
+        .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!, SemanticModel));
 
     /// <summary>
     ///     Gets the fields of the class.
@@ -239,7 +258,7 @@ public class ClassEntity : TypeEntity
     [BindablePropertyAsTable]
     public IEnumerable<ConstructorEntity> Constructors => Syntax.Members
         .OfType<ConstructorDeclarationSyntax>()
-        .Select(c => new ConstructorEntity(SemanticModel.GetDeclaredSymbol(c)!, c));
+        .Select(c => new ConstructorEntity(SemanticModel.GetDeclaredSymbol(c)!, c, SemanticModel));
 
     /// <summary>
     ///     Gets the events of the class.
@@ -255,13 +274,13 @@ public class ClassEntity : TypeEntity
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(eventDecl);
                 if (symbol != null)
-                    events.Add(new EventEntity(symbol, eventDecl));
+                    events.Add(new EventEntity(symbol, Solution, eventDecl));
             }
 
             foreach (var eventField in Syntax.Members.OfType<EventFieldDeclarationSyntax>())
             foreach (var variable in eventField.Declaration.Variables)
                 if (SemanticModel.GetDeclaredSymbol(variable) is IEventSymbol symbol)
-                    events.Add(new EventEntity(symbol, fieldSyntax: eventField));
+                    events.Add(new EventEntity(symbol, Solution, fieldSyntax: eventField));
 
             return events;
         }
@@ -271,6 +290,16 @@ public class ClassEntity : TypeEntity
     ///     Gets the count of events in the class.
     /// </summary>
     public int EventsCount => Events.Count();
+
+    /// <summary>
+    ///     Gets a value indicating whether the class is a record class.
+    /// </summary>
+    public bool IsRecord => Symbol.IsRecord;
+
+    /// <summary>
+    ///     Gets a value indicating whether the class is a partial class.
+    /// </summary>
+    public bool IsPartial => Syntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
 
     /// <summary>
     ///     Gets a value indicating whether the class has XML documentation.

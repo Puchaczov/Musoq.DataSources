@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -41,6 +43,28 @@ public class ParameterEntity
     ///     Gets the type of the parameter.
     /// </summary>
     public string Type => _parameterSymbol.Type.Name;
+
+    /// <summary>
+    ///     Gets the full type name including namespace.
+    /// </summary>
+    public string FullTypeName => _parameterSymbol.Type.ToDisplayString();
+
+    /// <summary>
+    ///     Gets the ordinal position of the parameter (0-based).
+    /// </summary>
+    public int Ordinal => _parameterSymbol.Ordinal;
+
+    /// <summary>
+    ///     Gets a value indicating whether the parameter has an explicit default value.
+    /// </summary>
+    public bool HasDefaultValue => _parameterSymbol.HasExplicitDefaultValue;
+
+    /// <summary>
+    ///     Gets the default value of the parameter if it has one, null otherwise.
+    /// </summary>
+    public string? DefaultValue => _parameterSymbol.HasExplicitDefaultValue
+        ? _parameterSymbol.ExplicitDefaultValue?.ToString()
+        : null;
 
     /// <summary>
     ///     Gets the name of the parameter.
@@ -125,4 +149,11 @@ public class ParameterEntity
     {
         return $"{Type} {Name}";
     }
+
+    /// <summary>
+    ///     Gets the attributes applied to the parameter.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<AttributeEntity> Attributes =>
+        _parameterSymbol.GetAttributes().Select(attr => new AttributeEntity(attr));
 }

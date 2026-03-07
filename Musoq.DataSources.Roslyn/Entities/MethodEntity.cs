@@ -269,6 +269,17 @@ public class MethodEntity
     public IEnumerable<string> TypeParameters => Symbol.TypeParameters.Select(tp => tp.Name);
 
     /// <summary>
+    ///     Gets the type parameter constraints of the method.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<TypeParameterConstraintEntity> TypeParameterConstraints =>
+        Symbol.TypeParameters
+            .Where(tp => tp.HasReferenceTypeConstraint || tp.HasValueTypeConstraint ||
+                         tp.HasUnmanagedTypeConstraint || tp.HasNotNullConstraint ||
+                         tp.HasConstructorConstraint || tp.ConstraintTypes.Length > 0)
+            .Select(tp => new TypeParameterConstraintEntity(tp));
+
+    /// <summary>
     ///     Gets the accessibility of the method (public, private, etc.).
     /// </summary>
     public string Accessibility => Symbol.DeclaredAccessibility.ToString().ToLowerInvariant();
@@ -525,6 +536,52 @@ public class MethodEntity
     public int CalleeCount => Callees.Count();
 
     /// <summary>
+    ///     Gets the methods that call this method.
+    ///     Returns an empty collection if the solution context is not available.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<CalledMethodInfo> Callers
+    {
+        get
+        {
+            if (Solution == null)
+                return Enumerable.Empty<CalledMethodInfo>();
+
+            var callerResults = RoslynAsyncHelper.RunSyncWithTimeout(
+                ct => SymbolFinder.FindCallersAsync(Symbol, Solution, ct),
+                RoslynAsyncHelper.DefaultReferenceTimeout,
+                null);
+
+            if (callerResults == null)
+                return Enumerable.Empty<CalledMethodInfo>();
+
+            return callerResults
+                .Where(c => c.IsDirect)
+                .Select(c => c.CallingSymbol)
+                .OfType<IMethodSymbol>()
+                .Select(m => new CalledMethodInfo(
+                    m.Name,
+                    m.ContainingType?.Name ?? string.Empty,
+                    m.ContainingNamespace?.ToDisplayString() ?? string.Empty,
+                    m.IsStatic,
+                    m.IsExtensionMethod
+                ));
+        }
+    }
+
+    /// <summary>
+    ///     Gets the number of methods that call this method.
+    /// </summary>
+    public int CallerCount
+    {
+        get
+        {
+            if (Solution == null) return 0;
+            return Callers.Count();
+        }
+    }
+
+    /// <summary>
     ///     Gets a value indicating whether the method calls itself (directly recursive).
     /// </summary>
     public bool IsRecursive
@@ -629,6 +686,29 @@ public class MethodEntity
     public bool ImplementsInterface => ImplementedInterfaceMethods.Any();
 
     /// <summary>
+    ///     Gets the explicit interface implementations of this method.
+    ///     Returns interface names for methods that use explicit interface implementation syntax (e.g., IFoo.Bar()).
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<string> ExplicitInterfaceImplementations =>
+        Symbol.ExplicitInterfaceImplementations.Select(m => m.ContainingType.ToDisplayString());
+
+    /// <summary>
+    ///     Gets a value indicating whether this method is an explicit interface implementation.
+    /// </summary>
+    public bool IsExplicitInterfaceImplementation => Symbol.ExplicitInterfaceImplementations.Length > 0;
+
+    /// <summary>
+    ///     Gets a value indicating whether the method is a partial method.
+    /// </summary>
+    public bool IsPartial => _methodDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
+
+    /// <summary>
+    ///     Gets the method kind (Ordinary, Constructor, Destructor, PropertyGet, PropertySet, etc.).
+    /// </summary>
+    public string MethodKind => Symbol.MethodKind.ToString();
+
+    /// <summary>
     ///     Gets a value indicating whether this method is part of the public API (public or protected in a public type).
     /// </summary>
     public bool IsPublicApi
@@ -681,6 +761,54 @@ public class MethodEntity
     public string? SourceFilePath => _methodDeclaration.SyntaxTree.FilePath;
 
     /// <summary>
+    ///     Gets data flow analysis information for the method body.
+    ///     Includes read/written variables, captured variables by lambdas, etc.
+    ///     Returns null if the semantic model is not available or the method has no body.
+    /// </summary>
+    public DataFlowInfo? DataFlow
+    {
+        get
+        {
+            if (_semanticModel == null || _methodDeclaration.Body == null)
+                return null;
+
+            try
+            {
+                var analysis = _semanticModel.AnalyzeDataFlow(_methodDeclaration.Body);
+                return analysis.Succeeded ? new DataFlowInfo(analysis) : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Gets control flow analysis information for the method body.
+    ///     Includes reachability, exit points, return statements count.
+    ///     Returns null if the semantic model is not available or the method has no body.
+    /// </summary>
+    public ControlFlowInfo? ControlFlow
+    {
+        get
+        {
+            if (_semanticModel == null || _methodDeclaration.Body == null)
+                return null;
+
+            try
+            {
+                var analysis = _semanticModel.AnalyzeControlFlow(_methodDeclaration.Body);
+                return analysis.Succeeded ? new ControlFlowInfo(analysis) : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
     ///     Gets the containing type name.
     /// </summary>
     public string ContainingTypeName => Symbol.ContainingType?.Name ?? string.Empty;
@@ -689,6 +817,32 @@ public class MethodEntity
     ///     Gets the containing namespace.
     /// </summary>
     public string ContainingNamespace => Symbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+
+    /// <summary>
+    ///     Gets the types referenced within this method body, including usage context
+    ///     (casts, is/as operators, pattern matching, local variable types, generic arguments, etc.).
+    ///     Returns an empty collection if the semantic model is not available.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<TypeReferenceEntity> ReferencedTypes
+    {
+        get
+        {
+            if (_semanticModel == null)
+                return Enumerable.Empty<TypeReferenceEntity>();
+
+            var body = (SyntaxNode?)_methodDeclaration.Body ?? _methodDeclaration.ExpressionBody;
+            if (body == null)
+                return Enumerable.Empty<TypeReferenceEntity>();
+
+            var references = new List<TypeReferenceEntity>();
+            var tree = _methodDeclaration.SyntaxTree;
+
+            TypeReferenceHelper.CollectTypeReferences(references, body, _semanticModel, tree);
+
+            return references;
+        }
+    }
 
     /// <summary>
     ///     Gets the underlying method symbol for advanced scenarios.
@@ -744,4 +898,5 @@ public class MethodEntity
 
         return maxDepth;
     }
+
 }

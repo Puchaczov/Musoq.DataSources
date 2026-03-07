@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
@@ -94,4 +95,46 @@ public class EnumEntity : TypeEntity
     ///     Gets a value indicating whether the enum is used (referenced) in the solution.
     /// </summary>
     public bool IsUsed => ReferenceCount > 0;
+
+    /// <summary>
+    ///     Gets the attributes applied to the enum.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<AttributeEntity> Attributes =>
+        Symbol.GetAttributes().Select(attr => new AttributeEntity(attr));
+
+    /// <summary>
+    ///     Gets the underlying type of the enum (e.g., int, byte, long).
+    /// </summary>
+    public string UnderlyingType => Symbol.EnumUnderlyingType?.ToDisplayString() ?? "int";
+
+    /// <summary>
+    ///     Gets a value indicating whether the enum has the [Flags] attribute.
+    /// </summary>
+    public bool HasFlagsAttribute => Symbol.GetAttributes()
+        .Any(a => a.AttributeClass?.Name == "FlagsAttribute" || a.AttributeClass?.Name == "Flags");
+
+    /// <summary>
+    ///     Gets the enum members with their names and values.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<EnumMemberEntity> EnumMembers => Symbol
+        .GetMembers()
+        .OfType<IFieldSymbol>()
+        .Where(f => f.ConstantValue != null)
+        .Select(f => new EnumMemberEntity(f));
+
+    /// <summary>
+    ///     Gets a value indicating whether the enum has XML documentation.
+    /// </summary>
+    public bool HasDocumentation
+    {
+        get
+        {
+            var trivia = Syntax.GetLeadingTrivia();
+            return trivia.Any(t =>
+                t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
+        }
+    }
 }

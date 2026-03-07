@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -14,6 +15,7 @@ public class EventEntity
 {
     private readonly IEventSymbol _eventSymbol;
     private readonly EventFieldDeclarationSyntax? _fieldSyntax;
+    private readonly Solution? _solution;
     private readonly EventDeclarationSyntax? _syntax;
 
     /// <summary>
@@ -28,6 +30,23 @@ public class EventEntity
         _eventSymbol = eventSymbol;
         _syntax = syntax;
         _fieldSyntax = fieldSyntax;
+        _solution = null;
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="EventEntity" /> class with solution context.
+    /// </summary>
+    /// <param name="eventSymbol">The event symbol representing the event.</param>
+    /// <param name="solution">The solution for finding references.</param>
+    /// <param name="syntax">The event declaration syntax node (for custom add/remove).</param>
+    /// <param name="fieldSyntax">The event field declaration syntax node (for field-like events).</param>
+    public EventEntity(IEventSymbol eventSymbol, Solution solution, EventDeclarationSyntax? syntax = null,
+        EventFieldDeclarationSyntax? fieldSyntax = null)
+    {
+        _eventSymbol = eventSymbol;
+        _syntax = syntax;
+        _fieldSyntax = fieldSyntax;
+        _solution = solution;
     }
 
     /// <summary>
@@ -140,6 +159,57 @@ public class EventEntity
     [BindablePropertyAsTable]
     public IEnumerable<AttributeEntity> Attributes =>
         _eventSymbol.GetAttributes().Select(attr => new AttributeEntity(attr));
+
+    /// <summary>
+    ///     Gets the number of references to this event in the solution.
+    ///     Returns null if the solution context is not available or if the operation times out.
+    /// </summary>
+    public int? ReferenceCount
+    {
+        get
+        {
+            if (_solution == null)
+                return null;
+
+            var references = RoslynAsyncHelper.RunSyncWithTimeout(
+                ct => SymbolFinder.FindReferencesAsync(_eventSymbol, _solution, ct)!,
+                RoslynAsyncHelper.DefaultReferenceTimeout,
+                null);
+
+            return references?.Sum(r => r.Locations.Count());
+        }
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether the event is used (referenced) in the solution.
+    ///     Returns null if the solution context is not available.
+    /// </summary>
+    public bool? IsUsed
+    {
+        get
+        {
+            if (_solution == null)
+                return null;
+
+            return ReferenceCount > 0;
+        }
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether the event has XML documentation.
+    /// </summary>
+    public bool HasDocumentation
+    {
+        get
+        {
+            SyntaxNode? syntaxNode = _syntax ?? (SyntaxNode?)_fieldSyntax;
+            if (syntaxNode == null) return false;
+            var trivia = syntaxNode.GetLeadingTrivia();
+            return trivia.Any(t =>
+                t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
+        }
+    }
 
     /// <summary>
     ///     Returns a string representation of the event entity.

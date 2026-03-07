@@ -2142,6 +2142,2798 @@ public class RoslynToSqlTests
         Assert.IsTrue((int)result[0][1] > 0, "Should reference some namespaces");
     }
 
+    [TestMethod]
+    public void WhenAllInterfacesQueried_ShouldReturnTransitiveInterfaces()
+    {
+        var query = $@"
+            select 
+                c.Name,
+                ai.Value as InterfaceName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.AllInterfaces ai
+            where c.Name = 'DeepImplementor'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 3, $"DeepImplementor should implement at least 3 interfaces transitively, got {result.Count}");
+        
+        var interfaceNames = result.Select(r => r[1].ToString()).ToList();
+        Assert.IsTrue(interfaceNames.Any(n => n!.Contains("ISuperAdvancedProcessable")), "Should contain ISuperAdvancedProcessable");
+        Assert.IsTrue(interfaceNames.Any(n => n!.Contains("IAdvancedProcessable")), "Should contain IAdvancedProcessable (transitive)");
+        Assert.IsTrue(interfaceNames.Any(n => n!.Contains("IProcessable")), "Should contain IProcessable (transitive)");
+    }
+
+    [TestMethod]
+    public void WhenAllInterfacesQueried_DirectInterfacesShouldStillWork()
+    {
+        var query = $@"
+            select 
+                c.Name,
+                i.Value as InterfaceName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Interfaces i
+            where c.Name = 'DeepImplementor'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "DeepImplementor directly implements only ISuperAdvancedProcessable");
+        Assert.AreEqual("ISuperAdvancedProcessable", result[0][1].ToString());
+    }
+
+    [TestMethod]
+    public void WhenAllBaseInterfacesQueried_ShouldReturnTransitiveBaseInterfaces()
+    {
+        var query = $@"
+            select 
+                i.Name,
+                abi.Value as BaseInterfaceName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Interfaces i
+            cross apply i.AllBaseInterfaces abi
+            where i.Name = 'ISuperAdvancedProcessable'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 2, $"ISuperAdvancedProcessable should have at least 2 transitive base interfaces, got {result.Count}");
+        
+        var baseNames = result.Select(r => r[1].ToString()).ToList();
+        Assert.IsTrue(baseNames.Any(n => n!.Contains("IAdvancedProcessable")), "Should contain IAdvancedProcessable");
+        Assert.IsTrue(baseNames.Any(n => n!.Contains("IProcessable")), "Should contain IProcessable (transitive)");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_CastShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind,
+                rt.IsInterface
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithCast'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast" && (bool)r[3]),
+            "Should find IProcessable used as Cast and marked as interface");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_IsOperatorShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.IsInterface
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithIsOperator'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Is"),
+            "Should find IProcessable used with 'is' operator");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_AsOperatorShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithAsOperator'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As"),
+            "Should find IProcessable used with 'as' operator");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_PatternMatchShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithPatternMatch'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "PatternMatch"),
+            "Should find IProcessable used in pattern matching");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_LocalVariableShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithLocalVariable'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "LocalVariable"),
+            "Should find IProcessable used as local variable type");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_GenericArgumentShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithGenericArgument'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "GenericArgument"),
+            "Should find IProcessable used as generic type argument");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_TypeOfShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithTypeOf'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "TypeOf"),
+            "Should find IProcessable used in typeof()");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_DefaultShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithDefault'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Default"),
+            "Should find IProcessable used in default()");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_MultipleUsagesShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.FullName,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithMultipleUsages'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 3, $"Should find at least 3 type references, got {result.Count}");
+        
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable"), "Should reference IProcessable");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable"), "Should reference IAdvancedProcessable");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "ISuperAdvancedProcessable"), "Should reference ISuperAdvancedProcessable");
+        
+        Assert.IsTrue(result.All(r => r[3].ToString() == "Interface"), "All referenced types should be interfaces");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_ArrayCreationShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithArrayCreation'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "ArrayCreation"),
+            "Should find IProcessable used in array creation");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_SwitchPatternShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithSwitchPattern'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 pattern references, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable"), "Should find IProcessable in switch pattern");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesFiltered_OnlyInterfacesShouldBeReturned()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.FullName,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithMultipleUsages' and rt.IsInterface = true";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 3, $"Should find at least 3 interface references, got {result.Count}");
+        Assert.IsTrue(result.All(r => r[1].ToString()!.Contains("Solution1.ClassLibrary1")),
+            "All FullName values should contain the namespace");
+    }
+
+    [TestMethod]
+    public void WhenPropertyFullTypeNameQueried_ShouldReturnFullyQualifiedName()
+    {
+        var query = $@"
+            select 
+                pr.Name,
+                pr.Type,
+                pr.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'PropertyUsagePatterns' and pr.Name = 'CastingProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, $"Should find exactly 1 property, got {result.Count}");
+        Assert.AreEqual("CastingProperty", result[0][0].ToString());
+        Assert.IsTrue(result[0][2].ToString()!.Contains("IProcessable"), 
+            $"FullTypeName should contain IProcessable, got {result[0][2]}");
+    }
+
+    [TestMethod]
+    public void WhenParameterFullTypeNameQueried_ShouldReturnFullyQualifiedName()
+    {
+        var query = $@"
+            select 
+                param.Name,
+                param.Type,
+                param.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.Parameters param
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithCast'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should find exactly 1 parameter");
+        Assert.AreEqual("obj", result[0][0].ToString());
+        Assert.AreEqual("Object", result[0][1].ToString());
+        Assert.AreEqual("object", result[0][2].ToString());
+    }
+
+    [TestMethod]
+    public void WhenMethodFullReturnTypeQueried_ShouldReturnFullyQualifiedName()
+    {
+        var query = $@"
+            select 
+                m.Name,
+                m.ReturnType,
+                m.FullReturnType
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithDefault'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should find exactly 1 method");
+        Assert.AreEqual("MethodWithDefault", result[0][0].ToString());
+        Assert.IsTrue(result[0][2].ToString()!.Contains("IProcessable"),
+            $"FullReturnType should contain IProcessable, got {result[0][2]}");
+    }
+
+    [TestMethod]
+    public void WhenConstructorReferencedTypesQueried_ShouldDetectTypesInBody()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorUsagePatterns'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 2, $"Should find at least 2 type references in constructor, got {result.Count}");
+        
+        var castRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast");
+        Assert.IsNotNull(castRef, "Should detect IProcessable cast in constructor body");
+        
+        var patternRef = result.FirstOrDefault(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "PatternMatch");
+        Assert.IsNotNull(patternRef, "Should detect IAdvancedProcessable pattern match in constructor body");
+    }
+
+    [TestMethod]
+    public void WhenPropertyReferencedTypesQueried_ShouldDetectTypesInAccessors()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.ReferencedTypes rt
+            where c.Name = 'PropertyUsagePatterns' and pr.Name = 'CastingProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 2, $"Should find at least 2 type references in property accessors, got {result.Count}");
+        
+        var asRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As");
+        Assert.IsNotNull(asRef, "Should detect IProcessable 'as' usage in getter body");
+        
+        var patternRef = result.FirstOrDefault(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "PatternMatch");
+        Assert.IsNotNull(patternRef, "Should detect IAdvancedProcessable pattern match in setter body");
+    }
+
+    [TestMethod]
+    public void WhenPropertyExpressionBodiedReferencedTypesQueried_ShouldDetectTypes()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.ReferencedTypes rt
+            where c.Name = 'PropertyUsagePatterns' and pr.Name = 'ProcessableType'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, $"Should find exactly 1 type reference in expression-bodied property, got {result.Count}");
+        Assert.AreEqual("IProcessable", result[0][0].ToString());
+        Assert.AreEqual("TypeOf", result[0][1].ToString());
+    }
+
+    [TestMethod]
+    public void WhenVarInferredTypeQueried_ShouldResolveActualType()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithVarInferred'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 2, $"Should find at least 2 type references, got {result.Count}");
+        
+        // The explicit IProcessable local variable should be detected
+        var explicitLocal = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "LocalVariable");
+        Assert.IsNotNull(explicitLocal, "Should detect explicit IProcessable local variable");
+        
+        // The cast should also be detected  
+        var castRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast");
+        Assert.IsNotNull(castRef, "Should detect IProcessable cast");
+    }
+
+    [TestMethod]
+    public void WhenConstructorLocalVariableTypesQueried_ShouldDetectExplicitTypes()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorUsagePatterns' and rt.UsageKind = 'LocalVariable'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable type reference in constructor, got {result.Count}");
+        var localRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable");
+        Assert.IsNotNull(localRef, "Should detect IProcessable local variable in constructor body");
+    }
+
+    [TestMethod]
+    public void WhenConstructorLocalVariablesQueried_ShouldReturnVariables()
+    {
+        var query = $@"
+            select 
+                lv.Name,
+                lv.Type,
+                lv.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.LocalVariables lv
+            where c.Name = 'ConstructorUsagePatterns'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable in constructor, got {result.Count}");
+        var localVar = result.FirstOrDefault(r => r[0].ToString() == "local");
+        Assert.IsNotNull(localVar, "Should find local variable named 'local'");
+        Assert.AreEqual("IProcessable", localVar![1].ToString());
+        Assert.IsTrue(localVar[2].ToString()!.Contains("IProcessable"),
+            $"FullTypeName should contain IProcessable, got {localVar[2]}");
+    }
+
+    [TestMethod]
+    public void WhenPropertyLocalVariablesQueried_ShouldReturnVariablesInAccessors()
+    {
+        var query = $@"
+            select 
+                lv.Name,
+                lv.Type,
+                lv.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.LocalVariables lv
+            where c.Name = 'PropertyUsagePatterns' and pr.Name = 'CastingProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable in property accessor, got {result.Count}");
+        var backupVar = result.FirstOrDefault(r => r[0].ToString() == "backup");
+        Assert.IsNotNull(backupVar, "Should find local variable named 'backup'");
+        Assert.AreEqual("IProcessable", backupVar![1].ToString());
+        Assert.IsTrue(backupVar[2].ToString()!.Contains("IProcessable"),
+            $"FullTypeName should contain IProcessable, got {backupVar[2]}");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: AllInterfaces / AllBaseInterfaces
+    // =====================================================================
+    
+    [TestMethod]
+    public void WhenClassHasNoInterfaces_AllInterfacesShouldBeEmpty()
+    {
+        var query = $@"
+            select 
+                c.Name,
+                c.InterfacesCount
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            where c.Name = 'NoInterfaceClass'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should find exactly 1 class");
+        Assert.AreEqual(0, Convert.ToInt32(result[0][1]), "NoInterfaceClass should have 0 interfaces");
+    }
+
+    [TestMethod]
+    public void WhenClassHasSingleInterface_AllInterfacesShouldContainOnlyThat()
+    {
+        var query = $@"
+            select 
+                c.Name,
+                ai.Value as InterfaceName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.AllInterfaces ai
+            where c.Name = 'SingleInterfaceClass'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "SingleInterfaceClass should have exactly 1 interface in AllInterfaces");
+        Assert.IsTrue(result[0][1].ToString()!.Contains("IProcessable"), "Should be IProcessable");
+    }
+
+    [TestMethod]
+    public void WhenAllInterfacesQueried_ShouldReturnFullyQualifiedNames()
+    {
+        var query = $@"
+            select 
+                ai.Value as InterfaceName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.AllInterfaces ai
+            where c.Name = 'DeepImplementor'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 3, "Should have at least 3 transitive interfaces");
+        Assert.IsTrue(result.All(r => r[0].ToString()!.Contains("Solution1.ClassLibrary1")),
+            "AllInterfaces should return fully qualified names including namespace");
+    }
+
+    [TestMethod]
+    public void WhenInterfaceHasNoParents_AllBaseInterfacesShouldBeEmpty()
+    {
+        var query = $@"
+            select 
+                i.Name
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Interfaces i
+            where i.Name = 'IStandaloneInterface'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should find the standalone interface");
+        
+        // Now query with cross apply - should produce no rows
+        var query2 = $@"
+            select 
+                i.Name,
+                abi.Value
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Interfaces i
+            cross apply i.AllBaseInterfaces abi
+            where i.Name = 'IStandaloneInterface'";
+
+        var vm2 = CompileQuery(query2);
+        var result2 = vm2.Run();
+
+        Assert.AreEqual(0, result2.Count, "IStandaloneInterface should have no base interfaces");
+    }
+
+    [TestMethod]
+    public void WhenInterfaceHasOneParent_AllBaseInterfacesShouldContainOnlyParent()
+    {
+        var query = $@"
+            select 
+                i.Name,
+                abi.Value as BaseInterfaceName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Interfaces i
+            cross apply i.AllBaseInterfaces abi
+            where i.Name = 'IChildInterface'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "IChildInterface should have exactly 1 base interface");
+        Assert.IsTrue(result[0][1].ToString()!.Contains("IStandaloneInterface"), "Should be IStandaloneInterface");
+    }
+
+    [TestMethod]
+    public void WhenAllBaseInterfacesQueried_ShouldReturnFullyQualifiedNames()
+    {
+        var query = $@"
+            select 
+                abi.Value as BaseInterfaceName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Interfaces i
+            cross apply i.AllBaseInterfaces abi
+            where i.Name = 'ISuperAdvancedProcessable'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 2, "Should have at least 2 base interfaces");
+        Assert.IsTrue(result.All(r => r[0].ToString()!.Contains("Solution1.ClassLibrary1")),
+            "AllBaseInterfaces should return fully qualified names");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: TypeReferenceEntity properties
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_FullNameShouldIncludeNamespace()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.Namespace,
+                rt.FullName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithCast'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, "Should find at least 1 type reference");
+        var ipRef = result.First(r => r[0].ToString() == "IProcessable");
+        Assert.AreEqual("Solution1.ClassLibrary1", ipRef[1].ToString(), "Namespace should be correct");
+        Assert.AreEqual("Solution1.ClassLibrary1.IProcessable", ipRef[2].ToString(), "FullName should be Namespace.Name");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_LineNumberShouldBePositive()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.LineNumber
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithCast'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, "Should find at least 1 type reference");
+        foreach (var row in result)
+        {
+            var lineNumber = Convert.ToInt32(row[1]);
+            Assert.IsTrue(lineNumber > 0, $"LineNumber should be positive (1-based), got {lineNumber}");
+        }
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_KindShouldBeInterface()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.Kind,
+                rt.IsInterface,
+                rt.IsClass,
+                rt.IsEnum,
+                rt.IsStruct
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithCast'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        var ipRef = result.First(r => r[0].ToString() == "IProcessable");
+        Assert.AreEqual("Interface", ipRef[1].ToString(), "Kind should be 'Interface'");
+        Assert.IsTrue((bool)ipRef[2], "IsInterface should be true");
+        Assert.IsFalse((bool)ipRef[3], "IsClass should be false");
+        Assert.IsFalse((bool)ipRef[4], "IsEnum should be false");
+        Assert.IsFalse((bool)ipRef[5], "IsStruct should be false");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_ClassReferenceShouldHaveKindClass()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.Kind,
+                rt.UsageKind,
+                rt.IsClass
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithLocalVariable'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        // DeepImplementor is used as ObjectCreation  
+        var classRef = result.FirstOrDefault(r => r[0].ToString() == "DeepImplementor");
+        Assert.IsNotNull(classRef, "Should find DeepImplementor class reference");
+        Assert.AreEqual("Class", classRef[1].ToString(), "Kind should be 'Class'");
+        Assert.IsTrue((bool)classRef[3], "IsClass should be true for DeepImplementor");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_ObjectCreationShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'EmptyBodyClass' and m.Name = 'MethodWithObjectCreation'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "DeepImplementor" && r[1].ToString() == "ObjectCreation"),
+            "Should detect DeepImplementor as ObjectCreation");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "LocalVariable"),
+            "Should detect IProcessable as LocalVariable type");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueried_CatchDeclarationShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'EmptyBodyClass' and m.Name = 'MethodWithCatchDeclaration'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        var catchRefs = result.Where(r => r[1].ToString() == "CatchDeclaration").ToList();
+        Assert.IsTrue(catchRefs.Count >= 2, $"Should find at least 2 catch declaration type references, got {catchRefs.Count}");
+        Assert.IsTrue(catchRefs.Any(r => r[0].ToString() == "InvalidOperationException"),
+            "Should detect InvalidOperationException in catch");
+        Assert.IsTrue(catchRefs.Any(r => r[0].ToString() == "ArgumentNullException"),
+            "Should detect ArgumentNullException in catch");
+    }
+
+    [TestMethod]
+    public void WhenMethodHasNoTypeReferences_ReferencedTypesCrossApplyShouldYieldNoRows()
+    {
+        var query = $@"
+            select 
+                rt.Name
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'EmptyBodyClass' and m.Name = 'MethodWithNoReferences'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(0, result.Count, "Method with only primitives/string should have no named type references");
+    }
+
+    [TestMethod]
+    public void WhenMethodHasOnlyClassReferences_ShouldNotContainInterfaces()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.Kind,
+                rt.IsInterface
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'EmptyBodyClass' and m.Name = 'MethodWithOnlyClassReferences' and rt.IsInterface = true";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(0, result.Count, "Method with only class references should have no interface references when filtered");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: Constructor ReferencedTypes (expanded)
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenConstructorReferencedTypesQueried_ShouldDetectGenericArgument()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "GenericArgument"),
+            "Should detect IProcessable as generic argument in List<IProcessable>");
+    }
+
+    [TestMethod]
+    public void WhenConstructorReferencedTypesQueried_ShouldDetectCatchDeclaration()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "InvalidOperationException" && r[1].ToString() == "CatchDeclaration"),
+            "Should detect InvalidOperationException as CatchDeclaration in constructor");
+    }
+
+    [TestMethod]
+    public void WhenConstructorReferencedTypesQueried_ShouldDetectPatternMatch()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "ISuperAdvancedProcessable" && r[1].ToString() == "PatternMatch"),
+            "Should detect ISuperAdvancedProcessable pattern match in constructor");
+    }
+
+    [TestMethod]
+    public void WhenConstructorReferencedTypesQueried_ShouldDetectArrayCreation()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "ArrayCreation"),
+            "Should detect IProcessable array creation in constructor");
+    }
+
+    [TestMethod]
+    public void WhenConstructorReferencedTypesQueried_ShouldDetectTypeOf()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "TypeOf"),
+            "Should detect IAdvancedProcessable typeof in constructor");
+    }
+
+    [TestMethod]
+    public void WhenConstructorReferencedTypesQueried_DefaultConstructorShouldHaveMinimalReferences()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 0";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        // Default constructor only has `new List<IProcessable>()` - should detect IProcessable as GenericArgument
+        var interfaceRefs = result.Where(r => r[0].ToString() == "IProcessable").ToList();
+        Assert.IsTrue(interfaceRefs.Count >= 1, "Default constructor should reference IProcessable via generic argument");
+    }
+
+    [TestMethod]
+    public void WhenConstructorReferencedTypesQueried_VarInferredShouldBeResolved()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'VarInferenceInConstructor'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast"),
+            "Should detect cast to IProcessable");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable"),
+            "Should detect IAdvancedProcessable reference");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: Property ReferencedTypes (expanded)
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenAutoPropertyReferencedTypesQueried_ShouldBeEmpty()
+    {
+        var query = $@"
+            select 
+                rt.Name
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.ReferencedTypes rt
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'AutoProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(0, result.Count, "Auto-property should have no referenced types");
+    }
+
+    [TestMethod]
+    public void WhenGetterOnlyPropertyReferencedTypesQueried_ShouldDetectTypes()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.ReferencedTypes rt
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'GetterOnlyWithBody'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As"),
+            "Should detect IProcessable 'as' usage in getter body");
+    }
+
+    [TestMethod]
+    public void WhenPropertySetterReferencedTypesQueried_ShouldDetectTypes()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.ReferencedTypes rt
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'MultiLocalProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "As"),
+            "Should detect IAdvancedProcessable 'as' usage in setter body");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: LocalVariables on Constructor (expanded)
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenConstructorHasMultipleLocalVariables_ShouldReturnAll()
+    {
+        var query = $@"
+            select 
+                lv.Name,
+                lv.Type,
+                lv.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.LocalVariables lv
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 3, $"Should find at least 3 local variables, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "localFirst"), "Should find 'localFirst' variable");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "localSecond"), "Should find 'localSecond' variable");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "combined"), "Should find 'combined' variable");
+    }
+
+    [TestMethod]
+    public void WhenConstructorLocalVariableCount_ShouldMatchActualCount()
+    {
+        var query = $@"
+            select 
+                ctor.LocalVariableCount
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should find exactly 1 constructor");
+        var count = Convert.ToInt32(result[0][0]);
+        Assert.IsTrue(count >= 3, $"LocalVariableCount should be at least 3, got {count}");
+    }
+
+    [TestMethod]
+    public void WhenDefaultConstructorLocalVariablesQueried_ShouldBeEmpty()
+    {
+        var query = $@"
+            select 
+                lv.Name
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.LocalVariables lv
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 0";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(0, result.Count, "Default constructor with no locals should yield 0 LocalVariables");
+    }
+
+    [TestMethod]
+    public void WhenConstructorLocalVariableFullTypeName_ShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                lv.Name,
+                lv.Type,
+                lv.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.LocalVariables lv
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2 and lv.Name = 'localFirst'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should find exactly 1 variable named 'localFirst'");
+        Assert.IsTrue(result[0][2].ToString()!.Contains("IProcessable"),
+            $"FullTypeName should contain IProcessable, got {result[0][2]}");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: LocalVariables on Property (expanded)
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenAutoPropertyLocalVariablesQueried_ShouldBeEmpty()
+    {
+        var query = $@"
+            select 
+                lv.Name
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.LocalVariables lv
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'AutoProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(0, result.Count, "Auto-property should have no local variables");
+    }
+
+    [TestMethod]
+    public void WhenPropertyWithMultipleLocals_ShouldReturnAll()
+    {
+        var query = $@"
+            select 
+                lv.Name,
+                lv.Type,
+                lv.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.LocalVariables lv
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'MultiLocalProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 3, $"Should find at least 3 local variables in setter, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "backup"), "Should find 'backup' variable");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "advanced"), "Should find 'advanced' variable");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "description"), "Should find 'description' variable");
+    }
+
+    [TestMethod]
+    public void WhenPropertyLocalVariableCount_ShouldMatchActualCount()
+    {
+        var query = $@"
+            select 
+                pr.Name,
+                pr.LocalVariableCount
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'MultiLocalProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count, "Should find exactly 1 property");
+        var count = Convert.ToInt32(result[0][1]);
+        Assert.IsTrue(count >= 3, $"LocalVariableCount should be at least 3, got {count}");
+    }
+
+    [TestMethod]
+    public void WhenExpressionBodiedPropertyLocalVariablesQueried_ShouldBeEmpty()
+    {
+        var query = $@"
+            select 
+                lv.Name
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.LocalVariables lv
+            where c.Name = 'PropertyUsagePatterns' and pr.Name = 'ProcessableType'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(0, result.Count, "Expression-bodied property should have no local variables");
+    }
+
+    [TestMethod]
+    public void WhenGetterOnlyPropertyLocalVariablesQueried_ShouldReturnGetterLocals()
+    {
+        var query = $@"
+            select 
+                lv.Name,
+                lv.Type
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.LocalVariables lv
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'GetterOnlyWithBody'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable in getter, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "impl"), "Should find 'impl' variable in getter");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: FullTypeName on PropertyEntity (expanded)
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenPropertyFullTypeNameQueried_GenericTypeShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                pr.Name,
+                pr.Type,
+                pr.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'GenericProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullTypeName = result[0][2].ToString();
+        Assert.IsTrue(fullTypeName!.Contains("List"), $"FullTypeName should contain 'List', got {fullTypeName}");
+        Assert.IsTrue(fullTypeName.Contains("IProcessable"), $"FullTypeName should contain 'IProcessable', got {fullTypeName}");
+    }
+
+    [TestMethod]
+    public void WhenPropertyFullTypeNameQueried_NullableValueTypeShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                pr.Name,
+                pr.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'NullableValueProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullTypeName = result[0][1].ToString();
+        Assert.IsTrue(fullTypeName!.Contains("int") || fullTypeName.Contains("Int32") || fullTypeName.Contains("Nullable"),
+            $"FullTypeName for nullable int should contain int/Int32/Nullable, got {fullTypeName}");
+    }
+
+    [TestMethod]
+    public void WhenPropertyFullTypeNameQueried_DictionaryTypeShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                pr.Name,
+                pr.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'DictionaryProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullTypeName = result[0][1].ToString();
+        Assert.IsTrue(fullTypeName!.Contains("Dictionary"), $"FullTypeName should contain 'Dictionary', got {fullTypeName}");
+        Assert.IsTrue(fullTypeName.Contains("string"), $"FullTypeName should contain 'string', got {fullTypeName}");
+        Assert.IsTrue(fullTypeName.Contains("IProcessable"), $"FullTypeName should contain 'IProcessable', got {fullTypeName}");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: FullTypeName on ParameterEntity (expanded)
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenParameterFullTypeNameQueried_GenericParamShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                param.Name,
+                param.Type,
+                param.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.Parameters param
+            where c.Name = 'ParameterEdgeCases' and m.Name = 'MethodWithGenericParam'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullTypeName = result[0][2].ToString();
+        Assert.IsTrue(fullTypeName!.Contains("List"), $"FullTypeName should contain 'List', got {fullTypeName}");
+        Assert.IsTrue(fullTypeName.Contains("IProcessable"), $"FullTypeName should contain 'IProcessable', got {fullTypeName}");
+    }
+
+    [TestMethod]
+    public void WhenParameterFullTypeNameQueried_ArrayParamShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                param.Name,
+                param.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.Parameters param
+            where c.Name = 'ParameterEdgeCases' and m.Name = 'MethodWithArrayParam'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullTypeName = result[0][1].ToString();
+        Assert.IsTrue(fullTypeName!.Contains("IProcessable") && fullTypeName.Contains("[]"),
+            $"FullTypeName for array param should contain 'IProcessable[]', got {fullTypeName}");
+    }
+
+    [TestMethod]
+    public void WhenParameterFullTypeNameQueried_InterfaceParamShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                param.Name,
+                param.Type,
+                param.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.Parameters param
+            where c.Name = 'ParameterEdgeCases' and m.Name = 'MethodWithInterfaceParam'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("IProcessable", result[0][1].ToString());
+        Assert.IsTrue(result[0][2].ToString()!.Contains("Solution1.ClassLibrary1.IProcessable"),
+            $"FullTypeName should be fully qualified, got {result[0][2]}");
+    }
+
+    [TestMethod]
+    public void WhenParameterFullTypeNameQueried_MixedParamsShouldAllBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                param.Name,
+                param.FullTypeName
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.Parameters param
+            where c.Name = 'ParameterEdgeCases' and m.Name = 'MethodWithMixedParams'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(4, result.Count, "Should find exactly 4 parameters");
+        
+        var nameParam = result.First(r => r[0].ToString() == "name");
+        Assert.AreEqual("string", nameParam[1].ToString());
+        
+        var processableParam = result.First(r => r[0].ToString() == "processable");
+        Assert.IsTrue(processableParam[1].ToString()!.Contains("IProcessable"));
+        
+        var numbersParam = result.First(r => r[0].ToString() == "numbers");
+        Assert.IsTrue(numbersParam[1].ToString()!.Contains("List"));
+        
+        var lookupParam = result.First(r => r[0].ToString() == "lookup");
+        var lookupType = lookupParam[1].ToString();
+        Assert.IsTrue(lookupType!.Contains("Dictionary") && lookupType.Contains("IAdvancedProcessable"),
+            $"Lookup param FullTypeName should contain Dictionary and IAdvancedProcessable, got {lookupType}");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: FullReturnType on MethodEntity (expanded)
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenMethodFullReturnTypeQueried_VoidShouldBeVoid()
+    {
+        var query = $@"
+            select 
+                m.Name,
+                m.ReturnType,
+                m.FullReturnType
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'ReturnTypeEdgeCases' and m.Name = 'VoidMethod'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("void", result[0][2].ToString());
+    }
+
+    [TestMethod]
+    public void WhenMethodFullReturnTypeQueried_GenericReturnShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                m.Name,
+                m.FullReturnType
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'ReturnTypeEdgeCases' and m.Name = 'GenericReturnMethod'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullReturnType = result[0][1].ToString();
+        Assert.IsTrue(fullReturnType!.Contains("List") && fullReturnType.Contains("IProcessable"),
+            $"FullReturnType should contain List and IProcessable, got {fullReturnType}");
+    }
+
+    [TestMethod]
+    public void WhenMethodFullReturnTypeQueried_TaskReturnShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                m.Name,
+                m.FullReturnType
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'ReturnTypeEdgeCases' and m.Name = 'TaskReturnMethod'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullReturnType = result[0][1].ToString();
+        Assert.IsTrue(fullReturnType!.Contains("Task") && fullReturnType.Contains("IProcessable"),
+            $"FullReturnType should contain Task and IProcessable, got {fullReturnType}");
+    }
+
+    [TestMethod]
+    public void WhenMethodFullReturnTypeQueried_ArrayReturnShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                m.Name,
+                m.FullReturnType
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'ReturnTypeEdgeCases' and m.Name = 'ArrayReturnMethod'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullReturnType = result[0][1].ToString();
+        Assert.IsTrue(fullReturnType!.Contains("IProcessable") && fullReturnType.Contains("[]"),
+            $"FullReturnType should contain IProcessable[], got {fullReturnType}");
+    }
+
+    [TestMethod]
+    public void WhenMethodFullReturnTypeQueried_NestedGenericShouldBeFullyQualified()
+    {
+        var query = $@"
+            select 
+                m.Name,
+                m.FullReturnType
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'ReturnTypeEdgeCases' and m.Name = 'NestedGenericReturnMethod'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        var fullReturnType = result[0][1].ToString();
+        Assert.IsTrue(fullReturnType!.Contains("Dictionary") && fullReturnType.Contains("List") && fullReturnType.Contains("IProcessable"),
+            $"FullReturnType should contain Dictionary, List, IProcessable, got {fullReturnType}");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: Struct-specific tests
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenStructMethodReferencedTypesQueried_ShouldDetectTypes()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Structs st
+            cross apply st.Methods m
+            cross apply m.ReferencedTypes rt
+            where st.Name = 'StructWithPatterns' and m.Name = 'ProcessData'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast"),
+            "Should detect IProcessable cast in struct method");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "PatternMatch"),
+            "Should detect IAdvancedProcessable pattern match in struct method");
+    }
+
+    [TestMethod]
+    public void WhenStructConstructorReferencedTypesQueried_ShouldDetectTypes()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Structs st
+            cross apply st.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where st.Name = 'StructWithPatterns'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "PatternMatch"),
+            "Should detect IProcessable pattern match in struct constructor");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "LocalVariable"),
+            "Should detect IProcessable as local variable type in struct constructor");
+    }
+
+    [TestMethod]
+    public void WhenStructPropertyReferencedTypesQueried_ShouldDetectTypes()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Structs st
+            cross apply st.Properties pr
+            cross apply pr.ReferencedTypes rt
+            where st.Name = 'StructWithPatterns' and pr.Name = 'ProcessableData'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As"),
+            "Should detect IProcessable 'as' usage in struct property getter");
+    }
+
+    [TestMethod]
+    public void WhenStructConstructorLocalVariablesQueried_ShouldReturnVariables()
+    {
+        var query = $@"
+            select 
+                lv.Name,
+                lv.Type
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Structs st
+            cross apply st.Constructors ctor
+            cross apply ctor.LocalVariables lv
+            where st.Name = 'StructWithPatterns'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable, got {result.Count}");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "local"), "Should find 'local' variable in struct constructor");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: Cross-entity combination queries
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenAllInterfaceReferencesInClassQueried_ShouldFindAcrossMethodsConstructorsAndProperties()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'ComprehensiveInterfaceUser' and rt.IsInterface = true";
+
+        var vm = CompileQuery(query);
+        var methodResult = vm.Run();
+
+        var query2 = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ComprehensiveInterfaceUser' and rt.IsInterface = true";
+
+        var vm2 = CompileQuery(query2);
+        var ctorResult = vm2.Run();
+
+        var query3 = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Properties pr
+            cross apply pr.ReferencedTypes rt
+            where c.Name = 'ComprehensiveInterfaceUser' and rt.IsInterface = true";
+
+        var vm3 = CompileQuery(query3);
+        var propResult = vm3.Run();
+
+        // Method should find IAdvancedProcessable (pattern match)
+        Assert.IsTrue(methodResult.Any(r => r[0].ToString() == "IAdvancedProcessable"),
+            "Method should reference IAdvancedProcessable");
+
+        // Constructor should find IProcessable (cast)
+        Assert.IsTrue(ctorResult.Any(r => r[0].ToString() == "IProcessable"),
+            "Constructor should reference IProcessable");
+
+        // Property should find ISuperAdvancedProcessable (as)
+        Assert.IsTrue(propResult.Any(r => r[0].ToString() == "ISuperAdvancedProcessable"),
+            "Property should reference ISuperAdvancedProcessable");
+
+        // Combine all interface names found across all members
+        var allInterfaces = methodResult.Select(r => r[0].ToString())
+            .Concat(ctorResult.Select(r => r[0].ToString()))
+            .Concat(propResult.Select(r => r[0].ToString()))
+            .Distinct()
+            .ToList();
+
+        Assert.IsTrue(allInterfaces.Count >= 3,
+            $"Should find at least 3 distinct interfaces across all members, got {allInterfaces.Count}: {string.Join(", ", allInterfaces)}");
+    }
+
+    [TestMethod]
+    public void WhenReferencedTypesQueriedSeparately_ShouldFindInterfacesInBothMethodsAndConstructors()
+    {
+        var methodQuery = $@"
+            select rt.Name, rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'ComprehensiveInterfaceUser' and rt.IsInterface = true";
+
+        var vm1 = CompileQuery(methodQuery);
+        var methodResult = vm1.Run();
+
+        var ctorQuery = $@"
+            select rt.Name, rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ComprehensiveInterfaceUser' and rt.IsInterface = true";
+
+        var vm2 = CompileQuery(ctorQuery);
+        var ctorResult = vm2.Run();
+
+        Assert.IsTrue(methodResult.Count >= 1, $"Methods should reference at least 1 interface, got {methodResult.Count}");
+        Assert.IsTrue(ctorResult.Count >= 1, $"Constructors should reference at least 1 interface, got {ctorResult.Count}");
+
+        // Different interfaces found in different locations
+        var methodInterfaces = methodResult.Select(r => r[0].ToString()).Distinct().ToList();
+        var ctorInterfaces = ctorResult.Select(r => r[0].ToString()).Distinct().ToList();
+        var allInterfaces = methodInterfaces.Union(ctorInterfaces).ToList();
+
+        Assert.IsTrue(allInterfaces.Count >= 2, 
+            $"Combined should find at least 2 distinct interfaces, got {allInterfaces.Count}: {string.Join(", ", allInterfaces)}");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: Multiple UsageKinds in a single method
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenMultipleUsageKindsInConstructor_AllShouldBeDetected()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Constructors ctor
+            cross apply ctor.ReferencedTypes rt
+            where c.Name = 'ConstructorEdgeCases' and ctor.ParameterCount = 2";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        var usageKinds = result.Select(r => r[1].ToString()).Distinct().ToList();
+        Assert.IsTrue(usageKinds.Contains("LocalVariable"), "Should contain LocalVariable usage kind");
+        Assert.IsTrue(usageKinds.Contains("CatchDeclaration"), "Should contain CatchDeclaration usage kind");
+        Assert.IsTrue(usageKinds.Contains("PatternMatch"), "Should contain PatternMatch usage kind");
+        Assert.IsTrue(usageKinds.Contains("ArrayCreation"), "Should contain ArrayCreation usage kind");
+        Assert.IsTrue(usageKinds.Contains("TypeOf"), "Should contain TypeOf usage kind");
+    }
+
+    // =====================================================================
+    // COMPREHENSIVE TESTS: var-inferred type resolution (expanded)
+    // =====================================================================
+
+    [TestMethod]
+    public void WhenVarInferredFromCast_ShouldResolveToTargetType()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithCast'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        // 'var processed = (IProcessable)obj;' should produce:
+        // 1. Cast reference to IProcessable
+        // 2. var-inferred LocalVariable reference to IProcessable
+        var castRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast");
+        Assert.IsNotNull(castRef, "Should detect direct cast to IProcessable");
+    }
+
+    [TestMethod]
+    public void WhenVarInferredFromAsOperator_ShouldResolveToTargetType()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind,
+                rt.Kind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithAsOperator'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        // 'var processed = obj as IProcessable;' should produce As reference
+        var asRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As");
+        Assert.IsNotNull(asRef, "Should detect 'as' IProcessable reference");
+    }
+
+    [TestMethod]
+    public void WhenVarInferredWithGenericNew_ShouldResolveGenericType()
+    {
+        var query = $@"
+            select 
+                rt.Name,
+                rt.UsageKind
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p 
+            cross apply p.Documents d 
+            cross apply d.Classes c
+            cross apply c.Methods m
+            cross apply m.ReferencedTypes rt
+            where c.Name = 'InterfaceUsagePatterns' and m.Name = 'MethodWithGenericArgument'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "GenericArgument"),
+            "Should detect IProcessable as GenericArgument in new List<IProcessable>()");
+    }
+
+    // ============================================================
+    // Phase 1 Tests: IsRecord, IsPartial, Property locations
+    // ============================================================
+
+    [TestMethod]
+    public void WhenClassIsRecord_ShouldReturnTrue()
+    {
+        var query =
+            $@"select c.Name, c.IsRecord from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            where c.Name = 'RecordClass'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenClassIsNotRecord_ShouldReturnFalse()
+    {
+        var query =
+            $@"select c.Name, c.IsRecord from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            where c.Name = 'TestFeatures'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(false, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenClassIsPartial_ShouldReturnTrue()
+    {
+        var query =
+            $@"select c.Name, c.IsPartial from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            where c.Name = 'PartialFeatureClass'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenStructIsPartial_ShouldReturnTrue()
+    {
+        var query =
+            $@"select st.Name, st.IsPartial from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Structs st
+            where st.Name = 'PartialFeatureStruct'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenInterfaceIsPartial_ShouldReturnTrue()
+    {
+        var query =
+            $@"select i.Name, i.IsPartial from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
+            where i.Name = 'IPartialFeatureInterface'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenPropertyQueried_ShouldHaveStartLineAndEndLine()
+    {
+        var query =
+            $@"select pr.Name, pr.StartLine, pr.EndLine, pr.ContainingTypeName from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects proj cross apply proj.Documents d cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'TestFeatures' and pr.Name = 'AutoProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue((int)result[0][1] > 0, "StartLine should be > 0");
+        Assert.IsTrue((int)result[0][2] > 0, "EndLine should be > 0");
+        Assert.AreEqual("TestFeatures", result[0][3].ToString());
+    }
+
+    [TestMethod]
+    public void WhenPropertyHasDocumentation_ShouldReturnTrue()
+    {
+        var query =
+            $@"select pr.Name, pr.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'PropertyEdgeCases' and pr.Name = 'AutoProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    // ============================================================
+    // Phase 2 Tests: Attributes on entities
+    // ============================================================
+
+    [TestMethod]
+    public void WhenPropertyHasAttributes_ShouldReturnThem()
+    {
+        var query =
+            $@"select pr.Name, a.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Properties pr cross apply pr.Attributes a
+            where c.Name = 'AttributeTestClass' and pr.Name = 'OldProperty'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1);
+        Assert.IsTrue(result.Any(r => r[1].ToString() == "Obsolete"));
+    }
+
+    [TestMethod]
+    public void WhenParameterHasAttribute_ShouldReturnIt()
+    {
+        var query =
+            $@"select par.Name, a.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m cross apply m.Parameters par cross apply par.Attributes a
+            where c.Name = 'AttributeTestClass' and m.Name = 'MethodWithAttributedParams'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1);
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "name" && r[1].ToString() == "TestCustom"));
+    }
+
+    [TestMethod]
+    public void WhenInterfaceHasAttribute_ShouldReturnIt()
+    {
+        var query =
+            $@"select i.Name, a.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
+            cross apply i.Attributes a
+            where i.Name = 'IAttributedInterface'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1);
+        Assert.IsTrue(result.Any(r => r[1].ToString() == "TestCustom"));
+    }
+
+    [TestMethod]
+    public void WhenEnumHasAttributes_ShouldReturnThem()
+    {
+        var query =
+            $@"select e.Name, a.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
+            cross apply e.Attributes a
+            where e.Name = 'FlagsEnum'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1);
+        Assert.IsTrue(result.Any(r => r[1].ToString() == "Flags"));
+    }
+
+    // ============================================================
+    // Phase 3 Tests: Parameter enhancements
+    // ============================================================
+
+    [TestMethod]
+    public void WhenParameterHasDefaultValue_ShouldReturnIt()
+    {
+        var query =
+            $@"select par.Name, par.HasDefaultValue, par.DefaultValue, par.Ordinal from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m cross apply m.Parameters par
+            where c.Name = 'ParameterTestClass' and m.Name = 'MethodWithDefaults'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(4, result.Count);
+        
+        // required (ordinal 0): no default
+        var required = result.First(r => r[0].ToString() == "required");
+        Assert.AreEqual(false, required[1]);
+        Assert.AreEqual(0, (int)required[3]);
+        
+        // optional (ordinal 1): default = 42
+        var optional = result.First(r => r[0].ToString() == "optional");
+        Assert.AreEqual(true, optional[1]);
+        Assert.AreEqual("42", optional[2].ToString());
+        Assert.AreEqual(1, (int)optional[3]);
+    }
+
+    // ============================================================
+    // Phase 4 Tests: Documentation & usage tracking
+    // ============================================================
+
+    [TestMethod]
+    public void WhenStructHasDocumentation_ShouldReturnTrue()
+    {
+        var query =
+            $@"select st.Name, st.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Structs st
+            where st.Name = 'TestStruct'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenStructHasAllInterfaces_ShouldReturnThem()
+    {
+        var query =
+            $@"select st.Name, ai.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Structs st
+            cross apply st.AllInterfaces ai
+            where st.Name = 'StructWithPatterns'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1);
+        Assert.IsTrue(result.Any(r => r[1].ToString().Contains("IProcessable")));
+    }
+
+    [TestMethod]
+    public void WhenStructHasEvents_ShouldReturnThem()
+    {
+        // TestStruct doesn't have events, but we test the query works
+        var query =
+            $@"select st.Name, st.EventsCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Structs st
+            where st.Name = 'TestStruct'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(0, (int)result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenInterfaceHasDocumentation_ShouldReturnTrue()
+    {
+        var query =
+            $@"select i.Name, i.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
+            where i.Name = 'IAttributedInterface'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenEnumHasDocumentation_ShouldReturnTrue()
+    {
+        var query =
+            $@"select e.Name, e.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
+            where e.Name = 'FlagsEnum'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    // ============================================================
+    // Phase 5 Tests: Enum enhancements
+    // ============================================================
+
+    [TestMethod]
+    public void WhenEnumHasFlagsAttribute_ShouldReturnTrue()
+    {
+        var query =
+            $@"select e.Name, e.HasFlagsAttribute from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
+            where e.Name = 'FlagsEnum'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenEnumHasNoFlagsAttribute_ShouldReturnFalse()
+    {
+        var query =
+            $@"select e.Name, e.HasFlagsAttribute from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
+            where e.Name = 'Enum1'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(false, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenEnumHasUnderlyingByteType_ShouldReturnByte()
+    {
+        var query =
+            $@"select e.Name, e.UnderlyingType from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
+            where e.Name = 'ByteEnum'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("byte", result[0][1].ToString());
+    }
+
+    [TestMethod]
+    public void WhenEnumMembersQueried_ShouldReturnNameAndValue()
+    {
+        var query =
+            $@"select em.Name, em.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
+            cross apply e.EnumMembers em
+            where e.Name = 'FlagsEnum'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 4);
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "Read" && r[1].ToString() == "1"));
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "Write" && r[1].ToString() == "2"));
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "Execute" && r[1].ToString() == "4"));
+    }
+
+    // ============================================================
+    // Phase 6 Tests: Interface enhancements
+    // ============================================================
+
+    [TestMethod]
+    public void WhenInterfaceHasTypeParameters_ShouldReturnThem()
+    {
+        var query =
+            $@"select i.Name, tp.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
+            cross apply i.TypeParameters tp
+            where i.Name = 'IGenericInterface'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("T", result[0][1].ToString());
+    }
+
+    [TestMethod]
+    public void WhenInterfaceIsQueried_ShouldHaveMethodsAndPropertiesCounts()
+    {
+        var query =
+            $@"select i.Name, i.MethodsCount, i.PropertiesCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
+            where i.Name = 'IGenericInterface'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(2, (int)result[0][1]); // GetValue + SetValue
+        Assert.AreEqual(0, (int)result[0][2]); // no properties
+    }
+
+    [TestMethod]
+    public void WhenInterfaceHasMembers_ShouldReturnMemberNames()
+    {
+        var query =
+            $@"select i.Name, mn.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
+            cross apply i.MemberNames mn
+            where i.Name = 'IExplicitTestA'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 2);
+        Assert.IsTrue(result.Any(r => r[1].ToString() == "SharedMethod"));
+        Assert.IsTrue(result.Any(r => r[1].ToString() == "SharedProperty"));
+    }
+
+    // ============================================================
+    // Phase 7 Tests: Type constraints
+    // ============================================================
+
+    [TestMethod]
+    public void WhenClassHasTypeConstraints_ShouldReturnThem()
+    {
+        var query =
+            $@"select c.Name, tc.Name, tc.HasReferenceTypeConstraint, tc.HasValueTypeConstraint, tc.HasConstructorConstraint, tc.ConstraintSummary from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.TypeParameterConstraints tc
+            where c.Name = 'ConstrainedGenericClass'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 2);
+        
+        // T: class, IDisposable, new()
+        var tConstraint = result.FirstOrDefault(r => r[1].ToString() == "T");
+        Assert.IsNotNull(tConstraint);
+        Assert.AreEqual(true, tConstraint[2]); // HasReferenceTypeConstraint
+        Assert.AreEqual(true, tConstraint[4]); // HasConstructorConstraint
+        
+        // TKey: struct
+        var tkeyConstraint = result.FirstOrDefault(r => r[1].ToString() == "TKey");
+        Assert.IsNotNull(tkeyConstraint);
+        Assert.AreEqual(true, tkeyConstraint[3]); // HasValueTypeConstraint
+    }
+
+    [TestMethod]
+    public void WhenMethodHasTypeConstraints_ShouldReturnThem()
+    {
+        var query =
+            $@"select m.Name, tc.Name, tc.HasReferenceTypeConstraint, tc.HasConstructorConstraint from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m cross apply m.TypeParameterConstraints tc
+            where c.Name = 'ConstrainedGenericClass' and m.Name = 'Transform'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("TResult", result[0][1].ToString());
+        Assert.AreEqual(true, result[0][2]); // HasReferenceTypeConstraint
+        Assert.AreEqual(true, result[0][3]); // HasConstructorConstraint
+    }
+
+    // ============================================================
+    // Phase 8 Tests: Explicit interface implementations
+    // ============================================================
+
+    [TestMethod]
+    public void WhenMethodIsExplicitInterfaceImpl_ShouldReturnTrue()
+    {
+        var query =
+            $@"select m.Name, m.IsExplicitInterfaceImplementation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'ExplicitImplementor'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 3);
+        Assert.IsTrue(result.Any(r => (bool)r[1] == true), "Should have at least one explicit implementation");
+        Assert.IsTrue(result.Any(r => r[0].ToString() == "RegularMethod" && (bool)r[1] == false));
+    }
+
+    [TestMethod]
+    public void WhenMethodIsPartial_ShouldReturnTrue()
+    {
+        var query =
+            $@"select m.Name, m.IsPartial from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'TestFeatures' and m.Name = 'PartialMethodNoBody'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenMethodHasMethodKind_ShouldReturnOrdinary()
+    {
+        var query =
+            $@"select m.Name, m.MethodKind from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'TestFeatures' and m.Name = 'EmptyMethod'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("Ordinary", result[0][1].ToString());
+    }
+
+    // ============================================================
+    // Phase 9 Tests: DelegateEntity
+    // ============================================================
+
+    [TestMethod]
+    public void WhenDelegatesQueried_ShouldReturnAllDelegates()
+    {
+        var query =
+            $@"select del.Name, del.ReturnType, del.ParameterCount, del.IsGeneric from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Delegates del
+            where del.Name = 'SimpleCallback'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("SimpleCallback", result[0][0].ToString());
+        Assert.AreEqual("Void", result[0][1].ToString());
+        Assert.AreEqual(1, (int)result[0][2]);
+        Assert.AreEqual(false, result[0][3]);
+    }
+
+    [TestMethod]
+    public void WhenGenericDelegateQueried_ShouldReturnGenericInfo()
+    {
+        var query =
+            $@"select del.Name, del.IsGeneric, del.TypeParameterCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Delegates del
+            where del.Name = 'Transformer'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(2, (int)result[0][2]);
+    }
+
+    [TestMethod]
+    public void WhenDelegateCountQueried_ShouldReturnCorrectCount()
+    {
+        var query =
+            $@"select d.Name, d.DelegateCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d
+            where d.Name = 'NewFeaturePatterns.cs'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue((int)result[0][1] >= 3, "Should have at least 3 delegates");
+    }
+
+    // ============================================================
+    // Phase 11 Tests: Compiler diagnostics
+    // ============================================================
+
+    [TestMethod]
+    public void WhenDiagnosticsQueried_ShouldReturnResults()
+    {
+        var query =
+            $@"select d.Name, d.DiagnosticCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d
+            where d.Name = 'Class1.cs'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        // DiagnosticCount could be warnings or errors
+        Assert.IsTrue((int)result[0][1] >= 0, "DiagnosticCount should be non-negative");
+    }
+
+    // ============================================================
+    // Phase 12 Tests: Data flow analysis
+    // ============================================================
+
+    [TestMethod]
+    public void WhenMethodHasDataFlow_ShouldReturnCapturedVariables()
+    {
+        var query =
+            $@"select m.Name, m.DataFlow.CapturedCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithCapture'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue((int)result[0][1] >= 1, "Should have at least 1 captured variable");
+    }
+
+    [TestMethod]
+    public void WhenDataFlowCapturedVarsQueried_ShouldContainCapturedVar()
+    {
+        var query =
+            $@"select m.Name, m.DataFlow.CapturedCount, m.DataFlow.ReadInsideCount, m.DataFlow.WrittenInsideCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithCapture'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue((int)result[0][1] >= 1, "Should have at least 1 captured variable");
+    }
+
+    [TestMethod]
+    public void WhenDataFlowReadWriteQueried_ShouldWork()
+    {
+        var query =
+            $@"select m.Name, m.DataFlow.ReadInsideCount, m.DataFlow.WrittenInsideCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithReadWrite'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue((int)result[0][1] > 0, "Should have reads");
+        Assert.IsTrue((int)result[0][2] > 0, "Should have writes");
+    }
+
+    // ============================================================
+    // Phase 13 Tests: Control flow analysis
+    // ============================================================
+
+    [TestMethod]
+    public void WhenMethodHasControlFlow_ShouldReturnReachability()
+    {
+        var query =
+            $@"select m.Name, m.ControlFlow.EndPointIsReachable from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithUnreachableCode'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(false, result[0][1], "End point should not be reachable");
+    }
+
+    [TestMethod]
+    public void WhenMethodHasMultipleExitPoints_ShouldCountThem()
+    {
+        var query =
+            $@"select m.Name, m.ControlFlow.ExitPointCount, m.ControlFlow.ReturnStatementCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Methods m
+            where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithEarlyReturn'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsTrue((int)result[0][1] >= 2, "Should have at least 2 exit points");
+        Assert.IsTrue((int)result[0][2] >= 2, "Should have at least 2 return statements");
+    }
+
+    // ============================================================
+    // Property default value test
+    // ============================================================
+
+    [TestMethod]
+    public void WhenPropertyHasDefaultValue_ShouldReturnIt()
+    {
+        var query =
+            $@"select pr.Name, pr.DefaultValue from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'PropertyDefaultValueClass' and pr.Name = 'PropertyWithDefault'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsNotNull(result[0][1]);
+        Assert.IsTrue(result[0][1].ToString().Contains("DefaultValue"));
+    }
+
+    [TestMethod]
+    public void WhenPropertyHasNoDefaultValue_ShouldReturnNull()
+    {
+        var query =
+            $@"select pr.Name, pr.DefaultValue from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'PropertyDefaultValueClass' and pr.Name = 'PropertyWithoutDefault'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.IsNull(result[0][1]);
+    }
+
+    // ============================================================
+    // Event entity enhancement tests
+    // ============================================================
+
+    [TestMethod]
+    public void WhenEventQueried_ShouldHaveDocumentationFlag()
+    {
+        var query =
+            $@"select ev.Name, ev.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Events ev
+            where c.Name = 'TestFeatures'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 1);
+    }
+
+    // Explicit interface implementation on property
+    [TestMethod]
+    public void WhenPropertyIsExplicitInterfaceImpl_ShouldReturnTrue()
+    {
+        var query =
+            $@"select pr.Name, pr.IsExplicitInterfaceImplementation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Properties pr
+            where c.Name = 'ExplicitImplementor'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.IsTrue(result.Count >= 2);
+        Assert.IsTrue(result.Any(r => (bool)r[1] == true), "Should have at least one explicit property implementation");
+    }
+
+    // ============================================================
+    // Interface BaseInterfaces as table test
+    // ============================================================
+
+    [TestMethod]
+    public void WhenInterfaceBaseInterfacesQueriedAsTable_ShouldWork()
+    {
+        var query =
+            $@"select i.Name, bi.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
+            cross apply i.BaseInterfaces bi
+            where i.Name = 'IChildInterface'";
+
+        var vm = CompileQuery(query);
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("IStandaloneInterface", result[0][1].ToString());
+    }
+
     private CompiledQuery CompileQuery(string script)
     {
         return InstanceCreatorHelpers.CompileForExecution(

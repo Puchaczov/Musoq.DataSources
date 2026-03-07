@@ -92,9 +92,15 @@ public class CSharpSchema : SchemaBase
     ///             <column name="ClassCount" type="int">Class count</column>
     ///             <column name="InterfaceCount" type="int">Interface count</column>
     ///             <column name="EnumCount" type="int">Enum count</column>
-    ///             <column name="Classes" type="ClassEntity[]">Struct count</column>
+    ///             <column name="Classes" type="ClassEntity[]">Classes (includes records)</column>
     ///             <column name="Interfaces" type="InterfaceEntity[]">Interfaces</column>
     ///             <column name="Enums" type="EnumEntity[]">Enums</column>
+    ///             <column name="Delegates" type="DelegateEntity[]">Delegate declarations</column>
+    ///             <column name="DelegateCount" type="int">Number of delegate declarations</column>
+    ///             <column name="Diagnostics" type="DiagnosticEntity[]">Compiler diagnostics (errors, warnings)</column>
+    ///             <column name="DiagnosticCount" type="int">Number of compiler diagnostics</column>
+    ///             <column name="ErrorCount" type="int">Number of error-level diagnostics</column>
+    ///             <column name="WarningCount" type="int">Number of warning-level diagnostics</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -123,7 +129,8 @@ public class CSharpSchema : SchemaBase
     ///             <column name="IsSealed" type="bool">Is sealed</column>
     ///             <column name="IsStatic" type="bool">Is static</column>
     ///             <column name="BaseTypes" type="string[]">Base types</column>
-    ///             <column name="Interfaces" type="string[]">Interfaces</column>
+    ///             <column name="Interfaces" type="string[]">Directly implemented interfaces (short names)</column>
+    ///             <column name="AllInterfaces" type="string[]">All interfaces including transitive (fully qualified)</column>
     ///             <column name="TypeParameters" type="string[]">Type parameters</column>
     ///             <column name="MemberNames" type="string[]">Member names</column>
     ///             <column name="Attributes" type="string[]">Attributes</column>
@@ -143,6 +150,12 @@ public class CSharpSchema : SchemaBase
     ///             <column name="InterfacesCount" type="int">Interfaces count</column>
     ///             <column name="LackOfCohesion" type="int">Lack of cohesion</column>
     ///             <column name="LinesOfCode" type="int">Lines of code</column>
+    ///             <column name="IsRecord" type="bool">Whether the class is a record type</column>
+    ///             <column name="IsPartial" type="bool">Whether the class is partial</column>
+    ///             <column name="HasDocumentation" type="bool">Whether the class has XML documentation</column>
+    ///             <column name="Events" type="EventEntity[]">Events declared in the class</column>
+    ///             <column name="EventsCount" type="int">Number of events</column>
+    ///             <column name="TypeParameterConstraints" type="TypeParameterConstraintEntity[]">Type parameter constraints</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -156,19 +169,34 @@ public class CSharpSchema : SchemaBase
     ///             <column name="Modifiers" type="string[]">Modifiers</column>
     ///             <column name="Methods" type="MethodEntity[]">Methods</column>
     ///             <column name="Properties" type="PropertyEntity[]">Properties</column>
+    ///             <column name="Attributes" type="AttributeEntity[]">Attributes</column>
+    ///             <column name="UnderlyingType" type="string">Underlying type (e.g. int, byte)</column>
+    ///             <column name="HasFlagsAttribute" type="bool">Whether the enum has [Flags] attribute</column>
+    ///             <column name="EnumMembers" type="EnumMemberEntity[]">Enum members with name and value</column>
+    ///             <column name="HasDocumentation" type="bool">Whether the enum has XML documentation</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
     ///         <description>Represent interface of document</description>
     ///         <columns type="InterfaceEntity">
     ///             <column name="Document" type="DocumentEntity">Document</column>
-    ///             <column name="BaseInterfaces" type="string[]">Base interfaces</column>
+    ///             <column name="BaseInterfaces" type="string[]">Directly extended base interfaces (short names)</column>
+    ///             <column name="AllBaseInterfaces" type="string[]">All base interfaces including transitive (fully qualified)</column>
     ///             <column name="Name" type="string">Name</column>
     ///             <column name="FullName" type="string">Full name</column>
     ///             <column name="Namespace" type="string">Namespace</column>
     ///             <column name="Modifiers" type="string[]">Modifiers</column>
     ///             <column name="Methods" type="MethodEntity[]">Methods</column>
     ///             <column name="Properties" type="PropertyEntity[]">Properties</column>
+    ///             <column name="IsPartial" type="bool">Whether the interface is partial</column>
+    ///             <column name="Attributes" type="AttributeEntity[]">Attributes</column>
+    ///             <column name="HasDocumentation" type="bool">Whether the interface has XML documentation</column>
+    ///             <column name="TypeParameters" type="string[]">Type parameters (e.g. T, TKey)</column>
+    ///             <column name="MemberNames" type="string[]">Names of all interface members</column>
+    ///             <column name="MethodsCount" type="int">Number of methods</column>
+    ///             <column name="PropertiesCount" type="int">Number of properties</column>
+    ///             <column name="Events" type="EventEntity[]">Events declared in the interface</column>
+    ///             <column name="EventsCount" type="int">Number of events</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -176,6 +204,7 @@ public class CSharpSchema : SchemaBase
     ///         <columns type="MethodEntity">
     ///             <column name="Name" type="string">Name</column>
     ///             <column name="ReturnType" type="string">Return type</column>
+    ///             <column name="FullReturnType" type="string">Full return type name including namespace</column>
     ///             <column name="Parameters" type="ParameterEntity[]">Parameters</column>
     ///             <column name="Modifiers" type="string[]">Modifiers</column>
     ///             <column name="Text" type="string">Text</column>
@@ -192,6 +221,16 @@ public class CSharpSchema : SchemaBase
     ///             <column name="LocalFunctions" type="LocalFunctionEntity[]">Local functions defined within this method</column>
     ///             <column name="ReferenceCount" type="int?">Number of references to the method (null if unavailable)</column>
     ///             <column name="IsUsed" type="bool?">Whether the method is referenced (null if unavailable)</column>
+    ///             <column name="ReferencedTypes" type="TypeReferenceEntity[]">Types referenced in the method body with usage context</column>
+    ///             <column name="TypeParameterConstraints" type="TypeParameterConstraintEntity[]">Type parameter constraints</column>
+    ///             <column name="ExplicitInterfaceImplementations" type="string[]">Explicit interface implementations</column>
+    ///             <column name="IsExplicitInterfaceImplementation" type="bool">Whether the method is an explicit interface implementation</column>
+    ///             <column name="IsPartial" type="bool">Whether the method is partial</column>
+    ///             <column name="MethodKind" type="string">Kind of method (Ordinary, PropertyGet, etc.)</column>
+    ///             <column name="Callers" type="CalledMethodInfo[]">Methods that call this method</column>
+    ///             <column name="CallerCount" type="int">Number of callers</column>
+    ///             <column name="DataFlow" type="DataFlowInfo">Data flow analysis for the method body</column>
+    ///             <column name="ControlFlow" type="ControlFlowInfo">Control flow analysis for the method body</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -199,6 +238,7 @@ public class CSharpSchema : SchemaBase
     ///         <columns type="PropertyEntity">
     ///             <column name="Name" type="string">Name</column>
     ///             <column name="Type" type="string">Type</column>
+    ///             <column name="FullTypeName" type="string">Full type name including namespace</column>
     ///             <column name="IsIndexer" type="bool">Is indexer</column>
     ///             <column name="IsReadOnly" type="bool">Is read only</column>
     ///             <column name="IsWriteOnly" type="bool">Is write only</column>
@@ -214,6 +254,19 @@ public class CSharpSchema : SchemaBase
     ///             <column name="HasGetter" type="bool">Whether the property has a get accessor</column>
     ///             <column name="HasSetter" type="bool">Whether the property has a set accessor (includes init)</column>
     ///             <column name="HasInitSetter" type="bool">Whether the property has an init accessor specifically</column>
+    ///             <column name="ReferencedTypes" type="TypeReferenceEntity[]">Types referenced in property accessor bodies with usage context</column>
+    ///             <column name="LocalVariables" type="VariableEntity[]">Local variables declared in property accessor bodies</column>
+    ///             <column name="LocalVariableCount" type="int">Number of local variables in property accessor bodies</column>
+    ///             <column name="StartLine" type="int">Start line of the property declaration</column>
+    ///             <column name="EndLine" type="int">End line of the property declaration</column>
+    ///             <column name="SourceFilePath" type="string">Source file path of the property</column>
+    ///             <column name="ContainingTypeName" type="string">Name of the containing type</column>
+    ///             <column name="ContainingNamespace" type="string">Namespace of the containing type</column>
+    ///             <column name="HasDocumentation" type="bool">Whether the property has XML documentation</column>
+    ///             <column name="DefaultValue" type="string">Default value initializer text</column>
+    ///             <column name="Attributes" type="AttributeEntity[]">Attributes</column>
+    ///             <column name="ExplicitInterfaceImplementations" type="string[]">Explicit interface implementations</column>
+    ///             <column name="IsExplicitInterfaceImplementation" type="bool">Whether the property is an explicit interface implementation</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -221,6 +274,7 @@ public class CSharpSchema : SchemaBase
     ///         <columns type="ParameterEntity">
     ///             <column name="Name" type="string">Name</column>
     ///             <column name="Type" type="string">Type</column>
+    ///             <column name="FullTypeName" type="string">Full type name including namespace</column>
     ///             <column name="IsOptional" type="bool">Is optional</column>
     ///             <column name="IsParams" type="bool">Is params</column>
     ///             <column name="IsThis" type="bool">Is this</column>
@@ -231,6 +285,10 @@ public class CSharpSchema : SchemaBase
     ///             <column name="IsByRef" type="bool">Is by ref</column>
     ///             <column name="IsByValue" type="bool">Is by value</column>
     ///             <column name="IsUsed" type="bool?">Whether parameter is used in method body</column>
+    ///             <column name="Ordinal" type="int">Zero-based ordinal position of the parameter</column>
+    ///             <column name="HasDefaultValue" type="bool">Whether the parameter has a default value</column>
+    ///             <column name="DefaultValue" type="string">Default value text</column>
+    ///             <column name="Attributes" type="AttributeEntity[]">Attributes</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -332,6 +390,9 @@ public class CSharpSchema : SchemaBase
     ///             <column name="LinesOfCode" type="int">Lines of code</column>
     ///             <column name="HasInitializer" type="bool">Whether it calls this() or base()</column>
     ///             <column name="InitializerKind" type="string">Type of initializer (this or base)</column>
+    ///             <column name="ReferencedTypes" type="TypeReferenceEntity[]">Types referenced in constructor body with usage context</column>
+    ///             <column name="LocalVariables" type="VariableEntity[]">Local variables declared in constructor body</column>
+    ///             <column name="LocalVariableCount" type="int">Number of local variables in constructor body</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -352,6 +413,11 @@ public class CSharpSchema : SchemaBase
     ///             <column name="Properties" type="PropertyEntity[]">Properties</column>
     ///             <column name="Fields" type="FieldEntity[]">Fields</column>
     ///             <column name="Constructors" type="ConstructorEntity[]">Constructors</column>
+    ///             <column name="IsPartial" type="bool">Whether the struct is partial</column>
+    ///             <column name="AllInterfaces" type="string[]">All interfaces including transitive (fully qualified)</column>
+    ///             <column name="Events" type="EventEntity[]">Events declared in the struct</column>
+    ///             <column name="EventsCount" type="int">Number of events</column>
+    ///             <column name="HasDocumentation" type="bool">Whether the struct has XML documentation</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -366,6 +432,9 @@ public class CSharpSchema : SchemaBase
     ///             <column name="Accessibility" type="string">Accessibility level</column>
     ///             <column name="HasExplicitAccessors" type="bool">Whether it has add/remove accessors</column>
     ///             <column name="IsFieldLike" type="bool">Whether it is field-like event</column>
+    ///             <column name="ReferenceCount" type="int?">Number of references to the event (null if unavailable)</column>
+    ///             <column name="IsUsed" type="bool?">Whether the event is referenced (null if unavailable)</column>
+    ///             <column name="HasDocumentation" type="bool">Whether the event has XML documentation</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -392,6 +461,99 @@ public class CSharpSchema : SchemaBase
     ///             <column name="Alias" type="string">Alias name if present</column>
     ///             <column name="HasAlias" type="bool">Whether it has an alias</column>
     ///             <column name="LineNumber" type="int">Line number</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Represent type reference within a code body (method, constructor, or property accessor)</description>
+    ///         <columns type="TypeReferenceEntity">
+    ///             <column name="Name" type="string">Referenced type name</column>
+    ///             <column name="Namespace" type="string">Referenced type namespace</column>
+    ///             <column name="FullName" type="string">Fully qualified type name</column>
+    ///             <column name="Kind" type="string">Type kind (Class, Interface, Enum, Struct, Delegate)</column>
+    ///             <column name="UsageKind" type="string">How the type is used (Cast, Is, As, PatternMatch, LocalVariable, ObjectCreation, GenericArgument, TypeOf, Default, ArrayCreation, CatchDeclaration, Other)</column>
+    ///             <column name="LineNumber" type="int">Line number where the reference occurs</column>
+    ///             <column name="IsInterface" type="bool">Whether the referenced type is an interface</column>
+    ///             <column name="IsClass" type="bool">Whether the referenced type is a class</column>
+    ///             <column name="IsEnum" type="bool">Whether the referenced type is an enum</column>
+    ///             <column name="IsStruct" type="bool">Whether the referenced type is a struct</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Represent enum member (constant value)</description>
+    ///         <columns type="EnumMemberEntity">
+    ///             <column name="Name" type="string">Enum member name</column>
+    ///             <column name="Value" type="int">Ordinal value of the enum member</column>
+    ///             <column name="ConstantValue" type="string">String representation of the constant value</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Represent delegate declaration</description>
+    ///         <columns type="DelegateEntity">
+    ///             <column name="Name" type="string">Delegate name</column>
+    ///             <column name="FullName" type="string">Fully qualified delegate name</column>
+    ///             <column name="Namespace" type="string">Namespace</column>
+    ///             <column name="ReturnType" type="string">Return type</column>
+    ///             <column name="FullReturnType" type="string">Full return type name</column>
+    ///             <column name="ParameterCount" type="int">Number of parameters</column>
+    ///             <column name="Parameters" type="ParameterEntity[]">Parameters</column>
+    ///             <column name="IsGeneric" type="bool">Whether the delegate is generic</column>
+    ///             <column name="TypeParameters" type="string[]">Type parameters</column>
+    ///             <column name="TypeParameterCount" type="int">Number of type parameters</column>
+    ///             <column name="Accessibility" type="string">Accessibility level</column>
+    ///             <column name="HasDocumentation" type="bool">Whether it has XML documentation</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Represent compiler diagnostic (error, warning, info)</description>
+    ///         <columns type="DiagnosticEntity">
+    ///             <column name="Id" type="string">Diagnostic ID (e.g. CS0168)</column>
+    ///             <column name="Message" type="string">Diagnostic message</column>
+    ///             <column name="Severity" type="string">Severity level (Error, Warning, Info, Hidden)</column>
+    ///             <column name="IsError" type="bool">Whether it is an error</column>
+    ///             <column name="IsWarning" type="bool">Whether it is a warning</column>
+    ///             <column name="Category" type="string">Diagnostic category</column>
+    ///             <column name="StartLine" type="int">Start line number</column>
+    ///             <column name="EndLine" type="int">End line number</column>
+    ///             <column name="FilePath" type="string">File path</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Represent type parameter constraint</description>
+    ///         <columns type="TypeParameterConstraintEntity">
+    ///             <column name="Name" type="string">Type parameter name</column>
+    ///             <column name="Ordinal" type="int">Ordinal position</column>
+    ///             <column name="HasReferenceTypeConstraint" type="bool">Has class constraint</column>
+    ///             <column name="HasValueTypeConstraint" type="bool">Has struct constraint</column>
+    ///             <column name="HasUnmanagedTypeConstraint" type="bool">Has unmanaged constraint</column>
+    ///             <column name="HasNotNullConstraint" type="bool">Has notnull constraint</column>
+    ///             <column name="HasConstructorConstraint" type="bool">Has new() constraint</column>
+    ///             <column name="ConstraintTypes" type="string[]">Type constraints (e.g. IDisposable)</column>
+    ///             <column name="ConstraintSummary" type="string">Human-readable constraint summary</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Data flow analysis information for a method body</description>
+    ///         <columns type="DataFlowInfo">
+    ///             <column name="ReadInside" type="string[]">Variables read inside the body</column>
+    ///             <column name="WrittenInside" type="string[]">Variables written inside the body</column>
+    ///             <column name="ReadOutside" type="string[]">Variables read outside the body</column>
+    ///             <column name="WrittenOutside" type="string[]">Variables written outside the body</column>
+    ///             <column name="VariablesDeclared" type="string[]">Variables declared in the body</column>
+    ///             <column name="Captured" type="string[]">Captured variables (closures)</column>
+    ///             <column name="AlwaysAssigned" type="string[]">Variables always assigned</column>
+    ///             <column name="CapturedCount" type="int">Number of captured variables</column>
+    ///             <column name="ReadInsideCount" type="int">Number of variables read inside</column>
+    ///             <column name="WrittenInsideCount" type="int">Number of variables written inside</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Control flow analysis information for a method body</description>
+    ///         <columns type="ControlFlowInfo">
+    ///             <column name="StartPointIsReachable" type="bool">Whether the start point is reachable</column>
+    ///             <column name="EndPointIsReachable" type="bool">Whether the end point is reachable</column>
+    ///             <column name="ReturnStatementCount" type="int">Number of return statements</column>
+    ///             <column name="ExitPointCount" type="int">Number of exit points</column>
+    ///             <column name="EntryPointCount" type="int">Number of entry points</column>
     ///         </columns>
     ///     </additional-table>
     /// </additional-tables>

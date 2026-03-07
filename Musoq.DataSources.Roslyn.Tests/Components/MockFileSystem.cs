@@ -11,7 +11,7 @@ namespace Musoq.DataSources.Roslyn.Tests.Components;
 public class MockFileSystem : IFileSystem
 {
     // Track directories
-    private readonly HashSet<string> _directories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _directories = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ConcurrentDictionary<string, byte[]> _files = new(StringComparer.OrdinalIgnoreCase);
 
@@ -25,7 +25,7 @@ public class MockFileSystem : IFileSystem
 
     public bool IsDirectoryExists(string path)
     {
-        return _directories.Contains(NormalizePath(path));
+        return _directories.ContainsKey(NormalizePath(path));
     }
 
     public IEnumerable<string> GetFiles(string path, bool recursive, CancellationToken cancellationToken)
@@ -76,7 +76,7 @@ public class MockFileSystem : IFileSystem
 
 
         var directory = Path.GetDirectoryName(normalizedPath);
-        if (directory != null) _directories.Add(directory);
+        AddDirectory(directory);
 
 
         if (_fileWatchers.TryGetValue(normalizedPath, out var subscribers))
@@ -93,7 +93,7 @@ public class MockFileSystem : IFileSystem
         _files[normalizedPath] = bytes;
 
         var directory = Path.GetDirectoryName(normalizedPath);
-        if (directory != null) _directories.Add(directory);
+        AddDirectory(directory);
 
         if (_fileWatchers.TryGetValue(normalizedPath, out var subscribers))
             foreach (var subscriber in subscribers)
@@ -112,7 +112,7 @@ public class MockFileSystem : IFileSystem
 
 
             var directory = Path.GetDirectoryName(normalizedPath);
-            if (directory != null) _directories.Add(directory);
+            AddDirectory(directory);
 
 
             if (_fileWatchers.TryGetValue(normalizedPath, out var subscribers))
@@ -128,14 +128,14 @@ public class MockFileSystem : IFileSystem
         _files[normalizedPath] = Encoding.UTF8.GetBytes("Extracted file content");
 
         var directory = Path.GetDirectoryName(normalizedPath);
-        if (directory != null) _directories.Add(directory);
+        AddDirectory(directory);
 
         return Task.CompletedTask;
     }
 
     public void CreateDirectory(string path)
     {
-        if (!string.IsNullOrEmpty(path)) _directories.Add(NormalizePath(path));
+        AddDirectory(path);
     }
 
     public void DeleteFile(string path)
@@ -171,7 +171,7 @@ public class MockFileSystem : IFileSystem
 
 
         var directory = Path.GetDirectoryName(normalizedPath);
-        if (directory != null) _directories.Add(directory);
+        AddDirectory(directory);
 
 
         if (_fileWatchers.TryGetValue(normalizedPath, out var subscribers))
@@ -190,6 +190,14 @@ public class MockFileSystem : IFileSystem
     private static string NormalizePath(string path)
     {
         return path.Replace('\\', '/');
+    }
+
+    private void AddDirectory(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return;
+
+        _directories.TryAdd(NormalizePath(path), 0);
     }
 
     // Helper stream class to capture data when a stream is closed

@@ -77,10 +77,23 @@ public class StructEntity : TypeEntity
     public bool IsRecordStruct => Symbol.IsRecord;
 
     /// <summary>
+    ///     Gets a value indicating whether this is a partial struct.
+    /// </summary>
+    public bool IsPartial => Syntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
+
+    /// <summary>
     ///     Gets the interfaces implemented by the struct.
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<string> Interfaces => Symbol.Interfaces.Select(i => i.Name);
+
+    /// <summary>
+    ///     Gets all interfaces implemented by the struct, including those inherited
+    ///     transitively through interface inheritance chains.
+    ///     Returns fully qualified names.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<string> AllInterfaces => Symbol.AllInterfaces.Select(i => i.ToDisplayString());
 
     /// <summary>
     ///     Gets the type parameters of the struct.
@@ -131,7 +144,7 @@ public class StructEntity : TypeEntity
     /// </summary>
     public override IEnumerable<PropertyEntity> Properties => Syntax.Members
         .OfType<PropertyDeclarationSyntax>()
-        .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!));
+        .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!, SemanticModel));
 
     /// <summary>
     ///     Gets the fields of the struct.
@@ -151,7 +164,7 @@ public class StructEntity : TypeEntity
     [BindablePropertyAsTable]
     public IEnumerable<ConstructorEntity> Constructors => Syntax.Members
         .OfType<ConstructorDeclarationSyntax>()
-        .Select(c => new ConstructorEntity(SemanticModel.GetDeclaredSymbol(c)!, c));
+        .Select(c => new ConstructorEntity(SemanticModel.GetDeclaredSymbol(c)!, c, SemanticModel));
 
     /// <summary>
     ///     Gets the number of references to this struct in the solution.
@@ -174,6 +187,51 @@ public class StructEntity : TypeEntity
     ///     Gets a value indicating whether the struct is used (referenced) in the solution.
     /// </summary>
     public bool IsUsed => ReferenceCount > 0;
+
+    /// <summary>
+    ///     Gets the events of the struct.
+    /// </summary>
+    [BindablePropertyAsTable]
+    public IEnumerable<EventEntity> Events
+    {
+        get
+        {
+            var events = new List<EventEntity>();
+
+            foreach (var eventDecl in Syntax.Members.OfType<EventDeclarationSyntax>())
+            {
+                var symbol = SemanticModel.GetDeclaredSymbol(eventDecl);
+                if (symbol != null)
+                    events.Add(new EventEntity(symbol, Solution, eventDecl));
+            }
+
+            foreach (var eventField in Syntax.Members.OfType<EventFieldDeclarationSyntax>())
+            foreach (var variable in eventField.Declaration.Variables)
+                if (SemanticModel.GetDeclaredSymbol(variable) is IEventSymbol symbol)
+                    events.Add(new EventEntity(symbol, fieldSyntax: eventField));
+
+            return events;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the count of events in the struct.
+    /// </summary>
+    public int EventsCount => Events.Count();
+
+    /// <summary>
+    ///     Gets a value indicating whether the struct has XML documentation.
+    /// </summary>
+    public bool HasDocumentation
+    {
+        get
+        {
+            var trivia = Syntax.GetLeadingTrivia();
+            return trivia.Any(t =>
+                t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
+        }
+    }
 
     /// <summary>
     ///     Gets the count of unused fields in the struct.
