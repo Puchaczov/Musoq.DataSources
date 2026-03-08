@@ -17,22 +17,7 @@ public class RoslynToSqlTests
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 
-    private static string Solution1SolutionPath =>
-        Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
-
-    private static string StartDirectory
-    {
-        get
-        {
-            var filePath = typeof(RoslynToSqlTests).Assembly.Location;
-            var directory = Path.GetDirectoryName(filePath);
-
-            if (string.IsNullOrEmpty(directory))
-                throw new InvalidOperationException("Directory is empty.");
-
-            return directory;
-        }
-    }
+    private static string Solution1SolutionPath => RoslynTestSolutionLocator.GetSolutionPath<RoslynToSqlTests>("Solution1");
 
     [TestMethod]
     public void WhenSolutionQueried_ShouldPass()
@@ -4523,8 +4508,7 @@ public class RoslynToSqlTests
 
         var vm = CompileQuery(query);
         var result = vm.Run();
-        var formattedResult = string.Join(Environment.NewLine,
-            result.Select((row, index) => $"[{index}] {row[0]} | {row[1]}"));
+
         var expectedMembers = new[]
         {
             (Name: "None", Value: "0"),
@@ -4534,13 +4518,12 @@ public class RoslynToSqlTests
             (Name: "All", Value: "7")
         };
 
-        Assert.AreEqual(expectedMembers.Length, result.Count,
-            $"Expected exactly {expectedMembers.Length} enum members for FlagsEnum.{Environment.NewLine}{formattedResult}");
+        Assert.AreEqual(expectedMembers.Length, result.Count);
 
         foreach (var expectedMember in expectedMembers)
         {
             Assert.IsTrue(result.Any(r => r[0].ToString() == expectedMember.Name && r[1].ToString() == expectedMember.Value),
-                $"Expected enum member {expectedMember.Name}={expectedMember.Value}.{Environment.NewLine}{formattedResult}");
+                $"Expected enum member {expectedMember.Name}={expectedMember.Value}.");
         }
     }
 

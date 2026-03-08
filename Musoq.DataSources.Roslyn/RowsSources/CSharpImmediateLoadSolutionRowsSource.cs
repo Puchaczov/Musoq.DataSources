@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
@@ -33,11 +32,7 @@ internal class CSharpImmediateLoadSolutionRowsSource(
 
         logger.LogTrace("Loading solution file: {solutionFilePath}", solutionFilePath);
 
-        var workspace = MSBuildWorkspace.Create();
-        var solutionLoadLogger = new SolutionLoadLogger(logger);
-        var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
-        var solution = await workspace.OpenSolutionAsync(solutionFilePath, solutionLoadLogger,
-            projectLoadProgressLogger, cancellationToken);
+        var solution = await RoslynSolutionLoader.OpenSolutionAsync(solutionFilePath, logger, cancellationToken);
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
             new NuGetCachePathResolver(
