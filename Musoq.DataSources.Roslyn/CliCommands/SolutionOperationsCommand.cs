@@ -55,10 +55,7 @@ internal class SolutionOperationsCommand(ILogger logger)
             return;
         }
 
-        var workspace = MSBuildWorkspace.Create();
-        var projectLoadProgressLogger = new ProjectLoadProgressLogger(logger);
-        var solution =
-            await workspace.OpenSolutionAsync(solutionFilePath, projectLoadProgressLogger, cancellationToken);
+        var solution = await RoslynSolutionLoader.OpenSolutionAsync(solutionFilePath, logger, cancellationToken);
 
         logger.LogTrace("Initializing solution");
 
