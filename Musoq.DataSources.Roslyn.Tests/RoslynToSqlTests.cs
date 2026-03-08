@@ -4523,11 +4523,25 @@ public class RoslynToSqlTests
 
         var vm = CompileQuery(query);
         var result = vm.Run();
+        var formattedResult = string.Join(Environment.NewLine,
+            result.Select((row, index) => $"[{index}] {row[0]} | {row[1]}"));
+        var expectedMembers = new[]
+        {
+            (Name: "None", Value: "0"),
+            (Name: "Read", Value: "1"),
+            (Name: "Write", Value: "2"),
+            (Name: "Execute", Value: "4"),
+            (Name: "All", Value: "7")
+        };
 
-        Assert.IsTrue(result.Count >= 4);
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "Read" && r[1].ToString() == "1"));
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "Write" && r[1].ToString() == "2"));
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "Execute" && r[1].ToString() == "4"));
+        Assert.AreEqual(expectedMembers.Length, result.Count,
+            $"Expected exactly {expectedMembers.Length} enum members for FlagsEnum.{Environment.NewLine}{formattedResult}");
+
+        foreach (var expectedMember in expectedMembers)
+        {
+            Assert.IsTrue(result.Any(r => r[0].ToString() == expectedMember.Name && r[1].ToString() == expectedMember.Value),
+                $"Expected enum member {expectedMember.Name}={expectedMember.Value}.{Environment.NewLine}{formattedResult}");
+        }
     }
 
     // ============================================================
