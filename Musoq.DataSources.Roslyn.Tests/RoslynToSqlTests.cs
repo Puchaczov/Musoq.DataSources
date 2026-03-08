@@ -4494,42 +4494,11 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenEnumMembersQueried_ShouldReturnNameAndValue()
     {
-        var solutionPath = Solution1SolutionPath;
-        var diagnosticInfo = new System.Text.StringBuilder();
-        diagnosticInfo.AppendLine($"Solution path: {solutionPath}");
-        diagnosticInfo.AppendLine($"Solution path length: {solutionPath.Length}");
-        diagnosticInfo.AppendLine($"Solution file exists: {File.Exists(solutionPath)}");
-
-        // Diagnostic: count projects
-        var projectQuery = $"select p.Name, p.AssemblyName from #csharp.solution('{solutionPath.Escape()}') s cross apply s.Projects p";
-        var projectVm = CompileQuery(projectQuery);
-        var projectResult = projectVm.Run();
-        diagnosticInfo.AppendLine($"Project count: {projectResult.Count}");
-        foreach (var row in projectResult)
-            diagnosticInfo.AppendLine($"  Project: {row[0]} (Assembly: {row[1]})");
-
-        // Diagnostic: count documents per project
-        var docQuery = $"select p.Name, d.Name from #csharp.solution('{solutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d";
-        var docVm = CompileQuery(docQuery);
-        var docResult = docVm.Run();
-        diagnosticInfo.AppendLine($"Total documents: {docResult.Count}");
-        foreach (var row in docResult)
-            diagnosticInfo.AppendLine($"  [{row[0]}] {row[1]}");
-
-        // Diagnostic: list all enums
-        var enumQuery = $"select e.Name, e.FullName from #csharp.solution('{solutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e";
-        var enumVm = CompileQuery(enumQuery);
-        var enumResult = enumVm.Run();
-        diagnosticInfo.AppendLine($"Total enums: {enumResult.Count}");
-        foreach (var row in enumResult)
-            diagnosticInfo.AppendLine($"  Enum: {row[0]} ({row[1]})");
-
-        // Actual test query
         var query =
             $@"select 
                 em.Name, 
                 em.Value 
-            from #csharp.solution('{solutionPath.Escape()}') s 
+            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Enums e
@@ -4539,8 +4508,7 @@ public class RoslynToSqlTests
 
         var vm = CompileQuery(query);
         var result = vm.Run();
-        var formattedResult = string.Join(Environment.NewLine,
-            result.Select((row, index) => $"[{index}] {row[0]} | {row[1]}"));
+
         var expectedMembers = new[]
         {
             (Name: "None", Value: "0"),
@@ -4550,13 +4518,12 @@ public class RoslynToSqlTests
             (Name: "All", Value: "7")
         };
 
-        Assert.AreEqual(expectedMembers.Length, result.Count,
-            $"Expected exactly {expectedMembers.Length} enum members for FlagsEnum.{Environment.NewLine}Diagnostic info:{Environment.NewLine}{diagnosticInfo}{Environment.NewLine}Actual rows:{Environment.NewLine}{formattedResult}");
+        Assert.AreEqual(expectedMembers.Length, result.Count);
 
         foreach (var expectedMember in expectedMembers)
         {
             Assert.IsTrue(result.Any(r => r[0].ToString() == expectedMember.Name && r[1].ToString() == expectedMember.Value),
-                $"Expected enum member {expectedMember.Name}={expectedMember.Value}.{Environment.NewLine}{formattedResult}");
+                $"Expected enum member {expectedMember.Name}={expectedMember.Value}.");
         }
     }
 
