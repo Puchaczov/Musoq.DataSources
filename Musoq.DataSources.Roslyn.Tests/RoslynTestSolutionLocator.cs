@@ -81,7 +81,36 @@ internal static class RoslynTestSolutionLocator
         if (!File.Exists(stagedSolutionPath))
             throw new FileNotFoundException($"Staged solution was not copied correctly: '{stagedSolutionPath}'.");
 
+        RestoreSolution(stagedSolutionPath);
+
         return stagedSolutionPath;
+    }
+
+    private static void RestoreSolution(string solutionPath)
+    {
+        var psi = new ProcessStartInfo("dotnet", $"restore \"{solutionPath}\"")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = Path.GetDirectoryName(solutionPath) ?? string.Empty
+        };
+
+        using var process = Process.Start(psi);
+
+        if (process is null)
+            throw new InvalidOperationException("Failed to start dotnet restore.");
+
+        var stdout = process.StandardOutput.ReadToEnd();
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit(TimeSpan.FromMinutes(2));
+
+        if (process.ExitCode != 0)
+            throw new InvalidOperationException(
+                $"dotnet restore failed (exit code {process.ExitCode}) for '{solutionPath}'.{Environment.NewLine}" +
+                $"stdout: {stdout}{Environment.NewLine}" +
+                $"stderr: {stderr}");
     }
 
     private static void CopyDirectory(string sourceDirectory, string destinationDirectory)
