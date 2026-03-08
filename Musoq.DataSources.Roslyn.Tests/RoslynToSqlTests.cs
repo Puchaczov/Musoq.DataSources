@@ -4518,7 +4518,8 @@ public class RoslynToSqlTests
             cross apply p.Documents d 
             cross apply d.Enums e
             cross apply e.EnumMembers em
-            where e.Name = 'FlagsEnum'";
+            where e.Name = 'FlagsEnum'
+            order by em.Value asc";
 
         var vm = CompileQuery(query);
         var result = vm.Run();
