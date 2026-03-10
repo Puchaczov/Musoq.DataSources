@@ -102,9 +102,15 @@ internal static class RoslynTestSolutionLocator
         if (process is null)
             throw new InvalidOperationException("Failed to start dotnet restore.");
 
-        var stdout = process.StandardOutput.ReadToEnd();
-        var stderr = process.StandardError.ReadToEnd();
-        process.WaitForExit(TimeSpan.FromMinutes(2));
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+
+        if (!process.WaitForExit(TimeSpan.FromMinutes(2)))
+            throw new InvalidOperationException(
+                $"dotnet restore timed out after 2 minutes for '{solutionPath}'.");
+
+        var stdout = stdoutTask.GetAwaiter().GetResult();
+        var stderr = stderrTask.GetAwaiter().GetResult();
 
         if (process.ExitCode != 0)
             throw new InvalidOperationException(
