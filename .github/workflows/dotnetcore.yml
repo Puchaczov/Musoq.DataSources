@@ -12,7 +12,8 @@ jobs:
     timeout-minutes: 30
     name: Running tests on ${{ matrix.runs-on }}. 
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
     - name: Build & Run tests

@@ -31,17 +31,7 @@ public static class LifecycleHooks
     public static void Initialize()
     {
         if (MSBuildLocator.CanRegister)
-        {
-            var msBuild = MSBuildLocator.QueryVisualStudioInstances(new VisualStudioInstanceQueryOptions
-                {
-                    AllowAllRuntimeVersions = true,
-                    AllowAllDotnetLocations = true,
-                    DiscoveryTypes = DiscoveryType.DotNetSdk
-                }).OrderByDescending(instance => instance.Version)
-                .First();
-
-            MSBuildLocator.RegisterInstance(msBuild);
-        }
+            MSBuildLocator.RegisterDefaults();
 
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
