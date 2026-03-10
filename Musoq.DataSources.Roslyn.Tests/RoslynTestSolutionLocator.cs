@@ -9,11 +9,21 @@ internal static class RoslynTestSolutionLocator
 {
     private static readonly ConcurrentDictionary<string, string> CachedSolutionPaths = new();
 
+    /// <summary>
+    ///     Paths shorter than this are safe for MSBuild/Roslyn on Windows.
+    ///     Staging to a temp directory is only needed when the path is long
+    ///     enough to risk hitting the 260-char MAX_PATH limit.
+    /// </summary>
+    private const int SafePathLengthThreshold = 150;
+
     public static string GetSolutionPath<TAnchor>(string solutionName)
     {
         var sourceSolutionPath = ResolveSourceSolutionPath(typeof(TAnchor), solutionName);
 
         if (!OperatingSystem.IsWindows())
+            return sourceSolutionPath;
+
+        if (sourceSolutionPath.Length <= SafePathLengthThreshold)
             return sourceSolutionPath;
 
         return CachedSolutionPaths.GetOrAdd(sourceSolutionPath, StageSolutionToShortPath);
