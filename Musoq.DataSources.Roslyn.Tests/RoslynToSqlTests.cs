@@ -17,7 +17,22 @@ public class RoslynToSqlTests
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
     }
 
-    private static string Solution1SolutionPath => RoslynTestSolutionLocator.GetSolutionPath<RoslynToSqlTests>("Solution1");
+    private static string Solution1SolutionPath =>
+        Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
+
+    private static string StartDirectory
+    {
+        get
+        {
+            var filePath = typeof(RoslynToSqlTests).Assembly.Location;
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Directory is empty.");
+
+            return directory;
+        }
+    }
 
     [TestMethod]
     public void WhenSolutionQueried_ShouldPass()
