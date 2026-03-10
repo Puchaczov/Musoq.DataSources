@@ -52,11 +52,8 @@ public class EnumEntity : TypeEntity
     ///     An enumerable collection of member names.
     /// </value>
     [BindablePropertyAsTable]
-    public IEnumerable<string> Members => Syntax.Members
-        .Select(member => SemanticModel.GetDeclaredSymbol(member))
-        .OfType<IFieldSymbol>()
-        .Where(f => f.HasConstantValue)
-        .Select(f => f.Name);
+    public IEnumerable<string> Members => GetEnumMemberSymbols()
+        .Select(field => field.Name);
 
     /// <summary>
     ///     Gets itself.
@@ -118,11 +115,8 @@ public class EnumEntity : TypeEntity
     ///     Gets the enum members with their names and values.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<EnumMemberEntity> EnumMembers => Syntax.Members
-        .Select(member => SemanticModel.GetDeclaredSymbol(member))
-        .OfType<IFieldSymbol>()
-        .Where(f => f.HasConstantValue)
-        .Select(f => new EnumMemberEntity(f));
+    public IEnumerable<EnumMemberEntity> EnumMembers => GetEnumMemberSymbols()
+        .Select(field => new EnumMemberEntity(field));
 
     /// <summary>
     ///     Gets a value indicating whether the enum has XML documentation.
@@ -136,5 +130,13 @@ public class EnumEntity : TypeEntity
                 t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
                 t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
         }
+    }
+
+    private IEnumerable<IFieldSymbol> GetEnumMemberSymbols()
+    {
+        return Symbol.GetMembers()
+            .OfType<IFieldSymbol>()
+            .Where(field => !field.IsImplicitlyDeclared)
+            .Where(field => field.HasConstantValue);
     }
 }

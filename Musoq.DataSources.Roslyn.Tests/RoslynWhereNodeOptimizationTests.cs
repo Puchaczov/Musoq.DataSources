@@ -17,7 +17,21 @@ public class RoslynWhereNodeOptimizationTests
     }
 
     private static string Solution1SolutionPath =>
-        RoslynTestSolutionLocator.GetSolutionPath<RoslynWhereNodeOptimizationTests>("Solution1");
+        Path.Combine(StartDirectory, "TestsSolutions", "Solution1", "Solution1.sln");
+
+    private static string StartDirectory
+    {
+        get
+        {
+            var filePath = typeof(RoslynWhereNodeOptimizationTests).Assembly.Location;
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Directory is empty.");
+
+            return directory;
+        }
+    }
 
     [TestMethod]
     public void WhenProjectsFilteredByAssemblyName_ShouldReturnMatchingProject()
