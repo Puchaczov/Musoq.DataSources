@@ -791,6 +791,50 @@ public class RawTraverseVisitor<TExpressionVisitor> : IExpressionVisitor
         node.Accept(Visitor);
     }
 
+    public virtual void Visit(WindowFunctionNode node)
+    {
+        node.FunctionCall.Accept(this);
+
+        if (!node.IsNamedWindowReference)
+            node.WindowSpecification?.Accept(this);
+
+        node.Accept(Visitor);
+    }
+
+    public virtual void Visit(WindowSpecificationNode node)
+    {
+        if (node.PartitionFields != null)
+        {
+            foreach (var field in node.PartitionFields)
+                field.Accept(this);
+        }
+
+        if (node.OrderByFields != null)
+        {
+            foreach (var field in node.OrderByFields)
+                field.Accept(this);
+        }
+
+        node.Accept(Visitor);
+    }
+
+    public virtual void Visit(WindowDefinitionNode node)
+    {
+        node.Specification.Accept(this);
+        node.Accept(Visitor);
+    }
+
+    public virtual void Visit(WindowNode node)
+    {
+        if (node.Definitions != null)
+        {
+            foreach (var definition in node.Definitions)
+                definition.Accept(this);
+        }
+
+        node.Accept(Visitor);
+    }
+
     private void TraverseSetOperator(SetOperatorNode node)
     {
         node.Left.Accept(this);

@@ -645,4 +645,24 @@ internal class ToStringWhereQueryPartVisitor : IExpressionVisitor
     {
         throw new NotImplementedException();
     }
+
+    public void Visit(WindowFunctionNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(WindowSpecificationNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(WindowDefinitionNode node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Visit(WindowNode node)
+    {
+        throw new NotImplementedException();
+    }
 }
