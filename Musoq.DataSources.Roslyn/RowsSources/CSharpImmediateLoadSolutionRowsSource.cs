@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.Roslyn;
 using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
@@ -30,6 +31,8 @@ internal class CSharpImmediateLoadSolutionRowsSource(
 
         var solution = await RoslynSolutionLoader.OpenSolutionAsync(solutionFilePath, logger, cancellationToken);
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var filters = RoslynSourcePlanner.GetFilters(ExecutionContext.Plan);
+        var acceptedPredicate = ExecutionContext.Plan.AcceptedPredicate;
         var nuGetPackageMetadataRetriever = new NuGetPackageMetadataRetriever(
             new NuGetCachePathResolver(
                 solutionFilePath,
@@ -45,7 +48,12 @@ internal class CSharpImmediateLoadSolutionRowsSource(
             SolutionOperationsCommand.BannedPropertiesValues,
             SolutionOperationsCommand.ResolveValueStrategy,
             logger);
-        var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, ExecutionContext.EndWorkToken);
+        var solutionEntity = new SolutionEntity(
+            solution,
+            nuGetPackageMetadataRetriever,
+            ExecutionContext.EndWorkToken,
+            project => RoslynSourcePlanner.Matches(filters, project) &&
+                       RoslynSourcePlanner.Matches(acceptedPredicate, project));
 
         logger.LogTrace("Initializing solution");
 

@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.Roslyn;
 using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
@@ -25,6 +26,8 @@ internal sealed class CSharpInMemorySolutionRowsSource(
     protected override Task CollectChunksAsync(IChunkWriter<SolutionEntity> writer, CancellationToken cancellationToken)
     {
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
+        var filters = RoslynSourcePlanner.GetFilters(ExecutionContext.Plan);
+        var acceptedPredicate = ExecutionContext.Plan.AcceptedPredicate;
 
         writer.Write([
             solution.CloneWith(
@@ -43,7 +46,9 @@ internal sealed class CSharpInMemorySolutionRowsSource(
                     SolutionOperationsCommand.BannedPropertiesValues,
                     SolutionOperationsCommand.ResolveValueStrategy,
                     logger),
-                ExecutionContext.EndWorkToken)
+                ExecutionContext.EndWorkToken,
+                project => RoslynSourcePlanner.Matches(filters, project) &&
+                           RoslynSourcePlanner.Matches(acceptedPredicate, project))
         ]);
 
         return Task.CompletedTask;

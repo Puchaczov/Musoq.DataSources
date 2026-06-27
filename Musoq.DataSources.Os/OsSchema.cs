@@ -460,7 +460,7 @@ public class OsSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
-        return SourcePlanResult.RejectAll(request);
+        return OsSourcePlanner.Plan(name, request);
     }
 
     /// <summary>

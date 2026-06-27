@@ -36,6 +36,7 @@ public class SolutionEntity
 
     private readonly CancellationToken _cancellationToken;
     private readonly INuGetPackageMetadataRetriever _nuGetPackageMetadataRetriever;
+    private readonly Func<ProjectEntity, bool>? _projectFilter;
     private readonly Solution _solution;
     private ProjectEntity[] _projects;
     private bool _wasLoaded;
@@ -64,13 +65,16 @@ public class SolutionEntity
     /// <param name="solution">The solution.</param>
     /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="projectFilter">Optional filter applied to projects exposed by the solution.</param>
     public SolutionEntity(Solution solution, INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<ProjectEntity, bool>? projectFilter = null)
     {
         _solution = solution;
         _nuGetPackageMetadataRetriever = nuGetPackageMetadataRetriever;
         _projects = [];
         _cancellationToken = cancellationToken;
+        _projectFilter = projectFilter;
     }
 
     internal string Path => _solution.FilePath!;
@@ -90,8 +94,13 @@ public class SolutionEntity
         {
             if (_wasLoaded) return _projects;
 
-            _projects = _solution.Projects
-                .Select(p => new ProjectEntity(p, _nuGetPackageMetadataRetriever, _cancellationToken)).ToArray();
+            var projects = _solution.Projects
+                .Select(p => new ProjectEntity(p, _nuGetPackageMetadataRetriever, _cancellationToken));
+
+            if (_projectFilter is not null)
+                projects = projects.Where(_projectFilter);
+
+            _projects = projects.ToArray();
             _wasLoaded = true;
 
             return _projects;
@@ -103,10 +112,12 @@ public class SolutionEntity
     /// </summary>
     /// <param name="nuGetPackageMetadataRetriever">The NuGet package metadata retriever.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="projectFilter">Optional filter applied to projects exposed by the cloned solution.</param>
     /// <returns>A new instance of the <see cref="SolutionEntity" /> class.</returns>
     public SolutionEntity CloneWith(INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<ProjectEntity, bool>? projectFilter = null)
     {
-        return new SolutionEntity(_solution, nuGetPackageMetadataRetriever, cancellationToken);
+        return new SolutionEntity(_solution, nuGetPackageMetadataRetriever, cancellationToken, projectFilter);
     }
 }

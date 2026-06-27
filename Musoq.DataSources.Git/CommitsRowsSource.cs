@@ -6,17 +6,32 @@ using LibGit2Sharp;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git;
 
-internal sealed class CommitsRowsSource(
-    string repositoryPath,
-    Func<string, Repository> createRepository,
-    CancellationToken cancellationToken) : AsyncRowsSourceBase<CommitEntity>(cancellationToken)
+internal sealed class CommitsRowsSource : AsyncRowsSourceBase<CommitEntity>
 {
+    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly Func<string, Repository> _createRepository;
+    private readonly GitFilterParameters _filters;
+    private readonly string _repositoryPath;
+
+    public CommitsRowsSource(
+        string repositoryPath,
+        Func<string, Repository> createRepository,
+        SourceExecutionContext executionContext)
+        : base(executionContext.EndWorkToken)
+    {
+        _repositoryPath = repositoryPath;
+        _createRepository = createRepository;
+        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
+    }
+
     protected override Task CollectChunksAsync(IChunkWriter<CommitEntity> writer, CancellationToken cancellationToken)
     {
-        var repository = createRepository(repositoryPath);
+        var repository = _createRepository(_repositoryPath);
         var chunk = new List<CommitEntity>(100);
         var commitFilter = new CommitFilter
         {
@@ -27,7 +42,15 @@ internal sealed class CommitsRowsSource(
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            chunk.Add(new CommitEntity(commit, repository));
+            if (!GitSourcePlanner.Matches(_filters, commit))
+                continue;
+
+            var entity = new CommitEntity(commit, repository);
+
+            if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
+                continue;
+
+            chunk.Add(entity);
 
             if (chunk.Count < 100)
                 continue;

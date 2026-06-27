@@ -867,7 +867,9 @@ public class CSharpSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
-        return SourcePlanResult.RejectAll(request);
+        return name.Equals("solution", StringComparison.OrdinalIgnoreCase)
+            ? RoslynSourcePlanner.Plan(request)
+            : SourcePlanResult.RejectAll(request);
     }
 
     public override SchemaMethodInfo[] GetConstructors()

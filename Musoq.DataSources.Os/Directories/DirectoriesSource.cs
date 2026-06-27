@@ -14,6 +14,8 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 {
     private const string DirectoriesSourceName = "directories";
     private const int ChunkSize = 2000;
+    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly OsDirectoryFilterParameters _directoryFilters;
     private readonly SourceExecutionContext _executionContext;
     private readonly string _path;
     private readonly bool _recursive;
@@ -27,6 +29,8 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         _path = new DirectoryInfo(path).FullName;
         _recursive = recursive;
         _executionContext = executionContext;
+        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _directoryFilters = OsSourcePlanner.GetDirectoryFilters(executionContext.Plan);
     }
 
     protected override async Task CollectChunksAsync(
@@ -48,7 +52,16 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 
             await foreach (var dir in EnumerateDirectoriesAsync(_path, _recursive, cancellationToken))
             {
-                chunk.Add(new DirectoryInfo(dir));
+                if (_directoryFilters.Name is not null &&
+                    !Path.GetFileName(dir).Equals(_directoryFilters.Name, StringComparison.Ordinal))
+                    continue;
+
+                var directoryInfo = new DirectoryInfo(dir);
+
+                if (!OsSourcePlanner.Matches(_acceptedPredicate, directoryInfo))
+                    continue;
+
+                chunk.Add(directoryInfo);
 
                 if (chunk.Count < ChunkSize)
                     continue;

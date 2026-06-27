@@ -701,15 +701,15 @@ public class GitSchema : SchemaBase
             case TagsTable:
                 return EnsureSourceType<T, TagEntity>(
                     name,
-                    new TagsRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
+                    new TagsRowsSource((string)parameters[0], _createRepository, executionContext));
             case CommitsTable:
                 return EnsureSourceType<T, CommitEntity>(
                     name,
-                    new CommitsRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
+                    new CommitsRowsSource((string)parameters[0], _createRepository, executionContext));
             case BranchesTable:
                 return EnsureSourceType<T, BranchEntity>(
                     name,
-                    new BranchesRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
+                    new BranchesRowsSource((string)parameters[0], _createRepository, executionContext));
             case FileHistoryTable:
                 var skip = parameters.Length > 3 ? (int)parameters[2] : 0;
                 var take = parameters.Length > 3 ? (int)parameters[3] :
@@ -721,11 +721,11 @@ public class GitSchema : SchemaBase
             case StatusTable:
                 return EnsureSourceType<T, StatusEntity>(
                     name,
-                    new StatusRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
+                    new StatusRowsSource((string)parameters[0], _createRepository, executionContext));
             case RemotesTable:
                 return EnsureSourceType<T, RemoteEntity>(
                     name,
-                    new RemotesRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
+                    new RemotesRowsSource((string)parameters[0], _createRepository, executionContext));
             case BlameTable:
                 var repositoryPath = (string)parameters[0];
                 var filePath = (string)parameters[1];
@@ -766,7 +766,7 @@ public class GitSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
-        return SourcePlanResult.RejectAll(request);
+        return GitSourcePlanner.Plan(name, request);
     }
 
     public override SchemaMethodInfo[] GetConstructors()

@@ -16,6 +16,8 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
     : AsyncRowsSourceBase<TEntity>(executionContext.EndWorkToken)
 {
     private const int ChunkSize = 100;
+    private readonly SourcePredicateExpression? _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+    private readonly OsFileFilterParameters _fileFilters = OsSourcePlanner.GetFileFilters(executionContext.Plan);
 
     private readonly DirectorySourceSearchOptions[] _source =
     [
@@ -122,6 +124,10 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
 
     protected virtual FileInfo[] GetFiles(DirectoryInfo directoryInfo)
     {
+        var searchPattern = _fileFilters.GetSearchPattern();
+        if (searchPattern is not null)
+            return directoryInfo.GetFiles(searchPattern);
+
         return directoryInfo.GetFiles();
     }
 
@@ -129,7 +135,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
     {
         var entity = CreateBasedOnFile(file, source.Path);
 
-        if (entity != null)
+        if (entity != null && OsSourcePlanner.Matches(_acceptedPredicate, entity))
             dirFiles.Add(entity);
     }
 
