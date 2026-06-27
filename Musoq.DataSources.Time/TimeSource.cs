@@ -10,7 +10,7 @@ internal class TimeSource(
     DateTimeOffset stopAt,
     string resolution,
     SourceExecutionContext executionContext)
-    : RowSourceBase<DateTimeOffset>
+    : RowSourceBase<TimeEntity>
 {
     private const string TimeSourceName = "time";
     private readonly string _resolution = resolution.ToLowerInvariant();
@@ -25,13 +25,16 @@ internal class TimeSource(
         _ => throw new NotSupportedException($"Chosen resolution '{resolution.ToLowerInvariant()}' is not supported.")
     };
 
-    protected override void CollectChunks(IChunkWriter<DateTimeOffset> writer)
+    protected override void CollectChunks(IChunkWriter<TimeEntity> writer)
     {
         executionContext.ReportDataSourceBegin(TimeSourceName);
         long totalRowsProcessed = 0;
 
         try
         {
+            if (executionContext.EndWorkToken.IsCancellationRequested)
+                return;
+
             var modify = _resolution switch
             {
                 "seconds" => (Func<DateTimeOffset, DateTimeOffset>)(offset => offset.AddSeconds(1)),
@@ -43,13 +46,13 @@ internal class TimeSource(
                 _ => throw new NotSupportedException($"Chosen resolution '{_resolution}' is not supported.")
             };
 
-            var chunk = new List<DateTimeOffset>();
+            var chunk = new List<TimeEntity>();
             var currentTime = startAt;
 
             while (currentTime <= _stopAt)
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
-                chunk.Add(currentTime);
+                chunk.Add(new TimeEntity(currentTime));
                 currentTime = modify(currentTime);
                 totalRowsProcessed++;
 

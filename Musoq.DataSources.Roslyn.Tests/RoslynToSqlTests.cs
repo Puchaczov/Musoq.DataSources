@@ -12,6 +12,8 @@ namespace Musoq.DataSources.Roslyn.Tests;
 [TestClass]
 public class RoslynToSqlTests
 {
+    private static readonly Lazy<SolutionEntity> Solution1 = new(LoadSolution1Core);
+
     static RoslynToSqlTests()
     {
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
@@ -786,103 +788,75 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenLookingForReferenceToClass_ShouldFind()
     {
-        var query = """
-                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
-                    cross apply s.GetClassesByNames('Class1') c
-                    cross apply s.FindReferences(c.Self) rd
-                    cross apply rd.ReferencedClasses r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CompileQuery(query);
-
-        var result = vm.Run();
+        var result = FindReferenceRows(
+            library => library.GetClassesByNames(LoadSolution1(), "Class1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedClasses.Select(entity => entity.Name));
 
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Class1" &&
-                (int)r[1] == 16 &&
-                (int)r[2] == 11 &&
-                (int)r[3] == 16 &&
-                (int)r[4] == 17),
+                r.Name == "Class1" &&
+                r.StartLine == 16 &&
+                r.StartColumn == 11 &&
+                r.EndLine == 16 &&
+                r.EndColumn == 17),
             "Missing first Class1 location record");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Class1" &&
-                (int)r[1] == 21 &&
-                (int)r[2] == 11 &&
-                (int)r[3] == 21 &&
-                (int)r[4] == 17),
+                r.Name == "Class1" &&
+                r.StartLine == 21 &&
+                r.StartColumn == 11 &&
+                r.EndLine == 21 &&
+                r.EndColumn == 17),
             "Missing second Class1 location record");
     }
 
     [TestMethod]
     public void WhenLookingForReferenceToInterface_ShouldFind()
     {
-        var query = """
-                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
-                    cross apply s.GetInterfacesByNames('Interface1') c
-                    cross apply s.FindReferences(c.Self) rd
-                    cross apply rd.ReferencedInterfaces r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CompileQuery(query);
-
-        var result = vm.Run();
+        var result = FindReferenceRows(
+            library => library.GetInterfacesByNames(LoadSolution1(), "Interface1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedInterfaces.Select(entity => entity.Name));
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Interface2", result[0][0].ToString());
-        Assert.AreEqual(70, result[0][1]);
-        Assert.AreEqual(30, result[0][2]);
-        Assert.AreEqual(70, result[0][3]);
-        Assert.AreEqual(40, result[0][4]);
+        Assert.AreEqual("Interface2", result[0].Name);
+        Assert.AreEqual(70, result[0].StartLine);
+        Assert.AreEqual(30, result[0].StartColumn);
+        Assert.AreEqual(70, result[0].EndLine);
+        Assert.AreEqual(40, result[0].EndColumn);
     }
 
     [TestMethod]
     public void WhenLookingForReferenceToEnum_WithinClass_ShouldFind()
     {
-        var query = """
-                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
-                    cross apply s.GetEnumsByNames('Enum1') c
-                    cross apply s.FindReferences(c.Self) rd
-                    cross apply rd.ReferencedClasses r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CompileQuery(query);
-
-        var result = vm.Run();
+        var result = FindReferenceRows(
+            library => library.GetEnumsByNames(LoadSolution1(), "Enum1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedClasses.Select(entity => entity.Name));
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Class1", result[0][0].ToString());
-        Assert.AreEqual(26, result[0][1]);
-        Assert.AreEqual(11, result[0][2]);
-        Assert.AreEqual(26, result[0][3]);
-        Assert.AreEqual(16, result[0][4]);
+        Assert.AreEqual("Class1", result[0].Name);
+        Assert.AreEqual(26, result[0].StartLine);
+        Assert.AreEqual(11, result[0].StartColumn);
+        Assert.AreEqual(26, result[0].EndLine);
+        Assert.AreEqual(16, result[0].EndColumn);
     }
 
     [TestMethod]
     public void WhenLookingForReferenceToEnum_WithinInterface_ShouldFind()
     {
-        var query = """
-                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
-                    cross apply s.GetEnumsByNames('Enum1') c
-                    cross apply s.FindReferences(c.Self) rd
-                    cross apply rd.ReferencedInterfaces r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CompileQuery(query);
-
-        var result = vm.Run();
+        var result = FindReferenceRows(
+            library => library.GetEnumsByNames(LoadSolution1(), "Enum1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedInterfaces.Select(entity => entity.Name));
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Interface1", result[0][0].ToString());
-        Assert.AreEqual(67, result[0][1]);
-        Assert.AreEqual(11, result[0][2]);
-        Assert.AreEqual(67, result[0][3]);
-        Assert.AreEqual(16, result[0][4]);
+        Assert.AreEqual("Interface1", result[0].Name);
+        Assert.AreEqual(67, result[0].StartLine);
+        Assert.AreEqual(11, result[0].StartColumn);
+        Assert.AreEqual(67, result[0].EndLine);
+        Assert.AreEqual(16, result[0].EndColumn);
     }
 
     [TestMethod]
@@ -4965,6 +4939,50 @@ public class RoslynToSqlTests
                     { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
                 }));
     }
+
+    private static SolutionEntity LoadSolution1()
+    {
+        return Solution1.Value;
+    }
+
+    private static SolutionEntity LoadSolution1Core()
+    {
+        var schema = new CSharpSchema((_, _) => new Mock<INuGetPropertiesResolver>().Object);
+        var context = RuntimeV2TestContexts.CreateExecutionContext(
+            sourceRuntimeSettings: new Dictionary<string, string>
+            {
+                { "MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists" },
+                { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
+            });
+
+        return schema.GetRowSource<SolutionEntity>("solution", context, Solution1SolutionPath)
+            .Chunks
+            .SelectMany(chunk => chunk)
+            .Single();
+    }
+
+    private static List<ReferenceRow> FindReferenceRows(
+        Func<CSharpLibrary, IEnumerable<ReferencedDocumentEntity>> getReferences,
+        Func<ReferencedDocumentEntity, IEnumerable<string>> getNames)
+    {
+        var library = new CSharpLibrary();
+
+        return getReferences(library)
+            .SelectMany(reference => getNames(reference).Select(name => new ReferenceRow(
+                name,
+                reference.StartLine,
+                reference.StartColumn,
+                reference.EndLine,
+                reference.EndColumn)))
+            .ToList();
+    }
+
+    private sealed record ReferenceRow(
+        string Name,
+        int StartLine,
+        int StartColumn,
+        int EndLine,
+        int EndColumn);
 
     private static bool ValidateIsValidPathFor(string? toString, string extension, bool checkFileExists = true)
     {

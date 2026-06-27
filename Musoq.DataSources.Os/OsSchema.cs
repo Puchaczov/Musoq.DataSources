@@ -319,7 +319,7 @@ public class OsSchema : SchemaBase
                     name,
                     new DirectoriesSource((string)parameters[0], (bool)parameters[1], executionContext));
             case ZipTable:
-                return EnsureSourceType<T, ZipArchiveEntry>(
+                return EnsureSourceType<T, ZipEntryEntity>(
                     name,
                     new ZipSource((string)parameters[0], executionContext));
             case ProcessesName:

@@ -1,15 +1,14 @@
-using Docker.DotNet.Models;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Docker.Volumes;
 
 internal class VolumesSource(IDockerApi api, SourceExecutionContext executionContext)
-    : RowSourceBase<VolumeResponse>
+    : RowSourceBase<VolumeEntity>
 {
     private const string VolumesSourceName = "docker_volumes";
 
-    protected override void CollectChunks(IChunkWriter<VolumeResponse> writer)
+    protected override void CollectChunks(IChunkWriter<VolumeEntity> writer)
     {
         executionContext.ReportDataSourceBegin(VolumesSourceName);
 
@@ -18,7 +17,7 @@ internal class VolumesSource(IDockerApi api, SourceExecutionContext executionCon
             var volumes = api.ListVolumesAsync().Result;
             executionContext.ReportDataSourceRowsKnown(VolumesSourceName, volumes.Count);
 
-            writer.Write(volumes.ToList());
+            writer.Write(volumes.Select(volume => new VolumeEntity(volume)).ToList());
 
             executionContext.ReportDataSourceEnd(VolumesSourceName, volumes.Count);
         }

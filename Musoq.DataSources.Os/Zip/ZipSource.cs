@@ -6,21 +6,24 @@ using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Zip;
 
-internal class ZipSource(string zipPath, SourceExecutionContext executionContext) : RowSourceBase<ZipArchiveEntry>
+internal class ZipSource(string zipPath, SourceExecutionContext executionContext) : RowSourceBase<ZipEntryEntity>
 {
     private const string ZipSourceName = "zip";
     private const int ChunkSize = 100;
 
-    protected override void CollectChunks(IChunkWriter<ZipArchiveEntry> writer)
+    protected override void CollectChunks(IChunkWriter<ZipEntryEntity> writer)
     {
         executionContext.ReportDataSourceBegin(ZipSourceName);
         long totalRowsProcessed = 0;
 
         try
         {
+            if (executionContext.EndWorkToken.IsCancellationRequested)
+                return;
+
             using var file = File.OpenRead(zipPath);
             using var zip = new ZipArchive(file);
-            var chunk = new List<ZipArchiveEntry>(ChunkSize);
+            var chunk = new List<ZipEntryEntity>(ChunkSize);
 
             executionContext.ReportDataSourceRowsKnown(ZipSourceName, zip.Entries.Count);
 
@@ -31,7 +34,7 @@ internal class ZipSource(string zipPath, SourceExecutionContext executionContext
                 if (entry.Name == string.Empty)
                     continue;
 
-                chunk.Add(entry);
+                chunk.Add(new ZipEntryEntity(entry));
                 totalRowsProcessed++;
 
                 if (chunk.Count < ChunkSize)

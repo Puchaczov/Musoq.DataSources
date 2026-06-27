@@ -1,4 +1,4 @@
-﻿using Musoq.Schema;
+using Musoq.Schema;
 
 namespace Musoq.DataSources.SeparatedValues.Tests;
 

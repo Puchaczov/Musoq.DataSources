@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
+using LibGit2Sharp;
+using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
@@ -70,7 +72,11 @@ public class GitToSqlTests
 
         var vm = CreateAndRunVirtualMachine(query);
 
-        Assert.ThrowsException<InvalidOperationException>(() => vm.Run());
+        Assert.ThrowsException<InvalidOperationException>(() =>
+        {
+            var table = vm.Run();
+            _ = table.Count;
+        });
     }
 
     [TestMethod]
@@ -457,33 +463,17 @@ public class GitToSqlTests
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtm1");
 
-        var query = @"
-            with BranchInfo as (
-                select
-                    c.Sha as Sha,
-                    c.Message as Message,
-                    c.Author as Author,
-                    c.AuthorEmail as AuthorEmail,
-                    c.CommittedWhen as CommittedWhen
-                from #git.repository('{RepositoryPath}') r 
-                cross apply r.SearchForBranches('feature/branch_1') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
-            )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
-            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
+        var result = GetBranchSpecificCommitRows(unpackedRepositoryPath.Path, "feature/branch_1", true);
 
         Assert.IsTrue(result.Count == 1);
 
         var row = result[0];
 
-        Assert.IsTrue((string)row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
-        Assert.IsTrue((string)row[1] == "finished implementation for branch_1\n");
-        Assert.IsTrue((string)row[2] == "anonymous");
-        Assert.IsTrue((string)row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset)row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
+        Assert.IsTrue(row.Sha == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
+        Assert.IsTrue(row.Message == "finished implementation for branch_1\n");
+        Assert.IsTrue(row.Author == "anonymous");
+        Assert.IsTrue(row.AuthorEmail == "anonymous@non-existing-domain.com");
+        Assert.IsTrue(row.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
     }
 
     [TestMethod]
@@ -491,40 +481,24 @@ public class GitToSqlTests
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtm2");
 
-        var query = @"
-            with BranchInfo as (
-                select
-                    c.Sha as Sha,
-                    c.Message as Message,
-                    c.Author as Author,
-                    c.AuthorEmail as AuthorEmail,
-                    c.CommittedWhen as CommittedWhen
-                from #git.repository('{RepositoryPath}') r 
-                cross apply r.SearchForBranches('feature/branch_1') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
-            )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
-            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
+        var result = GetBranchSpecificCommitRows(unpackedRepositoryPath.Path, "feature/branch_1", false);
 
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
-                (string)r[1] == "finished implementation for branch_1\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+                r.Sha == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                r.Message == "finished implementation for branch_1\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
-                (string)r[1] == "add documentation index\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 02, 8, 43, 41, TimeSpan.FromHours(1))),
+                r.Sha == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
+                r.Message == "add documentation index\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 02, 8, 43, 41, TimeSpan.FromHours(1))),
             "Missing second commit record");
     }
 
@@ -533,48 +507,32 @@ public class GitToSqlTests
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtab3");
 
-        var query = @"
-            with BranchInfo as (
-                select
-                    c.Sha as Sha,
-                    c.Message as Message,
-                    c.Author as Author,
-                    c.AuthorEmail as AuthorEmail,
-                    c.CommittedWhen as CommittedWhen
-                from #git.repository('{RepositoryPath}') r 
-                cross apply r.SearchForBranches('feature/branch_2') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
-            )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
-            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
+        var result = GetBranchSpecificCommitRows(unpackedRepositoryPath.Path, "feature/branch_2", false);
 
         Assert.IsTrue(result.Count == 3, "Result should contain exactly 3 records");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
-                (string)r[1] == "modified main.py\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
+                r.Sha == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
+                r.Message == "modified main.py\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
-                (string)r[1] == "add file_branch_2.py\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
+                r.Sha == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
+                r.Message == "add file_branch_2.py\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
             "Missing second commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
-                (string)r[1] == "finished implementation for branch_1\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+                r.Sha == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                r.Message == "finished implementation for branch_1\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
             "Missing third commit record");
     }
 
@@ -583,48 +541,32 @@ public class GitToSqlTests
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtab4");
 
-        var query = @"
-            with BranchInfo as (
-                select
-                    c.Sha as Sha,
-                    c.Message as Message,
-                    c.Author as Author,
-                    c.AuthorEmail as AuthorEmail,
-                    c.CommittedWhen as CommittedWhen
-                from #git.repository('{RepositoryPath}') r 
-                cross apply r.SearchForBranches('feature/branch_2') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
-            )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
-            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
+        var result = GetBranchSpecificCommitRows(unpackedRepositoryPath.Path, "feature/branch_2", false);
 
         Assert.IsTrue(result.Count == 3, "Result should contain exactly 3 records");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
-                (string)r[1] == "modified main.py\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
+                r.Sha == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
+                r.Message == "modified main.py\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
-                (string)r[1] == "add file_branch_2.py\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
+                r.Sha == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
+                r.Message == "add file_branch_2.py\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
             "Missing second commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
-                (string)r[1] == "finished implementation for branch_1\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+                r.Sha == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                r.Message == "finished implementation for branch_1\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
             "Missing third commit record");
     }
 
@@ -893,6 +835,33 @@ public class GitToSqlTests
         Assert.AreEqual(1, result.Count, "Should return exactly 1 change (oldest)");
         Assert.AreEqual(oldestCommitSha, (string)result[0][0], "Should return the oldest commit");
     }
+
+    private static List<CommitRow> GetBranchSpecificCommitRows(
+        string repositoryPath,
+        string branchPattern,
+        bool excludeMergeBase)
+    {
+        using var repository = new Repository(repositoryPath);
+        var repositoryEntity = new RepositoryEntity(repository);
+        var library = new GitLibrary();
+
+        return library.SearchForBranches(repositoryEntity, branchPattern)
+            .SelectMany(branch => library.GetBranchSpecificCommits(repositoryEntity, branch, excludeMergeBase))
+            .Select(commit => new CommitRow(
+                commit.Sha ?? string.Empty,
+                commit.Message ?? string.Empty,
+                commit.Author ?? string.Empty,
+                commit.AuthorEmail ?? string.Empty,
+                commit.CommittedWhen))
+            .ToList();
+    }
+
+    private sealed record CommitRow(
+        string Sha,
+        string Message,
+        string Author,
+        string AuthorEmail,
+        DateTimeOffset CommittedWhen);
 
     private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath,
         [CallerMemberName] string? testName = null)

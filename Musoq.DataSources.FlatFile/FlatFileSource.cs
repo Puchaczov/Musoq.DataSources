@@ -17,6 +17,9 @@ internal class FlatFileSource(string filePath, SourceExecutionContext executionC
 
         try
         {
+            if (executionContext.EndWorkToken.IsCancellationRequested)
+                return;
+
             if (!File.Exists(filePath))
                 return;
 

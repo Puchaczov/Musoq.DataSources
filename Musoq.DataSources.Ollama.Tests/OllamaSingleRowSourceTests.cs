@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.Schema;
+using Musoq.DataSources.Tests.Common;
 using OllamaSharp.Models.Chat;
 
 namespace Musoq.DataSources.Ollama.Tests;
@@ -25,19 +25,17 @@ public class OllamaSingleRowSourceTests
             .Returns(() => new HttpClient());
 
         var source = new OllamaSingleRowSource(
-            new RuntimeContext(
-                "test",
+            RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty, mockLogger.Object), new OllamaRequestInfo
+                sourceRuntimeSettings: new Dictionary<string, string>(),
+                logger: mockLogger.Object), new OllamaRequestInfo
             {
                 Model = "test-model",
                 Temperature = 0,
                 OllamaBaseUrl = OllamaApi.DefaultAddress
             }, mockHttpClientFactory.Object);
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(1, fired);
     }

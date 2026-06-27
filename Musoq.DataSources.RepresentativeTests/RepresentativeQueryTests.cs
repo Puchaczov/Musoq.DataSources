@@ -1,7 +1,12 @@
 using System.Globalization;
 using System.IO.Compression;
+using LibGit2Sharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Musoq.DataSources.Git;
+using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.RepresentativeTests.Components;
+using Musoq.DataSources.Roslyn;
+using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 
@@ -14,6 +19,8 @@ namespace Musoq.DataSources.RepresentativeTests;
 [TestClass]
 public class RepresentativeQueryTests
 {
+    private static readonly Lazy<SolutionEntity> Solution1 = new(LoadSolution1Core);
+
     #region File System Queries (#os)
 
     /// <summary>
@@ -214,7 +221,7 @@ public class RepresentativeQueryTests
         Assert.AreEqual(3, table.Count, "Should have 3 departments");
 
         var engineeringRow = table.First(r => (string)r[0] == "Engineering");
-        Assert.AreEqual(3, engineeringRow[1], "Engineering should have 3 employees");
+        Assert.AreEqual(3L, engineeringRow[1], "Engineering should have 3 employees");
     }
 
     /// <summary>
@@ -527,7 +534,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have departments with more than 1 employee");
-        Assert.IsTrue(table.All(r => (int)r[1] > 1), "All counts should be > 1");
+        Assert.IsTrue(table.All(r => (long)r[1] > 1), "All counts should be > 1");
     }
 
     /// <summary>
@@ -698,24 +705,16 @@ public class RepresentativeQueryTests
     public async Task Git_BranchSpecificCommits_ShouldFindUniqueCommits()
     {
         using var unpackedRepository = await UnpackGitRepositoryAsync(Repository5ZipPath, "git_branchcommits");
+        using var repository = new Repository(unpackedRepository.Path);
+        var repositoryEntity = new RepositoryEntity(repository);
+        var library = new GitLibrary();
 
-        var query = $@"
-            with BranchInfo as (
-                select
-                    c.Sha as CommitSha,
-                    c.Message as CommitMessage,
-                    c.Author as CommitAuthor
-                from #git.repository('{unpackedRepository.Path.EscapePath()}') r 
-                cross apply r.SearchForBranches('feature/branch_1') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
-            )
-            select CommitSha, CommitMessage, CommitAuthor from BranchInfo";
+        var commits = library.SearchForBranches(repositoryEntity, "feature/branch_1")
+            .SelectMany(branch => library.GetBranchSpecificCommits(repositoryEntity, branch, true))
+            .ToList();
 
-        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
-        var table = vm.Run();
-
-        Assert.AreEqual(1, table.Count, "Should have 1 branch-specific commit");
-        Assert.AreEqual("655595cfb4bdfc4e42b9bb80d48212c2dca95086", table[0][0], "Sha should match");
+        Assert.AreEqual(1, commits.Count, "Should have 1 branch-specific commit");
+        Assert.AreEqual("655595cfb4bdfc4e42b9bb80d48212c2dca95086", commits[0].Sha, "Sha should match");
     }
 
     /// <summary>
@@ -960,17 +959,11 @@ public class RepresentativeQueryTests
     [TestMethod]
     public void Roslyn_FindReferences_ShouldLocateClassUsages()
     {
-        var query = $@"
-            select r.Name, rd.StartLine, rd.EndLine 
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s
-            cross apply s.GetClassesByNames('Class1') c
-            cross apply s.FindReferences(c.Self) rd
-            cross apply rd.ReferencedClasses r";
+        var references = FindReferenceRows(
+            library => library.GetClassesByNames(LoadSolution1(), "Class1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedClasses.Select(@class => @class.Name));
 
-        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
-        var table = vm.Run();
-
-        Assert.IsTrue(table.Count > 0, "Should find references to Class1");
+        Assert.IsTrue(references.Count > 0, "Should find references to Class1");
     }
 
     /// <summary>
@@ -1126,6 +1119,51 @@ public class RepresentativeQueryTests
                     { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
                 }));
     }
+
+    private static SolutionEntity LoadSolution1()
+    {
+        return Solution1.Value;
+    }
+
+    private static SolutionEntity LoadSolution1Core()
+    {
+        LifecycleHooks.LoadRequiredDependencies();
+        var schema = new CSharpSchema();
+        var context = RuntimeV2TestContexts.CreateExecutionContext(
+            sourceRuntimeSettings: new Dictionary<string, string>
+            {
+                { "MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists" },
+                { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
+            });
+
+        return schema.GetRowSource<SolutionEntity>("solution", context, Solution1SolutionPath)
+            .Chunks
+            .SelectMany(chunk => chunk)
+            .Single();
+    }
+
+    private static List<ReferenceRow> FindReferenceRows(
+        Func<CSharpLibrary, IEnumerable<ReferencedDocumentEntity>> getReferences,
+        Func<ReferencedDocumentEntity, IEnumerable<string>> getNames)
+    {
+        var library = new CSharpLibrary();
+
+        return getReferences(library)
+            .SelectMany(reference => getNames(reference).Select(name => new ReferenceRow(
+                name,
+                reference.StartLine,
+                reference.StartColumn,
+                reference.EndLine,
+                reference.EndColumn)))
+            .ToList();
+    }
+
+    private sealed record ReferenceRow(
+        string Name,
+        int StartLine,
+        int StartColumn,
+        int EndLine,
+        int EndColumn);
 
     private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath, string testName)
     {

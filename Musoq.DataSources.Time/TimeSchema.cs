@@ -42,7 +42,7 @@ public class TimeSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            Interval => EnsureSourceType<T, DateTimeOffset>(name, new TimeSource(
+            Interval => EnsureSourceType<T, TimeEntity>(name, new TimeSource(
                 DateTimeOffset.Parse((string)parameters[0]),
                 DateTimeOffset.Parse((string)parameters[1]),
                 (string)parameters[2],

@@ -71,7 +71,7 @@ public class FileHistoryEntity
     public string? CommitSha => _commit?.Sha;
     public string? Author => _commit?.Author?.Name;
     public string? AuthorEmail => _commit?.Author?.Email;
-    public DateTimeOffset? CommittedWhen => _commit?.Committer?.When;
+    public DateTimeOffset CommittedWhen => _commit?.Committer?.When ?? default;
     public string? FilePath => _change?.Path ?? _path;
     public string? ChangeType => _change?.Status.ToString() ?? _changeKind?.ToString();
     public string? OldPath => _change?.OldPath;

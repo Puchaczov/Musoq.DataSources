@@ -23,6 +23,12 @@ public abstract class AsyncRowsSourceBase<T>(CancellationToken queryCancelledTok
         using var linkedTokenSource =
             CancellationTokenSource.CreateLinkedTokenSource(queryCancelledToken, writer.CancellationToken);
 
-        CollectChunksAsync(writer, linkedTokenSource.Token).GetAwaiter().GetResult();
+        try
+        {
+            CollectChunksAsync(writer, linkedTokenSource.Token).GetAwaiter().GetResult();
+        }
+        catch (OperationCanceledException) when (linkedTokenSource.IsCancellationRequested)
+        {
+        }
     }
 }

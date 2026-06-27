@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using Musoq.Schema;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.SeparatedValues;
 
 internal class InitiallyInferredTable(IReadOnlyCollection<ISchemaColumn> columns) : ISchemaTable
 {
-    public ISchemaColumn[] Columns { get; } = columns.ToArray();
+    public ISchemaColumn[] Columns { get; } = columns.Select(NormalizeColumn).ToArray();
 
     public SchemaTableMetadata Metadata => new(typeof(object[]));
 
@@ -18,5 +19,12 @@ internal class InitiallyInferredTable(IReadOnlyCollection<ISchemaColumn> columns
     public ISchemaColumn[] GetColumnsByName(string name)
     {
         return Columns.Where(column => column.ColumnName == name).ToArray();
+    }
+
+    private static ISchemaColumn NormalizeColumn(ISchemaColumn column)
+    {
+        return column.ColumnType == typeof(object)
+            ? new SchemaColumn(column.ColumnName, column.ColumnIndex, typeof(string))
+            : column;
     }
 }

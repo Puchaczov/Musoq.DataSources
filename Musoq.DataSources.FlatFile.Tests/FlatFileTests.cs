@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -73,15 +72,9 @@ public class FlatFileTests
         var endWorkTokenSource = new CancellationTokenSource();
         endWorkTokenSource.Cancel();
         var schema = new FlatFileSource("./TestMultilineFile.txt",
-            new RuntimeContext(
-                "test",
-                endWorkTokenSource.Token,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(endWorkTokenSource.Token, logger: mockLogger.Object));
 
-        var fires = schema.Rows.Count();
+        var fires = schema.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(0, fires);
     }
@@ -91,15 +84,9 @@ public class FlatFileTests
     {
         var mockLogger = new Mock<ILogger>();
         var schema = new FlatFileSource("./TestMultilineFile.txt",
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
-        var fires = schema.Rows.Count();
+        var fires = schema.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(6, fires);
     }

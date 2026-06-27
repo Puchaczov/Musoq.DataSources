@@ -84,7 +84,7 @@ public class SolutionEntity
     ///     Gets the projects within the solution.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ProjectEntity> Projects
+    public ProjectEntity[] Projects
     {
         get
         {

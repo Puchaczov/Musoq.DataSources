@@ -298,14 +298,7 @@ public class CANBusSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            SeparatedValuesTable => EnsureSourceType<T, MessageFrameEntity>(
-                name,
-                new SeparatedValuesFromFileCanFramesSource(
-                    (string)parameters[0],
-                    _createCanBusApi((string)parameters[1]),
-                    executionContext,
-                    parameters.Length > 2 ? (string)parameters[2] : "dec",
-                    parameters.Length > 3 ? (string)parameters[3] : "little")),
+            SeparatedValuesTable => CreateSeparatedValuesRowSource<T>(name, executionContext, parameters),
             MessagesTable => EnsureSourceType<T, MessageEntity>(
                 name,
                 new MessagesSource(_createCanBusApi((string)parameters[0]), executionContext)),
@@ -314,6 +307,67 @@ public class CANBusSchema : SchemaBase
                 new SignalsSource(_createCanBusApi((string)parameters[0]), executionContext)),
             _ => base.GetRowSource<T>(name, executionContext, parameters)
         };
+    }
+
+    private RowSource<T> CreateSeparatedValuesRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        object[] parameters)
+    {
+        var source = new SeparatedValuesFromFileCanFramesSource(
+            (string)parameters[0],
+            _createCanBusApi((string)parameters[1]),
+            executionContext,
+            parameters.Length > 2 ? (string)parameters[2] : "dec",
+            parameters.Length > 3 ? (string)parameters[3] : "little");
+
+        return typeof(T) == typeof(object)
+            ? EnsureSourceType<T, object>(name, new MessageFrameObjectRowSource(source, executionContext))
+            : EnsureSourceType<T, MessageFrameEntity>(name, source);
+    }
+
+    private sealed class MessageFrameObjectRowSource(
+        RowSource<MessageFrameEntity> source,
+        SourceExecutionContext executionContext) : RowSourceBase<object>
+    {
+        protected override void CollectChunks(IChunkWriter<object> writer)
+        {
+            foreach (var chunk in source.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+
+                var objects = new List<object>(chunk.Count);
+                foreach (var item in chunk)
+                    objects.Add(ToDictionary(item));
+
+                writer.Write(objects);
+            }
+        }
+
+        private Dictionary<string, object?> ToDictionary(MessageFrameEntity entity)
+        {
+            var nameToIndexMap = entity.CreateMessageNameToIndexMap();
+            var accessMap = entity.CreateMessageIndexToMethodAccessMap();
+            var values = new Dictionary<string, object?>();
+            var columns = executionContext.AllColumns;
+
+            if (columns.Count == 0)
+            {
+                foreach (var (name, index) in nameToIndexMap)
+                    values[name] = accessMap[index](entity);
+
+                return values;
+            }
+
+            foreach (var column in columns)
+            {
+                values[column.ColumnName] = nameToIndexMap.TryGetValue(column.ColumnName, out var index)
+                    ? accessMap[index](entity)
+                    : null;
+            }
+
+            return values;
+        }
     }
 
     private static MethodsAggregator CreateLibrary()

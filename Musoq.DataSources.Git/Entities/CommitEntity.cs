@@ -124,7 +124,7 @@ public class CommitEntity
     /// <summary>
     ///     Gets the date and time when the commit was made.
     /// </summary>
-    public DateTimeOffset? CommittedWhen => LibGitCommit?.Committer?.When;
+    public DateTimeOffset CommittedWhen => LibGitCommit?.Committer?.When ?? default;
 
     /// <summary>
     ///     Gets the parent commits of this commit.

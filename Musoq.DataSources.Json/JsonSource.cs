@@ -53,6 +53,9 @@ public class JsonSource : RowSourceBase<object[]>
 
         try
         {
+            if (_executionContext.EndWorkToken.IsCancellationRequested)
+                return;
+
             using var contentStream = _stream;
             using var contentReader = new StreamReader(contentStream);
             using var reader = new JsonTextReader(contentReader);

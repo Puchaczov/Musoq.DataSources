@@ -67,7 +67,7 @@ public class DockerTests
 
         Assert.AreEqual("1", table[0][0]);
 
-        var names = (IList<string>)table[0][1];
+        var names = (IReadOnlyList<string>)table[0][1];
 
         Assert.AreEqual(1, names.Count);
         Assert.AreEqual("1", names[0]);
@@ -79,12 +79,12 @@ public class DockerTests
         Assert.AreEqual("1", table[0][6]);
         Assert.AreEqual("1", table[0][7]);
 
-        var ports = (IList<string>)table[0][8];
+        var ports = (IReadOnlyList<string>)table[0][8];
 
         Assert.AreEqual(1, ports.Count);
         Assert.AreEqual("1:1", ports[0]);
 
-        var labels = (IDictionary<string, string>)table[0][9];
+        var labels = (IReadOnlyDictionary<string, string>)table[0][9];
 
         Assert.AreEqual(1, labels.Count);
         Assert.AreEqual("1", labels["1"]);
@@ -92,23 +92,14 @@ public class DockerTests
         Assert.AreEqual(1L, table[0][10]);
         Assert.AreEqual(1L, table[0][11]);
 
-        var networkSettings = (SummaryNetworkSettings)table[0][12];
+        var networkSettings = (string)table[0][12];
 
-        Assert.AreEqual(1, networkSettings.Networks.Count);
-        Assert.AreEqual("1", networkSettings.Networks["1"].IPAddress);
-        Assert.AreEqual("1", networkSettings.Networks["1"].MacAddress);
+        Assert.IsTrue(networkSettings.Contains("1:1:1"));
 
-        var mounts = (IList<MountPoint>)table[0][13];
+        var mounts = (IReadOnlyList<string>)table[0][13];
 
         Assert.AreEqual(1, mounts.Count);
-        Assert.AreEqual("1", mounts[0].Destination);
-        Assert.AreEqual("1", mounts[0].Driver);
-        Assert.AreEqual("1", mounts[0].Mode);
-
-        Assert.AreEqual("1", mounts[0].Name);
-        Assert.AreEqual(true, mounts[0].RW);
-        Assert.AreEqual("1", mounts[0].Source);
-        Assert.AreEqual("1", mounts[0].Type);
+        Assert.AreEqual("1:1:1:1:1:1:True", mounts[0]);
 
         Assert.AreEqual("1:1", table[0][14]);
 
@@ -148,12 +139,12 @@ public class DockerTests
         Assert.AreEqual(DateTime.MinValue, table[0][0]);
         Assert.AreEqual("1", table[0][1]);
 
-        var repoDigests = (IList<string>)table[0][3];
+        var repoDigests = (IReadOnlyList<string>)table[0][3];
 
         Assert.AreEqual(1, repoDigests.Count);
         Assert.AreEqual("1", repoDigests[0]);
 
-        var repoTags = (IList<string>)table[0][4];
+        var repoTags = (IReadOnlyList<string>)table[0][4];
 
         Assert.AreEqual(1, repoTags.Count);
         Assert.AreEqual("1", repoTags[0]);
@@ -196,7 +187,7 @@ public class DockerTests
         Assert.AreEqual("now", table[0][0]);
         Assert.AreEqual("1", table[0][1]);
 
-        var labels = (IDictionary<string, string>)table[0][2];
+        var labels = (IReadOnlyDictionary<string, string>)table[0][2];
 
         Assert.AreEqual(1, labels.Count);
         Assert.AreEqual("1", labels["1"]);
@@ -204,7 +195,7 @@ public class DockerTests
         Assert.AreEqual("1", table[0][3]);
         Assert.AreEqual("1", table[0][4]);
 
-        var options = (IDictionary<string, string>)table[0][5];
+        var options = (IReadOnlyDictionary<string, string>)table[0][5];
 
         Assert.AreEqual(1, options.Count);
         Assert.AreEqual("1", options["1"]);
@@ -251,14 +242,14 @@ public class DockerTests
         Assert.AreEqual("1", table[0][3]);
         Assert.AreEqual(true, table[0][4]);
 
-        var labels = (IDictionary<string, string>)table[0][5];
+        var labels = (IReadOnlyDictionary<string, string>)table[0][5];
 
         Assert.AreEqual(1, labels.Count);
         Assert.AreEqual("1", labels["1"]);
 
         Assert.AreEqual("1", table[0][6]);
 
-        var options = (IDictionary<string, string>)table[0][7];
+        var options = (IReadOnlyDictionary<string, string>)table[0][7];
 
         Assert.AreEqual(1, options.Count);
         Assert.AreEqual("1", options["1"]);

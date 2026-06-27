@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -7,7 +6,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Schema;
 
 namespace Musoq.DataSources.Time.Tests;
 
@@ -41,15 +39,9 @@ public class TimeTests
         var now = DateTimeOffset.Now;
         var nextHour = now.AddHours(1);
         var source = new TimeSource(now, nextHour, "minutes",
-            new RuntimeContext(
-                "test",
-                tokenSource.Token,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(tokenSource.Token, logger: mockLogger.Object));
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(0, fired);
     }
@@ -61,15 +53,9 @@ public class TimeTests
         var now = DateTimeOffset.Parse("01/01/2000");
         var nextHour = now.AddHours(1);
         var source = new TimeSource(now, nextHour, "minutes",
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(61, fired);
     }

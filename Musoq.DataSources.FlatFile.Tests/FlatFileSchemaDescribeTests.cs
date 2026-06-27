@@ -43,7 +43,7 @@ public class FlatFileSchemaDescribeTests
         Assert.AreEqual(1, methodNames.Count(m => m == "file"), "Should contain 'file' method once");
 
         var fileRow = table.First(row => (string)row[0] == "file");
-        Assert.AreEqual("filePath: System.String", (string)fileRow[1]);
+        Assert.AreEqual("path: System.String", (string)fileRow[1]);
     }
 
     [TestMethod]
@@ -62,7 +62,7 @@ public class FlatFileSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("file", (string)row[0]);
-        Assert.AreEqual("filePath: System.String", (string)row[1]);
+        Assert.AreEqual("path: System.String", (string)row[1]);
     }
 
     [TestMethod]

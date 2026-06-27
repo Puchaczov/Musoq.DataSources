@@ -38,6 +38,9 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 
         try
         {
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
             if (!Directory.Exists(_path))
                 return;
 
@@ -77,6 +80,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 
         while (pendingDirs.Count > 0)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var currentDir = pendingDirs.Dequeue();
             string[] subDirs;
 
@@ -91,6 +95,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 
             foreach (var dir in subDirs)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 yield return dir;
 
                 if (recursive)

@@ -1,22 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Musoq.Converter;
-using Musoq.Converter.Build;
 using Musoq.Evaluator;
 using Musoq.Schema;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Tests.Common;
 
 public static class InstanceCreatorHelpers
 {
     private static ILoggerResolver DefaultLoggerResolver => new VoidLoggerResolver();
-
-    private static CompilationOptions CompilationOptions { get; } =
-        new(ParallelizationMode.Full, usePrimitiveTypeValidation: false);
 
     public static CompiledQuery CompileForExecution(
         string script,
@@ -27,32 +23,27 @@ public static class InstanceCreatorHelpers
     {
         loggerResolver ??= DefaultLoggerResolver;
 
-        var compiledQuery = InstanceCreator.CompileForExecution(
+        var compilationOptions = new CompilationOptions(
+            ParallelizationMode.Full,
+            usePrimitiveTypeValidation: false,
+            sourceRuntimeSettingsResolver: new EnvironmentVariablesRuntimeSettingsResolver(environmentVariables));
+
+        return InstanceCreator.CompileForExecution(
             script,
             assemblyName,
             schemaProvider,
             loggerResolver,
-            () => new CreateTree(
-                new TransformTree(
-                    new TurnQueryIntoRunnableCode(null), loggerResolver)),
-            items =>
-            {
-                items.PositionalEnvironmentVariables = environmentVariables;
-                items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns, _, _) =>
-                    new BuildMetadataAndInferTypesForTestsVisitor(provider, columns, environmentVariables,
-                        CompilationOptions, loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>());
-            });
+            compilationOptions);
+    }
 
-        var runnableField = compiledQuery.GetType().GetRuntimeFields().FirstOrDefault(f => f.Name.Contains("runnable"));
-
-        var runnable = (IRunnable)runnableField?.GetValue(compiledQuery);
-
-        if (runnable == null)
-            throw new InvalidOperationException("Runnable is null.");
-
-        runnable.Logger = loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>();
-
-        return compiledQuery;
+    private sealed class EnvironmentVariablesRuntimeSettingsResolver(
+        IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> environmentVariables)
+        : ISourceRuntimeSettingsResolver
+    {
+        public IReadOnlyDictionary<string, string> Resolve(SourceRuntimeSettingsResolutionRequest request)
+        {
+            return environmentVariables.Values.FirstOrDefault() ?? new Dictionary<string, string>();
+        }
     }
 
     private class VoidLoggerResolver : ILoggerResolver

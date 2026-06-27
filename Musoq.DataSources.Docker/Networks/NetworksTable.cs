@@ -1,4 +1,3 @@
-﻿using Docker.DotNet.Models;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Docker.Networks;
@@ -7,7 +6,7 @@ internal class NetworksTable : ISchemaTable
 {
     public ISchemaColumn[] Columns => NetworksSourceHelper.NetworksColumns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(NetworkResponse));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(NetworkEntity));
 
     public ISchemaColumn? GetColumnByName(string name)
     {

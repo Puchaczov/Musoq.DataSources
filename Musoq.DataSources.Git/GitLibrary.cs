@@ -358,12 +358,12 @@ public static class MaxCommitAggregateKernel
             state.Value = value;
     }
 
-    public static CommitEntity? Get(ref State state)
+    public static CommitEntity? Get(in State state)
     {
         return state.Value;
     }
 
-    public static void Merge(ref State state, ref State other)
+    public static void Merge(ref State state, in State other)
     {
         if (IsNewer(other.Value, state.Value))
             state.Value = other.Value;
@@ -392,12 +392,12 @@ public static class MinCommitAggregateKernel
             state.Value = value;
     }
 
-    public static CommitEntity? Get(ref State state)
+    public static CommitEntity? Get(in State state)
     {
         return state.Value;
     }
 
-    public static void Merge(ref State state, ref State other)
+    public static void Merge(ref State state, in State other)
     {
         if (IsOlder(other.Value, state.Value))
             state.Value = other.Value;

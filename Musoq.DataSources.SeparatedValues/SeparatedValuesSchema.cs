@@ -188,7 +188,7 @@ public class SeparatedValuesSchema : SchemaBase
         SourceMetadataContext metadataContext,
         object?[] parameters)
     {
-        if (metadataContext.AllColumns.Count > 0)
+        if (metadataContext.AllColumns.Count > 0 && parameters[0] is not string)
             return new InitiallyInferredTable(metadataContext.AllColumns);
 
         return new SeparatedValuesTable(

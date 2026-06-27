@@ -1,27 +1,15 @@
-﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Musoq.DataSources.Os.Files;
-using Musoq.Schema;
-using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Tests.Utils;
 
-internal class TestFilesSource(string path, bool useSubDirectories, RuntimeContext communicator)
-    : FilesSource(path, useSubDirectories, communicator)
+internal class TestFilesSource(string path, bool useSubDirectories, SourceExecutionContext context)
+    : FilesSource(path, useSubDirectories, context)
 {
-    private readonly RuntimeContext _communicator = communicator;
-
-    public IReadOnlyList<EntityResolver<FileEntity>> GetFiles()
+    public IReadOnlyList<FileEntity> GetFiles()
     {
-        var collection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
-        CollectChunksAsync(collection, _communicator.EndWorkToken).Wait();
-
-        var list = new List<EntityResolver<FileEntity>>();
-
-        foreach (var item in collection)
-            list.AddRange(item.Select(file => (EntityResolver<FileEntity>)file));
-
-        return list;
+        return Chunks.SelectMany(chunk => chunk).ToArray();
     }
 }

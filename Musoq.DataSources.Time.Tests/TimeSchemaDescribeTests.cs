@@ -47,9 +47,9 @@ public class TimeSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("interval", (string)row[0]);
-        Assert.AreEqual("startAt: System.DateTimeOffset", (string)row[1]);
-        Assert.AreEqual("stopAt: System.DateTimeOffset", (string)row[2]);
-        Assert.AreEqual("resolution: System.String", (string)row[3]);
+        Assert.AreEqual("startDateTime: System.String", (string)row[1]);
+        Assert.AreEqual("stopDateTime: System.String", (string)row[2]);
+        Assert.AreEqual("interval: System.String", (string)row[3]);
     }
 
     [TestMethod]
@@ -70,9 +70,9 @@ public class TimeSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("interval", (string)row[0]);
-        Assert.AreEqual("startAt: System.DateTimeOffset", (string)row[1]);
-        Assert.AreEqual("stopAt: System.DateTimeOffset", (string)row[2]);
-        Assert.AreEqual("resolution: System.String", (string)row[3]);
+        Assert.AreEqual("startDateTime: System.String", (string)row[1]);
+        Assert.AreEqual("stopDateTime: System.String", (string)row[2]);
+        Assert.AreEqual("interval: System.String", (string)row[3]);
     }
 
     [TestMethod]

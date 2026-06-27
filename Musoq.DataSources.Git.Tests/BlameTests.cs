@@ -111,7 +111,11 @@ public class BlameTests
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
-        Assert.ThrowsException<FileNotFoundException>(() => vm.Run());
+        Assert.ThrowsException<FileNotFoundException>(() =>
+        {
+            var table = vm.Run();
+            _ = table.Count;
+        });
     }
 
     [TestMethod]
@@ -127,7 +131,11 @@ public class BlameTests
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
-        Assert.ThrowsException<ArgumentException>(() => vm.Run());
+        Assert.ThrowsException<ArgumentException>(() =>
+        {
+            var table = vm.Run();
+            _ = table.Count;
+        });
     }
 
     [TestMethod]

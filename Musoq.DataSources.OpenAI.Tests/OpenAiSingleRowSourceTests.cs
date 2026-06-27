@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.Schema;
+using Musoq.DataSources.Tests.Common;
 using OpenAI.Chat;
 
 namespace Musoq.DataSources.OpenAI.Tests;
@@ -22,21 +22,18 @@ public class OpenAiSingleRowSourceTests
         var mockLogger = new Mock<ILogger>();
 
         var source = new OpenAiSingleRowSource(
-            new RuntimeContext(
-                "test",
+            RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>
+                sourceRuntimeSettings: new Dictionary<string, string>
                 {
                     { "OPENAI_API_KEY", "OPENAI_API_KEY" }
                 },
-                QuerySourceInfo.Empty,
-                mockLogger.Object), new OpenAiRequestInfo
+                logger: mockLogger.Object), new OpenAiRequestInfo
             {
                 Model = ModelName
             });
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(1, fired);
     }

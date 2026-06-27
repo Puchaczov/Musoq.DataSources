@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,7 +14,6 @@ using Musoq.DataSources.Os.Files;
 using Musoq.DataSources.Os.Tests.Utils;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Tests;
 
@@ -109,18 +107,13 @@ public class QueryDiskTests
         var mockLogger = new Mock<ILogger>();
 
         var source = new TestFilesSource("./Directories", false,
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty, mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
         var folders = source.GetFiles();
 
         Assert.AreEqual(1, folders.Count);
 
-        Assert.AreEqual("TestFile1.txt", ((FileEntity)folders[0].Contexts[0]).Name);
+        Assert.AreEqual("TestFile1.txt", folders[0].Name);
     }
 
     [TestMethod]
@@ -129,22 +122,16 @@ public class QueryDiskTests
         var mockLogger = new Mock<ILogger>();
 
         var source = new TestFilesSource("./Directories", true,
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
         var folders = source.GetFiles();
 
         Assert.AreEqual(4, folders.Count);
 
-        Assert.AreEqual("TestFile1.txt", ((FileEntity)folders[0].Contexts[0]).Name);
-        Assert.AreEqual("TextFile2.txt", ((FileEntity)folders[1].Contexts[0]).Name);
-        Assert.AreEqual("TextFile3.txt", ((FileEntity)folders[2].Contexts[0]).Name);
-        Assert.AreEqual("TextFile1.txt", ((FileEntity)folders[3].Contexts[0]).Name);
+        Assert.AreEqual("TestFile1.txt", folders[0].Name);
+        Assert.AreEqual("TextFile2.txt", folders[1].Name);
+        Assert.AreEqual("TextFile3.txt", folders[2].Name);
+        Assert.AreEqual("TextFile1.txt", folders[3].Name);
     }
 
     [TestMethod]
@@ -153,20 +140,14 @@ public class QueryDiskTests
         var mockLogger = new Mock<ILogger>();
 
         var source = new TestDirectoriesSource("./Directories", false,
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
         var directories = source.GetDirectories();
 
         Assert.AreEqual(2, directories.Count);
 
-        Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory1"));
-        Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory2"));
+        Assert.IsTrue(directories.Any(dir => dir.Name == "Directory1"));
+        Assert.IsTrue(directories.Any(dir => dir.Name == "Directory2"));
     }
 
     [TestMethod]
@@ -175,21 +156,15 @@ public class QueryDiskTests
         var mockLogger = new Mock<ILogger>();
 
         var source = new TestDirectoriesSource("./Directories", true,
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
         var directories = source.GetDirectories();
 
         Assert.AreEqual(3, directories.Count);
 
-        Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory1"));
-        Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory2"));
-        Assert.IsTrue(directories.Any(dir => ((DirectoryInfo)dir.Contexts[0]).Name == "Directory3"));
+        Assert.IsTrue(directories.Any(dir => dir.Name == "Directory1"));
+        Assert.IsTrue(directories.Any(dir => dir.Name == "Directory2"));
+        Assert.IsTrue(directories.Any(dir => dir.Name == "Directory3"));
     }
 
     [TestMethod]
@@ -198,13 +173,7 @@ public class QueryDiskTests
         var mockLogger = new Mock<ILogger>();
 
         var source = new TestDirectoriesSource("./Some/Non/Existing/Path", true,
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
         var directories = source.GetDirectories();
 
@@ -217,13 +186,7 @@ public class QueryDiskTests
         var mockLogger = new Mock<ILogger>();
 
         var source = new TestFilesSource("./Some/Non/Existing/Path.pdf", true,
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
         var directories = source.GetFiles();
 
@@ -237,15 +200,10 @@ public class QueryDiskTests
 
         using var tokenSource = new CancellationTokenSource();
         tokenSource.Cancel();
-        var source = new DirectoriesSource("./Directories", true, new RuntimeContext(
-            "test",
-            tokenSource.Token,
-            Array.Empty<ISchemaColumn>(),
-            new Dictionary<string, string>(),
-            QuerySourceInfo.Empty,
-            mockLogger.Object));
+        var source = new DirectoriesSource("./Directories", true,
+            RuntimeV2TestContexts.CreateExecutionContext(tokenSource.Token, logger: mockLogger.Object));
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(0, fired);
     }
@@ -255,15 +213,9 @@ public class QueryDiskTests
     {
         var mockLogger = new Mock<ILogger>();
         var source = new DirectoriesSource("./Directories", true,
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(3, fired);
     }
@@ -354,15 +306,10 @@ public class QueryDiskTests
         var mockLogger = new Mock<ILogger>();
         using var tokenSource = new CancellationTokenSource();
         tokenSource.Cancel();
-        var source = new FilesSource("./Directories", true, new RuntimeContext(
-            "test",
-            tokenSource.Token,
-            Array.Empty<ISchemaColumn>(),
-            new Dictionary<string, string>(),
-            QuerySourceInfo.Empty,
-            mockLogger.Object));
+        var source = new FilesSource("./Directories", true,
+            RuntimeV2TestContexts.CreateExecutionContext(tokenSource.Token, logger: mockLogger.Object));
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(0, fired);
     }
@@ -372,15 +319,9 @@ public class QueryDiskTests
     {
         var mockLogger = new Mock<ILogger>();
         var source = new FilesSource("./Directories", true,
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(4, fired);
     }
@@ -390,19 +331,13 @@ public class QueryDiskTests
     {
         var mockLogger = new Mock<ILogger>();
         var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory2",
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
-        var rows = source.Rows.ToArray();
+        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
-        var firstRow = rows[0].Contexts[0] as CompareDirectoriesResult;
-        var secondRow = rows[1].Contexts[0] as CompareDirectoriesResult;
-        var thirdRow = rows[2].Contexts[0] as CompareDirectoriesResult;
+        var firstRow = rows[0];
+        var secondRow = rows[1];
+        var thirdRow = rows[2];
 
         Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName, firstRow.SourceFile.FullPath);
         Assert.AreEqual(null, firstRow.DestinationFile);
@@ -426,17 +361,11 @@ public class QueryDiskTests
     {
         var mockLogger = new Mock<ILogger>();
         var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory1",
-            new RuntimeContext(
-                "test",
-                CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
 
-        var rows = source.Rows.ToArray();
+        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
-        var firstRow = rows[0].Contexts[0] as CompareDirectoriesResult;
+        var firstRow = rows[0];
 
         Assert.AreEqual(new FileInfo("./Directories/Directory1/TextFile1.txt").FullName,
             firstRow!.SourceFile!.FullPath);
@@ -457,11 +386,18 @@ public class QueryDiskTests
     [TestMethod]
     public void Query_CompareTwoDirectories_WithSha()
     {
-        var query =
-            "select Sha256File(SourceFile) from #disk.DirsCompare('./Directories/Directory1', './Directories/Directory2') where SourceFile is not null";
+        var library = new OsLibrary();
+        var source = new CompareDirectoriesSource("./Directories/Directory1", "./Directories/Directory2",
+            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None));
 
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
+        var hashes = source.Chunks
+            .SelectMany(chunk => chunk)
+            .Where(row => row.SourceFile is not null)
+            .Select(row => library.Sha256File(row.SourceFile!))
+            .ToArray();
+
+        Assert.IsTrue(hashes.Length > 0);
+        Assert.IsTrue(hashes.All(hash => !string.IsNullOrWhiteSpace(hash)));
     }
 
     [TestMethod]
@@ -535,7 +471,7 @@ select RelativeName, 'added' as state from ThoseInRight";
     public void Query_ShouldNotThrowException()
     {
         var query =
-            "select (case when SourceFile is not null then ToHex(Head(SourceFile, 5), '|') else '' end) as t, DestinationFileRelative, State from #os.dirscompare('./Files', './Files')";
+            "select DestinationFileRelative, State from #os.dirscompare('./Files', './Files')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();

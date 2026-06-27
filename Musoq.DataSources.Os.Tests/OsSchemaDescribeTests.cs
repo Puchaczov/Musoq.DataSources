@@ -48,8 +48,8 @@ public class OsSchemaDescribeTests
             "Should contain 'metadata' method 3 times (3 overloads)");
 
         var filesRow = table.First(row => (string)row[0] == "files");
-        Assert.AreEqual("path: System.String", (string)filesRow[1]);
-        Assert.AreEqual("useSubDirectories: System.Boolean", (string)filesRow[2]);
+        Assert.AreEqual("directory: System.String", (string)filesRow[1]);
+        Assert.AreEqual("useSubdirectories: System.Boolean", (string)filesRow[2]);
         Assert.IsNull(filesRow[3], "Third parameter should be null for files method");
 
         var processesRow = table.First(row => (string)row[0] == "processes");
@@ -59,8 +59,8 @@ public class OsSchemaDescribeTests
         Assert.IsNull(processesRow[3]);
 
         var dirsCompareRow = table.First(row => (string)row[0] == "dirscompare");
-        Assert.AreEqual("firstDirectory: System.String", (string)dirsCompareRow[1]);
-        Assert.AreEqual("secondDirectory: System.String", (string)dirsCompareRow[2]);
+        Assert.AreEqual("sourceDirectory: System.String", (string)dirsCompareRow[1]);
+        Assert.AreEqual("destinationDirectory: System.String", (string)dirsCompareRow[2]);
         Assert.IsNull(dirsCompareRow[3]);
     }
 
@@ -81,8 +81,8 @@ public class OsSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("files", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
-        Assert.AreEqual("useSubDirectories: System.Boolean", (string)row[2]);
+        Assert.AreEqual("directory: System.String", (string)row[1]);
+        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row[2]);
     }
 
     [TestMethod]
@@ -98,8 +98,8 @@ public class OsSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("directories", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
-        Assert.AreEqual("recursive: System.Boolean", (string)row[2],
+        Assert.AreEqual("directory: System.String", (string)row[1]);
+        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row[2],
             "Parameter name should match actual constructor parameter");
     }
 
@@ -116,7 +116,7 @@ public class OsSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("zip", (string)row[0]);
-        Assert.AreEqual("zipPath: System.String", (string)row[1],
+        Assert.AreEqual("path: System.String", (string)row[1],
             "Parameter name should match actual constructor parameter");
     }
 
@@ -149,7 +149,7 @@ public class OsSchemaDescribeTests
         var row = table.First();
         Assert.AreEqual("dlls", (string)row[0]);
         Assert.AreEqual("path: System.String", (string)row[1]);
-        Assert.AreEqual("useSubDirectories: System.Boolean", (string)row[2]);
+        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row[2]);
     }
 
     [TestMethod]
@@ -165,9 +165,9 @@ public class OsSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("dirscompare", (string)row[0]);
-        Assert.AreEqual("firstDirectory: System.String", (string)row[1],
+        Assert.AreEqual("sourceDirectory: System.String", (string)row[1],
             "First parameter name should match actual constructor parameter");
-        Assert.AreEqual("secondDirectory: System.String", (string)row[2],
+        Assert.AreEqual("destinationDirectory: System.String", (string)row[2],
             "Second parameter name should match actual constructor parameter");
     }
 
@@ -284,10 +284,10 @@ public class OsSchemaDescribeTests
         var param1 = (string)row[1];
         var param2 = (string)row[2];
 
-        Assert.IsTrue(param1.Contains("firstDirectory") && param1.Contains("System.String"),
-            $"First parameter should be firstDirectory: System.String, got: {param1}");
-        Assert.IsTrue(param2.Contains("secondDirectory") && param2.Contains("System.String"),
-            $"Second parameter should be secondDirectory: System.String, got: {param2}");
+        Assert.IsTrue(param1.Contains("sourceDirectory") && param1.Contains("System.String"),
+            $"First parameter should be sourceDirectory: System.String, got: {param1}");
+        Assert.IsTrue(param2.Contains("destinationDirectory") && param2.Contains("System.String"),
+            $"Second parameter should be destinationDirectory: System.String, got: {param2}");
     }
 
     [TestMethod]

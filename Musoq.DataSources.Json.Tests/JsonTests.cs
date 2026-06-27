@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -7,7 +6,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Schema;
 
 namespace Musoq.DataSources.Json.Tests;
 
@@ -112,16 +110,10 @@ public class JsonTests
         var mockLogger = new Mock<ILogger>();
         using var tokenSource = new CancellationTokenSource();
         tokenSource.Cancel();
-        var runtimeContext = new RuntimeContext(
-            "test",
-            tokenSource.Token,
-            Array.Empty<ISchemaColumn>(),
-            new Dictionary<string, string>(),
-            QuerySourceInfo.Empty,
-            mockLogger.Object);
-        var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
+        var executionContext = RuntimeV2TestContexts.CreateExecutionContext(tokenSource.Token, logger: mockLogger.Object);
+        var source = new JsonSource("./JsonTestFile_First.json", executionContext);
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(0, fired);
     }
@@ -130,16 +122,10 @@ public class JsonTests
     public void JsonSource_FullLoadTest()
     {
         var mockLogger = new Mock<ILogger>();
-        var runtimeContext = new RuntimeContext(
-            "test",
-            CancellationToken.None,
-            Array.Empty<ISchemaColumn>(),
-            new Dictionary<string, string>(),
-            QuerySourceInfo.Empty,
-            mockLogger.Object);
-        var source = new JsonSource("./JsonTestFile_First.json", runtimeContext);
+        var executionContext = RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object);
+        var source = new JsonSource("./JsonTestFile_First.json", executionContext);
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(3, fired);
     }

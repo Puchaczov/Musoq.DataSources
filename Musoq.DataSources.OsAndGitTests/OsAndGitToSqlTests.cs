@@ -132,10 +132,10 @@ public class OsAndGitToSqlTests
             Assert.AreEqual(2, table.Count);
 
             Assert.AreEqual("Repository1", table[0][0]);
-            Assert.AreEqual(1, table[0][1]);
+            Assert.AreEqual(1L, table[0][1]);
 
             Assert.AreEqual("Repository5", table[1][0]);
-            Assert.AreEqual(8, table[1][1]);
+            Assert.AreEqual(8L, table[1][1]);
         }
     }
 

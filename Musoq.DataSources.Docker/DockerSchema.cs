@@ -193,16 +193,16 @@ public class DockerSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            ContainersTableName => EnsureSourceType<T, ContainerListResponse>(
+            ContainersTableName => EnsureSourceType<T, ContainerEntity>(
                 name,
                 new ContainersSource(_dockerApi, executionContext)),
-            ImagesTableName => EnsureSourceType<T, ImagesListResponse>(
+            ImagesTableName => EnsureSourceType<T, ImageEntity>(
                 name,
                 new ImagesSource(_dockerApi, executionContext)),
-            NetworksTableName => EnsureSourceType<T, NetworkResponse>(
+            NetworksTableName => EnsureSourceType<T, NetworkEntity>(
                 name,
                 new NetworksSource(_dockerApi, executionContext)),
-            VolumesTableName => EnsureSourceType<T, VolumeResponse>(
+            VolumesTableName => EnsureSourceType<T, VolumeEntity>(
                 name,
                 new VolumesSource(_dockerApi, executionContext)),
             _ => throw new NotSupportedException($"Table {name} not supported.")

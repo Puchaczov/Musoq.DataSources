@@ -1,4 +1,3 @@
-﻿using System.IO.Compression;
 using System.Linq;
 using Musoq.Schema;
 
@@ -8,7 +7,7 @@ internal class ZipBasedTable : ISchemaTable
 {
     public ISchemaColumn[] Columns => SchemaZipHelper.SchemaColumns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(ZipArchiveEntry));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(ZipEntryEntity));
 
     public ISchemaColumn GetColumnByName(string name)
     {
