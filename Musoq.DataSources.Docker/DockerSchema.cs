@@ -1,4 +1,5 @@
 ﻿using Docker.DotNet;
+using Docker.DotNet.Models;
 using Musoq.DataSources.Docker.Containers;
 using Musoq.DataSources.Docker.Images;
 using Musoq.DataSources.Docker.Networks;
@@ -6,6 +7,7 @@ using Musoq.DataSources.Docker.Volumes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Docker;
@@ -159,10 +161,13 @@ public class DockerSchema : SchemaBase
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
@@ -178,28 +183,71 @@ public class DockerSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
-            ContainersTableName => new ContainersSource(_dockerApi, runtimeContext),
-            ImagesTableName => new ImagesSource(_dockerApi, runtimeContext),
-            NetworksTableName => new NetworksSource(_dockerApi, runtimeContext),
-            VolumesTableName => new VolumesSource(_dockerApi, runtimeContext),
+            ContainersTableName => EnsureSourceType<T, ContainerListResponse>(
+                name,
+                new ContainersSource(_dockerApi, executionContext)),
+            ImagesTableName => EnsureSourceType<T, ImagesListResponse>(
+                name,
+                new ImagesSource(_dockerApi, executionContext)),
+            NetworksTableName => EnsureSourceType<T, NetworkResponse>(
+                name,
+                new NetworksSource(_dockerApi, executionContext)),
+            VolumesTableName => EnsureSourceType<T, VolumeResponse>(
+                name,
+                new VolumesSource(_dockerApi, executionContext)),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return [];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
     }
 
     /// <summary>
     ///     Gets raw constructor information for a specific data source method.
     /// </summary>
     /// <param name="methodName">Name of the data source method</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of constructor information for the specified method</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
     {
         return methodName.ToLowerInvariant() switch
         {
@@ -216,9 +264,9 @@ public class DockerSchema : SchemaBase
     /// <summary>
     ///     Gets raw constructor information for all data source methods in the schema.
     /// </summary>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of constructor information for all methods</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return
         [

@@ -1,45 +1,42 @@
-﻿using System.Collections.Generic;
-using Musoq.Schema;
+using System.Collections.Generic;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.System;
 
-internal class RangeSource : RowSource
+internal class RangeSource(long min, long max, SourceExecutionContext executionContext) : RowSourceBase<RangeItemEntity>
 {
     private const string RangeSourceName = "range";
-    private readonly long _max;
-    private readonly long _min;
-    private readonly RuntimeContext _runtimeContext;
 
-    public RangeSource(long min, long max, RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<RangeItemEntity> writer)
     {
-        _min = min;
-        _max = max;
-        _runtimeContext = runtimeContext;
-    }
+        executionContext.ReportDataSourceBegin(RangeSourceName);
+        var totalRows = max - min;
+        executionContext.ReportDataSourceRowsKnown(RangeSourceName, totalRows);
+        long totalRowsProcessed = 0;
+        var chunk = new List<RangeItemEntity>();
 
-    public override IEnumerable<IObjectResolver> Rows
-    {
-        get
+        try
         {
-            _runtimeContext.ReportDataSourceBegin(RangeSourceName);
-            var totalRows = _max - _min;
-            _runtimeContext.ReportDataSourceRowsKnown(RangeSourceName, totalRows);
-            long totalRowsProcessed = 0;
+            for (var i = min; i < max; ++i)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                chunk.Add(new RangeItemEntity { Value = i });
+                totalRowsProcessed++;
 
-            try
-            {
-                for (var i = _min; i < _max; ++i)
-                {
-                    totalRowsProcessed++;
-                    yield return new EntityResolver<RangeItemEntity>(new RangeItemEntity { Value = i },
-                        RangeHelper.RangeToIndexMap, RangeHelper.RangeToMethodAccessMap);
-                }
+                if (chunk.Count < RowChunking.DefaultChunkSize)
+                    continue;
+
+                writer.Write(chunk);
+                chunk = [];
             }
-            finally
-            {
-                _runtimeContext.ReportDataSourceEnd(RangeSourceName, totalRowsProcessed);
-            }
+
+            if (chunk.Count > 0)
+                writer.Write(chunk);
+        }
+        finally
+        {
+            executionContext.ReportDataSourceEnd(RangeSourceName, totalRowsProcessed);
         }
     }
 }

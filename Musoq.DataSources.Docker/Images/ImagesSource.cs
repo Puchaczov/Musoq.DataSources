@@ -1,40 +1,30 @@
-﻿using System.Collections.Concurrent;
 using Docker.DotNet.Models;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Docker.Images;
 
-internal class ImagesSource : RowSourceBase<ImagesListResponse>
+internal class ImagesSource(IDockerApi api, SourceExecutionContext executionContext)
+    : RowSourceBase<ImagesListResponse>
 {
     private const string ImagesSourceName = "docker_images";
-    private readonly IDockerApi _api;
-    private readonly RuntimeContext _runtimeContext;
 
-    public ImagesSource(IDockerApi api, RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<ImagesListResponse> writer)
     {
-        _api = api;
-        _runtimeContext = runtimeContext;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _runtimeContext.ReportDataSourceBegin(ImagesSourceName);
+        executionContext.ReportDataSourceBegin(ImagesSourceName);
 
         try
         {
-            var images = _api.ListImagesAsync().Result;
-            _runtimeContext.ReportDataSourceRowsKnown(ImagesSourceName, images.Count);
+            var images = api.ListImagesAsync().Result;
+            executionContext.ReportDataSourceRowsKnown(ImagesSourceName, images.Count);
 
-            chunkedSource.Add(
-                images.Select(c => new EntityResolver<ImagesListResponse>(c, ImagesSourceHelper.ImagesNameToIndexMap,
-                    ImagesSourceHelper.ImagesIndexToMethodAccessMap)).ToList());
+            writer.Write(images.ToList());
 
-            _runtimeContext.ReportDataSourceEnd(ImagesSourceName, images.Count);
+            executionContext.ReportDataSourceEnd(ImagesSourceName, images.Count);
         }
         catch
         {
-            _runtimeContext.ReportDataSourceEnd(ImagesSourceName, 0);
+            executionContext.ReportDataSourceEnd(ImagesSourceName, 0);
             throw;
         }
     }

@@ -1,46 +1,50 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 using SharpCompress.Readers;
 
 namespace Musoq.DataSources.Archives;
 
-internal class ArchivesRowSource(string path, RuntimeContext runtimeContext) : RowSource
+internal class ArchivesRowSource(string path, SourceExecutionContext executionContext) : RowSourceBase<EntryWrapper>
 {
     private const string ArchivesSourceName = "archives";
-    private readonly Stream _stream = File.OpenRead(path);
 
-    public override IEnumerable<IObjectResolver> Rows
+    protected override void CollectChunks(IChunkWriter<EntryWrapper> writer)
     {
-        get
+        executionContext.ReportDataSourceBegin(ArchivesSourceName);
+        long totalRowsProcessed = 0;
+
+        try
         {
-            runtimeContext.ReportDataSourceBegin(ArchivesSourceName);
-            long totalRowsProcessed = 0;
-
-            try
+            using var stream = File.OpenRead(path);
+            using var reader = ReaderFactory.Open(stream, new ReaderOptions
             {
-                using var stream = _stream;
-                using var reader = ReaderFactory.Open(stream, new ReaderOptions
-                {
-                    LeaveStreamOpen = true
-                });
+                LeaveStreamOpen = true
+            });
 
-                var index = 0;
+            var index = 0;
+            var chunk = new List<EntryWrapper>();
 
-                while (reader.MoveToNextEntry())
-                {
-                    totalRowsProcessed++;
-                    yield return new EntityResolver<EntryWrapper>(
-                        new EntryWrapper(reader.Entry, path, index++),
-                        EntryWrapper.NameToIndexMap,
-                        EntryWrapper.IndexToMethodAccessMap);
-                }
-            }
-            finally
+            while (reader.MoveToNextEntry())
             {
-                runtimeContext.ReportDataSourceEnd(ArchivesSourceName, totalRowsProcessed);
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                chunk.Add(new EntryWrapper(reader.Entry, path, index++));
+                totalRowsProcessed++;
+
+                if (chunk.Count < RowChunking.DefaultChunkSize)
+                    continue;
+
+                writer.Write(chunk);
+                chunk = [];
             }
+
+            if (chunk.Count > 0)
+                writer.Write(chunk);
+        }
+        finally
+        {
+            executionContext.ReportDataSourceEnd(ArchivesSourceName, totalRowsProcessed);
         }
     }
 }

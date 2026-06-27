@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Archives;
@@ -58,10 +60,13 @@ public class ArchivesSchema : SchemaBase
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         return new ArchivesTable();
     }
@@ -70,19 +75,59 @@ public class ArchivesSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
-            FileTable => new ArchivesRowSource((string)parameters[0], runtimeContext),
+            FileTable => EnsureSourceType<T, EntryWrapper>(
+                name,
+                new ArchivesRowSource((string)parameters[0], executionContext)),
             _ => throw new NotSupportedException($"Source {parameters[0]} is not supported.")
         };
     }
 
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return [];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
+    }
+
+    public override SchemaMethodInfo[] GetConstructors()
+    {
+        return [CreateFileMethodInfo()];
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(string methodName, SourceMetadataContext metadataContext)
     {
         return methodName.ToLowerInvariant() switch
         {
@@ -93,7 +138,7 @@ public class ArchivesSchema : SchemaBase
         };
     }
 
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return [CreateFileMethodInfo()];
     }

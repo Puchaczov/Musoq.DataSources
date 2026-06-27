@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Dynamic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -12,7 +11,7 @@ using System.Threading.Tasks;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Musoq.DataSources.CANBus.Components;
-using Musoq.Schema;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.CANBus.CanDump;
 
@@ -23,13 +22,13 @@ internal class CanDumpFromFileCanFramesSource : MessageFrameSourceBase
     private readonly FileInfo _file;
     private readonly string _idOfType;
     private readonly MessagesLookup _messages;
-    private Dictionary<int, string>? _indexToMessagesNameMap;
 
-    private Dictionary<string, int>? _messagesNameToIndexMap;
-
-    public CanDumpFromFileCanFramesSource(string canDumpFile, ICANBusApi canBusApi, RuntimeContext runtimeContext,
+    public CanDumpFromFileCanFramesSource(
+        string canDumpFile,
+        ICANBusApi canBusApi,
+        SourceExecutionContext executionContext,
         string idOfType, string bigOrLittle)
-        : base(runtimeContext.EndWorkToken)
+        : base(executionContext.EndWorkToken)
     {
         _messages = new MessagesLookup();
         _file = new FileInfo(canDumpFile);
@@ -39,49 +38,6 @@ internal class CanDumpFromFileCanFramesSource : MessageFrameSourceBase
     }
 
     protected override HashSet<string> AllMessagesSet => _messages.Select(f => f.Key).ToHashSet();
-
-    protected override IReadOnlyDictionary<string, int> MessagesNameToIndexMap
-    {
-        get
-        {
-            if (_messagesNameToIndexMap is not null) return _messagesNameToIndexMap;
-
-            var messagesNameToIndexMap = new Dictionary<string, int>();
-            var indexToMessagesNameMap = new Dictionary<int, string>();
-            var index = 0;
-            foreach (var message in _messages)
-            {
-                messagesNameToIndexMap.Add(message.Key, index);
-                indexToMessagesNameMap.Add(index, message.Key);
-                index += 1;
-            }
-
-            _messagesNameToIndexMap = messagesNameToIndexMap;
-            _indexToMessagesNameMap = indexToMessagesNameMap;
-
-            return _messagesNameToIndexMap;
-        }
-    }
-
-    protected override IReadOnlyDictionary<int, Func<MessageFrameEntity, object?>> MessagesIndexToMethodAccessMap
-    {
-        get
-        {
-            if (_indexToMessagesNameMap is null)
-                throw new InvalidOperationException("Index to messages name map cannot be null.");
-
-            var indexToMessagesNameMap = _indexToMessagesNameMap;
-            var indexToMethodAccessMap = new Dictionary<int, Func<MessageFrameEntity, object?>>();
-
-            for (var i = 0; i < _indexToMessagesNameMap.Count; i++)
-            {
-                var member = new MessageFrameMemberBinder(indexToMessagesNameMap[i], false);
-                indexToMethodAccessMap.Add(i, f => f.TryGetMember(member, out var result) ? result : null);
-            }
-
-            return indexToMethodAccessMap;
-        }
-    }
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken)
     {
@@ -195,20 +151,6 @@ internal class CanDumpFromFileCanFramesSource : MessageFrameSourceBase
         Hex,
         Decimal,
         Binary
-    }
-
-    private class MessageFrameMemberBinder : GetMemberBinder
-    {
-        public MessageFrameMemberBinder(string name, bool ignoreCase)
-            : base(name, ignoreCase)
-        {
-        }
-
-        public override DynamicMetaObject FallbackGetMember(DynamicMetaObject target,
-            DynamicMetaObject? errorSuggestion)
-        {
-            throw new NotImplementedException();
-        }
     }
 
     // ReSharper disable once ClassNeverInstantiated.Local

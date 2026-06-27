@@ -1,70 +1,56 @@
-﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.FlatFile;
 
-internal class FlatFileSource : RowSourceBase<FlatFileEntity>
+internal class FlatFileSource(string filePath, SourceExecutionContext executionContext)
+    : RowSourceBase<FlatFileEntity>
 {
     private const string FlatFileSourceName = "flatfile";
-    private readonly RuntimeContext _communicator;
-    private readonly string _filePath;
 
-    public FlatFileSource(string filePath, RuntimeContext communicator)
+    protected override void CollectChunks(IChunkWriter<FlatFileEntity> writer)
     {
-        _filePath = filePath;
-        _communicator = communicator;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _communicator.ReportDataSourceBegin(FlatFileSourceName);
+        executionContext.ReportDataSourceBegin(FlatFileSourceName);
         long totalRowsProcessed = 0;
 
         try
         {
-            const int chunkSize = 1000;
-
-            if (!File.Exists(_filePath))
+            if (!File.Exists(filePath))
                 return;
 
             var rowNum = 0;
-            var endWorkToken = _communicator.EndWorkToken;
+            var chunk = new List<FlatFileEntity>();
 
-            using var file = File.OpenRead(_filePath);
+            using var file = File.OpenRead(filePath);
             using var reader = new StreamReader(file);
-            var list = new List<EntityResolver<FlatFileEntity>>();
 
             while (!reader.EndOfStream)
             {
-                var line = reader.ReadLine();
-                var entity = new FlatFileEntity
-                {
-                    Line = line,
-                    LineNumber = ++rowNum
-                };
+                writer.CancellationToken.ThrowIfCancellationRequested();
 
-                list.Add(new EntityResolver<FlatFileEntity>(entity, FlatFileHelper.FlatNameToIndexMap,
-                    FlatFileHelper.FlatIndexToMethodAccessMap));
+                chunk.Add(new FlatFileEntity
+                {
+                    Line = reader.ReadLine(),
+                    LineNumber = ++rowNum
+                });
 
                 totalRowsProcessed++;
 
-                if (rowNum <= chunkSize)
+                if (chunk.Count < RowChunking.DefaultChunkSize)
                     continue;
 
-                rowNum = 0;
-                chunkedSource.Add(list, endWorkToken);
-
-                list = new List<EntityResolver<FlatFileEntity>>(chunkSize);
+                writer.Write(chunk);
+                chunk = [];
             }
 
-            chunkedSource.Add(list, endWorkToken);
+            if (chunk.Count > 0)
+                writer.Write(chunk);
         }
         finally
         {
-            _communicator.ReportDataSourceEnd(FlatFileSourceName, totalRowsProcessed);
+            executionContext.ReportDataSourceEnd(FlatFileSourceName, totalRowsProcessed);
         }
     }
 }

@@ -1,30 +1,22 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DbcParserLib.Model;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.CANBus.Components;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.CANBus.Messages;
 
-internal class MessagesSource(ICANBusApi canBusApi, RuntimeContext runtimeContext)
-    : AsyncRowsSourceBase<Message>(runtimeContext.EndWorkToken)
+internal class MessagesSource(ICANBusApi canBusApi, SourceExecutionContext executionContext)
+    : AsyncRowsSourceBase<MessageEntity>(executionContext.EndWorkToken)
 {
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+    protected override async Task CollectChunksAsync(
+        IChunkWriter<MessageEntity> writer,
         CancellationToken cancellationToken)
     {
-        var messages = await canBusApi.GetMessagesAsync(runtimeContext.EndWorkToken);
+        var messages = await canBusApi.GetMessagesAsync(cancellationToken);
 
-        chunkedSource.Add(
-            messages.Select(f => new EntityResolver<MessageEntity>(
-                new MessageEntity(f),
-                MessagesSourceHelper.MessagesNameToIndexMap,
-                MessagesSourceHelper.MessagesIndexToMethodAccessMap)
-            ).ToList(),
-            cancellationToken);
+        writer.Write(messages.Select(f => new MessageEntity(f)).ToList());
     }
 }

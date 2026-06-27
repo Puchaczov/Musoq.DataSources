@@ -1,40 +1,30 @@
-﻿using System.Collections.Concurrent;
 using Docker.DotNet.Models;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Docker.Volumes;
 
-internal class VolumesSource : RowSourceBase<VolumeResponse>
+internal class VolumesSource(IDockerApi api, SourceExecutionContext executionContext)
+    : RowSourceBase<VolumeResponse>
 {
     private const string VolumesSourceName = "docker_volumes";
-    private readonly IDockerApi _api;
-    private readonly RuntimeContext _runtimeContext;
 
-    public VolumesSource(IDockerApi api, RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<VolumeResponse> writer)
     {
-        _api = api;
-        _runtimeContext = runtimeContext;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _runtimeContext.ReportDataSourceBegin(VolumesSourceName);
+        executionContext.ReportDataSourceBegin(VolumesSourceName);
 
         try
         {
-            var volumes = _api.ListVolumesAsync().Result;
-            _runtimeContext.ReportDataSourceRowsKnown(VolumesSourceName, volumes.Count);
+            var volumes = api.ListVolumesAsync().Result;
+            executionContext.ReportDataSourceRowsKnown(VolumesSourceName, volumes.Count);
 
-            chunkedSource.Add(
-                volumes.Select(c => new EntityResolver<VolumeResponse>(c, VolumesSourceHelper.VolumesNameToIndexMap,
-                    VolumesSourceHelper.VolumesIndexToMethodAccessMap)).ToList());
+            writer.Write(volumes.ToList());
 
-            _runtimeContext.ReportDataSourceEnd(VolumesSourceName, volumes.Count);
+            executionContext.ReportDataSourceEnd(VolumesSourceName, volumes.Count);
         }
         catch
         {
-            _runtimeContext.ReportDataSourceEnd(VolumesSourceName, 0);
+            executionContext.ReportDataSourceEnd(VolumesSourceName, 0);
             throw;
         }
     }

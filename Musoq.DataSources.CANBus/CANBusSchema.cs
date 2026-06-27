@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.DataSources.CANBus.Messages;
 using Musoq.DataSources.CANBus.SeparatedValuesFromFile;
@@ -7,6 +8,7 @@ using Musoq.DataSources.CANBus.Signals;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.CANBus;
@@ -138,23 +140,58 @@ public class CANBusSchema : SchemaBase
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
             SeparatedValuesTable => new SeparatedValuesFromFileCanFramesTable(
                 _createCanBusApi((string)parameters[1]),
-                runtimeContext.EndWorkToken),
+                CancellationToken.None),
             MessagesTable => new MessagesTable(),
             SignalsTable => new SignalsTable(),
-            _ => base.GetTableByName(name, runtimeContext, parameters)
+            _ => base.GetTableByName(name, metadataContext, parameters)
         };
     }
 
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return [];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
+    }
+
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
     {
         return methodName.ToLowerInvariant() switch
         {
@@ -167,7 +204,7 @@ public class CANBusSchema : SchemaBase
         };
     }
 
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         var constructors = new List<SchemaMethodInfo>
         {
@@ -250,24 +287,32 @@ public class CANBusSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
     /// <exception cref="NotSupportedException">Thrown when data source is not supported.</exception>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
-            SeparatedValuesTable => new SeparatedValuesFromFileCanFramesSource(
-                (string)parameters[0],
-                _createCanBusApi((string)parameters[1]),
-                runtimeContext,
-                parameters.Length > 2 ? (string)parameters[2] : "dec",
-                parameters.Length > 3 ? (string)parameters[3] : "little"
-            ),
-            MessagesTable => new MessagesSource(_createCanBusApi((string)parameters[0]), runtimeContext),
-            SignalsTable => new SignalsSource(_createCanBusApi((string)parameters[0]), runtimeContext),
-            _ => base.GetRowSource(name, runtimeContext, parameters)
+            SeparatedValuesTable => EnsureSourceType<T, MessageFrameEntity>(
+                name,
+                new SeparatedValuesFromFileCanFramesSource(
+                    (string)parameters[0],
+                    _createCanBusApi((string)parameters[1]),
+                    executionContext,
+                    parameters.Length > 2 ? (string)parameters[2] : "dec",
+                    parameters.Length > 3 ? (string)parameters[3] : "little")),
+            MessagesTable => EnsureSourceType<T, MessageEntity>(
+                name,
+                new MessagesSource(_createCanBusApi((string)parameters[0]), executionContext)),
+            SignalsTable => EnsureSourceType<T, SignalEntity>(
+                name,
+                new SignalsSource(_createCanBusApi((string)parameters[0]), executionContext)),
+            _ => base.GetRowSource<T>(name, executionContext, parameters)
         };
     }
 

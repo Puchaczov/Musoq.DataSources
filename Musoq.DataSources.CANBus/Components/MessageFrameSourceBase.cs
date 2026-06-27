@@ -1,83 +1,44 @@
-﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.CANBus.Components;
 
-internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFrameEntity>
+internal abstract class MessageFrameSourceBase(CancellationToken endWorkToken) : AsyncRowsSourceBase<MessageFrameEntity>(endWorkToken)
 {
-    protected MessageFrameSourceBase(CancellationToken endWorkToken) : base(endWorkToken)
-    {
-    }
-
     protected abstract HashSet<string> AllMessagesSet { get; }
-
-    protected abstract IReadOnlyDictionary<string, int> MessagesNameToIndexMap { get; }
-
-    protected abstract IReadOnlyDictionary<int, Func<MessageFrameEntity, object?>> MessagesIndexToMethodAccessMap
-    {
-        get;
-    }
 
     protected abstract Task InitializeAsync(CancellationToken cancellationToken);
 
     protected abstract IAsyncEnumerable<SourceCanFrame> GetFramesAsync(CancellationToken cancellationToken);
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+    protected override async Task CollectChunksAsync(
+        IChunkWriter<MessageFrameEntity> writer,
         CancellationToken cancellationToken)
     {
         await InitializeAsync(cancellationToken);
 
-        var itemsAdded = 0;
-        const int maxItems = 1000;
-        var chunk = new List<IObjectResolver>();
+        var chunk = new List<MessageFrameEntity>();
 
         await foreach (var frame in GetFramesAsync(cancellationToken))
         {
-            var messageFrame = new MessageFrameEntity(
+            chunk.Add(new MessageFrameEntity(
                 frame.Timestamp,
                 frame.Frame,
                 frame.Message,
-                AllMessagesSet);
+                AllMessagesSet));
 
-            var nameToIndexMap = messageFrame.CreateMessageNameToIndexMap();
-            var nameToIndexMapFinal = new Dictionary<string, int>(nameToIndexMap);
-            var addedKeysIndexes = new List<(string Key, int Index)>();
-            foreach (var keyValuePair in MessagesNameToIndexMap)
-            {
-                var count = nameToIndexMap.Count;
-                if (nameToIndexMapFinal.TryAdd(keyValuePair.Key, count))
-                    addedKeysIndexes.Add((keyValuePair.Key, count));
-            }
-
-            var indexToMethodAccessMap = messageFrame.CreateMessageIndexToMethodAccessMap();
-            var indexToMethodAccessMapFinal =
-                new Dictionary<int, Func<MessageFrameEntity, object?>>(indexToMethodAccessMap);
-
-            foreach (var grouping in addedKeysIndexes.GroupBy(f => f.Index))
-                indexToMethodAccessMapFinal.Add(grouping.Key, _ => null);
-
-            if (itemsAdded != maxItems)
-            {
-                chunk.Add(new EntityResolver<MessageFrameEntity>(messageFrame, nameToIndexMapFinal,
-                    indexToMethodAccessMapFinal));
-                itemsAdded += 1;
+            if (chunk.Count < RowChunking.DefaultChunkSize)
                 continue;
-            }
 
-            chunk.Add(new EntityResolver<MessageFrameEntity>(messageFrame, nameToIndexMapFinal,
-                indexToMethodAccessMapFinal));
-            chunkedSource.Add(chunk, cancellationToken);
+            writer.Write(chunk);
             chunk = [];
-            itemsAdded = 0;
         }
 
         if (chunk.Count > 0)
-            chunkedSource.Add(chunk, cancellationToken);
+            writer.Write(chunk);
     }
 }

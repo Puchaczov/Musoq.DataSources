@@ -1,40 +1,30 @@
-﻿using System.Collections.Concurrent;
 using Docker.DotNet.Models;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Docker.Networks;
 
-internal class NetworksSource : RowSourceBase<NetworkResponse>
+internal class NetworksSource(IDockerApi api, SourceExecutionContext executionContext)
+    : RowSourceBase<NetworkResponse>
 {
     private const string NetworksSourceName = "docker_networks";
-    private readonly IDockerApi _api;
-    private readonly RuntimeContext _runtimeContext;
 
-    public NetworksSource(IDockerApi api, RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<NetworkResponse> writer)
     {
-        _api = api;
-        _runtimeContext = runtimeContext;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _runtimeContext.ReportDataSourceBegin(NetworksSourceName);
+        executionContext.ReportDataSourceBegin(NetworksSourceName);
 
         try
         {
-            var networks = _api.ListNetworksAsync().Result;
-            _runtimeContext.ReportDataSourceRowsKnown(NetworksSourceName, networks.Count);
+            var networks = api.ListNetworksAsync().Result;
+            executionContext.ReportDataSourceRowsKnown(NetworksSourceName, networks.Count);
 
-            chunkedSource.Add(
-                networks.Select(c => new EntityResolver<NetworkResponse>(c, NetworksSourceHelper.NetworksNameToIndexMap,
-                    NetworksSourceHelper.NetworksIndexToMethodAccessMap)).ToList());
+            writer.Write(networks.ToList());
 
-            _runtimeContext.ReportDataSourceEnd(NetworksSourceName, networks.Count);
+            executionContext.ReportDataSourceEnd(NetworksSourceName, networks.Count);
         }
         catch
         {
-            _runtimeContext.ReportDataSourceEnd(NetworksSourceName, 0);
+            executionContext.ReportDataSourceEnd(NetworksSourceName, 0);
             throw;
         }
     }
