@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
@@ -10,11 +10,11 @@
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.2"/>
         <PackageReference Include="MSTest.TestFramework" Version="3.8.2"/>
         <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
-        <PackageReference Include="Musoq.Converter" Version="10.0.3" />
-        <PackageReference Include="Musoq.Evaluator" Version="16.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="10.0.0" />
-        <PackageReference Include="Musoq.Plugins" Version="13.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="15.0.0" />
+        <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1" />
+        <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1" />
+        <PackageReference Include="Musoq.Parser" Version="17.0.0-alpha.1" />
+        <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.1" />
+        <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1" />
     </ItemGroup>
 
     <ItemGroup>
