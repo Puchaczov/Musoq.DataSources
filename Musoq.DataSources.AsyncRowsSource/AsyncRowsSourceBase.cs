@@ -1,67 +1,28 @@
-using System.Collections.Concurrent;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.AsyncRowsSource;
 
 /// <summary>
-///     Read rows asynchronously in chunks.
+///     Read rows asynchronously and emit runtime-v2 typed chunks.
 /// </summary>
 /// <param name="queryCancelledToken">Token that signals the end of the work.</param>
 /// <typeparam name="T">Type of the entity.</typeparam>
-public abstract class AsyncRowsSourceBase<T>(CancellationToken queryCancelledToken) : RowSource
+public abstract class AsyncRowsSourceBase<T>(CancellationToken queryCancelledToken) : RowSourceBase<T>
 {
-    private readonly TaskCompletionSource<Exception?> _exception = new();
-
     /// <summary>
-    ///     Enumerate rows.
+    ///     Collect chunks of typed rows.
     /// </summary>
-    public override IEnumerable<IObjectResolver> Rows
-    {
-        get
-        {
-            var chunkedSourceBlockingCollection = new BlockingCollection<IReadOnlyList<IObjectResolver>>();
-            var workFinishedCancellationTokenSource = new CancellationTokenSource();
-            var workFinishedToken = workFinishedCancellationTokenSource.Token;
-            var linkedTokenSource =
-                CancellationTokenSource.CreateLinkedTokenSource(workFinishedToken, queryCancelledToken);
-            var linkedToken = linkedTokenSource.Token;
-
-            Task.Run(async () =>
-            {
-                try
-                {
-                    await CollectChunksAsync(chunkedSourceBlockingCollection, linkedToken);
-                    _exception.SetResult(null);
-                }
-                catch (OperationCanceledException)
-                {
-                }
-                catch (Exception exc)
-                {
-                    _exception.SetResult(exc);
-                }
-                finally
-                {
-                    chunkedSourceBlockingCollection.CompleteAdding();
-                    workFinishedCancellationTokenSource.Cancel();
-                }
-            });
-
-            return new ChunkedSource(chunkedSourceBlockingCollection, workFinishedToken, GetParentException);
-        }
-    }
-
-    /// <summary>
-    ///     Collect chunks of rows.
-    /// </summary>
-    /// <param name="chunkedSource">Collection of chunks.</param>
+    /// <param name="writer">Writer used to emit chunks.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Task.</returns>
-    protected abstract Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken);
+    protected abstract Task CollectChunksAsync(IChunkWriter<T> writer, CancellationToken cancellationToken);
 
-    private Exception? GetParentException()
+    /// <inheritdoc />
+    protected sealed override void CollectChunks(IChunkWriter<T> writer)
     {
-        return _exception.Task.IsCompleted ? _exception.Task.Result : null;
+        using var linkedTokenSource =
+            CancellationTokenSource.CreateLinkedTokenSource(queryCancelledToken, writer.CancellationToken);
+
+        CollectChunksAsync(writer, linkedTokenSource.Token).GetAwaiter().GetResult();
     }
 }
