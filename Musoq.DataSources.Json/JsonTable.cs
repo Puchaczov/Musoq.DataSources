@@ -43,7 +43,7 @@ internal class JsonTable : ISchemaTable
         }
     }
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(object));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(object[]));
 
     public ISchemaColumn GetColumnByName(string name)
     {

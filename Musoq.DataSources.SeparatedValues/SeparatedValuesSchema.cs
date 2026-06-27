@@ -1,8 +1,10 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.SeparatedValues;
@@ -17,6 +19,9 @@ namespace Musoq.DataSources.SeparatedValues;
 public class SeparatedValuesSchema : SchemaBase
 {
     private const string SchemaName = "SeparatedValues";
+    private const string CommaTable = "comma";
+    private const string TabTable = "tab";
+    private const string SemicolonTable = "semicolon";
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
@@ -59,122 +64,85 @@ public class SeparatedValuesSchema : SchemaBase
     public SeparatedValuesSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
-        AddSource<SeparatedValuesFromFileRowsSource>("comma");
-        AddSource<SeparatedValuesFromFileRowsSource>("tab");
-        AddSource<SeparatedValuesFromFileRowsSource>("semicolon");
-        AddTable<SeparatedValuesTable>("comma");
-        AddTable<SeparatedValuesTable>("tab");
-        AddTable<SeparatedValuesTable>("semicolon");
     }
 
     /// <summary>
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object?[] parameters)
     {
-        switch (name.ToLowerInvariant())
+        return name.ToLowerInvariant() switch
         {
-            case "comma":
-                if (runtimeContext.QuerySourceInfo.HasExternallyProvidedTypes)
-                    return new InitiallyInferredTable(runtimeContext.AllColumns);
-
-                return new SeparatedValuesTable((string)parameters[0], ",", (bool)parameters[1], (int)parameters[2])
-                    { InferredColumns = runtimeContext.AllColumns };
-            case "tab":
-                if (runtimeContext.QuerySourceInfo.HasExternallyProvidedTypes)
-                    return new InitiallyInferredTable(runtimeContext.AllColumns);
-
-                return new SeparatedValuesTable((string)parameters[0], "\t", (bool)parameters[1], (int)parameters[2])
-                    { InferredColumns = runtimeContext.AllColumns };
-            case "semicolon":
-                if (runtimeContext.QuerySourceInfo.HasExternallyProvidedTypes)
-                    return new InitiallyInferredTable(runtimeContext.AllColumns);
-
-                return new SeparatedValuesTable((string)parameters[0], ";", (bool)parameters[1], (int)parameters[2])
-                    { InferredColumns = runtimeContext.AllColumns };
-        }
-
-        return base.GetTableByName(name, runtimeContext, parameters);
+            CommaTable => CreateTable(",", metadataContext, parameters),
+            TabTable => CreateTable("\t", metadataContext, parameters),
+            SemicolonTable => CreateTable(";", metadataContext, parameters),
+            _ => base.GetTableByName(name, metadataContext, parameters)
+        };
     }
 
     /// <summary>
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object?[] parameters)
     {
-        switch (name.ToLowerInvariant())
+        return name.ToLowerInvariant() switch
         {
-            case "comma":
-                if (parameters[0] is IReadOnlyTable csvTable)
-                    return new SeparatedValuesFromFileRowsSource(csvTable, ",", runtimeContext.EndWorkToken)
-                        { RuntimeContext = runtimeContext };
-
-                if (parameters[0] is Stream csvStream)
-                    return new SeparatedValuesFromStreamRowsSource(csvStream, ",", (bool)parameters[1],
-                        (int)parameters[2], runtimeContext);
-
-                return new SeparatedValuesFromFileRowsSource((string)parameters[0], ",", (bool)parameters[1],
-                    (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
-            case "tab":
-                if (parameters[0] is IReadOnlyTable tsvTable)
-                    return new SeparatedValuesFromFileRowsSource(tsvTable, "\t", runtimeContext.EndWorkToken)
-                        { RuntimeContext = runtimeContext };
-
-                if (parameters[0] is Stream tsvStream)
-                    return new SeparatedValuesFromStreamRowsSource(tsvStream, "\t", (bool)parameters[1],
-                        (int)parameters[2], runtimeContext);
-
-                return new SeparatedValuesFromFileRowsSource((string)parameters[0], "\t", (bool)parameters[1],
-                    (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
-            case "semicolon":
-                if (parameters[0] is IReadOnlyTable semicolonTable)
-                    return new SeparatedValuesFromFileRowsSource(semicolonTable, ";", runtimeContext.EndWorkToken)
-                        { RuntimeContext = runtimeContext };
-
-                if (parameters[0] is Stream semicolonStream)
-                    return new SeparatedValuesFromStreamRowsSource(semicolonStream, ";", (bool)parameters[1],
-                        (int)parameters[2], runtimeContext);
-
-                return new SeparatedValuesFromFileRowsSource((string)parameters[0], ";", (bool)parameters[1],
-                    (int)parameters[2], runtimeContext.EndWorkToken) { RuntimeContext = runtimeContext };
-        }
-
-        return base.GetRowSource(name, runtimeContext, parameters);
-    }
-
-    /// <summary>
-    ///     Gets the constructor information for a specific data source method.
-    /// </summary>
-    /// <param name="methodName">The name of the method to get constructor information for.</param>
-    /// <param name="runtimeContext">The runtime context.</param>
-    /// <returns>An array of SchemaMethodInfo objects representing the method's constructors.</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
-    {
-        return methodName.ToLowerInvariant() switch
-        {
-            "comma" => [CreateCommaMethodInfo()],
-            "tab" => [CreateTabMethodInfo()],
-            "semicolon" => [CreateSemicolonMethodInfo()],
-            _ => throw new NotSupportedException(
-                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: comma, tab, semicolon")
+            CommaTable => CreateSource<T>(name, ",", executionContext, parameters),
+            TabTable => CreateSource<T>(name, "\t", executionContext, parameters),
+            SemicolonTable => CreateSource<T>(name, ";", executionContext, parameters),
+            _ => base.GetRowSource<T>(name, executionContext, parameters)
         };
     }
 
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object?[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object?[] parameters)
+    {
+        return [];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
+    }
+
     /// <summary>
-    ///     Gets constructor information for all data source methods.
+    ///     Gets information's about all tables in the schema.
     /// </summary>
-    /// <param name="runtimeContext">The runtime context.</param>
-    /// <returns>An array of all SchemaMethodInfo objects.</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    /// <returns>Data sources constructors</returns>
+    public override SchemaMethodInfo[] GetConstructors()
     {
         return
         [
@@ -182,6 +150,82 @@ public class SeparatedValuesSchema : SchemaBase
             CreateTabMethodInfo(),
             CreateSemicolonMethodInfo()
         ];
+    }
+
+    /// <summary>
+    ///     Gets the constructor information for a specific data source method.
+    /// </summary>
+    /// <param name="methodName">The name of the method to get constructor information for.</param>
+    /// <param name="metadataContext">Metadata context.</param>
+    /// <returns>An array of SchemaMethodInfo objects representing the method's constructors.</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
+    {
+        return methodName.ToLowerInvariant() switch
+        {
+            CommaTable => [CreateCommaMethodInfo()],
+            TabTable => [CreateTabMethodInfo()],
+            SemicolonTable => [CreateSemicolonMethodInfo()],
+            _ => throw new NotSupportedException(
+                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: {CommaTable}, {TabTable}, {SemicolonTable}")
+        };
+    }
+
+    /// <summary>
+    ///     Gets constructor information for all data source methods.
+    /// </summary>
+    /// <param name="metadataContext">Metadata context.</param>
+    /// <returns>An array of all SchemaMethodInfo objects.</returns>
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
+    {
+        return GetConstructors();
+    }
+
+    private static ISchemaTable CreateTable(
+        string separator,
+        SourceMetadataContext metadataContext,
+        object?[] parameters)
+    {
+        if (metadataContext.AllColumns.Count > 0)
+            return new InitiallyInferredTable(metadataContext.AllColumns);
+
+        return new SeparatedValuesTable(
+            (string)parameters[0]!,
+            separator,
+            (bool)parameters[1]!,
+            (int)parameters[2]!)
+        {
+            InferredColumns = metadataContext.AllColumns
+        };
+    }
+
+    private RowSource<T> CreateSource<T>(
+        string name,
+        string separator,
+        SourceExecutionContext executionContext,
+        object?[] parameters)
+    {
+        RowSource<object?[]> source = parameters[0] switch
+        {
+            IReadOnlyTable table => new SeparatedValuesFromFileRowsSource(table, separator, executionContext),
+            Stream stream => new SeparatedValuesFromStreamRowsSource(
+                stream,
+                separator,
+                (bool)parameters[1]!,
+                (int)parameters[2]!,
+                executionContext),
+            string path => new SeparatedValuesFromFileRowsSource(
+                path,
+                separator,
+                (bool)parameters[1]!,
+                (int)parameters[2]!,
+                executionContext),
+            _ => throw new NotSupportedException($"Source parameter type '{parameters[0]?.GetType().Name}' is not supported.")
+        };
+
+        return EnsureSourceType<T, object?[]>(name, source);
     }
 
     private static SchemaMethodInfo CreateCommaMethodInfo()
@@ -193,10 +237,9 @@ public class SeparatedValuesSchema : SchemaBase
                 ("path", typeof(string)),
                 ("hasHeader", typeof(bool)),
                 ("skipLines", typeof(int))
-            ]
-        );
+            ]);
 
-        return new SchemaMethodInfo("comma", constructorInfo);
+        return new SchemaMethodInfo(CommaTable, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateTabMethodInfo()
@@ -208,10 +251,9 @@ public class SeparatedValuesSchema : SchemaBase
                 ("path", typeof(string)),
                 ("hasHeader", typeof(bool)),
                 ("skipLines", typeof(int))
-            ]
-        );
+            ]);
 
-        return new SchemaMethodInfo("tab", constructorInfo);
+        return new SchemaMethodInfo(TabTable, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateSemicolonMethodInfo()
@@ -223,10 +265,9 @@ public class SeparatedValuesSchema : SchemaBase
                 ("path", typeof(string)),
                 ("hasHeader", typeof(bool)),
                 ("skipLines", typeof(int))
-            ]
-        );
+            ]);
 
-        return new SchemaMethodInfo("semicolon", constructorInfo);
+        return new SchemaMethodInfo(SemicolonTable, constructorInfo);
     }
 
     private static MethodsAggregator CreateLibrary()

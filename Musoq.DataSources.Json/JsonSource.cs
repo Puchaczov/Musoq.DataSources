@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Musoq.DataSources.JsonHelpers;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 using Newtonsoft.Json;
 
 namespace Musoq.DataSources.Json;
@@ -13,44 +13,43 @@ namespace Musoq.DataSources.Json;
 /// <summary>
 ///     Represents a json source.
 /// </summary>
-public class JsonSource : RowSourceBase<dynamic>
+public class JsonSource : RowSourceBase<object[]>
 {
     private const string JsonSourceName = "json";
-    private readonly RuntimeContext _runtimeContext;
+    private readonly SourceExecutionContext _executionContext;
     private readonly Stream _stream;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="JsonSource" /> class.
     /// </summary>
-    /// <param name="stream"></param>
-    /// <param name="runtimeContext"></param>
-    public JsonSource(Stream stream, RuntimeContext runtimeContext)
+    /// <param name="stream">Stream with json content.</param>
+    /// <param name="executionContext">Execution context.</param>
+    public JsonSource(Stream stream, SourceExecutionContext executionContext)
     {
         _stream = stream;
-        _runtimeContext = runtimeContext;
+        _executionContext = executionContext;
     }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="JsonSource" /> class.
     /// </summary>
-    /// <param name="path"></param>
-    /// <param name="runtimeContext"></param>
-    public JsonSource(string path, RuntimeContext runtimeContext)
+    /// <param name="path">Path to json content.</param>
+    /// <param name="executionContext">Execution context.</param>
+    public JsonSource(string path, SourceExecutionContext executionContext)
     {
-        _runtimeContext = runtimeContext;
+        _executionContext = executionContext;
         _stream = File.OpenRead(path);
     }
 
     /// <summary>
     ///     Gets the data from json file.
     /// </summary>
-    /// <param name="chunkedSource"></param>
-    /// <exception cref="NotSupportedException"></exception>
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    /// <param name="writer">Chunk writer.</param>
+    /// <exception cref="NotSupportedException">Thrown when json shape is not supported.</exception>
+    protected override void CollectChunks(IChunkWriter<object[]> writer)
     {
-        _runtimeContext.ReportDataSourceBegin(JsonSourceName);
+        _executionContext.ReportDataSourceBegin(JsonSourceName);
         long totalRowsProcessed = 0;
-        var endWorkToken = _runtimeContext.EndWorkToken;
 
         try
         {
@@ -64,54 +63,56 @@ public class JsonSource : RowSourceBase<dynamic>
 
             var rows = reader.TokenType switch
             {
-                JsonToken.StartObject => new[] { JsonParser.ParseObject(reader, endWorkToken) },
-                JsonToken.StartArray => JsonParser.ParseArray(reader, endWorkToken),
+                JsonToken.StartObject => [JsonParser.ParseObject(reader, writer.CancellationToken)],
+                JsonToken.StartArray => JsonParser.ParseArray(reader, writer.CancellationToken),
                 _ => null
             };
 
             if (rows == null)
                 throw new NotSupportedException("This type of .json file is not supported.");
 
-            using var enumerator = rows.GetEnumerator();
+            var columns = _executionContext.AllColumns
+                .OrderBy(column => column.ColumnIndex)
+                .ToArray();
+            var chunk = new List<object[]>();
 
-            if (!enumerator.MoveNext())
-                return;
-
-            if (enumerator.Current is not IDictionary<string, object> firstRow)
-                return;
-
-            var index = 0;
-            var indexToNameMap = firstRow.Keys.ToDictionary(_ => index++);
-
-            var list = new List<IObjectResolver>
+            foreach (var row in rows)
             {
-                new JsonObjectResolver(firstRow, indexToNameMap)
-            };
-            totalRowsProcessed++;
+                writer.CancellationToken.ThrowIfCancellationRequested();
 
-            while (enumerator.MoveNext())
-            {
-                endWorkToken.ThrowIfCancellationRequested();
-
-                if (enumerator.Current is not IDictionary<string, object> row)
-                    continue;
-
-                list.Add(new JsonObjectResolver(row, indexToNameMap));
+                var dictionary = (IDictionary<string, object>)row;
+                chunk.Add(ProjectRow(dictionary, columns));
                 totalRowsProcessed++;
 
-                if (list.Count < 1000)
+                if (chunk.Count < RowChunking.DefaultChunkSize)
                     continue;
 
-                chunkedSource.Add(list, endWorkToken);
-
-                list = new List<IObjectResolver>(1000);
+                writer.Write(chunk);
+                chunk = [];
             }
 
-            chunkedSource.Add(list, endWorkToken);
+            if (chunk.Count > 0)
+                writer.Write(chunk);
         }
         finally
         {
-            _runtimeContext.ReportDataSourceEnd(JsonSourceName, totalRowsProcessed);
+            _executionContext.ReportDataSourceEnd(JsonSourceName, totalRowsProcessed);
         }
+    }
+
+    private static object[] ProjectRow(
+        IDictionary<string, object> row,
+        IReadOnlyList<ISchemaColumn> columns)
+    {
+        if (columns.Count == 0)
+            return row.Values.ToArray();
+
+        var values = new object[columns[^1].ColumnIndex + 1];
+
+        foreach (var column in columns)
+            if (row.TryGetValue(column.ColumnName, out var value))
+                values[column.ColumnIndex] = value;
+
+        return values;
     }
 }
