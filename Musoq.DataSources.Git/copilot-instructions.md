@@ -7,7 +7,7 @@
 - `GitSchema.cs`
 - root-level `*Table.cs` and `*RowsSource.cs` files
 - `Entities/`
-- `GitWhereNodeHelper.cs`
+- `GitSchema.cs` planning methods
 - `GitLibrary.cs`
 - `Musoq.DataSources.Git.Tests/GitToSqlTests.cs`
 - `Musoq.DataSources.Git.Tests/BlameTests.cs`
@@ -17,7 +17,7 @@
 - Keep each Git concept in its own entity/table/source pair instead of adding generic catch-all rows.
 - Many sources inherit from `AsyncRowsSourceBase`; preserve chunking and cancellation for large-history traversal.
 - `GitSchema` method names and overloads define the public query surface and `desc #git` behavior.
-- Simple `WHERE` pushdown happens through `GitWhereNodeHelper`; keep optimization behavior aligned with tests.
+- Simple `WHERE` pushdown happens through runtime-v2 source planning; keep optimization behavior aligned with tests.
 
 ## Source families
 - Direct top-level sources are registered in `GitSchema.GetRowSource()`: `repository`, `tags`, `commits`, `branches`, `filehistory`, `status`, `remotes`, and `blame`.
@@ -38,7 +38,7 @@
 - `RepositoryEntity` owns a `LibGit2Sharp.Repository` and disposes it in the finalizer. Avoid introducing extra ownership ambiguity when adding nested entities.
 
 ## Simple predicate optimization
-- Predicate extraction lives in `GitWhereNodeHelper.ExtractParameters()`.
+- Predicate extraction lives in the runtime-v2 source-planning path.
 - Pushdown is applied manually inside `CommitsRowsSource`, `BranchesRowsSource`, `TagsRowsSource`, `StatusRowsSource`, and `RemotesRowsSource`.
 - Supported pushdown is intentionally simple:
 	- equality on plain fields such as `Author`, `Sha`, `FriendlyName`, `CanonicalName`, `IsRemote`, `IsTracking`, `IsAnnotated`, `Name` / `RemoteName`, `Url`, and `State`
@@ -55,7 +55,7 @@
 - Negative `take` in `filehistory` means “oldest N changes”, implemented by reversing the commit history in memory. Keep tests in sync if you optimize that path.
 - `BlameRowsSource` returns empty results for binary blobs and for blame operations that LibGit2Sharp cannot resolve; invalid revisions and missing files still throw.
 - `StatusRowsSource` currently emits one-row chunks, unlike the 100-row batching used by most other Git row sources. Do not normalize that casually unless you validate behavior and cancellation.
-- `GitWhereNodeHelper` works on raw field names, so aliasing or computed predicates should not be baked into pushdown assumptions.
+- Runtime-v2 source planning works on source field names, so aliasing or computed predicates should not be baked into pushdown assumptions.
 
 ## Fixture conventions
 - Canonical fixtures live in `Musoq.DataSources.Git.Tests/Repositories/*.zip`.

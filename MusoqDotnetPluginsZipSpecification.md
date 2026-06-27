@@ -27,8 +27,8 @@ The package is a **nested Zip archive**. The outer zip file contains metadata fi
 | `EntryPoint.txt` | Yes | The name of the main plugin assembly DLL. | `Musoq.DataSources.Git.dll` |
 | `Platform.txt` | Yes | The target operating system. | `windows`, `linux`, `macos`, or `alpine` |
 | `Architecture.txt` | Yes | The target CPU architecture. | `x64` or `arm64` |
-| `Version.txt` | No | The version string. If omitted, extracted from DLL metadata. | `1.2.3` |
-| `LibraryName.txt` | No | Display name for the plugin. If omitted, inferred from entry point. | `Musoq.DataSources.Git` |
+| `Version.txt` | Yes | The version string from the plugin project. | `1.2.3` |
+| `LibraryName.txt` | Yes | Display name for the plugin. | `Musoq.DataSources.Git` |
 
 ### Plugin Artifacts (Inner Zip: `Plugin.zip`)
 
@@ -36,6 +36,7 @@ The `Plugin.zip` file must contain the published output of the plugin project.
 
 **Contents:**
 - The main plugin DLL (e.g., `Musoq.DataSources.Git.dll`)
+- The XML documentation file for the main plugin DLL (e.g., `Musoq.DataSources.Git.xml`)
 - The dependency configuration file (`.deps.json`)
 - The runtime configuration file (`.runtimeconfig.json`)
 - All required third-party dependency DLLs (e.g., `LibGit2Sharp.dll`)
@@ -44,8 +45,10 @@ The `Plugin.zip` file must contain the published output of the plugin project.
 **Exclusions:**
 The following core Musoq assemblies **MUST NOT** be included in the `Plugin.zip` as they are provided by the host environment:
 - `Musoq.Schema.dll`
-- `Musoq.Parser.dll`
 - `Musoq.Plugins.dll`
+- `Musoq.Parser.dll`
+- `Musoq.Converter.dll`
+- `Musoq.Evaluator.dll`
 
 ## Visual Hierarchy
 
@@ -54,13 +57,13 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
 ├── EntryPoint.txt          # Content: "Musoq.DataSources.MyPlugin.dll"
 ├── Platform.txt            # Content: "windows"
 ├── Architecture.txt        # Content: "x64"
-├── Version.txt             # (Optional) Content: "1.0.0"
-├── LibraryName.txt         # (Optional) Content: "Musoq.DataSources.MyPlugin"
+├── LibraryName.txt         # Content: "Musoq.DataSources.MyPlugin"
+├── Version.txt             # Content: "1.0.0"
 └── Plugin.zip              # Inner Archive
     ├── Musoq.DataSources.MyPlugin.dll
     ├── Musoq.DataSources.MyPlugin.deps.json
     ├── Musoq.DataSources.MyPlugin.runtimeconfig.json
-    ├── Musoq.DataSources.MyPlugin.xml   # XML documentation (optional)
+    ├── Musoq.DataSources.MyPlugin.xml   # XML documentation
     ├── ThirdParty.Dependency.dll
     ├── third-party-notices/    # License files folder
     │   ├── report.json
@@ -73,11 +76,12 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
 
 1. **Publish the project:**
    ```bash
-   dotnet publish MyPlugin.csproj -c Release -r win-x64 --no-self-contained -o ./publish
+   dotnet publish MyPlugin.csproj -c Release -f net10.0 -r win-x64 --no-self-contained -o ./publish
    ```
 
 2. **Prepare the Inner Zip:**
-   - Remove excluded assemblies (`Musoq.Schema.dll`, `Musoq.Parser.dll`, `Musoq.Plugins.dll`) from `./publish`.
+   - Remove excluded assemblies (`Musoq.Schema.dll`, `Musoq.Plugins.dll`, `Musoq.Parser.dll`, `Musoq.Converter.dll`, `Musoq.Evaluator.dll`) from `./publish`.
+   - Verify the main plugin XML documentation file exists in `./publish`.
    - Gather and place all license files into a `third-party-notices` folder within `./publish`.
    - Zip the contents of `./publish` into `Plugin.zip`.
 
@@ -85,18 +89,18 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
    - Create `EntryPoint.txt` with the DLL name.
    - Create `Platform.txt` with the platform (e.g., `windows`, `linux`, `alpine`, `macos`).
    - Create `Architecture.txt` with the architecture (e.g., `x64`, `arm64`).
-   - (Optional) Create `Version.txt` with the version string if you don't want it extracted from DLL metadata.
-   - (Optional) Create `LibraryName.txt` with the display name if different from the entry point filename.
+   - Create `LibraryName.txt` with the display name.
+   - Create `Version.txt` with the version string.
 
 4. **Create the Final Package:**
-   - Zip `Plugin.zip`, `EntryPoint.txt`, `Platform.txt`, `Architecture.txt`, and any optional metadata files into `Musoq.DataSources.MyPlugin-windows-x64.zip`.
+   - Zip `Plugin.zip`, `EntryPoint.txt`, `LibraryName.txt`, `Version.txt`, `Platform.txt`, and `Architecture.txt` into `Musoq.DataSources.MyPlugin-windows-x64.zip`.
 
 ## License Gathering Tool Setup
 
 To comply with the requirement of including `third-party-notices`, you should use the `Musoq.Cloud.LicensesGatherer` tool.
 
 ### Prerequisites
-- .NET SDK 8.0+
+- .NET SDK 10.0.300 or newer compatible 10.0 feature band
 - The `Musoq.Cloud.LicensesGatherer` tool located in `tools/dotnet/LicenseGatherer`.
 
 ### Required Configuration Files

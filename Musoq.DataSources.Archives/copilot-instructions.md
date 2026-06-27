@@ -15,7 +15,7 @@
 - Keep enumeration streaming-friendly and single-pass where possible.
 - `EntryWrapper.NameToIndexMap` and `ArchivesTable` must stay aligned.
 - Helper methods like `GetTextContent()`, `GetContent()`, and `GetStreamContent()` are part of the user-facing query contract.
-- Preserve `RuntimeContext.ReportDataSourceBegin/End(...)` around archive processing.
+- Preserve runtime-v2 data-source begin/end reporting around archive processing.
 
 ## Integrations
 - Main external dependency is `SharpCompress`.

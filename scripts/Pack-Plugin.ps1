@@ -12,7 +12,13 @@ $Targets = @(
     @{ Rid = "linux-musl-x64"; Platform = "alpine";  Architecture = "x64" }
 )
 
-$ExcludedAssemblies = @("Musoq.Schema.dll", "Musoq.Parser.dll", "Musoq.Plugins.dll")
+$ExcludedAssemblies = @(
+    "Musoq.Schema.dll",
+    "Musoq.Plugins.dll",
+    "Musoq.Parser.dll",
+    "Musoq.Converter.dll",
+    "Musoq.Evaluator.dll"
+)
 
 $IgnorePatterns = @(
     "Tests$",
@@ -89,6 +95,19 @@ if ($Projects.Count -eq 0) {
     Write-Error "No matching plugin projects found."
 }
 
+function Get-ProjectVersion {
+    param([System.IO.FileInfo]$Project)
+
+    [xml]$csproj = Get-Content $Project.FullName
+    $PropertyGroup = $csproj.Project.PropertyGroup | Select-Object -First 1
+
+    if ($PropertyGroup.Version) {
+        return $PropertyGroup.Version.Trim()
+    }
+
+    return "1.0.0"
+}
+
 $ProjectLicenseMap = @{}
 
 foreach ($Project in $Projects) {
@@ -149,7 +168,7 @@ foreach ($Project in $Projects) {
 Write-Host "Starting Build..." -ForegroundColor Cyan
 
 $BuildScriptBlock = {
-    param($ProjectFullName, $ProjectBaseName, $OutputDirectory, $Targets, $ExcludedAssemblies, $ProjectLicensesDir)
+    param($ProjectFullName, $ProjectBaseName, $ProjectVersion, $OutputDirectory, $Targets, $ExcludedAssemblies, $ProjectLicensesDir)
     
     $ErrorActionPreference = "Stop"
     $MinPluginZipSizeBytes = 1000
@@ -166,6 +185,7 @@ $BuildScriptBlock = {
             $PublishArgs = @(
                 "publish", $ProjectFullName,
                 "-c", "Release",
+                "-f", "net10.0",
                 "-r", $Rid,
                 "--no-self-contained",
                 "-o", $PublishDir
@@ -202,6 +222,12 @@ $BuildScriptBlock = {
                 throw "Entry point DLL '$EntryPointDll' not found in publish directory: $PublishDir"
             }
 
+            $EntryPointXml = "${ProjectBaseName}.xml"
+            $EntryPointXmlPath = Join-Path $PublishDir $EntryPointXml
+            if (-not (Test-Path $EntryPointXmlPath)) {
+                throw "XML documentation '$EntryPointXml' not found in publish directory: $PublishDir"
+            }
+
             $InnerZipPath = Join-Path $PackageDir "Plugin.zip"
             $FilesToCompress = Get-ChildItem -Path $PublishDir -Force | Select-Object -ExpandProperty FullName
             Compress-Archive -Path $FilesToCompress -DestinationPath $InnerZipPath -Force
@@ -215,6 +241,8 @@ $BuildScriptBlock = {
             }
 
             Set-Content -Path "$PackageDir\EntryPoint.txt" -Value "${ProjectBaseName}.dll"
+            Set-Content -Path "$PackageDir\LibraryName.txt" -Value $ProjectBaseName
+            Set-Content -Path "$PackageDir\Version.txt" -Value $ProjectVersion
             Set-Content -Path "$PackageDir\Platform.txt" -Value $Target.Platform
             Set-Content -Path "$PackageDir\Architecture.txt" -Value $Target.Architecture
 
@@ -240,6 +268,7 @@ foreach ($Project in $Projects) {
     $JobParams = @(
         $Project.FullName,
         $Project.BaseName,
+        (Get-ProjectVersion -Project $Project),
         $OutputDirectory,
         $Targets,
         $ExcludedAssemblies,
@@ -260,4 +289,3 @@ foreach ($Project in $Projects) {
     $LicenseTempDir = Join-Path $OutputDirectory "temp_licenses_$($Project.BaseName)"
     if (Test-Path $LicenseTempDir) { Remove-Item $LicenseTempDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
-

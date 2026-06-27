@@ -6,8 +6,17 @@ namespace Musoq.DataSources.RepresentativeTests;
 [TestClass]
 public class PluginPackageSmokeTests
 {
+    private static readonly string[] HostProvidedAssemblies =
+    [
+        "Musoq.Schema.dll",
+        "Musoq.Plugins.dll",
+        "Musoq.Parser.dll",
+        "Musoq.Converter.dll",
+        "Musoq.Evaluator.dll"
+    ];
+
     [TestMethod]
-    public void PluginPackages_WhenArtifactsExist_ShouldContainEntryPointDllAndXmlDocs()
+    public void PluginPackages_WhenArtifactsExist_ShouldMatchRuntimeV2PackageContract()
     {
         var artifactsDirectory = Environment.GetEnvironmentVariable("MUSOQ_PLUGIN_ARTIFACTS_DIR")
                                  ?? Path.Combine(FindSolutionRoot(), "artifacts");
@@ -40,6 +49,18 @@ public class PluginPackageSmokeTests
             var entryPointDll = File.ReadAllText(entryPointPath).Trim();
             Assert.IsFalse(string.IsNullOrWhiteSpace(entryPointDll), $"EntryPoint.txt is empty: {packagePath}");
 
+            var libraryNamePath = Path.Combine(outerDirectory, "LibraryName.txt");
+            Assert.IsTrue(File.Exists(libraryNamePath), $"Package is missing LibraryName.txt: {packagePath}");
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(File.ReadAllText(libraryNamePath)),
+                $"LibraryName.txt is empty: {packagePath}");
+
+            var versionPath = Path.Combine(outerDirectory, "Version.txt");
+            Assert.IsTrue(File.Exists(versionPath), $"Package is missing Version.txt: {packagePath}");
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(File.ReadAllText(versionPath)),
+                $"Version.txt is empty: {packagePath}");
+
             var pluginZipPath = Path.Combine(outerDirectory, "Plugin.zip");
             Assert.IsTrue(File.Exists(pluginZipPath), $"Package is missing Plugin.zip: {packagePath}");
 
@@ -53,6 +74,13 @@ public class PluginPackageSmokeTests
             Assert.IsTrue(
                 File.Exists(Path.Combine(pluginDirectory, xmlDocumentationFile)),
                 $"Plugin.zip is missing XML documentation '{xmlDocumentationFile}': {packagePath}");
+
+            foreach (var assemblyName in HostProvidedAssemblies)
+            {
+                Assert.IsFalse(
+                    File.Exists(Path.Combine(pluginDirectory, assemblyName)),
+                    $"Plugin.zip should not include host-provided assembly '{assemblyName}': {packagePath}");
+            }
         }
         finally
         {

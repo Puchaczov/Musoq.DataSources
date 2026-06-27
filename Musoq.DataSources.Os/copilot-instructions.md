@@ -32,7 +32,7 @@
 - Preserve behavior around missing paths, file scans, and cross-apply-friendly metadata extraction.
 
 ## Optimization and metadata quirks
-- Simple pushdown is centralized in `OsWhereNodeHelper.cs`.
+- Simple pushdown is centralized in runtime-v2 source planning.
 - File pushdown is intentionally narrow: it only translates simple equality on file name-like fields and extensions.
 - Directory pushdown is lighter than file pushdown and mostly uses name extraction.
 - `OR` conditions are intentionally ignored for pushdown.
@@ -50,7 +50,7 @@
 - For a new file-based surface, reuse `EnumerateFilesSourceBase<TEntity>` and add a dedicated domain folder with `Entity`, schema helper, source, and table types.
 - Keep all source/table registration and manual overload wiring in `OsSchema.cs`.
 - Add SQL helpers in `OsLibrary.cs` with bindable methods and injected source entities where appropriate.
-- If you extend pushdown, do it in `OsWhereNodeHelper.cs` first rather than ad hoc in individual sources.
+- If you extend pushdown, do it in the source-planning path first rather than ad hoc in individual sources.
 
 ## Integrations
 - `MetadataExtractor`

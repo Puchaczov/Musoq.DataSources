@@ -10,6 +10,14 @@ $ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 
+$HostProvidedAssemblies = @(
+    "Musoq.Schema.dll",
+    "Musoq.Plugins.dll",
+    "Musoq.Parser.dll",
+    "Musoq.Converter.dll",
+    "Musoq.Evaluator.dll"
+)
+
 if (-not (Test-ValidRepository -Repository $Repository)) {
     Write-Error "Invalid repository format: $Repository. Expected 'owner/repo' format."
     exit 1
@@ -122,10 +130,22 @@ foreach ($Project in $Projects) {
                 Expand-Archive -Path $artifact.FullName -DestinationPath $ValidationTempDir -Force
                 
                 $EntryPointFile = Join-Path $ValidationTempDir "EntryPoint.txt"
+                $LibraryNameFile = Join-Path $ValidationTempDir "LibraryName.txt"
+                $VersionFile = Join-Path $ValidationTempDir "Version.txt"
                 $PluginZipFile = Join-Path $ValidationTempDir "Plugin.zip"
                 
                 if (-not (Test-Path $EntryPointFile)) {
                     Write-Warning "  Skipping artifact missing EntryPoint.txt: $($artifact.Name)"
+                    continue
+                }
+
+                if (-not (Test-Path $LibraryNameFile)) {
+                    Write-Warning "  Skipping artifact missing LibraryName.txt: $($artifact.Name)"
+                    continue
+                }
+
+                if (-not (Test-Path $VersionFile)) {
+                    Write-Warning "  Skipping artifact missing Version.txt: $($artifact.Name)"
                     continue
                 }
                 
@@ -139,6 +159,18 @@ foreach ($Project in $Projects) {
                     Write-Warning "  Skipping artifact with empty EntryPoint.txt: $($artifact.Name)"
                     continue
                 }
+
+                $LibraryName = (Get-Content $LibraryNameFile -Raw).Trim()
+                if ($LibraryName -ne $ProjectName) {
+                    Write-Warning "  Skipping artifact with LibraryName.txt '$LibraryName' that does not match '$ProjectName': $($artifact.Name)"
+                    continue
+                }
+
+                $ArtifactVersion = (Get-Content $VersionFile -Raw).Trim()
+                if ($ArtifactVersion -ne $Version) {
+                    Write-Warning "  Skipping artifact with Version.txt '$ArtifactVersion' that does not match '$Version': $($artifact.Name)"
+                    continue
+                }
                 
                 # Extract Plugin.zip and verify entry point DLL exists
                 $PluginTempDir = Join-Path $ValidationTempDir "plugin-contents"
@@ -148,6 +180,26 @@ foreach ($Project in $Projects) {
                 $EntryPointPath = Join-Path $PluginTempDir $EntryPointDll
                 if (-not (Test-Path $EntryPointPath)) {
                     Write-Warning "  Skipping artifact with missing entry point DLL '$EntryPointDll': $($artifact.Name)"
+                    continue
+                }
+
+                $EntryPointXml = [System.IO.Path]::ChangeExtension($EntryPointDll, ".xml")
+                $EntryPointXmlPath = Join-Path $PluginTempDir $EntryPointXml
+                if (-not (Test-Path $EntryPointXmlPath)) {
+                    Write-Warning "  Skipping artifact with missing XML documentation '$EntryPointXml': $($artifact.Name)"
+                    continue
+                }
+
+                $ContainsHostAssembly = $false
+                foreach ($Assembly in $HostProvidedAssemblies) {
+                    if (Test-Path (Join-Path $PluginTempDir $Assembly)) {
+                        Write-Warning "  Skipping artifact containing host-provided assembly '$Assembly': $($artifact.Name)"
+                        $ContainsHostAssembly = $true
+                        break
+                    }
+                }
+
+                if ($ContainsHostAssembly) {
                     continue
                 }
                 

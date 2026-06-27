@@ -19,14 +19,14 @@
 
 ## Dynamic table rules
 - This is the clearest dynamic-table example in the repo.
-- If `runtimeContext.QuerySourceInfo.HasExternallyProvidedTypes` is true, `GetTableByName()` returns `InitiallyInferredTable`; otherwise the table is built from file headers plus inferred types.
+- If runtime-v2 metadata says all columns are externally provided, `GetTableByName()` returns `InitiallyInferredTable`; otherwise the table is built from file headers plus inferred types.
 - File-backed inference opens the file, skips configured leading lines and blank lines, then builds columns from the first logical row.
 - Headerless files become `Column1`, `Column2`, and so on.
 - Stream mode does not infer its schema directly from the stream content; it relies on the runtime column set.
 
 ## Patterns to preserve
 - Preserve header sanitization via `SeparatedValuesHelper.MakeHeaderNameValidColumnName()`.
-- Preserve chunked async reading, cancellation, and `RuntimeContext.ReportDataSourceBegin/End(...)`.
+- Preserve chunked async reading, cancellation, and runtime-v2 data-source begin/end reporting.
 - `Stream` and `IReadOnlyTable` inputs are part of the query contract and support coupling/cross-apply scenarios.
 
 ## Header and type behavior

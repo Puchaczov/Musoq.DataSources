@@ -15,7 +15,7 @@
 ## Architecture map
 - `CSharpSchema.GetRowSource()` is the real composition root: it validates environment variables, wires HTTP/cache/rate-limit handlers, selects immediate-load vs in-memory solution flow, and defines the public XML-doc contract.
 - `CSharpLibrary` is the safest extension point for new SQL-callable helpers over existing entities.
-- `RowsSources/` contains solution-loading and query-optimization logic. Read `CSharpImmediateLoadSolutionRowsSource.cs`, `CSharpInMemorySolutionRowsSource.cs`, and `RoslynWhereNodeHelper.cs` first.
+- `RowsSources/` contains solution-loading and query-optimization logic. Read `CSharpImmediateLoadSolutionRowsSource.cs`, `CSharpInMemorySolutionRowsSource.cs`, and the source-planning path in `CSharpSchema.cs` first.
 - The main entity chain is `SolutionEntity -> ProjectEntity -> DocumentEntity -> type/member entities`. Most user-visible behavior comes from entity properties rather than special row-source code.
 - `Tables/` is secondary here; the primary table metadata entry is `CSharpSolutionTable.cs`.
 
@@ -46,7 +46,7 @@
 ## Common pitfalls
 - `MUSOQ_SERVER_HTTP_ENDPOINT` is required for `GetRowSource()` even when the query mostly looks local.
 - `DocumentEntity` members often assume initialization has already happened; ad hoc entity creation must respect that.
-- `RoslynWhereNodeHelper` only supports narrow pushdown for simple equality filters joined by `AND`; `OR` is intentionally ignored for optimization.
+- Runtime-v2 planning only supports narrow pushdown for simple equality filters joined by `AND`; `OR` is intentionally ignored for optimization.
 - Timeout-tolerant analysis helpers return fallback values like `null` or `-1` instead of failing the entire query; preserve that behavior.
 - Entity property names and XML docs are public query surface. Renaming them is a breaking change.
 - NuGet metadata retrieval contains ordered fallbacks and banned-value filtering; “simplifying” it often changes observable results.
@@ -54,7 +54,7 @@
 ## Safe extension points
 - Add new SQL-callable helper methods in `CSharpLibrary.cs` first.
 - Add new entity-derived surfaces in `Entities/`, then reflect them in `CSharpSchema.cs` XML docs.
-- Extend solution/project filter optimization by updating both `RoslynWhereNodeHelper` and the row-source project-matching logic.
+- Extend solution/project filter optimization by updating both the source-planning path and the row-source project-matching logic.
 - Swap external behaviors through interfaces in `Components/` and `Components/NuGet/`, not by editing callers throughout the entity graph.
 - Extend CLI/cache behavior through `LifecycleHooks.cs` and `SolutionOperationsCommand.cs`, not by introducing scattered static state.
 

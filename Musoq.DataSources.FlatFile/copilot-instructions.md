@@ -21,7 +21,7 @@
 
 ## Line semantics and chunking
 - `FlatFileSource` reads the file sequentially and yields `FlatFileEntity` rows in source order.
-- Current chunking is synchronous and local to this plugin, not shared with `AsyncRowsSource`: it buffers rows in a `List<EntityResolver<FlatFileEntity>>` and emits after roughly 1000 rows.
+- Current chunking is synchronous and local to this plugin, not shared with `AsyncRowsSource`: it buffers `FlatFileEntity` rows and emits after roughly 1000 rows.
 - Be careful when changing chunk logic. The current implementation uses the same counter for emitted `LineNumber` values and chunk flushing, so any fix here must preserve existing observable behavior or come with explicit regression tests and doc updates.
 - Empty files and missing files are both treated as zero-row sources; missing files simply return without throwing.
 - Cancellation is only observed when adding chunks through the runtime token, so if you refactor reading flow, keep cancellation semantics aligned with the current tests.
