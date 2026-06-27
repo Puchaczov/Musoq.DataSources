@@ -1,6 +1,8 @@
-# Musoq Plugin Development Tutorial
+# Musoq Plugin Development Tutorial - Runtime V2
 
-Welcome to the comprehensive tutorial for creating Musoq plugins! In this guide, I'll teach you how to build powerful data source plugins from the ground up. By the end of this tutorial, you'll understand every component of a Musoq plugin and be able to create your own to query any data source using SQL-like syntax.
+This tutorial teaches how to build and migrate Musoq data source plugins for the runtime-v2 engine. It is self-contained for a plugin repository that does not have the Musoq source tree checked out. The examples mirror the current runtime-v2 shape used by Musoq itself: typed entity rows, dictionary rows for dynamic data, explicit source planning, source runtime settings, `TABLE` / `COUPLE`, read modifiers, and contract diagnostics.
+
+Runtime-v2 only: do not build new plugins against runtime-v1 datasource APIs.
 
 ## Table of Contents
 
@@ -9,3253 +11,1870 @@ Welcome to the comprehensive tutorial for creating Musoq plugins! In this guide,
 3. [Core Concepts and Architecture](#core-concepts-and-architecture)
 4. [Building Your First Plugin](#building-your-first-plugin)
 5. [Understanding Each Component](#understanding-each-component)
-6. [Essential XML Metadata](#essential-xml-metadata)
-7. [Documentation and Build Configuration](#documentation-and-build-configuration)
-8. [Testing and Validation](#testing-and-validation)
-9. [Advanced Patterns and Features](#advanced-patterns-and-features)
+6. [Essential XML Metadata (Critical)](#essential-xml-metadata-critical)
+7. [Testing and Validation](#testing-and-validation)
+8. [Advanced Runtime V2 Patterns](#advanced-runtime-v2-patterns)
+9. [Migration From Runtime V1](#migration-from-runtime-v1)
 10. [Best Practices and Common Patterns](#best-practices-and-common-patterns)
-11. [Learning from Real-World Examples](#learning-from-real-world-examples)
-12. [Common Use Cases](#common-use-cases)
-13. [Support and Community](#support-and-community)
-
----
+11. [Common Use Cases](#common-use-cases)
+12. [Summary](#summary)
 
 ## Understanding Musoq Plugins
 
 ### What is a Musoq Plugin?
 
-A Musoq plugin is a .NET library that extends Musoq's capability to query data sources that aren't natively supported. Think of it as a bridge between your data and SQL queries.
+A Musoq datasource plugin lets SQL query external data:
 
-**Example**: Instead of writing custom code to parse JSON files and filter data, you can write:
 ```sql
-SELECT Name, Age FROM #json.file('users.json') WHERE Age > 25
+select City, TemperatureC
+from #weather.current('Warsaw')
+where TemperatureC > 10
+order by ObservedAt desc
+take 5;
 ```
+
+The plugin tells Musoq:
+
+- what schema name it provides, such as `weather`
+- what source methods exist, such as `current(city)`
+- what row type and columns each source returns
+- how to produce row chunks during execution
+- what source-side work can be accepted, such as filters or paging
+- what settings the host must resolve, such as API tokens
 
 ### How Plugins Work
 
-When Musoq encounters a query like `#myplugin.table()`, it:
+At runtime the engine follows this path:
 
-1. **Locates your plugin** using the schema name (`myplugin`)
-2. **Instantiates your schema class** to understand available tables
-3. **Creates a row source** to fetch data from your data source
-4. **Maps your data** to SQL-queryable rows and columns
-5. **Applies SQL operations** (WHERE, JOIN, GROUP BY, etc.) on your data
+```text
+SQL text
+  -> #weather.current('Warsaw')
+  -> ISchemaProvider.GetSchema("weather")
+  -> ISchema.GetTableByName("current", metadataContext, parameters)
+  -> ISchema.DescribeSource("current", describeContext, parameters)
+  -> ISchema.TryPlanSource("current", request, parameters)
+  -> ISchema.GetRowSource<T>("current", executionContext, parameters)
+  -> RowSource<T>.Chunks
+  -> SQL projection, joins, grouping, ordering, and result rows
+```
 
 ### Plugin Lifecycle
 
-```
-SQL Query → Schema Resolution → Table Metadata → Row Source Creation → Data Retrieval → SQL Processing → Results
-```
-
-Let's understand each step:
-
-**1. Schema Resolution**: Musoq finds your plugin by name
-**2. Table Metadata**: Your plugin describes what columns are available
-**3. Row Source Creation**: Your plugin creates an object to fetch data
-**4. Data Retrieval**: Your plugin fetches actual data from the source
-**5. SQL Processing**: Musoq applies SQL operations on your data
-
----
+1. The host loads the plugin assembly.
+2. The host creates an `ISchemaProvider`.
+3. During query compilation, Musoq asks for table metadata, source descriptions, settings requirements, and planning decisions.
+4. During query execution, Musoq asks for a typed `RowSource<T>`.
+5. The row source emits chunks as `IReadOnlyList<T>`.
 
 ## Prerequisites and Setup
 
-Before we begin building plugins, let's make sure you have everything you need and understand the development environment.
-
 ### Required Tools
 
-- **.NET 8.0 SDK or later** - Download from [dotnet.microsoft.com](https://dotnet.microsoft.com/download)
-- **A code editor** - Visual Studio, VS Code, or any C# IDE
-- **Basic C# knowledge** - Understanding classes, interfaces, and async programming
-- **SQL familiarity** - Basic SELECT, WHERE, JOIN concepts
+- .NET SDK `10.0.300` or newer compatible `10.0` feature band
+- A compatible Musoq package train; current known train is `17.0.0-alpha.1`
+- Visual Studio, Rider, or VS Code with C# support
+- A test runner for MSTest, xUnit, or NUnit
 
-### Understanding the Development Environment
+Add `global.json` to a standalone repository:
 
-When you build a Musoq plugin, you're creating a **class library** that Musoq can dynamically load. Your plugin will be compiled into a DLL that other applications can reference and use.
-
-**Key concept**: Musoq loads your plugin at runtime and uses reflection to discover its capabilities. This means your plugin must follow specific conventions and interfaces.
-
-### Setting Up Your Development Environment
-
-1. **Create a workspace** for your plugin development:
-   ```bash
-   mkdir MyMusoqPlugin
-   cd MyMusoqPlugin
-   ```
-
-2. **Understand the Musoq ecosystem** by examining existing plugins in this repository. Each plugin in the `Musoq.DataSources.*` folders demonstrates different patterns and complexity levels.
-
-3. **Clone the repository** to have reference implementations available:
-   ```bash
-   git clone https://github.com/Puchaczov/Musoq.DataSources.git
-   ```
-
----
-
-## Core Concepts and Architecture
-
-Before we start coding, let's understand the fundamental concepts that make Musoq plugins work.
-
-### The Five Essential Components
-
-Every Musoq plugin consists of exactly five key components. Think of them as the building blocks:
-
-#### 1. **Schema** - The Plugin's Main Interface
-- **Purpose**: The entry point that tells Musoq "I exist and here's what I can do"
-- **Responsibility**: Defines available tables and handles requests
-- **Analogy**: Like a restaurant menu - it lists what's available
-
-#### 2. **Entity** - Your Data Model  
-- **Purpose**: Represents the structure of your data
-- **Responsibility**: Defines properties that become SQL columns
-- **Analogy**: Like a database table schema - defines what fields exist
-
-#### 3. **Table** - Column Metadata Definition
-- **Purpose**: Describes the structure and types of your data to Musoq
-- **Responsibility**: Maps entity properties to SQL column information
-- **Analogy**: Like column definitions in CREATE TABLE statement
-
-#### 4. **RowSource** - The Data Fetcher
-- **Purpose**: Actually retrieves data from your data source
-- **Responsibility**: Connects to external systems and returns data
-- **Analogy**: Like a database driver - handles the actual data retrieval
-
-#### 5. **Helper** - The Column Mapping Bridge
-- **Purpose**: Creates efficient mappings between entity properties and table columns
-- **Responsibility**: Provides fast access patterns for data retrieval
-- **Analogy**: Like an index - speeds up data access
-
-### How These Components Work Together
-
-```
-SQL Query: SELECT Name FROM #myplugin.users()
-    ↓
-1. Schema receives the request for "users" table
-    ↓  
-2. Schema asks Table for column information about "users"
-    ↓
-3. Schema creates RowSource to fetch actual user data
-    ↓
-4. RowSource uses Entity to structure the data
-    ↓
-5. Helper provides efficient column access patterns
-    ↓
-6. Data flows back as SQL-queryable results
-```
-
-### The Plugin Directory Structure
-
-Here's how we'll organize our plugin files:
-
-```
-Musoq.DataSources.MyPlugin/
-├── AssemblyInfo.cs              # Plugin registration
-├── MyPluginSchema.cs            # Main schema class (Component #1)
-├── Entities/
-│   └── MyEntity.cs              # Data model (Component #2)
-├── Tables/
-│   ├── MyTable.cs               # Table metadata (Component #3)
-│   └── MyTableHelper.cs         # Column mappings (Component #5)
-├── Sources/
-│   └── MyRowSource.cs           # Data fetcher (Component #4)
-├── MyPluginLibrary.cs           # Custom functions (optional)
-└── MyPlugin.csproj              # Project configuration
-```
-
-**Why this structure?** Each component has a distinct responsibility, making the code easier to understand, test, and maintain.
-
-### Understanding Data Flow
-
-Let's trace through what happens when someone runs a SQL query:
-
-**Step 1: Discovery**
-- User runs: `SELECT * FROM #weather.current()`
-- Musoq looks for a schema named "weather"
-
-**Step 2: Schema Resolution**
-- Your Schema class gets instantiated
-- Musoq calls `GetTableByName("current", ...)` on your schema
-
-**Step 3: Metadata Resolution**
-- Your Table class describes what columns are available
-- Helper class provides efficient access patterns
-
-**Step 4: Data Retrieval**
-- Musoq calls `GetRowSource("current", ...)` on your schema
-- Your RowSource fetches actual weather data
-- Data gets packaged into Entity objects
-
-**Step 5: SQL Processing**
-- Musoq applies SQL operations (WHERE, ORDER BY, etc.) on your data
-- Results are returned to the user
-
----
-
-## Building Your First Plugin
-
-Now let's build a complete plugin from scratch! We'll create a "Weather" plugin that provides current weather data. I'll guide you through each step, explaining why we're doing what we're doing.
-
-### Step 1: Create the Project Foundation
-
-First, let's create a new .NET class library:
-
-```bash
-dotnet new classlib -n Musoq.DataSources.Weather
-cd Musoq.DataSources.Weather
-```
-
-**Why this naming?** The `Musoq.DataSources.*` naming convention helps organize plugins and indicates their purpose clearly.
-
-### Step 2: Configure the Project File
-
-Replace the contents of `Musoq.DataSources.Weather.csproj`:
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.0</Version>
-        <Authors>Your Name</Authors>
-        <Product>Musoq</Product>
-        <PackageProjectUrl>https://github.com/YourGitHub/Weather-Plugin</PackageProjectUrl>
-        <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageTags>sql, weather, dotnet-core</PackageTags>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <EnableDynamicLoading>true</EnableDynamicLoading>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <PackageId>Musoq.DataSources.Weather</PackageId>
-    </PropertyGroup>
-
-    <!-- CRITICAL: This target ensures XML documentation is included -->
-    <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
-        <ItemGroup>
-            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" 
-                                    Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
-        </ItemGroup>
-    </Target>
-
-    <ItemGroup>
-        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="5.7.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.4.0" />
-        <PackageReference Include="Musoq.Schema" Version="10.1.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
-    </ItemGroup>
-</Project>
-```
-
-**Key points about this configuration:**
-- `GenerateDocumentationFile` enables XML documentation generation (critical!)
-- `EnableDynamicLoading` allows Musoq to load your plugin at runtime
-- The special `_ResolveCopyLocalNuGetPackageXmls` target includes XML metadata in packages
-- We reference the three essential Musoq packages
-
-### Step 3: Register Your Plugin
-
-Create `AssemblyInfo.cs` in the root directory:
-
-```csharp
-using Musoq.Schema.Attributes;
-
-[assembly: PluginSchemas("weather")]
-```
-
-**What's happening here?** This tells Musoq that your assembly contains a schema named "weather". When someone writes `#weather.something()`, Musoq will look for this registration.
-
-### Step 4: Design Your Data Model (Entity)
-
-Create the `Entities/` directory and add `WeatherEntity.cs`:
-
-```csharp
-namespace Musoq.DataSources.Weather.Entities;
-
-/// <summary>
-/// Represents current weather information for a location
-/// </summary>
-public class WeatherEntity
+```json
 {
-    public string Location { get; set; } = string.Empty;
-    public double Temperature { get; set; }
-    public string Description { get; set; } = string.Empty;
-    public double Humidity { get; set; }
-    public double WindSpeed { get; set; }
-    public DateTime LastUpdated { get; set; }
-    public bool IsRaining { get; set; }
+  "sdk": {
+    "version": "10.0.300",
+    "rollForward": "latestFeature",
+    "allowPrerelease": false
+  }
 }
 ```
 
-**Why this structure?** Each property will become a column in our SQL table. We use descriptive names and appropriate data types. The properties are simple values that SQL can easily understand.
+### Setting Up Your Development Environment
 
-### Step 5: Create the Helper (Column Mappings)
+```powershell
+dotnet new sln -n WeatherPlugin
+dotnet new classlib -n Musoq.DataSources.Weather -f net10.0
+dotnet new mstest -n Musoq.DataSources.Weather.Tests -f net10.0
+dotnet sln add Musoq.DataSources.Weather/Musoq.DataSources.Weather.csproj
+dotnet sln add Musoq.DataSources.Weather.Tests/Musoq.DataSources.Weather.Tests.csproj
+dotnet add Musoq.DataSources.Weather.Tests/Musoq.DataSources.Weather.Tests.csproj reference Musoq.DataSources.Weather/Musoq.DataSources.Weather.csproj
+```
 
-Create the `Tables/` directory and add `WeatherTableHelper.cs`:
+Plugin project package references:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1">
+    <ExcludeAssets>runtime</ExcludeAssets>
+  </PackageReference>
+  <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.1">
+    <ExcludeAssets>runtime</ExcludeAssets>
+  </PackageReference>
+</ItemGroup>
+```
+
+The host normally provides the Musoq runtime assemblies. Keep compile assets, but exclude runtime assets from plugin output to avoid duplicate assembly loading.
+
+Test project package references:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1" />
+  <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1" />
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+  <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
+  <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
+</ItemGroup>
+```
+
+## Core Concepts and Architecture
+
+### The Five Essential Components
+
+Runtime-v2 plugins still have a simple mental model, but one old component changes: the resolver/helper maps are no longer the bridge. Typed rows and table metadata are the bridge.
+
+1. **SchemaProvider** - gives the host an `ISchema`.
+2. **Schema** - implements source metadata, settings, planning, and row-source creation.
+3. **Entity or Dictionary Row** - represents each data row.
+4. **Table** - declares columns and row type through `ISchemaTable`.
+5. **RowSource** - emits row chunks through `RowSource<T>`.
+
+Optional components:
+
+- **Library** - SQL-callable functions through `LibraryBase`.
+- **Client** - talks to an API, database, file system, or SDK.
+- **Planner** - translates `SourcePlanRequest` into accepted work.
+- **Value converter** - honors `TABLE` read modifiers for dynamic sources.
+
+### Runtime V2 Contracts
+
+The active datasource contract is:
+
+```csharp
+public interface ISchema
+{
+    string Name { get; }
+
+    ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object?[] parameters);
+
+    SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object?[] parameters);
+
+    IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object?[] parameters);
+
+    SourcePlanResult TryPlanSource(
+        string name,
+        SourcePlanRequest request,
+        params object?[] parameters);
+
+    RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object?[] parameters);
+}
+```
+
+Rows are produced through:
+
+```csharp
+public abstract class RowSource<T>
+{
+    public abstract IEnumerable<IReadOnlyList<T>> Chunks { get; }
+}
+
+public abstract class RowSourceBase<T> : RowSource<T>
+{
+    protected abstract void CollectChunks(IChunkWriter<T> writer);
+}
+
+public interface IChunkWriter<T>
+{
+    CancellationToken CancellationToken { get; }
+    void Write(IReadOnlyList<T> rows);
+}
+```
+
+### Typed Rows vs Dynamic Rows
+
+Use typed rows when the plugin owns the schema:
+
+```csharp
+public sealed class WeatherEntity
+{
+    public string City { get; init; } = string.Empty;
+    public decimal TemperatureC { get; init; }
+}
+```
+
+Use dictionary rows when the query owns the schema through `TABLE`:
+
+```csharp
+IReadOnlyDictionary<string, object?> row =
+    new Dictionary<string, object?>
+    {
+        ["City"] = "Warsaw",
+        ["TemperatureC"] = 21.5m
+    };
+```
+
+### Data Flow
+
+```text
+Schema table metadata:
+  column names, indexes, types, row type
+
+Planning:
+  required columns, predicate, order, skip, take
+
+Execution context:
+  accepted source plan, runtime settings, progress reporter
+
+RowSource:
+  chunks of typed rows or dictionary rows
+```
+
+## Building Your First Plugin
+
+This walkthrough builds `#weather.current(city)`.
+
+### Step 1: Create the Project Foundation
+
+Directory:
+
+```text
+Musoq.DataSources.Weather/
+  Musoq.DataSources.Weather.csproj
+  Assembly.cs
+  WeatherEntity.cs
+  WeatherTable.cs
+  WeatherRowSource.cs
+  WeatherSchema.cs
+  WeatherSchemaProvider.cs
+  WeatherLibrary.cs
+  WeatherClient.cs
+```
+
+### Step 2: Configure the Project File
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyName>Musoq.DataSources.Weather</AssemblyName>
+    <RootNamespace>Musoq.DataSources.Weather</RootNamespace>
+    <PackageId>Musoq.DataSources.Weather</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Your Name</Authors>
+    <Product>Musoq</Product>
+    <Description>Runtime-v2 weather datasource for Musoq.</Description>
+    <PackageProjectUrl>https://example.org/weather-plugin</PackageProjectUrl>
+    <PackageTags>musoq;datasource;weather;runtime-v2</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <!-- Critical: copy XML documentation for referenced NuGet assemblies when
+       they are available. Musoq hosts and registry tooling can read XML
+       metadata without loading arbitrary plugin DLLs. -->
+  <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths
+        Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')"
+        Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.1">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>
+```
+
+The important parts are `EnableDynamicLoading`, `GenerateDocumentationFile`, the XML copy target, and `ExcludeAssets=runtime` on Musoq assemblies that the host provides. Test projects usually do not exclude runtime assets because the test process must load the Musoq assemblies itself.
+
+### Step 3: Register Your Plugin
+
+`Properties/AssemblyInfo.cs`:
+
+```csharp
+using System.Reflection;
+using Musoq.Schema.Attributes;
+
+[assembly: PluginSchemas("weather")]
+[assembly: AssemblyTitle("Musoq Weather Data Source")]
+[assembly: AssemblyDescription("Runtime-v2 weather datasource for Musoq.")]
+[assembly: AssemblyCompany("Example")]
+[assembly: AssemblyProduct("Musoq.DataSources.Weather")]
+```
+
+`PluginSchemas("weather")` is critical. Musoq can discover that the plugin owns `#weather` without loading the DLL, then use the XML documentation next to the DLL to inspect available methods and columns.
+
+`Assembly.cs`:
 
 ```csharp
 using Musoq.Schema;
-using Musoq.DataSources.Weather.Entities;
 
-namespace Musoq.DataSources.Weather.Tables;
+namespace Musoq.DataSources.Weather;
 
-internal static class WeatherTableHelper
+public sealed class Assembly
 {
-    public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<WeatherEntity, object?>> IndexToMethodAccessMap;
-    public static readonly ISchemaColumn[] Columns;
-
-    static WeatherTableHelper()
+    public static ISchemaProvider CreateSchemaProvider()
     {
-        // Map column names to their index positions
-        NameToIndexMap = new Dictionary<string, int>
-        {
-            {nameof(WeatherEntity.Location), 0},
-            {nameof(WeatherEntity.Temperature), 1},
-            {nameof(WeatherEntity.Description), 2},
-            {nameof(WeatherEntity.Humidity), 3},
-            {nameof(WeatherEntity.WindSpeed), 4},
-            {nameof(WeatherEntity.LastUpdated), 5},
-            {nameof(WeatherEntity.IsRaining), 6}
-        };
-        
-        // Map column indices to property accessors
-        IndexToMethodAccessMap = new Dictionary<int, Func<WeatherEntity, object?>>
-        {
-            {0, entity => entity.Location},
-            {1, entity => entity.Temperature},
-            {2, entity => entity.Description},
-            {3, entity => entity.Humidity},
-            {4, entity => entity.WindSpeed},
-            {5, entity => entity.LastUpdated},
-            {6, entity => entity.IsRaining}
-        };
-        
-        // Define column metadata for SQL
-        Columns = new[]
-        {
-            new SchemaColumn(nameof(WeatherEntity.Location), 0, typeof(string)),
-            new SchemaColumn(nameof(WeatherEntity.Temperature), 1, typeof(double)),
-            new SchemaColumn(nameof(WeatherEntity.Description), 2, typeof(string)),
-            new SchemaColumn(nameof(WeatherEntity.Humidity), 3, typeof(double)),
-            new SchemaColumn(nameof(WeatherEntity.WindSpeed), 4, typeof(double)),
-            new SchemaColumn(nameof(WeatherEntity.LastUpdated), 5, typeof(DateTime)),
-            new SchemaColumn(nameof(WeatherEntity.IsRaining), 6, typeof(bool))
-        };
+        return new WeatherSchemaProvider();
     }
 }
 ```
 
-**What's this doing?** This helper class creates efficient mappings for Musoq to:
-1. Look up columns by name (for `SELECT Location`)
-2. Access entity properties by index (for performance)
-3. Understand column types and metadata
+If the target host uses a different plugin factory, adapt this one file. Keep the schema implementation runtime-v2.
 
-**Why three mappings?** Each serves a different purpose:
-- `NameToIndexMap`: "What's the index of the 'Temperature' column?" → 1
-- `IndexToMethodAccessMap`: "How do I get the value at index 1?" → `entity => entity.Temperature`
-- `Columns`: "What type is column 1?" → `double`
+### Step 4: Design Your Entity
 
-### Step 6: Create the Table Definition
+```csharp
+namespace Musoq.DataSources.Weather;
 
-Add `WeatherTable.cs` in the `Tables/` directory:
+public sealed class WeatherEntity
+{
+    public string City { get; init; } = string.Empty;
+
+    public DateTimeOffset ObservedAt { get; init; }
+
+    public decimal TemperatureC { get; init; }
+
+    public decimal HumidityPercent { get; init; }
+
+    public string Condition { get; init; } = string.Empty;
+}
+```
+
+Entity rules:
+
+- Keep properties public and readable.
+- Prefer immutable `init` setters or constructor-only values.
+- Match column names to property names unless you have a strong reason not to.
+- Use concrete primitive-friendly types for queryable values.
+
+### Step 5: Create the Table Definition
 
 ```csharp
 using Musoq.Schema;
-using Musoq.DataSources.Weather.Entities;
+using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.Weather.Tables;
+namespace Musoq.DataSources.Weather;
 
-internal class WeatherTable : ISchemaTable
+public sealed class WeatherTable : ISchemaTable
 {
-    public ISchemaColumn[] Columns => WeatherTableHelper.Columns;
-    
+    public WeatherTable()
+    {
+    }
+
+    public WeatherTable(string city)
+    {
+        _ = city;
+    }
+
+    public ISchemaColumn[] Columns { get; } =
+    [
+        new SchemaColumn(nameof(WeatherEntity.City), 0, typeof(string)),
+        new SchemaColumn(nameof(WeatherEntity.ObservedAt), 1, typeof(DateTimeOffset)),
+        new SchemaColumn(nameof(WeatherEntity.TemperatureC), 2, typeof(decimal)),
+        new SchemaColumn(nameof(WeatherEntity.HumidityPercent), 3, typeof(decimal)),
+        new SchemaColumn(nameof(WeatherEntity.Condition), 4, typeof(string))
+    ];
+
     public SchemaTableMetadata Metadata { get; } = new(typeof(WeatherEntity));
 
     public ISchemaColumn? GetColumnByName(string name)
     {
-        return Columns.SingleOrDefault(column => column.ColumnName == name);
+        return Columns.SingleOrDefault(column =>
+            string.Equals(column.ColumnName, name, StringComparison.OrdinalIgnoreCase));
     }
-    
+
     public ISchemaColumn[] GetColumnsByName(string name)
     {
-        return Columns.Where(column => column.ColumnName == name).ToArray();
+        return Columns
+            .Where(column => string.Equals(column.ColumnName, name, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
     }
 }
 ```
 
-**What's the Table class for?** It implements the `ISchemaTable` interface that Musoq uses to understand your table structure. When Musoq needs to know "What columns does this table have?", it asks this class.
+`SchemaTableMetadata(typeof(WeatherEntity))` is the runtime-v2 row-type contract.
 
-### Step 7: Implement the Data Source (RowSource)
+### Step 6: Implement the Client
 
-Create the `Sources/` directory and add `WeatherRowSource.cs`:
+The client is ordinary application code. Keep host/runtime types out of it.
 
 ```csharp
-using System.Collections.Concurrent;
-using Musoq.Schema;
-using Musoq.Schema.DataSources;
-using Musoq.DataSources.Weather.Entities;
-using Musoq.DataSources.Weather.Tables;
+namespace Musoq.DataSources.Weather;
 
-namespace Musoq.DataSources.Weather.Sources;
-
-internal class WeatherRowSource : RowSourceBase<WeatherEntity>
+public sealed class WeatherClient
 {
-    private const string WeatherSourceName = "weather";
-    private readonly string _location;
-    private readonly RuntimeContext _runtimeContext;
+    private readonly IReadOnlyDictionary<string, string> _settings;
 
-    public WeatherRowSource(RuntimeContext runtimeContext, string? location = null)
+    public WeatherClient()
+        : this(new Dictionary<string, string>())
     {
-        _runtimeContext = runtimeContext;
-        // Use provided location or default to environment variable
-        _location = location ?? runtimeContext.EnvironmentVariables.GetValueOrDefault("WEATHER_LOCATION", "London");
     }
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    private WeatherClient(IReadOnlyDictionary<string, string> settings)
     {
-        // Report that data source processing has begun
-        _runtimeContext.ReportDataSourceBegin(WeatherSourceName);
-        
-        try
-        {
-            // Fetch weather data
-            var weatherData = GetWeatherData();
-
-            // Convert to object resolvers that Musoq can understand
-            var resolvers = weatherData.Select(entity => 
-                new EntityResolver<WeatherEntity>(entity, WeatherTableHelper.NameToIndexMap, WeatherTableHelper.IndexToMethodAccessMap))
-                .ToList();
-
-            // Add to the collection for Musoq to process
-            chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
-        }
-        finally
-        {
-            // Report that data source processing has completed
-            _runtimeContext.ReportDataSourceEnd(WeatherSourceName, 1);
-        }
+        _settings = settings;
     }
 
-    private List<WeatherEntity> GetWeatherData()
+    public WeatherClient WithSettings(IReadOnlyDictionary<string, string> settings)
     {
-        // For now, return mock data. In a real plugin, you'd call a weather API
-        return new List<WeatherEntity>
-        {
-            new WeatherEntity 
-            { 
-                Location = _location,
-                Temperature = 22.5,
-                Description = "Partly Cloudy",
-                Humidity = 65.0,
-                WindSpeed = 12.3,
-                LastUpdated = DateTime.Now,
-                IsRaining = false
+        return new WeatherClient(settings);
+    }
+
+    public IReadOnlyList<WeatherEntity> GetCurrent(string city, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        _settings.TryGetValue("WEATHER_API_KEY", out var _);
+
+        return
+        [
+            new WeatherEntity
+            {
+                City = city,
+                ObservedAt = DateTimeOffset.UtcNow,
+                TemperatureC = 21.5m,
+                HumidityPercent = 55m,
+                Condition = "Clear"
             }
-        };
+        ];
     }
 }
 ```
 
-**Understanding the RowSource:** This is where the magic happens! The `CollectChunks` method is called by Musoq when it needs data. Here's what's happening:
-
-1. **Data Source Reporting**: We call `ReportDataSourceBegin()` to notify Musoq that data retrieval has started
-2. **Data Retrieval**: `GetWeatherData()` fetches actual data (in a real plugin, this would call an API)
-3. **Entity Resolution**: We wrap each entity in an `EntityResolver` that knows how to extract values efficiently
-4. **Data Delivery**: We add the data to `chunkedSource` for Musoq to process, using the `EndWorkToken` for cancellation support
-5. **Completion Reporting**: In the `finally` block, we call `ReportDataSourceEnd()` to notify Musoq of completion
-
-**Why chunking?** For large datasets, you can add multiple chunks, allowing Musoq to process data incrementally rather than loading everything into memory.
-
-### Step 8: Create the Schema (Main Interface)
-
-Finally, create the main `WeatherSchema.cs` in the root directory:
+### Step 7: Implement the RowSource
 
 ```csharp
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
-using Musoq.Schema.Managers;
-using Musoq.Schema.Reflection;
-using Musoq.DataSources.Weather.Sources;
-using Musoq.DataSources.Weather.Tables;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Weather;
 
-/// <description>
-/// Provides access to current weather information for any location
-/// </description>
-/// <short-description>
-/// Weather data source for current conditions
-/// </short-description>
-/// <project-url>https://github.com/YourGitHub/Weather-Plugin</project-url>
-public class WeatherSchema : SchemaBase
+public sealed class WeatherRowSource(
+    WeatherClient client,
+    SourceExecutionContext executionContext,
+    string city)
+    : RowSourceBase<WeatherEntity>
 {
-    private const string SchemaName = "weather";
-    private const string CurrentWeatherTable = "current";
-
-    /// <virtual-constructors>
-    /// <virtual-constructor>
-    /// <examples>
-    /// <example>
-    /// <from>
-    /// <environmentVariables>
-    /// <environmentVariable name="WEATHER_LOCATION" isRequired="false">Default location for weather queries</environmentVariable>
-    /// </environmentVariables>
-    /// #weather.current()
-    /// </from>
-    /// <description>Gets current weather for the default location</description>
-    /// <columns>
-    /// <column name="Location" type="string">Location name</column>
-    /// <column name="Temperature" type="double">Temperature in Celsius</column>
-    /// <column name="Description" type="string">Weather condition description</column>
-    /// <column name="Humidity" type="double">Humidity percentage</column>
-    /// <column name="WindSpeed" type="double">Wind speed in km/h</column>
-    /// <column name="LastUpdated" type="DateTime">Last update timestamp</column>
-    /// <column name="IsRaining" type="bool">Whether it's currently raining</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// <virtual-constructor>
-    /// <virtual-param>Location name (city, coordinates, etc.)</virtual-param>
-    /// <examples>
-    /// <example>
-    /// <from>#weather.current(string location)</from>
-    /// <description>Gets current weather for a specific location</description>
-    /// <columns>
-    /// <column name="Location" type="string">Location name</column>
-    /// <column name="Temperature" type="double">Temperature in Celsius</column>
-    /// <column name="Description" type="string">Weather condition description</column>
-    /// <column name="Humidity" type="double">Humidity percentage</column>
-    /// <column name="WindSpeed" type="double">Wind speed in km/h</column>
-    /// <column name="LastUpdated" type="DateTime">Last update timestamp</column>
-    /// <column name="IsRaining" type="bool">Whether it's currently raining</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// </virtual-constructors>
-    public WeatherSchema() : base(SchemaName, CreateLibrary())
+    protected override void CollectChunks(IChunkWriter<WeatherEntity> writer)
     {
-    }
+        const string dataSourceName = "weather.current";
 
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
-    {
-        return name.ToLowerInvariant() switch
-        {
-            CurrentWeatherTable => new WeatherTable(),
-            _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-        };
-    }
+        executionContext.ReportDataSourceBegin(dataSourceName);
 
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
-    {
-        return name.ToLowerInvariant() switch
-        {
-            CurrentWeatherTable => new WeatherRowSource(runtimeContext, parameters.Length > 0 ? parameters[0]?.ToString() : null),
-            _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-        };
-    }
+        var rows = client.GetCurrent(city, writer.CancellationToken);
+        var plannedRows = WeatherPlanExecutor.Apply(rows, executionContext.Plan).ToArray();
 
-    public override SchemaMethodInfo[] GetConstructors()
-    {
-        var constructors = new List<SchemaMethodInfo>();
-        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<WeatherRowSource>(CurrentWeatherTable));
-        return constructors.ToArray();
-    }
-
-    private static MethodsAggregator CreateLibrary()
-    {
-        var methodsManager = new MethodsManager();
-        // No custom functions for now
-        return new MethodsAggregator(methodsManager);
+        executionContext.ReportDataSourceRowsKnown(dataSourceName, plannedRows.Length);
+        writer.Write(plannedRows);
+        executionContext.ReportDataSourceRowsRead(dataSourceName, plannedRows.Length, plannedRows.Length);
+        executionContext.ReportDataSourceEnd(dataSourceName, plannedRows.Length);
     }
 }
 ```
 
-**Understanding the Schema class:** This is the conductor of your plugin orchestra. Notice:
+If you already have chunks:
 
-1. **XML Documentation**: The extensive comments above the constructor are essential - they tell Musoq how to use your plugin
-2. **GetTableByName**: When someone requests `#weather.current()`, this method returns a `WeatherTable`
-3. **GetRowSource**: This creates the actual data source that fetches weather data
-4. **GetConstructors**: This tells Musoq what parameters your methods accept
-
-### Step 9: Build and Test
-
-Now let's build our plugin:
-
-```bash
-dotnet build
-```
-
-If everything compiles successfully, congratulations! You've just built your first Musoq plugin.
-
-### Step 10: Understanding What We Built
-
-Let's trace through what happens when someone runs this query:
-
-```sql
-SELECT Location, Temperature FROM #weather.current('Paris') WHERE Temperature > 20
-```
-
-1. **Musoq sees `#weather.current('Paris')`** and looks for the "weather" schema
-2. **Your AssemblyInfo.cs** tells Musoq that this assembly provides the "weather" schema
-3. **Musoq instantiates WeatherSchema** and calls `GetTableByName("current", ...)`
-4. **WeatherSchema returns a WeatherTable** describing the available columns
-5. **Musoq calls GetRowSource("current", ...)** with "Paris" as a parameter
-6. **WeatherSchema creates a WeatherRowSource** with location="Paris"
-7. **WeatherRowSource.CollectChunks()** fetches weather data for Paris
-8. **Musoq applies the SQL operations** (SELECT specific columns, WHERE temperature > 20)
-9. **Results are returned** to the user
-
-This is the fundamental flow of every Musoq plugin!
-
----
-
-## Understanding Each Component
-
-Now that you've built a complete plugin, let's dive deeper into each component to understand exactly what they do and how to customize them for different scenarios.
-
-### Component 1: The Entity - Your Data Model
-
-The Entity represents the structure of your data. It's the C# class that models what a single record looks like.
-
-#### Design Principles for Entities
-
-**1. Keep it simple**: Use basic data types that SQL understands:
 ```csharp
-// Good - Simple, SQL-friendly types
-public class UserEntity
+public sealed class ExistingChunkSource<T>(IEnumerable<IReadOnlyList<T>> chunks) : RowSource<T>
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public bool IsActive { get; set; }
+    public override IEnumerable<IReadOnlyList<T>> Chunks =>
+        RowChunking.NormalizeSourceChunks(chunks);
 }
 ```
 
-**2. Handle complex data appropriately**: For complex data, use collections or nested objects:
+For large materialized arrays or lists, use `RowChunk<T>`:
+
 ```csharp
-// Good - Complex types that make sense
-public class ProductEntity
+for (var offset = 0; offset < rows.Count; offset += 4096)
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public List<string> Tags { get; set; } = new();
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    yield return new RowChunk<WeatherEntity>(
+        rows,
+        offset,
+        Math.Min(4096, rows.Count - offset));
 }
 ```
 
-**3. Use nullable types when appropriate**:
-```csharp
-public class WeatherEntity
-{
-    public string Location { get; set; } = string.Empty;
-    public double? Temperature { get; set; }  // Might not be available
-    public DateTime? LastUpdated { get; set; } // Might be null for new records
-}
-```
-
-#### Common Entity Patterns
-
-**Simple Record Entity** (like our weather plugin):
-```csharp
-public class SimpleEntity
-{
-    public string Id { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; }
-}
-```
-
-**API Response Entity** (for REST API integrations):
-```csharp
-public class ApiResponseEntity  
-{
-    public string Id { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public Dictionary<string, object> Data { get; set; } = new();
-    public List<string> Errors { get; set; } = new();
-}
-```
-
-**File-based Entity** (for file processing):
-```csharp
-public class FileEntity
-{
-    public string FileName { get; set; } = string.Empty;
-    public long Size { get; set; }
-    public DateTime Modified { get; set; }
-    public string Content { get; set; } = string.Empty;
-}
-```
-
-### Component 2: The Helper - Efficient Data Access
-
-The Helper class creates mappings that allow Musoq to efficiently access your entity properties. 
-
-#### Understanding the Three Mappings
-
-Let's look at why each mapping exists:
-
-```csharp
-static MyTableHelper()
-{
-    // 1. Name-to-Index: "What position is the 'Temperature' column?"
-    NameToIndexMap = new Dictionary<string, int>
-    {
-        {nameof(WeatherEntity.Location), 0},     // "Location" → 0
-        {nameof(WeatherEntity.Temperature), 1},  // "Temperature" → 1
-        {nameof(WeatherEntity.Description), 2}   // "Description" → 2
-    };
-    
-    // 2. Index-to-Accessor: "How do I get the value at position 1?"
-    IndexToMethodAccessMap = new Dictionary<int, Func<WeatherEntity, object?>>
-    {
-        {0, entity => entity.Location},        // Position 0 → get Location
-        {1, entity => entity.Temperature},     // Position 1 → get Temperature  
-        {2, entity => entity.Description}      // Position 2 → get Description
-    };
-    
-    // 3. Column Metadata: "What type is position 1? What's its name?"
-    Columns = new[]
-    {
-        new SchemaColumn("Location", 0, typeof(string)),        // Position 0: string column
-        new SchemaColumn("Temperature", 1, typeof(double)),     // Position 1: double column
-        new SchemaColumn("Description", 2, typeof(string))      // Position 2: string column
-    };
-}
-```
-
-**Why not just use reflection?** While we could use reflection to access properties, these pre-built mappings are much faster. When processing thousands of rows, this performance difference matters significantly.
-
-#### Helper Generation Pattern
-
-Here's a useful pattern for generating helpers systematically:
-
-```csharp
-private static (Dictionary<string, int> nameToIndex, 
-               Dictionary<int, Func<T, object?>> indexToAccessor,
-               SchemaColumn[] columns) 
-               GenerateMappings<T>()
-{
-    var properties = typeof(T).GetProperties();
-    var nameToIndex = new Dictionary<string, int>();
-    var indexToAccessor = new Dictionary<int, Func<T, object?>>();
-    var columns = new SchemaColumn[properties.Length];
-
-    for (int i = 0; i < properties.Length; i++)
-    {
-        var prop = properties[i];
-        nameToIndex[prop.Name] = i;
-        indexToAccessor[i] = entity => prop.GetValue(entity);
-        columns[i] = new SchemaColumn(prop.Name, i, prop.PropertyType);
-    }
-
-    return (nameToIndex, indexToAccessor, columns);
-}
-```
-
-### Component 3: The Table - Schema Definition
-
-The Table class implements `ISchemaTable` and tells Musoq about your table structure.
-
-#### Understanding ISchemaTable
-
-```csharp
-public interface ISchemaTable
-{
-    ISchemaColumn[] Columns { get; }                           // All available columns
-    SchemaTableMetadata Metadata { get; }                     // Table metadata
-    ISchemaColumn? GetColumnByName(string name);              // Find one column by name
-    ISchemaColumn[] GetColumnsByName(string name);            // Find multiple columns by name
-}
-```
-
-**When would you have multiple columns with the same name?** Rarely, but it can happen with complex schemas or when joining data sources.
-
-#### Custom Table Implementations
-
-Most tables follow this simple pattern:
-```csharp
-internal class MyTable : ISchemaTable
-{
-    public ISchemaColumn[] Columns => MyTableHelper.Columns;
-    public SchemaTableMetadata Metadata { get; } = new(typeof(MyEntity));
-
-    public ISchemaColumn? GetColumnByName(string name)
-    {
-        return Columns.SingleOrDefault(column => column.ColumnName == name);
-    }
-    
-    public ISchemaColumn[] GetColumnsByName(string name)
-    {
-        return Columns.Where(column => column.ColumnName == name).ToArray();
-    }
-}
-```
-
-### Component 4: The RowSource - Data Retrieval Engine
-
-The RowSource is where you implement the actual data fetching logic. This is the most important and most customizable component.
-
-#### Understanding RowSourceBase<T>
-
-The `RowSourceBase<T>` class provides a framework for data collection:
-
-```csharp
-public abstract class RowSourceBase<T> : RowSource
-{
-    protected abstract void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource);
-}
-```
-
-**Your job**: Implement `CollectChunks` to fetch data and add it to the collection.
-
-#### Data Fetching Patterns
-
-**Pattern 1: Simple Collection** (like our weather example)
-```csharp
-protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-{
-    _runtimeContext.ReportDataSourceBegin(SourceName);
-    
-    try
-    {
-        // Get all data at once
-        var allData = GetAllData();
-        
-        // Convert to resolvers
-        var resolvers = allData.Select(entity => 
-            new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
-            .ToList();
-        
-        // Add as a single chunk
-        chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
-    }
-    finally
-    {
-        _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
-    }
-}
-```
-
-**Pattern 2: Chunked Processing** (for large datasets)
-```csharp
-protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-{
-    _runtimeContext.ReportDataSourceBegin(SourceName);
-    long totalRowsProcessed = 0;
-    const int chunkSize = 1000;
-    int offset = 0;
-    
-    try
-    {
-        while (true)
-        {
-            var chunk = GetDataChunk(offset, chunkSize);
-            if (!chunk.Any()) break;
-            
-            var resolvers = chunk.Select(entity => 
-                new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
-                .ToList();
-            
-            chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
-            offset += chunkSize;
-            totalRowsProcessed += chunk.Count;
-        }
-    }
-    finally
-    {
-        _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
-    }
-}
-```
-
-**Pattern 3: Streaming Data** (for APIs with pagination)
-```csharp
-protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-{
-    _runtimeContext.ReportDataSourceBegin(SourceName);
-    long totalRowsProcessed = 0;
-    string? nextPageToken = null;
-    
-    try
-    {
-        do
-        {
-            var (data, newNextPageToken) = GetDataPage(nextPageToken);
-            nextPageToken = newNextPageToken;
-            
-            if (data.Any())
-            {
-                var resolvers = data.Select(entity => 
-                    new EntityResolver<MyEntity>(entity, MyTableHelper.NameToIndexMap, MyTableHelper.IndexToMethodAccessMap))
-                    .ToList();
-                
-                chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
-                totalRowsProcessed += data.Count;
-            }
-        } 
-        while (nextPageToken != null);
-    }
-    finally
-    {
-        _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
-    }
-}
-```
-
-#### Handling Parameters in RowSource
-
-Parameters from SQL queries are passed to your RowSource constructor:
-
-```csharp
-public class MyRowSource : RowSourceBase<MyEntity>
-{
-    private readonly string _query;
-    private readonly int _maxResults;
-
-    public MyRowSource(RuntimeContext runtimeContext, string? query = null, int maxResults = 100)
-    {
-        _query = query ?? "default";
-        _maxResults = maxResults;
-    }
-}
-```
-
-**Corresponding SQL**: `SELECT * FROM #myplugin.data('search term', 50)`
-
-#### Using Environment Variables
-
-Access environment variables through the RuntimeContext:
-
-```csharp
-public MyRowSource(RuntimeContext runtimeContext)
-{
-    // Required variable - will throw if missing
-    var apiKey = runtimeContext.EnvironmentVariables["API_KEY"];
-    
-    // Optional with default
-    var baseUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("BASE_URL", "https://api.example.com");
-    
-    // Check if variable exists
-    if (runtimeContext.EnvironmentVariables.TryGetValue("OPTIONAL_VAR", out var value))
-    {
-        // Use the optional variable
-    }
-}
-```
-
-### Component 5: The Schema - The Orchestrator
-
-The Schema class is the main coordinator that ties everything together.
-
-#### Understanding Schema Responsibilities
-
-1. **Table Resolution**: "What table does 'users' refer to?"
-2. **Row Source Creation**: "Create a data source for the 'users' table"
-3. **Constructor Information**: "What parameters does the 'users' table accept?"
-4. **Library Integration**: "What custom functions are available?"
-
-#### Schema Method Patterns
-
-**Simple Schema** (single table):
-```csharp
-public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
-{
-    return name.ToLowerInvariant() switch
-    {
-        "data" => new MyTable(),
-        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-    };
-}
-
-public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
-{
-    return name.ToLowerInvariant() switch
-    {
-        "data" => new MyRowSource(runtimeContext),
-        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-    };
-}
-```
-
-**Multi-table Schema** (multiple related tables):
-```csharp
-public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
-{
-    return name.ToLowerInvariant() switch
-    {
-        "users" => new UsersTable(),
-        "orders" => new OrdersTable(),
-        "products" => new ProductsTable(),
-        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-    };
-}
-
-public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
-{
-    return name.ToLowerInvariant() switch
-    {
-        "users" => new UsersRowSource(runtimeContext),
-        "orders" => new OrdersRowSource(runtimeContext),
-        "products" => new ProductsRowSource(runtimeContext),
-        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-    };
-}
-```
-
----
-
-## Essential XML Metadata
-
-Now that you understand the basic components, let's learn about one of the most critical aspects of plugin development: XML metadata annotations. These annotations are not just documentation—they're essential for Musoq to understand and use your plugin correctly.
-
-### Why XML Metadata Matters
-
-When you write SQL like `SELECT * FROM #weather.current('Paris')`, Musoq needs to know:
-
-- **What is the 'weather' schema?** (Your plugin's purpose)
-- **What is the 'current' method?** (Available tables/functions)
-- **What parameters does it accept?** ('Paris' string parameter)
-- **What columns will be returned?** (Location, Temperature, etc.)
-- **Are there any requirements?** (API keys, environment variables)
-
-The XML metadata provides all this information. **Without proper XML metadata, your plugin won't work correctly with Musoq.**
-
-### Understanding XML Metadata Structure
-
-XML metadata goes in the constructor comments of your Schema class. Here's the basic structure:
-
-```csharp
-/// <description>
-/// Main description of what your plugin does
-/// </description>
-/// <short-description>
-/// Brief one-line description
-/// </short-description>
-/// <project-url>https://github.com/YourRepo/YourPlugin</project-url>
-public class YourSchema : SchemaBase
-{
-    /// <virtual-constructors>
-    /// <!-- Documentation for each table/method goes here -->
-    /// </virtual-constructors>
-    public YourSchema() : base("yourschema", CreateLibrary())
-    {
-    }
-}
-```
-
-### Step-by-Step: Adding XML Metadata to Our Weather Plugin
-
-Let's enhance our weather plugin with comprehensive XML metadata. I'll show you exactly what each part does.
-
-#### Step 1: Document the Schema Purpose
-
-```csharp
-/// <description>
-/// Provides access to current weather information for any location worldwide.
-/// Supports querying real-time weather conditions including temperature, humidity,
-/// wind speed, and weather descriptions.
-/// </description>
-/// <short-description>
-/// Real-time weather data source
-/// </short-description>
-/// <project-url>https://github.com/YourGitHub/Weather-Plugin</project-url>
-public class WeatherSchema : SchemaBase
-```
-
-**What this does:**
-- `<description>`: Detailed explanation shown in help systems
-- `<short-description>`: Brief summary for quick reference
-- `<project-url>`: Link to your plugin's documentation
-
-#### Step 2: Document Virtual Constructors (Methods)
-
-Virtual constructors define how users can call your plugin. Each method needs documentation:
-
-```csharp
-/// <virtual-constructors>
-/// <virtual-constructor>
-/// <examples>
-/// <example>
-/// <from>
-/// <environmentVariables>
-/// <environmentVariable name="WEATHER_API_KEY" isRequired="true">API key for weather service</environmentVariable>
-/// <environmentVariable name="WEATHER_LOCATION" isRequired="false">Default location for weather queries</environmentVariable>
-/// </environmentVariables>
-/// #weather.current()
-/// </from>
-/// <description>Gets current weather for the default location (from WEATHER_LOCATION environment variable)</description>
-/// <columns>
-/// <column name="Location" type="string">Location name</column>
-/// <column name="Temperature" type="double">Temperature in Celsius</column>
-/// <column name="Description" type="string">Weather condition description</column>
-/// <column name="Humidity" type="double">Humidity percentage (0-100)</column>
-/// <column name="WindSpeed" type="double">Wind speed in km/h</column>
-/// <column name="LastUpdated" type="DateTime">Last update timestamp</column>
-/// <column name="IsRaining" type="bool">Whether it's currently raining</column>
-/// </columns>
-/// </example>
-/// </examples>
-/// </virtual-constructor>
-/// </virtual-constructors>
-```
-
-**Breaking this down:**
-
-1. **Environment Variables**: Documents what environment variables your plugin uses
-   - `isRequired="true"`: Must be set or plugin fails
-   - `isRequired="false"`: Optional, plugin provides defaults
-
-2. **From**: Shows exactly how to call your plugin in SQL
-   - `#weather.current()`: The actual SQL syntax
-
-3. **Description**: Explains what this specific method does
-
-4. **Columns**: Documents each column returned by this method
-   - `name`: Column name as it appears in SQL
-   - `type`: .NET type (string, int, double, DateTime, bool, etc.)
-   - Description text: What this column contains
-
-#### Step 3: Document Method Overloads
-
-When your plugin accepts parameters, document each variation:
-
-```csharp
-/// <virtual-constructor>
-/// <virtual-param>Location name (city, coordinates, or address)</virtual-param>
-/// <examples>
-/// <example>
-/// <from>#weather.current(string location)</from>
-/// <description>Gets current weather for a specific location</description>
-/// <columns>
-/// <column name="Location" type="string">Location name</column>
-/// <column name="Temperature" type="double">Temperature in Celsius</column>
-/// <column name="Description" type="string">Weather condition description</column>
-/// <column name="Humidity" type="double">Humidity percentage (0-100)</column>
-/// <column name="WindSpeed" type="double">Wind speed in km/h</column>
-/// <column name="LastUpdated" type="DateTime">Last update timestamp</column>
-/// <column name="IsRaining" type="bool">Whether it's currently raining</column>
-/// </columns>
-/// </example>
-/// </examples>
-/// </virtual-constructor>
-```
-
-**Key points:**
-- `<virtual-param>`: Documents each parameter your method accepts
-- Multiple `<virtual-constructor>` blocks for different parameter combinations
-- Each parameter gets its own description
-
-### Understanding Column Types
-
-Musoq supports various .NET types in columns. Here's how to document them properly:
-
-#### Basic Types
-```xml
-<column name="Id" type="int">Unique identifier</column>
-<column name="Name" type="string">Display name</column>
-<column name="Price" type="decimal">Price in USD</column>
-<column name="IsActive" type="bool">Whether item is active</column>
-<column name="CreatedDate" type="DateTime">Creation timestamp</column>
-```
-
-#### Nullable Types
-```xml
-<column name="OptionalDate" type="DateTime?">Optional date field</column>
-<column name="OptionalPrice" type="decimal?">Price if available</column>
-```
-
-#### Collections and Arrays
-```xml
-<column name="Tags" type="string[]">Array of tag strings</column>
-<column name="Categories" type="IList&lt;string&gt;">List of categories</column>
-<column name="Metadata" type="IDictionary&lt;string, object&gt;">Key-value metadata</column>
-```
-
-**Note**: Use `&lt;` and `&gt;` instead of `<` and `>` in XML for generic types.
-
-#### Custom Object Types
-```xml
-<column name="Address" type="AddressEntity">Address information object</column>
-<column name="Permissions" type="PermissionEntity[]">Array of permission objects</column>
-```
-
-### Dynamic vs Static Columns
-
-Sometimes you don't know the columns at compile time. For example, querying a database table or an API that returns varying schemas.
-
-#### Static Columns (You Know the Structure)
-```xml
-<columns>
-<column name="Id" type="string">User identifier</column>
-<column name="Name" type="string">Full name</column>
-<column name="Email" type="string">Email address</column>
-</columns>
-```
-
-#### Dynamic Columns (Structure Determined at Runtime)
-```xml
-<columns isDynamic="true"></columns>
-```
-
-**When to use dynamic columns:**
-- Database plugins (table structures vary)
-- API plugins (response schemas change)
-- File plugins (CSV files with unknown headers)
-- AI plugins (responses have varying formats)
-
-### Environment Variable Patterns
-
-Document environment variables to help users configure your plugin:
-
-#### Required Variables
-```xml
-<environmentVariables>
-<environmentVariable name="API_KEY" isRequired="true">Your service API key</environmentVariable>
-<environmentVariable name="API_SECRET" isRequired="true">Your service API secret</environmentVariable>
-</environmentVariables>
-```
-
-#### Optional Variables with Defaults
-```xml
-<environmentVariables>
-<environmentVariable name="BASE_URL" isRequired="false">Custom API base URL (default: https://api.service.com)</environmentVariable>
-<environmentVariable name="TIMEOUT_SECONDS" isRequired="false">Request timeout in seconds (default: 30)</environmentVariable>
-</environmentVariables>
-```
-
-#### Using Environment Variables in Code
-
-After documenting them, use environment variables in your RowSource:
-
-```csharp
-public class WeatherRowSource : RowSourceBase<WeatherEntity>
-{
-    private readonly string _apiKey;
-    private readonly string _baseUrl;
-    private readonly int _timeoutSeconds;
-
-    public WeatherRowSource(RuntimeContext runtimeContext, string? location = null)
-    {
-        // Required variables - will throw if missing
-        _apiKey = runtimeContext.EnvironmentVariables["WEATHER_API_KEY"];
-        
-        // Optional variables with defaults
-        _baseUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("BASE_URL", "https://api.openweathermap.org");
-        _timeoutSeconds = int.Parse(runtimeContext.EnvironmentVariables.GetValueOrDefault("TIMEOUT_SECONDS", "30"));
-        
-        _location = location ?? runtimeContext.EnvironmentVariables.GetValueOrDefault("WEATHER_LOCATION", "London");
-    }
-}
-```
-
-### Complete XML Metadata Example
-
-Here's our weather plugin with complete, comprehensive XML metadata:
-
-```csharp
-/// <description>
-/// Provides access to current weather information for any location worldwide.
-/// Supports querying real-time weather conditions including temperature, humidity,
-/// wind speed, and weather descriptions through integration with weather APIs.
-/// </description>
-/// <short-description>
-/// Real-time weather data source
-/// </short-description>
-/// <project-url>https://github.com/YourGitHub/Weather-Plugin</project-url>
-public class WeatherSchema : SchemaBase
-{
-    /// <virtual-constructors>
-    /// <virtual-constructor>
-    /// <examples>
-    /// <example>
-    /// <from>
-    /// <environmentVariables>
-    /// <environmentVariable name="WEATHER_API_KEY" isRequired="true">API key for weather service (get from openweathermap.org)</environmentVariable>
-    /// <environmentVariable name="WEATHER_LOCATION" isRequired="false">Default location for weather queries (default: London)</environmentVariable>
-    /// </environmentVariables>
-    /// #weather.current()
-    /// </from>
-    /// <description>Gets current weather for the default location specified in WEATHER_LOCATION environment variable</description>
-    /// <columns>
-    /// <column name="Location" type="string">Location name or coordinates</column>
-    /// <column name="Temperature" type="double">Temperature in Celsius</column>
-    /// <column name="Description" type="string">Weather condition description (e.g., "Partly Cloudy")</column>
-    /// <column name="Humidity" type="double">Humidity percentage (0-100)</column>
-    /// <column name="WindSpeed" type="double">Wind speed in kilometers per hour</column>
-    /// <column name="LastUpdated" type="DateTime">Timestamp when weather data was last updated</column>
-    /// <column name="IsRaining" type="bool">Whether it's currently raining at the location</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// <virtual-constructor>
-    /// <virtual-param>Location name, coordinates (lat,lon), or address</virtual-param>
-    /// <examples>
-    /// <example>
-    /// <from>#weather.current(string location)</from>
-    /// <description>Gets current weather for a specific location</description>
-    /// <columns>
-    /// <column name="Location" type="string">Location name or coordinates</column>
-    /// <column name="Temperature" type="double">Temperature in Celsius</column>
-    /// <column name="Description" type="string">Weather condition description (e.g., "Partly Cloudy")</column>
-    /// <column name="Humidity" type="double">Humidity percentage (0-100)</column>
-    /// <column name="WindSpeed" type="double">Wind speed in kilometers per hour</column>
-    /// <column name="LastUpdated" type="DateTime">Timestamp when weather data was last updated</column>
-    /// <column name="IsRaining" type="bool">Whether it's currently raining at the location</column>
-    /// </columns>
-    /// </example>
-    /// </examples>
-    /// </virtual-constructor>
-    /// </virtual-constructors>
-    public WeatherSchema() : base("weather", CreateLibrary())
-    {
-    }
-}
-```
-
-This comprehensive XML metadata enables:
-- **IntelliSense support** in IDEs
-- **Help system integration** for documentation
-- **Parameter validation** by Musoq
-- **Schema discovery** for tools and applications
-
----
-
-## Documentation and Build Configuration
-
-Now that you understand XML metadata, let's learn how to configure your project so that this metadata gets properly generated and included in your plugin package.
-
-### Critical Build Configuration
-
-⚠️ **Without proper build configuration, your XML metadata won't be available to Musoq at runtime!**
-
-#### The Essential .csproj Configuration
-
-Every Musoq plugin **must** include this exact configuration in your `.csproj` file:
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        
-        <!-- CRITICAL: These two properties are mandatory -->
-        <EnableDynamicLoading>true</EnableDynamicLoading>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        
-        <!-- Package metadata -->
-        <Version>1.0.0</Version>
-        <Authors>Your Name</Authors>
-        <Product>Musoq</Product>
-        <PackageProjectUrl>https://github.com/YourGitHub/Weather-Plugin</PackageProjectUrl>
-        <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageTags>sql, weather, dotnet-core</PackageTags>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <PackageId>Musoq.DataSources.Weather</PackageId>
-    </PropertyGroup>
-
-    <!-- CRITICAL: This target ensures XML documentation is packaged correctly -->
-    <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
-        <ItemGroup>
-            <ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')" 
-                                    Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')" />
-        </ItemGroup>
-    </Target>
-
-    <!-- License and metadata -->
-    <ItemGroup>
-        <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
-    </ItemGroup>
-
-    <!-- Musoq dependencies -->
-    <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-        <PackageReference Include="Musoq.Parser" Version="5.7.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="8.4.0" />
-        <PackageReference Include="Musoq.Schema" Version="10.1.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
-        <!-- Add your specific dependencies here -->
-    </ItemGroup>
-</Project>
-```
-
-#### Understanding Each Configuration Element
-
-**`<EnableDynamicLoading>true</EnableDynamicLoading>`**
-- Allows Musoq to load your plugin at runtime
-- Without this, your plugin can't be dynamically discovered
-
-**`<GenerateDocumentationFile>true</GenerateDocumentationFile>`**
-- Generates XML documentation from your XML comments
-- Creates a `.xml` file alongside your `.dll`
-
-**`<Target Name="_ResolveCopyLocalNuGetPackageXmls" ...>`**
-- Ensures XML documentation files are included in NuGet packages
-- **This is the most commonly forgotten but critical piece**
-- Without this target, XML metadata won't be available at runtime
-
-#### Verifying Your Configuration
-
-After building your plugin, check that XML files are generated:
-
-```bash
-dotnet build
-ls bin/Debug/net8.0/
-```
-
-You should see both:
-- `Musoq.DataSources.Weather.dll` (your compiled plugin)
-- `Musoq.DataSources.Weather.xml` (your XML metadata)
-
-If the `.xml` file is missing, check your configuration.
-
-### Understanding the Documentation Generation Process
-
-Here's what happens when you build your plugin:
-
-1. **Compilation**: C# compiler processes your code
-2. **XML Generation**: Compiler extracts XML comments and creates `.xml` file
-3. **Package Creation**: MSBuild packages both `.dll` and `.xml` files
-4. **Runtime Discovery**: Musoq loads your plugin and reads the XML metadata
-
-### Testing Your Configuration
-
-Create this simple test to verify your XML metadata is working:
-
-```csharp
-// Add this test method to verify XML generation
-[Fact]
-public void VerifyXmlDocumentationExists()
-{
-    var assemblyLocation = typeof(WeatherSchema).Assembly.Location;
-    var xmlPath = Path.ChangeExtension(assemblyLocation, ".xml");
-    
-    Assert.True(File.Exists(xmlPath), $"XML documentation file not found at {xmlPath}");
-    
-    var xmlContent = File.ReadAllText(xmlPath);
-    Assert.Contains("WeatherSchema", xmlContent);
-    Assert.Contains("virtual-constructors", xmlContent);
-}
-```
-
----
-
-## Testing and Validation
-
-Testing your plugin ensures it works correctly and integrates properly with Musoq. Let's learn how to create comprehensive tests for all aspects of your plugin.
-
-### Setting Up Your Test Project
-
-Create a test project alongside your plugin:
-
-```bash
-dotnet new xunit -n Musoq.DataSources.Weather.Tests
-cd Musoq.DataSources.Weather.Tests
-```
-
-Configure the test project file:
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <IsPackable>false</IsPackable>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-        <PackageReference Include="xunit" Version="2.4.2" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
-        <PackageReference Include="Moq" Version="4.20.69" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Musoq.DataSources.Weather\Musoq.DataSources.Weather.csproj" />
-    </ItemGroup>
-</Project>
-```
-
-### Testing Strategy: The Five-Layer Approach
-
-Test each component of your plugin independently:
-
-#### 1. Entity Testing
-```csharp
-public class WeatherEntityTests
-{
-    [Fact]
-    public void WeatherEntity_Should_Initialize_With_Default_Values()
-    {
-        // Arrange & Act
-        var entity = new WeatherEntity();
-
-        // Assert
-        Assert.Equal(string.Empty, entity.Location);
-        Assert.Equal(string.Empty, entity.Description);
-        Assert.Equal(0.0, entity.Temperature);
-        Assert.Equal(0.0, entity.Humidity);
-        Assert.Equal(0.0, entity.WindSpeed);
-        Assert.False(entity.IsRaining);
-    }
-
-    [Fact]
-    public void WeatherEntity_Should_Accept_All_Property_Values()
-    {
-        // Arrange
-        var entity = new WeatherEntity
-        {
-            Location = "Paris",
-            Temperature = 22.5,
-            Description = "Sunny",
-            Humidity = 65.0,
-            WindSpeed = 12.3,
-            LastUpdated = DateTime.Now,
-            IsRaining = false
-        };
-
-        // Assert
-        Assert.Equal("Paris", entity.Location);
-        Assert.Equal(22.5, entity.Temperature);
-        Assert.Equal("Sunny", entity.Description);
-        Assert.Equal(65.0, entity.Humidity);
-        Assert.Equal(12.3, entity.WindSpeed);
-        Assert.False(entity.IsRaining);
-    }
-}
-```
-
-#### 2. Helper Testing
-```csharp
-public class WeatherTableHelperTests
-{
-    [Fact]
-    public void NameToIndexMap_Should_Map_All_Properties()
-    {
-        // Arrange & Act
-        var map = WeatherTableHelper.NameToIndexMap;
-
-        // Assert
-        Assert.Equal(0, map[nameof(WeatherEntity.Location)]);
-        Assert.Equal(1, map[nameof(WeatherEntity.Temperature)]);
-        Assert.Equal(2, map[nameof(WeatherEntity.Description)]);
-        Assert.Equal(3, map[nameof(WeatherEntity.Humidity)]);
-        Assert.Equal(4, map[nameof(WeatherEntity.WindSpeed)]);
-        Assert.Equal(5, map[nameof(WeatherEntity.LastUpdated)]);
-        Assert.Equal(6, map[nameof(WeatherEntity.IsRaining)]);
-    }
-
-    [Fact]
-    public void IndexToMethodAccessMap_Should_Return_Correct_Values()
-    {
-        // Arrange
-        var entity = new WeatherEntity
-        {
-            Location = "Tokyo",
-            Temperature = 25.0,
-            Description = "Clear",
-            Humidity = 70.0,
-            WindSpeed = 8.5,
-            LastUpdated = new DateTime(2024, 1, 1),
-            IsRaining = true
-        };
-
-        var accessor = WeatherTableHelper.IndexToMethodAccessMap;
-
-        // Act & Assert
-        Assert.Equal("Tokyo", accessor[0](entity));
-        Assert.Equal(25.0, accessor[1](entity));
-        Assert.Equal("Clear", accessor[2](entity));
-        Assert.Equal(70.0, accessor[3](entity));
-        Assert.Equal(8.5, accessor[4](entity));
-        Assert.Equal(new DateTime(2024, 1, 1), accessor[5](entity));
-        Assert.True((bool)accessor[6](entity)!);
-    }
-
-    [Fact]
-    public void Columns_Should_Have_Correct_Metadata()
-    {
-        // Arrange & Act
-        var columns = WeatherTableHelper.Columns;
-
-        // Assert
-        Assert.Equal(7, columns.Length);
-        Assert.Equal("Location", columns[0].ColumnName);
-        Assert.Equal(typeof(string), columns[0].ColumnType);
-        Assert.Equal("Temperature", columns[1].ColumnName);
-        Assert.Equal(typeof(double), columns[1].ColumnType);
-    }
-}
-```
-
-#### 3. Table Testing
-```csharp
-public class WeatherTableTests
-{
-    [Fact]
-    public void Table_Should_Return_Correct_Columns()
-    {
-        // Arrange
-        var table = new WeatherTable();
-
-        // Act
-        var columns = table.Columns;
-
-        // Assert
-        Assert.Equal(7, columns.Length);
-        Assert.Contains(columns, c => c.ColumnName == "Location");
-        Assert.Contains(columns, c => c.ColumnName == "Temperature");
-    }
-
-    [Fact]
-    public void GetColumnByName_Should_Return_Correct_Column()
-    {
-        // Arrange
-        var table = new WeatherTable();
-
-        // Act
-        var column = table.GetColumnByName("Temperature");
-
-        // Assert
-        Assert.NotNull(column);
-        Assert.Equal("Temperature", column.ColumnName);
-        Assert.Equal(typeof(double), column.ColumnType);
-    }
-
-    [Fact]
-    public void GetColumnByName_Should_Return_Null_For_Unknown_Column()
-    {
-        // Arrange
-        var table = new WeatherTable();
-
-        // Act
-        var column = table.GetColumnByName("NonExistentColumn");
-
-        // Assert
-        Assert.Null(column);
-    }
-}
-```
-
-#### 4. RowSource Testing
-```csharp
-public class WeatherRowSourceTests
-{
-    [Fact]
-    public void RowSource_Should_Return_Data_With_Default_Location()
-    {
-        // Arrange
-        var environmentVars = new Dictionary<string, string>();
-        var runtimeContext = new RuntimeContext(CancellationToken.None, environmentVars);
-        var rowSource = new WeatherRowSource(runtimeContext);
-
-        // Act
-        var rows = rowSource.Rows.ToList();
-
-        // Assert
-        Assert.NotEmpty(rows);
-        Assert.Single(rows);
-        
-        var resolver = rows.First();
-        Assert.Equal("London", resolver[0]); // Default location
-    }
-
-    [Fact]
-    public void RowSource_Should_Use_Provided_Location()
-    {
-        // Arrange
-        var environmentVars = new Dictionary<string, string>();
-        var runtimeContext = new RuntimeContext(CancellationToken.None, environmentVars);
-        var rowSource = new WeatherRowSource(runtimeContext, "Paris");
-
-        // Act
-        var rows = rowSource.Rows.ToList();
-
-        // Assert
-        Assert.NotEmpty(rows);
-        var resolver = rows.First();
-        Assert.Equal("Paris", resolver[0]); // Provided location
-    }
-
-    [Fact]
-    public void RowSource_Should_Use_Environment_Variable_Location()
-    {
-        // Arrange
-        var environmentVars = new Dictionary<string, string>
-        {
-            ["WEATHER_LOCATION"] = "Tokyo"
-        };
-        var runtimeContext = new RuntimeContext(CancellationToken.None, environmentVars);
-        var rowSource = new WeatherRowSource(runtimeContext);
-
-        // Act
-        var rows = rowSource.Rows.ToList();
-
-        // Assert
-        Assert.NotEmpty(rows);
-        var resolver = rows.First();
-        Assert.Equal("Tokyo", resolver[0]); // Environment variable location
-    }
-}
-```
-
-#### 5. Schema Integration Testing
-```csharp
-public class WeatherSchemaTests
-{
-    [Fact]
-    public void Schema_Should_Return_Correct_Table()
-    {
-        // Arrange
-        var schema = new WeatherSchema();
-        var runtimeContext = new RuntimeContext(CancellationToken.None, new Dictionary<string, string>());
-
-        // Act
-        var table = schema.GetTableByName("current", runtimeContext);
-
-        // Assert
-        Assert.NotNull(table);
-        Assert.IsType<WeatherTable>(table);
-    }
-
-    [Fact]
-    public void Schema_Should_Return_Correct_RowSource()
-    {
-        // Arrange
-        var schema = new WeatherSchema();
-        var runtimeContext = new RuntimeContext(CancellationToken.None, new Dictionary<string, string>());
-
-        // Act
-        var rowSource = schema.GetRowSource("current", runtimeContext);
-
-        // Assert
-        Assert.NotNull(rowSource);
-        Assert.IsType<WeatherRowSource>(rowSource);
-    }
-
-    [Fact]
-    public void Schema_Should_Throw_For_Unknown_Table()
-    {
-        // Arrange
-        var schema = new WeatherSchema();
-        var runtimeContext = new RuntimeContext(CancellationToken.None, new Dictionary<string, string>());
-
-        // Act & Assert
-        Assert.Throws<NotSupportedException>(() => schema.GetTableByName("unknown", runtimeContext));
-        Assert.Throws<NotSupportedException>(() => schema.GetRowSource("unknown", runtimeContext));
-    }
-
-    [Fact]
-    public void GetConstructors_Should_Return_Valid_Information()
-    {
-        // Arrange
-        var schema = new WeatherSchema();
-
-        // Act
-        var constructors = schema.GetConstructors();
-
-        // Assert
-        Assert.NotEmpty(constructors);
-        Assert.Contains(constructors, c => c.MethodName == "current");
-    }
-}
-```
-
-### Running Your Tests
-
-Execute your tests to verify everything works:
-
-```bash
-dotnet test
-```
-
-Your output should show all tests passing:
-```
-Test run for Musoq.DataSources.Weather.Tests.dll(.NETCoreApp,Version=v8.0)
-Microsoft (R) Test Execution Command Line Tool Version 18.0.0
-Starting test execution, please wait...
-
-Passed!  - Failed:     0, Passed:    15, Skipped:     0, Total:    15
-```
-
-### Integration Testing with Actual Musoq
-
-For complete validation, test your plugin with actual Musoq:
-
-```csharp
-[Fact]
-public void Plugin_Should_Work_With_Musoq_Engine()
-{
-    // This test requires the actual Musoq engine
-    // Add Musoq.Engine package reference for this test
-    
-    var engine = new MusoqEngine();
-    var environmentVariables = new Dictionary<string, string>
-    {
-        ["WEATHER_LOCATION"] = "London"
-    };
-    
-    var query = "SELECT Location, Temperature FROM #weather.current()";
-    var result = engine.Run(query, environmentVariables);
-    
-    Assert.NotEmpty(result);
-    Assert.Equal("London", result.First()["Location"]);
-}
-```
-
----
-
-## Advanced Patterns and Features
-
-Now that you've mastered the basics, let's explore advanced patterns that will help you build sophisticated, production-ready plugins.
-
-### Custom Functions and Libraries
-
-Beyond basic data retrieval, you can add custom functions that users can call in their SQL queries.
-
-#### Creating a Plugin Library
-
-Add a library class to extend your plugin's capabilities:
+### Step 8: Create the Library
 
 ```csharp
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
-using Musoq.DataSources.Weather.Entities;
 
 namespace Musoq.DataSources.Weather;
 
-/// <summary>
-/// Custom functions for weather data manipulation
-/// </summary>
-public class WeatherLibrary : LibraryBase
+public sealed class WeatherLibrary : LibraryBase
 {
-    /// <summary>
-    /// Converts temperature from Celsius to Fahrenheit
-    /// </summary>
     [BindableMethod]
-    public double ToFahrenheit([InjectSpecificSource(typeof(WeatherEntity))] WeatherEntity weather)
+    public decimal CelsiusToFahrenheit(decimal celsius)
     {
-        return (weather.Temperature * 9.0 / 5.0) + 32.0;
-    }
-
-    /// <summary>
-    /// Determines if weather is comfortable for outdoor activities
-    /// </summary>
-    [BindableMethod]
-    public bool IsComfortable([InjectSpecificSource(typeof(WeatherEntity))] WeatherEntity weather)
-    {
-        return weather.Temperature >= 18.0 && 
-               weather.Temperature <= 26.0 && 
-               !weather.IsRaining && 
-               weather.WindSpeed < 20.0;
-    }
-
-    /// <summary>
-    /// Categorizes temperature into comfort levels
-    /// </summary>
-    [BindableMethod]
-    public string TemperatureCategory([InjectSpecificSource(typeof(WeatherEntity))] WeatherEntity weather)
-    {
-        return weather.Temperature switch
-        {
-            < 0 => "Freezing",
-            < 10 => "Cold",
-            < 20 => "Cool",
-            < 30 => "Warm",
-            _ => "Hot"
-        };
-    }
-
-    /// <summary>
-    /// Calculates wind chill factor
-    /// </summary>
-    [BindableMethod]
-    public double WindChill([InjectSpecificSource(typeof(WeatherEntity))] WeatherEntity weather)
-    {
-        if (weather.Temperature >= 10.0 || weather.WindSpeed < 4.8)
-            return weather.Temperature;
-
-        var temp = weather.Temperature;
-        var windSpeed = weather.WindSpeed;
-        
-        return 13.12 + 0.6215 * temp - 11.37 * Math.Pow(windSpeed, 0.16) + 0.3965 * temp * Math.Pow(windSpeed, 0.16);
+        return (celsius * 9m / 5m) + 32m;
     }
 }
 ```
 
-#### Registering Your Library
+Usage:
 
-Update your Schema to include the library:
+```sql
+select City, CelsiusToFahrenheit(TemperatureC)
+from #weather.current('Warsaw');
+```
+
+### Step 9: Create the SchemaProvider
 
 ```csharp
-public class WeatherSchema : SchemaBase
+using Musoq.Schema;
+
+namespace Musoq.DataSources.Weather;
+
+public sealed class WeatherSchemaProvider : ISchemaProvider
 {
-    public WeatherSchema() : base("weather", CreateLibrary())
+    public ISchema GetSchema(string schema)
     {
+        if (!string.Equals(schema, "weather", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(schema, "#weather", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new NotSupportedException($"Schema '{schema}' is not supported.");
+        }
+
+        return new WeatherSchema(new WeatherClient());
+    }
+}
+```
+
+### Step 10: Create the Schema
+
+```csharp
+using Musoq.Plugins;
+using Musoq.Schema;
+using Musoq.Schema.DataSources;
+using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
+
+namespace Musoq.DataSources.Weather;
+
+public sealed class WeatherSchema : SchemaBase
+{
+    private const string Current = "current";
+    private readonly WeatherClient _client;
+
+    public WeatherSchema(WeatherClient client)
+        : base("weather", CreateLibrary())
+    {
+        _client = client;
+
+        // Registers constructor metadata for desc #weather and static catalogs.
+        AddTable<WeatherTable>(Current);
+    }
+
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object?[] parameters)
+    {
+        EnsureCurrent(name);
+        return new WeatherTable();
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object?[] parameters)
+    {
+        EnsureCurrent(name);
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            RowType = table.Metadata.TableEntityType,
+            Columns = table.Columns
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object?[] parameters)
+    {
+        EnsureCurrent(name);
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                "WEATHER_API_KEY",
+                Required: true,
+                Secret: true,
+                SourceRuntimeSettingPhase.Execution,
+                "API key for the weather provider.")
+        ];
+    }
+
+    public override SourcePlanResult TryPlanSource(
+        string name,
+        SourcePlanRequest request,
+        params object?[] parameters)
+    {
+        EnsureCurrent(name);
+        return WeatherPlanBuilder.Plan(request);
+    }
+
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object?[] parameters)
+    {
+        EnsureCurrent(name);
+
+        if (parameters.Length != 1 || parameters[0] is not string city)
+            throw new ArgumentException("#weather.current(city) requires one string argument.");
+
+        return EnsureSourceType<T, WeatherEntity>(
+            name,
+            new WeatherRowSource(
+                _client.WithSettings(executionContext.SourceRuntimeSettings),
+                executionContext,
+                city));
+    }
+
+    private static void EnsureCurrent(string name)
+    {
+        if (!string.Equals(name, Current, StringComparison.OrdinalIgnoreCase))
+            throw new NotSupportedException($"Source '{name}' is not supported.");
     }
 
     private static MethodsAggregator CreateLibrary()
     {
-        var methodsManager = new MethodsManager();
-        var library = new WeatherLibrary();
-        methodsManager.RegisterLibraries(library);
-        return new MethodsAggregator(methodsManager);
+        var manager = new MethodsManager();
+        manager.RegisterLibraries(new LibraryBase());
+        manager.RegisterLibraries(new WeatherLibrary());
+        return new MethodsAggregator(manager);
     }
 }
 ```
 
-#### Using Custom Functions in SQL
+### Step 11: Add Minimal Planning
 
-Users can now write more sophisticated queries:
-
-```sql
--- Convert temperature to Fahrenheit and categorize
-SELECT 
-    Location,
-    Temperature,
-    ToFahrenheit() as TempF,
-    TemperatureCategory() as Category,
-    IsComfortable() as IsComfortable,
-    WindChill() as FeelsLike
-FROM #weather.current('New York')
-
--- Find comfortable weather locations
-SELECT Location, Temperature, Description
-FROM #weather.current()
-WHERE IsComfortable() = true
-
--- Group by temperature categories
-SELECT 
-    TemperatureCategory() as Category,
-    COUNT(*) as LocationCount,
-    AVG(Temperature) as AvgTemp
-FROM #weather.current()
-GROUP BY TemperatureCategory()
-```
-
-### Multi-Table Schemas
-
-Real-world plugins often need to expose multiple related tables. Here's how to structure them:
-
-#### Example: Enhanced Weather Plugin with Multiple Tables
+Start with reject-all planning:
 
 ```csharp
-public class WeatherSchema : SchemaBase
+public static SourcePlanResult Plan(SourcePlanRequest request)
 {
-    private const string CurrentWeatherTable = "current";
-    private const string ForecastTable = "forecast";
-    private const string HistoricalTable = "historical";
-    private const string AlertsTable = "alerts";
-
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
-    {
-        return name.ToLowerInvariant() switch
-        {
-            CurrentWeatherTable => new CurrentWeatherTable(),
-            ForecastTable => new ForecastTable(),
-            HistoricalTable => new HistoricalTable(),
-            AlertsTable => new AlertsTable(),
-            _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-        };
-    }
-
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
-    {
-        return name.ToLowerInvariant() switch
-        {
-            CurrentWeatherTable => new CurrentWeatherRowSource(runtimeContext, parameters),
-            ForecastTable => new ForecastRowSource(runtimeContext, parameters),
-            HistoricalTable => new HistoricalRowSource(runtimeContext, parameters),
-            AlertsTable => new AlertsRowSource(runtimeContext, parameters),
-            _ => throw new NotSupportedException($"Table '{name}' is not supported.")
-        };
-    }
-
-    public override SchemaMethodInfo[] GetConstructors()
-    {
-        var constructors = new List<SchemaMethodInfo>();
-        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<CurrentWeatherRowSource>(CurrentWeatherTable));
-        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<ForecastRowSource>(ForecastTable));
-        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<HistoricalRowSource>(HistoricalTable));
-        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<AlertsRowSource>(AlertsTable));
-        return constructors.ToArray();
-    }
+    return SourcePlanResult.RejectAll(request);
 }
 ```
 
-This enables complex queries across multiple tables:
-
-```sql
--- Join current weather with forecast
-SELECT 
-    c.Location,
-    c.Temperature as CurrentTemp,
-    f.Temperature as ForecastTemp,
-    f.Date as ForecastDate
-FROM #weather.current('London') c
-JOIN #weather.forecast('London', 7) f ON c.Location = f.Location
-
--- Find locations with weather alerts
-SELECT 
-    a.Location,
-    a.AlertType,
-    a.Severity,
-    c.Temperature
-FROM #weather.alerts() a
-JOIN #weather.current() c ON a.Location = c.Location
-WHERE a.Severity = 'High'
-```
-
-### Handling Complex Data Types
-
-Modern data sources often return complex, nested data structures. Here's how to handle them effectively:
-
-#### Entity with Complex Properties
+Then add safe accepted work. This example accepts projection only, and leaves predicate, order, skip, and take to the engine:
 
 ```csharp
-public class WeatherEntity
-{
-    public string Location { get; set; } = string.Empty;
-    public double Temperature { get; set; }
-    public List<string> Conditions { get; set; } = new();
-    public Dictionary<string, object> Metadata { get; set; } = new();
-    public WeatherDetails Details { get; set; } = new();
-    public List<WeatherAlert> Alerts { get; set; } = new();
-}
+using Musoq.Schema.Optimization;
 
-public class WeatherDetails
-{
-    public double Pressure { get; set; }
-    public double Visibility { get; set; }
-    public string UVIndex { get; set; } = string.Empty;
-}
+namespace Musoq.DataSources.Weather;
 
-public class WeatherAlert
+internal static class WeatherPlanBuilder
 {
-    public string Type { get; set; } = string.Empty;
-    public string Severity { get; set; } = string.Empty;
-    public DateTime ExpiresAt { get; set; }
-}
-```
-
-#### Helper for Complex Types
-
-```csharp
-internal static class WeatherTableHelper
-{
-    static WeatherTableHelper()
+    public static SourcePlanResult Plan(SourcePlanRequest request)
     {
-        NameToIndexMap = new Dictionary<string, int>
+        return new SourcePlanResult
         {
-            {nameof(WeatherEntity.Location), 0},
-            {nameof(WeatherEntity.Temperature), 1},
-            {nameof(WeatherEntity.Conditions), 2},
-            {nameof(WeatherEntity.Metadata), 3},
-            {nameof(WeatherEntity.Details), 4},
-            {nameof(WeatherEntity.Alerts), 5}
-        };
-        
-        IndexToMethodAccessMap = new Dictionary<int, Func<WeatherEntity, object?>>
-        {
-            {0, entity => entity.Location},
-            {1, entity => entity.Temperature},
-            {2, entity => entity.Conditions},           // List<string>
-            {3, entity => entity.Metadata},             // Dictionary<string, object>
-            {4, entity => entity.Details},              // Complex object
-            {5, entity => entity.Alerts}                // List<WeatherAlert>
-        };
-        
-        Columns = new[]
-        {
-            new SchemaColumn(nameof(WeatherEntity.Location), 0, typeof(string)),
-            new SchemaColumn(nameof(WeatherEntity.Temperature), 1, typeof(double)),
-            new SchemaColumn(nameof(WeatherEntity.Conditions), 2, typeof(List<string>)),
-            new SchemaColumn(nameof(WeatherEntity.Metadata), 3, typeof(Dictionary<string, object>)),
-            new SchemaColumn(nameof(WeatherEntity.Details), 4, typeof(WeatherDetails)),
-            new SchemaColumn(nameof(WeatherEntity.Alerts), 5, typeof(List<WeatherAlert>))
+            ExecutionPlan = new SourceExecutionPlan
+            {
+                Identity = request.Identity,
+                AcceptedColumns = request.RequiredColumns
+            },
+            AcceptedColumns = request.RequiredColumns,
+            ResidualPredicate = request.Predicate,
+            ResidualOrderBy = request.OrderBy,
+            ResidualSkip = request.Skip,
+            ResidualTake = request.Take,
+            Cardinality = CardinalityEstimate.Unknown("Weather source does not know filtered cardinality at compile time.")
         };
     }
 }
 ```
 
-#### XML Documentation for Complex Types
+Execution applies only the work accepted into `SourceExecutionContext.Plan`:
+
+```csharp
+internal static class WeatherPlanExecutor
+{
+    public static IEnumerable<WeatherEntity> Apply(
+        IEnumerable<WeatherEntity> rows,
+        SourceExecutionPlan plan)
+    {
+        return rows;
+    }
+}
+```
+
+Do not accept `take` or `skip` unless the source also accepts every earlier operation that can change row membership or row order. For example, accepting `take` while leaving `where` or `order by` residual can truncate the wrong rows before the engine applies the remaining work.
+
+## Understanding Each Component
+
+### Component 1: Entity
+
+Typed entity rows are the best default for stable schemas.
+
+Good entity:
+
+```csharp
+public sealed class CommitEntity
+{
+    public string Sha { get; init; } = string.Empty;
+    public string Author { get; init; } = string.Empty;
+    public DateTimeOffset Date { get; init; }
+    public int FileCount { get; init; }
+}
+```
+
+Avoid:
+
+- hiding queryable values behind methods
+- using ambiguous `object` properties for known primitive values
+- keeping old index resolver maps as the source of truth
+
+### Component 2: Table
+
+`ISchemaTable` maps SQL-visible column names to types and row type.
+
+```csharp
+public interface ISchemaTable
+{
+    ISchemaColumn[] Columns { get; }
+    SchemaTableMetadata Metadata { get; }
+    ISchemaColumn? GetColumnByName(string name);
+    ISchemaColumn[] GetColumnsByName(string name);
+}
+```
+
+`SchemaColumn` constructor:
+
+```csharp
+new SchemaColumn("ColumnName", 0, typeof(string))
+new SchemaColumn("ColumnName", 0, typeof(string), readModifiers)
+```
+
+Table constructors also describe source parameters for `desc #schema.method` and static catalogs. If users call `#weather.current('Warsaw')`, the table should expose a metadata-only constructor with the same public parameters:
+
+```csharp
+public sealed class WeatherTable : ISchemaTable
+{
+    public WeatherTable()
+    {
+    }
+
+    public WeatherTable(string city)
+    {
+        _ = city;
+    }
+
+    // Columns and Metadata omitted.
+}
+```
+
+Register the table in the schema constructor:
+
+```csharp
+public WeatherSchema(WeatherClient client)
+    : base("weather", CreateLibrary())
+{
+    _client = client;
+    AddTable<WeatherTable>("current");
+}
+```
+
+`SchemaBase` uses those registrations to implement:
+
+```csharp
+SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext);
+SchemaMethodInfo[] GetRawConstructors(string methodName, SourceMetadataContext metadataContext);
+```
+
+Override those methods only for generated/dynamic source catalogs or schemas that cannot use `AddTable<T>()`. Do not use the retired `GetRawConstructors(RuntimeContext)` signature in runtime-v2 plugins.
+
+### Component 3: RowSource
+
+`RowSource<T>.Chunks` is pull-based. The engine enumerates chunks during execution.
+
+Patterns:
+
+```csharp
+public sealed class SingleChunkSource<T>(IReadOnlyList<T> rows) : RowSource<T>
+{
+    public override IEnumerable<IReadOnlyList<T>> Chunks
+    {
+        get { yield return rows; }
+    }
+}
+```
+
+```csharp
+public sealed class WriterSource<T>(IReadOnlyList<T> rows) : RowSourceBase<T>
+{
+    protected override void CollectChunks(IChunkWriter<T> writer)
+    {
+        writer.Write(rows);
+    }
+}
+```
+
+Do not use producer queues or blocking collections in runtime-v2 plugin code. Emit chunks directly.
+
+### Component 4: Schema
+
+`SchemaBase` gives useful defaults:
+
+- table/source constructor registration with `AddTable<T>()` and `AddSource<T>()`
+- `DescribeSource` default based on table metadata
+- `DescribeSourceRuntimeSettings` from `SourceRuntimeSettingAttribute`
+- `TryPlanSource` default reject-all
+- row type validation helpers
+- library method resolution through `MethodsAggregator`
+
+When a plugin needs explicit control, override the runtime-v2 methods directly.
+
+### Component 5: Library
+
+Library methods are normal C# methods decorated with `[BindableMethod]`.
+
+```csharp
+[BindableMethod]
+public bool IsFreezing(decimal celsius)
+{
+    return celsius <= 0m;
+}
+```
+
+Keep datasource I/O out of library methods. Source I/O belongs in clients and row sources.
+
+## Essential XML Metadata (Critical)
+
+### Why XML Metadata Matters
+
+XML metadata is not just developer-facing documentation. It is a static discovery contract. Musoq tooling can read the XML file next to the plugin DLL to determine available schemas, source methods, parameters, tables, and columns without loading the DLL itself.
+
+That matters for:
+
+- plugin discovery UIs
+- `desc`-style table and column catalogs
+- generated help
+- package review
+- offline indexes and registries
+- safer inspection of untrusted plugin packages
+- autonomous agent repair and maintenance
+
+Runtime-v2 execution still validates behavior through `GetTableByName`, `DescribeSource`, `DescribeSourceRuntimeSettings`, `TryPlanSource`, and `GetRowSource<T>`. The XML file is the static catalog; the runtime-v2 schema methods are the execution contract. They must stay synchronized.
+
+Enable XML docs:
 
 ```xml
-<columns>
-<column name="Location" type="string">Weather station location</column>
-<column name="Temperature" type="double">Temperature in Celsius</column>
-<column name="Conditions" type="IList&lt;string&gt;">List of weather conditions</column>
-<column name="Metadata" type="IDictionary&lt;string, object&gt;">Additional weather metadata</column>
-<column name="Details" type="WeatherDetails">Detailed weather measurements</column>
-<column name="Alerts" type="WeatherAlert[]">Active weather alerts</column>
-</columns>
+<GenerateDocumentationFile>true</GenerateDocumentationFile>
 ```
 
-### Error Handling and Resilience Patterns
+### XML Metadata Structure
 
-Production plugins need robust error handling:
-
-#### RowSource with Error Handling
-
-```csharp
-internal class WeatherRowSource : RowSourceBase<WeatherEntity>
-{
-    private readonly string _apiKey;
-    private readonly string _location;
-    private readonly ILogger _logger;
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        try
-        {
-            var weatherData = GetWeatherDataWithRetry();
-            
-            if (!weatherData.Any())
-            {
-                _logger.LogWarning("No weather data returned for location: {Location}", _location);
-                return;
-            }
-
-            var resolvers = weatherData.Select(entity => 
-                new EntityResolver<WeatherEntity>(entity, WeatherTableHelper.NameToIndexMap, WeatherTableHelper.IndexToMethodAccessMap))
-                .ToList();
-
-            chunkedSource.Add(resolvers);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to retrieve weather data for location: {Location}", _location);
-            
-            // Option 1: Re-throw to fail the query
-            throw new InvalidOperationException($"Weather data unavailable for {_location}: {ex.Message}", ex);
-            
-            // Option 2: Return empty results
-            // chunkedSource.Add(new List<IObjectResolver>());
-            
-            // Option 3: Return error data
-            // var errorEntity = new WeatherEntity { Location = _location, Description = "Error: " + ex.Message };
-            // var errorResolver = new EntityResolver<WeatherEntity>(errorEntity, ...);
-            // chunkedSource.Add(new List<IObjectResolver> { errorResolver });
-        }
-    }
-
-    private List<WeatherEntity> GetWeatherDataWithRetry()
-    {
-        const int maxRetries = 3;
-        var delay = TimeSpan.FromSeconds(1);
-
-        for (int attempt = 1; attempt <= maxRetries; attempt++)
-        {
-            try
-            {
-                return GetWeatherData();
-            }
-            catch (HttpRequestException ex) when (attempt < maxRetries)
-            {
-                _logger.LogWarning("Attempt {Attempt} failed, retrying in {Delay}ms: {Error}", 
-                    attempt, delay.TotalMilliseconds, ex.Message);
-                
-                Thread.Sleep(delay);
-                delay = TimeSpan.FromMilliseconds(delay.TotalMilliseconds * 2); // Exponential backoff
-            }
-        }
-
-        throw new InvalidOperationException($"Failed to retrieve weather data after {maxRetries} attempts");
-    }
-
-    private List<WeatherEntity> GetWeatherData()
-    {
-        // Your actual data retrieval logic here
-        // This could throw HttpRequestException, JsonException, etc.
-        return new List<WeatherEntity>();
-    }
-}
-```
-
-### Performance Optimization Patterns
-
-#### Chunked Data Processing
-
-For large datasets, implement efficient chunking:
-
-```csharp
-protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-{
-    const int chunkSize = 1000;
-    int totalProcessed = 0;
-    
-    using var dataStream = GetDataStream(); // IEnumerable<WeatherEntity>
-    
-    var chunk = new List<WeatherEntity>(chunkSize);
-    
-    foreach (var entity in dataStream)
-    {
-        chunk.Add(entity);
-        
-        if (chunk.Count >= chunkSize)
-        {
-            ProcessAndAddChunk(chunk, chunkedSource);
-            chunk.Clear();
-            totalProcessed += chunkSize;
-            
-            // Optional: Log progress for long-running operations
-            if (totalProcessed % 10000 == 0)
-            {
-                _logger.LogInformation("Processed {Count} weather records", totalProcessed);
-            }
-        }
-    }
-    
-    // Process remaining items
-    if (chunk.Any())
-    {
-        ProcessAndAddChunk(chunk, chunkedSource);
-    }
-}
-
-private void ProcessAndAddChunk(List<WeatherEntity> entities, BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-{
-    var resolvers = entities.Select(entity => 
-        new EntityResolver<WeatherEntity>(entity, WeatherTableHelper.NameToIndexMap, WeatherTableHelper.IndexToMethodAccessMap))
-        .ToList();
-    
-    chunkedSource.Add(resolvers);
-}
-```
-
-#### Caching Strategies
-
-For APIs with rate limits or slow responses:
-
-```csharp
-internal class WeatherRowSource : RowSourceBase<WeatherEntity>
-{
-    private static readonly MemoryCache _cache = new MemoryCache(new MemoryCacheOptions
-    {
-        SizeLimit = 1000
-    });
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        var cacheKey = $"weather_{_location}_{DateTime.Now:yyyyMMddHH}"; // Cache per hour
-        
-        if (_cache.TryGetValue(cacheKey, out List<WeatherEntity>? cachedData))
-        {
-            ProcessCachedData(cachedData!, chunkedSource);
-            return;
-        }
-
-        var freshData = GetWeatherData();
-        
-        // Cache for 1 hour
-        _cache.Set(cacheKey, freshData, TimeSpan.FromHours(1));
-        
-        ProcessCachedData(freshData, chunkedSource);
-    }
-}
-```
-
----
-
-## Best Practices and Common Patterns
-
-Through building many plugins, the Musoq community has developed best practices that ensure reliable, maintainable, and performant plugins. Let me teach you these essential patterns.
-
-### The Golden Rules of Plugin Development
-
-#### 1. Always Provide Comprehensive XML Metadata
-**This is the most critical rule.** Your XML metadata is not optional documentation—it's essential functionality:
+Put the plugin-level description on the schema class and the source catalog on the schema constructor. This is the part Musoq can parse without loading the assembly:
 
 ```csharp
 /// <description>
-/// [Always write a clear, concise description of what your plugin does]
+/// Provides current weather observations.
 /// </description>
-/// <virtual-constructors>
-/// <virtual-constructor>
-/// <virtual-param>[Document every parameter clearly]</virtual-param>
-/// <examples>
-/// <example>
-/// <from>
-/// <environmentVariables>
-/// <environmentVariable name="API_KEY" isRequired="true">[Explain what this is for]</environmentVariable>
-/// </environmentVariables>
-/// #yourschema.method(string param)
-/// </from>
-/// <description>[Explain exactly what this method does]</description>
-/// <columns>
-/// <column name="ColumnName" type="type">[Describe what this column contains]</column>
-/// </columns>
-/// </example>
-/// </examples>
-/// </virtual-constructor>
-/// </virtual-constructors>
-```
-
-**Why this matters:**
-- Enables IntelliSense and auto-completion
-- Provides help documentation
-- Validates parameter usage
-- Essential for schema discovery
-
-#### 2. Handle Errors Gracefully
-Production plugins must handle failures elegantly:
-
-```csharp
-protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+/// <short-description>
+/// Weather datasource.
+/// </short-description>
+/// <project-url>https://example.org/weather-plugin</project-url>
+public sealed class WeatherSchema : SchemaBase
 {
-    try
+    private readonly WeatherClient _client;
+
+    /// <virtual-constructors>
+    ///   <virtual-constructor>
+    ///     <virtual-param>City name, coordinates, or address.</virtual-param>
+    ///     <examples>
+    ///       <example>
+    ///         <from>#weather.current(string city)</from>
+    ///         <description>Returns the current weather observation for one city.</description>
+    ///         <columns>
+    ///           <column name="City" type="string">Resolved city name.</column>
+    ///           <column name="ObservedAt" type="DateTimeOffset">Observation timestamp.</column>
+    ///           <column name="TemperatureC" type="decimal">Temperature in Celsius.</column>
+    ///           <column name="HumidityPercent" type="decimal">Relative humidity from 0 to 100.</column>
+    ///           <column name="Condition" type="string">Short weather condition text.</column>
+    ///         </columns>
+    ///       </example>
+    ///     </examples>
+    ///   </virtual-constructor>
+    /// </virtual-constructors>
+    public WeatherSchema(WeatherClient client)
+        : base("weather", CreateLibrary())
     {
-        var data = GetDataFromSource();
-        // Process data...
-    }
-    catch (HttpRequestException ex)
-    {
-        throw new InvalidOperationException($"Network error while fetching data: {ex.Message}", ex);
-    }
-    catch (JsonException ex)
-    {
-        throw new InvalidOperationException($"Invalid data format received: {ex.Message}", ex);
-    }
-    catch (Exception ex)
-    {
-        throw new InvalidOperationException($"Unexpected error in {GetType().Name}: {ex.Message}", ex);
+        _client = client;
+        AddTable<WeatherTable>("current");
     }
 }
 ```
 
-#### 3. Use Environment Variables Properly
-Follow consistent patterns for configuration:
+For runtime-v2 settings, the authoritative contract is `DescribeSourceRuntimeSettings`. If your Musoq host still reads the legacy XML `environmentVariables` node for static help, document setting names there too, but do not read secrets from environment variables unless your host explicitly requires that.
 
-```csharp
-public MyRowSource(RuntimeContext runtimeContext, string? customParam = null)
-{
-    // Required variables - fail fast if missing
-    _apiKey = runtimeContext.EnvironmentVariables["MY_API_KEY"];
-    
-    // Optional variables with sensible defaults
-    _timeout = int.Parse(runtimeContext.EnvironmentVariables.GetValueOrDefault("MY_TIMEOUT", "30"));
-    _baseUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("MY_BASE_URL", "https://api.default.com");
-    
-    // Parameter overrides environment variable
-    _endpoint = customParam ?? runtimeContext.EnvironmentVariables.GetValueOrDefault("MY_ENDPOINT", "default");
-}
-```
-
-#### 4. Design for Performance
-Think about performance from the beginning:
-
-```csharp
-// Good: Process data in chunks
-protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-{
-    const int chunkSize = 1000;
-    var buffer = new List<MyEntity>(chunkSize);
-    
-    foreach (var item in GetDataStream())
-    {
-        buffer.Add(item);
-        
-        if (buffer.Count >= chunkSize)
-        {
-            ProcessChunk(buffer, chunkedSource);
-            buffer.Clear();
-        }
-    }
-    
-    if (buffer.Any())
-        ProcessChunk(buffer, chunkedSource);
-}
-
-// Bad: Load everything into memory at once
-protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-{
-    var allData = GetAllDataAtOnce(); // Could cause OutOfMemoryException
-    var resolvers = allData.Select(entity => new EntityResolver<MyEntity>(...)).ToList();
-    chunkedSource.Add(resolvers);
-}
-```
-
-#### 5. Follow Consistent Naming Conventions
-
-**File Organization:**
-```
-Musoq.DataSources.YourPlugin/
-├── YourPluginSchema.cs           # Main schema
-├── Entities/
-│   └── YourEntity.cs            # Data models
-├── Tables/
-│   ├── YourTable.cs             # Table definitions
-│   └── YourTableHelper.cs       # Column mappings
-├── Sources/
-│   └── YourRowSource.cs         # Data sources
-└── YourPluginLibrary.cs         # Custom functions
-```
-
-**Naming Pattern:**
-- Schema: `{PluginName}Schema`
-- Entity: `{DataType}Entity`
-- Table: `{DataType}Table`
-- Helper: `{DataType}TableHelper`
-- RowSource: `{DataType}RowSource`
-- Library: `{PluginName}Library`
-
-### Architecture Decision Patterns
-
-#### When to Use Multiple Tables vs Single Table
-
-**Use Multiple Tables When:**
-- Different data types with distinct schemas
-- Related but separate concerns (users vs orders vs products)
-- Different data sources within the same domain
-
-**Use Single Table When:**
-- One primary data type
-- Simple, focused plugin
-- All data comes from the same API/source
-
-#### Static vs Dynamic Columns
-
-**Choose Static Columns When:**
 ```xml
-<columns>
-<column name="Id" type="string">Known column with fixed schema</column>
-<column name="Name" type="string">Another known column</column>
-</columns>
+<environmentVariables>
+  <environmentVariable name="WEATHER_API_KEY" isRequired="true">API token resolved by the host.</environmentVariable>
+</environmentVariables>
 ```
-- You know the exact schema at compile time
-- Data structure is stable
-- You want strong typing and IntelliSense
 
-**Choose Dynamic Columns When:**
+### Understanding Column Types
+
+Use stable type strings in `<column type="...">` and keep them synchronized with `ISchemaTable.Columns`.
+
+| .NET type | XML `type` value |
+|-----------|------------------|
+| `string` | `string` |
+| `int` | `int` |
+| `long` | `long` |
+| `double` | `double` |
+| `decimal` | `decimal` |
+| `bool` | `bool` |
+| `DateTime` | `DateTime` |
+| `DateTimeOffset` | `DateTimeOffset` |
+| `TimeSpan` | `TimeSpan` |
+| `Guid` | `Guid` |
+| `byte[]` | `byte[]` |
+| `string[]` | `string[]` |
+
+For nullable or generic types, use XML-safe names such as `DateTime?`, `IList&lt;string&gt;`, or `IDictionary&lt;string, object&gt;`.
+
+For query-local `TABLE` declarations, the common keyword mapping is:
+
+| TABLE keyword | Runtime column type |
+|---------------|---------------------|
+| `string` | `string` |
+| `byte` | `byte?` |
+| `sbyte` | `sbyte?` |
+| `short` | `short?` |
+| `int` | `int?` |
+| `long` | `long?` |
+| `ushort` | `ushort?` |
+| `uint` | `uint?` |
+| `ulong` | `ulong?` |
+| `float` | `float?` |
+| `double` | `double?` |
+| `decimal` / `money` | `decimal?` |
+| `bool` / `boolean` / `bit` | `bool?` |
+| `char` | `char?` |
+| `datetime` | `DateTime?` |
+| `datetimeoffset` | `DateTimeOffset?` |
+| `timespan` | `TimeSpan?` |
+| `guid` | `Guid?` |
+| `object` | `object` |
+
+Value types are nullable in `TABLE` context because dynamic sources can omit or null a value. Still document the intended column type in XML when the source shape is static.
+
+### Dynamic vs Static Columns
+
+Static typed source:
+
+```sql
+select City, TemperatureC from #weather.current('Warsaw');
+```
+
+Dynamic source with explicit shape:
+
+```sql
+table CsvWeather {
+    City: string trim,
+    TemperatureC: decimal culture 'en-US',
+    ObservedAt: datetimeoffset format 'O'
+};
+
+couple separatedvalues.comma with table CsvWeather as WeatherCsv;
+
+select City, TemperatureC
+from WeatherCsv('./weather.csv', true, 0);
+```
+
+For sources whose columns are unknown until the query, parameter, or external data is known, mark the static catalog as dynamic:
+
 ```xml
 <columns isDynamic="true"></columns>
 ```
-- Schema varies based on runtime data
-- API responses have different structures
-- Database tables with unknown schemas
-- File formats with varying columns
 
-#### Simple vs Complex Entities
+`TABLE` differs from binary/text interpretation schemas. `TABLE` declares a row shape for an existing datasource. Binary/text schemas describe how to parse bytes or text into structured values. AI schemas describe structured inference output and can be combined with `TABLE` or `COUPLE` in larger queries.
 
-**Simple Entity Pattern:**
+### Packaging XML Documentation
+
+The generated XML file must be shipped next to the plugin DLL inside the inner `Plugin.zip`. A common standalone datasource package is a two-level zip:
+
+```text
+Musoq.DataSources.Weather-windows-x64.zip
+  EntryPoint.txt          # Musoq.DataSources.Weather.dll
+  Platform.txt            # windows | linux | macos | alpine
+  Architecture.txt        # x64 | arm64
+  LibraryName.txt         # Musoq.DataSources.Weather
+  Version.txt             # 1.0.0
+  Plugin.zip
+    Musoq.DataSources.Weather.dll
+    Musoq.DataSources.Weather.xml
+    Musoq.DataSources.Weather.deps.json
+    Musoq.DataSources.Weather.runtimeconfig.json
+    ThirdParty.Dependency.dll
+```
+
+Verify it before publishing:
+
+```powershell
+dotnet build --configuration Release --nologo --verbosity quiet
+Test-Path .\Musoq.DataSources.Weather\bin\Release\net10.0\Musoq.DataSources.Weather.xml
+```
+
+If the XML is missing, Musoq tooling may be unable to list the plugin's tables and columns without loading the DLL.
+
+The default import command for hosts using datasource packages is:
+
+```powershell
+musoq datasource import .\artifacts\Musoq.DataSources.Weather-windows-x64.zip
+musoq datasource list
+```
+
+Some hosts expose the newer plugin-oriented equivalent:
+
+```powershell
+musoq plugin install .\artifacts\Musoq.DataSources.Weather-windows-x64.zip
+musoq plugin list
+```
+
+## Testing and Validation
+
+### Setting Up Your Test Project
+
+Add converter/evaluator packages to compile and execute real SQL:
+
+```xml
+<PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1" />
+<PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1" />
+```
+
+### Test Logger
+
 ```csharp
-public class SimpleEntity
+using Microsoft.Extensions.Logging;
+using Musoq.Evaluator;
+
+namespace Musoq.DataSources.Weather.Tests;
+
+public sealed class TestLoggerResolver : ILoggerResolver
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public DateTime Created { get; set; }
+    public ILogger ResolveLogger()
+    {
+        return LoggerFactory
+            .Create(static builder => builder.SetMinimumLevel(LogLevel.None))
+            .CreateLogger("MusoqTests");
+    }
 }
 ```
 
-**Complex Entity Pattern:**
+### Test Context and Query Helpers
+
 ```csharp
-public class ComplexEntity
+using Microsoft.Extensions.Logging.Abstractions;
+using Musoq.Converter;
+using Musoq.Evaluator;
+using Musoq.Evaluator.Tables;
+using Musoq.Schema;
+using Musoq.Schema.Optimization;
+
+namespace Musoq.DataSources.Weather.Tests;
+
+internal static class TestContexts
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public List<string> Tags { get; set; } = new();
-    public Dictionary<string, object> Metadata { get; set; } = new();
-    public NestedObject Details { get; set; } = new();
+    public static SourceMetadataContext Metadata(
+        IReadOnlyCollection<ISchemaColumn>? columns = null,
+        IReadOnlyDictionary<string, string>? settings = null)
+    {
+        return new SourceMetadataContext(
+            Guid.NewGuid().ToString("N"),
+            CancellationToken.None,
+            columns ?? [],
+            settings ?? new Dictionary<string, string>(),
+            NullLogger.Instance);
+    }
+}
+
+internal static class QueryRunner
+{
+    public static Table Run(
+        string query,
+        ISchemaProvider provider,
+        CompilationOptions? options = null)
+    {
+        var compiled = InstanceCreator.CompileForExecution(
+            query,
+            Guid.NewGuid().ToString("N"),
+            provider,
+            new TestLoggerResolver(),
+            options ?? new CompilationOptions());
+
+        return compiled.Run();
+    }
 }
 ```
 
-Use complex entities when your data source naturally returns nested or structured data.
+### Running a Query
 
-### Data Source Integration Patterns
-
-#### HTTP API Integration Pattern
 ```csharp
-internal class ApiRowSource : RowSourceBase<ApiEntity>
+using Musoq.Converter;
+
+var compiled = InstanceCreator.CompileForExecution(
+    "select City from #weather.current('Warsaw')",
+    Guid.NewGuid().ToString("N"),
+    new WeatherSchemaProvider(),
+    new TestLoggerResolver());
+
+var rows = compiled.Run();
+```
+
+### Diagnostic Compilation
+
+Use this path for negative tests:
+
+```csharp
+var result = InstanceCreator.CompileWithDiagnostics(
+    "select MissingColumn from #weather.current('Warsaw')",
+    Guid.NewGuid().ToString("N"),
+    new WeatherSchemaProvider(),
+    new TestLoggerResolver());
+
+Assert.IsFalse(result.Succeeded);
+Assert.IsTrue(result.Errors.Count > 0);
+```
+
+### Inspection Compilation
+
+Use inspection to verify planning, generated C#, and query description behavior:
+
+```csharp
+var inspection = InstanceCreator.CompileForInspection(
+    "desc query (select City from #weather.current('Warsaw'))",
+    Guid.NewGuid().ToString("N"),
+    new WeatherSchemaProvider(),
+    new TestLoggerResolver());
+
+StringAssert.Contains(inspection.PlanningText, "weather");
+```
+
+### Static Discovery Tests
+
+Test the assembly attribute that lets Musoq find the schema before loading behavior:
+
+```csharp
+using Musoq.Schema.Attributes;
+
+[TestMethod]
+public void Assembly_WhenInspected_HasPluginSchemasAttribute()
 {
-    private readonly HttpClient _httpClient;
-    private readonly string _apiKey;
-    private readonly string _baseUrl;
+    var attribute = typeof(WeatherSchema).Assembly
+        .GetCustomAttributes(typeof(PluginSchemasAttribute), inherit: false)
+        .Cast<PluginSchemasAttribute>()
+        .SingleOrDefault();
 
-    public ApiRowSource(RuntimeContext runtimeContext, string? endpoint = null)
+    Assert.IsNotNull(attribute);
+    CollectionAssert.Contains(attribute.Schemas.ToArray(), "weather");
+}
+```
+
+Test raw constructors and `desc` output:
+
+```csharp
+[TestMethod]
+public void GetRawConstructors_WhenAskedForCurrent_ReturnsCityParameter()
+{
+    var schema = new WeatherSchema(new WeatherClient());
+    var context = TestContexts.Metadata();
+
+    var constructors = schema.GetRawConstructors("current", context);
+
+    Assert.IsTrue(constructors.Any(constructor =>
+        constructor.ConstructorInfo.Arguments.Any(argument =>
+            argument.Name == "city" && argument.Type == typeof(string))));
+}
+
+[TestMethod]
+public void DescMethodWithArgs_ShouldReturnWeatherColumns()
+{
+    var rows = QueryRunner.Run(
+        "desc #weather.current('Warsaw')",
+        new WeatherSchemaProvider());
+
+    Assert.IsTrue(rows.Any(row => string.Equals((string)row[0], nameof(WeatherEntity.City), StringComparison.Ordinal)));
+    Assert.IsTrue(rows.Any(row => string.Equals((string)row[0], nameof(WeatherEntity.TemperatureC), StringComparison.Ordinal)));
+}
+```
+
+Test the generated XML file:
+
+```csharp
+[TestMethod]
+public void XmlDocumentation_WhenBuilt_ContainsVirtualConstructorsAndColumns()
+{
+    var xmlPath = Path.ChangeExtension(typeof(WeatherSchema).Assembly.Location, ".xml");
+
+    Assert.IsTrue(File.Exists(xmlPath), $"Missing XML documentation file: {xmlPath}");
+
+    var xml = File.ReadAllText(xmlPath);
+    StringAssert.Contains(xml, "virtual-constructors");
+    StringAssert.Contains(xml, "#weather.current(string city)");
+    StringAssert.Contains(xml, nameof(WeatherEntity.TemperatureC));
+}
+```
+
+### Runtime Settings Test
+
+```csharp
+using Musoq.Evaluator;
+using Musoq.Schema.Optimization;
+
+public sealed class DictionarySettingsResolver(
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> profiles)
+    : ISourceRuntimeSettingsResolver
+{
+    public IReadOnlyDictionary<string, string> Resolve(SourceRuntimeSettingsResolutionRequest request)
     {
-        _httpClient = new HttpClient();
-        _apiKey = runtimeContext.EnvironmentVariables["API_KEY"];
-        _baseUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("API_BASE_URL", "https://api.default.com");
+        var profile = request.ProfileName ?? "default";
+        return profiles.TryGetValue(profile, out var settings)
+            ? settings
+            : new Dictionary<string, string>();
     }
+}
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-        
-        var response = _httpClient.GetStringAsync($"{_baseUrl}/data").GetAwaiter().GetResult();
-        var apiData = JsonSerializer.Deserialize<List<ApiEntity>>(response) ?? new List<ApiEntity>();
-
-        var resolvers = apiData.Select(entity => 
-            new EntityResolver<ApiEntity>(entity, ApiTableHelper.NameToIndexMap, ApiTableHelper.IndexToMethodAccessMap))
-            .ToList();
-
-        chunkedSource.Add(resolvers);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
+[TestMethod]
+public void Current_WhenSettingsProfileIsUsed_ReceivesResolvedToken()
+{
+    var resolver = new DictionarySettingsResolver(
+        new Dictionary<string, IReadOnlyDictionary<string, string>>
         {
-            _httpClient?.Dispose();
-        }
-        base.Dispose(disposing);
-    }
-}
-```
-
-#### File Processing Pattern
-```csharp
-internal class FileRowSource : RowSourceBase<FileEntity>
-{
-    private readonly string _filePath;
-
-    public FileRowSource(RuntimeContext runtimeContext, string filePath)
-    {
-        _filePath = filePath;
-        
-        if (!File.Exists(_filePath))
-            throw new FileNotFoundException($"File not found: {_filePath}");
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        const int chunkSize = 1000;
-        var buffer = new List<FileEntity>(chunkSize);
-
-        foreach (var line in File.ReadLines(_filePath))
-        {
-            var entity = ParseLine(line);
-            buffer.Add(entity);
-
-            if (buffer.Count >= chunkSize)
+            ["prod"] = new Dictionary<string, string>
             {
-                ProcessChunk(buffer, chunkedSource);
-                buffer.Clear();
+                ["WEATHER_API_KEY"] = "token"
             }
-        }
+        });
 
-        if (buffer.Any())
-            ProcessChunk(buffer, chunkedSource);
-    }
+    var options = new CompilationOptions(sourceRuntimeSettingsResolver: resolver);
+    var query = """
+        couple weather.current with settings prod as CurrentWeather;
+        select City from CurrentWeather('Warsaw')
+        """;
 
-    private FileEntity ParseLine(string line)
-    {
-        // Your parsing logic here
-        return new FileEntity { Content = line };
-    }
+    var compiled = InstanceCreator.CompileForExecution(
+        query,
+        Guid.NewGuid().ToString("N"),
+        new WeatherSchemaProvider(),
+        new TestLoggerResolver(),
+        options);
+
+    var rows = compiled.Run();
+
+    Assert.AreEqual("Warsaw", rows[0][0]);
 }
 ```
 
-#### Database Connection Pattern
+### TABLE / COUPLE and Read Modifier Test
+
+```sql
+table LegacyWeather {
+    City: string encoding 'utf-8' trim,
+    TemperatureC: decimal culture 'en-US',
+    ObservedAt: datetimeoffset format 'O',
+    Payload: string source codec 'base64'
+};
+
+couple weather.dynamic with table LegacyWeather as WeatherRows;
+
+select City, TemperatureC from WeatherRows();
+```
+
+Datasource checks:
+
+- `metadataContext.AllColumns` contains columns with read modifiers in `GetTableByName`.
+- `SourcePlanRequest.RequiredColumns` contains `SourceColumnRef.ReadModifiers`.
+- `executionContext.AllColumns` contains modifiers in `GetRowSource<T>`.
+- unsupported modifiers produce `SourceContractDiagnostic.Warning` or `Error`.
+
+Statement order matters in a query batch:
+
+1. Put `TABLE` definitions first.
+2. Put `COUPLE` statements after the `TABLE` definitions they reference.
+3. Put CTEs and the final query after `TABLE` / `COUPLE`.
+
+### Package Smoke Test
+
+After building the plugin package, expand it and verify the static metadata and XML documentation are present:
+
 ```csharp
-internal class DatabaseRowSource : RowSourceBase<DatabaseEntity>
+using System.IO.Compression;
+
+[TestMethod]
+public void PackageZip_WhenExpanded_ContainsMetadataAndXml()
 {
-    private readonly string _connectionString;
+    var packagePath = Path.Combine("artifacts", "Musoq.DataSources.Weather-windows-x64.zip");
+    var extractDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
 
-    public DatabaseRowSource(RuntimeContext runtimeContext, string? query = null)
+    ZipFile.ExtractToDirectory(packagePath, extractDir);
+
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "EntryPoint.txt")));
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "Platform.txt")));
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "Architecture.txt")));
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "LibraryName.txt")));
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "Version.txt")));
+
+    var pluginZip = Path.Combine(extractDir, "Plugin.zip");
+    Assert.IsTrue(File.Exists(pluginZip));
+
+    var pluginDir = Path.Combine(extractDir, "plugin");
+    ZipFile.ExtractToDirectory(pluginZip, pluginDir);
+
+    Assert.IsTrue(File.Exists(Path.Combine(pluginDir, "Musoq.DataSources.Weather.dll")));
+    Assert.IsTrue(File.Exists(Path.Combine(pluginDir, "Musoq.DataSources.Weather.xml")));
+}
+```
+
+## Advanced Runtime V2 Patterns
+
+### Source Planning
+
+`SourcePlanRequest` contains possible source-side work:
+
+```csharp
+public sealed record SourcePlanRequest
+{
+    public required SourceIdentity Identity { get; init; }
+    public IReadOnlyDictionary<string, string> SourceRuntimeSettings { get; init; }
+    public IReadOnlyList<SourceColumnRef> RequiredColumns { get; init; }
+    public SourcePredicateExpression? Predicate { get; init; }
+    public IReadOnlyList<OrderByExpression> OrderBy { get; init; }
+    public long? Skip { get; init; }
+    public long? Take { get; init; }
+}
+```
+
+`SourcePlanResult` tells the engine what was accepted and what remains residual:
+
+```csharp
+return new SourcePlanResult
+{
+    ExecutionPlan = new SourceExecutionPlan
     {
-        _connectionString = runtimeContext.EnvironmentVariables["CONNECTION_STRING"];
-        _query = query ?? "SELECT * FROM DefaultTable";
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        using var connection = new SqlConnection(_connectionString);
-        connection.Open();
-
-        using var command = new SqlCommand(_query, connection);
-        using var reader = command.ExecuteReader();
-
-        var entities = new List<DatabaseEntity>();
-        while (reader.Read())
+        Identity = request.Identity,
+        AcceptedColumns = request.RequiredColumns,
+        AcceptedPredicate = request.Predicate,
+        AcceptedOrderBy = request.OrderBy,
+        AcceptedSkip = request.Skip,
+        AcceptedTake = request.Take,
+        Properties = new Dictionary<string, object?>
         {
-            entities.Add(new DatabaseEntity
-            {
-                Id = reader["Id"].ToString()!,
-                Name = reader["Name"].ToString()!,
-                // Map other columns...
-            });
+            ["Strategy"] = "RemoteApi"
         }
-
-        var resolvers = entities.Select(entity => 
-            new EntityResolver<DatabaseEntity>(entity, DatabaseTableHelper.NameToIndexMap, DatabaseTableHelper.IndexToMethodAccessMap))
-            .ToList();
-
-        chunkedSource.Add(resolvers);
-    }
-}
+    },
+    AcceptedColumns = request.RequiredColumns,
+    AcceptedPredicate = request.Predicate,
+    AcceptedOrderBy = request.OrderBy,
+    AcceptedSkip = request.Skip,
+    AcceptedTake = request.Take,
+    Cardinality = CardinalityEstimate.Unknown("Remote API does not expose a count endpoint.")
+};
 ```
 
-### Testing Best Practices
+Only accept work the source actually applies, and preserve query ordering semantics. A source can safely accept `take` or `skip` only when every predicate and order dependency before that slice is also accepted by the same source plan. The full `SourcePlanResult` also exposes `Diagnostics` and `ContractDiagnostics`; use those collections for planning warnings and source contract errors instead of throwing when the query can be diagnosed.
 
-#### Comprehensive Test Structure
+### Predicate Expression Pattern Matching
+
 ```csharp
-// 1. Entity Tests - Verify data model
-public class WeatherEntityTests { /* ... */ }
-
-// 2. Helper Tests - Verify column mappings
-public class WeatherTableHelperTests { /* ... */ }
-
-// 3. Table Tests - Verify schema metadata
-public class WeatherTableTests { /* ... */ }
-
-// 4. RowSource Tests - Verify data retrieval
-public class WeatherRowSourceTests { /* ... */ }
-
-// 5. Schema Integration Tests - Verify everything works together
-public class WeatherSchemaTests { /* ... */ }
-
-// 6. Library Tests - Verify custom functions
-public class WeatherLibraryTests { /* ... */ }
-```
-
-#### Mock External Dependencies
-```csharp
-[Fact]
-public void RowSource_Should_Handle_API_Errors_Gracefully()
+private static bool IsCityEquals(SourcePredicateExpression expression)
 {
-    // Arrange
-    var mockHttpClient = new Mock<HttpClient>();
-    mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>()))
-              .ThrowsAsync(new HttpRequestException("Network error"));
-
-    var runtimeContext = new RuntimeContext(CancellationToken.None, 
-        new Dictionary<string, string> { ["API_KEY"] = "test-key" });
-
-    // Act & Assert
-    var exception = Assert.Throws<InvalidOperationException>(() => 
+    return expression is SourcePredicateComparison
     {
-        var rowSource = new WeatherRowSource(runtimeContext);
-        var rows = rowSource.Rows.ToList();
-    });
-
-    Assert.Contains("Network error", exception.Message);
-}
-```
-
-### Common Pitfalls to Avoid
-
-#### ❌ Don't Forget XML Metadata
-```csharp
-// Bad: No XML metadata
-public class BadSchema : SchemaBase
-{
-    public BadSchema() : base("bad", CreateLibrary()) { }
-}
-
-// Good: Comprehensive XML metadata
-/// <description>Detailed description</description>
-/// <virtual-constructors>...</virtual-constructors>
-public class GoodSchema : SchemaBase
-{
-    public GoodSchema() : base("good", CreateLibrary()) { }
-}
-```
-
-#### ❌ Don't Ignore Performance
-```csharp
-// Bad: Loading everything into memory
-var allData = GetMillionsOfRecords().ToList();
-
-// Good: Processing in chunks
-foreach (var chunk in GetMillionsOfRecords().Chunk(1000))
-{
-    ProcessChunk(chunk);
-}
-```
-
-#### ❌ Don't Ignore Errors
-```csharp
-// Bad: Swallowing exceptions
-try 
-{
-    var data = GetData();
-} 
-catch 
-{ 
-    // Silent failure
-}
-
-// Good: Proper error handling
-try 
-{
-    var data = GetData();
-} 
-catch (Exception ex)
-{
-    throw new InvalidOperationException($"Failed to get data: {ex.Message}", ex);
-}
-```
-
-#### ❌ Don't Hardcode Configuration
-```csharp
-// Bad: Hardcoded values
-private const string ApiUrl = "https://hardcoded.api.com";
-
-// Good: Environment variable configuration
-var apiUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("API_URL", "https://default.api.com");
-```
-
----
-
-## Learning from Real-World Examples
-
-The best way to master plugin development is by studying the excellent examples already in this repository. Each plugin demonstrates different patterns and complexity levels. Let me guide you through the most instructive examples.
-
-### Study Path: From Simple to Complex
-
-#### Level 1: System Plugin - Understanding the Basics
-**Location**: `Musoq.DataSources.System/`
-
-Start here to understand fundamental concepts:
-
-**What to study:**
-- `SystemSchema.cs` - Simple schema with two tables (`dual`, `range`)
-- `DualEntity.cs` - Minimal entity with just one property
-- `RangeItemEntity.cs` - Simple numeric data
-- `EmptyLibrary.cs` - Minimal library implementation
-
-**Key lessons:**
-```csharp
-// Simple entity design
-public class DualEntity
-{
-    public string Value { get; set; } = string.Empty;
-}
-
-// Basic schema with multiple tables
-public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
-{
-    return name.ToLowerInvariant() switch
-    {
-        "dual" => new DualRowSource(runtimeContext),
-        "range" => new RangeSource(runtimeContext, parameters),
-        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
+        Operator: SourcePredicateComparisonOperator.Equal,
+        Left: SourcePredicateColumn { Column.Name: nameof(WeatherEntity.City) },
+        Right: SourcePredicateLiteral { Value: string }
     };
 }
+```
 
-// Method overloads handling
-public override SchemaMethodInfo[] GetConstructors()
+Supported expression records include:
+
+- `SourcePredicateColumn`
+- `SourcePredicateLiteral`
+- `SourcePredicateComparison`
+- `SourcePredicateLogical`
+- `SourcePredicateIn`
+- `SourcePredicateNullCheck`
+
+### Source Runtime Settings
+
+Manual declaration:
+
+```csharp
+new SourceRuntimeSettingRequirement(
+    "API_TOKEN",
+    Required: true,
+    Secret: true,
+    SourceRuntimeSettingPhase.All,
+    "Token used by the source.")
+```
+
+Attribute declaration:
+
+```csharp
+[SourceRuntimeSetting("API_TOKEN", Secret = true, Description = "Token used by the source.")]
+public ApiSource(SourceExecutionContext context)
 {
-    var constructors = new List<SchemaMethodInfo>();
-    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<DualRowSource>("dual"));
-    constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<RangeSource>("range"));
-    return constructors.ToArray();
 }
 ```
 
-**XML metadata patterns:**
-- Simple virtual constructors
-- Parameter documentation with `<virtual-param>`
-- Multiple examples for method overloads
+SQL profile selection:
 
-#### Level 2: OpenAI Plugin - API Integration Patterns
-**Location**: `Musoq.DataSources.OpenAI/`
-
-Study this for HTTP API integration:
-
-**What to study:**
-- `OpenAiSchema.cs` - Complex XML metadata with dynamic columns
-- `OpenAiRowSource.cs` - HTTP client usage and error handling
-- `OpenAiLibrary.cs` - Custom functions with entity injection
-- `OpenAiEntity.cs` - Complex entity with multiple data types
-
-**Key lessons:**
-```csharp
-// Dynamic columns for varying API responses
-/// <columns isDynamic="true"></columns>
-
-// Environment variable patterns
-var apiKey = runtimeContext.EnvironmentVariables["OPENAI_API_KEY"];
-var baseUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("OPENAI_BASE_URL", "https://api.openai.com");
-
-// HTTP client with authentication
-_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-
-// Complex virtual parameter documentation
-/// <virtual-param>Models to use: gpt-4, gpt-4-32k, gpt-4-vision-preview, gpt-4-turbo-preview, gpt-3.5-turbo, gpt-3.5-turbo-1106, gpt-3.5-turbo-16k, gpt-3.5-turbo-instruct, babbage-002, davinci-002</virtual-param>
+```sql
+couple weather.current with settings prod as CurrentWeather;
+desc settings CurrentWeather;
 ```
 
-**Advanced patterns:**
-- Dynamic column generation based on API responses
-- Comprehensive error handling for network operations
-- Custom functions that work with AI responses
+### Dynamic Dictionary Rows
 
-#### Level 3: Docker Plugin - Multi-Table Complex Schema
-**Location**: `Musoq.DataSources.Docker/`
+Dynamic rows are useful for CSV, JSON, loosely typed APIs, and table-valued input where the query declares shape.
 
-Study this for complex, multi-table plugins:
-
-**What to study:**
-- `DockerSchema.cs` - Multiple related tables in one schema
-- Multiple entity types (Container, Image, Network, Volume)
-- Complex data types and nested objects
-- Rich helper functions and metadata
-
-**Key lessons:**
 ```csharp
-// Multiple related tables
-public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+public sealed class DynamicTable(ISchemaColumn[] columns) : ISchemaTable
 {
-    return name.ToLowerInvariant() switch
+    public ISchemaColumn[] Columns => columns;
+    public SchemaTableMetadata Metadata { get; } =
+        new(typeof(IReadOnlyDictionary<string, object>));
+
+    public ISchemaColumn? GetColumnByName(string name)
     {
-        "containers" => new ContainersRowSource(runtimeContext, parameters),
-        "images" => new ImagesRowSource(runtimeContext, parameters),
-        "networks" => new NetworksRowSource(runtimeContext, parameters),
-        "volumes" => new VolumesRowSource(runtimeContext, parameters),
-        _ => throw new NotSupportedException($"Table '{name}' is not supported.")
+        return Columns.SingleOrDefault(column =>
+            string.Equals(column.ColumnName, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns
+            .Where(column => string.Equals(column.ColumnName, name, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+    }
+}
+
+public sealed class DynamicSource(IReadOnlyList<IReadOnlyDictionary<string, object?>> rows)
+    : RowSourceBase<IReadOnlyDictionary<string, object?>>
+{
+    protected override void CollectChunks(IChunkWriter<IReadOnlyDictionary<string, object?>> writer)
+    {
+        writer.Write(rows);
+    }
+}
+```
+
+### Read Modifiers and Conversion
+
+Known modifier constants are available through `ColumnReadModifiers`:
+
+- `ColumnReadModifiers.Encoding`
+- `ColumnReadModifiers.Culture`
+- `ColumnReadModifiers.Format`
+- `ColumnReadModifiers.Trim`
+- `ColumnReadModifiers.SourcePrefix`
+
+Example conversion:
+
+```csharp
+using System.Globalization;
+using Musoq.Schema;
+
+private static object? ConvertValue(object? rawValue, ISchemaColumn column)
+{
+    if (rawValue == null)
+        return null;
+
+    var modifiers = column.ReadModifiers;
+    var value = rawValue;
+
+    if (value is string text)
+    {
+        if (modifiers.ContainsKey(ColumnReadModifiers.Trim))
+            text = text.Trim();
+
+        var culture = modifiers.TryGetValue(ColumnReadModifiers.Culture, out var cultureName)
+            ? CultureInfo.GetCultureInfo(cultureName)
+            : CultureInfo.InvariantCulture;
+
+        var targetType = Nullable.GetUnderlyingType(column.ColumnType) ?? column.ColumnType;
+        return targetType == typeof(string)
+            ? text
+            : Convert.ChangeType(text, targetType, culture);
+    }
+
+    return value;
+}
+```
+
+### Contract Diagnostics
+
+Use `SourceContractDiagnostic` for table/source mismatches:
+
+```csharp
+using Musoq.Schema;
+using Musoq.Schema.Optimization;
+
+SourceContractDiagnostic.Error(
+    "Only utf-8 encoding is supported by #weather.dynamic().",
+    "UnsupportedEncoding") with
+{
+    ColumnName = "City",
+    ModifierKey = ColumnReadModifiers.Encoding
+};
+```
+
+Warnings become `MQ5013_SourceContractWarning`. Errors become `MQ3071_SourceContractError`.
+
+### Progress Reporting
+
+```csharp
+executionContext.ReportDataSourceBegin("weather.current");
+executionContext.ReportDataSourceRowsKnown("weather.current", totalRows);
+executionContext.ReportDataSourceRowsRead("weather.current", rowsRead, totalRows);
+executionContext.ReportDataSourceEnd("weather.current", rowsRead);
+```
+
+Progress belongs in row source execution, not metadata or planning.
+
+## Migration From Runtime V1
+
+### Retired API Map
+
+These names must not appear in active runtime-v2 source code:
+
+| Runtime-v1 API | Runtime-v2 replacement |
+|----------------|------------------------|
+| `RuntimeContext` | `SourceMetadataContext` or `SourceExecutionContext` |
+| `QuerySourceInfo` | `SourceIdentity`, `SourceDescriptor`, `SourceExecutionPlan` |
+| `QueryHints` | `SourcePlanRequest` and `SourcePlanResult` |
+| `IObjectResolver` | typed entity properties or dictionary rows |
+| `EntityResolver` | table metadata plus row type |
+| `BlockingCollection` chunks | `IEnumerable<IReadOnlyList<T>>` chunks |
+| non-generic `GetRowSource(...)` | `GetRowSource<T>(...)` |
+| `WhereNodeHelper` | `SourcePredicateExpression` planner |
+
+### Migration Checklist
+
+1. Upgrade projects to `net10.0`.
+2. Align all `Musoq.*` package versions to one runtime-v2 train.
+3. Replace old table helpers with `ISchemaTable` and `SchemaTableMetadata(typeof(TEntity))`.
+4. Replace resolver maps with typed properties or dictionary row access.
+5. Replace old row producers with `RowSource<T>`, `RowSourceBase<T>`, and `IChunkWriter<T>`.
+6. Replace non-generic source creation with `GetRowSource<T>`.
+7. Move environment variables and secrets to source runtime settings.
+8. Replace predicate AST pushdown with `TryPlanSource`.
+9. Consume accepted work from `SourceExecutionContext.Plan`.
+10. Add compiled query tests for typed rows, dynamic rows, settings, planning, and diagnostics.
+
+### Old Helper Migration
+
+Old plugins often had a helper containing:
+
+- name-to-index map
+- index-to-object map
+- resolver object
+
+Runtime-v2 does not need those maps for typed rows. Convert them into table metadata:
+
+```csharp
+public ISchemaColumn[] Columns { get; } =
+[
+    new SchemaColumn(nameof(MyEntity.Id), 0, typeof(int)),
+    new SchemaColumn(nameof(MyEntity.Name), 1, typeof(string))
+];
+
+public SchemaTableMetadata Metadata { get; } = new(typeof(MyEntity));
+```
+
+### Old Environment Variable Migration
+
+Before:
+
+```csharp
+var token = Environment.GetEnvironmentVariable("API_TOKEN");
+```
+
+After:
+
+```csharp
+public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(...)
+{
+    return
+    [
+        new SourceRuntimeSettingRequirement(
+            "API_TOKEN",
+            Required: true,
+            Secret: true,
+            SourceRuntimeSettingPhase.Execution,
+            "API token.")
+    ];
+}
+
+var token = executionContext.SourceRuntimeSettings["API_TOKEN"];
+```
+
+### Old Predicate Pushdown Migration
+
+Before: parse query AST nodes inside the datasource.
+
+After: pattern match source predicate records:
+
+```csharp
+private static string? TryGetAcceptedId(SourcePredicateExpression? predicate)
+{
+    return predicate switch
+    {
+        SourcePredicateComparison
+        {
+            Operator: SourcePredicateComparisonOperator.Equal,
+            Left: SourcePredicateColumn { Column.Name: "Id" },
+            Right: SourcePredicateLiteral { Value: string id }
+        } => id,
+        _ => null
     };
 }
-
-// Complex data types in entities
-public class ContainerEntity
-{
-    public string Id { get; set; } = string.Empty;
-    public IDictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
-    public IList<string> Ports { get; set; } = new List<string>();
-    public IList<MountPoint> Mounts { get; set; } = new List<MountPoint>();
-    public SummaryNetworkSettings NetworkSettings { get; set; } = new();
-}
-
-// Complex XML metadata for nested types
-/// <column name="Labels" type="IDictionary&lt;string, string&gt;">Assigned labels to specific container</column>
-/// <column name="Ports" type="IList&lt;string&gt;">Mapped ports</column>
-/// <column name="Mounts" type="IList&lt;MountPoint&gt;">Mounted points</column>
 ```
 
-**Advanced patterns:**
-- External service integration (Docker API)
-- Complex object hierarchies
-- Multiple table coordination
+### Migration Audit
 
-#### Level 4: CANBus Plugin - Advanced Metadata and Additional Tables
-**Location**: `Musoq.DataSources.CANBus/`
+Run:
 
-Study this for the most advanced XML metadata patterns:
+```powershell
+rg -n 'RuntimeContext|QuerySourceInfo|QueryHints|IObjectResolver|EntityResolver|BlockingCollection|WhereNodeHelper|net8\.0|Musoq\.Parser" Version="5\.7\.0|Musoq\.Schema" Version="10\.1\.0' .
+```
 
-**What to study:**
-- `CANBusSchema.cs` - Advanced XML with additional tables
-- Complex entity relationships
-- Advanced virtual constructor patterns
+Allowed hits:
 
-**Key lessons:**
+- this retired API table
+- migration warnings
+- changelog notes
+
+Disallowed hits:
+
+- active source code
+- active tests using old contracts
+- project files targeting old framework or stale fixed packages
+
+## Best Practices and Common Patterns
+
+### Golden Rules
+
+1. Use typed rows for stable schemas.
+2. Use dictionary rows deliberately for query-declared or dynamic schemas.
+3. Keep table metadata and row source type identical.
+4. Include `[assembly: PluginSchemas("schema")]` and keep it aligned with `SchemaBase`.
+5. Generate and package XML documentation next to the plugin DLL.
+6. Register table constructors with `AddTable<T>()` or override runtime-v2 `GetRawConstructors`.
+7. Return reject-all planning until pushdown is correct.
+8. Treat settings values as host-resolved secrets.
+9. Emit bounded chunks; avoid full materialization for large sources.
+10. Return residual work for anything the source does not apply.
+11. Use contract diagnostics for unsupported table contracts or modifiers.
+12. Write compiled SQL, `desc`, XML, and package smoke tests.
+
+### HTTP API Pattern
+
+```text
+Schema settings:
+  API_TOKEN, BASE_URL, TENANT
+
+Planning:
+  accept equality/range filters the API supports
+  accept take only if API has limit
+  accept skip only if API has offset or cursor semantics that match
+
+Execution:
+  build request from SourceExecutionContext.Plan
+  stream pages into chunks
+  report progress when total count is known
+```
+
+### Database Pattern
+
+```text
+Schema settings:
+  connection string or named connection profile
+
+Planning:
+  translate accepted predicates into parameterized SQL
+  accept projection to reduce selected columns
+  accept order/skip/take only with deterministic order
+
+Execution:
+  use DbDataReader
+  convert rows into typed entities or dictionaries
+  chunk at a fixed size
+```
+
+### File Processing Pattern
+
+```text
+Schema:
+  typed source for known file metadata
+  dictionary source for TABLE-declared file records
+
+Read modifiers:
+  encoding, culture, format, trim, source-specific codec
+
+Execution:
+  stream file lines or records
+  avoid loading large files into memory
+```
+
+### Caching Pattern
+
+Cache only stable metadata and reusable clients. Do not cache query-specific settings or execution plans globally unless the cache key includes the source context and settings profile.
+
+Good:
+
 ```csharp
-// Additional tables documentation
-/// <additional-tables>
-/// <additional-table>
-/// <description>Represent possible values of a signal</description>
-/// <columns type="ValueMapEntity[]">
-/// <column name="Value" type="int">Value of signal</column>
-/// <column name="Name" type="string">Name of the value</column>
-/// </columns>
-/// </additional-table>
-/// </additional-tables>
-
-// Complex entity arrays
-/// <column name="Signals" type="SignalEntity[]">Signals of the message</column>
-/// <column name="Receiver" type="string[]">Receiver for the signal entity</column>
-
-// File processing patterns
-public class MessageEntity
-{
-    public uint Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public SignalEntity[] Signals { get; set; } = Array.Empty<SignalEntity>();
-}
+private static readonly Lazy<MethodsAggregator> CachedLibrary = new(CreateLibrary);
 ```
 
-**Advanced patterns:**
-- File format parsing and processing
-- Complex metadata documentation
-- Entity arrays and relationships
+Risky:
 
-### Pattern Recognition Exercises
-
-As you study these plugins, look for these recurring patterns:
-
-#### 1. **Environment Variable Usage Patterns**
 ```csharp
-// Required (will throw if missing)
-var apiKey = runtimeContext.EnvironmentVariables["API_KEY"];
-
-// Optional with default
-var timeout = int.Parse(runtimeContext.EnvironmentVariables.GetValueOrDefault("TIMEOUT", "30"));
-
-// Optional, used only if present
-if (runtimeContext.EnvironmentVariables.TryGetValue("OPTIONAL_CONFIG", out var config))
-{
-    // Use optional configuration
-}
+private static IReadOnlyDictionary<string, string> LastSettings;
 ```
 
-#### 2. **Error Handling Patterns**
+### Error Handling
+
+Fail fast for invalid source names and parameters:
+
 ```csharp
-// Network/API errors
-catch (HttpRequestException ex)
-{
-    throw new InvalidOperationException($"Network error: {ex.Message}", ex);
-}
-
-// Data format errors
-catch (JsonException ex)
-{
-    throw new InvalidOperationException($"Invalid response format: {ex.Message}", ex);
-}
-
-// General errors
-catch (Exception ex)
-{
-    throw new InvalidOperationException($"Unexpected error: {ex.Message}", ex);
-}
+if (parameters.Length != 1 || parameters[0] is not string city)
+    throw new ArgumentException("#weather.current(city) requires one string city argument.");
 ```
 
-#### 3. **Data Processing Patterns**
-```csharp
-// Simple collection
-var data = GetAllData();
-var resolvers = data.Select(entity => new EntityResolver<T>(...)).ToList();
-chunkedSource.Add(resolvers);
-
-// Chunked processing
-const int chunkSize = 1000;
-foreach (var chunk in data.Chunk(chunkSize))
-{
-    var resolvers = chunk.Select(entity => new EntityResolver<T>(...)).ToList();
-    chunkedSource.Add(resolvers);
-}
-
-// Streaming processing
-foreach (var item in GetDataStream())
-{
-    yield return new EntityResolver<T>(item, ...);
-}
-```
-
-#### 4. **XML Metadata Patterns**
-```csharp
-// Simple static columns
-/// <columns>
-/// <column name="Id" type="string">Unique identifier</column>
-/// <column name="Name" type="string">Display name</column>
-/// </columns>
-
-// Dynamic columns
-/// <columns isDynamic="true"></columns>
-
-// Complex types
-/// <column name="Metadata" type="IDictionary&lt;string, object&gt;">Key-value metadata</column>
-/// <column name="Items" type="ItemEntity[]">Array of related items</column>
-```
-
-### Creating Your Own Patterns
-
-After studying existing plugins, you'll start to see patterns that apply to your specific use cases:
-
-#### Custom API Integration Pattern
-```csharp
-internal class MyApiRowSource : RowSourceBase<MyEntity>
-{
-    private readonly HttpClient _httpClient;
-    private readonly string _apiKey;
-    private readonly string _baseUrl;
-
-    public MyApiRowSource(RuntimeContext runtimeContext, params object[] parameters)
-    {
-        _httpClient = new HttpClient();
-        _apiKey = runtimeContext.EnvironmentVariables["MY_API_KEY"];
-        _baseUrl = runtimeContext.EnvironmentVariables.GetValueOrDefault("MY_BASE_URL", "https://api.myservice.com");
-        
-        // Configure based on parameters...
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        // Your API-specific logic here...
-    }
-}
-```
-
-#### Custom File Processing Pattern
-```csharp
-internal class MyFileRowSource : RowSourceBase<MyEntity>
-{
-    private readonly string _filePath;
-    private readonly string _format;
-
-    public MyFileRowSource(RuntimeContext runtimeContext, string filePath, string? format = null)
-    {
-        _filePath = filePath;
-        _format = format ?? runtimeContext.EnvironmentVariables.GetValueOrDefault("FILE_FORMAT", "json");
-        
-        if (!File.Exists(_filePath))
-            throw new FileNotFoundException($"File not found: {_filePath}");
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        // Your file-specific processing here...
-    }
-}
-```
-
----
+Use `SourceContractDiagnostic` when the query contract is invalid but discovered during metadata/planning.
 
 ## Common Use Cases
 
-Understanding common use cases helps you choose the right patterns and approaches for your plugin. Here are the most frequent scenarios and how to handle them:
+### Web API Data Source
 
-### 🌐 Web API Integration
-
-**When to use**: Querying REST APIs, GraphQL endpoints, or web services using SQL syntax.
-
-**Key considerations:**
-- Authentication (API keys, OAuth, JWT)
-- Rate limiting and throttling
-- Error handling for network issues
-- Data pagination
-
-**Example scenarios:**
 ```sql
--- Query GitHub repositories
-SELECT name, stars, language FROM #github.repos() WHERE stars > 1000
+couple github.issues with settings prod as Issues;
 
--- Get weather data for multiple cities
-SELECT city, temperature, humidity FROM #weather.current() WHERE city IN ('London', 'Paris', 'Tokyo')
-
--- Fetch social media posts
-SELECT author, content, likes FROM #twitter.search('musoq') WHERE likes > 100
+select Number, Title, State
+from Issues('owner', 'repo')
+where State = 'open'
+order by Number desc
+take 50;
 ```
 
-**Pattern to follow**: Study the OpenAI plugin for HTTP client patterns and authentication.
+Runtime-v2 features used:
 
-### 🗄️ Custom Database Connectors
+- settings profile for token
+- predicate pushdown for `State`
+- order/take pushdown if API supports it
+- typed rows for issue fields
 
-**When to use**: Connecting to proprietary databases or data stores not supported by standard providers.
+### CSV or Legacy File Data Source
 
-**Key considerations:**
-- Connection string management
-- SQL query generation
-- Dynamic schema discovery
-- Connection pooling and disposal
-
-**Example scenarios:**
 ```sql
--- Query custom database tables
-SELECT * FROM #mydb.users() WHERE created > '2024-01-01'
+table InvoiceRow {
+    Id: string trim,
+    IssuedAt: datetime format 'yyyy-MM-dd',
+    Amount: decimal culture 'pl-PL',
+    Payload: string source codec 'base64'
+};
 
--- Cross-database joins
-SELECT u.name, o.total FROM #db1.users() u JOIN #db2.orders() o ON u.id = o.user_id
+couple separatedvalues.comma with table InvoiceRow as Invoices;
 
--- Dynamic table access
-SELECT * FROM #warehouse.table('sales_2024') WHERE region = 'Europe'
+select Id, Amount
+from Invoices('./invoices.csv', true, 0)
+where Amount > 1000;
 ```
 
-**Pattern to follow**: Study the JSON or Archives plugin for dynamic row shaping, and Docker or GitHub for external integration patterns.
+Runtime-v2 features used:
 
-### 📁 File System Operations
+- dictionary rows
+- `TABLE`
+- read modifiers
+- contract diagnostics
 
-**When to use**: Querying files, directories, logs, or any file-based data sources.
+### Database Data Source
 
-**Key considerations:**
-- File format parsing (CSV, JSON, XML, binary)
-- Large file handling and streaming
-- File watching and real-time updates
-- Path resolution and security
-
-**Example scenarios:**
 ```sql
--- Query log files
-SELECT timestamp, level, message FROM #logs.file('/var/log/app.log') WHERE level = 'ERROR'
+couple postgres.table with settings reporting as Orders;
 
--- Directory listing
-SELECT name, size, modified FROM #files.directory('/home/user/docs') WHERE extension = '.pdf'
-
--- CSV data analysis
-SELECT region, SUM(sales) FROM #csv.file('sales.csv') GROUP BY region
+select Id, CustomerId, Total
+from Orders('orders')
+where Total > 100
+order by CreatedAt desc
+take 100;
 ```
 
-**Pattern to follow**: Study the JSON or Archives plugin for file processing patterns.
+Runtime-v2 features used:
 
-### ☁️ Cloud Service Integration
+- settings profile for connection
+- predicate/order/take planning
+- typed rows or dictionary rows depending on table discovery
 
-**When to use**: Querying cloud services like AWS, Azure, GCP resources, or SaaS platforms.
+### AI Interpretation With TABLE / COUPLE
 
-**Key considerations:**
-- Cloud authentication (IAM roles, service accounts)
-- Service-specific APIs and SDKs
-- Regional and zone handling
-- Cost optimization for API calls
+AI schemas can be used in a query that also consumes table-shaped sources:
 
-**Example scenarios:**
 ```sql
--- AWS EC2 instances
-SELECT instance_id, instance_type, state FROM #aws.ec2_instances() WHERE state = 'running'
+ai InvoiceSummary {
+    Vendor: string required,
+    Total: decimal required,
+    Currency: enum('USD', 'EUR', 'PLN')
+}
 
--- Azure storage blobs
-SELECT name, size, last_modified FROM #azure.blobs('mycontainer') WHERE size > 1000000
+table InvoiceFile {
+    FileName: string,
+    ContentBase64: string
+};
 
--- Google Cloud resources
-SELECT project_id, resource_type, location FROM #gcp.resources() WHERE location LIKE 'us-%'
+couple files.records with table InvoiceFile as Files;
+
+select f.FileName, summary.Vendor, summary.Total
+from Files('./invoices') f
+cross apply Infer(f.ContentBase64, InvoiceSummary) summary;
 ```
 
-**Pattern to follow**: Study the Docker or GitHub plugins for external service integration.
-
-### 🔧 System Monitoring
-
-**When to use**: Querying system metrics, performance counters, or monitoring data.
-
-**Key considerations:**
-- Real-time vs historical data
-- Performance impact of monitoring
-- Cross-platform compatibility
-- Metric aggregation and filtering
-
-**Example scenarios:**
-```sql
--- System processes
-SELECT name, cpu_percent, memory_mb FROM #system.processes() WHERE cpu_percent > 10
-
--- Performance counters
-SELECT counter_name, value, timestamp FROM #perf.counters() WHERE category = 'Processor'
-
--- Network connections
-SELECT local_port, remote_address, state FROM #network.connections() WHERE state = 'ESTABLISHED'
-```
-
-**Pattern to follow**: Study the Os or System plugins for system integration patterns.
-
-### 📊 Data Processing Pipelines
-
-**When to use**: Transforming and querying data from ETL processes or data pipelines.
-
-**Key considerations:**
-- Data streaming and real-time processing
-- Schema evolution and compatibility
-- Error handling and data quality
-- Performance optimization for large datasets
-
-**Example scenarios:**
-```sql
--- Stream processing
-SELECT event_type, COUNT(*) FROM #stream.events() WHERE timestamp > NOW() - INTERVAL '1 HOUR' GROUP BY event_type
-
--- Data validation
-SELECT table_name, row_count, error_count FROM #etl.validation() WHERE error_count > 0
-
--- Pipeline monitoring
-SELECT pipeline_id, status, duration FROM #pipeline.runs() WHERE status = 'FAILED'
-```
-
-**Pattern to follow**: Create custom patterns based on your specific data pipeline technology.
-
-### 🤖 AI and Machine Learning Integration
-
-**When to use**: Querying AI models, machine learning services, or data processing APIs.
-
-**Key considerations:**
-- Model versioning and deployment
-- Input/output data transformation
-- Performance and latency optimization
-- Cost management for AI API calls
-
-**Example scenarios:**
-```sql
--- Text analysis
-SELECT text, sentiment, confidence FROM #ai.sentiment_analysis('Analyze this text')
-
--- Image recognition
-SELECT image_path, detected_objects, confidence FROM #vision.analyze('/path/to/images/')
-
--- Language translation
-SELECT original_text, translated_text, source_lang, target_lang FROM #translate.text('Hello', 'es')
-```
-
-**Pattern to follow**: Study the OpenAI or Ollama plugins for AI service integration.
-
-### Choosing the Right Approach
-
-**For simple data sources**: Use single-table patterns with basic entities
-**For complex APIs**: Use multi-table patterns with rich XML metadata
-**For real-time data**: Implement streaming patterns with chunked processing
-**For large datasets**: Use pagination and caching strategies
-**For external services**: Implement robust error handling and retry logic
-
----
-
-## Support and Community
-
-### Getting Help
-
-**GitHub Issues**: Report bugs or request features at [https://github.com/Puchaczov/Musoq.DataSources/issues](https://github.com/Puchaczov/Musoq.DataSources/issues)
-
-**Discussions**: Join community discussions for questions and ideas at [https://github.com/Puchaczov/Musoq.DataSources/discussions](https://github.com/Puchaczov/Musoq.DataSources/discussions)
-
-**Examples**: Browse existing plugins in this repository for patterns and inspiration
-
-### Contributing
-
-**Documentation**: Help improve these guides by submitting pull requests
-
-**Plugin Examples**: Share your plugins as examples for others to learn from
-
-**Testing**: Report issues or bugs you encounter while developing plugins
-
-### Best Resources for Learning
-
-1. **This Tutorial**: Complete guide from basics to advanced patterns
-2. **Existing Plugins**: Real-world examples in this repository
-3. **Musoq Engine**: Understanding the main engine at [https://github.com/Puchaczov/Musoq](https://github.com/Puchaczov/Musoq)
-4. **Community Examples**: Plugins shared by other developers
-
----
+Here `TABLE` describes the file datasource rows. The AI schema describes the structured inference output.
 
 ## Summary
 
-Congratulations! You've completed the comprehensive Musoq plugin development tutorial. You now understand:
+A runtime-v2 datasource plugin is built around explicit metadata and typed chunk production:
 
-✅ **Core Concepts**: The five essential components and how they work together  
-✅ **Hands-On Development**: Building a complete plugin from scratch  
-✅ **Essential XML Metadata**: Critical annotations that make your plugin discoverable  
-✅ **Build Configuration**: Proper project setup for documentation generation  
-✅ **Testing Strategies**: Comprehensive testing approaches for all components  
-✅ **Advanced Patterns**: Complex scenarios like multi-table schemas and custom functions  
-✅ **Best Practices**: Proven patterns from the community  
-✅ **Real-World Examples**: Learning from existing successful plugins  
+- `ISchemaProvider` resolves schemas.
+- `ISchema` handles metadata, settings, planning, and execution.
+- `ISchemaTable` declares columns and row type.
+- `RowSource<T>` emits `IReadOnlyList<T>` chunks.
+- `SourcePlanRequest` and `SourcePlanResult` replace old hint and AST pushdown paths.
+- Source runtime settings replace hardcoded environment configuration.
+- `TABLE` / `COUPLE` and read modifiers make dynamic sources explicit and testable.
 
-### Your Next Steps
-
-1. **Build Your First Plugin**: Start with a simple data source you're familiar with
-2. **Study Existing Plugins**: Pick one similar to your use case and study its patterns
-3. **Test Thoroughly**: Write comprehensive tests for all components
-4. **Share Your Work**: Contribute back to the community with examples and improvements
-
-### Key Takeaways
-
-- **XML metadata is not optional** - it's essential for plugin functionality
-- **Start simple, then add complexity** - begin with basic patterns and evolve
-- **Study existing plugins** - they contain proven, production-ready patterns
-- **Test everything** - comprehensive testing prevents runtime issues
-- **Follow conventions** - consistent patterns make maintenance easier
-
-You're now equipped to create powerful, production-ready Musoq plugins that can query any data source using SQL syntax. Welcome to the Musoq plugin development community!
+For migrations, remove the old helper/resolver/pushdown APIs first, then rebuild the datasource as typed rows or deliberate dictionary rows with runtime-v2 tests.

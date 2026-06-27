@@ -1,194 +1,278 @@
-# Musoq .NET Data Source Plugin — Autonomous Development Guide
+# Musoq .NET Data Source Plugin - Autonomous Runtime V2 Migration Guide
 
-This document is the **single source of truth** for an AI agent to autonomously build, test, package, and install a Musoq .NET data source plugin **without access to the Musoq.DataSources repository**. It unifies plugin development, testing, and the packaging/distribution (zip specification) into one self-contained reference.
+This guide is written for an autonomous coding agent or developer building a Musoq data source plugin in a repository that does not contain the Musoq source tree. It intentionally includes the contracts, file layout, implementation snippets, migration checks, tests, packaging scripts, and troubleshooting notes needed to move an old runtime-v1 datasource to the runtime-v2 engine.
 
-> **Audience**: AI coding agents performing autonomous implementation.
-> **Scope**: .NET plugin development only. No Python.
-
----
+Runtime-v2 is the only target in this guide. Do not preserve runtime-v1 compatibility unless a separate host explicitly requires it.
 
 ## Table of Contents
 
-1. [Phase 0 — Pre-Flight Checks](#phase-0--pre-flight-checks)
-2. [Phase 1 — Scaffolded Execution Plan](#phase-1--scaffolded-execution-plan)
-3. [Phase 2 — Plugin Architecture Overview](#phase-2--plugin-architecture-overview)
-4. [Phase 3 — Step-by-Step Implementation](#phase-3--step-by-step-implementation)
-5. [Phase 4 — XML Documentation (Critical)](#phase-4--xml-documentation-critical)
-6. [Phase 5 — Unit Tests](#phase-5--unit-tests)
-7. [Phase 6 — Build & Package (Zip Specification)](#phase-6--build--package-zip-specification)
-8. [Phase 7 — Import / Install Scripts](#phase-7--import--install-scripts)
-9. [Appendix A — Troubleshooting & Common Pitfalls](#appendix-a--troubleshooting--common-pitfalls)
-10. [Appendix B — Complete File Reference](#appendix-b--complete-file-reference)
-11. [Appendix C — NuGet Package Version Resolution](#appendix-c--nuget-package-version-resolution)
-12. [Appendix D — Predicate Pushdown for Web API Sources](#appendix-d--predicate-pushdown-for-web-api-sources)
+1. [Phase 0 - Pre-Flight Checks](#phase-0---pre-flight-checks)
+2. [Phase 1 - Scaffolded Execution Plan](#phase-1---scaffolded-execution-plan)
+3. [Phase 2 - Plugin Architecture Overview](#phase-2---plugin-architecture-overview)
+4. [Phase 3 - Step-by-Step Implementation](#phase-3---step-by-step-implementation)
+5. [Phase 4 - XML Documentation (Critical)](#phase-4---xml-documentation-critical)
+6. [Phase 5 - Unit Tests](#phase-5---unit-tests)
+7. [Phase 6 - Build and Package](#phase-6---build-and-package)
+8. [Phase 7 - Import and Install Scripts](#phase-7---import-and-install-scripts)
+9. [Appendix A - Troubleshooting and Common Pitfalls](#appendix-a---troubleshooting-and-common-pitfalls)
+10. [Appendix B - Complete File Reference](#appendix-b---complete-file-reference)
+11. [Appendix C - NuGet Package Version Resolution](#appendix-c---nuget-package-version-resolution)
+12. [Appendix D - Predicate Pushdown in Runtime V2](#appendix-d---predicate-pushdown-in-runtime-v2)
 
----
-
-## Phase 0 — Pre-Flight Checks
-
-Before writing any code, the agent **must** determine its working context.
+## Phase 0 - Pre-Flight Checks
 
 ### 0.1 Detect Existing Solution
 
+Start in the plugin repository root.
+
+```powershell
+Get-ChildItem -Filter *.sln
+Get-ChildItem -Recurse -Filter *.csproj
 ```
-CHECK: Does a *.sln file exist in the workspace root?
-  YES → You are inside an existing Musoq.DataSources repository.
-        • Reuse the existing Musoq.DataSources.Tests.Common project.
-        • Match the Musoq.* NuGet package versions already used by sibling projects (inspect any existing .csproj).
-        • Add your new projects to the existing .sln via `dotnet sln add`.
-  NO  → You are creating a standalone plugin from scratch.
-        • You must create a new solution file.
-        • You must resolve the latest Musoq NuGet package versions yourself (see Appendix C).
-        • You must create your own test helper infrastructure (see Phase 5).
+
+If a solution exists, add the plugin and test project to it. If no solution exists, create one:
+
+```powershell
+dotnet new sln -n MyPlugin
+dotnet new classlib -n Musoq.DataSources.MyPlugin -f net10.0
+dotnet new mstest -n Musoq.DataSources.MyPlugin.Tests -f net10.0
+dotnet sln add Musoq.DataSources.MyPlugin/Musoq.DataSources.MyPlugin.csproj
+dotnet sln add Musoq.DataSources.MyPlugin.Tests/Musoq.DataSources.MyPlugin.Tests.csproj
+dotnet add Musoq.DataSources.MyPlugin.Tests/Musoq.DataSources.MyPlugin.Tests.csproj reference Musoq.DataSources.MyPlugin/Musoq.DataSources.MyPlugin.csproj
+```
+
+Use `net10.0`. The current Musoq source train is built with the .NET SDK `10.0.300` feature band (`rollForward: latestFeature`). In a standalone plugin repository, add this `global.json`:
+
+```json
+{
+  "sdk": {
+    "version": "10.0.300",
+    "rollForward": "latestFeature",
+    "allowPrerelease": false
+  }
+}
 ```
 
 ### 0.2 Determine Musoq Package Versions
 
-**Never hardcode Musoq package versions.** Always resolve them:
+Prefer one consistent Musoq package train. The current known train when this guide was refreshed is `17.0.0-alpha.1`, but do not hardcode it forever. Resolve versions from the target host, package feed, or sibling projects.
 
-1. If inside an existing repo: read version numbers from any sibling `.csproj` file.
-2. If standalone: query NuGet for the latest stable versions of:
-   - `Musoq.Parser`
-   - `Musoq.Plugins`
-   - `Musoq.Schema`
-   - `Musoq.Evaluator`
-   - `Musoq.Converter`
+Required packages for a datasource plugin:
 
-See [Appendix C](#appendix-c--nuget-package-version-resolution) for how to query NuGet programmatically.
+- `Musoq.Schema` - schema contracts, row sources, planning contexts
+- `Musoq.Plugins` - `LibraryBase`, built-in methods, bindable method attributes
+
+Common test packages:
+
+- `Musoq.Converter` - `InstanceCreator` query compilation APIs
+- `Musoq.Evaluator` - `CompilationOptions`, compiled query result types
+- `Microsoft.NET.Test.Sdk`, `MSTest.TestAdapter`, `MSTest.TestFramework`
+
+Example project references using the current train:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1">
+    <ExcludeAssets>runtime</ExcludeAssets>
+  </PackageReference>
+  <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.1">
+    <ExcludeAssets>runtime</ExcludeAssets>
+  </PackageReference>
+</ItemGroup>
+```
+
+The host normally provides the Musoq runtime assemblies. Keep compile assets, but exclude runtime assets from plugin output to avoid duplicate assembly loading.
+
+Example test references:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1" />
+  <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1" />
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+  <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
+  <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
+</ItemGroup>
+```
 
 ### 0.3 Verify Prerequisites
 
-- .NET 8.0 SDK or later installed (`dotnet --version`)
-- Target framework: `net8.0`
-
----
-
-## Phase 1 — Scaffolded Execution Plan
-
-The agent should begin by building its own detailed execution plan from this high-level scaffold. Each item marked with `[FILL]` requires the agent to expand with specifics for its target data source.
-
-```
-EXECUTION PLAN
-==============
-
-1. DESIGN DECISIONS
-   1.1 Schema name (lowercase, used in SQL as #schemaname.method())    [FILL]
-   1.2 Table/method names (e.g., "file", "query", "list")              [FILL]
-   1.3 Entity design — what columns to expose                          [FILL]
-   1.4 Constructor parameters — what the user passes in SQL            [FILL]
-   1.5 Third-party NuGet dependencies                                  [FILL]
-   1.6 Environment variables (if any, with isRequired flags)           [FILL]
-   1.7 Predicate pushdown (for web APIs — see Appendix D)              [FILL: yes/no]
-
-2. PROJECT STRUCTURE
-   2.1 Plugin project: Musoq.DataSources.{Name}/                      [FILL]
-   2.2 Test project:   Musoq.DataSources.{Name}.Tests/                [FILL]
-   2.3 List all files to create                                        [FILL]
-
-3. IMPLEMENTATION ORDER
-   3.1 Create .csproj files (plugin + tests)
-   3.2 Create AssemblyInfo.cs + Assembly.cs
-   3.3 Create Entity class(es)
-   3.4 Create TableHelper class(es)
-   3.5 Create Table class(es)
-   3.6 Create RowSource class(es)
-   3.7 Create Library class (even if empty)
-   3.8 Create SchemaProvider class
-   3.9 Create Schema class (with full XML documentation)
-   3.10 Build and fix compilation errors
-   3.11 [IF WEB API] Create WhereNodeHelper + QueryBuilder (Appendix D)
-
-4. TESTING
-   4.1 Create test data / fixtures                                     [FILL]
-   4.2 Create functional query tests                                   [FILL]
-   4.3 Create describe (desc) tests                                    [FILL]
-   4.4 Create edge case tests                                          [FILL]
-   4.5 Run all tests, fix failures
-
-5. PACKAGING
-   5.1 Create build-package script (PowerShell + Bash)
-   5.2 Create install script
-   5.3 Verify package structure
-
-6. FINAL VERIFICATION
-   6.1 Clean build from scratch
-   6.2 All tests green
-   6.3 Package creation succeeds
+```powershell
+dotnet --version
+dotnet restore --nologo --verbosity quiet
 ```
 
----
+Required:
 
-## Phase 2 — Plugin Architecture Overview
+- .NET SDK `10.0.300` or newer compatible `10.0` feature band
+- Access to the NuGet feed containing the selected Musoq package train
+- A Musoq host or CLI version compatible with the same package train
 
-Every Musoq plugin consists of exactly **7 files** (minimum) across **5 logical components**:
+If the repository still targets `net8.0`, migrate the plugin and tests to `net10.0` before changing datasource code.
 
+## Phase 1 - Scaffolded Execution Plan
+
+Fill this checklist before editing code. It gives an autonomous agent the decisions it needs.
+
+| Decision | Value |
+|----------|-------|
+| Plugin assembly name | `Musoq.DataSources.<Name>` |
+| Schema name used in SQL | `<schema>` in `#<schema>.<source>()` |
+| Source method names | Example: `items`, `records`, `events` |
+| Row shape | Typed entity, dictionary row, or both |
+| Runtime settings | None, API token, endpoint, tenant, profile-specific settings |
+| Planning support | Reject all, projection only, predicate, order, skip, take |
+| Read modifiers | None, encoding, culture, format, trim, source-specific keys |
+| Publish target RIDs | `win-x64`, `linux-x64`, `osx-x64`, `osx-arm64`, etc. |
+| Tests | Direct source tests, compiled query tests, diagnostics tests |
+
+Default choices for a migration:
+
+1. Use typed entities for stable datasource schemas.
+2. Use `IReadOnlyDictionary<string, object?>` only when columns are declared by `TABLE` or inferred at runtime.
+3. Return `SourcePlanResult.RejectAll(request)` until pushdown is implemented and tested.
+4. Move secrets and environment-specific values to source runtime settings.
+5. Maintain XML docs as a critical static discovery contract, and keep them synchronized with runtime-v2 table metadata.
+
+## Phase 2 - Plugin Architecture Overview
+
+Runtime-v2 datasource execution has four explicit stages.
+
+```text
+SQL
+  -> schema provider resolves #schema
+  -> schema returns table metadata and source description
+  -> planner asks schema what work the source can accept
+  -> execution asks schema for RowSource<T> with accepted source plan and settings
+  -> row source emits IReadOnlyList<T> chunks
 ```
-Musoq.DataSources.{Name}/
-├── Musoq.DataSources.{Name}.csproj    # Project configuration
-├── AssemblyInfo.cs                     # Schema registration
-├── Assembly.cs                         # InternalsVisibleTo for tests
-├── Entities/
-│   └── {Name}Entity.cs                # Data model (Component 1)
-├── Tables/
-│   ├── {Name}TableHelper.cs           # Column mappings (Component 2)
-│   └── {Name}Table.cs                 # Table metadata (Component 3)
-├── Sources/
-│   └── {Name}RowSource.cs             # Data fetcher (Component 4)
-├── {Name}Library.cs                   # Custom SQL functions (Component 5, can be empty)
-├── {Name}SchemaProvider.cs            # Schema factory
-└── {Name}Schema.cs                    # Main orchestrator with XML docs
+
+### Runtime V2 Public Contract Surface
+
+Every runtime-v2 schema implements `ISchema`. Most plugins should derive from `SchemaBase`.
+
+```csharp
+public interface ISchema
+{
+    string Name { get; }
+
+    ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object?[] parameters);
+
+    SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object?[] parameters);
+
+    IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object?[] parameters);
+
+    SourcePlanResult TryPlanSource(
+        string name,
+        SourcePlanRequest request,
+        params object?[] parameters);
+
+    RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object?[] parameters);
+}
 ```
 
-### Data Flow
+The schema provider remains simple:
 
-```
-SQL: SELECT Col FROM #schema.method('arg')
-  ↓
-1. Musoq looks up schema name via [assembly: PluginSchemas("schema")]
-2. SchemaProvider.GetSchema() → returns Schema instance
-3. Schema.GetTableByName("method") → returns Table (column metadata)
-4. Schema.GetRowSource("method", ..., 'arg') → creates RowSource
-5. RowSource.CollectChunks() → fetches data, creates EntityResolver<Entity> objects
-6. Each EntityResolver uses TableHelper's NameToIndexMap + IndexToMethodAccessMap
-7. Musoq applies SQL operations (WHERE, GROUP BY, ORDER BY, etc.)
-8. Results returned to user
+```csharp
+public interface ISchemaProvider
+{
+    ISchema GetSchema(string schema);
+}
 ```
 
----
+### Runtime Contexts
 
-## Phase 3 — Step-by-Step Implementation
+`SourceMetadataContext` is available during metadata lookup:
 
-### 3.1 Project File (`.csproj`)
+```csharp
+public class SourceMetadataContext
+{
+    public string QueryId { get; }
+    public CancellationToken EndWorkToken { get; }
+    public IReadOnlyCollection<ISchemaColumn> AllColumns { get; }
+    public IReadOnlyDictionary<string, string> SourceRuntimeSettings { get; }
+    public ILogger Logger { get; }
+}
+```
+
+`SourceExecutionContext` extends metadata context and adds the accepted plan, diagnostics, and progress callbacks:
+
+```csharp
+public class SourceExecutionContext : SourceMetadataContext
+{
+    public SourceExecutionPlan Plan { get; }
+    public SourceDiagnostics Diagnostics { get; }
+
+    public void ReportDataSourceBegin(string dataSourceName);
+    public void ReportDataSourceRowsKnown(string dataSourceName, long totalRows);
+    public void ReportDataSourceRowsRead(string dataSourceName, long rowsProcessed, long? totalRows = null);
+    public void ReportDataSourceEnd(string dataSourceName, long? totalRowsProcessed = null);
+}
+```
+
+### Retired Runtime V1 APIs
+
+These names are invalid in active runtime-v2 datasource code:
+
+| Retired API | Runtime-v2 replacement |
+|-------------|------------------------|
+| `RuntimeContext` | `SourceMetadataContext` or `SourceExecutionContext` |
+| `QuerySourceInfo` | `SourceIdentity`, `SourceDescriptor`, and `SourceExecutionPlan` |
+| `QueryHints` | `SourcePlanRequest` and `SourcePlanResult` |
+| `IObjectResolver` | typed rows or dictionary rows |
+| `EntityResolver` | typed entity properties and table metadata |
+| `BlockingCollection` row chunks | `RowSource<T>.Chunks` as `IEnumerable<IReadOnlyList<T>>` |
+| non-generic `GetRowSource(...)` | generic `GetRowSource<T>(...)` |
+| `WhereNodeHelper` | `SourcePredicateExpression` planning in `TryPlanSource` |
+
+Do not keep these names in implementation snippets except in migration notes or tests that intentionally assert they are gone.
+
+## Phase 3 - Step-by-Step Implementation
+
+The examples below build a standalone weather datasource. Replace names and data fetching with the real source.
+
+### 3.1 Project File
+
+`Musoq.DataSources.Weather/Musoq.DataSources.Weather.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyName>Musoq.DataSources.Weather</AssemblyName>
+    <RootNamespace>Musoq.DataSources.Weather</RootNamespace>
+    <PackageId>Musoq.DataSources.Weather</PackageId>
     <Version>1.0.0</Version>
     <Authors>Your Name</Authors>
     <Product>Musoq</Product>
-    <Description>[FILL: Description of what this plugin does]</Description>
-    <PackageProjectUrl>[FILL: GitHub URL]</PackageProjectUrl>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageTags>[FILL: comma-separated tags]</PackageTags>
+    <Description>Runtime-v2 weather datasource for Musoq.</Description>
+    <PackageProjectUrl>https://example.org/weather-plugin</PackageProjectUrl>
+    <PackageTags>musoq;datasource;weather;runtime-v2</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="../LICENSE" Pack="true" Visible="false" PackagePath="" />
-  </ItemGroup>
-
-  <!-- CRITICAL: Without this target, XML documentation for NuGet dependencies
-       will NOT be copied to the output directory, and Musoq won't see the
-       full metadata at runtime. -->
+  <!-- Critical: copy XML documentation for referenced NuGet assemblies when
+       they are available. Musoq hosts and registry tooling can read XML
+       metadata without loading arbitrary plugin DLLs. -->
   <Target Name="_ResolveCopyLocalNuGetPackageXmls" AfterTargets="ResolveReferences">
     <ItemGroup>
       <ReferenceCopyLocalPaths
@@ -199,484 +283,880 @@ SQL: SELECT Col FROM #schema.method('arg')
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <!-- Musoq.Parser and Musoq.Schema MUST have ExcludeAssets=runtime because
-         these DLLs are provided by the host. Including them causes assembly
-         loading conflicts at runtime. -->
-    <PackageReference Include="Musoq.Converter" Version="[RESOLVE]" />
-    <PackageReference Include="Musoq.Evaluator" Version="[RESOLVE]" />
-    <PackageReference Include="Musoq.Parser" Version="[RESOLVE]">
+    <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Musoq.Plugins" Version="[RESOLVE]" />
-    <PackageReference Include="Musoq.Schema" Version="[RESOLVE]">
+    <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.1">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <!-- [FILL: Add your third-party NuGet dependencies here] -->
   </ItemGroup>
-
 </Project>
 ```
 
-**Critical details:**
+Critical project settings:
 
-| Setting | Why |
-|---------|-----|
-| `EnableDynamicLoading` | Allows Musoq host to load plugin at runtime |
-| `GenerateDocumentationFile` | Generates the `.xml` file containing your XML doc comments |
-| `_ResolveCopyLocalNuGetPackageXmls` target | Copies XML docs from NuGet packages to output — without this, Musoq can't read dependency metadata |
-| `ExcludeAssets=runtime` on Parser/Schema | These DLLs are provided by the Musoq host; including them causes version conflicts |
+| Setting | Why it matters |
+|---------|----------------|
+| `TargetFramework=net10.0` | matches the runtime-v2 host train and `.NET 10.0.300` feature band |
+| `EnableDynamicLoading` | allows dynamic plugin loading in hosts that use collectible load contexts |
+| `GenerateDocumentationFile` | emits the XML catalog Musoq can inspect without loading the DLL |
+| `_ResolveCopyLocalNuGetPackageXmls` | preserves XML metadata for referenced packages when present |
+| `ExcludeAssets=runtime` on host-provided `Musoq.*` packages | prevents duplicate Musoq assemblies in `Plugin.zip` |
+| package metadata | lets package registries and import scripts display useful plugin information |
+
+Do not use `ExcludeAssets=runtime` in the test project unless the test host also supplies those assemblies. Test projects normally reference `Musoq.Converter` and `Musoq.Evaluator` directly.
 
 ### 3.2 Assembly Registration Files
 
-**`AssemblyInfo.cs`** — **[CRITICAL]** Registers the schema name that Musoq uses for plugin discovery:
+Most Musoq plugin hosts discover schema names by assembly metadata before they load a plugin. This file is not optional for standalone plugin packages.
+
+`Properties/AssemblyInfo.cs`:
 
 ```csharp
+using System.Reflection;
 using Musoq.Schema.Attributes;
 
-[assembly: PluginSchemas("[FILL: schema-name-lowercase]")]
+[assembly: PluginSchemas("weather")]
+[assembly: AssemblyTitle("Musoq Weather Data Source")]
+[assembly: AssemblyDescription("Runtime-v2 weather datasource for Musoq.")]
+[assembly: AssemblyCompany("Example")]
+[assembly: AssemblyProduct("Musoq.DataSources.Weather")]
 ```
 
-**Why this is critical:**
+`PluginSchemas("weather")` is the static discovery key for SQL such as `select * from #weather.current('Warsaw')`. Keep it lowercase and keep it identical to the schema name passed to `SchemaBase`.
 
-- Without this attribute, Musoq **will not discover your plugin at all**.
-- The schema name (e.g., `"github"`, `"jira"`, `"docker"`) is what appears after `#` in SQL queries: `SELECT * FROM #github.user_info()`.
-- Must match the namespace convention: for `Musoq.DataSources.GitHub`, the schema name is `"github"` (lowercase).
-- **Never use** `ComVisible` or other outdated attributes in this file — the `PluginSchemas` attribute is the only requirement.
-
-**Examples from existing plugins:**
-
-| Plugin | Schema Name | SQL Usage |
-|--------|------------|-----------|
-| Docker | `"docker"` | `SELECT * FROM #docker.containers()` |
-| GitHub | `"github"` | `SELECT * FROM #github.user_repositories()` |
-| Jira | `"jira"` | `SELECT * FROM #jira.issues()` |
-| OpenAI | `"openai"` | `SELECT * FROM #openai.completions()` |
-
-**`Assembly.cs`** — Exposes internal types to the test project:
-
-```csharp
-using System.Runtime.CompilerServices;
-
-[assembly: InternalsVisibleTo("Musoq.DataSources.[FILL].Tests")]
-```
-
-This is necessary because RowSource, Table, TableHelper are typically `internal` classes, and tests need access.
-
-### 3.3 Entity Class
-
-The entity is a plain C# class. Each public property decorated with `[EntityProperty]` becomes a SQL column.
-
-```csharp
-using Musoq.Schema.Attributes;
-
-namespace Musoq.DataSources.[FILL].Entities;
-
-/// <summary>
-/// [FILL: Description of what this entity represents]
-/// </summary>
-public class [FILL]Entity
-{
-    /// <summary>
-    /// [FILL: Column description]
-    /// </summary>
-    [EntityProperty]
-    public string Name { get; set; } = string.Empty;
-    
-    // [FILL: Add more properties as needed]
-    // Supported types: string, int, long, double, decimal, bool, DateTime, DateTime?,
-    //                  byte[], string[], and other basic .NET types.
-    // For nullable reference types, use the ? suffix: string?, DateTime?, etc.
-}
-```
-
-**Design guidelines:**
-
-- Use simple .NET types that SQL understands.
-- Mark every property that should be a column with `[EntityProperty]`.
-- Add XML `<summary>` doc comments to every property.
-- Use `string.Empty` as default for strings (not null).
-- Use nullable types (`DateTime?`) when data might not exist.
-
-### 3.4 TableHelper Class
-
-This static class provides three lookup structures for fast column access:
+`Assembly.cs`:
 
 ```csharp
 using Musoq.Schema;
-using Musoq.Schema.DataSources;
-using Musoq.DataSources.[FILL].Entities;
 
-namespace Musoq.DataSources.[FILL].Tables;
+namespace Musoq.DataSources.Weather;
 
-internal static class [FILL]TableHelper
+public sealed class Assembly
 {
-    public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<[FILL]Entity, object?>> IndexToMethodAccessMap;
-    public static readonly ISchemaColumn[] Columns;
-
-    static [FILL]TableHelper()
+    public static ISchemaProvider CreateSchemaProvider()
     {
-        // Maps column names to integer indices.
-        // The index must match between all three structures.
-        NameToIndexMap = new Dictionary<string, int>
-        {
-            { nameof([FILL]Entity.Name), 0 },
-            // [FILL: Add entries for all entity properties, incrementing the index]
-        };
-
-        // Maps integer indices to lambda accessors that extract the value from an entity.
-        IndexToMethodAccessMap = new Dictionary<int, Func<[FILL]Entity, object?>>
-        {
-            { 0, entity => entity.Name },
-            // [FILL: Add entries matching NameToIndexMap]
-        };
-
-        // Defines column metadata (name, index, .NET type) for Musoq's query engine.
-        Columns =
-        [
-            new SchemaColumn(nameof([FILL]Entity.Name), 0, typeof(string)),
-            // [FILL: Add entries matching above. Type must match the entity property type.]
-        ];
+        return new WeatherSchemaProvider();
     }
 }
 ```
 
-**The three structures MUST be consistent:**
-- Same number of entries in all three.
-- Index N in `NameToIndexMap` must correspond to index N in `IndexToMethodAccessMap` and `Columns`.
-- The `typeof()` in `SchemaColumn` must match the actual property return type.
+`PluginSchemas` is the discovery contract. `Assembly.CreateSchemaProvider()` is a common host factory convention. If your host expects a different factory type, keep the runtime-v2 schema code unchanged and adapt only this registration file.
 
-### 3.5 Table Class
+### 3.3 Entity Class
 
-Implements `ISchemaTable` — this is what Musoq queries for column metadata:
+Use typed entities when the datasource owns its schema.
+
+`WeatherEntity.cs`:
+
+```csharp
+namespace Musoq.DataSources.Weather;
+
+public sealed class WeatherEntity
+{
+    public string City { get; init; } = string.Empty;
+
+    public DateTimeOffset ObservedAt { get; init; }
+
+    public decimal TemperatureC { get; init; }
+
+    public decimal HumidityPercent { get; init; }
+
+    public string Condition { get; init; } = string.Empty;
+}
+```
+
+Runtime-v2 reads properties directly from typed rows. You no longer need a resolver map to extract values by index.
+
+### 3.4 Table Metadata
+
+`ISchemaTable` describes column names, indexes, types, and the row type.
+
+`WeatherTable.cs`:
 
 ```csharp
 using Musoq.Schema;
+using Musoq.Schema.DataSources;
 
-namespace Musoq.DataSources.[FILL].Tables;
+namespace Musoq.DataSources.Weather;
 
-internal class [FILL]Table : ISchemaTable
+public sealed class WeatherTable : ISchemaTable
 {
-    public ISchemaColumn[] Columns { get; } = [FILL]TableHelper.Columns;
-
-    public SchemaTableMetadata Metadata { get; } = new(typeof(Entities.[FILL]Entity));
-
-    public ISchemaColumn GetColumnByName(string name)
+    public WeatherTable()
     {
-        return Columns.SingleOrDefault(column => column.ColumnName == name)!;
+    }
+
+    public WeatherTable(string city)
+    {
+        _ = city;
+    }
+
+    public ISchemaColumn[] Columns { get; } =
+    [
+        new SchemaColumn(nameof(WeatherEntity.City), 0, typeof(string)),
+        new SchemaColumn(nameof(WeatherEntity.ObservedAt), 1, typeof(DateTimeOffset)),
+        new SchemaColumn(nameof(WeatherEntity.TemperatureC), 2, typeof(decimal)),
+        new SchemaColumn(nameof(WeatherEntity.HumidityPercent), 3, typeof(decimal)),
+        new SchemaColumn(nameof(WeatherEntity.Condition), 4, typeof(string))
+    ];
+
+    public SchemaTableMetadata Metadata { get; } = new(typeof(WeatherEntity));
+
+    public ISchemaColumn? GetColumnByName(string name)
+    {
+        return Columns.SingleOrDefault(column =>
+            string.Equals(column.ColumnName, name, StringComparison.OrdinalIgnoreCase));
     }
 
     public ISchemaColumn[] GetColumnsByName(string name)
     {
-        return Columns.Where(column => column.ColumnName == name).ToArray();
+        return Columns
+            .Where(column => string.Equals(column.ColumnName, name, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
     }
 }
 ```
 
-### 3.6 RowSource Class
+The `SchemaTableMetadata(typeof(WeatherEntity))` value is important. The engine uses it to request `GetRowSource<WeatherEntity>`. If metadata says one row type and the row source returns another, runtime-v2 fails fast.
 
-This is where data fetching happens. It extends `RowSourceBase<TEntity>`:
+### 3.5 RowSource Class
+
+`RowSource<T>` returns chunks. Each chunk is an `IReadOnlyList<T>`.
+
+Use `RowSourceBase<T>` when data is produced inside `CollectChunks`:
 
 ```csharp
-using System.Collections.Concurrent;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.DataSources.[FILL].Entities;
-using Musoq.DataSources.[FILL].Tables;
+using Musoq.Schema.Optimization;
 
-namespace Musoq.DataSources.[FILL].Sources;
+namespace Musoq.DataSources.Weather;
 
-internal class [FILL]RowSource : RowSourceBase<[FILL]Entity>
+public sealed class WeatherRowSource(
+    WeatherClient client,
+    SourceExecutionContext executionContext,
+    string city)
+    : RowSourceBase<WeatherEntity>
 {
-    private const string SourceName = "[FILL: lowercase source identifier]";
-    private readonly string _parameterFromSql;  // [FILL: parameters from constructor]
-    private readonly RuntimeContext _runtimeContext;
-
-    // Constructor parameters (after RuntimeContext) become the SQL method parameters.
-    // e.g. for #schema.method('arg1', 42):
-    //   public MyRowSource(string arg1, int arg2, RuntimeContext ctx)
-    // The parameter order matters — it matches positional args in SQL.
-    // RuntimeContext can be in any position; Musoq injects it automatically.
-    public [FILL]RowSource(string parameterFromSql, RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<WeatherEntity> writer)
     {
-        _parameterFromSql = parameterFromSql;
-        _runtimeContext = runtimeContext;
+        const string dataSourceName = "weather.current";
+
+        executionContext.ReportDataSourceBegin(dataSourceName);
+
+        var rows = client.GetCurrent(city, writer.CancellationToken);
+        var plannedRows = ApplyAcceptedPlan(rows, executionContext.Plan).ToArray();
+
+        executionContext.ReportDataSourceRowsKnown(dataSourceName, plannedRows.Length);
+        writer.Write(plannedRows);
+        executionContext.ReportDataSourceRowsRead(dataSourceName, plannedRows.Length, plannedRows.Length);
+        executionContext.ReportDataSourceEnd(dataSourceName, plannedRows.Length);
     }
 
-    protected override void CollectChunks(
-        BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    private static IEnumerable<WeatherEntity> ApplyAcceptedPlan(
+        IEnumerable<WeatherEntity> rows,
+        SourceExecutionPlan plan)
     {
-        _runtimeContext.ReportDataSourceBegin(SourceName);
-        long totalRowsProcessed = 0;
+        var query = rows;
 
-        try
+        if (plan.AcceptedPredicate != null)
+            query = query.Where(row => WeatherPredicateEvaluator.Evaluate(plan.AcceptedPredicate, row));
+
+        foreach (var order in plan.AcceptedOrderBy.Reverse())
+            query = ApplyOrder(query, order);
+
+        if (plan.AcceptedSkip.HasValue)
+            query = query.Skip((int)plan.AcceptedSkip.Value);
+
+        if (plan.AcceptedTake.HasValue)
+            query = query.Take((int)plan.AcceptedTake.Value);
+
+        return query;
+    }
+
+    private static IEnumerable<WeatherEntity> ApplyOrder(
+        IEnumerable<WeatherEntity> rows,
+        OrderByExpression order)
+    {
+        Func<WeatherEntity, object?> keySelector = order.Column.Name switch
         {
-            const int chunkSize = 1000;
-            var endWorkToken = _runtimeContext.EndWorkToken;
+            nameof(WeatherEntity.City) => row => row.City,
+            nameof(WeatherEntity.ObservedAt) => row => row.ObservedAt,
+            nameof(WeatherEntity.TemperatureC) => row => row.TemperatureC,
+            nameof(WeatherEntity.HumidityPercent) => row => row.HumidityPercent,
+            nameof(WeatherEntity.Condition) => row => row.Condition,
+            _ => throw new InvalidOperationException($"Unsupported order column '{order.Column.Name}'.")
+        };
 
-            // [FILL: Your data-fetching logic here]
-            // For file-based sources, check File.Exists first and return early if not found.
-            // For API-based sources, make HTTP calls here.
-
-            var list = new List<EntityResolver<[FILL]Entity>>(chunkSize);
-
-            foreach (var item in /* [FILL: your data enumeration] */)
-            {
-                if (endWorkToken.IsCancellationRequested)
-                    return;
-
-                var entity = new [FILL]Entity
-                {
-                    // [FILL: Map source data to entity properties]
-                };
-
-                list.Add(new EntityResolver<[FILL]Entity>(
-                    entity,
-                    [FILL]TableHelper.NameToIndexMap,
-                    [FILL]TableHelper.IndexToMethodAccessMap));
-
-                totalRowsProcessed++;
-
-                // When chunk is full, flush it to Musoq and start a new list.
-                if (list.Count >= chunkSize)
-                {
-                    chunkedSource.Add(list, endWorkToken);
-                    list = new List<EntityResolver<[FILL]Entity>>(chunkSize);
-                }
-            }
-
-            // Don't forget the last partial chunk!
-            if (list.Count > 0)
-            {
-                chunkedSource.Add(list, endWorkToken);
-            }
-        }
-        finally
-        {
-            // ALWAYS report end, even on failure. Use finally block.
-            _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
-        }
+        return order.Direction == OrderDirection.Descending
+            ? rows.OrderByDescending(keySelector)
+            : rows.OrderBy(keySelector);
     }
 }
 ```
 
-**Key patterns:**
+Use `EntitySource<T>` when rows are already materialized into chunks:
 
-1. **Always call `ReportDataSourceBegin`/`ReportDataSourceEnd`** — wrap in try/finally.
-2. **Check `endWorkToken.IsCancellationRequested`** in loops to support query cancellation.
-3. **Chunk your data** — don't accumulate everything in one list for large datasets.
-4. **Flush the last partial chunk** — a common bug is forgetting to add the remaining items.
-5. **For file-based sources** — check `File.Exists()` and return early (empty result) if file is missing. Do not throw.
+```csharp
+var chunks = RowChunking.FromEnumerableOutput(rows);
+return EnsureSourceType<T, WeatherEntity>(
+    name,
+    new EntitySource<WeatherEntity>(
+        chunks,
+        new Dictionary<string, int>(),
+        new Dictionary<int, Func<WeatherEntity, object?>>()));
+```
 
-### 3.7 Library Class
+The two dictionaries are retained for compatibility with the helper class constructor but are ignored by runtime-v2. Do not rebuild old resolver maps just to populate them.
 
-Even if you have no custom SQL functions, you must create an empty library:
+### 3.6 Library Class
+
+Use libraries for SQL-callable helper functions, not for datasource row access.
+
+`WeatherLibrary.cs`:
 
 ```csharp
 using Musoq.Plugins;
+using Musoq.Plugins.Attributes;
 
-namespace Musoq.DataSources.[FILL];
+namespace Musoq.DataSources.Weather;
 
-/// <summary>
-/// [FILL] helper methods
-/// </summary>
-public class [FILL]Library : LibraryBase
+public sealed class WeatherLibrary : LibraryBase
 {
-    // Add [BindableMethod] methods here for custom SQL functions.
-    // Leave empty if no custom functions are needed.
+    [BindableMethod]
+    public decimal CelsiusToFahrenheit(decimal celsius)
+    {
+        return (celsius * 9m / 5m) + 32m;
+    }
 }
 ```
 
-### 3.8 SchemaProvider Class
+### 3.7 SchemaProvider Class
 
-A simple factory that returns your Schema instance:
+`WeatherSchemaProvider.cs`:
 
 ```csharp
 using Musoq.Schema;
 
-namespace Musoq.DataSources.[FILL];
+namespace Musoq.DataSources.Weather;
 
-/// <summary>
-/// Provides the requested schema
-/// </summary>
-public class [FILL]SchemaProvider : ISchemaProvider
+public sealed class WeatherSchemaProvider : ISchemaProvider
 {
-    /// <summary>
-    /// Get schema based on provided name
-    /// </summary>
-    /// <param name="schema">Schema name</param>
-    /// <returns>Requested schema</returns>
     public ISchema GetSchema(string schema)
     {
-        return new [FILL]Schema();
+        if (!string.Equals(schema, "weather", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(schema, "#weather", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new NotSupportedException($"Schema '{schema}' is not supported.");
+        }
+
+        return new WeatherSchema(new WeatherClient());
     }
 }
 ```
 
-### 3.9 Schema Class
+### 3.8 Schema Class
 
-The schema is the main orchestrator. Its **XML documentation on the constructor** is critical — Musoq uses it for discovery, help, and parameter validation.
+`WeatherSchema.cs`:
 
 ```csharp
+using Musoq.Plugins;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Exceptions;
-using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
-using Musoq.Schema.Reflection;
-using Musoq.DataSources.[FILL].Sources;
-using Musoq.DataSources.[FILL].Tables;
+using Musoq.Schema.Optimization;
 
-namespace Musoq.DataSources.[FILL];
+namespace Musoq.DataSources.Weather;
 
-/// <description>
-/// [FILL: Multi-line description of what this plugin does]
-/// </description>
-/// <short-description>
-/// [FILL: One-line summary]
-/// </short-description>
-/// <project-url>[FILL: URL]</project-url>
-public class [FILL]Schema : SchemaBase
+public sealed class WeatherSchema : SchemaBase
 {
-    private const string SchemaName = "[FILL: lowercase schema name matching AssemblyInfo]";
+    private const string Current = "current";
+    private readonly WeatherClient _client;
 
-    /// <virtual-constructors>
-    /// [FILL: See Phase 4 for the full XML documentation structure]
-    /// </virtual-constructors>
-    public [FILL]Schema()
-        : base(SchemaName, CreateLibrary())
+    public WeatherSchema(WeatherClient client)
+        : base("weather", CreateLibrary())
     {
+        _client = client;
+
+        // Registers constructor metadata used by desc #weather and desc #weather.current.
+        // Keep WeatherTable constructors aligned with supported source parameters.
+        AddTable<WeatherTable>(Current);
     }
 
-    /// <summary>
-    /// Gets the table name based on the given data source and parameters.
-    /// </summary>
-    /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
-    /// <param name="parameters">Parameters to pass to data source</param>
-    /// <returns>Requested table metadata</returns>
     public override ISchemaTable GetTableByName(
-        string name, RuntimeContext runtimeContext, params object[] parameters)
+        string name,
+        SourceMetadataContext metadataContext,
+        params object?[] parameters)
     {
-        return name.ToLowerInvariant() switch
+        EnsureSourceName(name);
+        return new WeatherTable();
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object?[] parameters)
+    {
+        EnsureSourceName(name);
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+        return new SourceDescriptor
         {
-            "[FILL: method name]" => new [FILL]Table(),
-            _ => throw new TableNotFoundException(nameof(name))
+            Identity = context.Identity,
+            RowType = table.Metadata.TableEntityType,
+            Columns = table.Columns
         };
     }
 
-    /// <summary>
-    /// Gets the data source based on the given data source and parameters.
-    /// </summary>
-    /// <param name="name">Data source name</param>
-    /// <param name="interCommunicator">Runtime context</param>
-    /// <param name="parameters">Parameters to pass data to data source</param>
-    /// <returns>Data source</returns>
-    public override RowSource GetRowSource(
-        string name, RuntimeContext interCommunicator, params object[] parameters)
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object?[] parameters)
     {
-        return name.ToLowerInvariant() switch
+        EnsureSourceName(name);
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                "WEATHER_API_KEY",
+                Required: true,
+                Secret: true,
+                SourceRuntimeSettingPhase.Execution,
+                "API key used to call the weather service."),
+            new SourceRuntimeSettingRequirement(
+                "WEATHER_ENDPOINT",
+                Required: false,
+                Secret: false,
+                SourceRuntimeSettingPhase.Execution,
+                "Optional weather API endpoint override.")
+        ];
+    }
+
+    public override SourcePlanResult TryPlanSource(
+        string name,
+        SourcePlanRequest request,
+        params object?[] parameters)
+    {
+        EnsureSourceName(name);
+
+        var acceptedPredicate = WeatherPredicatePlanner.TryAccept(request.Predicate);
+        var acceptsPredicate = acceptedPredicate != null || request.Predicate == null;
+        var acceptedOrder = request.OrderBy.Where(IsSupportedOrder).ToArray();
+        var acceptsAllOrder = acceptedOrder.Length == request.OrderBy.Count;
+        var acceptsSlice = acceptsPredicate && acceptsAllOrder;
+
+        return new SourcePlanResult
         {
-            "[FILL: method name]" => new [FILL]RowSource(
-                (string)parameters[0],  // [FILL: cast parameters to correct types]
-                interCommunicator),
-            _ => throw new SourceNotFoundException(nameof(name))
+            ExecutionPlan = new SourceExecutionPlan
+            {
+                Identity = request.Identity,
+                AcceptedColumns = request.RequiredColumns,
+                AcceptedPredicate = acceptedPredicate,
+                AcceptedOrderBy = acceptedOrder,
+                AcceptedSkip = acceptsSlice ? request.Skip : null,
+                AcceptedTake = acceptsSlice ? request.Take : null
+            },
+            AcceptedColumns = request.RequiredColumns,
+            AcceptedPredicate = acceptedPredicate,
+            ResidualPredicate = acceptsPredicate ? null : request.Predicate,
+            AcceptedOrderBy = acceptedOrder,
+            ResidualOrderBy = acceptsAllOrder ? [] : request.OrderBy,
+            AcceptedSkip = acceptsSlice ? request.Skip : null,
+            ResidualSkip = acceptsSlice ? null : request.Skip,
+            AcceptedTake = acceptsSlice ? request.Take : null,
+            ResidualTake = acceptsSlice ? null : request.Take,
+            Cardinality = CardinalityEstimate.Unknown("Weather API cardinality is request-dependent.")
         };
     }
 
-    /// <summary>
-    /// Gets information's about all tables in the schema.
-    /// </summary>
-    /// <returns>Data sources constructors</returns>
-    public override SchemaMethodInfo[] GetConstructors()
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object?[] parameters)
     {
-        var constructors = new List<SchemaMethodInfo>();
-        constructors.AddRange(
-            TypeHelper.GetSchemaMethodInfosForType<[FILL]RowSource>("[FILL: method name]"));
-        return constructors.ToArray();
+        EnsureSourceName(name);
+
+        if (parameters.Length != 1 || parameters[0] is not string city)
+            throw new ArgumentException("#weather.current(city) requires one string city argument.");
+
+        return EnsureSourceType<T, WeatherEntity>(
+            name,
+            new WeatherRowSource(_client.WithSettings(executionContext.SourceRuntimeSettings), executionContext, city));
     }
 
-    /// <summary>
-    /// Gets raw constructor information for a specific data source method.
-    /// </summary>
-    public override SchemaMethodInfo[] GetRawConstructors(
-        string methodName, RuntimeContext runtimeContext)
+    private static bool IsSupportedOrder(OrderByExpression order)
     {
-        return methodName.ToLowerInvariant() switch
-        {
-            "[FILL: method name]" => TypeHelper
-                .GetSchemaMethodInfosForType<[FILL]RowSource>("[FILL: method name]"),
-            _ => throw new NotSupportedException(
-                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: [FILL: comma-separated list of method names]")
-        };
+        return string.Equals(order.Column.Name, nameof(WeatherEntity.ObservedAt), StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(order.Column.Name, nameof(WeatherEntity.City), StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// Gets raw constructor information for all data source methods in the schema.
-    /// </summary>
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    private static void EnsureSourceName(string name)
     {
-        return TypeHelper
-            .GetSchemaMethodInfosForType<[FILL]RowSource>("[FILL: method name]");
+        if (!string.Equals(name, Current, StringComparison.OrdinalIgnoreCase))
+            throw new NotSupportedException($"Source '{name}' is not supported.");
     }
 
     private static MethodsAggregator CreateLibrary()
     {
         var methodsManager = new MethodsManager();
-        var library = new [FILL]Library();
-        methodsManager.RegisterLibraries(library);
+        methodsManager.RegisterLibraries(new LibraryBase());
+        methodsManager.RegisterLibraries(new WeatherLibrary());
         return new MethodsAggregator(methodsManager);
     }
 }
 ```
 
----
+If planning is not implemented yet, use:
 
-## Phase 4 — XML Documentation (Critical)
+```csharp
+public override SourcePlanResult TryPlanSource(
+    string name,
+    SourcePlanRequest request,
+    params object?[] parameters)
+{
+    return SourcePlanResult.RejectAll(request);
+}
+```
 
-The XML documentation on the Schema constructor is **not optional**. Musoq parses it at runtime for:
-- Schema discovery (`desc #schemaname`)
-- Method signatures (`desc #schemaname.method`)
-- Column metadata (`desc #schemaname.method('arg')`)
-- Environment variable requirements
-- IntelliSense / help systems
+### 3.8.1 Raw Constructors and `desc` Support
+
+Musoq uses raw constructor metadata for `desc #schema`, `desc #schema.method`, and some static package catalogs. Runtime-v2 uses these exact signatures:
+
+```csharp
+public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext);
+
+public override SchemaMethodInfo[] GetRawConstructors(
+    string methodName,
+    SourceMetadataContext metadataContext);
+```
+
+If you call `AddTable<WeatherTable>(Current)` and `WeatherTable` has constructors that match the public source parameters, `SchemaBase` can produce this metadata automatically. The table constructors do not have to perform I/O; they only describe accepted parameters for metadata and `desc`.
+
+```csharp
+public sealed class WeatherTable : ISchemaTable
+{
+    public WeatherTable()
+    {
+    }
+
+    public WeatherTable(string city)
+    {
+        _ = city;
+    }
+
+    // Columns and Metadata omitted.
+}
+```
+
+Override the raw constructor methods only when the source shape is generated dynamically or you intentionally do not use `AddTable<T>()`:
+
+```csharp
+using Musoq.Schema.Helpers;
+using Musoq.Schema.Reflection;
+
+public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
+{
+    ArgumentNullException.ThrowIfNull(metadataContext);
+    return TypeHelper.GetSchemaMethodInfosForType<WeatherTable>(Current);
+}
+
+public override SchemaMethodInfo[] GetRawConstructors(
+    string methodName,
+    SourceMetadataContext metadataContext)
+{
+    ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
+    return GetRawConstructors(metadataContext)
+        .Where(constructor => string.Equals(constructor.MethodName, methodName, StringComparison.Ordinal))
+        .ToArray();
+}
+```
+
+Do not use the retired `GetRawConstructors(RuntimeContext)` signature. Runtime-v2 passes `SourceMetadataContext`.
+
+### 3.9 Predicate Planner and Evaluator
+
+Runtime-v2 predicate pushdown receives `SourcePredicateExpression` records, not parser AST nodes.
+
+```csharp
+using Musoq.Schema.Optimization;
+
+namespace Musoq.DataSources.Weather;
+
+internal static class WeatherPredicatePlanner
+{
+    public static SourcePredicateExpression? TryAccept(SourcePredicateExpression? predicate)
+    {
+        return predicate switch
+        {
+            null => null,
+            SourcePredicateComparison comparison when IsSupportedComparison(comparison) => comparison,
+            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
+                TryAcceptAnd(logical),
+            _ => null
+        };
+    }
+
+    private static SourcePredicateExpression? TryAcceptAnd(SourcePredicateLogical logical)
+    {
+        var left = TryAccept(logical.Left);
+        var right = TryAccept(logical.Right);
+
+        if (left == null || right == null)
+            return null;
+
+        return new SourcePredicateLogical(SourcePredicateLogicalOperator.And, left, right);
+    }
+
+    private static bool IsSupportedComparison(SourcePredicateComparison comparison)
+    {
+        return comparison.Left is SourcePredicateColumn { Column.Name: nameof(WeatherEntity.City) } &&
+               comparison.Right is SourcePredicateLiteral &&
+               comparison.Operator is SourcePredicateComparisonOperator.Equal or SourcePredicateComparisonOperator.NotEqual;
+    }
+}
+```
+
+This simple planner accepts a predicate only when the whole supported expression can be applied by the source. If you want partial `AND` pushdown, return both the accepted and residual pieces explicitly from your planner and set `AcceptedPredicate` and `ResidualPredicate` accordingly; never drop the unsupported side.
+
+For in-memory tests or local filtering:
+
+```csharp
+using Musoq.Schema.Optimization;
+
+namespace Musoq.DataSources.Weather;
+
+internal static class WeatherPredicateEvaluator
+{
+    public static bool Evaluate(SourcePredicateExpression predicate, WeatherEntity row)
+    {
+        return predicate switch
+        {
+            SourcePredicateComparison comparison => EvaluateComparison(comparison, row),
+            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
+                Evaluate(logical.Left, row) && Evaluate(logical.Right, row),
+            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.Or } logical =>
+                Evaluate(logical.Left, row) || Evaluate(logical.Right, row),
+            SourcePredicateIn inPredicate => EvaluateIn(inPredicate, row),
+            SourcePredicateNullCheck nullCheck =>
+                (EvaluateValue(nullCheck.Expression, row) == null) ^ nullCheck.IsNegated,
+            _ => throw new InvalidOperationException($"Unsupported predicate '{predicate.GetType().Name}'.")
+        };
+    }
+
+    private static bool EvaluateComparison(SourcePredicateComparison comparison, WeatherEntity row)
+    {
+        var left = EvaluateValue(comparison.Left, row);
+        var right = EvaluateValue(comparison.Right, row);
+        var compare = Comparer<object>.Default.Compare(left, right);
+
+        return comparison.Operator switch
+        {
+            SourcePredicateComparisonOperator.Equal => Equals(left, right),
+            SourcePredicateComparisonOperator.NotEqual => !Equals(left, right),
+            SourcePredicateComparisonOperator.GreaterThan => compare > 0,
+            SourcePredicateComparisonOperator.GreaterOrEqual => compare >= 0,
+            SourcePredicateComparisonOperator.LessThan => compare < 0,
+            SourcePredicateComparisonOperator.LessOrEqual => compare <= 0,
+            _ => false
+        };
+    }
+
+    private static bool EvaluateIn(SourcePredicateIn predicate, WeatherEntity row)
+    {
+        var value = EvaluateValue(predicate.Expression, row);
+        var contains = predicate.Values.Any(item => Equals(EvaluateValue(item, row), value));
+        return predicate.IsNegated ? !contains : contains;
+    }
+
+    private static object? EvaluateValue(SourcePredicateExpression expression, WeatherEntity row)
+    {
+        return expression switch
+        {
+            SourcePredicateColumn column => GetColumnValue(row, column.Column.Name),
+            SourcePredicateLiteral literal => literal.Value,
+            _ => throw new InvalidOperationException($"Unsupported value expression '{expression.GetType().Name}'.")
+        };
+    }
+
+    private static object? GetColumnValue(WeatherEntity row, string column)
+    {
+        return column switch
+        {
+            nameof(WeatherEntity.City) => row.City,
+            nameof(WeatherEntity.ObservedAt) => row.ObservedAt,
+            nameof(WeatherEntity.TemperatureC) => row.TemperatureC,
+            nameof(WeatherEntity.HumidityPercent) => row.HumidityPercent,
+            nameof(WeatherEntity.Condition) => row.Condition,
+            _ => throw new InvalidOperationException($"Unsupported column '{column}'.")
+        };
+    }
+}
+```
+
+### 3.10 Dynamic Dictionary Rows
+
+Use dictionary rows for sources whose row shape comes from `TABLE`, `COUPLE`, or runtime discovery.
+
+```csharp
+public sealed class DynamicRecordTable(ISchemaColumn[] columns) : ISchemaTable
+{
+    public ISchemaColumn[] Columns => columns;
+
+    public SchemaTableMetadata Metadata { get; } =
+        new(typeof(IReadOnlyDictionary<string, object>));
+
+    public ISchemaColumn? GetColumnByName(string name)
+    {
+        return Columns.SingleOrDefault(column =>
+            string.Equals(column.ColumnName, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public ISchemaColumn[] GetColumnsByName(string name)
+    {
+        return Columns
+            .Where(column => string.Equals(column.ColumnName, name, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+    }
+}
+
+public sealed class DynamicRecordSource(IReadOnlyList<IReadOnlyDictionary<string, object?>> rows)
+    : RowSourceBase<IReadOnlyDictionary<string, object?>>
+{
+    protected override void CollectChunks(IChunkWriter<IReadOnlyDictionary<string, object?>> writer)
+    {
+        writer.Write(rows);
+    }
+}
+```
+
+When a `TABLE` statement supplies the columns, the schema receives those columns through `metadataContext.AllColumns` and `executionContext.AllColumns`.
+
+```csharp
+public override ISchemaTable GetTableByName(
+    string name,
+    SourceMetadataContext metadataContext,
+    params object?[] parameters)
+{
+    return new DynamicRecordTable(metadataContext.AllColumns.ToArray());
+}
+
+public override RowSource<T> GetRowSource<T>(
+    string name,
+    SourceExecutionContext executionContext,
+    params object?[] parameters)
+{
+    var rows = LoadRows(executionContext.AllColumns);
+    return EnsureSourceType<T, IReadOnlyDictionary<string, object?>>(
+        name,
+        new DynamicRecordSource(rows));
+}
+```
+
+### 3.11 Read Modifiers and Contract Diagnostics
+
+`TABLE` column modifiers are preserved in `ISchemaColumn.ReadModifiers` during metadata and execution, and in `SourceColumnRef.ReadModifiers` during planning.
+
+Statement order matters in a query batch:
+
+1. `TABLE` definitions first.
+2. `COUPLE` statements after the `TABLE` definitions they reference.
+3. CTEs and the final query after `TABLE` / `COUPLE`.
+
+Known modifier keys:
+
+| Syntax | Key | Value |
+|--------|-----|-------|
+| `encoding 'utf-8'` | `encoding` | `utf-8` |
+| `culture 'pl-PL'` | `culture` | `pl-PL` |
+| `format 'yyyy-MM-dd'` | `format` | `yyyy-MM-dd` |
+| `trim` | `trim` | `true` |
+| `source codec 'base64'` | `source.codec` | `base64` |
+
+Return contract diagnostics when a contract cannot be honored. `ColumnReadModifiers` is in `Musoq.Schema`; `SourceContractDiagnostic` is in `Musoq.Schema.Optimization`.
+
+```csharp
+return new SourceDescriptor
+{
+    Identity = context.Identity,
+    RowType = typeof(IReadOnlyDictionary<string, object>),
+    Columns = columns,
+    ContractDiagnostics =
+    [
+        SourceContractDiagnostic.Warning(
+            "Encoding modifier 'windows-1250' is ignored by this source.",
+            "UnsupportedEncoding") with
+        {
+            ColumnName = "Name",
+            ModifierKey = ColumnReadModifiers.Encoding
+        }
+    ]
+};
+```
+
+Diagnostic severity behavior:
+
+| Severity | Engine behavior |
+|----------|-----------------|
+| `Info` | appears in planning/inspection output |
+| `Warning` | reported as `MQ5013_SourceContractWarning` |
+| `Error` | reported as `MQ3071_SourceContractError` and stops compilation |
+
+### 3.12 Source Runtime Settings
+
+Runtime settings replace environment-variable-style hardcoding. The datasource declares requirements; the host resolves values. SQL may select a settings profile through `COUPLE`.
+
+Manual declaration:
+
+```csharp
+public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+    string name,
+    SourceRuntimeSettingsDescribeContext context,
+    params object?[] parameters)
+{
+    return
+    [
+        new SourceRuntimeSettingRequirement(
+            "API_TOKEN",
+            Required: true,
+            Secret: true,
+            SourceRuntimeSettingPhase.All,
+            "Token used to call the remote API.")
+    ];
+}
+```
+
+Attribute declaration on table/source constructors also works when using `SchemaBase.AddTable<T>()` and `SchemaBase.AddSource<T>()`:
+
+```csharp
+[SourceRuntimeSetting(
+    "API_TOKEN",
+    Secret = true,
+    Description = "Token used to call the remote API.")]
+public ApiSource(SourceExecutionContext context)
+{
+    Context = context;
+}
+```
+
+During execution:
+
+```csharp
+var token = executionContext.SourceRuntimeSettings["API_TOKEN"];
+```
+
+Host-side test resolver:
+
+```csharp
+public sealed class DictionarySettingsResolver(
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> profiles)
+    : ISourceRuntimeSettingsResolver
+{
+    public IReadOnlyDictionary<string, string> Resolve(SourceRuntimeSettingsResolutionRequest request)
+    {
+        var profile = request.ProfileName ?? "default";
+        return profiles.TryGetValue(profile, out var settings)
+            ? settings
+            : new Dictionary<string, string>();
+    }
+}
+```
+
+SQL:
+
+```sql
+couple weather.current with settings prod as CurrentWeather;
+select City, TemperatureC from CurrentWeather('Warsaw');
+desc settings CurrentWeather;
+```
+
+## Phase 4 - XML Documentation (Critical)
+
+XML documentation is mandatory for production plugins. Musoq tooling can read the XML file next to the plugin assembly to determine available schemas, source methods, parameters, tables, and columns without loading the plugin DLL. This is important for plugin indexes, `desc`-style discovery, help systems, offline catalog generation, and safe inspection of untrusted packages.
+
+Runtime-v2 execution still validates metadata through `GetTableByName`, `DescribeSource`, `DescribeSourceRuntimeSettings`, `TryPlanSource`, and `GetRowSource<T>`. The XML file is the static discovery contract; the runtime-v2 schema methods are the execution contract. They must describe the same sources and columns.
 
 ### 4.1 Full XML Structure Reference
 
-Here is the complete XML structure placed as a doc comment on the Schema **constructor**:
+Enable documentation output in the project:
 
 ```xml
-/// <virtual-constructors>
-///   <virtual-constructor>
-///     <virtual-param>Description of parameter 1</virtual-param>
-///     <virtual-param>Description of parameter 2</virtual-param>
-///     <examples>
-///       <example>
-///         <from>
-///           <environmentVariables>
-///             <environmentVariable name="VAR_NAME" isRequired="true">Description</environmentVariable>
-///             <environmentVariable name="OPTIONAL_VAR" isRequired="false">Description (default: value)</environmentVariable>
-///           </environmentVariables>
-///           #schemaname.method(string param1, int param2)
-///         </from>
-///         <description>What this method does</description>
-///         <columns>
-///           <column name="ColumnName" type="string">Column description</column>
-///           <column name="OtherColumn" type="int">Other description</column>
-///         </columns>
-///       </example>
-///     </examples>
-///   </virtual-constructor>
-/// </virtual-constructors>
+<GenerateDocumentationFile>true</GenerateDocumentationFile>
+```
+
+Document schema purpose at schema class level and source method shapes on the schema constructor. The XML structure below is the minimum static catalog a Musoq program can parse without loading the DLL:
+
+```csharp
+/// <description>
+/// Provides current weather observations.
+/// </description>
+/// <short-description>
+/// Weather datasource.
+/// </short-description>
+/// <project-url>https://example.org/weather-plugin</project-url>
+public sealed class WeatherSchema : SchemaBase
+{
+    private readonly WeatherClient _client;
+
+    /// <virtual-constructors>
+    ///   <virtual-constructor>
+    ///     <virtual-param>City name, coordinates, or address.</virtual-param>
+    ///     <examples>
+    ///       <example>
+    ///         <from>#weather.current(string city)</from>
+    ///         <description>Returns the current weather observation for one city.</description>
+    ///         <columns>
+    ///           <column name="City" type="string">Resolved city name.</column>
+    ///           <column name="ObservedAt" type="DateTimeOffset">Observation timestamp.</column>
+    ///           <column name="TemperatureC" type="decimal">Temperature in Celsius.</column>
+    ///           <column name="HumidityPercent" type="decimal">Relative humidity from 0 to 100.</column>
+    ///           <column name="Condition" type="string">Short weather condition text.</column>
+    ///         </columns>
+    ///       </example>
+    ///     </examples>
+    ///   </virtual-constructor>
+    /// </virtual-constructors>
+    public WeatherSchema(WeatherClient client)
+        : base("weather", CreateLibrary())
+    {
+        _client = client;
+        AddTable<WeatherTable>("current");
+    }
+}
+```
+
+For a source with runtime-v2 settings, document the setting names in the example description or in an `environmentVariables` block if your Musoq host still reads that legacy XML node for static help. The authoritative runtime-v2 settings contract remains `DescribeSourceRuntimeSettings`.
+
+```xml
+<environmentVariables>
+  <environmentVariable name="WEATHER_API_KEY" isRequired="true">API token resolved by the host.</environmentVariable>
+</environmentVariables>
+```
+
+Also document schema provider, entity properties, and SQL-callable library methods with ordinary XML comments for maintainability.
+
+```csharp
+namespace Musoq.DataSources.Weather;
+
+/// <summary>
+/// Provides the #weather schema.
+/// </summary>
+public sealed class WeatherSchemaProvider : ISchemaProvider
+{
+    /// <summary>
+    /// Gets the weather schema.
+    /// </summary>
+    /// <param name="schema">Schema name. Use weather or #weather.</param>
+    /// <returns>Weather schema instance.</returns>
+    public ISchema GetSchema(string schema)
+    {
+        return new WeatherSchema(new WeatherClient());
+    }
+}
 ```
 
 ### 4.2 Column Type Strings
 
-Use these exact type strings in the `type` attribute:
+Use stable type strings in `<column type="...">`. Keep them synchronized with `ISchemaTable.Columns`.
 
-| .NET Type | XML `type` value |
-|-----------|-----------------|
+| .NET type | XML `type` value |
+|-----------|------------------|
 | `string` | `string` |
 | `int` | `int` |
 | `long` | `long` |
@@ -684,41 +1164,79 @@ Use these exact type strings in the `type` attribute:
 | `decimal` | `decimal` |
 | `bool` | `bool` |
 | `DateTime` | `DateTime` |
-| `DateTime?` | `DateTime?` |
+| `DateTimeOffset` | `DateTimeOffset` |
+| `TimeSpan` | `TimeSpan` |
+| `Guid` | `Guid` |
 | `byte[]` | `byte[]` |
 | `string[]` | `string[]` |
 
-For generic types, use XML entities: `IList&lt;string&gt;`, `IDictionary&lt;string, object&gt;`.
+For nullable or generic types, use XML-safe names such as `DateTime?`, `IList&lt;string&gt;`, or `IDictionary&lt;string, object&gt;`.
+
+For query-local `TABLE` declarations, the common keyword mapping is:
+
+| TABLE keyword | Runtime column type |
+|---------------|---------------------|
+| `string` | `string` |
+| `byte` | `byte?` |
+| `sbyte` | `sbyte?` |
+| `short` | `short?` |
+| `int` | `int?` |
+| `long` | `long?` |
+| `ushort` | `ushort?` |
+| `uint` | `uint?` |
+| `ulong` | `ulong?` |
+| `float` | `float?` |
+| `double` | `double?` |
+| `decimal` / `money` | `decimal?` |
+| `bool` / `boolean` / `bit` | `bool?` |
+| `char` | `char?` |
+| `datetime` | `DateTime?` |
+| `datetimeoffset` | `DateTimeOffset?` |
+| `timespan` | `TimeSpan?` |
+| `guid` | `Guid?` |
+| `object` | `object` |
+
+Value types are nullable in `TABLE` context because dynamic sources can omit or null a value.
 
 ### 4.3 Dynamic Columns
 
-If columns are determined at runtime (e.g., database queries, CSV headers):
+For dynamic sources, mark the catalog as dynamic because a static XML scanner cannot know the final shape without query-local `TABLE`, `COUPLE`, parameters, or external data:
 
 ```xml
 <columns isDynamic="true"></columns>
 ```
 
+The description should explain how callers provide a shape:
+
+```xml
+<description>
+Reads records using columns declared by a query-local TABLE statement. Column read
+modifiers such as encoding, culture, format, trim, and source codec are available
+through ISchemaColumn.ReadModifiers during execution.
+</description>
+```
+
 ### 4.4 Multiple Overloads
 
-Add multiple `<virtual-constructor>` blocks for different parameter combinations:
+If the source supports multiple parameter sets, add one `<virtual-constructor>` block per SQL shape.
 
 ```xml
 /// <virtual-constructors>
 ///   <virtual-constructor>
 ///     <examples>
 ///       <example>
-///         <from>#schema.method()</from>
-///         <description>No-argument version</description>
+///         <from>#weather.current()</from>
+///         <description>Uses the default city from host-resolved settings.</description>
 ///         <columns>...</columns>
 ///       </example>
 ///     </examples>
 ///   </virtual-constructor>
 ///   <virtual-constructor>
-///     <virtual-param>File path</virtual-param>
+///     <virtual-param>City name.</virtual-param>
 ///     <examples>
 ///       <example>
-///         <from>#schema.method(string path)</from>
-///         <description>Single-argument version</description>
+///         <from>#weather.current(string city)</from>
+///         <description>Uses the supplied city.</description>
 ///         <columns>...</columns>
 ///       </example>
 ///     </examples>
@@ -726,1529 +1244,929 @@ Add multiple `<virtual-constructor>` blocks for different parameter combinations
 /// </virtual-constructors>
 ```
 
-### 4.5 Where XML Docs Go — Summary
+### 4.5 Where XML Docs Go - Summary
 
-| Location | Content |
-|----------|---------|
-| Class-level on Schema | `<description>`, `<short-description>`, `<project-url>` |
-| Constructor of Schema | `<virtual-constructors>` with all method signatures |
-| Entity properties | `<summary>` on each property |
-| All public methods | Standard `<summary>`, `<param>`, `<returns>` |
+| File | XML docs required |
+|------|-------------------|
+| `WeatherSchemaProvider.cs` | schema provider purpose |
+| `WeatherSchema.cs` class | `<description>`, `<short-description>`, `<project-url>` |
+| `WeatherSchema.cs` constructor | `<virtual-constructors>` with every source shape and static columns |
+| `WeatherEntity.cs` | important columns, units, nullability |
+| `WeatherLibrary.cs` | SQL-callable methods |
+| `WeatherClient.cs` | optional, useful for maintainers |
 
 ### 4.6 Verifying XML Generation
 
-After building, confirm the `.xml` file exists alongside the `.dll`:
-
-```bash
-dotnet build
-# Check for: bin/Debug/net8.0/Musoq.DataSources.{Name}.xml
+```powershell
+dotnet build --configuration Release --nologo --verbosity quiet
+Test-Path .\Musoq.DataSources.Weather\bin\Release\net10.0\Musoq.DataSources.Weather.xml
 ```
 
-If the `.xml` file is missing, ensure `<GenerateDocumentationFile>true</GenerateDocumentationFile>` is in your `.csproj`.
+Also verify the XML is packaged next to the DLL:
 
----
+```powershell
+Expand-Archive .\artifacts\Musoq.DataSources.Weather-windows-x64.zip -DestinationPath .\artifacts\verify -Force
+Expand-Archive .\artifacts\verify\Plugin.zip -DestinationPath .\artifacts\verify\plugin -Force
+Test-Path .\artifacts\verify\plugin\Musoq.DataSources.Weather.xml
+```
 
-## Phase 5 — Unit Tests
+If the XML file is missing from the package, Musoq tooling may be forced to load the DLL for discovery or may show no table/column catalog at all.
+
+## Phase 5 - Unit Tests
 
 ### 5.1 Test Project Structure
 
-```
-Musoq.DataSources.{Name}.Tests/
-├── Musoq.DataSources.{Name}.Tests.csproj
-├── {Name}Tests.cs                    # Functional query tests
-└── {Name}SchemaDescribeTests.cs      # Schema discovery tests
+```text
+Musoq.DataSources.Weather.Tests/
+  WeatherSchemaTests.cs
+  WeatherQueryTests.cs
+  WeatherRuntimeSettingsTests.cs
+  WeatherPlanningTests.cs
+  TestLoggerResolver.cs
+  DictionarySettingsResolver.cs
 ```
 
-### 5.2 Test Project File (`.csproj`)
+### 5.2 Test Project File
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1" />
+    <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
     <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
-    <PackageReference Include="Musoq.Converter" Version="[RESOLVE]" />
-    <PackageReference Include="Musoq.Evaluator" Version="[RESOLVE]" />
-    <PackageReference Include="Musoq.Parser" Version="[RESOLVE]" />
-    <PackageReference Include="Musoq.Plugins" Version="[RESOLVE]" />
-    <PackageReference Include="Musoq.Schema" Version="[RESOLVE]" />
-    <!-- [FILL: third-party packages needed for test data creation] -->
   </ItemGroup>
 
   <ItemGroup>
-    <!-- If inside existing repo, reference the shared test common project -->
-    <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj" />
-    <ProjectReference Include="..\Musoq.DataSources.{Name}\Musoq.DataSources.{Name}.csproj" />
+    <ProjectReference Include="..\Musoq.DataSources.Weather\Musoq.DataSources.Weather.csproj" />
   </ItemGroup>
-
 </Project>
 ```
 
-### 5.3 Test Infrastructure — When Inside Existing Repo
-
-When inside the existing Musoq.DataSources repository, you can use the shared `Musoq.DataSources.Tests.Common` project which provides:
-
-**`InstanceCreatorHelpers.CompileForExecution()`** — Compiles and prepares a SQL query for execution:
+### 5.3 Test Infrastructure
 
 ```csharp
-public static CompiledQuery CompileForExecution(
-    string script,                // The SQL query string
-    string assemblyName,          // Unique name (use Guid.NewGuid().ToString())
-    ISchemaProvider schemaProvider, // Your SchemaProvider instance
-    IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> environmentVariables)
-```
-
-**`EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables()`** — Creates mocked env vars:
-
-```csharp
-// No specific env vars:
-var envVars = EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables();
-
-// With specific env vars:
-var envVars = EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables(
-    new Dictionary<string, string> { ["API_KEY"] = "test-key" });
-```
-
-**`Culture.ApplyWithDefaultCulture()`** — Sets test culture to `pl-PL` for consistent results.
-
-### 5.4 Test Infrastructure — When Standalone (No Existing Repo)
-
-If you're building outside the repository, you must create these helper classes yourself. Here is the complete implementation:
-
-**`InstanceCreatorHelpers.cs`:**
-
-```csharp
-using System.Reflection;
 using Microsoft.Extensions.Logging;
-using Moq;
+using Musoq.Evaluator;
+
+namespace Musoq.DataSources.Weather.Tests;
+
+public sealed class TestLoggerResolver : ILoggerResolver
+{
+    public ILogger ResolveLogger()
+    {
+        return LoggerFactory
+            .Create(static builder => builder.SetMinimumLevel(LogLevel.None))
+            .CreateLogger("Tests");
+    }
+}
+```
+
+Compile and run helper:
+
+```csharp
 using Musoq.Converter;
-using Musoq.Converter.Build;
 using Musoq.Evaluator;
+using Musoq.Evaluator.Tables;
 using Musoq.Schema;
 
-namespace Musoq.DataSources.Tests.Common;
+namespace Musoq.DataSources.Weather.Tests;
 
-public static class InstanceCreatorHelpers
+internal static class QueryRunner
 {
-    private static ILoggerResolver DefaultLoggerResolver => new VoidLoggerResolver();
-
-    private static CompilationOptions CompilationOptions { get; } =
-        new(ParallelizationMode.Full, usePrimitiveTypeValidation: false);
-
-    public static CompiledQuery CompileForExecution(
-        string script,
-        string assemblyName,
-        ISchemaProvider schemaProvider,
-        IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> environmentVariables,
-        ILoggerResolver loggerResolver = null)
+    public static Table Run(
+        string query,
+        ISchemaProvider provider,
+        CompilationOptions? options = null)
     {
-        loggerResolver ??= DefaultLoggerResolver;
+        var compiled = options == null
+            ? InstanceCreator.CompileForExecution(
+                query,
+                Guid.NewGuid().ToString("N"),
+                provider,
+                new TestLoggerResolver())
+            : InstanceCreator.CompileForExecution(
+                query,
+                Guid.NewGuid().ToString("N"),
+                provider,
+                new TestLoggerResolver(),
+                options);
 
-        var compiledQuery = InstanceCreator.CompileForExecution(
-            script,
-            assemblyName,
-            schemaProvider,
-            loggerResolver,
-            () => new CreateTree(
-                new TransformTree(
-                    new TurnQueryIntoRunnableCode(null), loggerResolver)),
-            items =>
-            {
-                items.PositionalEnvironmentVariables = environmentVariables;
-                items.CreateBuildMetadataAndInferTypesVisitor = (provider, columns, _) =>
-                    new BuildMetadataAndInferTypesForTestsVisitor(
-                        provider, columns, environmentVariables, CompilationOptions,
-                        loggerResolver.ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>());
-            });
-
-        var runnableField = compiledQuery.GetType().GetRuntimeFields()
-            .FirstOrDefault(f => f.Name.Contains("runnable"));
-        var runnable = (IRunnable)runnableField?.GetValue(compiledQuery);
-
-        if (runnable == null)
-            throw new InvalidOperationException("Runnable is null.");
-
-        runnable.Logger = loggerResolver
-            .ResolveLogger<BuildMetadataAndInferTypesForTestsVisitor>();
-
-        return compiledQuery;
-    }
-
-    private class VoidLoggerResolver : ILoggerResolver
-    {
-        public ILogger ResolveLogger()
-        {
-            return new Mock<ILogger>().Object;
-        }
-
-        public ILogger<T> ResolveLogger<T>()
-        {
-            return new Mock<ILogger<T>>().Object;
-        }
+        return compiled.Run();
     }
 }
 ```
 
-**`BuildMetadataAndInferTypesForTestsVisitor.cs`:**
+### 5.4 Functional Query Test
 
 ```csharp
-using Microsoft.Extensions.Logging;
-using Musoq.Evaluator;
-using Musoq.Evaluator.Visitors;
-using Musoq.Parser.Nodes.From;
-using Musoq.Schema;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Musoq.DataSources.Tests.Common;
+namespace Musoq.DataSources.Weather.Tests;
 
-public class BuildMetadataAndInferTypesForTestsVisitor(
-    ISchemaProvider provider,
-    IReadOnlyDictionary<string, string[]> columns,
-    IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>> defaultEnvironmentVariables,
-    CompilationOptions compilationOptions,
-    ILogger<BuildMetadataAndInferTypesForTestsVisitor> logger)
-    : BuildMetadataAndInferTypesVisitor(provider, columns, logger, compilationOptions)
+[TestClass]
+public sealed class WeatherQueryTests
 {
-    protected override IReadOnlyDictionary<string, string> RetrieveEnvironmentVariables(
-        uint position, SchemaFromNode node)
+    [TestMethod]
+    public void Current_WhenCityIsPassed_ReturnsWeatherRows()
     {
-        var emptyEnvironmentVariables = new Dictionary<string, string>();
+        var provider = new WeatherSchemaProvider();
 
-        if (defaultEnvironmentVariables.TryGetValue(position, out var variables))
+        var rows = QueryRunner.Run(
+            "select City, TemperatureC from #weather.current('Warsaw')",
+            provider);
+
+        Assert.AreEqual("Warsaw", rows[0][0]);
+    }
+}
+```
+
+### 5.5 Schema Description Tests
+
+```csharp
+[TestMethod]
+public void GetTableByName_WhenCurrentSource_ReturnsTypedWeatherMetadata()
+{
+    var schema = new WeatherSchema(new WeatherClient());
+    var metadataContext = TestContexts.Metadata();
+
+    var table = schema.GetTableByName("current", metadataContext);
+
+    Assert.AreEqual(typeof(WeatherEntity), table.Metadata.TableEntityType);
+    Assert.IsNotNull(table.GetColumnByName(nameof(WeatherEntity.City)));
+}
+```
+
+Verify assembly discovery metadata:
+
+```csharp
+using Musoq.Schema.Attributes;
+
+[TestMethod]
+public void Assembly_WhenInspected_HasPluginSchemasAttribute()
+{
+    var attribute = typeof(WeatherSchema).Assembly
+        .GetCustomAttributes(typeof(PluginSchemasAttribute), inherit: false)
+        .Cast<PluginSchemasAttribute>()
+        .SingleOrDefault();
+
+    Assert.IsNotNull(attribute);
+    CollectionAssert.Contains(attribute.Schemas.ToArray(), "weather");
+}
+```
+
+Verify raw constructors for `desc` support:
+
+```csharp
+[TestMethod]
+public void GetRawConstructors_WhenAskedForCurrent_ReturnsSourceParameters()
+{
+    var schema = new WeatherSchema(new WeatherClient());
+    var metadataContext = TestContexts.Metadata();
+
+    var constructors = schema.GetRawConstructors("current", metadataContext);
+
+    Assert.IsTrue(constructors.Any());
+    Assert.IsTrue(constructors.Any(constructor =>
+        constructor.ConstructorInfo.Arguments.Any(argument =>
+            argument.Name == "city" && argument.Type == typeof(string))));
+}
+```
+
+Verify `desc` through SQL, not only by direct method calls:
+
+```csharp
+[TestMethod]
+public void DescSchema_ShouldListCurrentMethod()
+{
+    var rows = QueryRunner.Run(
+        "desc #weather",
+        new WeatherSchemaProvider());
+
+    Assert.IsTrue(rows.Any(row => string.Equals((string)row[0], "current", StringComparison.Ordinal)));
+}
+
+[TestMethod]
+public void DescMethodWithArgs_ShouldReturnColumns()
+{
+    var rows = QueryRunner.Run(
+        "desc #weather.current('Warsaw')",
+        new WeatherSchemaProvider());
+
+    Assert.IsTrue(rows.Any(row => string.Equals((string)row[0], nameof(WeatherEntity.City), StringComparison.Ordinal)));
+    Assert.IsTrue(rows.Any(row => string.Equals((string)row[0], nameof(WeatherEntity.TemperatureC), StringComparison.Ordinal)));
+}
+```
+
+Verify generated XML before packaging:
+
+```csharp
+[TestMethod]
+public void XmlDocumentation_WhenBuilt_ContainsStaticCatalog()
+{
+    var assemblyPath = typeof(WeatherSchema).Assembly.Location;
+    var xmlPath = Path.ChangeExtension(assemblyPath, ".xml");
+
+    Assert.IsTrue(File.Exists(xmlPath), $"Missing XML documentation file: {xmlPath}");
+
+    var xml = File.ReadAllText(xmlPath);
+    StringAssert.Contains(xml, "virtual-constructors");
+    StringAssert.Contains(xml, "#weather.current(string city)");
+    StringAssert.Contains(xml, nameof(WeatherEntity.TemperatureC));
+}
+```
+
+Create a simple metadata context in tests:
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using Musoq.Schema;
+using Musoq.Schema.Optimization;
+
+namespace Musoq.DataSources.Weather.Tests;
+
+internal static class TestContexts
+{
+    public static SourceMetadataContext Metadata(
+        IReadOnlyCollection<ISchemaColumn>? columns = null,
+        IReadOnlyDictionary<string, string>? settings = null)
+    {
+        return new SourceMetadataContext(
+            Guid.NewGuid().ToString("N"),
+            CancellationToken.None,
+            columns ?? [],
+            settings ?? new Dictionary<string, string>(),
+            NullLogger.Instance);
+    }
+}
+```
+
+### 5.6 Runtime Settings Tests
+
+```csharp
+[TestMethod]
+public void Query_WhenSettingsProfileIsSelected_PassesResolvedSettingsToSource()
+{
+    var resolver = new DictionarySettingsResolver(
+        new Dictionary<string, IReadOnlyDictionary<string, string>>
         {
-            foreach (var variable in variables)
+            ["prod"] = new Dictionary<string, string>
             {
-                emptyEnvironmentVariables.TryAdd(variable.Key, variable.Value);
+                ["WEATHER_API_KEY"] = "secret-token"
             }
-        }
+        });
 
-        InternalPositionalEnvironmentVariables.TryAdd(position, emptyEnvironmentVariables);
+    var options = new CompilationOptions(sourceRuntimeSettingsResolver: resolver);
+    var query = """
+        couple weather.current with settings prod as CurrentWeather;
+        select City from CurrentWeather('Warsaw')
+        """;
 
-        return emptyEnvironmentVariables;
-    }
+    var rows = QueryRunner.Run(query, new WeatherSchemaProvider(), options);
+
+    Assert.AreEqual("Warsaw", rows[0][0]);
 }
 ```
 
-**`EnvironmentVariablesHelpers.cs`:**
+Also test the settings description snapshot produced during analysis:
 
 ```csharp
-using Moq;
-
-namespace Musoq.DataSources.Tests.Common;
-
-public static class EnvironmentVariablesHelpers
+[TestMethod]
+public void DescSettings_WhenSourceDeclaresRequiredSetting_ReturnsRequirement()
 {
-    public static IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>>
-        CreateMockedEnvironmentVariables()
-    {
-        var mock = new Mock<IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>>>();
-        mock.Setup(f => f[It.IsAny<uint>()])
-            .Returns(new Dictionary<string, string>());
-        return mock.Object;
-    }
+    var items = InstanceCreator.CreateForAnalyze(
+        "select City from #weather.current('Warsaw')",
+        Guid.NewGuid().ToString("N"),
+        new WeatherSchemaProvider(),
+        new TestLoggerResolver());
+    var descriptions = items.SourceRuntimeSettingDescriptionsBySourceContextId
+        .Values
+        .Single();
 
-    public static IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>>
-        CreateMockedEnvironmentVariables(IReadOnlyDictionary<string, string> variables)
-    {
-        var mock = new Mock<IReadOnlyDictionary<uint, IReadOnlyDictionary<string, string>>>();
-        var data = new Dictionary<uint, IReadOnlyDictionary<string, string>>();
-        for (uint i = 0; i <= 100; i++) data[i] = variables;
-
-        mock.Setup(x => x.GetEnumerator()).Returns(() => data.GetEnumerator());
-        mock.Setup(x => x.Keys).Returns(data.Keys);
-        mock.Setup(x => x[It.IsAny<uint>()]).Returns((uint index) => data[index]);
-        mock.Setup(x => x.TryGetValue(It.IsAny<uint>(),
-                out It.Ref<IReadOnlyDictionary<string, string>>.IsAny))
-            .Returns((uint key, out IReadOnlyDictionary<string, string> val) =>
-                data.TryGetValue(key, out val));
-
-        return mock.Object;
-    }
+    Assert.AreEqual("WEATHER_API_KEY", descriptions.Single().Name);
 }
 ```
 
-**`Culture.cs`:**
+### 5.7 Planning Tests
+
+Test planning directly:
 
 ```csharp
-using System.Globalization;
-
-namespace Musoq.DataSources.Tests.Common;
-
-public static class Culture
+[TestMethod]
+public void TryPlanSource_WhenCityPredicateIsUsed_AcceptsPredicate()
 {
-    public static CultureInfo DefaultCulture { get; } = CultureInfo.GetCultureInfo("pl-PL");
-
-    public static void ApplyWithDefaultCulture() => Apply(DefaultCulture);
-
-    public static void Apply(CultureInfo culture)
+    var schema = new WeatherSchema(new WeatherClient());
+    var request = new SourcePlanRequest
     {
-        CultureInfo.CurrentCulture
-            = CultureInfo.CurrentUICulture
-            = CultureInfo.DefaultThreadCurrentCulture
-            = CultureInfo.DefaultThreadCurrentUICulture
-            = culture;
-    }
+        Identity = SourceIdentity.Empty,
+        Predicate = new SourcePredicateComparison(
+            SourcePredicateComparisonOperator.Equal,
+            new SourcePredicateColumn(new SourceColumnRef(nameof(WeatherEntity.City))),
+            new SourcePredicateLiteral("Warsaw"))
+    };
+
+    var result = schema.TryPlanSource("current", request);
+
+    Assert.IsNotNull(result.AcceptedPredicate);
+    Assert.IsNull(result.ResidualPredicate);
 }
 ```
 
-Additional NuGet packages needed for the test common project when standalone:
+Test planning through SQL using `CompileForInspection` and `desc query` when the host supports it:
 
-```xml
-<PackageReference Include="Moq" Version="4.20.72" />
+```sql
+desc query (
+    select City, TemperatureC
+    from #weather.current('Warsaw')
+    where City = 'Warsaw'
+    order by ObservedAt desc
+    take 10
+);
 ```
 
-### 5.5 Functional Query Tests
+### 5.8 TABLE and COUPLE Tests
 
-These tests run actual SQL queries through the Musoq engine against your plugin.
+Use `TABLE` and `COUPLE` for dictionary row sources or explicit dynamic contracts:
+
+```sql
+table WeatherRow {
+    City: string trim,
+    TemperatureC: decimal culture 'en-US',
+    ObservedAt: datetimeoffset format 'O'
+};
+
+couple weather.current with table WeatherRow and settings prod as CurrentWeather;
+
+select City, TemperatureC
+from CurrentWeather('Warsaw')
+where TemperatureC > 10;
+```
+
+Assert that modifiers are visible in the datasource by recording `metadataContext.AllColumns`, `request.RequiredColumns`, and `executionContext.AllColumns`.
+
+### 5.9 Package Smoke Tests
+
+Add a package smoke test that expands the final zip and checks both metadata layers. This catches the common "works in unit tests, invisible in host" failure.
 
 ```csharp
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.DataSources.Tests.Common;
-using Musoq.Evaluator;
+using System.IO.Compression;
 
-namespace Musoq.DataSources.[FILL].Tests;
-
-[TestClass]
-public class [FILL]Tests
+[TestMethod]
+public void PackageZip_WhenExpanded_ContainsDiscoveryMetadataAndXml()
 {
-    // Static constructor sets culture for consistent test results
-    static [FILL]Tests()
-    {
-        Culture.ApplyWithDefaultCulture();
-    }
+    var packagePath = Path.Combine("artifacts", "Musoq.DataSources.Weather-windows-x64.zip");
+    var extractDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
 
-    // Helper to compile and prepare a query
-    private CompiledQuery CreateAndRunVirtualMachine(string script)
-    {
-        return InstanceCreatorHelpers.CompileForExecution(
-            script,
-            Guid.NewGuid().ToString(),
-            new [FILL]SchemaProvider(),
-            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
+    ZipFile.ExtractToDirectory(packagePath, extractDir);
 
-    // Escape backslashes in file paths for SQL string literals
-    private static string EscapePath(string path)
-    {
-        return path.Replace("\\", "\\\\");
-    }
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "EntryPoint.txt")));
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "Platform.txt")));
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "Architecture.txt")));
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "LibraryName.txt")));
+    Assert.IsTrue(File.Exists(Path.Combine(extractDir, "Version.txt")));
 
-    // --- Test data setup ---
-    // Use [ClassInitialize] to create test fixtures (temp files, etc.)
-    // Use [ClassCleanup] to clean them up
-    // [FILL: Create test data appropriate for your data source]
+    var pluginZip = Path.Combine(extractDir, "Plugin.zip");
+    Assert.IsTrue(File.Exists(pluginZip));
 
-    [TestMethod]
-    public void SelectAll_ShouldReturnExpectedRows()
-    {
-        var query = "SELECT Column1, Column2 FROM #schema.method('[FILL: test arg]')";
+    var pluginDir = Path.Combine(extractDir, "plugin");
+    ZipFile.ExtractToDirectory(pluginZip, pluginDir);
 
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
-
-        // Verify column metadata
-        Assert.AreEqual(2, table.Columns.Count());
-        Assert.AreEqual("Column1", table.Columns.ElementAt(0).ColumnName);
-
-        // Verify row count
-        Assert.AreEqual([FILL: expected count], table.Count);
-
-        // Verify specific values
-        Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "[FILL: expected value]"));
-    }
-
-    [TestMethod]
-    public void WhereClause_ShouldFilterCorrectly()
-    {
-        var query = @"SELECT Column1 FROM #schema.method('[FILL]')
-                      WHERE Column2 = 'value'";
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
-
-        Assert.AreEqual([FILL: expected filtered count], table.Count);
-    }
-
-    [TestMethod]
-    public void Count_ShouldWork()
-    {
-        var query = "SELECT Count(Column1) FROM #schema.method('[FILL]')";
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
-
-        Assert.AreEqual(1, table.Count);
-        Assert.AreEqual([FILL: expected], (int)table.First().Values[0]);
-    }
-
-    [TestMethod]
-    public void EmptySource_ShouldReturnNoRows()
-    {
-        // Test with non-existent file / empty source
-        var query = "SELECT Column1 FROM #schema.method('[FILL: empty/missing source]')";
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
-
-        Assert.AreEqual(0, table.Count);
-    }
+    Assert.IsTrue(File.Exists(Path.Combine(pluginDir, "Musoq.DataSources.Weather.dll")));
+    Assert.IsTrue(File.Exists(Path.Combine(pluginDir, "Musoq.DataSources.Weather.xml")));
 }
 ```
 
-### 5.6 Schema Describe Tests
-
-These test the `desc #schema` query variants that exercise `GetRawConstructors`:
-
-```csharp
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.DataSources.Tests.Common;
-using Musoq.Evaluator;
-
-namespace Musoq.DataSources.[FILL].Tests;
-
-[TestClass]
-public class [FILL]SchemaDescribeTests
-{
-    static [FILL]SchemaDescribeTests()
-    {
-        Culture.ApplyWithDefaultCulture();
-    }
-
-    private CompiledQuery CreateAndRunVirtualMachine(string script)
-    {
-        return InstanceCreatorHelpers.CompileForExecution(
-            script,
-            Guid.NewGuid().ToString(),
-            new [FILL]SchemaProvider(),
-            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    [TestMethod]
-    public void DescSchema_ShouldListAllAvailableMethods()
-    {
-        var query = "desc #[FILL: schema name]";
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
-
-        // desc #schema returns columns: Name, Param 0, Param 1, ...
-        Assert.AreEqual(2, table.Columns.Count());
-        Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
-        Assert.AreEqual("Param 0", table.Columns.ElementAt(1).ColumnName);
-
-        // Should list all methods
-        Assert.AreEqual([FILL: expected method count], table.Count);
-
-        var row = table.First(row => (string)row[0] == "[FILL: method name]");
-        Assert.AreEqual("[FILL: paramName]: System.String", (string)row[1]);
-    }
-
-    [TestMethod]
-    public void DescMethod_ShouldReturnMethodSignature()
-    {
-        var query = "desc #[FILL].method";
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
-
-        Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("[FILL: method name]", (string)table.First()[0]);
-    }
-
-    [TestMethod]
-    public void DescMethodWithArgs_ShouldReturnTableSchema()
-    {
-        // [FILL: Create a temp test fixture if needed]
-
-        var query = "desc #[FILL].method('[FILL: test arg]')";
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
-
-        // desc with args returns 3 columns and one row per entity property
-        Assert.AreEqual(3, table.Columns.Count());
-        Assert.IsTrue(table.Count > 0);
-
-        var columnNames = table.Select(row => (string)row[0]).ToList();
-        // Verify expected columns are present
-        Assert.IsTrue(columnNames.Contains("Name"));
-        // [FILL: Check all expected column names]
-    }
-
-    [TestMethod]
-    public void DescUnknownMethod_ShouldThrowException()
-    {
-        var query = "desc #[FILL].unknownmethod";
-
-        try
-        {
-            var vm = CreateAndRunVirtualMachine(query);
-            vm.Run();
-            Assert.Fail("Should have thrown");
-        }
-        catch (Exception ex)
-        {
-            var message = ex.InnerException?.Message ?? ex.Message;
-            Assert.IsTrue(message.Contains("unknownmethod", StringComparison.OrdinalIgnoreCase));
-            Assert.IsTrue(
-                message.Contains("not supported", StringComparison.OrdinalIgnoreCase) ||
-                message.Contains("Available data sources", StringComparison.OrdinalIgnoreCase));
-        }
-    }
-}
-```
-
-### 5.7 Adding to Existing Solution
-
-If inside the existing Musoq.DataSources repo:
-
-```bash
-cd <repo-root>
-dotnet sln add Musoq.DataSources.{Name}/Musoq.DataSources.{Name}.csproj
-dotnet sln add Musoq.DataSources.{Name}.Tests/Musoq.DataSources.{Name}.Tests.csproj
-```
-
----
-
-## Phase 6 — Build & Package (Zip Specification)
-
-The distribution format is a **nested zip archive**. The outer zip contains metadata files and an inner `Plugin.zip` with the actual binaries.
+## Phase 6 - Build and Package
 
 ### 6.1 Package Structure
 
+The proven datasource distribution format is a nested zip archive. The outer zip contains static metadata files. The inner `Plugin.zip` contains the plugin DLL, XML documentation, runtime files, and third-party dependencies.
+
+```text
+Musoq.DataSources.Weather-windows-x64.zip
+  EntryPoint.txt          # Musoq.DataSources.Weather.dll
+  Platform.txt            # windows | linux | macos | alpine
+  Architecture.txt        # x64 | arm64
+  LibraryName.txt         # Musoq.DataSources.Weather
+  Version.txt             # 1.0.0
+  Plugin.zip
+    Musoq.DataSources.Weather.dll
+    Musoq.DataSources.Weather.xml
+    Musoq.DataSources.Weather.deps.json
+    Musoq.DataSources.Weather.runtimeconfig.json
+    ThirdParty.Dependency.dll
 ```
-Musoq.DataSources.{Name}-{platform}-{arch}.zip        ← Outer zip
-├── EntryPoint.txt          # Content: "Musoq.DataSources.{Name}.dll"
-├── Platform.txt            # Content: "windows" | "linux" | "macos" | "alpine"
-├── Architecture.txt        # Content: "x64" | "arm64"
-├── Version.txt             # (Optional) Content: "1.0.0"
-├── LibraryName.txt         # (Optional) Content: "Musoq.DataSources.{Name}"
-└── Plugin.zip              ← Inner zip
-    ├── Musoq.DataSources.{Name}.dll
-    ├── Musoq.DataSources.{Name}.deps.json
-    ├── Musoq.DataSources.{Name}.runtimeconfig.json
-    ├── Musoq.DataSources.{Name}.xml
-    ├── ThirdParty.Dependency.dll
-    ├── third-party-notices/
-    │   ├── report.json
-    │   └── ThirdParty.Dependency/
-    │       └── license.txt
-    └── ...
-```
+
+Confirm the exact package convention used by your Musoq host. If the host uses a registry or a newer plugin command, keep the inner `Plugin.zip` contents and adapt only the outer metadata names.
 
 ### 6.2 Excluded Assemblies
 
-The following **MUST NOT** be in `Plugin.zip` — they are provided by the Musoq host:
+Do not ship assemblies provided by the host unless your host explicitly requires self-contained plugins.
+
+Common exclusions:
 
 - `Musoq.Schema.dll`
-- `Musoq.Parser.dll`
 - `Musoq.Plugins.dll`
+- `Musoq.Parser.dll`
+- `Musoq.Evaluator.dll`
+- `Musoq.Converter.dll`
+- `Microsoft.CodeAnalysis*.dll`
+- `System.*.dll`
+- `Microsoft.Extensions.*.dll`
 
 ### 6.3 PowerShell Build Script
 
-Save as `build-package.ps1` in the plugin project directory:
+`build-package.ps1`:
+
+Save this script in the solution or plugin-repository root and run it from that directory. It assumes the plugin project folder is named the same as `$PluginName`.
 
 ```powershell
-<#
-.SYNOPSIS
-    Builds and packages a Musoq data source plugin according to the Musoq zip specification.
-
-.PARAMETER PluginName
-    The full plugin name (e.g., "Musoq.DataSources.MyPlugin")
-
-.PARAMETER Platform
-    Target platform: windows, linux, macos, alpine
-
-.PARAMETER Architecture
-    Target architecture: x64, arm64
-
-.PARAMETER Configuration
-    Build configuration (default: Release)
-
-.EXAMPLE
-    .\build-package.ps1 -PluginName "Musoq.DataSources.MyPlugin" -Platform "windows" -Architecture "x64"
-#>
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$PluginName,
 
-    [Parameter(Mandatory=$true)]
     [ValidateSet("windows", "linux", "macos", "alpine")]
-    [string]$Platform,
+    [string]$Platform = "windows",
 
-    [Parameter(Mandatory=$true)]
     [ValidateSet("x64", "arm64")]
-    [string]$Architecture,
+    [string]$Architecture = "x64",
 
     [string]$Configuration = "Release"
 )
 
 $ErrorActionPreference = "Stop"
 
-# Map platform to RID prefix
 $ridMap = @{
     "windows" = "win"
-    "linux"   = "linux"
-    "macos"   = "osx"
-    "alpine"  = "linux-musl"
+    "linux" = "linux"
+    "macos" = "osx"
+    "alpine" = "linux-musl"
 }
+
 $rid = "$($ridMap[$Platform])-$Architecture"
+$project = "$PluginName/$PluginName.csproj"
+$publishDir = "artifacts/publish/$rid"
+$packageId = "$Platform-$Architecture"
+$packageDir = "artifacts/package/$packageId"
+$pluginZip = Join-Path $packageDir "Plugin.zip"
+$finalZip = "artifacts/$PluginName-$packageId.zip"
 
-$projectDir   = $PSScriptRoot
-$projectFile  = Join-Path $projectDir "$PluginName.csproj"
-$publishDir   = Join-Path $projectDir "publish"
-$packageDir   = Join-Path $projectDir "package"
-$pluginZip    = Join-Path $packageDir "Plugin.zip"
-$finalZip     = Join-Path $projectDir "$PluginName-$Platform-$Architecture.zip"
-
-# Excluded assemblies (provided by Musoq host)
-$excludedAssemblies = @(
+$excluded = @(
     "Musoq.Schema.dll",
+    "Musoq.Plugins.dll",
     "Musoq.Parser.dll",
-    "Musoq.Plugins.dll"
+    "Musoq.Evaluator.dll",
+    "Musoq.Converter.dll"
 )
 
-Write-Host "=== Building $PluginName for $Platform-$Architecture ===" -ForegroundColor Cyan
+Remove-Item $publishDir, $packageDir, $finalZip -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $publishDir, $packageDir | Out-Null
 
-# Step 1: Clean
-if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
-if (Test-Path $packageDir) { Remove-Item $packageDir -Recurse -Force }
-if (Test-Path $finalZip)   { Remove-Item $finalZip -Force }
-New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+dotnet publish $project `
+    --configuration $Configuration `
+    --framework net10.0 `
+    --runtime $rid `
+    --self-contained false `
+    --output $publishDir `
+    --nologo `
+    --verbosity quiet
 
-# Step 2: Publish
-Write-Host "Publishing..." -ForegroundColor Yellow
-dotnet publish $projectFile -c $Configuration -r $rid --no-self-contained -o $publishDir
-if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
+$required = @(
+    "$PluginName.dll",
+    "$PluginName.xml"
+)
 
-# Step 3: Remove excluded assemblies
-Write-Host "Removing excluded assemblies..." -ForegroundColor Yellow
-foreach ($excluded in $excludedAssemblies) {
-    $path = Join-Path $publishDir $excluded
-    if (Test-Path $path) {
-        Remove-Item $path -Force
-        Write-Host "  Removed: $excluded"
+foreach ($name in $required) {
+    $path = Join-Path $publishDir $name
+    if (-not (Test-Path $path)) {
+        throw "Required package file is missing: $path"
     }
 }
 
-# Step 4: Create Plugin.zip (inner archive)
-Write-Host "Creating Plugin.zip..." -ForegroundColor Yellow
+foreach ($name in $excluded) {
+    Remove-Item (Join-Path $publishDir $name) -Force -ErrorAction SilentlyContinue
+}
+
 Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $pluginZip -Force
 
-# Step 5: Create metadata files
-Write-Host "Creating metadata files..." -ForegroundColor Yellow
-Set-Content -Path (Join-Path $packageDir "EntryPoint.txt")    -Value "$PluginName.dll" -NoNewline
-Set-Content -Path (Join-Path $packageDir "Platform.txt")      -Value $Platform -NoNewline
-Set-Content -Path (Join-Path $packageDir "Architecture.txt")  -Value $Architecture -NoNewline
-Set-Content -Path (Join-Path $packageDir "LibraryName.txt")   -Value $PluginName -NoNewline
-
-# Optional: extract version from DLL
-$dllPath = Join-Path $publishDir "$PluginName.dll"
-if (Test-Path $dllPath) {
-    $version = (Get-Item $dllPath).VersionInfo.ProductVersion
-    if ($version) {
-        # Strip any +commitsha suffix
-        $version = $version -replace '\+.*$', ''
-        Set-Content -Path (Join-Path $packageDir "Version.txt") -Value $version -NoNewline
-        Write-Host "  Version: $version"
-    }
+$assemblyPath = Join-Path $publishDir "$PluginName.dll"
+$version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
+if ([string]::IsNullOrWhiteSpace($version)) {
+    $version = "1.0.0"
 }
 
-# Step 6: Create final package (outer archive)
-Write-Host "Creating final package..." -ForegroundColor Yellow
+Set-Content -Path (Join-Path $packageDir "EntryPoint.txt") -Value "$PluginName.dll" -NoNewline
+Set-Content -Path (Join-Path $packageDir "Platform.txt") -Value $Platform -NoNewline
+Set-Content -Path (Join-Path $packageDir "Architecture.txt") -Value $Architecture -NoNewline
+Set-Content -Path (Join-Path $packageDir "LibraryName.txt") -Value $PluginName -NoNewline
+Set-Content -Path (Join-Path $packageDir "Version.txt") -Value $version -NoNewline
 Compress-Archive -Path (Join-Path $packageDir "*") -DestinationPath $finalZip -Force
 
-# Cleanup
-Remove-Item $publishDir -Recurse -Force
-Remove-Item $packageDir -Recurse -Force
-
-Write-Host "=== Package created: $finalZip ===" -ForegroundColor Green
-Write-Host "Contents:"
-# Verify
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$zip = [System.IO.Compression.ZipFile]::OpenRead($finalZip)
-$zip.Entries | ForEach-Object { Write-Host "  $_" }
-$zip.Dispose()
+Write-Host "Created $finalZip"
 ```
 
 ### 6.4 Bash Build Script
 
-Save as `build-package.sh`:
+`build-package.sh`:
+
+Save this script in the solution or plugin-repository root and run it from that directory. It assumes the plugin project folder is named the same as `PLUGIN_NAME`.
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./build-package.sh <PluginName> <platform> <architecture> [configuration]
-# Example: ./build-package.sh Musoq.DataSources.MyPlugin linux x64
-
-PLUGIN_NAME="${1:?Usage: $0 <PluginName> <platform> <architecture> [configuration]}"
-PLATFORM="${2:?Specify platform: windows|linux|macos|alpine}"
-ARCHITECTURE="${3:?Specify architecture: x64|arm64}"
+PLUGIN_NAME="${1:?Plugin name is required}"
+PLATFORM="${2:-linux}"
+ARCH="${3:-x64}"
 CONFIGURATION="${4:-Release}"
 
-# Map platform to RID prefix
 case "$PLATFORM" in
-    windows) RID_PREFIX="win" ;;
-    linux)   RID_PREFIX="linux" ;;
-    macos)   RID_PREFIX="osx" ;;
-    alpine)  RID_PREFIX="linux-musl" ;;
-    *)       echo "Invalid platform: $PLATFORM"; exit 1 ;;
+  windows) RID_PREFIX="win" ;;
+  linux) RID_PREFIX="linux" ;;
+  macos) RID_PREFIX="osx" ;;
+  alpine) RID_PREFIX="linux-musl" ;;
+  *) echo "Unsupported platform: $PLATFORM" >&2; exit 1 ;;
 esac
-RID="${RID_PREFIX}-${ARCHITECTURE}"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_FILE="${SCRIPT_DIR}/${PLUGIN_NAME}.csproj"
-PUBLISH_DIR="${SCRIPT_DIR}/publish"
-PACKAGE_DIR="${SCRIPT_DIR}/package"
-FINAL_ZIP="${SCRIPT_DIR}/${PLUGIN_NAME}-${PLATFORM}-${ARCHITECTURE}.zip"
+RID="${RID_PREFIX}-${ARCH}"
+PACKAGE_ID="${PLATFORM}-${ARCH}"
+PROJECT="${PLUGIN_NAME}/${PLUGIN_NAME}.csproj"
+PUBLISH_DIR="artifacts/publish/${RID}"
+PACKAGE_DIR="artifacts/package/${PACKAGE_ID}"
+PLUGIN_ZIP="${PACKAGE_DIR}/Plugin.zip"
+FINAL_ZIP="artifacts/${PLUGIN_NAME}-${PACKAGE_ID}.zip"
 
-# Excluded assemblies
-EXCLUDED_ASSEMBLIES=("Musoq.Schema.dll" "Musoq.Parser.dll" "Musoq.Plugins.dll")
-
-echo "=== Building ${PLUGIN_NAME} for ${PLATFORM}-${ARCHITECTURE} ==="
-
-# Clean
 rm -rf "$PUBLISH_DIR" "$PACKAGE_DIR" "$FINAL_ZIP"
-mkdir -p "$PACKAGE_DIR"
+mkdir -p "$PUBLISH_DIR" "$PACKAGE_DIR"
 
-# Publish
-echo "Publishing..."
-dotnet publish "$PROJECT_FILE" -c "$CONFIGURATION" -r "$RID" --no-self-contained -o "$PUBLISH_DIR"
+dotnet publish "$PROJECT" \
+  --configuration "$CONFIGURATION" \
+  --framework net10.0 \
+  --runtime "$RID" \
+  --self-contained false \
+  --output "$PUBLISH_DIR" \
+  --nologo \
+  --verbosity quiet
 
-# Remove excluded assemblies
-echo "Removing excluded assemblies..."
-for asm in "${EXCLUDED_ASSEMBLIES[@]}"; do
-    rm -f "${PUBLISH_DIR}/${asm}"
-done
+test -f "$PUBLISH_DIR/${PLUGIN_NAME}.dll"
+test -f "$PUBLISH_DIR/${PLUGIN_NAME}.xml"
 
-# Create Plugin.zip
-echo "Creating Plugin.zip..."
-(cd "$PUBLISH_DIR" && zip -r "${PACKAGE_DIR}/Plugin.zip" .)
+rm -f \
+  "$PUBLISH_DIR/Musoq.Schema.dll" \
+  "$PUBLISH_DIR/Musoq.Plugins.dll" \
+  "$PUBLISH_DIR/Musoq.Parser.dll" \
+  "$PUBLISH_DIR/Musoq.Evaluator.dll" \
+  "$PUBLISH_DIR/Musoq.Converter.dll"
 
-# Create metadata files
-printf '%s' "${PLUGIN_NAME}.dll"  > "${PACKAGE_DIR}/EntryPoint.txt"
-printf '%s' "$PLATFORM"          > "${PACKAGE_DIR}/Platform.txt"
-printf '%s' "$ARCHITECTURE"      > "${PACKAGE_DIR}/Architecture.txt"
-printf '%s' "$PLUGIN_NAME"       > "${PACKAGE_DIR}/LibraryName.txt"
+(cd "$PUBLISH_DIR" && zip -qr "../../package/${PACKAGE_ID}/Plugin.zip" .)
 
-# Extract version from published DLL metadata (best-effort)
-VERSION=$(dotnet --roll-forward LatestMajor \
-    /usr/share/dotnet/sdk/*/Tools/net*/any/Microsoft.DotNet.Tools.dll \
-    2>/dev/null || true)
-# Fallback: use project version
-printf '1.0.0' > "${PACKAGE_DIR}/Version.txt"
+printf '%s' "${PLUGIN_NAME}.dll" > "$PACKAGE_DIR/EntryPoint.txt"
+printf '%s' "$PLATFORM" > "$PACKAGE_DIR/Platform.txt"
+printf '%s' "$ARCH" > "$PACKAGE_DIR/Architecture.txt"
+printf '%s' "$PLUGIN_NAME" > "$PACKAGE_DIR/LibraryName.txt"
+printf '%s' "1.0.0" > "$PACKAGE_DIR/Version.txt"
 
-# Create final package
-echo "Creating final package..."
-(cd "$PACKAGE_DIR" && zip -r "$FINAL_ZIP" .)
+(cd "$PACKAGE_DIR" && zip -qr "../../${PLUGIN_NAME}-${PACKAGE_ID}.zip" .)
 
-# Cleanup
-rm -rf "$PUBLISH_DIR" "$PACKAGE_DIR"
-
-echo "=== Package created: ${FINAL_ZIP} ==="
-echo "Contents:"
-unzip -l "$FINAL_ZIP"
+echo "Created $FINAL_ZIP"
 ```
 
----
-
-## Phase 7 — Import / Install Scripts
+## Phase 7 - Import and Install Scripts
 
 ### 7.1 PowerShell Install Script
 
-Save as `install-plugin.ps1`:
+`install-plugin.ps1`:
 
 ```powershell
-<#
-.SYNOPSIS
-    Installs a Musoq data source plugin from a local package.
-
-.PARAMETER PackagePath
-    Path to the .zip package file or extracted directory.
-
-.EXAMPLE
-    .\install-plugin.ps1 -PackagePath ".\Musoq.DataSources.MyPlugin-windows-x64.zip"
-#>
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$PackagePath
 )
 
 $ErrorActionPreference = "Stop"
 
-# Verify musoq CLI is available
-if (-not (Get-Command "musoq" -ErrorAction SilentlyContinue)) {
-    Write-Error "musoq CLI not found. Please install it first: https://github.com/Puchaczov/Musoq"
-    exit 1
+if (-not (Get-Command musoq -ErrorAction SilentlyContinue)) {
+    throw "The musoq CLI was not found on PATH."
 }
 
-if (-not (Test-Path $PackagePath)) {
-    Write-Error "Package not found: $PackagePath"
-    exit 1
-}
-
-Write-Host "Installing plugin from: $PackagePath" -ForegroundColor Cyan
 musoq datasource import $PackagePath
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Plugin installed successfully!" -ForegroundColor Green
-} else {
-    Write-Error "Plugin installation failed."
-    exit 1
-}
+musoq datasource list
 ```
 
 ### 7.2 Bash Install Script
 
-Save as `install-plugin.sh`:
+`install-plugin.sh`:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-PACKAGE_PATH="${1:?Usage: $0 <path-to-package.zip>}"
+PACKAGE_PATH="${1:?Package path is required}"
 
-if ! command -v musoq &>/dev/null; then
-    echo "Error: musoq CLI not found. Install it first."
-    exit 1
+if ! command -v musoq >/dev/null 2>&1; then
+  echo "The musoq CLI was not found on PATH." >&2
+  exit 1
 fi
 
-if [ ! -f "$PACKAGE_PATH" ]; then
-    echo "Error: Package not found: $PACKAGE_PATH"
-    exit 1
-fi
-
-echo "Installing plugin from: $PACKAGE_PATH"
 musoq datasource import "$PACKAGE_PATH"
-echo "Plugin installed successfully!"
+musoq datasource list
+```
+
+If your host has a newer plugin-focused CLI, the equivalent command may be:
+
+```powershell
+musoq plugin install .\artifacts\Musoq.DataSources.Weather-windows-x64.zip
+musoq plugin list
 ```
 
 ### 7.3 Installing from Registry
 
-```bash
-# Install from the built-in plugin registry
-musoq datasource install <plugin-short-name>
+If your host supports registries:
 
-# Add a custom registry
-musoq registry add custom https://your-registry.example.com/registry.json
+```powershell
+musoq plugin registry list
+musoq plugin install Musoq.DataSources.Weather
 ```
 
----
+For private registries:
 
-## Appendix A — Troubleshooting & Common Pitfalls
+```powershell
+musoq plugin registry add internal https://example.local/musoq/plugins/index.json
+musoq plugin install Musoq.DataSources.Weather --registry internal
+```
 
-These are real issues encountered during plugin development with proven solutions.
+## Appendix A - Troubleshooting and Common Pitfalls
 
 ### A.1 Compilation Issues
 
-| Problem | Cause | Solution |
-|---------|-------|----------|
-| `CS8603: Possible null reference return` on `GetColumnByName` | `SingleOrDefault` returns nullable but interface expects non-null | Add `!` (null-forgiving operator): `return Columns.SingleOrDefault(...)!;` |
-| Missing types from `Musoq.Schema` namespace | Missing package reference | Ensure `Musoq.Schema` is in your `.csproj` with `ExcludeAssets=runtime` |
-| `Musoq.Schema.Exceptions.TableNotFoundException` not found | Older Musoq.Schema version | Use `throw new TableNotFoundException(nameof(name))` — check you have the right package version |
-| `Musoq.Schema.Exceptions.SourceNotFoundException` not found | Same as above | Same as above |
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `net8.0` target errors | old plugin target | migrate projects to `net10.0` |
+| `GetRowSource` override not found | runtime-v1 signature | implement `GetRowSource<T>(string, SourceExecutionContext, params object?[])` |
+| `RuntimeContext` type missing | runtime-v1 API | use `SourceMetadataContext` or `SourceExecutionContext` |
+| package downgrade/conflict | mixed Musoq versions | align all `Musoq.*` packages to one train |
+| XML file missing | docs disabled or file not copied into package | set `<GenerateDocumentationFile>true</GenerateDocumentationFile>` and fail packaging when `.xml` is absent |
 
 ### A.2 Test Failures
 
-| Problem | Cause | Solution |
-|---------|-------|----------|
-| Tests return fewer rows than expected | Data creation issue — resource handles (streams, files) not properly disposed before reading | Use explicit `using (var x = ...) { }` blocks instead of `using var`. Dispose each resource before creating the next one. This is especially important for libraries that manage file/stream handles internally. |
-| `desc #schema` test returns wrong column count | `GetRawConstructors` not implemented | Override both `GetRawConstructors(string, RuntimeContext)` and `GetRawConstructors(RuntimeContext)` |
-| `desc #schema.unknownmethod` doesn't throw | Missing throw in switch default | Ensure the `_` arm in your switch throws `NotSupportedException` with a helpful message mentioning "Available data sources" |
-| Assert fails on `table.Count` with off-by-one | Forgot to flush last partial chunk in RowSource | Add `if (list.Count > 0) chunkedSource.Add(list, endWorkToken)` after the loop |
-| Null reference in `row.Values[n]` | Column type mismatch between entity and helper | Ensure `typeof()` in `SchemaColumn` matches the actual property type exactly |
-| File path tests fail on Windows | Backslashes not escaped in SQL strings | Use `path.Replace("\\", "\\\\")` when embedding paths in SQL query strings |
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| row type mismatch | table metadata and row source type differ | use `SchemaTableMetadata(typeof(TEntity))` and `EnsureSourceType<TRequested, TEntity>()` |
+| missing setting diagnostic | resolver did not return required value | test with `CompilationOptions(sourceRuntimeSettingsResolver: ...)` |
+| contract warning/error | datasource rejected `TABLE` or read modifier | update `SourceDescriptor.ContractDiagnostics` or query table |
+| query compiles but source sees no columns | projection not requested or dynamic table not coupled | use `TABLE` + `COUPLE` or inspect `AllColumns` |
+| `desc #schema` lists only `empty` or no source methods | table constructors were not registered | call `AddTable<TTable>("method")` or override runtime-v2 `GetRawConstructors(SourceMetadataContext)` |
+| `desc #schema.method('arg')` has wrong parameters | table constructors do not mirror source parameters | add metadata-only table constructors such as `WeatherTable(string city)` |
 
-### A.3 Runtime / Packaging Issues
+### A.3 Runtime and Packaging Issues
 
-| Problem | Cause | Solution |
-|---------|-------|----------|
-| Plugin not discovered by Musoq | Missing `[assembly: PluginSchemas(...)]` in AssemblyInfo.cs | Create `AssemblyInfo.cs` with **ONLY** `using Musoq.Schema.Attributes;` and `[assembly: PluginSchemas("schema-name")]`. Do NOT include ComVisible or other attributes. Schema name must be lowercase. |
-| Wrong schema name in plugin discovery | AssemblyInfo.cs has incorrect schema name | Ensure schema name matches the plugin naming convention: for `Musoq.DataSources.GitHub`, use `"github"`. Must be lowercase letter-only. |
-| XML metadata missing at runtime | `GenerateDocumentationFile` not set, or `_ResolveCopyLocalNuGetPackageXmls` target missing | Add both to `.csproj` |
-| Assembly loading conflict | Musoq.Schema.dll or Musoq.Parser.dll included in Plugin.zip | Remove from publish output; add `ExcludeAssets=runtime` to `.csproj` |
-| Plugin loads but columns are empty | XML docs not generated | Check that `.xml` file exists next to `.dll` in build output |
-| `desc #schema.method('arg')` crashes | `GetRawConstructors` returns wrong constructors | Use `TypeHelper.GetSchemaMethodInfosForType<YourRowSource>("method")` |
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| plugin not discovered | missing `[assembly: PluginSchemas("schema")]` or schema name mismatch | add `PluginSchemas`, keep it lowercase, and match the `SchemaBase` name |
+| host cannot load plugin | wrong RID or missing dependency | publish for host RID and inspect `Plugin.zip` |
+| duplicate assembly load errors | shipped host-provided Musoq DLLs | exclude host assemblies from package |
+| host can load plugin but cannot list tables without loading DLL | XML documentation missing from `Plugin.zip` | include `Musoq.DataSources.Name.xml` next to the DLL |
+| settings not available during metadata | requirement phase excludes metadata | set `SourceRuntimeSettingPhase.Metadata` or `All` if needed |
+| progress UI silent | source never calls progress methods | call begin, rows known, rows read, end |
 
 ### A.4 Data Source Specific Issues
 
-| Problem | Cause | Solution |
-|---------|-------|----------|
-| RowSource hangs indefinitely | Not checking `endWorkToken.IsCancellationRequested` | Check cancellation token in every loop iteration |
-| Memory issues with large files | Loading entire file content into memory | Use chunking (add to `chunkedSource` every N items) and consider not loading binary `Content` unless needed |
-| `DateTime.MinValue` showing in results | Source returns default DateTime values | Map `DateTime.MinValue` to `null` for nullable DateTime columns |
+| Source type | Runtime-v2 guidance |
+|-------------|---------------------|
+| HTTP API | declare endpoint/token settings, accept predicates only when API query parameters match semantics |
+| database | use source runtime settings for connection strings, accept projection and predicates conservatively |
+| files | use dictionary rows for user-declared `TABLE` shapes, honor read modifiers when possible |
+| streaming | yield bounded chunks; do not materialize whole input unless required |
+| high-volume | use `RowChunk<T>` or chunked arrays/lists; report progress |
 
----
+## Appendix B - Complete File Reference
 
-## Appendix B — Complete File Reference
+Minimum typed plugin:
 
-Here is the complete list of files for a plugin named `Musoq.DataSources.Example` with schema name `example` and one table method `file`:
+```text
+Musoq.DataSources.Weather/
+  Musoq.DataSources.Weather.csproj
+  Assembly.cs
+  Properties/AssemblyInfo.cs
+  WeatherEntity.cs
+  WeatherTable.cs
+  WeatherRowSource.cs
+  WeatherSchema.cs
+  WeatherSchemaProvider.cs
+  WeatherLibrary.cs
+  WeatherClient.cs
+  WeatherPredicatePlanner.cs
+  WeatherPredicateEvaluator.cs
+```
 
-| # | File | Purpose |
-|---|------|---------|
-| 1 | `Musoq.DataSources.Example/Musoq.DataSources.Example.csproj` | Project config with NuGet refs, dynamic loading, XML docs |
-| 2 | `Musoq.DataSources.Example/AssemblyInfo.cs` | `[assembly: PluginSchemas("example")]` |
-| 3 | `Musoq.DataSources.Example/Assembly.cs` | `[assembly: InternalsVisibleTo("Musoq.DataSources.Example.Tests")]` |
-| 4 | `Musoq.DataSources.Example/Entities/ExampleEntity.cs` | Entity with `[EntityProperty]` on each column |
-| 5 | `Musoq.DataSources.Example/Tables/ExampleTableHelper.cs` | Three static maps: NameToIndex, IndexToMethod, Columns |
-| 6 | `Musoq.DataSources.Example/Tables/ExampleTable.cs` | `ISchemaTable` implementation |
-| 7 | `Musoq.DataSources.Example/Sources/ExampleRowSource.cs` | `RowSourceBase<ExampleEntity>` with `CollectChunks` |
-| 8 | `Musoq.DataSources.Example/ExampleLibrary.cs` | Empty `LibraryBase` (or with `[BindableMethod]` functions) |
-| 9 | `Musoq.DataSources.Example/ExampleSchemaProvider.cs` | `ISchemaProvider` factory |
-| 10 | `Musoq.DataSources.Example/ExampleSchema.cs` | `SchemaBase` with full XML docs |
-| 11 | `Musoq.DataSources.Example.Tests/Musoq.DataSources.Example.Tests.csproj` | Test project config |
-| 12 | `Musoq.DataSources.Example.Tests/ExampleTests.cs` | Functional SQL query tests |
-| 13 | `Musoq.DataSources.Example.Tests/ExampleSchemaDescribeTests.cs` | `desc` query tests |
-| 14 | `build-package.ps1` | PowerShell packaging script |
-| 15 | `build-package.sh` | Bash packaging script |
-| 16 | `install-plugin.ps1` | PowerShell install script |
-| 17 | `install-plugin.sh` | Bash install script |
+Minimum dynamic plugin additions:
 
----
+```text
+  DynamicRecordTable.cs
+  DynamicRecordSource.cs
+  ReadModifierValueConverter.cs
+```
 
-## Appendix C — NuGet Package Version Resolution
+Minimum test project:
 
-When you don't have access to an existing repo to read versions from, resolve the latest stable versions:
+```text
+Musoq.DataSources.Weather.Tests/
+  Musoq.DataSources.Weather.Tests.csproj
+  TestLoggerResolver.cs
+  DictionarySettingsResolver.cs
+  TestContexts.cs
+  WeatherSchemaTests.cs
+  WeatherQueryTests.cs
+  WeatherRuntimeSettingsTests.cs
+  WeatherPlanningTests.cs
+  WeatherTableCoupleTests.cs
+```
 
-### Using `dotnet` CLI
+## Appendix C - NuGet Package Version Resolution
 
-```bash
-# Search for latest version of a package
-dotnet package search Musoq.Schema --take 1
-dotnet package search Musoq.Parser --take 1
-dotnet package search Musoq.Plugins --take 1
-dotnet package search Musoq.Evaluator --take 1
-dotnet package search Musoq.Converter --take 1
+### Using dotnet CLI
+
+```powershell
+dotnet package search Musoq.Schema --prerelease
+dotnet package search Musoq.Converter --prerelease
 ```
 
 ### Using NuGet HTTP API
 
-```bash
-# Get package versions (JSON response)
-curl -s "https://api.nuget.org/v3-flatcontainer/musoq.schema/index.json"
-# Returns: { "versions": ["1.0.0", "2.0.0", ..., "12.0.0"] }
-# Take the last entry for the latest version.
+```powershell
+$package = "musoq.schema"
+$index = Invoke-RestMethod "https://api.nuget.org/v3-flatcontainer/$package/index.json"
+$index.versions | Select-Object -Last 20
 ```
 
-### Using PowerShell
+### Using PowerShell in a Repository
 
 ```powershell
-$packageName = "Musoq.Schema"
-$response = Invoke-RestMethod "https://api.nuget.org/v3-flatcontainer/$($packageName.ToLower())/index.json"
-$latestVersion = $response.versions[-1]
-Write-Host "$packageName : $latestVersion"
+Select-String -Path **/*.csproj,Directory.Packages.props,scripts/Versions.props `
+    -Pattern "Musoq.Schema|Musoq.Plugins|Musoq.Converter|Musoq.Evaluator"
 ```
 
 ### Package Compatibility Matrix
 
-The Musoq packages have version dependencies. When resolving, prefer using versions that are known to work together. The safest approach:
+| Plugin target | Musoq package train | .NET target |
+|---------------|---------------------|-------------|
+| runtime-v2 current | `17.0.0-alpha.1` train or compatible | `net10.0` |
+| runtime-v1 legacy | not covered by this guide | do not use |
 
-1. Resolve `Musoq.Schema` version first (it's the core).
-2. Use `Musoq.Evaluator` and `Musoq.Converter` — these will pull compatible transitive dependencies.
-3. All five packages in a single plugin must be from compatible releases.
+Always align `Musoq.Schema`, `Musoq.Plugins`, `Musoq.Converter`, and `Musoq.Evaluator` when they are used together.
 
----
-
-## Appendix D — Predicate Pushdown for Web API Sources
-
-When building plugins that wrap **web APIs** (REST, GraphQL, etc.), a critical optimization is **predicate pushdown** — extracting WHERE clause conditions from the SQL query and translating them into API-specific query parameters or query languages.
-
-Without predicate pushdown, your plugin would:
-1. Fetch **all** records from the API
-2. Let Musoq runtime filter them in memory
-
-With predicate pushdown, your plugin:
-1. Extracts filter conditions from the parsed WHERE clause
-2. Translates them to API query parameters (e.g., `?state=open&assignee=john`)
-3. Fetches **only** matching records from the API
-4. Let Musoq apply any remaining filters it couldn't push down
-
-This dramatically reduces network traffic, API rate limit consumption, and memory usage.
+## Appendix D - Predicate Pushdown in Runtime V2
 
 ### D.1 When to Implement Predicate Pushdown
 
-Implement predicate pushdown when your data source:
-- Wraps a **web API** (REST, GraphQL, SOAP, etc.)
-- The API supports **query filtering** (query parameters, JQL, GraphQL filters, etc.)
-- Dataset is potentially **large** (hundreds or thousands of records)
-- API has **rate limits** that you want to respect
+Implement pushdown only when the external source can apply the same semantics as Musoq. Good candidates:
 
-Skip predicate pushdown when:
-- Your data source reads **local files** (filesystem filtering is fast)
-- The API returns **all data anyway** (no server-side filtering supported)
-- Dataset is always **small** (under 100 records)
+- API filters with exact equality or range semantics
+- SQL database predicates with parameterized queries
+- server-side ordering and paging
+- expensive columns that can be skipped through accepted projection
+
+Do not accept a predicate if case sensitivity, null behavior, culture, type conversion, or time zone behavior differs and you cannot compensate.
 
 ### D.2 Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         User SQL Query                               │
-│  SELECT * FROM #api.issues('PROJ') WHERE Status = 'Open' AND ...    │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Musoq Parser                                    │
-│  Parses SQL → Creates AST with WhereNode containing condition tree  │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    RuntimeContext                                    │
-│  _runtimeContext.QuerySourceInfo.WhereNode → Parsed WHERE clause    │
-│  _runtimeContext.QueryHints.TakeValue → LIMIT value (if any)        │
-│  _runtimeContext.QueryHints.SkipValue → OFFSET value (if any)       │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                WhereNodeHelper / FilterBuilder                       │
-│  1. ExtractParameters(WhereNode) → FilterParameters object          │
-│  2. Walk AST tree, extract supported conditions                      │
-│  3. Ignore unsupported conditions (Musoq filters them later)        │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    API Query Builder                                 │
-│  BuildQuery(baseQuery, filterParameters) → API-specific query       │
-│  e.g., JQL: "project = PROJ AND status = 'Open'"                    │
-│  e.g., REST: "?state=open&assignee=john"                            │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                     Web API Call                                     │
-│  Fetch only matching records (much smaller dataset)                  │
-└─────────────────────────────────────────────────────────────────────┘
+```text
+SQL WHERE / ORDER BY / SKIP / TAKE
+  -> SourcePlanRequest
+  -> schema.TryPlanSource(...)
+  -> SourcePlanResult with accepted and residual work
+  -> SourceExecutionContext.Plan
+  -> row source applies accepted work or sends it to remote API
+  -> engine applies residual work
 ```
 
-### D.3 Filter Parameters Class
+The source must set both the public accepted/residual fields and the `ExecutionPlan` fields consistently.
 
-Create a class to hold extracted filter parameters specific to your API:
+### D.3 Request and Result Records
 
 ```csharp
-using Musoq.Parser.Nodes;
-
-namespace Musoq.DataSources.[FILL].Helpers;
-
-/// <summary>
-/// Parameters extracted from WHERE clause for [FILL] API queries.
-/// </summary>
-internal class [FILL]FilterParameters
+public sealed record SourcePlanRequest
 {
-    // String filters (equality comparisons)
-    /// <summary>Gets or sets the status filter (e.g., "open", "closed").</summary>
-    public string? Status { get; set; }
-    
-    /// <summary>Gets or sets the assignee filter.</summary>
-    public string? Assignee { get; set; }
-    
-    /// <summary>Gets or sets the author/creator filter.</summary>
-    public string? Author { get; set; }
-    
-    // Collection filters (for IN or multiple equality)
-    /// <summary>Gets or sets labels to filter by.</summary>
-    public List<string> Labels { get; set; } = [];
-    
-    // Date range filters (comparison operators)
-    /// <summary>Gets or sets the created date range start (>= comparison).</summary>
-    public DateTimeOffset? CreatedAfter { get; set; }
-    
-    /// <summary>Gets or sets the created date range end (<= comparison).</summary>
-    public DateTimeOffset? CreatedBefore { get; set; }
-    
-    // Boolean filters
-    /// <summary>Gets or sets whether to filter archived items.</summary>
-    public bool? IsArchived { get; set; }
-    
-    // Text search (LIKE operator)
-    /// <summary>Gets or sets text search query from LIKE conditions.</summary>
-    public string? TextSearch { get; set; }
-    
-    // [FILL: Add properties for each API filter your endpoint supports]
+    public required SourceIdentity Identity { get; init; }
+    public IReadOnlyDictionary<string, string> SourceRuntimeSettings { get; init; }
+    public IReadOnlyList<SourceColumnRef> RequiredColumns { get; init; }
+    public SourcePredicateExpression? Predicate { get; init; }
+    public IReadOnlyList<OrderByExpression> OrderBy { get; init; }
+    public long? Skip { get; init; }
+    public long? Take { get; init; }
+}
+
+public sealed record SourcePlanResult
+{
+    public required SourceExecutionPlan ExecutionPlan { get; init; }
+    public IReadOnlyList<SourceColumnRef> AcceptedColumns { get; init; }
+    public SourcePredicateExpression? AcceptedPredicate { get; init; }
+    public SourcePredicateExpression? ResidualPredicate { get; init; }
+    public IReadOnlyList<OrderByExpression> AcceptedOrderBy { get; init; }
+    public IReadOnlyList<OrderByExpression> ResidualOrderBy { get; init; }
+    public long? AcceptedSkip { get; init; }
+    public long? ResidualSkip { get; init; }
+    public long? AcceptedTake { get; init; }
+    public long? ResidualTake { get; init; }
+    public CardinalityEstimate? Cardinality { get; init; }
+    public IReadOnlyList<OptimizationDiagnostic> Diagnostics { get; init; }
+    public IReadOnlyList<SourceContractDiagnostic> ContractDiagnostics { get; init; }
 }
 ```
 
-### D.4 Where Node Helper Class
+### D.4 Predicate Expressions
 
-Create a helper class that walks the WHERE clause AST and extracts filter parameters:
+Supported public expression records:
 
 ```csharp
-using Musoq.Parser.Nodes;
+public abstract record SourcePredicateExpression;
+public sealed record SourcePredicateColumn(SourceColumnRef Column) : SourcePredicateExpression;
+public sealed record SourcePredicateLiteral(object? Value) : SourcePredicateExpression;
+public sealed record SourcePredicateComparison(SourcePredicateComparisonOperator Operator, SourcePredicateExpression Left, SourcePredicateExpression Right) : SourcePredicateExpression;
+public sealed record SourcePredicateLogical(SourcePredicateLogicalOperator Operator, SourcePredicateExpression Left, SourcePredicateExpression Right) : SourcePredicateExpression;
+public sealed record SourcePredicateIn(SourcePredicateExpression Expression, IReadOnlyList<SourcePredicateExpression> Values, bool IsNegated = false) : SourcePredicateExpression;
+public sealed record SourcePredicateNullCheck(SourcePredicateExpression Expression, bool IsNegated = false) : SourcePredicateExpression;
+```
 
-namespace Musoq.DataSources.[FILL].Helpers;
+### D.5 API Query Builder
 
-/// <summary>
-/// Helper class to extract filter parameters from WHERE clause nodes for [FILL] API.
-/// </summary>
-internal static class WhereNodeHelper
+Example builder for a web API:
+
+```csharp
+internal sealed class WeatherApiQuery
 {
-    /// <summary>
-    /// Extracts filter parameters from a WHERE node.
-    /// </summary>
-    public static [FILL]FilterParameters ExtractParameters(WhereNode? whereNode)
+    public string? City { get; init; }
+    public long? Skip { get; init; }
+    public long? Take { get; init; }
+    public string? OrderBy { get; init; }
+    public bool Descending { get; init; }
+}
+
+internal static class WeatherApiQueryBuilder
+{
+    public static WeatherApiQuery FromPlan(SourceExecutionPlan plan)
     {
-        var parameters = new [FILL]FilterParameters();
-        
-        if (whereNode?.Expression == null)
-            return parameters;
-        
-        ExtractFromNode(whereNode.Expression, parameters);
-        
-        return parameters;
+        return new WeatherApiQuery
+        {
+            City = ExtractCity(plan.AcceptedPredicate),
+            Skip = plan.AcceptedSkip,
+            Take = plan.AcceptedTake,
+            OrderBy = plan.AcceptedOrderBy.FirstOrDefault()?.Column.Name,
+            Descending = plan.AcceptedOrderBy.FirstOrDefault()?.Direction == OrderDirection.Descending
+        };
     }
-    
-    private static void ExtractFromNode(Node node, [FILL]FilterParameters parameters)
+
+    private static string? ExtractCity(SourcePredicateExpression? predicate)
     {
-        switch (node)
+        return predicate switch
         {
-            // AND conditions: process both sides (both can be pushed down)
-            case AndNode andNode:
-                ExtractFromNode(andNode.Left, parameters);
-                ExtractFromNode(andNode.Right, parameters);
-                break;
-            
-            // OR conditions: skip for pushdown (complex to translate, let runtime filter)
-            case OrNode:
-                // OR conditions are complex — skip for now.
-                // The Musoq runtime will filter these after fetching.
-                break;
-            
-            // Equality: column = 'value'
-            case EqualityNode equalityNode:
-                ExtractEqualityCondition(equalityNode, parameters);
-                break;
-            
-            // Comparisons: column >= value, column < value, etc.
-            case GreaterOrEqualNode greaterEqualNode:
-                ExtractComparisonCondition(greaterEqualNode, ">=", parameters);
-                break;
-            
-            case LessOrEqualNode lessEqualNode:
-                ExtractComparisonCondition(lessEqualNode, "<=", parameters);
-                break;
-            
-            case GreaterNode greaterNode:
-                ExtractComparisonCondition(greaterNode, ">", parameters);
-                break;
-            
-            case LessNode lessNode:
-                ExtractComparisonCondition(lessNode, "<", parameters);
-                break;
-            
-            // LIKE: column LIKE '%pattern%' (for text search)
-            case LikeNode likeNode:
-                ExtractLikeCondition(likeNode, parameters);
-                break;
-        }
-    }
-    
-    private static void ExtractEqualityCondition(
-        EqualityNode node, 
-        [FILL]FilterParameters parameters)
-    {
-        var (fieldName, value) = ExtractFieldAndValue(node.Left, node.Right);
-        
-        if (fieldName == null || value == null)
-            return;
-        
-        // Map entity property names to filter parameters
-        // Use case-insensitive matching for robustness
-        switch (fieldName.ToLowerInvariant())
-        {
-            case "status":
-                parameters.Status = value.ToString();
-                break;
-            case "assignee":
-            case "assigneedisplayname":
-                parameters.Assignee = value.ToString();
-                break;
-            case "author":
-            case "authorlogin":
-                parameters.Author = value.ToString();
-                break;
-            case "isarchived":
-                if (bool.TryParse(value.ToString(), out var archived))
-                    parameters.IsArchived = archived;
-                break;
-            // [FILL: Add cases for each filterable column in your entity]
-        }
-    }
-    
-    private static void ExtractComparisonCondition(
-        Node node, 
-        string op, 
-        [FILL]FilterParameters parameters)
-    {
-        Node left, right;
-        
-        switch (node)
-        {
-            case GreaterOrEqualNode ge:
-                left = ge.Left;
-                right = ge.Right;
-                break;
-            case LessOrEqualNode le:
-                left = le.Left;
-                right = le.Right;
-                break;
-            case GreaterNode g:
-                left = g.Left;
-                right = g.Right;
-                break;
-            case LessNode l:
-                left = l.Left;
-                right = l.Right;
-                break;
-            default:
-                return;
-        }
-        
-        var (fieldName, value) = ExtractFieldAndValue(left, right);
-        
-        if (fieldName == null || value == null)
-            return;
-        
-        // Handle date range comparisons
-        switch (fieldName.ToLowerInvariant())
-        {
-            case "createdat":
-                if (op is ">=" or ">")
-                {
-                    if (DateTimeOffset.TryParse(value.ToString(), out var after))
-                        parameters.CreatedAfter = after;
-                }
-                else if (op is "<=" or "<")
-                {
-                    if (DateTimeOffset.TryParse(value.ToString(), out var before))
-                        parameters.CreatedBefore = before;
-                }
-                break;
-            // [FILL: Add cases for other date/numeric columns]
-        }
-    }
-    
-    private static void ExtractLikeCondition(
-        LikeNode node, 
-        [FILL]FilterParameters parameters)
-    {
-        if (node.Left is not FieldNode fieldNode)
-            return;
-        
-        if (node.Right is not StringNode stringNode)
-            return;
-        
-        var fieldName = fieldNode.FieldName.ToLowerInvariant();
-        var pattern = stringNode.Value;
-        
-        // Convert SQL LIKE pattern to API search (strip % wildcards)
-        var searchText = pattern.Trim('%');
-        
-        switch (fieldName)
-        {
-            case "summary":
-            case "title":
-            case "description":
-                parameters.TextSearch = searchText;
-                break;
-        }
-    }
-    
-    private static (string? fieldName, object? value) ExtractFieldAndValue(
-        Node left, 
-        Node right)
-    {
-        string? fieldName = null;
-        object? value = null;
-        
-        // Handle: Column = 'value'
-        if (left is FieldNode fieldNode)
-        {
-            fieldName = fieldNode.FieldName;
-            value = ExtractValue(right);
-        }
-        // Handle: 'value' = Column (less common but valid SQL)
-        else if (right is FieldNode fieldNode2)
-        {
-            fieldName = fieldNode2.FieldName;
-            value = ExtractValue(left);
-        }
-        
-        return (fieldName, value);
-    }
-    
-    private static object? ExtractValue(Node node)
-    {
-        return node switch
-        {
-            StringNode stringNode => stringNode.Value,
-            IntegerNode intNode => intNode.ObjValue,
-            DecimalNode decimalNode => decimalNode.Value,
-            BooleanNode boolNode => boolNode.Value,
-            _ => null  // Unsupported node type — skip
+            SourcePredicateComparison
+            {
+                Operator: SourcePredicateComparisonOperator.Equal,
+                Left: SourcePredicateColumn { Column.Name: nameof(WeatherEntity.City) },
+                Right: SourcePredicateLiteral { Value: string city }
+            } => city,
+            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
+                ExtractCity(logical.Left) ?? ExtractCity(logical.Right),
+            _ => null
         };
     }
 }
 ```
 
-### D.5 API Query Builder
+### D.6 Best Practices
 
-Translate extracted parameters into your API's query format:
+- Accept only work you truly execute.
+- Return unsupported work as residual so the engine can still produce correct results.
+- Always consume accepted work from `executionContext.Plan`; do not re-parse SQL.
+- Keep source plan properties simple, serializable, and version-tolerant.
+- Add direct tests for accepted and residual work.
+- Use `CardinalityEstimate.Exact`, `Estimate`, `Bounded`, or `Unknown` when the source has row-count knowledge.
 
-```csharp
-namespace Musoq.DataSources.[FILL].Helpers;
+### D.7 Migration From Runtime V1 Predicate Helpers
 
-/// <summary>
-/// Builds API-specific queries from extracted filter parameters.
-/// </summary>
-internal static class QueryBuilder
-{
-    /// <summary>
-    /// Builds a query string/object from filter parameters.
-    /// </summary>
-    /// <param name="baseQuery">Base query (e.g., project filter from method args)</param>
-    /// <param name="parameters">Filter parameters from WHERE clause</param>
-    /// <returns>API-specific query format</returns>
-    public static string BuildQuery(string? baseQuery, [FILL]FilterParameters parameters)
-    {
-        var conditions = new List<string>();
-        
-        if (!string.IsNullOrEmpty(baseQuery))
-            conditions.Add(baseQuery);
-        
-        // For JQL-style APIs (Jira, etc.)
-        if (!string.IsNullOrEmpty(parameters.Status))
-            conditions.Add($"status = \"{EscapeValue(parameters.Status)}\"");
-        
-        if (!string.IsNullOrEmpty(parameters.Assignee))
-            conditions.Add($"assignee = \"{EscapeValue(parameters.Assignee)}\"");
-        
-        if (parameters.CreatedAfter.HasValue)
-            conditions.Add($"created >= \"{parameters.CreatedAfter.Value:yyyy-MM-dd}\"");
-        
-        if (parameters.CreatedBefore.HasValue)
-            conditions.Add($"created <= \"{parameters.CreatedBefore.Value:yyyy-MM-dd}\"");
-        
-        // [FILL: Add translation for each filter parameter]
-        
-        return conditions.Count > 0 
-            ? string.Join(" AND ", conditions) 
-            : string.Empty;  // No filters = fetch all (API default)
-    }
-    
-    /// <summary>
-    /// Builds REST query parameters from filter parameters.
-    /// </summary>
-    public static Dictionary<string, string> BuildQueryParams([FILL]FilterParameters parameters)
-    {
-        var queryParams = new Dictionary<string, string>();
-        
-        // For REST APIs with query parameters
-        if (!string.IsNullOrEmpty(parameters.Status))
-            queryParams["state"] = parameters.Status.ToLowerInvariant();
-        
-        if (!string.IsNullOrEmpty(parameters.Assignee))
-            queryParams["assignee"] = parameters.Assignee;
-        
-        if (parameters.CreatedAfter.HasValue)
-            queryParams["since"] = parameters.CreatedAfter.Value.ToString("O");
-        
-        // [FILL: Add query parameters for each filter]
-        
-        return queryParams;
-    }
-    
-    private static string EscapeValue(string value)
-    {
-        // Escape special characters for your API's query language
-        return value.Replace("\"", "\\\"");
-    }
-}
+Old datasource code often parsed a where AST with a helper. Delete that path. Runtime-v2 planning already gives the datasource normalized source expressions.
+
+Migration steps:
+
+1. Remove parser AST dependencies from the plugin.
+2. Replace the old helper with a planner that pattern matches `SourcePredicateExpression`.
+3. Return `SourcePlanResult` with accepted and residual work.
+4. Apply accepted work in the API request or row source using `SourceExecutionContext.Plan`.
+5. Test both accepted and rejected predicates through compiled SQL.
+
+Final migration audit:
+
+```powershell
+rg -n 'RuntimeContext|QuerySourceInfo|QueryHints|IObjectResolver|EntityResolver|BlockingCollection|WhereNodeHelper|net8\.0|Musoq\.Parser" Version="5\.7\.0|Musoq\.Schema" Version="10\.1\.0' .
 ```
 
-### D.6 Using Predicate Pushdown in RowSource
-
-Update your RowSource to use the filter extraction:
-
-```csharp
-protected override void CollectChunks(
-    BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-{
-    _runtimeContext.ReportDataSourceBegin(SourceName);
-    long totalRowsProcessed = 0;
-
-    try
-    {
-        // ═══════════════════════════════════════════════════════════════
-        // STEP 1: Extract filter parameters from WHERE clause
-        // ═══════════════════════════════════════════════════════════════
-        var filterParams = WhereNodeHelper.ExtractParameters(
-            _runtimeContext.QuerySourceInfo.WhereNode);
-        
-        // ═══════════════════════════════════════════════════════════════
-        // STEP 2: Get pagination hints from query (LIMIT/OFFSET)
-        // ═══════════════════════════════════════════════════════════════
-        var takeValue = _runtimeContext.QueryHints.TakeValue;  // LIMIT
-        var skipValue = _runtimeContext.QueryHints.SkipValue;  // OFFSET
-        
-        var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
-        var startAt = skipValue.HasValue ? (int)skipValue.Value : 0;
-        
-        // ═══════════════════════════════════════════════════════════════
-        // STEP 3: Build API query with extracted filters
-        // ═══════════════════════════════════════════════════════════════
-        var baseQuery = $"project = {_projectKey}";  // From method args
-        var apiQuery = QueryBuilder.BuildQuery(baseQuery, filterParams);
-        
-        // ═══════════════════════════════════════════════════════════════
-        // STEP 4: Fetch data with pushed-down predicates
-        // ═══════════════════════════════════════════════════════════════
-        var fetchedRows = 0;
-        var pageSize = 100;
-        
-        while (fetchedRows < maxRows && 
-               !_runtimeContext.EndWorkToken.IsCancellationRequested)
-        {
-            // API call with filters already applied
-            var items = _api.SearchAsync(apiQuery, pageSize, startAt).Result;
-            
-            if (items.Count == 0)
-                break;
-            
-            var resolvers = items
-                .Take(maxRows - fetchedRows)
-                .Select(item => new EntityResolver<[FILL]Entity>(
-                    item,
-                    [FILL]TableHelper.NameToIndexMap,
-                    [FILL]TableHelper.IndexToMethodAccessMap))
-                .ToList();
-            
-            chunkedSource.Add(resolvers, _runtimeContext.EndWorkToken);
-            
-            fetchedRows += resolvers.Count;
-            totalRowsProcessed += resolvers.Count;
-            startAt += items.Count;
-            
-            _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
-            
-            if (items.Count < pageSize)
-                break;  // Last page
-        }
-    }
-    finally
-    {
-        _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
-    }
-}
-```
-
-### D.7 Supported AST Node Types
-
-The Musoq parser creates these node types that you can handle:
-
-| Node Type | SQL Example | Description |
-|-----------|-------------|-------------|
-| `AndNode` | `a AND b` | Logical AND — process both sides |
-| `OrNode` | `a OR b` | Logical OR — typically skip (complex) |
-| `EqualityNode` | `Col = 'value'` | Equality comparison |
-| `NotEqualNode` | `Col <> 'value'` | Inequality comparison |
-| `GreaterNode` | `Col > 10` | Greater than |
-| `GreaterOrEqualNode` | `Col >= 10` | Greater than or equal |
-| `LessNode` | `Col < 10` | Less than |
-| `LessOrEqualNode` | `Col <= 10` | Less than or equal |
-| `LikeNode` | `Col LIKE '%x%'` | Pattern matching |
-| `InNode` | `Col IN ('a','b')` | Set membership |
-| `IsNullNode` | `Col IS NULL` | Null check |
-
-Value node types for extracting literals:
-
-| Node Type | Example | Property |
-|-----------|---------|----------|
-| `StringNode` | `'hello'` | `.Value` (string) |
-| `IntegerNode` | `42` | `.ObjValue` (object) |
-| `DecimalNode` | `3.14` | `.Value` (decimal) |
-| `BooleanNode` | `true` | `.Value` (bool) |
-| `FieldNode` | `ColumnName` | `.FieldName` (string) |
-
-### D.8 Best Practices
-
-1. **Don't require all filters** — If WHERE clause has no pushable conditions, fetch all data.
-
-2. **Skip OR conditions** — OR is complex to translate. Let Musoq runtime filter.
-   ```csharp
-   case OrNode:
-       // Skip — Musoq runtime will filter after fetch
-       break;
-   ```
-
-3. **Handle both field positions** — SQL allows `'value' = Column`:
-   ```csharp
-   if (left is FieldNode) { /* normal */ }
-   else if (right is FieldNode) { /* reversed */ }
-   ```
-
-4. **Map multiple property names** — Users might filter on different property names:
-   ```csharp
-   case "assignee":
-   case "assigneedisplayname":
-   case "assigneeemail":
-       parameters.Assignee = value.ToString();
-       break;
-   ```
-
-5. **Use LIMIT/OFFSET hints** — Apply them to API pagination:
-   ```csharp
-   var take = _runtimeContext.QueryHints.TakeValue;
-   var skip = _runtimeContext.QueryHints.SkipValue;
-   ```
-
-6. **Escape values properly** — Prevent injection in API queries:
-   ```csharp
-   private static string EscapeJql(string value) =>
-       value.Replace("\"", "\\\"").Replace("'", "\\'");
-   ```
-
-7. **Document pushable columns** — In XML docs, note which columns support pushdown:
-   ```xml
-   /// <param name="Status">
-   /// The issue status. Supports predicate pushdown for efficient API filtering.
-   /// </param>
-   ```
-
-### D.9 Example: Complete Filter Extraction
-
-Given this SQL query:
-```sql
-SELECT * 
-FROM #jira.issues('MYPROJ') 
-WHERE Status = 'Open' 
-  AND Assignee = 'john.doe'
-  AND CreatedAt >= '2024-01-01'
-  AND Priority = 'High'
-```
-
-The WhereNodeHelper extracts:
-```csharp
-filterParams.Status = "Open"
-filterParams.Assignee = "john.doe"
-filterParams.CreatedAfter = 2024-01-01T00:00:00
-filterParams.Priority = "High"
-```
-
-QueryBuilder generates JQL:
-```
-project = MYPROJ AND status = "Open" AND assignee = "john.doe" 
-AND created >= "2024-01-01" AND priority = "High"
-```
-
-API call fetches only matching issues instead of all issues in the project.
+Hits should appear only in documentation or explicit migration warnings, not in source files.
