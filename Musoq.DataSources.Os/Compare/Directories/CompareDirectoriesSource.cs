@@ -1,23 +1,25 @@
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Musoq.DataSources.Os.Files;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Compare.Directories;
 
-internal class CompareDirectoriesSource(string firstDirectory, string secondDirectory, RuntimeContext runtimeContext)
+internal class CompareDirectoriesSource(
+    string firstDirectory,
+    string secondDirectory,
+    SourceExecutionContext executionContext)
     : RowSourceBase<CompareDirectoriesResult>
 {
     private const string CompareDirectoriesSourceName = "compare_directories";
     private readonly DirectoryInfo _firstDirectory = new(firstDirectory);
     private readonly DirectoryInfo _secondDirectory = new(secondDirectory);
 
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override void CollectChunks(IChunkWriter<CompareDirectoriesResult> writer)
     {
-        runtimeContext.ReportDataSourceBegin(CompareDirectoriesSourceName);
+        executionContext.ReportDataSourceBegin(CompareDirectoriesSourceName);
         long totalRowsProcessed = 0;
 
         try
@@ -35,58 +37,49 @@ internal class CompareDirectoriesSource(string firstDirectory, string secondDire
                 select new SourceDestinationFilesPair([null, secondDirFile]);
 
             var allFiles = leftJoinedFiles.Concat(rightJoinedFiles);
-
             var lib = new OsLibrary();
-            var source = new List<IObjectResolver>();
+            var chunk = new List<CompareDirectoriesResult>(100);
 
             foreach (var files in allFiles)
             {
-                State result;
+                writer.CancellationToken.ThrowIfCancellationRequested();
 
+                State result;
 
                 if (files.Source != null && files.Destination != null)
                     result = lib.Sha256File(files.Source) != lib.Sha256File(files.Destination)
                         ? State.Modified
                         : State.TheSame;
-
                 else if (files.Source != null)
                     result = State.Removed;
-
                 else if (files.Destination != null)
                     result = State.Added;
-
                 else
                     continue;
 
-                var value = new CompareDirectoriesResult(_firstDirectory, files.Source, _secondDirectory,
-                    files.Destination, result);
-
-                source.Add(new EntityResolver<CompareDirectoriesResult>(value,
-                    CompareDirectoriesHelper.CompareDirectoriesNameToIndexMap,
-                    CompareDirectoriesHelper.CompareDirectoriesIndexToMethodAccessMap));
+                chunk.Add(new CompareDirectoriesResult(_firstDirectory, files.Source, _secondDirectory,
+                    files.Destination, result));
                 totalRowsProcessed++;
 
-                if (source.Count <= 100) continue;
+                if (chunk.Count <= 100)
+                    continue;
 
-                runtimeContext.EndWorkToken.ThrowIfCancellationRequested();
-
-                chunkedSource.Add(source);
-                source = [];
+                writer.Write(chunk);
+                chunk = [];
             }
 
-            if (source.Count > 0)
-                chunkedSource.Add(source);
+            if (chunk.Count > 0)
+                writer.Write(chunk);
         }
         finally
         {
-            runtimeContext.ReportDataSourceEnd(CompareDirectoriesSourceName, totalRowsProcessed);
+            executionContext.ReportDataSourceEnd(CompareDirectoriesSourceName, totalRowsProcessed);
         }
     }
 
     private static IEnumerable<FileEntity> GetAllFiles(DirectoryInfo directory)
     {
         var dirs = new Stack<DirectoryInfo>();
-
         dirs.Push(directory);
 
         while (dirs.Count > 0)

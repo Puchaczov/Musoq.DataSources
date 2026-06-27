@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using LibGit2Sharp;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git;
@@ -14,44 +12,28 @@ namespace Musoq.DataSources.Git;
 internal sealed class RemotesRowsSource(
     string repositoryPath,
     Func<string, Repository> createRepository,
-    RuntimeContext runtimeContext) : AsyncRowsSourceBase<RemoteEntity>(runtimeContext.EndWorkToken)
+    CancellationToken cancellationToken) : AsyncRowsSourceBase<RemoteEntity>(cancellationToken)
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    protected override Task CollectChunksAsync(IChunkWriter<RemoteEntity> writer, CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
-        var chunk = new List<IObjectResolver>(100);
-        var filters = GitWhereNodeHelper.ExtractParameters(runtimeContext.QuerySourceInfo.WhereNode);
+        var chunk = new List<RemoteEntity>(100);
 
         foreach (var remote in repository.Network.Remotes)
         {
-            if (cancellationToken.IsCancellationRequested)
-                break;
+            cancellationToken.ThrowIfCancellationRequested();
 
+            chunk.Add(new RemoteEntity(remote));
 
-            if (!string.IsNullOrEmpty(filters.RemoteName) &&
-                !string.Equals(remote.Name, filters.RemoteName, StringComparison.OrdinalIgnoreCase))
+            if (chunk.Count < 100)
                 continue;
 
-            if (!string.IsNullOrEmpty(filters.Url) &&
-                !string.Equals(remote.Url, filters.Url, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            var entity = new RemoteEntity(remote);
-            chunk.Add(new EntityResolver<RemoteEntity>(
-                entity,
-                RemoteEntity.NameToIndexMap,
-                RemoteEntity.IndexToObjectAccessMap
-            ));
-
-            if (chunk.Count >= 100)
-            {
-                chunkedSource.Add(chunk.ToArray(), cancellationToken);
-                chunk.Clear();
-            }
+            writer.Write(chunk);
+            chunk = [];
         }
 
-        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
+        if (chunk.Count > 0)
+            writer.Write(chunk);
 
         return Task.CompletedTask;
     }

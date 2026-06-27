@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using Musoq.DataSources.Os.Compare.Directories;
 using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
@@ -10,8 +11,8 @@ using Musoq.DataSources.Os.Process;
 using Musoq.DataSources.Os.Zip;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Os;
@@ -32,7 +33,6 @@ public class OsSchema : SchemaBase
     private const string ZipTable = "zip";
     private const string ProcessesName = "processes";
     private const string DirsCompare = "dirscompare";
-    private const string Single = "single";
     private const string Metadata = "metadata";
 
     /// <virtual-constructors>
@@ -261,36 +261,19 @@ public class OsSchema : SchemaBase
     public OsSchema()
         : base(SchemaName, CreateLibrary())
     {
-        AddSource<FilesSource>(FilesTable);
-        AddTable<FilesBasedTable>(FilesTable);
-
-        AddSource<DirectoriesSource>(DirectoriesTable);
-        AddTable<DirectoriesBasedTable>(DirectoriesTable);
-
-        AddSource<ZipSource>(ZipTable);
-        AddTable<ZipBasedTable>(ZipTable);
-
-        AddSource<ProcessesSource>(ProcessesName);
-        AddTable<ProcessBasedTable>(ProcessesName);
-
-        AddSource<DllSource>(DllsTable);
-        AddTable<DllBasedTable>(DllsTable);
-
-        AddSource<CompareDirectoriesSource>(DirsCompare);
-        AddTable<DirsCompareBasedTable>(DirsCompare);
-
-        AddSource<MetadataSource>(Metadata);
-        AddTable<MetadataTable>(Metadata);
     }
 
     /// <summary>
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         switch (name.ToLowerInvariant())
         {
@@ -306,8 +289,6 @@ public class OsSchema : SchemaBase
                 return new DllBasedTable();
             case DirsCompare:
                 return new DirsCompareBasedTable();
-            case Single:
-                return new SingleRowSchemaTable();
             case Metadata:
                 return new MetadataTable();
         }
@@ -319,38 +300,53 @@ public class OsSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
         switch (name.ToLowerInvariant())
         {
             case FilesTable:
-                return new FilesSource((string)parameters[0], (bool)parameters[1], runtimeContext);
+                return EnsureSourceType<T, FileEntity>(
+                    name,
+                    new FilesSource((string)parameters[0], (bool)parameters[1], executionContext));
             case DirectoriesTable:
-                return new DirectoriesSource((string)parameters[0], (bool)parameters[1], runtimeContext);
+                return EnsureSourceType<T, DirectoryInfo>(
+                    name,
+                    new DirectoriesSource((string)parameters[0], (bool)parameters[1], executionContext));
             case ZipTable:
-                return new ZipSource((string)parameters[0], runtimeContext);
+                return EnsureSourceType<T, ZipArchiveEntry>(
+                    name,
+                    new ZipSource((string)parameters[0], executionContext));
             case ProcessesName:
-                return new ProcessesSource(runtimeContext);
+                return EnsureSourceType<T, System.Diagnostics.Process>(
+                    name,
+                    new ProcessesSource(executionContext));
             case DllsTable:
-                return new DllSource((string)parameters[0], (bool)parameters[1], runtimeContext);
+                return EnsureSourceType<T, DllInfo>(
+                    name,
+                    new DllSource((string)parameters[0], (bool)parameters[1], executionContext));
             case DirsCompare:
-                return new CompareDirectoriesSource((string)parameters[0], (string)parameters[1], runtimeContext);
-            case Single:
-                return new SingleRowSource();
+                return EnsureSourceType<T, CompareDirectoriesResult>(
+                    name,
+                    new CompareDirectoriesSource((string)parameters[0], (string)parameters[1], executionContext));
             case Metadata:
             {
                 {
                     if (parameters is [string pathDirectory, bool useSubDirectories, bool throwOnMetadataReadError])
-                        return new MetadataSource(
-                            pathDirectory,
-                            null,
-                            useSubDirectories,
-                            MetadataSource.PathType.MustBeDirectory,
-                            throwOnMetadataReadError,
-                            runtimeContext);
+                        return EnsureSourceType<T, MetadataEntity>(
+                            name,
+                            new MetadataSource(
+                                pathDirectory,
+                                null,
+                                useSubDirectories,
+                                MetadataSource.PathType.MustBeDirectory,
+                                throwOnMetadataReadError,
+                                executionContext));
                 }
 
                 {
@@ -362,13 +358,15 @@ public class OsSchema : SchemaBase
                             : Path.GetDirectoryName(pathDirectoryOrFile) ??
                               throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
                         var fileName = isDirectory ? null : Path.GetFileName(pathDirectoryOrFile);
-                        return new MetadataSource(
-                            directoryPath,
-                            fileName,
-                            false,
-                            MetadataSource.PathType.DirectoryOrFile,
-                            throwOnMetadataReadError,
-                            runtimeContext);
+                        return EnsureSourceType<T, MetadataEntity>(
+                            name,
+                            new MetadataSource(
+                                directoryPath,
+                                fileName,
+                                false,
+                                MetadataSource.PathType.DirectoryOrFile,
+                                throwOnMetadataReadError,
+                                executionContext));
                     }
                 }
 
@@ -381,13 +379,15 @@ public class OsSchema : SchemaBase
                             : Path.GetDirectoryName(pathDirectoryOrFile) ??
                               throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
                         var fileName = isDirectory ? null : Path.GetFileName(pathDirectoryOrFile);
-                        return new MetadataSource(
-                            directoryPath,
-                            fileName,
-                            false,
-                            MetadataSource.PathType.DirectoryOrFile,
-                            true,
-                            runtimeContext);
+                        return EnsureSourceType<T, MetadataEntity>(
+                            name,
+                            new MetadataSource(
+                                directoryPath,
+                                fileName,
+                                false,
+                                MetadataSource.PathType.DirectoryOrFile,
+                                true,
+                                executionContext));
                     }
                 }
 
@@ -402,9 +402,11 @@ public class OsSchema : SchemaBase
     ///     Gets the raw constructors for a specific method.
     /// </summary>
     /// <param name="methodName">The name of the method</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of SchemaMethodInfo objects describing the method signatures</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
     {
         return methodName.ToLowerInvariant() switch
         {
@@ -424,9 +426,48 @@ public class OsSchema : SchemaBase
     /// <summary>
     ///     Gets the raw constructors for all methods in the schema.
     /// </summary>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of SchemaMethodInfo objects for all data source methods</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
+    {
+        return GetConstructors();
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return [];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
+    }
+
+    /// <summary>
+    ///     Gets constructors for all methods in the schema.
+    /// </summary>
+    /// <returns>Array of SchemaMethodInfo objects for all data source methods</returns>
+    public override SchemaMethodInfo[] GetConstructors()
     {
         var constructors = new List<SchemaMethodInfo>
         {
@@ -445,32 +486,71 @@ public class OsSchema : SchemaBase
 
     private static SchemaMethodInfo CreateFilesMethodInfo()
     {
-        return TypeHelper.GetSchemaMethodInfosForType<FilesSource>(FilesTable)[0];
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("directory", typeof(string)),
+                ("useSubdirectories", typeof(bool))
+            ]);
+
+        return new SchemaMethodInfo(FilesTable, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateDirectoriesMethodInfo()
     {
-        return TypeHelper.GetSchemaMethodInfosForType<DirectoriesSource>(DirectoriesTable)[0];
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("directory", typeof(string)),
+                ("useSubdirectories", typeof(bool))
+            ]);
+
+        return new SchemaMethodInfo(DirectoriesTable, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateZipMethodInfo()
     {
-        return TypeHelper.GetSchemaMethodInfosForType<ZipSource>(ZipTable)[0];
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("path", typeof(string))
+            ]);
+
+        return new SchemaMethodInfo(ZipTable, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateProcessesMethodInfo()
     {
-        return TypeHelper.GetSchemaMethodInfosForType<ProcessesSource>(ProcessesName)[0];
+        return new SchemaMethodInfo(ProcessesName, new ConstructorInfo(null!, false, []));
     }
 
     private static SchemaMethodInfo CreateDllsMethodInfo()
     {
-        return TypeHelper.GetSchemaMethodInfosForType<DllSource>(DllsTable)[0];
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("path", typeof(string)),
+                ("useSubdirectories", typeof(bool))
+            ]);
+
+        return new SchemaMethodInfo(DllsTable, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateDirsCompareMethodInfo()
     {
-        return TypeHelper.GetSchemaMethodInfosForType<CompareDirectoriesSource>(DirsCompare)[0];
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("sourceDirectory", typeof(string)),
+                ("destinationDirectory", typeof(string))
+            ]);
+
+        return new SchemaMethodInfo(DirsCompare, constructorInfo);
     }
 
     private static SchemaMethodInfo[] CreateMetadataMethodInfos()

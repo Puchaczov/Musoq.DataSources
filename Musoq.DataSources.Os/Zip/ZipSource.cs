@@ -1,56 +1,52 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Zip;
 
-internal class ZipSource : RowSource
+internal class ZipSource(string zipPath, SourceExecutionContext executionContext) : RowSourceBase<ZipArchiveEntry>
 {
     private const string ZipSourceName = "zip";
-    private readonly RuntimeContext _runtimeContext;
-    private readonly string _zipPath;
+    private const int ChunkSize = 100;
 
-    public ZipSource(string zipPath, RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<ZipArchiveEntry> writer)
     {
-        _zipPath = zipPath;
-        _runtimeContext = runtimeContext;
-    }
+        executionContext.ReportDataSourceBegin(ZipSourceName);
+        long totalRowsProcessed = 0;
 
-    public override IEnumerable<IObjectResolver> Rows
-    {
-        get
+        try
         {
-            _runtimeContext.ReportDataSourceBegin(ZipSourceName);
-            long totalRowsProcessed = 0;
+            using var file = File.OpenRead(zipPath);
+            using var zip = new ZipArchive(file);
+            var chunk = new List<ZipArchiveEntry>(ChunkSize);
 
-            try
+            executionContext.ReportDataSourceRowsKnown(ZipSourceName, zip.Entries.Count);
+
+            foreach (var entry in zip.Entries)
             {
-                var endWorkToken = _runtimeContext.EndWorkToken;
-                using var file = File.OpenRead(_zipPath);
-                using var zip = new ZipArchive(file);
+                writer.CancellationToken.ThrowIfCancellationRequested();
 
-                // We know the total count upfront
-                _runtimeContext.ReportDataSourceRowsKnown(ZipSourceName, zip.Entries.Count);
+                if (entry.Name == string.Empty)
+                    continue;
 
-                foreach (var entry in zip.Entries)
-                {
-                    endWorkToken.ThrowIfCancellationRequested();
-                    if (entry.Name != string.Empty)
-                    {
-                        totalRowsProcessed++;
-                        yield return new EntityResolver<ZipArchiveEntry>(
-                            entry,
-                            SchemaZipHelper.NameToIndexMap,
-                            SchemaZipHelper.IndexToMethodAccessMap);
-                    }
-                }
+                chunk.Add(entry);
+                totalRowsProcessed++;
+
+                if (chunk.Count < ChunkSize)
+                    continue;
+
+                writer.Write(chunk);
+                chunk = [];
             }
-            finally
-            {
-                _runtimeContext.ReportDataSourceEnd(ZipSourceName, totalRowsProcessed);
-            }
+
+            if (chunk.Count > 0)
+                writer.Write(chunk);
+        }
+        finally
+        {
+            executionContext.ReportDataSourceEnd(ZipSourceName, totalRowsProcessed);
         }
     }
 }

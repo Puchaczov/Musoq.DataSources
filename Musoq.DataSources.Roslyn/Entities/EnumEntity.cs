@@ -53,7 +53,7 @@ public class EnumEntity : TypeEntity
     /// </value>
     [BindablePropertyAsTable]
     public IEnumerable<string> Members => GetEnumMemberSymbols()
-        .Select(field => field.Name);
+        .Select(enumField => enumField.Name);
 
     /// <summary>
     ///     Gets itself.
@@ -116,7 +116,7 @@ public class EnumEntity : TypeEntity
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<EnumMemberEntity> EnumMembers => GetEnumMemberSymbols()
-        .Select(field => new EnumMemberEntity(field));
+        .Select(enumField => new EnumMemberEntity(enumField));
 
     /// <summary>
     ///     Gets a value indicating whether the enum has XML documentation.
@@ -136,7 +136,7 @@ public class EnumEntity : TypeEntity
     {
         return Symbol.GetMembers()
             .OfType<IFieldSymbol>()
-            .Where(field => !field.IsImplicitlyDeclared)
-            .Where(field => field.HasConstantValue);
+            .Where(enumField => !enumField.IsImplicitlyDeclared)
+            .Where(enumField => enumField.HasConstantValue);
     }
 }

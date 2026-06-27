@@ -16,6 +16,7 @@ using Musoq.DataSources.Roslyn.RowsSources;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Roslyn;
@@ -560,9 +561,6 @@ public class CSharpSchema : SchemaBase
     public CSharpSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
-        AddSource<CSharpImmediateLoadSolutionRowsSource>("file");
-        AddTable<CSharpSolutionTable>("file");
-
         _createNugetPropertiesResolver = (baseUrl, client) => new NuGetPropertiesResolver(baseUrl, client);
     }
 
@@ -586,15 +584,18 @@ public class CSharpSchema : SchemaBase
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
             "solution" => new CSharpSolutionTable(),
-            _ => base.GetTableByName(name, runtimeContext, parameters)
+            _ => base.GetTableByName(name, metadataContext, parameters)
         };
     }
 
@@ -602,20 +603,23 @@ public class CSharpSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
         string? externalNugetPropertiesResolveEndpoint = null;
 
-        if (runtimeContext.EnvironmentVariables.TryGetValue("EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT",
+        if (executionContext.SourceRuntimeSettings.TryGetValue("EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT",
                 out var nugetPropertiesResolveEndpointValue))
             externalNugetPropertiesResolveEndpoint = nugetPropertiesResolveEndpointValue;
 
         string? internalNugetPropertiesResolveEndpoint = null;
 
-        if (runtimeContext.EnvironmentVariables.TryGetValue("MUSOQ_SERVER_HTTP_ENDPOINT",
+        if (executionContext.SourceRuntimeSettings.TryGetValue("MUSOQ_SERVER_HTTP_ENDPOINT",
                 out var internalNugetPropertiesResolveEndpointValue))
             internalNugetPropertiesResolveEndpoint = internalNugetPropertiesResolveEndpointValue;
 
@@ -626,7 +630,7 @@ public class CSharpSchema : SchemaBase
 
         if (!IFileSystem.DirectoryExists(cacheDirectory)) IFileSystem.CreateDirectory(cacheDirectory);
 
-        if (runtimeContext.EnvironmentVariables.TryGetValue("CACHE_DIRECTORY", out var incommingCacheDirectory) &&
+        if (executionContext.SourceRuntimeSettings.TryGetValue("CACHE_DIRECTORY", out var incommingCacheDirectory) &&
             incommingCacheDirectory is not null)
         {
             if (!Directory.Exists(incommingCacheDirectory))
@@ -635,12 +639,12 @@ public class CSharpSchema : SchemaBase
             cacheDirectory = incommingCacheDirectory;
         }
 
-        runtimeContext.Logger.LogTrace("Using cache directory: {CacheDirectory}", cacheDirectory);
+        executionContext.Logger.LogTrace("Using cache directory: {CacheDirectory}", cacheDirectory);
 
         var httpClient = WithCacheDirectory(
             cacheDirectory,
-            configs => GetDomains(configs, runtimeContext.EnvironmentVariables),
-            runtimeContext.Logger
+            configs => GetDomains(configs, executionContext.SourceRuntimeSettings),
+            executionContext.Logger
         );
 
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
@@ -659,7 +663,7 @@ public class CSharpSchema : SchemaBase
                                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                                     ? OSPlatform.Windows
                                     : OSPlatform.Linux,
-                                runtimeContext.Logger
+                                executionContext.Logger
                             ),
                             externalNugetPropertiesResolveEndpoint,
                             new NuGetRetrievalService(
@@ -671,35 +675,39 @@ public class CSharpSchema : SchemaBase
                             packageVersionConcurrencyManager,
                             SolutionOperationsCommand.BannedPropertiesValues,
                             ResolveValueStrategy,
-                            runtimeContext.Logger
+                            executionContext.Logger
                         ),
-                        runtimeContext.EndWorkToken
+                        executionContext.EndWorkToken
                     );
 
-                    return new CSharpInMemorySolutionRowsSource(
-                        solutionEntity,
+                    return EnsureSourceType<T, SolutionEntity>(
+                        name,
+                        new CSharpInMemorySolutionRowsSource(
+                            solutionEntity,
+                            httpClient,
+                            FileSystem,
+                            externalNugetPropertiesResolveEndpoint,
+                            _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
+                            executionContext.Logger,
+                            executionContext
+                        ));
+                }
+
+                return EnsureSourceType<T, SolutionEntity>(
+                    name,
+                    new CSharpImmediateLoadSolutionRowsSource(
+                        (string)parameters[0],
                         httpClient,
                         FileSystem,
                         externalNugetPropertiesResolveEndpoint,
                         _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
-                        runtimeContext.Logger,
-                        runtimeContext
-                    );
-                }
-
-                return new CSharpImmediateLoadSolutionRowsSource(
-                    (string)parameters[0],
-                    httpClient,
-                    FileSystem,
-                    externalNugetPropertiesResolveEndpoint,
-                    _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
-                    runtimeContext.Logger,
-                    runtimeContext
-                );
+                        executionContext.Logger,
+                        executionContext
+                    ));
             }
         }
 
-        return base.GetRowSource(name, runtimeContext, parameters);
+        return base.GetRowSource<T>(name, executionContext, parameters);
     }
 
     private static IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig> GetDomains(
@@ -777,9 +785,11 @@ public class CSharpSchema : SchemaBase
     ///     Gets raw information's about specific method in the schema.
     /// </summary>
     /// <param name="methodName">Method name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Data sources constructors</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
     {
         return methodName switch
         {
@@ -791,9 +801,76 @@ public class CSharpSchema : SchemaBase
     /// <summary>
     ///     Gets raw information's about all tables in the schema.
     /// </summary>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Data sources constructors</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
+    {
+        return GetConstructors();
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                "MUSOQ_SERVER_HTTP_ENDPOINT",
+                true,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "Internal Musoq server endpoint used to resolve NuGet properties."),
+            new SourceRuntimeSettingRequirement(
+                "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT",
+                false,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "Optional external endpoint used to resolve NuGet properties."),
+            new SourceRuntimeSettingRequirement(
+                "CACHE_DIRECTORY",
+                false,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "Optional cache directory for Roslyn NuGet metadata."),
+            new SourceRuntimeSettingRequirement(
+                "GITHUB_API_KEY",
+                false,
+                true,
+                SourceRuntimeSettingPhase.Execution,
+                "Optional GitHub API key used for authenticated package metadata requests."),
+            new SourceRuntimeSettingRequirement(
+                "GITLAB_API_KEY",
+                false,
+                true,
+                SourceRuntimeSettingPhase.Execution,
+                "Optional GitLab API key used for authenticated package metadata requests.")
+        ];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
+    }
+
+    public override SchemaMethodInfo[] GetConstructors()
     {
         return CreateSolutionMethodInfo();
     }

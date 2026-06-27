@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -20,11 +19,11 @@ internal sealed class FileHistoryRowsSource(
     Func<string, Repository> createRepository,
     CancellationToken cancellationToken) : AsyncRowsSourceBase<FileHistoryEntity>(cancellationToken)
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+    protected override Task CollectChunksAsync(IChunkWriter<FileHistoryEntity> writer,
         CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
-        var chunk = new List<IObjectResolver>(100);
+        var chunk = new List<FileHistoryEntity>(100);
 
         var fromOldest = take < 0;
         var actualTake = Math.Abs(take);
@@ -79,23 +78,19 @@ internal sealed class FileHistoryRowsSource(
                 }
 
                 var entity = new FileHistoryEntity(entry.Commit, entry.Path, ChangeKind.Modified);
-                chunk.Add(new EntityResolver<FileHistoryEntity>(
-                    entity,
-                    FileHistoryEntity.NameToIndexMap,
-                    FileHistoryEntity.IndexToObjectAccessMap
-                ));
+                chunk.Add(entity);
 
                 taken++;
 
                 if (chunk.Count < 100)
                     continue;
 
-                chunkedSource.Add(chunk.ToArray(), cancellationToken);
-                chunk.Clear();
+                writer.Write(chunk);
+                chunk = [];
             }
         }
 
-        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
+        if (chunk.Count > 0) writer.Write(chunk);
 
         return Task.CompletedTask;
     }

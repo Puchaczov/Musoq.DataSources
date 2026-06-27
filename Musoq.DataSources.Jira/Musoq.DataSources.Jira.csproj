@@ -8,7 +8,7 @@
         <Version>1.1.4</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
-        <Description>Lets you query Jira issues, projects, sprints and other resources with SQL-style queries. Supports predicate pushdown for efficient filtering via JQL.</Description>
+        <Description>Lets you query Jira issues, projects, sprints and other resources with SQL-style queries.</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>sql, jira, atlassian, issues, projects, sprints, musoq, plugin, datasource, dotnet, jql</PackageTags>
@@ -35,9 +35,6 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1" />
         <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1" />
-        <PackageReference Include="Musoq.Parser" Version="17.0.0-alpha.1">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
         <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.1" />
         <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1">
             <ExcludeAssets>runtime</ExcludeAssets>

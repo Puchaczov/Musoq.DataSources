@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using LibGit2Sharp;
@@ -15,19 +13,12 @@ internal sealed class RepositoryRowsSource(
     Func<string, Repository> createRepository,
     CancellationToken cancellationToken) : AsyncRowsSourceBase<RepositoryEntity>(cancellationToken)
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+    protected override Task CollectChunksAsync(
+        IChunkWriter<RepositoryEntity> writer,
         CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
-        var repositoryEntity = new RepositoryEntity(repository);
-        chunkedSource.Add(
-        [
-            new EntityResolver<RepositoryEntity>(
-                repositoryEntity,
-                RepositoryEntity.NameToIndexMap,
-                RepositoryEntity.IndexToObjectAccessMap
-            )
-        ], cancellationToken);
+        writer.Write([new RepositoryEntity(repository)]);
         return Task.CompletedTask;
     }
 }

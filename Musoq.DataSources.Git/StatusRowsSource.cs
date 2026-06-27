@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using LibGit2Sharp;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git;
@@ -14,34 +12,29 @@ namespace Musoq.DataSources.Git;
 internal sealed class StatusRowsSource(
     string repositoryPath,
     Func<string, Repository> createRepository,
-    RuntimeContext runtimeContext) : AsyncRowsSourceBase<StatusEntity>(runtimeContext.EndWorkToken)
+    CancellationToken cancellationToken) : AsyncRowsSourceBase<StatusEntity>(cancellationToken)
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    protected override Task CollectChunksAsync(IChunkWriter<StatusEntity> writer, CancellationToken cancellationToken)
     {
         var repository = createRepository(repositoryPath);
         var status = repository.RetrieveStatus();
-        var filters = GitWhereNodeHelper.ExtractParameters(runtimeContext.QuerySourceInfo.WhereNode);
+        var chunk = new List<StatusEntity>(100);
 
         foreach (var entry in status)
         {
-            if (cancellationToken.IsCancellationRequested)
-                break;
+            cancellationToken.ThrowIfCancellationRequested();
 
+            chunk.Add(new StatusEntity(entry));
 
-            if (!string.IsNullOrEmpty(filters.State) &&
-                !string.Equals(entry.State.ToString(), filters.State, StringComparison.OrdinalIgnoreCase))
+            if (chunk.Count < 100)
                 continue;
-            var entity = new StatusEntity(entry);
-            chunkedSource.Add(
-            [
-                new EntityResolver<StatusEntity>(
-                    entity,
-                    StatusEntity.NameToIndexMap,
-                    StatusEntity.IndexToObjectAccessMap
-                )
-            ], cancellationToken);
+
+            writer.Write(chunk);
+            chunk = [];
         }
+
+        if (chunk.Count > 0)
+            writer.Write(chunk);
 
         return Task.CompletedTask;
     }

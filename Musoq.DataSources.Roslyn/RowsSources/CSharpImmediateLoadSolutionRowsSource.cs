@@ -1,6 +1,3 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,8 +6,8 @@ using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Roslyn.RowsSources;
 
@@ -21,12 +18,11 @@ internal class CSharpImmediateLoadSolutionRowsSource(
     string? nugetPropertiesResolveEndpoint,
     INuGetPropertiesResolver nuGetPropertiesResolver,
     ILogger logger,
-    RuntimeContext runtimeContext
+    SourceExecutionContext executionContext
 )
-    : CSharpSolutionRowsSourceBase(runtimeContext)
+    : CSharpSolutionRowsSourceBase(executionContext)
 {
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(IChunkWriter<SolutionEntity> writer, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -38,8 +34,7 @@ internal class CSharpImmediateLoadSolutionRowsSource(
             new NuGetCachePathResolver(
                 solutionFilePath,
                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux,
-                logger
-            ),
+                logger),
             nugetPropertiesResolveEndpoint,
             new NuGetRetrievalService(
                 nuGetPropertiesResolver,
@@ -49,50 +44,19 @@ internal class CSharpImmediateLoadSolutionRowsSource(
             packageVersionConcurrencyManager,
             SolutionOperationsCommand.BannedPropertiesValues,
             SolutionOperationsCommand.ResolveValueStrategy,
-            logger
-        );
-        var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, RuntimeContext.EndWorkToken);
+            logger);
+        var solutionEntity = new SolutionEntity(solution, nuGetPackageMetadataRetriever, ExecutionContext.EndWorkToken);
 
         logger.LogTrace("Initializing solution");
 
-        var filters = RoslynWhereNodeHelper.ExtractParameters(RuntimeContext.QuerySourceInfo.WhereNode);
-
         await Parallel.ForEachAsync(solutionEntity.Projects, cancellationToken, async (project, token) =>
         {
-            if (!ProjectMatchesFilter(project, filters))
-                return;
-
-            foreach (var document in project.Documents) await document.InitializeAsync(token);
+            foreach (var document in project.Documents)
+                await document.InitializeAsync(token);
         });
 
         logger.LogTrace("Solution initialized.");
 
-        chunkedSource.Add(new List<IObjectResolver>
-        {
-            new EntityResolver<SolutionEntity>(solutionEntity, SolutionEntity.NameToIndexMap,
-                SolutionEntity.IndexToObjectAccessMap)
-        }, cancellationToken);
-    }
-
-    private static bool ProjectMatchesFilter(ProjectEntity project, RoslynFilterParameters filters)
-    {
-        if (filters.AssemblyName != null &&
-            !project.AssemblyName.Equals(filters.AssemblyName, StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        if (filters.Name != null &&
-            !project.Name.Equals(filters.Name, StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        if (filters.Language != null &&
-            !project.Language.Equals(filters.Language, StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        if (filters.DefaultNamespace != null &&
-            (project.DefaultNamespace == null ||
-             !project.DefaultNamespace.Equals(filters.DefaultNamespace, StringComparison.OrdinalIgnoreCase)))
-            return false;
-
-        return true;
+        writer.Write([solutionEntity]);
     }
 }

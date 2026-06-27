@@ -1,5 +1,3 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,8 +6,8 @@ using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Roslyn.RowsSources;
 
@@ -20,38 +18,33 @@ internal sealed class CSharpInMemorySolutionRowsSource(
     string? nugetPropertiesResolveEndpoint,
     INuGetPropertiesResolver nuGetPropertiesResolver,
     ILogger logger,
-    RuntimeContext runtimeContext
+    SourceExecutionContext executionContext
 )
-    : CSharpSolutionRowsSourceBase(runtimeContext)
+    : CSharpSolutionRowsSourceBase(executionContext)
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    protected override Task CollectChunksAsync(IChunkWriter<SolutionEntity> writer, CancellationToken cancellationToken)
     {
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
 
-        chunkedSource.Add(new List<IObjectResolver>
-        {
-            new EntityResolver<SolutionEntity>(
-                solution.CloneWith(
-                    new NuGetPackageMetadataRetriever(
-                        new NuGetCachePathResolver(
-                            solution.Path,
-                            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux,
-                            logger
-                        ),
-                        nugetPropertiesResolveEndpoint,
-                        new NuGetRetrievalService(
-                            nuGetPropertiesResolver,
-                            fileSystem,
-                            httpClient),
-                        fileSystem,
-                        packageVersionConcurrencyManager,
-                        SolutionOperationsCommand.BannedPropertiesValues,
-                        SolutionOperationsCommand.ResolveValueStrategy,
+        writer.Write([
+            solution.CloneWith(
+                new NuGetPackageMetadataRetriever(
+                    new NuGetCachePathResolver(
+                        solution.Path,
+                        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux,
                         logger),
-                    RuntimeContext.EndWorkToken
-                ), SolutionEntity.NameToIndexMap, SolutionEntity.IndexToObjectAccessMap)
-        }, cancellationToken);
+                    nugetPropertiesResolveEndpoint,
+                    new NuGetRetrievalService(
+                        nuGetPropertiesResolver,
+                        fileSystem,
+                        httpClient),
+                    fileSystem,
+                    packageVersionConcurrencyManager,
+                    SolutionOperationsCommand.BannedPropertiesValues,
+                    SolutionOperationsCommand.ResolveValueStrategy,
+                    logger),
+                ExecutionContext.EndWorkToken)
+        ]);
 
         return Task.CompletedTask;
     }

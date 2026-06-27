@@ -1,11 +1,11 @@
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Roslyn.Entities;
-using Musoq.Schema;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Roslyn.RowsSources;
 
-internal abstract class CSharpSolutionRowsSourceBase(RuntimeContext runtimeContext)
-    : AsyncRowsSourceBase<SolutionEntity>(runtimeContext.EndWorkToken)
+internal abstract class CSharpSolutionRowsSourceBase(SourceExecutionContext executionContext)
+    : AsyncRowsSourceBase<SolutionEntity>(executionContext.EndWorkToken)
 {
-    protected readonly RuntimeContext RuntimeContext = runtimeContext;
+    protected readonly SourceExecutionContext ExecutionContext = executionContext;
 }

@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security;
 using LibGit2Sharp;
+using Musoq.DataSources.Git.Entities;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Git;
@@ -454,10 +457,13 @@ public class GitSchema : SchemaBase
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         switch (name.ToLowerInvariant())
         {
@@ -479,11 +485,13 @@ public class GitSchema : SchemaBase
                 return new BlameTable();
         }
 
-        return base.GetTableByName(name, runtimeContext, parameters);
+        return base.GetTableByName(name, metadataContext, parameters);
     }
 
     /// <inheritdoc />
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
     {
         return methodName.ToLowerInvariant() switch
         {
@@ -502,7 +510,7 @@ public class GitSchema : SchemaBase
     }
 
     /// <inheritdoc />
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return
         [
@@ -667,10 +675,13 @@ public class GitSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
         var path = (string)parameters[0];
 
@@ -684,32 +695,93 @@ public class GitSchema : SchemaBase
         switch (name.ToLowerInvariant())
         {
             case RepositoryTable:
-                return new RepositoryRowsSource((string)parameters[0], _createRepository, runtimeContext.EndWorkToken);
+                return EnsureSourceType<T, RepositoryEntity>(
+                    name,
+                    new RepositoryRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
             case TagsTable:
-                return new TagsRowsSource((string)parameters[0], _createRepository, runtimeContext);
+                return EnsureSourceType<T, TagEntity>(
+                    name,
+                    new TagsRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
             case CommitsTable:
-                return new CommitsRowsSource((string)parameters[0], _createRepository, runtimeContext);
+                return EnsureSourceType<T, CommitEntity>(
+                    name,
+                    new CommitsRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
             case BranchesTable:
-                return new BranchesRowsSource((string)parameters[0], _createRepository, runtimeContext);
+                return EnsureSourceType<T, BranchEntity>(
+                    name,
+                    new BranchesRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
             case FileHistoryTable:
                 var skip = parameters.Length > 3 ? (int)parameters[2] : 0;
                 var take = parameters.Length > 3 ? (int)parameters[3] :
                     parameters.Length > 2 ? (int)parameters[2] : int.MaxValue;
-                return new FileHistoryRowsSource((string)parameters[0], (string)parameters[1], skip, take,
-                    _createRepository, runtimeContext.EndWorkToken);
+                return EnsureSourceType<T, FileHistoryEntity>(
+                    name,
+                    new FileHistoryRowsSource((string)parameters[0], (string)parameters[1], skip, take,
+                        _createRepository, executionContext.EndWorkToken));
             case StatusTable:
-                return new StatusRowsSource((string)parameters[0], _createRepository, runtimeContext);
+                return EnsureSourceType<T, StatusEntity>(
+                    name,
+                    new StatusRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
             case RemotesTable:
-                return new RemotesRowsSource((string)parameters[0], _createRepository, runtimeContext);
+                return EnsureSourceType<T, RemoteEntity>(
+                    name,
+                    new RemotesRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
             case BlameTable:
                 var repositoryPath = (string)parameters[0];
                 var filePath = (string)parameters[1];
                 var revision = parameters.Length > 2 ? (string)parameters[2] : "HEAD";
-                return new BlameRowsSource(repositoryPath, filePath, revision, _createRepository,
-                    runtimeContext.EndWorkToken);
+                return EnsureSourceType<T, BlameHunkEntity>(
+                    name,
+                    new BlameRowsSource(repositoryPath, filePath, revision, _createRepository,
+                        executionContext.EndWorkToken));
         }
 
-        return base.GetRowSource(name, runtimeContext, parameters);
+        return base.GetRowSource<T>(name, executionContext, parameters);
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return [];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
+    }
+
+    public override SchemaMethodInfo[] GetConstructors()
+    {
+        return
+        [
+            CreateRepositoryMethodInfo(),
+            CreateTagsMethodInfo(),
+            CreateCommitsMethodInfo(),
+            CreateBranchesMethodInfo(),
+            ..CreateFileHistoryMethodInfos(),
+            CreateStatusMethodInfo(),
+            CreateRemotesMethodInfo(),
+            ..CreateBlameMethodInfos()
+        ];
     }
 
     private static MethodsAggregator CreateLibrary()

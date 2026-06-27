@@ -1,15 +1,15 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Dlls;
 
-internal class DllSource(string path, bool useSubDirectories, RuntimeContext communicator)
-    : EnumerateFilesSourceBase<DllInfo>(path, useSubDirectories, communicator)
+internal class DllSource(string path, bool useSubDirectories, SourceExecutionContext executionContext)
+    : EnumerateFilesSourceBase<DllInfo>(path, useSubDirectories, executionContext)
 {
-    protected override EntityResolver<DllInfo>? CreateBasedOnFile(FileInfo file, string rootDirectory)
+    protected override DllInfo? CreateBasedOnFile(FileInfo file, string rootDirectory)
     {
         Assembly? asm;
         try
@@ -25,12 +25,12 @@ internal class DllSource(string path, bool useSubDirectories, RuntimeContext com
             return null;
 
         var version = FileVersionInfo.GetVersionInfo(asm.Location);
-        return new EntityResolver<DllInfo>(new DllInfo
+        return new DllInfo
         {
             FileInfo = file,
             Assembly = asm,
             Version = version
-        }, DllInfosHelper.DllInfosNameToIndexMap, DllInfosHelper.DllInfosIndexToMethodAccessMap);
+        };
     }
 
     protected override FileInfo[] GetFiles(DirectoryInfo directoryInfo)

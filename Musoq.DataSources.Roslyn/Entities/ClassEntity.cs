@@ -187,14 +187,14 @@ public class ClassEntity : TypeEntity
 
             var fieldUsage = new Dictionary<string, HashSet<string>>();
 
-            foreach (var variable in fields.SelectMany(field => field.Declaration.Variables))
+            foreach (var variable in fields.SelectMany(fieldDeclaration => fieldDeclaration.Declaration.Variables))
                 fieldUsage[variable.Identifier.Text] = [];
 
             foreach (var method in methods)
             {
                 var usedFields = GetUsedFields(method, SemanticModel);
-                foreach (var field in usedFields.Where(field => fieldUsage.ContainsKey(field)))
-                    fieldUsage[field].Add(method.Identifier.Text);
+                foreach (var usedField in usedFields.Where(usedField => fieldUsage.ContainsKey(usedField)))
+                    fieldUsage[usedField].Add(method.Identifier.Text);
             }
 
             var disjointFieldUsagePairs = 0;

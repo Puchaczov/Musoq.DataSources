@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -33,7 +32,7 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
     }
 
     protected override Task CollectChunksAsync(
-        BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+        IChunkWriter<BlameHunkEntity> writer,
         CancellationToken cancellationToken)
     {
         if (!Directory.Exists(_repositoryPath))
@@ -81,7 +80,7 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
             return Task.CompletedTask;
         }
 
-        var chunk = new List<IObjectResolver>(100);
+        var chunk = new List<BlameHunkEntity>(100);
 
         foreach (var hunk in blameHunks)
         {
@@ -89,20 +88,16 @@ internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
                 break;
 
             var entity = new BlameHunkEntity(hunk, repository, _filePath);
-            chunk.Add(new EntityResolver<BlameHunkEntity>(
-                entity,
-                BlameHunkEntity.NameToIndexMap,
-                BlameHunkEntity.IndexToObjectAccessMap
-            ));
+            chunk.Add(entity);
 
             if (chunk.Count >= 100)
             {
-                chunkedSource.Add(chunk.ToArray(), cancellationToken);
-                chunk.Clear();
+                writer.Write(chunk);
+                chunk = [];
             }
         }
 
-        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
+        if (chunk.Count > 0) writer.Write(chunk);
 
         return Task.CompletedTask;
     }

@@ -1,10 +1,9 @@
 using System.Globalization;
-using Musoq.Parser.Nodes;
 
 namespace Musoq.DataSources.Jira.Helpers;
 
 /// <summary>
-///     Parameters extracted from WHERE clause for Jira API queries.
+///     Parameters used to build Jira API queries.
 /// </summary>
 internal class JiraFilterParameters
 {
@@ -100,59 +99,15 @@ internal class JiraFilterParameters
 }
 
 /// <summary>
-///     Helper class to extract filter parameters from WHERE clause nodes and build JQL queries.
+///     Helper class to build JQL queries from filter parameters.
 /// </summary>
 internal static class JqlBuilder
 {
     /// <summary>
-    ///     Field name mappings from entity properties to JQL field names.
-    /// </summary>
-    private static readonly Dictionary<string, string> FieldMappings = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "status", "status" },
-        { "type", "issuetype" },
-        { "priority", "priority" },
-        { "resolution", "resolution" },
-        { "assignee", "assignee" },
-        { "assigneedisplayname", "assignee" },
-        { "reporter", "reporter" },
-        { "reporterdisplayname", "reporter" },
-        { "projectkey", "project" },
-        { "key", "key" },
-        { "labels", "labels" },
-        { "components", "component" },
-        { "createdat", "created" },
-        { "updatedat", "updated" },
-        { "resolvedat", "resolved" },
-        { "duedate", "duedate" },
-        { "parentkey", "parent" },
-        { "fixversions", "fixVersion" },
-        { "affectsversions", "affectedVersion" },
-        { "summary", "summary" },
-        { "description", "description" },
-        { "environment", "environment" }
-    };
-
-    /// <summary>
-    ///     Extracts Jira filter parameters from a WHERE node.
-    /// </summary>
-    public static JiraFilterParameters ExtractParameters(WhereNode? whereNode)
-    {
-        var parameters = new JiraFilterParameters();
-
-        if (whereNode?.Expression == null)
-            return parameters;
-
-        ExtractFromNode(whereNode.Expression, parameters);
-
-        return parameters;
-    }
-
-    /// <summary>
     ///     Builds a JQL query string from filter parameters.
     /// </summary>
     /// <param name="baseJql">Optional base JQL to extend (e.g., "project = PROJ")</param>
-    /// <param name="parameters">Filter parameters extracted from WHERE clause</param>
+    /// <param name="parameters">Filter parameters to include in the JQL query.</param>
     /// <returns>Complete JQL query string</returns>
     public static string BuildJql(string? baseJql, JiraFilterParameters parameters)
     {
@@ -216,206 +171,6 @@ internal static class JqlBuilder
         return conditions.Count > 0
             ? string.Join(" AND ", conditions)
             : "order by created DESC";
-    }
-
-    /// <summary>
-    ///     Builds a JQL query string directly from a WHERE node.
-    /// </summary>
-    /// <param name="baseJql">Optional base JQL to extend</param>
-    /// <param name="whereNode">WHERE clause node</param>
-    /// <returns>Complete JQL query string</returns>
-    public static string BuildJqlFromWhereNode(string? baseJql, WhereNode? whereNode)
-    {
-        var parameters = ExtractParameters(whereNode);
-        return BuildJql(baseJql, parameters);
-    }
-
-    private static void ExtractFromNode(Node node, JiraFilterParameters parameters)
-    {
-        switch (node)
-        {
-            case AndNode andNode:
-                ExtractFromNode(andNode.Left, parameters);
-                ExtractFromNode(andNode.Right, parameters);
-                break;
-
-            case OrNode:
-
-
-                break;
-
-            case EqualityNode equalityNode:
-                ExtractEqualityCondition(equalityNode, parameters);
-                break;
-
-            case GreaterOrEqualNode greaterEqualNode:
-                ExtractComparisonCondition(greaterEqualNode, ">=", parameters);
-                break;
-
-            case LessOrEqualNode lessEqualNode:
-                ExtractComparisonCondition(lessEqualNode, "<=", parameters);
-                break;
-
-            case GreaterNode greaterNode:
-                ExtractComparisonCondition(greaterNode, ">", parameters);
-                break;
-
-            case LessNode lessNode:
-                ExtractComparisonCondition(lessNode, "<", parameters);
-                break;
-
-            case LikeNode likeNode:
-                ExtractLikeCondition(likeNode, parameters);
-                break;
-        }
-    }
-
-    private static void ExtractEqualityCondition(EqualityNode node, JiraFilterParameters parameters)
-    {
-        var (fieldName, value) = ExtractFieldAndValue(node.Left, node.Right);
-
-        if (fieldName == null || value == null)
-            return;
-
-        var lowerFieldName = fieldName.ToLowerInvariant();
-
-        switch (lowerFieldName)
-        {
-            case "status":
-                parameters.Status = value.ToString();
-                break;
-            case "type":
-                parameters.Type = value.ToString();
-                break;
-            case "priority":
-                parameters.Priority = value.ToString();
-                break;
-            case "resolution":
-                parameters.Resolution = value.ToString();
-                break;
-            case "assignee":
-            case "assigneedisplayname":
-                parameters.Assignee = value.ToString();
-                break;
-            case "reporter":
-            case "reporterdisplayname":
-                parameters.Reporter = value.ToString();
-                break;
-            case "projectkey":
-                parameters.ProjectKey = value.ToString();
-                break;
-            case "key":
-                parameters.Key = value.ToString();
-                break;
-            case "parentkey":
-                parameters.ParentKey = value.ToString();
-                break;
-        }
-    }
-
-    private static void ExtractComparisonCondition(Node node, string op, JiraFilterParameters parameters)
-    {
-        Node left, right;
-
-        switch (node)
-        {
-            case GreaterOrEqualNode ge:
-                left = ge.Left;
-                right = ge.Right;
-                break;
-            case LessOrEqualNode le:
-                left = le.Left;
-                right = le.Right;
-                break;
-            case GreaterNode g:
-                left = g.Left;
-                right = g.Right;
-                break;
-            case LessNode l:
-                left = l.Left;
-                right = l.Right;
-                break;
-            default:
-                return;
-        }
-
-        var (fieldName, value) = ExtractFieldAndValue(left, right);
-
-        if (fieldName == null || value == null)
-            return;
-
-        var lowerFieldName = fieldName.ToLowerInvariant();
-
-
-        if (lowerFieldName == "createdat" && value is DateTimeOffset createdDate)
-        {
-            if (op is ">=" or ">")
-                parameters.CreatedAfter = createdDate;
-            else if (op is "<=" or "<")
-                parameters.CreatedBefore = createdDate;
-        }
-        else if (lowerFieldName == "updatedat" && value is DateTimeOffset updatedDate)
-        {
-            if (op is ">=" or ">")
-                parameters.UpdatedAfter = updatedDate;
-            else if (op is "<=" or "<")
-                parameters.UpdatedBefore = updatedDate;
-        }
-    }
-
-    private static void ExtractLikeCondition(LikeNode node, JiraFilterParameters parameters)
-    {
-        if (node.Left is not FieldNode fieldNode)
-            return;
-
-        var pattern = node.Right switch
-        {
-            StringNode stringNode => stringNode.Value,
-            _ => null
-        };
-
-        if (pattern == null)
-            return;
-
-
-        var searchText = pattern.Trim('%', '_');
-
-        var lowerFieldName = fieldNode.FieldName.ToLowerInvariant();
-
-        if (lowerFieldName == "summary")
-            parameters.SummaryContains = searchText;
-        else if (lowerFieldName == "description" || lowerFieldName == "text") parameters.TextSearch = searchText;
-    }
-
-    private static (string? fieldName, object? value) ExtractFieldAndValue(Node left, Node right)
-    {
-        string? fieldName = null;
-        object? value = null;
-
-        if (left is FieldNode fieldNode)
-        {
-            fieldName = fieldNode.FieldName;
-            value = ExtractValue(right);
-        }
-        else if (right is FieldNode fieldNode2)
-        {
-            fieldName = fieldNode2.FieldName;
-            value = ExtractValue(left);
-        }
-
-        return (fieldName, value);
-    }
-
-    private static object? ExtractValue(Node node)
-    {
-        return node switch
-        {
-            StringNode stringNode => stringNode.Value,
-            IntegerNode intNode => intNode.ObjValue,
-            DecimalNode decimalNode => decimalNode.Value,
-            BooleanNode boolNode => boolNode.Value,
-            _ => null
-        };
     }
 
     private static string EscapeJql(string value)

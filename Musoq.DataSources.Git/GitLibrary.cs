@@ -5,7 +5,6 @@ using LibGit2Sharp;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
-using Group = Musoq.Plugins.Group;
 
 namespace Musoq.DataSources.Git;
 
@@ -300,113 +299,116 @@ public class GitLibrary : LibraryBase
     }
 
     /// <summary>
-    ///     Gets the max commit from a given group.
+    ///     Gets the max commit from the current aggregation group.
     /// </summary>
-    /// <param name="group">The group to retrieve the value from.</param>
-    /// <param name="name">The name of the value to retrieve.</param>
+    /// <param name="value">The commit to aggregate.</param>
+    /// <returns>The latest commit by committer date.</returns>
+    [AggregateFunction(typeof(MaxCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
+    public CommitEntity? MaxCommit(CommitEntity? value)
+    {
+        return AggregateFunction.NotInvoked<CommitEntity?>();
+    }
+
+    /// <summary>
+    ///     Gets the max commit from a parent aggregation group.
+    /// </summary>
+    /// <param name="value">The commit to aggregate.</param>
     /// <param name="parent">The parent group index.</param>
-    /// <returns>The commit.</returns>
-    [AggregationGetMethod]
-    public CommitEntity? MaxCommit([InjectGroup] Group group, string name, int parent)
+    /// <returns>The latest commit by committer date.</returns>
+    [AggregateFunction(typeof(MaxCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
+    public CommitEntity? MaxCommit(CommitEntity? value, [AggregateParent] int parent)
     {
-        var parentGroup = GetParentGroup(group, parent);
-        return parentGroup.GetValue<CommitEntity>(name);
+        return AggregateFunction.NotInvoked<CommitEntity?>();
     }
 
     /// <summary>
-    ///     Gets the max commit from a given group.
+    ///     Gets the min commit from the current aggregation group.
     /// </summary>
-    /// <param name="group">The group to retrieve the value from.</param>
-    /// <param name="name">The name of the value to retrieve.</param>
-    /// <returns>The commit.</returns>
-    [AggregationGetMethod]
-    public CommitEntity? MaxCommit([InjectGroup] Group group, string name)
+    /// <param name="value">The commit to aggregate.</param>
+    /// <returns>The earliest commit by committer date.</returns>
+    [AggregateFunction(typeof(MinCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
+    public CommitEntity? MinCommit(CommitEntity? value)
     {
-        var parentGroup = GetParentGroup(group, 0);
-        return parentGroup.GetValue<CommitEntity>(name);
+        return AggregateFunction.NotInvoked<CommitEntity?>();
     }
 
     /// <summary>
-    ///     Sets the max commit in the specified group.
+    ///     Gets the min commit from a parent aggregation group.
     /// </summary>
-    /// <param name="group">The group to set the value in.</param>
-    /// <param name="name">The name of the value to set.</param>
-    /// <param name="value">The value to set.</param>
+    /// <param name="value">The commit to aggregate.</param>
     /// <param name="parent">The parent group index.</param>
-    [AggregationSetMethod]
-    public void SetMaxCommit([InjectGroup] Group group, string name, CommitEntity? value, int parent = 0)
+    /// <returns>The earliest commit by committer date.</returns>
+    [AggregateFunction(typeof(MinCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
+    public CommitEntity? MinCommit(CommitEntity? value, [AggregateParent] int parent)
     {
-        var parentGroup = GetParentGroup(group, parent);
+        return AggregateFunction.NotInvoked<CommitEntity?>();
+    }
+}
 
-        if (value == null)
-        {
-            parentGroup.GetOrCreateValue<CommitEntity>(name);
-            return;
-        }
-
-        if (value.LibGitCommit == null)
-            return;
-
-        var currentValue = parentGroup.GetOrCreateValue<CommitEntity>(name);
-        parentGroup.SetValue(name,
-            currentValue is null || value.LibGitCommit.Committer.When > currentValue.LibGitCommit!.Committer.When
-                ? value
-                : currentValue);
+public static class MaxCommitAggregateKernel
+{
+    public struct State
+    {
+        public CommitEntity? Value;
     }
 
-    /// <summary>
-    ///     Gets the min commit from a given group.
-    /// </summary>
-    /// <param name="group">The group to retrieve the value from.</param>
-    /// <param name="name">The name of the value to retrieve.</param>
-    /// <param name="parent">The parent group index.</param>
-    /// <returns>The commit.</returns>
-    [AggregationGetMethod]
-    public CommitEntity? MinCommit([InjectGroup] Group group, string name, int parent)
+    public static void Set(ref State state, CommitEntity? value)
     {
-        var parentGroup = GetParentGroup(group, parent);
-        return parentGroup.GetValue<CommitEntity>(name);
+        if (IsNewer(value, state.Value))
+            state.Value = value;
     }
 
-
-    /// <summary>
-    ///     Gets the min commit from a given group.
-    /// </summary>
-    /// <param name="group">The group to retrieve the value from.</param>
-    /// <param name="name">The name of the value to retrieve.</param>
-    /// <returns>The commit.</returns>
-    [AggregationGetMethod]
-    public CommitEntity? MinCommit([InjectGroup] Group group, string name)
+    public static CommitEntity? Get(ref State state)
     {
-        var parentGroup = GetParentGroup(group, 0);
-        return parentGroup.GetValue<CommitEntity>(name);
+        return state.Value;
     }
 
-    /// <summary>
-    ///     Sets the min commit in the specified group.
-    /// </summary>
-    /// <param name="group">The group to set the value in.</param>
-    /// <param name="name">The name of the value to set.</param>
-    /// <param name="value">The value to set.</param>
-    /// <param name="parent">The parent group index.</param>
-    [AggregationSetMethod]
-    public void SetMinCommit([InjectGroup] Group group, string name, CommitEntity? value, int parent = 0)
+    public static void Merge(ref State state, ref State other)
     {
-        var parentGroup = GetParentGroup(group, parent);
+        if (IsNewer(other.Value, state.Value))
+            state.Value = other.Value;
+    }
 
-        if (value == null)
-        {
-            parentGroup.GetOrCreateValue<CommitEntity>(name);
-            return;
-        }
+    private static bool IsNewer(CommitEntity? candidate, CommitEntity? current)
+    {
+        if (candidate?.LibGitCommit == null)
+            return false;
 
-        if (value.LibGitCommit == null)
-            return;
+        return current?.LibGitCommit == null ||
+               candidate.LibGitCommit.Committer.When > current.LibGitCommit.Committer.When;
+    }
+}
 
-        var currentValue = parentGroup.GetOrCreateValue<CommitEntity>(name);
-        parentGroup.SetValue(name,
-            currentValue is null || value.LibGitCommit.Committer.When < currentValue.LibGitCommit!.Committer.When
-                ? value
-                : currentValue);
+public static class MinCommitAggregateKernel
+{
+    public struct State
+    {
+        public CommitEntity? Value;
+    }
+
+    public static void Set(ref State state, CommitEntity? value)
+    {
+        if (IsOlder(value, state.Value))
+            state.Value = value;
+    }
+
+    public static CommitEntity? Get(ref State state)
+    {
+        return state.Value;
+    }
+
+    public static void Merge(ref State state, ref State other)
+    {
+        if (IsOlder(other.Value, state.Value))
+            state.Value = other.Value;
+    }
+
+    private static bool IsOlder(CommitEntity? candidate, CommitEntity? current)
+    {
+        if (candidate?.LibGitCommit == null)
+            return false;
+
+        return current?.LibGitCommit == null ||
+               candidate.LibGitCommit.Committer.When < current.LibGitCommit.Committer.When;
     }
 }

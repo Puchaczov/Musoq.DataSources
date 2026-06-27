@@ -1,46 +1,43 @@
-﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Process;
 
-internal class ProcessesSource(RuntimeContext communicator) : RowSourceBase<System.Diagnostics.Process>
+internal class ProcessesSource(SourceExecutionContext executionContext) : RowSourceBase<System.Diagnostics.Process>
 {
     private const string ProcessesSourceName = "processes";
+    private const int ChunkSize = 20;
 
-    protected override void CollectChunks(
-        BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override void CollectChunks(IChunkWriter<System.Diagnostics.Process> writer)
     {
-        communicator.ReportDataSourceBegin(ProcessesSourceName);
+        executionContext.ReportDataSourceBegin(ProcessesSourceName);
         long totalRowsProcessed = 0;
 
         try
         {
-            var list = new List<EntityResolver<System.Diagnostics.Process>>();
-            var endWorkToken = communicator.EndWorkToken;
-            var i = 0;
+            var chunk = new List<System.Diagnostics.Process>(ChunkSize);
+
             foreach (var process in System.Diagnostics.Process.GetProcesses())
             {
-                i += 1;
-                list.Add(new EntityResolver<System.Diagnostics.Process>(process, ProcessHelper.ProcessNameToIndexMap,
-                    ProcessHelper.ProcessIndexToMethodAccessMap));
+                writer.CancellationToken.ThrowIfCancellationRequested();
 
+                chunk.Add(process);
                 totalRowsProcessed++;
 
-                if (i < 20)
+                if (chunk.Count < ChunkSize)
                     continue;
 
-                i = 0;
-                chunkedSource.Add(list, endWorkToken);
-                list = [];
+                writer.Write(chunk);
+                chunk = [];
             }
 
-            chunkedSource.Add(list, endWorkToken);
+            if (chunk.Count > 0)
+                writer.Write(chunk);
         }
         finally
         {
-            communicator.ReportDataSourceEnd(ProcessesSourceName, totalRowsProcessed);
+            executionContext.ReportDataSourceEnd(ProcessesSourceName, totalRowsProcessed);
         }
     }
 }

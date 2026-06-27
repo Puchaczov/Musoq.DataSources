@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using Musoq.DataSources.Os.Files;
@@ -10,79 +9,80 @@ namespace Musoq.DataSources.Os;
 public partial class OsLibrary
 {
     /// <summary>
-    ///     Gets the aggregated average value from the given group name
+    ///     Aggregates files from the current group into a list.
     /// </summary>
-    /// <param name="group" injectedByRuntime="true">The group object</param>
-    /// <param name="name">The name of the group</param>
-    /// <returns>Aggregated value</returns>
-    [AggregationGetMethod]
-    public IReadOnlyList<FileEntity>? AggregateFiles([InjectGroup] Group group, string name)
+    /// <param name="file">File to aggregate.</param>
+    /// <returns>Aggregated files.</returns>
+    [AggregateFunction(typeof(AggregateFilesKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
+    public IReadOnlyList<FileEntity>? AggregateFiles(FileEntity file)
     {
-        return group.GetValue<IReadOnlyList<FileEntity>>(name);
+        return AggregateFunction.NotInvoked<IReadOnlyList<FileEntity>?>();
     }
 
     /// <summary>
-    ///     Sets the value to average aggregation from the given group name
+    ///     Aggregates directories from the current group into a list.
     /// </summary>
-    /// <param name="group" injectedByRuntime="true">The group object</param>
-    /// <param name="name">The name of the group</param>
-    /// <param name="file">The value to set</param>
-    /// <returns>Aggregated value</returns>
-    [AggregationSetMethod]
-    public void SetAggregateFiles([InjectGroup] Group group, string name, FileEntity file)
+    /// <param name="directory">Directory to aggregate.</param>
+    /// <returns>Aggregated directories.</returns>
+    [AggregateFunction(typeof(AggregateDirectoriesKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
+    public IReadOnlyList<DirectoryInfo>? AggregateDirectories(DirectoryInfo directory)
     {
-        var list = group.GetOrCreateValue(name, new List<FileEntity>());
+        return AggregateFunction.NotInvoked<IReadOnlyList<DirectoryInfo>?>();
+    }
+}
 
-        list.Add(file);
+public static class AggregateFilesKernel
+{
+    public struct State
+    {
+        public List<FileEntity>? Files;
     }
 
-    /// <summary>
-    ///     Sets the value to average aggregation from the given group name
-    /// </summary>
-    /// <param name="group" injectedByRuntime="true">The group object</param>
-    /// <param name="name">The name of the group</param>
-    /// <param name="file">The value to set</param>
-    /// <returns>Aggregated value</returns>
-    [AggregationSetMethod]
-    public void SetAggregateFiles([InjectGroup] Group group, [InjectSpecificSource(typeof(FileEntity))] FileEntity file,
-        string name)
+    public static void Set(ref State state, FileEntity file)
     {
-        var list = group.GetOrCreateValue(name, new List<FileEntity>());
-
-        if (list == null)
-            throw new InvalidOperationException("List is null");
-
-        list.Add(file);
+        state.Files ??= [];
+        state.Files.Add(file);
     }
 
-    /// <summary>
-    ///     Gets the aggregated average value from the given group name
-    /// </summary>
-    /// <param name="group" injectedByRuntime="true">The group object</param>
-    /// <param name="name">The name of the group</param>
-    /// <returns>Aggregated value</returns>
-    [AggregationGetMethod]
-    public IReadOnlyList<DirectoryInfo>? AggregateDirectories([InjectGroup] Group group, string name)
+    public static IReadOnlyList<FileEntity>? Get(ref State state)
     {
-        return group.GetValue<IReadOnlyList<DirectoryInfo>>(name);
+        return state.Files;
     }
 
-    /// <summary>
-    ///     Sets the value to average aggregation from the given group name
-    /// </summary>
-    /// <param name="group" injectedByRuntime="true">The group object</param>
-    /// <param name="directory">The value to set</param>
-    /// <param name="name">The name of the group</param>
-    /// <returns>Aggregated value</returns>
-    [AggregationSetMethod]
-    public void SetAggregateDirectories([InjectGroup] Group group,
-        [InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo directory, string name)
+    public static void Merge(ref State state, ref State other)
     {
-        var list = group.GetOrCreateValue(name, new List<DirectoryInfo>());
+        if (other.Files == null)
+            return;
 
-        if (list == null)
-            throw new InvalidOperationException("List is null");
+        state.Files ??= [];
+        state.Files.AddRange(other.Files);
+    }
+}
 
-        list.Add(directory);
+public static class AggregateDirectoriesKernel
+{
+    public struct State
+    {
+        public List<DirectoryInfo>? Directories;
+    }
+
+    public static void Set(ref State state, DirectoryInfo directory)
+    {
+        state.Directories ??= [];
+        state.Directories.Add(directory);
+    }
+
+    public static IReadOnlyList<DirectoryInfo>? Get(ref State state)
+    {
+        return state.Directories;
+    }
+
+    public static void Merge(ref State state, ref State other)
+    {
+        if (other.Directories == null)
+            return;
+
+        state.Directories ??= [];
+        state.Directories.AddRange(other.Directories);
     }
 }
