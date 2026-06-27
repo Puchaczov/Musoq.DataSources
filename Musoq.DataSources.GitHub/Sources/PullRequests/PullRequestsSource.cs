@@ -35,7 +35,12 @@ internal class PullRequestsSource : AsyncRowsSourceBase<PullRequestEntity>
         {
             var page = 1;
             var perPage = 100;
+            var plan = _executionContext.Plan;
+            var filters = GitHubSourcePlanner.GetFilters(plan);
             var request = new PullRequestRequest();
+            GitHubSourcePlanner.ApplyPullRequestFilters(request, filters);
+            long skipped = 0;
+            long emitted = 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -44,12 +49,18 @@ internal class PullRequestsSource : AsyncRowsSourceBase<PullRequestEntity>
                 if (pullRequests.Count == 0)
                     break;
 
-                writer.Write(pullRequests);
+                var plannedPullRequests =
+                    GitHubSourcePlanner.ApplyAcceptedPlan(pullRequests, plan, ref skipped, ref emitted);
 
-                totalRowsProcessed += pullRequests.Count;
-                _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                if (plannedPullRequests.Count > 0)
+                {
+                    writer.Write(plannedPullRequests);
 
-                if (pullRequests.Count < perPage)
+                    totalRowsProcessed += plannedPullRequests.Count;
+                    _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                }
+
+                if (pullRequests.Count < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
 
                 page++;

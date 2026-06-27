@@ -40,10 +40,16 @@ internal class CommitsSource : AsyncRowsSourceBase<CommitEntity>
         {
             var page = 1;
             var perPage = 100;
+            var plan = _executionContext.Plan;
+            var filters = GitHubSourcePlanner.GetFilters(plan);
             var request = new CommitRequest();
+            GitHubSourcePlanner.ApplyCommitFilters(request, filters);
 
             if (!string.IsNullOrEmpty(_branchOrSha))
                 request.Sha = _branchOrSha;
+
+            long skipped = 0;
+            long emitted = 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -52,12 +58,17 @@ internal class CommitsSource : AsyncRowsSourceBase<CommitEntity>
                 if (commits.Count == 0)
                     break;
 
-                writer.Write(commits);
+                var plannedCommits = GitHubSourcePlanner.ApplyAcceptedPlan(commits, plan, ref skipped, ref emitted);
 
-                totalRowsProcessed += commits.Count;
-                _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                if (plannedCommits.Count > 0)
+                {
+                    writer.Write(plannedCommits);
 
-                if (commits.Count < perPage)
+                    totalRowsProcessed += plannedCommits.Count;
+                    _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                }
+
+                if (commits.Count < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
 
                 page++;

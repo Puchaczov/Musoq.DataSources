@@ -77,6 +77,15 @@ public class GitHubIssuesTests
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual(101, table[0][0]);
         Assert.AreEqual("Open issue", table[0][1]);
+
+        api.Verify(
+            f => f.GetIssuesAsync(
+                "testowner",
+                "testrepo",
+                It.Is<RepositoryIssueRequest>(r => r.State == ItemStateFilter.Open),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()),
+            Times.Once);
     }
 
     [TestMethod]

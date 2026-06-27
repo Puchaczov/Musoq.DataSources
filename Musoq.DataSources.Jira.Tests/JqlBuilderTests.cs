@@ -156,6 +156,21 @@ public class JqlBuilderTests
     }
 
     [TestMethod]
+    public void BuildJql_WithExclusiveDateBounds_ShouldUseStrictOperators()
+    {
+        var start = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var end = new DateTimeOffset(2024, 12, 31, 23, 59, 0, TimeSpan.Zero);
+        var parameters = new JiraFilterParameters();
+        parameters.SetCreatedAfter(start, false);
+        parameters.SetUpdatedBefore(end, false);
+
+        var jql = JqlBuilder.BuildJql(null, parameters);
+
+        Assert.IsTrue(jql.Contains("created > \"2024-01-01 00:00\""));
+        Assert.IsTrue(jql.Contains("updated < \"2024-12-31 23:59\""));
+    }
+
+    [TestMethod]
     public void BuildJql_WithSummaryContains_ShouldUseTildeOperator()
     {
         var parameters = new JiraFilterParameters { SummaryContains = "login bug" };

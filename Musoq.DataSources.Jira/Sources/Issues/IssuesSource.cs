@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Jira.Entities;
+using Musoq.DataSources.Jira.Helpers;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -48,15 +49,21 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
 
         try
         {
-            var finalJql = !string.IsNullOrEmpty(_projectKey)
+            var plan = _executionContext.Plan;
+            var filters = JiraSourcePlanner.GetFilters(plan);
+            var baseJql = !string.IsNullOrEmpty(_projectKey)
                 ? $"project = {_projectKey}"
                 : _jql ?? string.Empty;
+
+            var finalJql = JqlBuilder.BuildJql(baseJql, filters);
 
             if (!finalJql.Contains("order by", StringComparison.OrdinalIgnoreCase))
                 finalJql += " ORDER BY created DESC";
 
             var startAt = 0;
             var maxResults = 50;
+            long skipped = 0;
+            long emitted = 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -65,14 +72,19 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
                 if (issues.Count == 0)
                     break;
 
-                writer.Write(issues);
+                var plannedIssues = JiraSourcePlanner.ApplyAcceptedPlan(issues, plan, ref skipped, ref emitted);
 
-                totalRowsProcessed += issues.Count;
+                if (plannedIssues.Count > 0)
+                {
+                    writer.Write(plannedIssues);
+
+                    totalRowsProcessed += plannedIssues.Count;
+                    _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                }
+
                 startAt += issues.Count;
 
-                _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
-
-                if (issues.Count < maxResults)
+                if (issues.Count < maxResults || JiraSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
             }
         }

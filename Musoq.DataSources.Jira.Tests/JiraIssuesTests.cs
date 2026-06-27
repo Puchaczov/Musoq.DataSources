@@ -123,6 +123,15 @@ public class JiraIssuesTests
 
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual("TEST-1", table[0][0]);
+
+        api.Verify(
+            f => f.GetIssuesAsync(
+                It.Is<string>(jql =>
+                    jql.Contains("status = \"Open\"") &&
+                    jql.Contains("priority = \"High\"")),
+                It.IsAny<int>(),
+                It.IsAny<int>()),
+            Times.Once);
     }
 
     [TestMethod]

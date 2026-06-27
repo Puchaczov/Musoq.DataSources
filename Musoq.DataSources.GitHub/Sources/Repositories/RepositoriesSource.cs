@@ -33,6 +33,10 @@ internal class RepositoriesSource : AsyncRowsSourceBase<RepositoryEntity>
         {
             var page = 1;
             var perPage = 100;
+            var plan = _executionContext.Plan;
+            var filters = GitHubSourcePlanner.GetFilters(plan);
+            long skipped = 0;
+            long emitted = 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -45,18 +49,25 @@ internal class RepositoriesSource : AsyncRowsSourceBase<RepositoryEntity>
                 else
                 {
                     var request = new RepositoryRequest();
+                    GitHubSourcePlanner.ApplyRepositoryFilters(request, filters);
                     repos = await _api.GetUserRepositoriesAsync(request, perPage, page);
                 }
 
                 if (repos.Count == 0)
                     break;
 
-                writer.Write(repos);
+                var plannedRepositories =
+                    GitHubSourcePlanner.ApplyAcceptedPlan(repos, plan, ref skipped, ref emitted);
 
-                totalRowsProcessed += repos.Count;
-                _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                if (plannedRepositories.Count > 0)
+                {
+                    writer.Write(plannedRepositories);
 
-                if (repos.Count < perPage)
+                    totalRowsProcessed += plannedRepositories.Count;
+                    _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                }
+
+                if (repos.Count < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
 
                 page++;

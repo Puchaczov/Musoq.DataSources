@@ -33,7 +33,12 @@ internal class IssuesSource : AsyncRowsSourceBase<IssueEntity>
         {
             var page = 1;
             var perPage = 100;
+            var plan = _executionContext.Plan;
+            var filters = GitHubSourcePlanner.GetFilters(plan);
             var request = new RepositoryIssueRequest();
+            GitHubSourcePlanner.ApplyIssueRequestFilters(request, filters);
+            long skipped = 0;
+            long emitted = 0;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -42,12 +47,17 @@ internal class IssuesSource : AsyncRowsSourceBase<IssueEntity>
                 if (issues.Count == 0)
                     break;
 
-                writer.Write(issues);
+                var plannedIssues = GitHubSourcePlanner.ApplyAcceptedPlan(issues, plan, ref skipped, ref emitted);
 
-                totalRowsProcessed += issues.Count;
-                _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                if (plannedIssues.Count > 0)
+                {
+                    writer.Write(plannedIssues);
 
-                if (issues.Count < perPage)
+                    totalRowsProcessed += plannedIssues.Count;
+                    _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                }
+
+                if (issues.Count < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
 
                 page++;

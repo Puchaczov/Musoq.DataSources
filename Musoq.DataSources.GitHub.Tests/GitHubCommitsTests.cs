@@ -163,6 +163,40 @@ public class GitHubCommitsTests
         Assert.AreEqual(0, table.Count);
     }
 
+    [TestMethod]
+    public void WhenCommitsFilteredByAuthorLogin_ShouldPassAuthorToRequest()
+    {
+        var api = new Mock<IGitHubApi>();
+
+        api.Setup(f =>
+                f.GetCommitsAsync("testowner", "testrepo", It.IsAny<CommitRequest>(), It.IsAny<int?>(),
+                    It.IsAny<int?>()))
+            .ReturnsAsync(new List<CommitEntity>
+            {
+                MockEntityFactory.CreateCommit("abc123def456", "Commit by user1", authorLogin: "user1"),
+                MockEntityFactory.CreateCommit("def456abc789", "Commit by user2", authorLogin: "user2")
+            });
+
+        var query =
+            "select Sha, AuthorLogin from #github.commits('testowner', 'testrepo') where AuthorLogin = 'user1'";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
+
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count);
+        Assert.AreEqual("user1", table[0][1]);
+
+        api.Verify(
+            f => f.GetCommitsAsync(
+                "testowner",
+                "testrepo",
+                It.Is<CommitRequest>(r => r.Author == "user1"),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()),
+            Times.Once);
+    }
+
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IGitHubApi api)
     {
         var mockSchemaProvider = new Mock<ISchemaProvider>();

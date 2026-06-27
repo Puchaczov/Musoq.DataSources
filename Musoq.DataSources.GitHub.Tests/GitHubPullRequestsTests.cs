@@ -108,6 +108,38 @@ public class GitHubPullRequestsTests
         Assert.AreEqual(true, table[0][2]);
     }
 
+    [TestMethod]
+    public void WhenPullRequestsFilteredByHeadRef_ShouldPassHeadToRequest()
+    {
+        var api = new Mock<IGitHubApi>();
+
+        api.Setup(f => f.GetPullRequestsAsync("testowner", "testrepo", It.IsAny<PullRequestRequest>(), It.IsAny<int?>(),
+                It.IsAny<int?>()))
+            .ReturnsAsync(new List<PullRequestEntity>
+            {
+                MockEntityFactory.CreatePullRequest(1, 201, "Feature PR", headRef: "feature"),
+                MockEntityFactory.CreatePullRequest(2, 202, "Other PR", headRef: "other")
+            });
+
+        var query = "select Number, HeadRef from #github.pullrequests('testowner', 'testrepo') where HeadRef = 'feature'";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
+
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count);
+        Assert.AreEqual(201, table[0][0]);
+
+        api.Verify(
+            f => f.GetPullRequestsAsync(
+                "testowner",
+                "testrepo",
+                It.Is<PullRequestRequest>(r => r.Head == "feature"),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()),
+            Times.Once);
+    }
+
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IGitHubApi api)
     {
         var mockSchemaProvider = new Mock<ISchemaProvider>();

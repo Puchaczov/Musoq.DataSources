@@ -283,7 +283,7 @@ public class JiraSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
-        return SourcePlanResult.RejectAll(request);
+        return JiraSourcePlanner.Plan(name, request);
     }
 
     /// <summary>
