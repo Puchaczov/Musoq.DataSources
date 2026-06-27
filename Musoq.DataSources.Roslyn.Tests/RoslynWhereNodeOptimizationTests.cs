@@ -4,7 +4,6 @@ using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Parser.Helpers;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 

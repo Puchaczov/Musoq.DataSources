@@ -7,7 +7,6 @@ using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Parser.Helpers;
 
 namespace Musoq.DataSources.Git.Tests;
 
