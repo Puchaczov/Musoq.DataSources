@@ -1,7 +1,7 @@
 ﻿using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.OpenAI;
@@ -140,10 +140,13 @@ public class OpenAiSchema : SchemaBase
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         return new OpenAiSingleRowTable();
     }
@@ -152,21 +155,64 @@ public class OpenAiSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
-        return new OpenAiSingleRowSource(runtimeContext, new OpenAiRequestInfo
+        return EnsureSourceType<T, OpenAiEntity>(
+            name,
+            new OpenAiSingleRowSource(executionContext, new OpenAiRequestInfo
+            {
+                Model = parameters.Length > 0
+                    ? Convert.ToString(parameters[0]) ?? Defaults.DefaultModel
+                    : Defaults.DefaultModel,
+                MaxTokens = parameters.Length > 1 ? Convert.ToInt32(parameters[1]) : 4000,
+                Temperature = parameters.Length > 2 ? Convert.ToSingle(parameters[2]) : 0,
+                FrequencyPenalty = parameters.Length > 3 ? Convert.ToSingle(parameters[3]) : 0,
+                PresencePenalty = parameters.Length > 4 ? Convert.ToSingle(parameters[4]) : 0
+            }));
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
         {
-            Model = parameters.Length > 0
-                ? Convert.ToString(parameters[0]) ?? Defaults.DefaultModel
-                : Defaults.DefaultModel,
-            MaxTokens = parameters.Length > 1 ? Convert.ToInt32(parameters[1]) : 4000,
-            Temperature = parameters.Length > 2 ? Convert.ToSingle(parameters[2]) : 0,
-            FrequencyPenalty = parameters.Length > 3 ? Convert.ToSingle(parameters[3]) : 0,
-            PresencePenalty = parameters.Length > 4 ? Convert.ToSingle(parameters[4]) : 0
-        });
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                "OPENAI_API_KEY",
+                true,
+                true,
+                SourceRuntimeSettingPhase.Execution,
+                "OpenAI API key.")
+        ];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
     }
 
     /// <summary>
@@ -175,20 +221,18 @@ public class OpenAiSchema : SchemaBase
     /// <returns>Data sources constructors</returns>
     public override SchemaMethodInfo[] GetConstructors()
     {
-        var constructors = new List<SchemaMethodInfo>();
-
-        constructors.AddRange(TypeHelper.GetSchemaMethodInfosForType<OpenAiSingleRowSource>("gpt"));
-
-        return constructors.ToArray();
+        return CreateGptMethodInfos();
     }
 
     /// <summary>
     ///     Gets raw information's about specific method in the schema.
     /// </summary>
     /// <param name="methodName">Method name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Data sources constructors</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
     {
         return methodName switch
         {
@@ -200,9 +244,9 @@ public class OpenAiSchema : SchemaBase
     /// <summary>
     ///     Gets raw information's about all tables in the schema.
     /// </summary>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Data sources constructors</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return CreateGptMethodInfos();
     }

@@ -1,33 +1,30 @@
-using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Jira.Entities;
-using Musoq.DataSources.Jira.Helpers;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Jira.Sources.Issues;
 
 /// <summary>
-///     Row source for Jira issues with predicate pushdown support.
-///     Extracts filter conditions from WHERE clause and builds JQL for efficient querying.
+///     Row source for Jira issues.
 /// </summary>
 internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
 {
     private const string SourceName = "jira_issues";
     private readonly IJiraApi _api;
+    private readonly SourceExecutionContext _executionContext;
     private readonly string? _jql;
     private readonly string? _projectKey;
-    private readonly RuntimeContext _runtimeContext;
 
     /// <summary>
     ///     Creates an issues source for a specific project.
     /// </summary>
-    public IssuesSource(IJiraApi api, RuntimeContext runtimeContext, string projectKey)
-        : base(runtimeContext.EndWorkToken)
+    public IssuesSource(IJiraApi api, SourceExecutionContext executionContext, string projectKey)
+        : base(executionContext.EndWorkToken)
     {
         _api = api;
-        _runtimeContext = runtimeContext;
+        _executionContext = executionContext;
         _projectKey = projectKey;
         _jql = null;
     }
@@ -35,68 +32,45 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
     /// <summary>
     ///     Creates an issues source with a custom JQL query.
     /// </summary>
-    public IssuesSource(IJiraApi api, RuntimeContext runtimeContext, string? projectKey, string? jql)
-        : base(runtimeContext.EndWorkToken)
+    public IssuesSource(IJiraApi api, SourceExecutionContext executionContext, string? projectKey, string? jql)
+        : base(executionContext.EndWorkToken)
     {
         _api = api;
-        _runtimeContext = runtimeContext;
+        _executionContext = executionContext;
         _projectKey = projectKey;
         _jql = jql;
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(IChunkWriter<IJiraIssue> writer, CancellationToken cancellationToken)
     {
-        _runtimeContext.ReportDataSourceBegin(SourceName);
+        _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
         try
         {
-            var filterParameters = JqlBuilder.ExtractParameters(_runtimeContext.QuerySourceInfo.WhereNode);
-
-
-            var baseJql = !string.IsNullOrEmpty(_projectKey)
+            var finalJql = !string.IsNullOrEmpty(_projectKey)
                 ? $"project = {_projectKey}"
-                : _jql;
-
-
-            var finalJql = JqlBuilder.BuildJql(baseJql, filterParameters);
-
+                : _jql ?? string.Empty;
 
             if (!finalJql.Contains("order by", StringComparison.OrdinalIgnoreCase))
                 finalJql += " ORDER BY created DESC";
 
-            var takeValue = _runtimeContext.QueryHints.TakeValue;
-            var skipValue = _runtimeContext.QueryHints.SkipValue;
-
-            var startAt = skipValue.HasValue ? (int)skipValue.Value : 0;
+            var startAt = 0;
             var maxResults = 50;
-            var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
-            var fetchedRows = 0;
 
-
-            while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 var issues = await _api.GetIssuesAsync(finalJql, maxResults, startAt);
 
                 if (issues.Count == 0)
                     break;
 
-                var resolvers = issues
-                    .Take(maxRows - fetchedRows)
-                    .Select(i => new EntityResolver<IJiraIssue>(
-                        i,
-                        IssuesSourceHelper.IssuesNameToIndexMap,
-                        IssuesSourceHelper.IssuesIndexToMethodAccessMap))
-                    .ToList();
+                writer.Write(issues);
 
-                chunkedSource.Add(resolvers);
-
-                fetchedRows += resolvers.Count;
-                totalRowsProcessed += resolvers.Count;
+                totalRowsProcessed += issues.Count;
                 startAt += issues.Count;
 
-                _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
 
                 if (issues.Count < maxResults)
                     break;
@@ -104,12 +78,12 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
         }
         catch (Exception ex)
         {
-            _runtimeContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
+            _executionContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
             throw;
         }
         finally
         {
-            _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
+            _executionContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
         }
     }
 }

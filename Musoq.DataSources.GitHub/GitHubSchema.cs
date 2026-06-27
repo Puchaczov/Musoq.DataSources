@@ -5,9 +5,11 @@ using Musoq.DataSources.GitHub.Sources.Issues;
 using Musoq.DataSources.GitHub.Sources.PullRequests;
 using Musoq.DataSources.GitHub.Sources.Releases;
 using Musoq.DataSources.GitHub.Sources.Repositories;
+using Musoq.DataSources.GitHub.Entities;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.GitHub;
@@ -337,10 +339,13 @@ public class GitHubSchema : SchemaBase
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
@@ -359,60 +364,137 @@ public class GitHubSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
-        var api = _api ?? new GitHubApi(runtimeContext.EnvironmentVariables["GITHUB_TOKEN"]);
+        var api = _api ?? new GitHubApi(executionContext.SourceRuntimeSettings["GITHUB_TOKEN"]);
 
         return name.ToLowerInvariant() switch
         {
             RepositoriesTableName => parameters.Length switch
             {
-                0 => new RepositoriesSource(api, runtimeContext),
-                1 => new RepositoriesSource(api, runtimeContext, Convert.ToString(parameters[0])),
+                0 => EnsureSourceType<T, RepositoryEntity>(name, new RepositoriesSource(api, executionContext)),
+                1 => EnsureSourceType<T, RepositoryEntity>(
+                    name,
+                    new RepositoriesSource(api, executionContext, Convert.ToString(parameters[0]))),
                 _ => throw new ArgumentException($"Invalid number of parameters for {name}")
             },
-            IssuesTableName => new IssuesSource(api, runtimeContext,
-                Convert.ToString(parameters[0])!,
-                Convert.ToString(parameters[1])!),
-            PullRequestsTableName => new PullRequestsSource(api, runtimeContext,
-                Convert.ToString(parameters[0])!,
-                Convert.ToString(parameters[1])!),
+            IssuesTableName => EnsureSourceType<T, IssueEntity>(
+                name,
+                new IssuesSource(api, executionContext,
+                    Convert.ToString(parameters[0])!,
+                    Convert.ToString(parameters[1])!)),
+            PullRequestsTableName => EnsureSourceType<T, PullRequestEntity>(
+                name,
+                new PullRequestsSource(api, executionContext,
+                    Convert.ToString(parameters[0])!,
+                    Convert.ToString(parameters[1])!)),
             CommitsTableName => parameters.Length switch
             {
-                2 => new CommitsSource(api, runtimeContext,
-                    Convert.ToString(parameters[0])!,
-                    Convert.ToString(parameters[1])!),
-                3 => new CommitsSource(api, runtimeContext,
-                    Convert.ToString(parameters[0])!,
-                    Convert.ToString(parameters[1])!,
-                    Convert.ToString(parameters[2])),
+                2 => EnsureSourceType<T, CommitEntity>(
+                    name,
+                    new CommitsSource(api, executionContext,
+                        Convert.ToString(parameters[0])!,
+                        Convert.ToString(parameters[1])!)),
+                3 => EnsureSourceType<T, CommitEntity>(
+                    name,
+                    new CommitsSource(api, executionContext,
+                        Convert.ToString(parameters[0])!,
+                        Convert.ToString(parameters[1])!,
+                        Convert.ToString(parameters[2]))),
                 _ => throw new ArgumentException($"Invalid number of parameters for {name}")
             },
-            BranchesTableName => new BranchesSource(api, runtimeContext,
-                Convert.ToString(parameters[0])!,
-                Convert.ToString(parameters[1])!),
-            BranchCommitsTableName => new BranchCommitsSource(api, runtimeContext,
-                Convert.ToString(parameters[0])!,
-                Convert.ToString(parameters[1])!,
-                Convert.ToString(parameters[2])!,
-                Convert.ToString(parameters[3])!),
-            ReleasesTableName => new ReleasesSource(api, runtimeContext,
-                Convert.ToString(parameters[0])!,
-                Convert.ToString(parameters[1])!),
+            BranchesTableName => EnsureSourceType<T, BranchEntity>(
+                name,
+                new BranchesSource(api, executionContext,
+                    Convert.ToString(parameters[0])!,
+                    Convert.ToString(parameters[1])!)),
+            BranchCommitsTableName => EnsureSourceType<T, CommitEntity>(
+                name,
+                new BranchCommitsSource(api, executionContext,
+                    Convert.ToString(parameters[0])!,
+                    Convert.ToString(parameters[1])!,
+                    Convert.ToString(parameters[2])!,
+                    Convert.ToString(parameters[3])!)),
+            ReleasesTableName => EnsureSourceType<T, ReleaseEntity>(
+                name,
+                new ReleasesSource(api, executionContext,
+                    Convert.ToString(parameters[0])!,
+                    Convert.ToString(parameters[1])!)),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
+        {
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return _api is not null
+            ? []
+            :
+            [
+                new SourceRuntimeSettingRequirement(
+                    "GITHUB_TOKEN",
+                    true,
+                    true,
+                    SourceRuntimeSettingPhase.Execution,
+                    "GitHub personal access token.")
+            ];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
+    }
+
+    public override SchemaMethodInfo[] GetConstructors()
+    {
+        return
+        [
+            CreateRepositoriesMethodInfo(),
+            CreateRepositoriesWithOwnerMethodInfo(),
+            CreateIssuesMethodInfo(),
+            CreatePullRequestsMethodInfo(),
+            CreateCommitsMethodInfo(),
+            CreateCommitsWithShaMethodInfo(),
+            CreateBranchCommitsMethodInfo(),
+            CreateBranchesMethodInfo(),
+            CreateReleasesMethodInfo()
+        ];
     }
 
     /// <summary>
     ///     Gets raw constructor information for a specific data source method.
     /// </summary>
     /// <param name="methodName">Name of the data source method</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of constructor information for the specified method</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
     {
         return methodName.ToLowerInvariant() switch
         {
@@ -432,9 +514,9 @@ public class GitHubSchema : SchemaBase
     /// <summary>
     ///     Gets raw constructor information for all data source methods in the schema.
     /// </summary>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of constructor information for all methods</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return
         [

@@ -1,10 +1,8 @@
-using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
-using Musoq.DataSources.GitHub.Helpers;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 using Octokit;
 
 namespace Musoq.DataSources.GitHub.Sources.Issues;
@@ -13,82 +11,41 @@ internal class IssuesSource : AsyncRowsSourceBase<IssueEntity>
 {
     private const string SourceName = "github_issues";
     private readonly IGitHubApi _api;
+    private readonly SourceExecutionContext _executionContext;
     private readonly string _owner;
     private readonly string _repo;
-    private readonly RuntimeContext _runtimeContext;
 
-    public IssuesSource(IGitHubApi api, RuntimeContext runtimeContext, string owner, string repo)
-        : base(runtimeContext.EndWorkToken)
+    public IssuesSource(IGitHubApi api, SourceExecutionContext executionContext, string owner, string repo)
+        : base(executionContext.EndWorkToken)
     {
         _api = api;
-        _runtimeContext = runtimeContext;
+        _executionContext = executionContext;
         _owner = owner;
         _repo = repo;
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(IChunkWriter<IssueEntity> writer, CancellationToken cancellationToken)
     {
-        _runtimeContext.ReportDataSourceBegin(SourceName);
+        _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
         try
         {
-            var parameters = WhereNodeHelper.ExtractParameters(_runtimeContext.QuerySourceInfo.WhereNode);
-            var takeValue = _runtimeContext.QueryHints.TakeValue;
-            var skipValue = _runtimeContext.QueryHints.SkipValue;
-
             var page = 1;
             var perPage = 100;
-
-            if (skipValue.HasValue && skipValue.Value > 0) page = (int)(skipValue.Value / perPage) + 1;
-
-            var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
-            var fetchedRows = 0;
-
-
             var request = new RepositoryIssueRequest();
 
-            if (!string.IsNullOrEmpty(parameters.State))
-                request.State = parameters.State.ToLowerInvariant() switch
-                {
-                    "open" => ItemStateFilter.Open,
-                    "closed" => ItemStateFilter.Closed,
-                    _ => ItemStateFilter.All
-                };
-
-            if (!string.IsNullOrEmpty(parameters.Assignee)) request.Assignee = parameters.Assignee;
-
-            if (!string.IsNullOrEmpty(parameters.Author)) request.Creator = parameters.Author;
-
-            if (!string.IsNullOrEmpty(parameters.Milestone)) request.Milestone = parameters.Milestone;
-
-            if (parameters.Since.HasValue) request.Since = parameters.Since.Value;
-
-            if (parameters.Labels.Count > 0)
-                foreach (var label in parameters.Labels)
-                    request.Labels.Add(label);
-
-            while (fetchedRows < maxRows && !cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 var issues = await _api.GetIssuesAsync(_owner, _repo, request, perPage, page);
 
                 if (issues.Count == 0)
                     break;
 
-                var resolvers = issues
-                    .Take(maxRows - fetchedRows)
-                    .Select(i => new EntityResolver<IssueEntity>(
-                        i,
-                        IssuesSourceHelper.IssuesNameToIndexMap,
-                        IssuesSourceHelper.IssuesIndexToMethodAccessMap))
-                    .ToList();
+                writer.Write(issues);
 
-                chunkedSource.Add(resolvers);
-
-                fetchedRows += resolvers.Count;
-                totalRowsProcessed += resolvers.Count;
-                _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+                totalRowsProcessed += issues.Count;
+                _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
 
                 if (issues.Count < perPage)
                     break;
@@ -98,12 +55,12 @@ internal class IssuesSource : AsyncRowsSourceBase<IssueEntity>
         }
         catch (Exception ex)
         {
-            _runtimeContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
+            _executionContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
             throw;
         }
         finally
         {
-            _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
+            _executionContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
         }
     }
 }

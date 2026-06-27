@@ -2,6 +2,7 @@
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 using Musoq.Schema.Reflection;
 
 namespace Musoq.DataSources.Ollama;
@@ -73,10 +74,13 @@ public class OllamaSchema : SchemaBase
     ///     Gets the table name based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data Source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    public override ISchemaTable GetTableByName(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override ISchemaTable GetTableByName(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
     {
         return new OllamaSingleRowTable();
     }
@@ -85,23 +89,66 @@ public class OllamaSchema : SchemaBase
     ///     Gets the data source based on the given data source and parameters.
     /// </summary>
     /// <param name="name">Data source name</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource GetRowSource(string name, RuntimeContext runtimeContext, params object[] parameters)
+    public override RowSource<T> GetRowSource<T>(
+        string name,
+        SourceExecutionContext executionContext,
+        params object[] parameters)
     {
-        runtimeContext.EnvironmentVariables.TryGetValue("OLLAMA_BASE_URL", out var ollamaBaseUrl);
+        executionContext.SourceRuntimeSettings.TryGetValue("OLLAMA_BASE_URL", out var ollamaBaseUrl);
 
         ollamaBaseUrl ??= OllamaApi.DefaultAddress;
 
-        return new OllamaSingleRowSource(runtimeContext, new OllamaRequestInfo
+        return EnsureSourceType<T, OllamaEntity>(
+            name,
+            new OllamaSingleRowSource(executionContext, new OllamaRequestInfo
+            {
+                Model = parameters.Length > 0
+                    ? Convert.ToString(parameters[0]) ?? throw new Exception("Model name cannot be null.")
+                    : throw new Exception("Model name is required."),
+                Temperature = parameters.Length > 1 ? MapParameter(parameters[1]) : 0,
+                OllamaBaseUrl = ollamaBaseUrl
+            }, _serviceProvider.GetRequiredService<IHttpClientFactory>()));
+    }
+
+    public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        var table = GetTableByName(name, context.MetadataContext, parameters);
+
+        return new SourceDescriptor
         {
-            Model = parameters.Length > 0
-                ? Convert.ToString(parameters[0]) ?? throw new Exception("Model name cannot be null.")
-                : throw new Exception("Model name is required."),
-            Temperature = parameters.Length > 1 ? MapParameter(parameters[1]) : 0,
-            OllamaBaseUrl = ollamaBaseUrl
-        }, _serviceProvider.GetRequiredService<IHttpClientFactory>());
+            Identity = context.Identity,
+            Columns = table.Columns,
+            RowType = table.Metadata.TableEntityType,
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                "OLLAMA_BASE_URL",
+                false,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "Ollama base URL.")
+        ];
+    }
+
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    {
+        return SourcePlanResult.RejectAll(request);
     }
 
     /// <summary>
@@ -117,9 +164,11 @@ public class OllamaSchema : SchemaBase
     ///     Gets raw constructor information for a specific data source method.
     /// </summary>
     /// <param name="methodName">Name of the data source method</param>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of constructor information for the specified method</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(string methodName, RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(
+        string methodName,
+        SourceMetadataContext metadataContext)
     {
         return methodName.ToLowerInvariant() switch
         {
@@ -133,9 +182,9 @@ public class OllamaSchema : SchemaBase
     /// <summary>
     ///     Gets raw constructor information for all data source methods in the schema.
     /// </summary>
-    /// <param name="runtimeContext">Runtime context</param>
+    /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of constructor information for all methods</returns>
-    public override SchemaMethodInfo[] GetRawConstructors(RuntimeContext runtimeContext)
+    public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return CreateLlmMethodInfos();
     }

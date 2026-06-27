@@ -1,9 +1,8 @@
-using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Jira.Entities;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Jira.Sources.Projects;
 
@@ -14,52 +13,42 @@ internal class ProjectsSource : AsyncRowsSourceBase<IJiraProject>
 {
     private const string SourceName = "jira_projects";
     private readonly IJiraApi _api;
-    private readonly RuntimeContext _runtimeContext;
+    private readonly SourceExecutionContext _executionContext;
 
-    public ProjectsSource(IJiraApi api, RuntimeContext runtimeContext)
-        : base(runtimeContext.EndWorkToken)
+    public ProjectsSource(IJiraApi api, SourceExecutionContext executionContext)
+        : base(executionContext.EndWorkToken)
     {
         _api = api;
-        _runtimeContext = runtimeContext;
+        _executionContext = executionContext;
     }
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    protected override async Task CollectChunksAsync(IChunkWriter<IJiraProject> writer, CancellationToken cancellationToken)
     {
-        _runtimeContext.ReportDataSourceBegin(SourceName);
+        _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
         try
         {
-            var takeValue = _runtimeContext.QueryHints.TakeValue;
             var projects = await _api.GetProjectsAsync();
 
-            var maxRows = takeValue.HasValue ? (int)takeValue.Value : int.MaxValue;
+            cancellationToken.ThrowIfCancellationRequested();
 
-            var resolvers = projects
-                .Take(maxRows)
-                .Select(p => new EntityResolver<IJiraProject>(
-                    p,
-                    ProjectsSourceHelper.ProjectsNameToIndexMap,
-                    ProjectsSourceHelper.ProjectsIndexToMethodAccessMap))
-                .ToList();
-
-            if (resolvers.Count > 0)
+            if (projects.Count > 0)
             {
-                chunkedSource.Add(resolvers);
-                totalRowsProcessed = resolvers.Count;
+                writer.Write(projects);
+                totalRowsProcessed = projects.Count;
             }
 
-            _runtimeContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
+            _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
         }
         catch (Exception ex)
         {
-            _runtimeContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
+            _executionContext.Logger.LogError(ex, "Error occurred while collecting {SourceName} data.", SourceName);
             throw;
         }
         finally
         {
-            _runtimeContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
+            _executionContext.ReportDataSourceEnd(SourceName, totalRowsProcessed);
         }
     }
 }
