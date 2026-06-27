@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Converter" Version="5.3.1"/>
-        <PackageReference Include="Musoq.Evaluator" Version="10.3.0"/>
-        <PackageReference Include="Musoq.Schema" Version="10.3.0"/>
+        <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1"/>
+        <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1"/>
+        <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1"/>
     </ItemGroup>
 
 </Project>
