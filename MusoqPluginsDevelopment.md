@@ -2890,38 +2890,6 @@ public class MessageEntity
 - Complex metadata documentation
 - Entity arrays and relationships
 
-#### Level 5: Postgres Plugin - Database Connectivity
-**Location**: `Musoq.DataSources.Postgres/`
-
-Study this for database integration patterns:
-
-**What to study:**
-- Database connection handling
-- Dynamic schema discovery
-- SQL query generation and execution
-- Connection string management
-
-**Key lessons:**
-```csharp
-// Database connection patterns
-var connectionString = runtimeContext.EnvironmentVariables["NPGSQL_CONNECTION_STRING"];
-
-// Dynamic columns for unknown database schemas
-/// <columns isDynamic="true"></columns>
-
-// Database-specific error handling
-try
-{
-    using var connection = new NpgsqlConnection(_connectionString);
-    connection.Open();
-    // Database operations...
-}
-catch (NpgsqlException ex)
-{
-    throw new InvalidOperationException($"Database error: {ex.Message}", ex);
-}
-```
-
 ### Pattern Recognition Exercises
 
 As you study these plugins, look for these recurring patterns:
@@ -3103,7 +3071,7 @@ SELECT u.name, o.total FROM #db1.users() u JOIN #db2.orders() o ON u.id = o.user
 SELECT * FROM #warehouse.table('sales_2024') WHERE region = 'Europe'
 ```
 
-**Pattern to follow**: Study the Postgres plugin for database connection patterns.
+**Pattern to follow**: Study the JSON or Archives plugin for dynamic row shaping, and Docker or GitHub for external integration patterns.
 
 ### 📁 File System Operations
 
@@ -3151,7 +3119,7 @@ SELECT name, size, last_modified FROM #azure.blobs('mycontainer') WHERE size > 1
 SELECT project_id, resource_type, location FROM #gcp.resources() WHERE location LIKE 'us-%'
 ```
 
-**Pattern to follow**: Study the Docker or Kubernetes plugins for external service integration.
+**Pattern to follow**: Study the Docker or GitHub plugins for external service integration.
 
 ### 🔧 System Monitoring
 

@@ -248,7 +248,6 @@ using Musoq.Schema.Attributes;
 | Plugin | Schema Name | SQL Usage |
 |--------|------------|-----------|
 | Docker | `"docker"` | `SELECT * FROM #docker.containers()` |
-| Kubernetes | `"kubernetes"` | `SELECT * FROM #kubernetes.pods()` |
 | GitHub | `"github"` | `SELECT * FROM #github.user_repositories()` |
 | Jira | `"jira"` | `SELECT * FROM #jira.issues()` |
 | OpenAI | `"openai"` | `SELECT * FROM #openai.completions()` |

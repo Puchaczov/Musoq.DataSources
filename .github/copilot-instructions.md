@@ -21,7 +21,6 @@
 
 ### Core helpers
 - AsyncRowsSource: `Musoq.DataSources.AsyncRowsSource/copilot-instructions.md`
-- Databases: `Musoq.DataSources.Databases/copilot-instructions.md`
 - JsonHelpers: `Musoq.DataSources.JsonHelpers/copilot-instructions.md`
 - LLMHelpers: `Musoq.DataSources.LLMHelpers/copilot-instructions.md`
 - Roslyn.CommandLineArguments: `Musoq.DataSources.Roslyn.CommandLineArguments/copilot-instructions.md`
@@ -36,17 +35,13 @@
 - System: `Musoq.DataSources.System/copilot-instructions.md`
 - Time: `Musoq.DataSources.Time/copilot-instructions.md`
 
-### Database and repository plugins
+### Repository plugins
 - Git: `Musoq.DataSources.Git/copilot-instructions.md`
-- Postgres: `Musoq.DataSources.Postgres/copilot-instructions.md`
-- Sqlite: `Musoq.DataSources.Sqlite/copilot-instructions.md`
 
 ### Remote/API plugins
-- Airtable: `Musoq.DataSources.Airtable/copilot-instructions.md`
 - Docker: `Musoq.DataSources.Docker/copilot-instructions.md`
 - GitHub: `Musoq.DataSources.GitHub/copilot-instructions.md`
 - Jira: `Musoq.DataSources.Jira/copilot-instructions.md`
-- Kubernetes: `Musoq.DataSources.Kubernetes/copilot-instructions.md`
 
 ### LLM plugins
 - Ollama: `Musoq.DataSources.Ollama/copilot-instructions.md`

@@ -12,7 +12,7 @@ The final package must be a Zip archive with a filename following this pattern:
 
 **Examples:**
 - `Musoq.DataSources.Git-windows-x64.zip`
-- `Musoq.DataSources.Sqlite-linux-arm64.zip`
+- `Musoq.DataSources.Time-linux-x64.zip`
 - `Musoq.DataSources.Json-alpine-x64.zip`
 
 ## Package Structure
