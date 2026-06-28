@@ -21,10 +21,12 @@ $script:MaxStringLength = 500
 $script:MaxDescriptionLength = 1000
 $script:MaxTagLength = 50
 $script:MaxTagCount = 20
-$script:VersionPattern = '^\d+\.\d+\.\d+(-[\w\d]+)?$'
+$script:VersionPattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
 $script:PluginNamePattern = '^Musoq\.DataSources\.[A-Za-z][A-Za-z0-9]*$'
 $script:ShortNamePattern = '^[a-z][a-z0-9]*$'
 $script:SafeStringPattern = '^[a-zA-Z0-9\.\-_\s,]+$'
+
+. "$PSScriptRoot/Plugin-Versioning.ps1"
 
 function Test-SafeString {
     param(
@@ -60,17 +62,11 @@ function Test-ValidVersion {
         return $false
     }
     
-    if ($Version -notmatch $script:VersionPattern) {
+    if (-not (Test-MusoqSemVer -Version $Version)) {
         return $false
     }
-    
-    try {
-        [void][version]($Version -replace '-.*$', '')
-        return $true
-    }
-    catch {
-        return $false
-    }
+
+    return $true
 }
 
 function Test-ValidPluginName {
@@ -280,7 +276,7 @@ function Get-ProjectMetadata {
     }
     
     $ShortName = Get-ShortName -ProjectName $Project.BaseName
-    $ReleaseTag = "$Version-$($Project.BaseName)"
+    $ReleaseTag = New-MusoqPluginReleaseTag -Version $Version -PluginName $Project.BaseName
     
     if ($ReleaseTag.Length -gt 200 -or $ReleaseTag -match '[<>|&;`$\s]') {
         throw "Invalid release tag format: $ReleaseTag"
