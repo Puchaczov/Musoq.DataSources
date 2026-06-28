@@ -82,6 +82,7 @@ foreach ($Project in $Projects) {
     $ProjectName = $Metadata.Name
     $Version = $Metadata.Version
     $ReleaseTag = $Metadata.ReleaseTag
+    $ParsedReleaseTag = ConvertFrom-MusoqPluginReleaseTag -ReleaseTag $ReleaseTag
     
     Write-Host "Processing $ProjectName with version $Version" -ForegroundColor Cyan
     
@@ -93,6 +94,12 @@ foreach ($Project in $Projects) {
     
     if (-not (Test-ValidVersion -Version $Version)) {
         Write-Warning "  Skipping: Invalid version format"
+        $SkippedCount++
+        continue
+    }
+
+    if (-not $ParsedReleaseTag -or $ParsedReleaseTag.Version -ne $Version -or $ParsedReleaseTag.PluginName -ne $ProjectName) {
+        Write-Warning "  Skipping: Release tag '$ReleaseTag' does not match project/version"
         $SkippedCount++
         continue
     }
@@ -245,6 +252,8 @@ foreach ($Project in $Projects) {
         Version = $Version
         ReleaseTag = $ReleaseTag
         ReleaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture)
+        Channel = Get-MusoqVersionChannel -Version $Version
+        IsPrerelease = Test-MusoqPrereleaseVersion -Version $Version
         Artifacts = $ArtifactInfo
     }
 }
