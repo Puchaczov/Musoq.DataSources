@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     - name: Build & Run tests
       run: dotnet test --configuration Release
     - name: Publish
@@ -23,11 +23,16 @@ jobs:
       run: |
         $scriptLocationDirectory=(Get-Location).ToString()
         $scriptLocationFilePath=[System.IO.Path]::Combine($scriptLocationDirectory, "Publish.Nuget.ps1")
-        $nugetExecutable=[System.IO.Path]::Combine($scriptLocationDirectory, "nuget", "nuget.exe")
-        $projects = @('Musoq.DataSources.FlatFile', 'Musoq.DataSources.Json', 'Musoq.DataSources.JsonHelpers', 'Musoq.DataSources.Os', 'Musoq.DataSources.SeparatedValues', 'Musoq.DataSources.System', 'Musoq.DataSources.Time', 'Musoq.DataSources.OpenAI', 'Musoq.DataSources.Archives', 'Musoq.DataSources.Docker', 'Musoq.DataSources.Roslyn', 'Musoq.DataSources.AsyncRowsSource', 'Musoq.DataSources.Git')
+        $projects = Get-ChildItem -Recurse -Filter 'Musoq.DataSources.*.csproj' |
+          Where-Object {
+            [xml]$csproj = Get-Content $_.FullName
+            ($csproj.Project.PropertyGroup | Where-Object { $_.GeneratePackageOnBuild -eq 'true' }).Count -gt 0
+          } |
+          ForEach-Object { $_.BaseName } |
+          Sort-Object -Unique
         foreach ($project in $projects) {
           pushd
           cd "./$project/bin/Release"
-          Invoke-Expression "$scriptLocationFilePath $nugetExecutable $project '${{ secrets.nuget_musoq_key }}'"
+          & $scriptLocationFilePath "" $project '${{ secrets.nuget_musoq_key }}'
           popd
         }

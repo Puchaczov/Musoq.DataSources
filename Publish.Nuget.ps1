@@ -1,16 +1,33 @@
-﻿param([String] $nuget, [String]$project, [String]$apiKey)
+param(
+    [string]$unusedNugetExecutable,
+    [Parameter(Mandatory=$true)]
+    [string]$project,
+    [Parameter(Mandatory=$true)]
+    [string]$apiKey,
+    [string]$Source = "https://api.nuget.org/v3/index.json"
+)
 
-$fileName=Get-ChildItem -Path ./ -File | Select-Object -First 1 | Select -exp Name
-$text = Invoke-Expression "$nuget list Puchaczov" | Select-String -Pattern $project | Out-String
-$name,$version = $text.trim().split(" ")
-$publishedFileName = "$name.$version.nupkg"
+$ErrorActionPreference = "Stop"
 
-if ($fileName -ne $publishedFileName){
-	echo "Publishing $fileName...";
-	Invoke-Expression "$nuget push './$fileName' -Source https://api.nuget.org/v3/index.json -ApiKey $apiKey -skipDuplicate"
-	echo "done."
+if ([string]::IsNullOrWhiteSpace($apiKey)) {
+    throw "NuGet API key is required."
 }
-else
-{
-	echo "File $publishedFileName has already been published. Skipping."
+
+$packages = @(Get-ChildItem -Path . -Filter "$project.*.nupkg" -File | Where-Object { $_.Name -notlike "*.symbols.nupkg" })
+if ($packages.Count -eq 0) {
+    throw "No NuGet package found for '$project' in $(Get-Location)."
+}
+
+foreach ($package in $packages) {
+    Write-Host "Publishing $($package.Name)..." -ForegroundColor Cyan
+    dotnet nuget push $package.FullName `
+        --source $Source `
+        --api-key $apiKey `
+        --skip-duplicate
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "dotnet nuget push failed for $($package.Name)."
+    }
+
+    Write-Host "done." -ForegroundColor Green
 }
