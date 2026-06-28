@@ -15,11 +15,15 @@ internal class VolumesSource(IDockerApi api, SourceExecutionContext executionCon
         try
         {
             var volumes = api.ListVolumesAsync().Result;
-            executionContext.ReportDataSourceRowsKnown(VolumesSourceName, volumes.Count);
+            var rows = volumes
+                .Select(volume => new VolumeEntity(volume))
+                .Where(entity => DockerSourcePlanner.Matches(executionContext.Plan.AcceptedPredicate, entity))
+                .ToList();
 
-            writer.Write(volumes.Select(volume => new VolumeEntity(volume)).ToList());
+            executionContext.ReportDataSourceRowsKnown(VolumesSourceName, rows.Count);
+            writer.Write(rows);
 
-            executionContext.ReportDataSourceEnd(VolumesSourceName, volumes.Count);
+            executionContext.ReportDataSourceEnd(VolumesSourceName, rows.Count);
         }
         catch
         {

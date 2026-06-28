@@ -243,4 +243,19 @@ public class JqlBuilderTests
 
         Assert.IsTrue(jql.Contains("resolution = \"Done\""));
     }
+
+    [TestMethod]
+    public void BuildJql_WithAcceptedOrder_ShouldAppendOrderBy()
+    {
+        var parameters = new JiraFilterParameters
+        {
+            Status = "Open",
+            OrderByField = "updated",
+            OrderByDirection = "ASC"
+        };
+
+        var jql = JqlBuilder.BuildJql("project = TEST", parameters);
+
+        Assert.AreEqual("project = TEST AND status = \"Open\" ORDER BY updated ASC", jql);
+    }
 }

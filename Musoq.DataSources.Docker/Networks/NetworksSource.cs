@@ -15,11 +15,15 @@ internal class NetworksSource(IDockerApi api, SourceExecutionContext executionCo
         try
         {
             var networks = api.ListNetworksAsync().Result;
-            executionContext.ReportDataSourceRowsKnown(NetworksSourceName, networks.Count);
+            var rows = networks
+                .Select(network => new NetworkEntity(network))
+                .Where(entity => DockerSourcePlanner.Matches(executionContext.Plan.AcceptedPredicate, entity))
+                .ToList();
 
-            writer.Write(networks.Select(network => new NetworkEntity(network)).ToList());
+            executionContext.ReportDataSourceRowsKnown(NetworksSourceName, rows.Count);
+            writer.Write(rows);
 
-            executionContext.ReportDataSourceEnd(NetworksSourceName, networks.Count);
+            executionContext.ReportDataSourceEnd(NetworksSourceName, rows.Count);
         }
         catch
         {

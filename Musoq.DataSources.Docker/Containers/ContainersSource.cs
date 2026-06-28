@@ -15,11 +15,15 @@ internal class ContainersSource(IDockerApi api, SourceExecutionContext execution
         try
         {
             var containers = api.ListContainersAsync().Result;
-            executionContext.ReportDataSourceRowsKnown(ContainersSourceName, containers.Count);
+            var rows = containers
+                .Select(container => new ContainerEntity(container))
+                .Where(entity => DockerSourcePlanner.Matches(executionContext.Plan.AcceptedPredicate, entity))
+                .ToList();
 
-            writer.Write(containers.Select(container => new ContainerEntity(container)).ToList());
+            executionContext.ReportDataSourceRowsKnown(ContainersSourceName, rows.Count);
+            writer.Write(rows);
 
-            executionContext.ReportDataSourceEnd(ContainersSourceName, containers.Count);
+            executionContext.ReportDataSourceEnd(ContainersSourceName, rows.Count);
         }
         catch
         {

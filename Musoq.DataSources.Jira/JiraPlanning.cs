@@ -14,9 +14,10 @@ internal static class JiraSourcePlanner
             return SourcePlanResult.RejectAll(request);
 
         var (acceptedPredicate, residualPredicate) = SplitPredicate(request.Predicate, IsSupported);
+        var (acceptedOrderBy, residualOrderBy) = SplitOrderBy(request.OrderBy);
         var filters = ExtractFilters(acceptedPredicate);
-        var acceptsSlice = residualPredicate is null && (request.OrderBy?.Count ?? 0) == 0;
-        var residualOrderBy = request.OrderBy ?? [];
+        ApplyOrderBy(acceptedOrderBy, filters);
+        var acceptsSlice = residualPredicate is null && residualOrderBy.Count == 0;
 
         return new SourcePlanResult
         {
@@ -25,7 +26,7 @@ internal static class JiraSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
-                AcceptedOrderBy = [],
+                AcceptedOrderBy = acceptedOrderBy,
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
                 Properties = new Dictionary<string, object?>
@@ -36,7 +37,7 @@ internal static class JiraSourcePlanner
             AcceptedColumns = [],
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
-            AcceptedOrderBy = [],
+            AcceptedOrderBy = acceptedOrderBy,
             ResidualOrderBy = residualOrderBy,
             AcceptedSkip = acceptsSlice ? request.Skip : null,
             ResidualSkip = acceptsSlice ? null : request.Skip,
@@ -46,6 +47,51 @@ internal static class JiraSourcePlanner
             Diagnostics = [],
             ContractDiagnostics = []
         };
+    }
+
+    private static (IReadOnlyList<OrderByExpression> Accepted, IReadOnlyList<OrderByExpression> Residual)
+        SplitOrderBy(IReadOnlyList<OrderByExpression>? orderBy)
+    {
+        if (orderBy is null || orderBy.Count == 0)
+            return ([], []);
+
+        if (orderBy.Count == 1 &&
+            TryGetJqlOrderField(orderBy[0].Column.Name, out _))
+            return (orderBy, []);
+
+        return ([], orderBy);
+    }
+
+    private static void ApplyOrderBy(IReadOnlyList<OrderByExpression> acceptedOrderBy, JiraFilterParameters filters)
+    {
+        if (acceptedOrderBy.Count == 0)
+            return;
+
+        if (!TryGetJqlOrderField(acceptedOrderBy[0].Column.Name, out var field))
+            return;
+
+        filters.OrderByField = field;
+        filters.OrderByDirection = acceptedOrderBy[0].Direction == OrderDirection.Descending ? "DESC" : "ASC";
+    }
+
+    private static bool TryGetJqlOrderField(string columnName, out string field)
+    {
+        var normalized = NormalizeColumnName(columnName);
+
+        if (normalized.Equals(nameof(IJiraIssue.CreatedAt), StringComparison.OrdinalIgnoreCase))
+        {
+            field = "created";
+            return true;
+        }
+
+        if (normalized.Equals(nameof(IJiraIssue.UpdatedAt), StringComparison.OrdinalIgnoreCase))
+        {
+            field = "updated";
+            return true;
+        }
+
+        field = string.Empty;
+        return false;
     }
 
     public static JiraFilterParameters GetFilters(SourceExecutionPlan plan)

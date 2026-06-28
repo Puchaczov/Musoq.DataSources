@@ -127,6 +127,16 @@ internal class JiraFilterParameters
     /// </summary>
     public string? SummaryContains { get; set; }
 
+    /// <summary>
+    ///     Gets or sets the accepted JQL order field.
+    /// </summary>
+    public string? OrderByField { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the accepted JQL order direction.
+    /// </summary>
+    public string? OrderByDirection { get; set; }
+
     public void SetCreatedAfter(DateTimeOffset value, bool inclusive)
     {
         (CreatedAfter, CreatedAfterInclusive) = SelectLower(CreatedAfter, CreatedAfterInclusive, value, inclusive);
@@ -203,6 +213,9 @@ internal static class JqlBuilder
         }
 
         if (!string.IsNullOrWhiteSpace(baseJql)) conditions.Add(baseJql);
+
+        if (!string.IsNullOrWhiteSpace(parameters.OrderByField))
+            orderBy = $"ORDER BY {parameters.OrderByField} {parameters.OrderByDirection ?? "ASC"}";
 
         if (!string.IsNullOrEmpty(parameters.Status)) conditions.Add($"status = \"{EscapeJql(parameters.Status)}\"");
 

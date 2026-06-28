@@ -85,6 +85,28 @@ public class GitHubRuntimeV2PlanningTests
     }
 
     [TestMethod]
+    public void TryPlanSource_WhenOrderIsRequested_KeepsOrderAndSliceResidual()
+    {
+        var schema = new GitHubSchema();
+        var request = CreateRequest(
+            Equal("State", "open"),
+            skip: 10,
+            take: 5,
+            orderBy: [new OrderByExpression(new SourceColumnRef("CreatedAt"), OrderDirection.Descending)]);
+
+        var result = schema.TryPlanSource("issues", request, "owner", "repo");
+
+        Assert.IsNotNull(result.AcceptedPredicate);
+        Assert.AreEqual(0, result.AcceptedOrderBy.Count);
+        Assert.AreEqual(1, result.ResidualOrderBy.Count);
+        Assert.IsNull(result.AcceptedSkip);
+        Assert.IsNull(result.AcceptedTake);
+        Assert.AreEqual(10, result.ResidualSkip);
+        Assert.AreEqual(5, result.ResidualTake);
+        AssertNoProjectionAccepted(result);
+    }
+
+    [TestMethod]
     public void TryPlanSource_WhenRequiredColumnsArePresent_DoesNotAcceptProjection()
     {
         var schema = new GitHubSchema();
@@ -101,7 +123,8 @@ public class GitHubRuntimeV2PlanningTests
         SourcePredicateExpression? predicate,
         int? skip = null,
         int? take = null,
-        IReadOnlyList<SourceColumnRef>? requiredColumns = null)
+        IReadOnlyList<SourceColumnRef>? requiredColumns = null,
+        IReadOnlyList<OrderByExpression>? orderBy = null)
     {
         return new SourcePlanRequest
         {
@@ -109,7 +132,7 @@ public class GitHubRuntimeV2PlanningTests
             RequiredColumns = requiredColumns ?? [],
             SourceRuntimeSettings = new Dictionary<string, string>(),
             Predicate = predicate,
-            OrderBy = [],
+            OrderBy = orderBy ?? [],
             Skip = skip,
             Take = take
         };

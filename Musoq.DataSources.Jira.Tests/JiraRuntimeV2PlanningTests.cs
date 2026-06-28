@@ -54,6 +54,52 @@ public class JiraRuntimeV2PlanningTests
     }
 
     [TestMethod]
+    public void TryPlanSource_WhenCreatedOrderAndSliceAreRequested_AcceptsOrderAndSlice()
+    {
+        var schema = new JiraSchema();
+        var request = CreateRequest(
+            Equal("Status", "Open"),
+            orderBy: [new OrderByExpression(new SourceColumnRef("CreatedAt"), OrderDirection.Descending)],
+            skip: 10,
+            take: 5);
+
+        var result = schema.TryPlanSource("issues", request, "TEST");
+
+        Assert.IsNotNull(result.AcceptedPredicate);
+        Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(1, result.AcceptedOrderBy.Count);
+        Assert.AreEqual(0, result.ResidualOrderBy.Count);
+        Assert.AreEqual(10, result.AcceptedSkip);
+        Assert.AreEqual(5, result.AcceptedTake);
+        Assert.AreEqual(result.AcceptedOrderBy.Count, result.ExecutionPlan.AcceptedOrderBy.Count);
+        Assert.AreEqual(result.AcceptedSkip, result.ExecutionPlan.AcceptedSkip);
+        Assert.AreEqual(result.AcceptedTake, result.ExecutionPlan.AcceptedTake);
+        AssertNoProjectionAccepted(result);
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenUnsupportedOrderIsRequested_KeepsOrderAndSliceResidual()
+    {
+        var schema = new JiraSchema();
+        var request = CreateRequest(
+            Equal("Status", "Open"),
+            orderBy: [new OrderByExpression(new SourceColumnRef("Key"), OrderDirection.Ascending)],
+            skip: 10,
+            take: 5);
+
+        var result = schema.TryPlanSource("issues", request, "TEST");
+
+        Assert.IsNotNull(result.AcceptedPredicate);
+        Assert.AreEqual(0, result.AcceptedOrderBy.Count);
+        Assert.AreEqual(1, result.ResidualOrderBy.Count);
+        Assert.IsNull(result.AcceptedSkip);
+        Assert.IsNull(result.AcceptedTake);
+        Assert.AreEqual(10, result.ResidualSkip);
+        Assert.AreEqual(5, result.ResidualTake);
+        AssertNoProjectionAccepted(result);
+    }
+
+    [TestMethod]
     public void TryPlanSource_WhenProjectPredicateIsUsed_KeepsPredicateResidual()
     {
         var schema = new JiraSchema();
@@ -81,7 +127,10 @@ public class JiraRuntimeV2PlanningTests
 
     private static SourcePlanRequest CreateRequest(
         SourcePredicateExpression predicate,
-        IReadOnlyList<SourceColumnRef>? requiredColumns = null)
+        IReadOnlyList<SourceColumnRef>? requiredColumns = null,
+        IReadOnlyList<OrderByExpression>? orderBy = null,
+        long? skip = null,
+        long? take = null)
     {
         return new SourcePlanRequest
         {
@@ -89,7 +138,9 @@ public class JiraRuntimeV2PlanningTests
             RequiredColumns = requiredColumns ?? [],
             SourceRuntimeSettings = new Dictionary<string, string>(),
             Predicate = predicate,
-            OrderBy = []
+            OrderBy = orderBy ?? [],
+            Skip = skip,
+            Take = take
         };
     }
 

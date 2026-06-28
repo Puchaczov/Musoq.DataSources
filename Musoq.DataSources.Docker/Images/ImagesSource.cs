@@ -15,11 +15,15 @@ internal class ImagesSource(IDockerApi api, SourceExecutionContext executionCont
         try
         {
             var images = api.ListImagesAsync().Result;
-            executionContext.ReportDataSourceRowsKnown(ImagesSourceName, images.Count);
+            var rows = images
+                .Select(image => new ImageEntity(image))
+                .Where(entity => DockerSourcePlanner.Matches(executionContext.Plan.AcceptedPredicate, entity))
+                .ToList();
 
-            writer.Write(images.Select(image => new ImageEntity(image)).ToList());
+            executionContext.ReportDataSourceRowsKnown(ImagesSourceName, rows.Count);
+            writer.Write(rows);
 
-            executionContext.ReportDataSourceEnd(ImagesSourceName, images.Count);
+            executionContext.ReportDataSourceEnd(ImagesSourceName, rows.Count);
         }
         catch
         {
