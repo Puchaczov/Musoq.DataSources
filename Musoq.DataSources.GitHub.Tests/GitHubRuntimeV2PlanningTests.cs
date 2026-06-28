@@ -17,6 +17,8 @@ public class GitHubRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
         Assert.IsTrue(result.ExecutionPlan.Properties.ContainsKey("GitHubFilters"));
     }
 
@@ -30,6 +32,8 @@ public class GitHubRuntimeV2PlanningTests
 
         Assert.IsNull(result.AcceptedPredicate);
         Assert.IsNotNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
     }
 
     [TestMethod]
@@ -42,6 +46,8 @@ public class GitHubRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
     }
 
     [TestMethod]
@@ -54,8 +60,11 @@ public class GitHubRuntimeV2PlanningTests
 
         Assert.AreEqual(10, result.AcceptedSkip);
         Assert.AreEqual(5, result.AcceptedTake);
+        Assert.AreEqual(result.AcceptedSkip, result.ExecutionPlan.AcceptedSkip);
+        Assert.AreEqual(result.AcceptedTake, result.ExecutionPlan.AcceptedTake);
         Assert.IsNull(result.ResidualSkip);
         Assert.IsNull(result.ResidualTake);
+        AssertNoProjectionAccepted(result);
     }
 
     [TestMethod]
@@ -68,19 +77,36 @@ public class GitHubRuntimeV2PlanningTests
 
         Assert.IsNull(result.AcceptedSkip);
         Assert.IsNull(result.AcceptedTake);
+        Assert.IsNull(result.ExecutionPlan.AcceptedSkip);
+        Assert.IsNull(result.ExecutionPlan.AcceptedTake);
         Assert.AreEqual(10, result.ResidualSkip);
         Assert.AreEqual(5, result.ResidualTake);
+        AssertNoProjectionAccepted(result);
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenRequiredColumnsArePresent_DoesNotAcceptProjection()
+    {
+        var schema = new GitHubSchema();
+        var request = CreateRequest(
+            Equal("State", "open"),
+            requiredColumns: [new SourceColumnRef("State")]);
+
+        var result = schema.TryPlanSource("issues", request, "owner", "repo");
+
+        AssertNoProjectionAccepted(result);
     }
 
     private static SourcePlanRequest CreateRequest(
         SourcePredicateExpression? predicate,
         int? skip = null,
-        int? take = null)
+        int? take = null,
+        IReadOnlyList<SourceColumnRef>? requiredColumns = null)
     {
         return new SourcePlanRequest
         {
             Identity = new SourceIdentity("github", "github", "github", "github"),
-            RequiredColumns = [],
+            RequiredColumns = requiredColumns ?? [],
             SourceRuntimeSettings = new Dictionary<string, string>(),
             Predicate = predicate,
             OrderBy = [],
@@ -95,5 +121,11 @@ public class GitHubRuntimeV2PlanningTests
             SourcePredicateComparisonOperator.Equal,
             new SourcePredicateColumn(new SourceColumnRef(columnName)),
             new SourcePredicateLiteral(value));
+    }
+
+    private static void AssertNoProjectionAccepted(SourcePlanResult result)
+    {
+        Assert.AreEqual(0, result.AcceptedColumns.Count);
+        Assert.AreEqual(0, result.ExecutionPlan.AcceptedColumns.Count);
     }
 }

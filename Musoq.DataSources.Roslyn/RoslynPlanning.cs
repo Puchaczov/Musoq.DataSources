@@ -67,7 +67,6 @@ internal static class RoslynSourcePlanner
         SourcePredicateExpression? residualPredicate,
         IReadOnlyDictionary<string, object?> properties)
     {
-        var requiredColumns = request.RequiredColumns ?? [];
         var residualOrderBy = request.OrderBy ?? [];
 
         return new SourcePlanResult
@@ -75,12 +74,12 @@ internal static class RoslynSourcePlanner
             ExecutionPlan = new SourceExecutionPlan
             {
                 Identity = request.Identity,
-                AcceptedColumns = requiredColumns,
+                AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
                 AcceptedOrderBy = [],
                 Properties = properties
             },
-            AcceptedColumns = requiredColumns,
+            AcceptedColumns = [],
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
             AcceptedOrderBy = [],

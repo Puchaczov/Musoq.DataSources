@@ -181,7 +181,6 @@ internal static class GitSourcePlanner
         SourcePredicateExpression? residualPredicate,
         IReadOnlyDictionary<string, object?> properties)
     {
-        var requiredColumns = request.RequiredColumns ?? [];
         var residualOrderBy = request.OrderBy ?? [];
 
         return new SourcePlanResult
@@ -189,12 +188,12 @@ internal static class GitSourcePlanner
             ExecutionPlan = new SourceExecutionPlan
             {
                 Identity = request.Identity,
-                AcceptedColumns = requiredColumns,
+                AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
                 AcceptedOrderBy = [],
                 Properties = properties
             },
-            AcceptedColumns = requiredColumns,
+            AcceptedColumns = [],
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
             AcceptedOrderBy = [],
@@ -251,10 +250,10 @@ internal static class GitSourcePlanner
         if (tableName.Equals("commits", StringComparison.OrdinalIgnoreCase) &&
             columnName.Equals(nameof(CommitEntity.CommittedWhen), StringComparison.OrdinalIgnoreCase))
         {
-            return op is SourcePredicateComparisonOperator.GreaterThan
-                       or SourcePredicateComparisonOperator.GreaterOrEqual
-                       or SourcePredicateComparisonOperator.LessThan
-                       or SourcePredicateComparisonOperator.LessOrEqual &&
+            return (op is SourcePredicateComparisonOperator.GreaterThan
+                        or SourcePredicateComparisonOperator.GreaterOrEqual
+                        or SourcePredicateComparisonOperator.LessThan
+                        or SourcePredicateComparisonOperator.LessOrEqual) &&
                    TryGetDateTimeOffset(literal.Value, out _);
         }
 

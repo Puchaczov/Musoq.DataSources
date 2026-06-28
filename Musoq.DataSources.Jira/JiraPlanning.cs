@@ -16,7 +16,6 @@ internal static class JiraSourcePlanner
         var (acceptedPredicate, residualPredicate) = SplitPredicate(request.Predicate, IsSupported);
         var filters = ExtractFilters(acceptedPredicate);
         var acceptsSlice = residualPredicate is null && (request.OrderBy?.Count ?? 0) == 0;
-        var requiredColumns = request.RequiredColumns ?? [];
         var residualOrderBy = request.OrderBy ?? [];
 
         return new SourcePlanResult
@@ -24,7 +23,7 @@ internal static class JiraSourcePlanner
             ExecutionPlan = new SourceExecutionPlan
             {
                 Identity = request.Identity,
-                AcceptedColumns = requiredColumns,
+                AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
                 AcceptedOrderBy = [],
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
@@ -34,7 +33,7 @@ internal static class JiraSourcePlanner
                     [FiltersPropertyName] = filters
                 }
             },
-            AcceptedColumns = requiredColumns,
+            AcceptedColumns = [],
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
             AcceptedOrderBy = [],

@@ -92,7 +92,6 @@ internal static class OsSourcePlanner
         SourcePredicateExpression? residualPredicate,
         IReadOnlyDictionary<string, object?> properties)
     {
-        var requiredColumns = request.RequiredColumns ?? [];
         var residualOrderBy = request.OrderBy ?? [];
 
         return new SourcePlanResult
@@ -100,12 +99,12 @@ internal static class OsSourcePlanner
             ExecutionPlan = new SourceExecutionPlan
             {
                 Identity = request.Identity,
-                AcceptedColumns = requiredColumns,
+                AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
                 AcceptedOrderBy = [],
                 Properties = properties
             },
-            AcceptedColumns = requiredColumns,
+            AcceptedColumns = [],
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
             AcceptedOrderBy = [],
@@ -163,8 +162,8 @@ internal static class OsSourcePlanner
 
         if (tableName is "files" or "dlls" or "metadata")
         {
-            return columnName.Equals(nameof(FileEntity.Extension), StringComparison.OrdinalIgnoreCase) ||
-                   (columnName.Equals(nameof(FileEntity.Name), StringComparison.OrdinalIgnoreCase) ||
+            return (columnName.Equals(nameof(FileEntity.Extension), StringComparison.OrdinalIgnoreCase) ||
+                    columnName.Equals(nameof(FileEntity.Name), StringComparison.OrdinalIgnoreCase) ||
                     columnName.Equals(nameof(FileEntity.FileName), StringComparison.OrdinalIgnoreCase)) &&
                    !ContainsWildcard(value);
         }

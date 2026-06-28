@@ -104,7 +104,6 @@ internal static class GitHubSourcePlanner
             expression => IsSupported(tableName, expression));
         var filters = ExtractFilters(tableName, acceptedPredicate);
         var acceptsSlice = residualPredicate is null && (request.OrderBy?.Count ?? 0) == 0;
-        var requiredColumns = request.RequiredColumns ?? [];
         var residualOrderBy = request.OrderBy ?? [];
 
         return new SourcePlanResult
@@ -112,7 +111,7 @@ internal static class GitHubSourcePlanner
             ExecutionPlan = new SourceExecutionPlan
             {
                 Identity = request.Identity,
-                AcceptedColumns = requiredColumns,
+                AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
                 AcceptedOrderBy = [],
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
@@ -122,7 +121,7 @@ internal static class GitHubSourcePlanner
                     [FiltersPropertyName] = filters
                 }
             },
-            AcceptedColumns = requiredColumns,
+            AcceptedColumns = [],
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
             AcceptedOrderBy = [],

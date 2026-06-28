@@ -16,6 +16,8 @@ public class GitRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
         Assert.IsTrue(result.ExecutionPlan.Properties.ContainsKey("GitFilters"));
     }
 
@@ -32,6 +34,8 @@ public class GitRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNotNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
     }
 
     [TestMethod]
@@ -44,6 +48,8 @@ public class GitRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
     }
 
     [TestMethod]
@@ -59,14 +65,31 @@ public class GitRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
     }
 
-    private static SourcePlanRequest CreateRequest(SourcePredicateExpression predicate)
+    [TestMethod]
+    public void TryPlanSource_WhenRequiredColumnsArePresent_DoesNotAcceptProjection()
+    {
+        var schema = new GitSchema();
+        var request = CreateRequest(
+            Equal("Author", "anonymous"),
+            [new SourceColumnRef("Author")]);
+
+        var result = schema.TryPlanSource("commits", request, "repo");
+
+        AssertNoProjectionAccepted(result);
+    }
+
+    private static SourcePlanRequest CreateRequest(
+        SourcePredicateExpression predicate,
+        IReadOnlyList<SourceColumnRef>? requiredColumns = null)
     {
         return new SourcePlanRequest
         {
             Identity = new SourceIdentity("git", "git", "git", "git"),
-            RequiredColumns = [],
+            RequiredColumns = requiredColumns ?? [],
             SourceRuntimeSettings = new Dictionary<string, string>(),
             Predicate = predicate,
             OrderBy = []
@@ -79,5 +102,11 @@ public class GitRuntimeV2PlanningTests
             SourcePredicateComparisonOperator.Equal,
             new SourcePredicateColumn(new SourceColumnRef(columnName)),
             new SourcePredicateLiteral(value));
+    }
+
+    private static void AssertNoProjectionAccepted(SourcePlanResult result)
+    {
+        Assert.AreEqual(0, result.AcceptedColumns.Count);
+        Assert.AreEqual(0, result.ExecutionPlan.AcceptedColumns.Count);
     }
 }

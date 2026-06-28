@@ -17,6 +17,8 @@ public class RoslynRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
         Assert.IsTrue(result.ExecutionPlan.Properties.ContainsKey("RoslynFilters"));
     }
 
@@ -30,6 +32,8 @@ public class RoslynRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
     }
 
     [TestMethod]
@@ -42,6 +46,8 @@ public class RoslynRuntimeV2PlanningTests
 
         Assert.IsNull(result.AcceptedPredicate);
         Assert.IsNotNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
     }
 
     [TestMethod]
@@ -57,14 +63,31 @@ public class RoslynRuntimeV2PlanningTests
 
         Assert.IsNotNull(result.AcceptedPredicate);
         Assert.IsNotNull(result.ResidualPredicate);
+        Assert.AreEqual(result.AcceptedPredicate, result.ExecutionPlan.AcceptedPredicate);
+        AssertNoProjectionAccepted(result);
     }
 
-    private static SourcePlanRequest CreateRequest(SourcePredicateExpression predicate)
+    [TestMethod]
+    public void TryPlanSource_WhenRequiredColumnsArePresent_DoesNotAcceptProjection()
+    {
+        var schema = new CSharpSchema();
+        var request = CreateRequest(
+            Equal("p.AssemblyName", "Solution1.ClassLibrary1"),
+            [new SourceColumnRef("AssemblyName")]);
+
+        var result = schema.TryPlanSource("solution", request, "solution.sln");
+
+        AssertNoProjectionAccepted(result);
+    }
+
+    private static SourcePlanRequest CreateRequest(
+        SourcePredicateExpression predicate,
+        IReadOnlyList<SourceColumnRef>? requiredColumns = null)
     {
         return new SourcePlanRequest
         {
             Identity = new SourceIdentity("csharp", "csharp", "csharp", "csharp"),
-            RequiredColumns = [],
+            RequiredColumns = requiredColumns ?? [],
             SourceRuntimeSettings = new Dictionary<string, string>(),
             Predicate = predicate,
             OrderBy = []
@@ -77,5 +100,11 @@ public class RoslynRuntimeV2PlanningTests
             SourcePredicateComparisonOperator.Equal,
             new SourcePredicateColumn(new SourceColumnRef(columnName)),
             new SourcePredicateLiteral(value));
+    }
+
+    private static void AssertNoProjectionAccepted(SourcePlanResult result)
+    {
+        Assert.AreEqual(0, result.AcceptedColumns.Count);
+        Assert.AreEqual(0, result.ExecutionPlan.AcceptedColumns.Count);
     }
 }
