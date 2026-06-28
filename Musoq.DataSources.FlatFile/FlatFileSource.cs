@@ -25,6 +25,9 @@ internal class FlatFileSource(string filePath, SourceExecutionContext executionC
 
             var rowNum = 0;
             var chunk = new List<FlatFileEntity>();
+            var plan = executionContext.Plan;
+            long skipped = 0;
+            long emitted = 0;
 
             using var file = File.OpenRead(filePath);
             using var reader = new StreamReader(file);
@@ -33,12 +36,26 @@ internal class FlatFileSource(string filePath, SourceExecutionContext executionC
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
 
-                chunk.Add(new FlatFileEntity
+                var entity = new FlatFileEntity
                 {
                     Line = reader.ReadLine(),
                     LineNumber = ++rowNum
-                });
+                };
 
+                if (!FlatFileSourcePlanner.Matches(plan.AcceptedPredicate, entity))
+                    continue;
+
+                if (plan.AcceptedSkip.HasValue && skipped < plan.AcceptedSkip.Value)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                if (plan.AcceptedTake.HasValue && emitted >= plan.AcceptedTake.Value)
+                    break;
+
+                chunk.Add(entity);
+                emitted++;
                 totalRowsProcessed++;
 
                 if (chunk.Count < RowChunking.DefaultChunkSize)

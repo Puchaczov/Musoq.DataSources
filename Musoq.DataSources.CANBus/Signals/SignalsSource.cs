@@ -18,13 +18,17 @@ internal class SignalsSource(ICANBusApi canBusApi, SourceExecutionContext execut
     {
         var signals = await canBusApi.GetMessagesSignalsAsync(cancellationToken);
         var orderMap = new Dictionary<string, int>();
+        var acceptedPredicate = executionContext.Plan.AcceptedPredicate;
 
-        writer.Write(signals.Select((f, _) =>
-        {
-            if (!orderMap.TryAdd(f.Message.Name, 0))
-                orderMap[f.Message.Name]++;
+        writer.Write(signals
+            .Select((f, _) =>
+            {
+                if (!orderMap.TryAdd(f.Message.Name, 0))
+                    orderMap[f.Message.Name]++;
 
-            return new SignalEntity(f.Signal, f.Message, orderMap[f.Message.Name]);
-        }).ToList());
+                return new SignalEntity(f.Signal, f.Message, orderMap[f.Message.Name]);
+            })
+            .Where(entity => CANBusSourcePlanner.MatchesSignal(acceptedPredicate, entity))
+            .ToList());
     }
 }

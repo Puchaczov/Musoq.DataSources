@@ -25,11 +25,17 @@ internal class ArchivesRowSource(string path, SourceExecutionContext executionCo
 
             var index = 0;
             var chunk = new List<EntryWrapper>();
+            var acceptedPredicate = executionContext.Plan.AcceptedPredicate;
 
             while (reader.MoveToNextEntry())
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
-                chunk.Add(new EntryWrapper(reader.Entry, path, index++));
+                var entry = new EntryWrapper(reader.Entry, path, index++);
+
+                if (!ArchivesSourcePlanner.Matches(acceptedPredicate, entry))
+                    continue;
+
+                chunk.Add(entry);
                 totalRowsProcessed++;
 
                 if (chunk.Count < RowChunking.DefaultChunkSize)

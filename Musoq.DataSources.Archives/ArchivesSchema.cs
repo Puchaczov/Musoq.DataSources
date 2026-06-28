@@ -119,7 +119,7 @@ public class ArchivesSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
-        return SourcePlanResult.RejectAll(request);
+        return ArchivesSourcePlanner.Plan(name, request);
     }
 
     public override SchemaMethodInfo[] GetConstructors()

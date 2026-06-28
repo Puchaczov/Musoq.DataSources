@@ -16,7 +16,11 @@ internal class MessagesSource(ICANBusApi canBusApi, SourceExecutionContext execu
         CancellationToken cancellationToken)
     {
         var messages = await canBusApi.GetMessagesAsync(cancellationToken);
+        var acceptedPredicate = executionContext.Plan.AcceptedPredicate;
 
-        writer.Write(messages.Select(f => new MessageEntity(f)).ToList());
+        writer.Write(messages
+            .Select(f => new MessageEntity(f))
+            .Where(entity => CANBusSourcePlanner.MatchesMessage(acceptedPredicate, entity))
+            .ToList());
     }
 }

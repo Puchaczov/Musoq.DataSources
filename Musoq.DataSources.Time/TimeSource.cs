@@ -48,12 +48,30 @@ internal class TimeSource(
 
             var chunk = new List<TimeEntity>();
             var currentTime = startAt;
+            var plan = executionContext.Plan;
+            long skipped = 0;
+            long emitted = 0;
 
             while (currentTime <= _stopAt)
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
-                chunk.Add(new TimeEntity(currentTime));
+                var entity = new TimeEntity(currentTime);
                 currentTime = modify(currentTime);
+
+                if (!TimeSourcePlanner.Matches(plan.AcceptedPredicate, entity))
+                    continue;
+
+                if (plan.AcceptedSkip.HasValue && skipped < plan.AcceptedSkip.Value)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                if (plan.AcceptedTake.HasValue && emitted >= plan.AcceptedTake.Value)
+                    break;
+
+                chunk.Add(entity);
+                emitted++;
                 totalRowsProcessed++;
 
                 if (chunk.Count < RowChunking.DefaultChunkSize)

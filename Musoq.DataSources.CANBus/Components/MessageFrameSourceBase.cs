@@ -12,6 +12,7 @@ internal abstract class MessageFrameSourceBase(SourceExecutionContext executionC
     : AsyncRowsSourceBase<MessageFrameEntity>(executionContext.EndWorkToken)
 {
     private readonly IReadOnlySet<string>? _requestedColumns = GetRequestedColumns(executionContext);
+    private readonly SourcePredicateExpression? _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
 
     protected abstract HashSet<string> AllMessagesSet { get; }
 
@@ -29,6 +30,9 @@ internal abstract class MessageFrameSourceBase(SourceExecutionContext executionC
 
         await foreach (var frame in GetFramesAsync(cancellationToken))
         {
+            if (!CANBusSourcePlanner.MatchesFrame(_acceptedPredicate, frame))
+                continue;
+
             chunk.Add(new MessageFrameEntity(
                 frame.Timestamp,
                 frame.Frame,

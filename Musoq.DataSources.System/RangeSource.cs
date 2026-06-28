@@ -12,16 +12,35 @@ internal class RangeSource(long min, long max, SourceExecutionContext executionC
     {
         executionContext.ReportDataSourceBegin(RangeSourceName);
         var totalRows = max - min;
-        executionContext.ReportDataSourceRowsKnown(RangeSourceName, totalRows);
+        var plan = executionContext.Plan;
+        if (plan.AcceptedPredicate is null && !plan.AcceptedSkip.HasValue && !plan.AcceptedTake.HasValue)
+            executionContext.ReportDataSourceRowsKnown(RangeSourceName, totalRows);
         long totalRowsProcessed = 0;
         var chunk = new List<RangeItemEntity>();
+        long skipped = 0;
+        long emitted = 0;
 
         try
         {
             for (var i = min; i < max; ++i)
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
-                chunk.Add(new RangeItemEntity { Value = i });
+                var entity = new RangeItemEntity { Value = i };
+
+                if (!SystemSourcePlanner.Matches(plan.AcceptedPredicate, entity))
+                    continue;
+
+                if (plan.AcceptedSkip.HasValue && skipped < plan.AcceptedSkip.Value)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                if (plan.AcceptedTake.HasValue && emitted >= plan.AcceptedTake.Value)
+                    break;
+
+                chunk.Add(entity);
+                emitted++;
                 totalRowsProcessed++;
 
                 if (chunk.Count < RowChunking.DefaultChunkSize)

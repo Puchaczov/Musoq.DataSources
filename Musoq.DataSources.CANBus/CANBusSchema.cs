@@ -190,6 +190,8 @@ public class CANBusSchema : SchemaBase
         return name.ToLowerInvariant() switch
         {
             SeparatedValuesTable => PlanSeparatedValuesProjection(request),
+            MessagesTable => CANBusSourcePlanner.PlanMessages(request),
+            SignalsTable => CANBusSourcePlanner.PlanSignals(request),
             _ => SourcePlanResult.RejectAll(request)
         };
     }
@@ -420,10 +422,10 @@ public class CANBusSchema : SchemaBase
 
     private static SourcePlanResult PlanSeparatedValuesProjection(SourcePlanRequest request)
     {
-        if (!CanSafelyAcceptProjection(request.RequiredColumns))
-            return SourcePlanResult.RejectAll(request);
-
-        var acceptedColumns = request.RequiredColumns ?? [];
+        var (acceptedPredicate, residualPredicate) = CANBusSourcePlanner.SplitFramePredicate(request.Predicate);
+        var acceptedColumns = CanSafelyAcceptProjection(request.RequiredColumns)
+            ? request.RequiredColumns ?? []
+            : [];
 
         return new SourcePlanResult
         {
@@ -431,13 +433,13 @@ public class CANBusSchema : SchemaBase
             {
                 Identity = request.Identity,
                 AcceptedColumns = acceptedColumns,
-                AcceptedPredicate = null,
+                AcceptedPredicate = acceptedPredicate,
                 AcceptedOrderBy = [],
                 Properties = new Dictionary<string, object?>()
             },
             AcceptedColumns = acceptedColumns,
-            AcceptedPredicate = null,
-            ResidualPredicate = request.Predicate,
+            AcceptedPredicate = acceptedPredicate,
+            ResidualPredicate = residualPredicate,
             AcceptedOrderBy = [],
             ResidualOrderBy = request.OrderBy ?? [],
             ResidualSkip = request.Skip,
