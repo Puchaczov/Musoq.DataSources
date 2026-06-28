@@ -25,7 +25,7 @@ internal class SeparatedValuesFromFileCanFramesSource : MessageFrameSourceBase
 
     public SeparatedValuesFromFileCanFramesSource(string framesCsvPath, ICANBusApi canBusApi,
         SourceExecutionContext executionContext, string idOfType, string bigOrLittle)
-        : base(executionContext.EndWorkToken)
+        : base(executionContext)
     {
         _messages = new MessagesLookup();
         _file = new FileInfo(framesCsvPath);

@@ -135,7 +135,11 @@ public class SeparatedValuesSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
-        return SourcePlanResult.RejectAll(request);
+        return name.ToLowerInvariant() switch
+        {
+            CommaTable or TabTable or SemicolonTable => PlanProjectionOnly(request),
+            _ => SourcePlanResult.RejectAll(request)
+        };
     }
 
     /// <summary>
@@ -268,6 +272,33 @@ public class SeparatedValuesSchema : SchemaBase
             ]);
 
         return new SchemaMethodInfo(SemicolonTable, constructorInfo);
+    }
+
+    private static SourcePlanResult PlanProjectionOnly(SourcePlanRequest request)
+    {
+        var acceptedColumns = request.RequiredColumns ?? [];
+
+        return new SourcePlanResult
+        {
+            ExecutionPlan = new SourceExecutionPlan
+            {
+                Identity = request.Identity,
+                AcceptedColumns = acceptedColumns,
+                AcceptedPredicate = null,
+                AcceptedOrderBy = [],
+                Properties = new Dictionary<string, object?>()
+            },
+            AcceptedColumns = acceptedColumns,
+            AcceptedPredicate = null,
+            ResidualPredicate = request.Predicate,
+            AcceptedOrderBy = [],
+            ResidualOrderBy = request.OrderBy ?? [],
+            ResidualSkip = request.Skip,
+            ResidualTake = request.Take,
+            Cardinality = CardinalityEstimate.Unknown("Separated values source cardinality depends on file contents."),
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
     }
 
     private static MethodsAggregator CreateLibrary()

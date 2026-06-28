@@ -28,7 +28,7 @@ internal class CanDumpFromFileCanFramesSource : MessageFrameSourceBase
         ICANBusApi canBusApi,
         SourceExecutionContext executionContext,
         string idOfType, string bigOrLittle)
-        : base(executionContext.EndWorkToken)
+        : base(executionContext)
     {
         _messages = new MessagesLookup();
         _file = new FileInfo(canDumpFile);

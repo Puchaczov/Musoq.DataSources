@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.DataSources.CANBus.Messages;
@@ -186,7 +187,11 @@ public class CANBusSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
-        return SourcePlanResult.RejectAll(request);
+        return name.ToLowerInvariant() switch
+        {
+            SeparatedValuesTable => PlanSeparatedValuesProjection(request),
+            _ => SourcePlanResult.RejectAll(request)
+        };
     }
 
     public override SchemaMethodInfo[] GetRawConstructors(
@@ -349,9 +354,9 @@ public class CANBusSchema : SchemaBase
             var nameToIndexMap = entity.CreateMessageNameToIndexMap();
             var accessMap = entity.CreateMessageIndexToMethodAccessMap();
             var values = new Dictionary<string, object?>();
-            var columns = executionContext.AllColumns;
+            var columns = GetProjectedColumns(executionContext, out var projectionAccepted);
 
-            if (columns.Count == 0)
+            if (columns.Length == 0 && !projectionAccepted)
             {
                 foreach (var (name, index) in nameToIndexMap)
                     values[name] = accessMap[index](entity);
@@ -368,6 +373,108 @@ public class CANBusSchema : SchemaBase
 
             return values;
         }
+
+        private static ISchemaColumn[] GetProjectedColumns(
+            SourceExecutionContext context,
+            out bool projectionAccepted)
+        {
+            var acceptedColumns = context.Plan.AcceptedColumns;
+            projectionAccepted = acceptedColumns.Count > 0;
+
+            if (!projectionAccepted)
+                return [.. context.AllColumns];
+
+            var acceptedNames = CreateAcceptedColumnNameSet(acceptedColumns, context.AllColumns);
+
+            return context.AllColumns
+                .Where(column => acceptedNames.Contains(column.ColumnName))
+                .ToArray();
+        }
+
+        private static HashSet<string> CreateAcceptedColumnNameSet(
+            IReadOnlyCollection<SourceColumnRef> acceptedColumns,
+            IReadOnlyCollection<ISchemaColumn> allColumns)
+        {
+            var allNames = allColumns
+                .Select(column => column.ColumnName)
+                .ToHashSet(StringComparer.Ordinal);
+            var acceptedNames = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var acceptedColumn in acceptedColumns)
+            {
+                AddIfKnown(acceptedColumn.Name);
+
+                foreach (var part in acceptedColumn.Name.Split('.'))
+                    AddIfKnown(part);
+            }
+
+            return acceptedNames;
+
+            void AddIfKnown(string name)
+            {
+                if (allNames.Count == 0 || allNames.Contains(name))
+                    acceptedNames.Add(name);
+            }
+        }
+    }
+
+    private static SourcePlanResult PlanSeparatedValuesProjection(SourcePlanRequest request)
+    {
+        if (!CanSafelyAcceptProjection(request.RequiredColumns))
+            return SourcePlanResult.RejectAll(request);
+
+        var acceptedColumns = request.RequiredColumns ?? [];
+
+        return new SourcePlanResult
+        {
+            ExecutionPlan = new SourceExecutionPlan
+            {
+                Identity = request.Identity,
+                AcceptedColumns = acceptedColumns,
+                AcceptedPredicate = null,
+                AcceptedOrderBy = [],
+                Properties = new Dictionary<string, object?>()
+            },
+            AcceptedColumns = acceptedColumns,
+            AcceptedPredicate = null,
+            ResidualPredicate = request.Predicate,
+            AcceptedOrderBy = [],
+            ResidualOrderBy = request.OrderBy ?? [],
+            ResidualSkip = request.Skip,
+            ResidualTake = request.Take,
+            Cardinality = CardinalityEstimate.Unknown("CAN bus frame cardinality depends on the frame file contents."),
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    private static bool CanSafelyAcceptProjection(IReadOnlyList<SourceColumnRef> requiredColumns)
+    {
+        if (requiredColumns.Count == 0)
+            return false;
+
+        // Dynamic member accesses are not always surfaced as required top-level columns.
+        // Base-only requests are therefore not enough to safely prune frame members.
+        var baseColumns = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "ID",
+            "Timestamp",
+            "Message",
+            "IsWellKnown",
+            "DataAsBytes",
+            "Data"
+        };
+
+        foreach (var requiredColumn in requiredColumns)
+        {
+            var parts = requiredColumn.Name.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            var sourceParts = parts.Length > 1 ? parts[1..] : parts;
+
+            if (sourceParts.Any(part => !baseColumns.Contains(part)))
+                return true;
+        }
+
+        return false;
     }
 
     private static MethodsAggregator CreateLibrary()

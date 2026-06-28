@@ -13,11 +13,12 @@ public static class RuntimeV2TestContexts
         CancellationToken cancellationToken = default,
         IReadOnlyCollection<ISchemaColumn> allColumns = null,
         IReadOnlyDictionary<string, string> sourceRuntimeSettings = null,
-        ILogger logger = null)
+        ILogger logger = null,
+        SourceExecutionPlan executionPlan = null)
     {
         return new SourceExecutionContext(
             "test",
-            new SourceExecutionPlan
+            executionPlan ?? new SourceExecutionPlan
             {
                 Identity = new SourceIdentity("test", "test", "test", "test")
             },

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Helpers;
 using Musoq.Schema.Optimization;
@@ -26,13 +27,16 @@ internal class SeparatedValuesFromStreamRowsSource(
 
     protected override void CollectChunks(IChunkWriter<object?[]> writer)
     {
-        var types = executionContext.AllColumns.ToDictionary(
+        var columns = GetProjectedColumns(executionContext, out var projectionAccepted);
+        var types = columns.ToDictionary(
             col => col.ColumnName,
             col => col.ColumnType.GetUnderlyingNullable());
 
         var indexToNameMap = executionContext.AllColumns.ToDictionary(
             col => col.ColumnIndex,
             col => col.ColumnName);
+        var activeIndexes = GetActiveIndexes(indexToNameMap, columns, projectionAccepted);
+        var outputLength = GetOutputLength(columns, projectionAccepted);
 
         using var reader = new StreamReader(stream, Encoding.UTF8, true, 1024);
 
@@ -50,7 +54,7 @@ internal class SeparatedValuesFromStreamRowsSource(
             if (rawRow is null)
                 continue;
 
-            chunk.Add(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap));
+            chunk.Add(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap, activeIndexes, outputLength));
 
             if (chunk.Count < RowChunking.DefaultChunkSize)
                 continue;
@@ -67,5 +71,74 @@ internal class SeparatedValuesFromStreamRowsSource(
     {
         for (var i = 0; i < linesToSkip; i++)
             reader.ReadLine();
+    }
+
+    private static ISchemaColumn[] GetProjectedColumns(
+        SourceExecutionContext context,
+        out bool projectionAccepted)
+    {
+        var acceptedColumns = context.Plan.AcceptedColumns;
+        projectionAccepted = acceptedColumns.Count > 0;
+
+        if (!projectionAccepted)
+            return context.AllColumns.ToArray();
+
+        var acceptedNames = CreateAcceptedColumnNameSet(acceptedColumns, context.AllColumns);
+
+        return context.AllColumns
+            .Where(column => acceptedNames.Contains(column.ColumnName))
+            .ToArray();
+    }
+
+    private static IReadOnlySet<int>? GetActiveIndexes(
+        IReadOnlyDictionary<int, string> indexToNameMap,
+        IReadOnlyCollection<ISchemaColumn> columns,
+        bool projectionAccepted)
+    {
+        if (!projectionAccepted)
+            return null;
+
+        var selectedNames = columns
+            .Select(column => column.ColumnName)
+            .ToHashSet(StringComparer.Ordinal);
+
+        return indexToNameMap
+            .Where(pair => selectedNames.Contains(pair.Value))
+            .Select(pair => pair.Key)
+            .ToHashSet();
+    }
+
+    private static int? GetOutputLength(IReadOnlyCollection<ISchemaColumn> columns, bool projectionAccepted)
+    {
+        if (!projectionAccepted)
+            return null;
+
+        return columns.Count == 0 ? 0 : columns.Max(column => column.ColumnIndex) + 1;
+    }
+
+    private static HashSet<string> CreateAcceptedColumnNameSet(
+        IReadOnlyCollection<SourceColumnRef> acceptedColumns,
+        IReadOnlyCollection<ISchemaColumn> allColumns)
+    {
+        var allNames = allColumns
+            .Select(column => column.ColumnName)
+            .ToHashSet(StringComparer.Ordinal);
+        var acceptedNames = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var acceptedColumn in acceptedColumns)
+        {
+            AddIfKnown(acceptedColumn.Name);
+
+            foreach (var part in acceptedColumn.Name.Split('.'))
+                AddIfKnown(part);
+        }
+
+        return acceptedNames;
+
+        void AddIfKnown(string name)
+        {
+            if (allNames.Count == 0 || allNames.Contains(name))
+                acceptedNames.Add(name);
+        }
     }
 }

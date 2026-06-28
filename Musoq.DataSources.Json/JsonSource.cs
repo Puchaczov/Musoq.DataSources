@@ -74,9 +74,7 @@ public class JsonSource : RowSourceBase<object[]>
             if (rows == null)
                 throw new NotSupportedException("This type of .json file is not supported.");
 
-            var columns = _executionContext.AllColumns
-                .OrderBy(column => column.ColumnIndex)
-                .ToArray();
+            var columns = GetProjectedColumns(_executionContext, out var projectionAccepted);
             var chunk = new List<object[]>();
 
             foreach (var row in rows)
@@ -84,7 +82,7 @@ public class JsonSource : RowSourceBase<object[]>
                 writer.CancellationToken.ThrowIfCancellationRequested();
 
                 var dictionary = (IDictionary<string, object>)row;
-                chunk.Add(ProjectRow(dictionary, columns));
+                chunk.Add(ProjectRow(dictionary, columns, projectionAccepted));
                 totalRowsProcessed++;
 
                 if (chunk.Count < RowChunking.DefaultChunkSize)
@@ -105,10 +103,11 @@ public class JsonSource : RowSourceBase<object[]>
 
     private static object[] ProjectRow(
         IDictionary<string, object> row,
-        IReadOnlyList<ISchemaColumn> columns)
+        IReadOnlyList<ISchemaColumn> columns,
+        bool projectionAccepted)
     {
         if (columns.Count == 0)
-            return row.Values.ToArray();
+            return projectionAccepted ? [] : row.Values.ToArray();
 
         var values = new object[columns[^1].ColumnIndex + 1];
 
@@ -117,5 +116,53 @@ public class JsonSource : RowSourceBase<object[]>
                 values[column.ColumnIndex] = value;
 
         return values;
+    }
+
+    private static ISchemaColumn[] GetProjectedColumns(
+        SourceExecutionContext executionContext,
+        out bool projectionAccepted)
+    {
+        var acceptedColumns = executionContext.Plan.AcceptedColumns;
+        projectionAccepted = acceptedColumns.Count > 0;
+
+        if (!projectionAccepted)
+        {
+            return executionContext.AllColumns
+                .OrderBy(column => column.ColumnIndex)
+                .ToArray();
+        }
+
+        var acceptedNames = CreateAcceptedColumnNameSet(acceptedColumns, executionContext.AllColumns);
+
+        return executionContext.AllColumns
+            .Where(column => acceptedNames.Contains(column.ColumnName))
+            .OrderBy(column => column.ColumnIndex)
+            .ToArray();
+    }
+
+    private static HashSet<string> CreateAcceptedColumnNameSet(
+        IReadOnlyCollection<SourceColumnRef> acceptedColumns,
+        IReadOnlyCollection<ISchemaColumn> allColumns)
+    {
+        var allNames = allColumns
+            .Select(column => column.ColumnName)
+            .ToHashSet(StringComparer.Ordinal);
+        var acceptedNames = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var acceptedColumn in acceptedColumns)
+        {
+            AddIfKnown(acceptedColumn.Name);
+
+            foreach (var part in acceptedColumn.Name.Split('.'))
+                AddIfKnown(part);
+        }
+
+        return acceptedNames;
+
+        void AddIfKnown(string name)
+        {
+            if (allNames.Count == 0 || allNames.Contains(name))
+                acceptedNames.Add(name);
+        }
     }
 }

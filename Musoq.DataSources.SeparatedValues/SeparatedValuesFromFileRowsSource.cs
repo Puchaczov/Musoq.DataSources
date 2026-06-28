@@ -150,9 +150,12 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         CultureInfo modifiedCulture,
         CancellationToken cancellationToken)
     {
-        var types = _executionContext.AllColumns.ToDictionary(
+        var columns = GetProjectedColumns(_executionContext, out var projectionAccepted);
+        var types = columns.ToDictionary(
             col => col.ColumnName,
             col => col.ColumnType.GetUnderlyingNullable());
+        var activeIndexes = GetActiveIndexes(indexToNameMap, columns, projectionAccepted);
+        var outputLength = GetOutputLength(columns, projectionAccepted);
 
         await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
             BufferSize, FileOptions.SequentialScan);
@@ -176,7 +179,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
             if (rawRow is null)
                 continue;
 
-            chunk.Add(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap));
+            chunk.Add(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap, activeIndexes, outputLength));
             Interlocked.Increment(ref _totalRowsProcessed);
 
             if (chunk.Count < ChunkSize)
@@ -203,6 +206,75 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
     {
         for (var i = 0; i < linesToSkip; i++)
             await reader.ReadLineAsync();
+    }
+
+    private static ISchemaColumn[] GetProjectedColumns(
+        SourceExecutionContext executionContext,
+        out bool projectionAccepted)
+    {
+        var acceptedColumns = executionContext.Plan.AcceptedColumns;
+        projectionAccepted = acceptedColumns.Count > 0;
+
+        if (!projectionAccepted)
+            return executionContext.AllColumns.ToArray();
+
+        var acceptedNames = CreateAcceptedColumnNameSet(acceptedColumns, executionContext.AllColumns);
+
+        return executionContext.AllColumns
+            .Where(column => acceptedNames.Contains(column.ColumnName))
+            .ToArray();
+    }
+
+    private static IReadOnlySet<int>? GetActiveIndexes(
+        IReadOnlyDictionary<int, string> indexToNameMap,
+        IReadOnlyCollection<ISchemaColumn> columns,
+        bool projectionAccepted)
+    {
+        if (!projectionAccepted)
+            return null;
+
+        var selectedNames = columns
+            .Select(column => column.ColumnName)
+            .ToHashSet(StringComparer.Ordinal);
+
+        return indexToNameMap
+            .Where(pair => selectedNames.Contains(pair.Value))
+            .Select(pair => pair.Key)
+            .ToHashSet();
+    }
+
+    private static int? GetOutputLength(IReadOnlyCollection<ISchemaColumn> columns, bool projectionAccepted)
+    {
+        if (!projectionAccepted)
+            return null;
+
+        return columns.Count == 0 ? 0 : columns.Max(column => column.ColumnIndex) + 1;
+    }
+
+    private static HashSet<string> CreateAcceptedColumnNameSet(
+        IReadOnlyCollection<SourceColumnRef> acceptedColumns,
+        IReadOnlyCollection<ISchemaColumn> allColumns)
+    {
+        var allNames = allColumns
+            .Select(column => column.ColumnName)
+            .ToHashSet(StringComparer.Ordinal);
+        var acceptedNames = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var acceptedColumn in acceptedColumns)
+        {
+            AddIfKnown(acceptedColumn.Name);
+
+            foreach (var part in acceptedColumn.Name.Split('.'))
+                AddIfKnown(part);
+        }
+
+        return acceptedNames;
+
+        void AddIfKnown(string name)
+        {
+            if (allNames.Count == 0 || allNames.Contains(name))
+                acceptedNames.Add(name);
+        }
     }
 
     private class SeparatedValueInfo

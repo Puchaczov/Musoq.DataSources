@@ -6,14 +6,22 @@ namespace Musoq.DataSources.SeparatedValues;
 
 internal static class ParseHelpers
 {
-    public static object?[] ParseRecords(IReadOnlyDictionary<string, Type> types, string?[] rawRow,
-        IReadOnlyDictionary<int, string> indexToNameMap)
+    public static object?[] ParseRecords(
+        IReadOnlyDictionary<string, Type> types,
+        string?[] rawRow,
+        IReadOnlyDictionary<int, string> indexToNameMap,
+        IReadOnlySet<int>? activeIndexes = null,
+        int? outputLength = null)
     {
-        var parsedRecords = new object?[rawRow.Length];
+        var parsedRecords = new object?[outputLength ?? rawRow.Length];
 
         for (var i = 0; i < rawRow.Length; ++i)
         {
-            var headerName = indexToNameMap[i];
+            if (i >= parsedRecords.Length ||
+                activeIndexes is not null && !activeIndexes.Contains(i) ||
+                !indexToNameMap.TryGetValue(i, out var headerName))
+                continue;
+
             if (types.TryGetValue(headerName, out var type))
             {
                 var colValue = rawRow[i];

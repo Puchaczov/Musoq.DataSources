@@ -12,6 +12,7 @@ public class MessageFrameEntity : DynamicObject, ICANDbcMessage
 {
     private const string Timestamp = nameof(Timestamp);
     private readonly HashSet<string> _allMessagesSet;
+    private readonly Message? _message;
 
     private readonly Dictionary<string, Func<object?>> _memberToValueMap;
 
@@ -22,36 +23,47 @@ public class MessageFrameEntity : DynamicObject, ICANDbcMessage
     /// <param name="frame">CAN frame.</param>
     /// <param name="message">Message.</param>
     /// <param name="allMessagesSet">Set of all messages.</param>
-    public MessageFrameEntity(ulong timestamp, CANFrame frame, Message? message, HashSet<string> allMessagesSet)
+    /// <param name="requestedColumns">Projected column names, or null when all members are required.</param>
+    public MessageFrameEntity(
+        ulong timestamp,
+        CANFrame frame,
+        Message? message,
+        HashSet<string> allMessagesSet,
+        IReadOnlySet<string>? requestedColumns = null)
     {
         _allMessagesSet = allMessagesSet;
+        _message = message;
 
-        var uint64Value = ConvertToUInt64(frame.Data);
-
-        _memberToValueMap = new Dictionary<string, Func<object?>>
+        ulong? uint64Value = null;
+        ulong GetRawData()
         {
-            { "ID", () => frame.Id },
-            { nameof(Timestamp), () => timestamp },
-            { nameof(Message), () => message },
-            { "IsWellKnown", () => message is not null },
-            { "DataAsBytes", () => frame.Data },
-            { "Data", () => uint64Value }
-        };
-        var expandoObject = new SignalFrameEntity(uint64Value, message);
-
-        if (message is null)
-        {
-            _memberToValueMap.Add("UnknownMessage", () => expandoObject);
-            return;
+            uint64Value ??= ConvertToUInt64(frame.Data);
+            return uint64Value.Value;
         }
 
-        _memberToValueMap.Add(message.Name, () => expandoObject);
+        _memberToValueMap = new Dictionary<string, Func<object?>>();
+
+        AddIfRequested("ID", () => frame.Id);
+        AddIfRequested(nameof(Timestamp), () => timestamp);
+        _memberToValueMap.Add(nameof(Message), () => _message);
+        AddIfRequested("IsWellKnown", () => message is not null);
+        AddIfRequested("DataAsBytes", () => frame.Data);
+        AddIfRequested("Data", () => GetRawData());
+
+        var dynamicMessageName = message?.Name ?? "UnknownMessage";
+        _memberToValueMap.Add(dynamicMessageName, () => new SignalFrameEntity(GetRawData(), message));
+
+        void AddIfRequested(string name, Func<object?> value)
+        {
+            if (requestedColumns is null || requestedColumns.Contains(name))
+                _memberToValueMap.Add(name, value);
+        }
     }
 
     /// <summary>
     ///     Gets the message.
     /// </summary>
-    public Message? Message => (Message?)_memberToValueMap[nameof(Message)]();
+    public Message? Message => _message;
 
     /// <inheritdoc />
     public override bool TryGetMember(GetMemberBinder binder, out object? result)

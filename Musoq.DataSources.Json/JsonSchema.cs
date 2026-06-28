@@ -109,7 +109,11 @@ public class JsonSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
-        return SourcePlanResult.RejectAll(request);
+        return name.ToLowerInvariant() switch
+        {
+            FileTable => PlanProjectionOnly(request),
+            _ => SourcePlanResult.RejectAll(request)
+        };
     }
 
     /// <summary>
@@ -161,6 +165,33 @@ public class JsonSchema : SchemaBase
             ]);
 
         return new SchemaMethodInfo(FileTable, constructorInfo);
+    }
+
+    private static SourcePlanResult PlanProjectionOnly(SourcePlanRequest request)
+    {
+        var acceptedColumns = request.RequiredColumns ?? [];
+
+        return new SourcePlanResult
+        {
+            ExecutionPlan = new SourceExecutionPlan
+            {
+                Identity = request.Identity,
+                AcceptedColumns = acceptedColumns,
+                AcceptedPredicate = null,
+                AcceptedOrderBy = [],
+                Properties = new Dictionary<string, object>()
+            },
+            AcceptedColumns = acceptedColumns,
+            AcceptedPredicate = null,
+            ResidualPredicate = request.Predicate,
+            AcceptedOrderBy = [],
+            ResidualOrderBy = request.OrderBy ?? [],
+            ResidualSkip = request.Skip,
+            ResidualTake = request.Take,
+            Cardinality = CardinalityEstimate.Unknown("JSON source cardinality depends on file contents."),
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
     }
 
     private static MethodsAggregator CreateLibrary()

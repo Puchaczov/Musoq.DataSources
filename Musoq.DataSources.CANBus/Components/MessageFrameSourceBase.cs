@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,8 +8,11 @@ using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.CANBus.Components;
 
-internal abstract class MessageFrameSourceBase(CancellationToken endWorkToken) : AsyncRowsSourceBase<MessageFrameEntity>(endWorkToken)
+internal abstract class MessageFrameSourceBase(SourceExecutionContext executionContext)
+    : AsyncRowsSourceBase<MessageFrameEntity>(executionContext.EndWorkToken)
 {
+    private readonly IReadOnlySet<string>? _requestedColumns = GetRequestedColumns(executionContext);
+
     protected abstract HashSet<string> AllMessagesSet { get; }
 
     protected abstract Task InitializeAsync(CancellationToken cancellationToken);
@@ -29,7 +33,8 @@ internal abstract class MessageFrameSourceBase(CancellationToken endWorkToken) :
                 frame.Timestamp,
                 frame.Frame,
                 frame.Message,
-                AllMessagesSet));
+                AllMessagesSet,
+                _requestedColumns));
 
             if (chunk.Count < RowChunking.DefaultChunkSize)
                 continue;
@@ -40,5 +45,25 @@ internal abstract class MessageFrameSourceBase(CancellationToken endWorkToken) :
 
         if (chunk.Count > 0)
             writer.Write(chunk);
+    }
+
+    private static IReadOnlySet<string>? GetRequestedColumns(SourceExecutionContext executionContext)
+    {
+        var acceptedColumns = executionContext.Plan.AcceptedColumns;
+
+        if (acceptedColumns.Count == 0)
+            return null;
+
+        var requestedColumns = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var acceptedColumn in acceptedColumns)
+        {
+            requestedColumns.Add(acceptedColumn.Name);
+
+            foreach (var part in acceptedColumn.Name.Split('.'))
+                requestedColumns.Add(part);
+        }
+
+        return requestedColumns;
     }
 }
