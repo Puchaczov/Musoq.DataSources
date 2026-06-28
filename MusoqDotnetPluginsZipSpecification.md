@@ -296,3 +296,5 @@ Datasource authors can copy this repository's producer-side release tooling into
 - `.github/workflows/release-plugins.yml`
 
 The copied workflow must pass its own GitHub repository as `owner/repo` to the release scripts. Plugin project files must use a valid `Musoq.DataSources.*` package name, a supported SemVer `<Version>`, package metadata, XML documentation generation, and the runtime-v2 `net10.0` target. If NuGet publishing is enabled, provide a NuGet API key and publish the exact project version; prerelease suffixes must not be rewritten.
+
+See `MusoqThirdPartyDatasourceRepositorySetup.md` for the full third-party repository checklist.

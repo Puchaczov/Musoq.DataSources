@@ -1068,6 +1068,8 @@ The workflow must pass the current GitHub repository as `owner/repo`. The genera
 https://github.com/{owner}/{repo}/releases/download/plugin-registry/plugin-registry.json
 ```
 
+For a copy-ready external repository checklist, see `MusoqThirdPartyDatasourceRepositorySetup.md`.
+
 The default import command for hosts using datasource packages is:
 
 ```powershell
