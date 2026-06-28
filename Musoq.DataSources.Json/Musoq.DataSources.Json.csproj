@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>8.4.7</Version>
+        <Version>9.0.0</Version>
         <Authors>Jakub Puchaa</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query JSON files and data with SQL-style queries, flattening nested structures into rows and columns.</Description>
