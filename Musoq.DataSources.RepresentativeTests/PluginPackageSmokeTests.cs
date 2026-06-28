@@ -6,6 +6,9 @@ namespace Musoq.DataSources.RepresentativeTests;
 [TestClass]
 public class PluginPackageSmokeTests
 {
+    private const string SemVerPattern =
+        @"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$";
+
     private static readonly string[] HostProvidedAssemblies =
     [
         "Musoq.Schema.dll",
@@ -57,9 +60,12 @@ public class PluginPackageSmokeTests
 
             var versionPath = Path.Combine(outerDirectory, "Version.txt");
             Assert.IsTrue(File.Exists(versionPath), $"Package is missing Version.txt: {packagePath}");
-            Assert.IsFalse(
-                string.IsNullOrWhiteSpace(File.ReadAllText(versionPath)),
-                $"Version.txt is empty: {packagePath}");
+            var packageVersion = File.ReadAllText(versionPath).Trim();
+            Assert.IsFalse(string.IsNullOrWhiteSpace(packageVersion), $"Version.txt is empty: {packagePath}");
+            StringAssert.Matches(
+                packageVersion,
+                new global::System.Text.RegularExpressions.Regex(SemVerPattern),
+                $"Version.txt must contain a stable or prerelease SemVer value: {packagePath}");
 
             var pluginZipPath = Path.Combine(outerDirectory, "Plugin.zip");
             Assert.IsTrue(File.Exists(pluginZipPath), $"Package is missing Plugin.zip: {packagePath}");
