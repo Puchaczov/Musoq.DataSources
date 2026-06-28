@@ -15,6 +15,95 @@ The final package must be a Zip archive with a filename following this pattern:
 - `Musoq.DataSources.Time-linux-x64.zip`
 - `Musoq.DataSources.Json-alpine-x64.zip`
 
+## Versioning and Registry Compatibility
+
+Plugin package versions use SemVer without build metadata. Supported examples:
+
+- `1.2.3`
+- `1.2.3-alpha`
+- `1.2.3-alpha.1`
+- `1.2.3-beta.1`
+- `1.2.3-rc.1`
+
+`Version.txt` must contain the exact version string from the plugin project. Do not strip prerelease suffixes from `Version.txt`, GitHub release metadata, NuGet packages, or registry history.
+
+GitHub release tags must be path-safe and must include both the exact version and plugin name:
+
+```text
+{Version}-{PluginName}
+```
+
+Examples:
+
+- `8.4.8-Musoq.DataSources.Json`
+- `8.4.9-alpha.1-Musoq.DataSources.Json`
+- `8.4.9-beta.1-Musoq.DataSources.Json`
+- `8.4.9-rc.1-Musoq.DataSources.Json`
+
+The plugin registry is backwards-compatible. Schema `1.1` keeps the schema `1.0` fields used by existing clients and adds optional channel metadata for newer clients:
+
+- `latestVersion`, `releaseTag`, and `releaseDate` remain present and point to the latest stable version when a stable version exists.
+- `versionHistory` remains present and maps every exact version to its release tag and date.
+- `latestStableVersion`, `latestPrereleaseVersion`, and `channels` are optional additive fields.
+- `versionHistory` entries may also include `channel` and `isPrerelease`.
+
+Example registry entry:
+
+```json
+{
+  "schemaVersion": "1.1",
+  "lastUpdated": "2026-06-28T12:00:00Z",
+  "repository": "https://github.com/Puchaczov/Musoq.DataSources",
+  "plugins": [
+    {
+      "name": "Musoq.DataSources.Json",
+      "shortName": "json",
+      "description": "JSON datasource for Musoq.",
+      "tags": ["json", "files", "datasource"],
+      "latestVersion": "8.4.8",
+      "releaseTag": "8.4.8-Musoq.DataSources.Json",
+      "releaseDate": "2026-06-20T10:15:00Z",
+      "latestStableVersion": "8.4.8",
+      "latestPrereleaseVersion": "8.4.9-alpha.1",
+      "channels": {
+        "stable": {
+          "version": "8.4.8",
+          "releaseTag": "8.4.8-Musoq.DataSources.Json",
+          "releaseDate": "2026-06-20T10:15:00Z"
+        },
+        "alpha": {
+          "version": "8.4.9-alpha.1",
+          "releaseTag": "8.4.9-alpha.1-Musoq.DataSources.Json",
+          "releaseDate": "2026-06-28T12:00:00Z"
+        }
+      },
+      "artifacts": {
+        "windows-x64": "Musoq.DataSources.Json-windows-x64.zip",
+        "linux-x64": "Musoq.DataSources.Json-linux-x64.zip",
+        "macos-arm64": "Musoq.DataSources.Json-macos-arm64.zip",
+        "alpine-x64": "Musoq.DataSources.Json-alpine-x64.zip"
+      }
+    }
+  ],
+  "versionHistory": {
+    "Musoq.DataSources.Json": {
+      "8.4.8": {
+        "releaseTag": "8.4.8-Musoq.DataSources.Json",
+        "releaseDate": "2026-06-20T10:15:00Z",
+        "channel": "stable",
+        "isPrerelease": false
+      },
+      "8.4.9-alpha.1": {
+        "releaseTag": "8.4.9-alpha.1-Musoq.DataSources.Json",
+        "releaseDate": "2026-06-28T12:00:00Z",
+        "channel": "alpha",
+        "isPrerelease": true
+      }
+    }
+  }
+}
+```
+
 ## Package Structure
 
 The package is a **nested Zip archive**. The outer zip file contains metadata files and an inner zip file holding the actual plugin binaries.
@@ -192,5 +281,18 @@ You can add multiple registries. The configuration is persisted by the local age
 
 ```bash
 # Add a registry
-musoq registry add custom https://your-registry.example.com/registry.json
+musoq registry add custom https://github.com/{owner}/{repo}/releases/download/plugin-registry/plugin-registry.json
 ```
+
+## Reusing the Release Scripts in Another Repository
+
+Datasource authors can copy this repository's producer-side release tooling into another GitHub repository:
+
+- `scripts/common`
+- `scripts/Pack-Plugin.ps1`
+- `scripts/Publish-PluginReleases.ps1`
+- `scripts/Update-PluginRegistry.ps1`
+- `scripts/Rollback-PluginReleases.ps1`
+- `.github/workflows/release-plugins.yml`
+
+The copied workflow must pass its own GitHub repository as `owner/repo` to the release scripts. Plugin project files must use a valid `Musoq.DataSources.*` package name, a supported SemVer `<Version>`, package metadata, XML documentation generation, and the runtime-v2 `net10.0` target. If NuGet publishing is enabled, provide a NuGet API key and publish the exact project version; prerelease suffixes must not be rewritten.

@@ -1667,6 +1667,30 @@ Musoq.DataSources.Weather-windows-x64.zip
 
 Confirm the exact package convention used by your Musoq host. If the host uses a registry or a newer plugin command, keep the inner `Plugin.zip` contents and adapt only the outer metadata names.
 
+`Version.txt` must contain the exact project SemVer. Stable versions such as `1.2.3` and prerelease versions such as `1.2.3-alpha.1`, `1.2.3-beta.1`, and `1.2.3-rc.1` are valid. Keep the same exact version in the project file, NuGet package, GitHub release tag, package metadata, and registry `versionHistory`.
+
+Repository registries use schema `1.1`, which is additive over schema `1.0`. Existing clients continue reading `latestVersion`, `releaseTag`, `releaseDate`, `artifacts`, and `versionHistory`. Channel-aware clients can also read `latestStableVersion`, `latestPrereleaseVersion`, and `channels`. Release tags are path-safe:
+
+```text
+8.4.8-Musoq.DataSources.Weather
+8.4.9-alpha.1-Musoq.DataSources.Weather
+```
+
+To publish a third-party datasource repository, copy the release tooling as a set:
+
+- `scripts/common`
+- `scripts/Pack-Plugin.ps1`
+- `scripts/Publish-PluginReleases.ps1`
+- `scripts/Update-PluginRegistry.ps1`
+- `scripts/Rollback-PluginReleases.ps1`
+- `.github/workflows/release-plugins.yml`
+
+The workflow passes its own `owner/repo` value to the scripts. Consumers can add the generated registry URL:
+
+```text
+https://github.com/{owner}/{repo}/releases/download/plugin-registry/plugin-registry.json
+```
+
 ### 6.2 Excluded Assemblies
 
 Do not ship assemblies provided by the host unless your host explicitly requires self-contained plugins.

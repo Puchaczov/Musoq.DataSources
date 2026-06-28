@@ -1049,6 +1049,25 @@ Test-Path .\Musoq.DataSources.Weather\bin\Release\net10.0\Musoq.DataSources.Weat
 
 If the XML is missing, Musoq tooling may be unable to list the plugin's tables and columns without loading the DLL.
 
+`Version.txt` must match the exact project SemVer. Stable versions such as `1.2.3` and prerelease versions such as `1.2.3-alpha.1`, `1.2.3-beta.1`, and `1.2.3-rc.1` are valid. Do not strip prerelease suffixes from `Version.txt`, release tags, NuGet packages, or registry history.
+
+Repository plugin registries use the package shape described in `MusoqDotnetPluginsZipSpecification.md`. Registry schema `1.1` is backwards-compatible with schema `1.0`: `latestVersion`, `releaseTag`, `releaseDate`, `artifacts`, and `versionHistory` remain present for existing clients, while newer clients can read `latestStableVersion`, `latestPrereleaseVersion`, and `channels`.
+
+Portable release scripts should be copied as a set into a datasource repository:
+
+- `scripts/common`
+- `scripts/Pack-Plugin.ps1`
+- `scripts/Publish-PluginReleases.ps1`
+- `scripts/Update-PluginRegistry.ps1`
+- `scripts/Rollback-PluginReleases.ps1`
+- `.github/workflows/release-plugins.yml`
+
+The workflow must pass the current GitHub repository as `owner/repo`. The generated registry is published at:
+
+```text
+https://github.com/{owner}/{repo}/releases/download/plugin-registry/plugin-registry.json
+```
+
 The default import command for hosts using datasource packages is:
 
 ```powershell
