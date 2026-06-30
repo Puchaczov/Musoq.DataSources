@@ -1,0 +1,284 @@
+name: Release Datasources Batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      selection:
+        description: 'All, or comma/newline/space separated slugs, package IDs, suffixes, or exact release tags'
+        required: true
+        default: 'All'
+        type: string
+      skip_existing:
+        description: 'Skip releases that already exist on GitHub'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      dry_run:
+        description: 'Dry run: validate, build, test, pack, and smoke-test without publishing'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-pack:
+    name: Validate, test, and pack batch
+    runs-on: windows-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      is_dry_run: ${{ steps.batch.outputs.is_dry_run }}
+      release_count: ${{ steps.batch.outputs.release_count }}
+
+    steps:
+      # actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      # actions/setup-dotnet@v4.3.1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Resolve batch release tags
+        id: batch
+        shell: pwsh
+        env:
+          BATCH_SELECTION: ${{ inputs.selection }}
+          BATCH_DRY_RUN: ${{ inputs.dry_run }}
+          BATCH_SKIP_EXISTING: ${{ inputs.skip_existing }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          $summaryJson = ./scripts/release/Resolve-BatchRelease.ps1 -Selection $env:BATCH_SELECTION -Json
+          $selected = @($summaryJson | ConvertFrom-Json)
+
+          if ($selected.Count -eq 0) {
+            throw 'Batch release selection did not resolve any datasource packages.'
+          }
+
+          $headers = @{
+            'User-Agent' = 'musoq-datasource-release'
+            'Accept' = 'application/vnd.github+json'
+            'Authorization' = "Bearer $env:GITHUB_TOKEN"
+          }
+
+          $pending = @()
+          $skipped = @()
+          foreach ($release in $selected) {
+            $tag = [string]$release.tag
+            $encodedTag = [System.Uri]::EscapeDataString($tag)
+            $uri = "$env:GITHUB_API_URL/repos/$env:GITHUB_REPOSITORY/releases/tags/$encodedTag"
+            $exists = $false
+            try {
+              [void](Invoke-RestMethod -Headers $headers -Uri $uri)
+              $exists = $true
+            }
+            catch {
+              if (-not $_.Exception.Response -or $_.Exception.Response.StatusCode.value__ -ne 404) {
+                throw
+              }
+            }
+
+            if ($exists -and $env:BATCH_SKIP_EXISTING -eq 'true') {
+              $skipped += $release
+              continue
+            }
+
+            if ($exists -and $env:BATCH_SKIP_EXISTING -ne 'true') {
+              Write-Host "Release '$tag' already exists and will be republished." -ForegroundColor Yellow
+            }
+
+            $pending += $release
+          }
+
+          New-Item -ItemType Directory -Force -Path artifacts/release | Out-Null
+          ConvertTo-Json -InputObject $pending -Depth 10 | Set-Content -Path artifacts/release/release-batch.json -Encoding UTF8
+          ConvertTo-Json -InputObject $skipped -Depth 10 | Set-Content -Path artifacts/release/skipped-release-batch.json -Encoding UTF8
+
+          Write-Host 'Selected releases:'
+          $selected | Format-Table tag, packageId, version, channel -AutoSize
+
+          if ($skipped.Count -gt 0) {
+            Write-Host 'Skipped existing releases:'
+            $skipped | Format-Table tag, packageId, version, channel -AutoSize
+          }
+
+          if ($pending.Count -eq 0) {
+            throw 'No unpublished datasource releases remain after existing-release filtering.'
+          }
+
+          if (@($pending | Where-Object { -not $_.isPrerelease }).Count -gt 0) {
+            git fetch origin main
+            git merge-base --is-ancestor HEAD origin/main
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Stable datasource releases must point to a commit contained in origin/main.'
+            }
+          }
+
+          "is_dry_run=$env:BATCH_DRY_RUN" >> $env:GITHUB_OUTPUT
+          "release_count=$($pending.Count)" >> $env:GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore Musoq.DataSources.sln --nologo
+
+      - name: Build
+        run: dotnet build Musoq.DataSources.sln --configuration Release --no-restore --nologo
+
+      - name: Test
+        run: dotnet test Musoq.DataSources.sln --configuration Release --no-build --nologo --logger "console;verbosity=minimal"
+
+      - name: Pack and smoke test release artifacts
+        shell: pwsh
+        run: |
+          $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
+          foreach ($release in $batch) {
+            $tag = [string]$release.tag
+            $artifactDirectory = Join-Path 'artifacts/release' $tag
+            ./scripts/release/Pack-Release.ps1 -Tag $tag -OutputPath $artifactDirectory
+            ./scripts/release/Test-ReleaseSmoke.ps1 -Tag $tag -ArtifactDirectory $artifactDirectory
+          }
+
+      # actions/upload-artifact@v4.6.2
+      - name: Upload batch release artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: datasource-batch-release-artifacts
+          path: artifacts/release/**
+          if-no-files-found: error
+
+  publish:
+    name: Publish batch to NuGet and plugin registry
+    needs: validate-pack
+    if: needs.validate-pack.outputs.is_dry_run == 'false'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    environment: nuget-production
+    permissions:
+      contents: write
+      id-token: write
+    concurrency:
+      group: plugin-registry
+      cancel-in-progress: false
+
+    steps:
+      # actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.x
+
+      # actions/download-artifact@v4.3.0
+      - name: Download batch release artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: datasource-batch-release-artifacts
+          path: artifacts/release
+
+      - name: Validate existing release tags
+        shell: pwsh
+        env:
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
+          foreach ($release in $batch) {
+            $tag = [string]$release.tag
+            $remoteTag = git ls-remote --tags origin "refs/tags/$tag"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to inspect remote tag '$tag'."
+            }
+
+            if ([string]::IsNullOrWhiteSpace($remoteTag)) {
+              Write-Host "Release tag '$tag' does not exist yet; GitHub release creation will create it at $env:TARGET_SHA."
+              continue
+            }
+
+            $remoteSha = ($remoteTag -split "`t")[0]
+            if ($remoteSha -ne $env:TARGET_SHA) {
+              throw "Remote tag '$tag' points to '$remoteSha', not current workflow commit '$env:TARGET_SHA'."
+            }
+
+            Write-Host "Release tag '$tag' already points to current workflow commit."
+          }
+
+      - name: Select NuGet credentials
+        id: nuget-credentials
+        shell: pwsh
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+          NUGET_MUSOQ_KEY: ${{ secrets.NUGET_MUSOQ_KEY }}
+        run: |
+          $useTrustedPublishing = -not [string]::IsNullOrWhiteSpace($env:NUGET_USER)
+          $hasApiKey = -not [string]::IsNullOrWhiteSpace($env:NUGET_MUSOQ_KEY)
+
+          if (-not $useTrustedPublishing -and -not $hasApiKey) {
+            throw 'Configure NUGET_USER for NuGet Trusted Publishing or NUGET_MUSOQ_KEY for API-key publishing.'
+          }
+
+          "use_trusted_publishing=$($useTrustedPublishing.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      # NuGet/login@v1
+      - name: NuGet login with Trusted Publishing
+        if: steps.nuget-credentials.outputs.use_trusted_publishing == 'true'
+        id: nuget-login
+        continue-on-error: true
+        uses: NuGet/login@ebc737b6fc418a6ca0073cf116ec8dc156d8b81e
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Publish batch release artifacts
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_SHA: ${{ github.sha }}
+          TRUSTED_NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          NUGET_MUSOQ_KEY: ${{ secrets.NUGET_MUSOQ_KEY }}
+        run: |
+          New-Item -ItemType Directory -Force -Path published | Out-Null
+
+          $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
+          $publishedPlugins = @()
+
+          foreach ($release in $batch) {
+            $tag = [string]$release.tag
+            $metadataPath = Join-Path 'published' "$tag.json"
+            $artifactDirectory = Join-Path 'artifacts/release' $tag
+
+            ./scripts/release/Publish-Release.ps1 `
+              -Tag $tag `
+              -Repository "${{ github.repository }}" `
+              -ArtifactDirectory $artifactDirectory `
+              -OutputMetadataPath $metadataPath `
+              -TargetCommitish $env:TARGET_SHA
+
+            $publishedPlugins += @(Get-Content $metadataPath -Raw | ConvertFrom-Json)
+          }
+
+          ConvertTo-Json -InputObject $publishedPlugins -Depth 10 | Set-Content -Path published-plugins.json -Encoding UTF8
+
+      - name: Update plugin registry once
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/Update-PluginRegistry.ps1 `
+            -Repository "${{ github.repository }}" `
+            -PublishedMetadataPath published-plugins.json

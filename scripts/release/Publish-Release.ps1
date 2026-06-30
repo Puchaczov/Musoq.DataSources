@@ -7,7 +7,8 @@ param(
     [string]$ArtifactDirectory = "artifacts/release",
     [string]$NuGetApiKey = "",
     [string]$NuGetSource = "https://api.nuget.org/v3/index.json",
-    [string]$OutputMetadataPath = ""
+    [string]$OutputMetadataPath = "",
+    [string]$TargetCommitish = ""
 )
 
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
@@ -44,6 +45,10 @@ if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
 
 if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
     throw "NuGet API key is required. Configure Trusted Publishing or NUGET_MUSOQ_KEY."
+}
+
+if (-not [string]::IsNullOrWhiteSpace($TargetCommitish) -and $TargetCommitish -notmatch '^[0-9a-fA-F]{7,40}$') {
+    throw "TargetCommitish must be a git commit SHA when supplied."
 }
 
 $manifestPath = Join-Path $resolvedArtifactDirectory "release-artifacts.json"
@@ -110,6 +115,10 @@ else {
 
     if ($release.IsPrerelease) {
         $createArgs += "--prerelease"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($TargetCommitish)) {
+        $createArgs += @("--target", $TargetCommitish)
     }
 
     $createArgs += $assetPaths

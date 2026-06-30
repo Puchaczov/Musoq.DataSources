@@ -44,6 +44,7 @@ scripts/release
 scripts/Pack-Plugin.ps1
 scripts/Update-PluginRegistry.ps1
 .github/workflows/release-datasource.yml
+.github/workflows/release-datasources-batch.yml
 ```
 
 Optional but recommended:
@@ -144,6 +145,19 @@ git tag 1.2.3-alpha.1-Musoq.DataSources.Weather
 git tag 2.0.0-alpha.1-Musoq.DataSources.Inventory
 git push origin 1.2.3-alpha.1-Musoq.DataSources.Weather 2.0.0-alpha.1-Musoq.DataSources.Inventory
 ```
+
+Pushing multiple tags starts one workflow run per tag. For larger coordinated releases, use the manual `release-datasources-batch.yml` workflow instead. It accepts `All` or a comma/newline/space separated list of datasource slugs, package IDs, suffixes, or exact release tags. The batch workflow restores, builds, and tests once, then packs and publishes each selected datasource, and updates `plugin-registry.json` once at the end.
+
+Batch workflow examples:
+
+```text
+All
+json,git,os
+Musoq.DataSources.Json Musoq.DataSources.Git
+9.0.0-alpha.2-Musoq.DataSources.Json
+```
+
+The batch workflow defaults to dry-run mode and skips GitHub releases that already exist. It creates GitHub release tags through the release API at the workflow commit instead of pushing git tags, so it does not trigger the single-tag release workflow for every datasource.
 
 ## Rollback
 

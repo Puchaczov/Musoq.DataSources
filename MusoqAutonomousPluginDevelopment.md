@@ -1692,6 +1692,7 @@ To publish a third-party datasource repository, copy the release tooling as a se
 - `scripts/Pack-Plugin.ps1`
 - `scripts/Update-PluginRegistry.ps1`
 - `.github/workflows/release-datasource.yml`
+- `.github/workflows/release-datasources-batch.yml`
 - `.github/workflows/rollback-release.yml`
 - `.github/workflows/validate-plugin-packages.yml`
 
@@ -1702,6 +1703,8 @@ https://github.com/{owner}/{repo}/releases/download/plugin-registry/plugin-regis
 ```
 
 Rollback is explicit and tag-scoped through `scripts/release/Rollback-Release.ps1`. NuGet-only helper packages that do not implement datasource schemas need a separate NuGet-only release flow.
+
+For coordinated releases, use the manual `release-datasources-batch.yml` workflow instead of pushing many tags. It validates the selected datasource set, restores/builds/tests once, publishes each selected datasource, and updates the registry once.
 
 ### 6.2 Excluded Assemblies
 

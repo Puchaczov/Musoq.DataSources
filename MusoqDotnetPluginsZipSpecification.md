@@ -323,11 +323,14 @@ Datasource authors can copy this repository's producer-side release tooling into
 - `scripts/Pack-Plugin.ps1`
 - `scripts/Update-PluginRegistry.ps1`
 - `.github/workflows/release-datasource.yml`
+- `.github/workflows/release-datasources-batch.yml`
 - `.github/workflows/rollback-release.yml`
 - `.github/workflows/validate-plugin-packages.yml`
 
 The copied workflow must pass its own GitHub repository as `owner/repo` to the release scripts. Plugin project files must use a valid `Musoq.DataSources.*` package name, a supported SemVer `<Version>`, package metadata, XML documentation generation, and the runtime-v2 `net10.0` target. Configure NuGet Trusted Publishing or `NUGET_MUSOQ_KEY` before enabling tag-push releases. Prerelease suffixes must not be rewritten.
 
 Rollback is handled by `scripts/release/Rollback-Release.ps1` and `.github/workflows/rollback-release.yml`. It accepts an exact datasource release tag, deletes that GitHub release only when explicitly applied, and regenerates the registry from remaining releases. NuGet-only helper packages that do not implement a datasource schema are not part of the unified datasource release flow yet.
+
+Use the single-tag workflow for canary or one-off releases. Use `release-datasources-batch.yml` for coordinated releases because it restores, builds, and tests once, publishes all selected datasource artifacts, and updates the registry once.
 
 See `MusoqThirdPartyDatasourceRepositorySetup.md` for the full third-party repository checklist.

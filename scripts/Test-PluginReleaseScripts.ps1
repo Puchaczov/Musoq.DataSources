@@ -179,8 +179,8 @@ function Test-SyntheticRegistryJsonShape {
 }
 
 function Test-DatasourceReleaseValidation {
-    $summary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag "9.0.0-alpha.1-Musoq.DataSources.Json" -Json | ConvertFrom-Json
-    Assert-Equal "9.0.0-alpha.1-Musoq.DataSources.Json" $summary.tag "Datasource release validation should preserve tag."
+    $summary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag "9.0.0-alpha.2-Musoq.DataSources.Json" -Json | ConvertFrom-Json
+    Assert-Equal "9.0.0-alpha.2-Musoq.DataSources.Json" $summary.tag "Datasource release validation should preserve tag."
     Assert-Equal "Musoq.DataSources.Json" $summary.packageId "Datasource release validation should resolve package id."
     Assert-Equal "alpha" $summary.channel "Datasource release validation should resolve channel."
 
@@ -193,6 +193,19 @@ function Test-DatasourceReleaseValidation {
     } "Datasource release validation should reject version mismatches."
 }
 
+function Test-BatchDatasourceReleaseResolution {
+    $jsonRelease = & "$PSScriptRoot/release/Resolve-BatchRelease.ps1" -Selection "json" -Json | ConvertFrom-Json
+    Assert-Equal 1 @($jsonRelease).Count "Batch release selection should resolve one datasource."
+    Assert-Equal "9.0.0-alpha.2-Musoq.DataSources.Json" $jsonRelease[0].tag "Batch release selection should use current project version."
+
+    $allReleases = & "$PSScriptRoot/release/Resolve-BatchRelease.ps1" -Selection "All" -Json | ConvertFrom-Json
+    Assert-True (@($allReleases).Count -ge 1) "Batch release selection should resolve all datasource packages."
+
+    Assert-Throws {
+        & "$PSScriptRoot/release/Resolve-BatchRelease.ps1" -Selection "Musoq.DataSources.AsyncRowsSource" -Json | Out-Null
+    } "Batch release selection should reject helper packages."
+}
+
 Test-SemVerValidation
 Test-SemVerOrdering
 Test-ReleaseTagParsing
@@ -202,5 +215,6 @@ Test-RollbackProjectionRecompute
 Test-PackageVersionTextPreservesPrerelease
 Test-SyntheticRegistryJsonShape
 Test-DatasourceReleaseValidation
+Test-BatchDatasourceReleaseResolution
 
 Write-Host "Plugin release script tests passed." -ForegroundColor Green
