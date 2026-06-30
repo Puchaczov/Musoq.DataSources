@@ -1053,14 +1053,23 @@ If the XML is missing, Musoq tooling may be unable to list the plugin's tables a
 
 Repository plugin registries use the package shape described in `MusoqDotnetPluginsZipSpecification.md`. Registry schema `1.1` is backwards-compatible with schema `1.0`: `latestVersion`, `releaseTag`, `releaseDate`, `artifacts`, and `versionHistory` remain present for existing clients, while newer clients can read `latestStableVersion`, `latestPrereleaseVersion`, and `channels`.
 
+The unified release flow uses one compatible tag for both NuGet and plugin zip assets:
+
+```powershell
+git tag 9.0.0-alpha.1-Musoq.DataSources.Weather
+git push origin 9.0.0-alpha.1-Musoq.DataSources.Weather
+```
+
+The tag must match the project `<Version>` exactly. The workflow uploads `.nupkg`, `.snupkg`, and all runtime plugin zips to the same GitHub release, then updates the registry. Existing clients continue using the registry `releaseTag` and `artifacts` fields.
+
 Portable release scripts should be copied as a set into a datasource repository:
 
 - `scripts/common`
+- `scripts/release`
 - `scripts/Pack-Plugin.ps1`
-- `scripts/Publish-PluginReleases.ps1`
 - `scripts/Update-PluginRegistry.ps1`
 - `scripts/Rollback-PluginReleases.ps1`
-- `.github/workflows/release-plugins.yml`
+- `.github/workflows/release-datasource.yml`
 
 The workflow must pass the current GitHub repository as `owner/repo`. The generated registry is published at:
 

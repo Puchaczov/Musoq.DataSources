@@ -1676,14 +1676,23 @@ Repository registries use schema `1.1`, which is additive over schema `1.0`. Exi
 8.4.9-alpha.1-Musoq.DataSources.Weather
 ```
 
+Use one release tag to publish both NuGet and plugin zip assets:
+
+```powershell
+git tag 8.4.9-alpha.1-Musoq.DataSources.Weather
+git push origin 8.4.9-alpha.1-Musoq.DataSources.Weather
+```
+
+The tag version must match the project `<Version>` exactly. The workflow publishes `.nupkg`, `.snupkg`, all runtime plugin zips, and the channel-aware registry entry from the same release.
+
 To publish a third-party datasource repository, copy the release tooling as a set:
 
 - `scripts/common`
+- `scripts/release`
 - `scripts/Pack-Plugin.ps1`
-- `scripts/Publish-PluginReleases.ps1`
 - `scripts/Update-PluginRegistry.ps1`
 - `scripts/Rollback-PluginReleases.ps1`
-- `.github/workflows/release-plugins.yml`
+- `.github/workflows/release-datasource.yml`
 
 The workflow passes its own `owner/repo` value to the scripts. Consumers can add the generated registry URL:
 

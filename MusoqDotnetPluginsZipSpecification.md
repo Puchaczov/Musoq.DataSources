@@ -104,6 +104,36 @@ Example registry entry:
 }
 ```
 
+Release selection rules:
+
+- `latestVersion`, root `releaseTag`, and root `releaseDate` point to the latest stable release when a stable release exists.
+- If only prereleases exist for a plugin, `latestVersion` points to the highest prerelease so the plugin remains discoverable.
+- `latestStableVersion` may be `null` or omitted when no stable release exists.
+- `latestPrereleaseVersion` points to the highest SemVer prerelease across all prerelease channels.
+- `channels.stable`, `channels.alpha`, `channels.beta`, and `channels.rc` point to the latest version in each channel when present.
+- Existing clients can continue using only `latestVersion`, `releaseTag`, and `artifacts`.
+
+## Unified NuGet and Plugin Release Flow
+
+For repositories that publish both NuGet packages and plugin zips, one Git tag releases one datasource:
+
+```powershell
+git tag 9.0.0-alpha.1-Musoq.DataSources.Json
+git push origin 9.0.0-alpha.1-Musoq.DataSources.Json
+```
+
+The release workflow validates that the tag version exactly matches the project `<Version>`, packs the `.nupkg` and `.snupkg`, packs all plugin runtime zips, uploads all assets to the same GitHub release, and updates `plugin-registry.json`.
+
+Multiple datasource releases can point to the same commit:
+
+```powershell
+git tag 9.0.0-alpha.1-Musoq.DataSources.Json
+git tag 2.0.0-alpha.1-Musoq.DataSources.Git
+git push origin 9.0.0-alpha.1-Musoq.DataSources.Json 2.0.0-alpha.1-Musoq.DataSources.Git
+```
+
+NuGet-only helper packages that do not implement a datasource schema are not part of the unified plugin release flow.
+
 ## Package Structure
 
 The package is a **nested Zip archive**. The outer zip file contains metadata files and an inner zip file holding the actual plugin binaries.
@@ -289,12 +319,12 @@ musoq registry add custom https://github.com/{owner}/{repo}/releases/download/pl
 Datasource authors can copy this repository's producer-side release tooling into another GitHub repository:
 
 - `scripts/common`
+- `scripts/release`
 - `scripts/Pack-Plugin.ps1`
-- `scripts/Publish-PluginReleases.ps1`
 - `scripts/Update-PluginRegistry.ps1`
 - `scripts/Rollback-PluginReleases.ps1`
-- `.github/workflows/release-plugins.yml`
+- `.github/workflows/release-datasource.yml`
 
-The copied workflow must pass its own GitHub repository as `owner/repo` to the release scripts. Plugin project files must use a valid `Musoq.DataSources.*` package name, a supported SemVer `<Version>`, package metadata, XML documentation generation, and the runtime-v2 `net10.0` target. If NuGet publishing is enabled, provide a NuGet API key and publish the exact project version; prerelease suffixes must not be rewritten.
+The copied workflow must pass its own GitHub repository as `owner/repo` to the release scripts. Plugin project files must use a valid `Musoq.DataSources.*` package name, a supported SemVer `<Version>`, package metadata, XML documentation generation, and the runtime-v2 `net10.0` target. Configure NuGet Trusted Publishing or a NuGet API key before enabling tag-push releases. Prerelease suffixes must not be rewritten.
 
 See `MusoqThirdPartyDatasourceRepositorySetup.md` for the full third-party repository checklist.
