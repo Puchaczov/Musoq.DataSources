@@ -1,0 +1,79 @@
+{
+  "packages": [
+    {
+      "slug": "archives",
+      "packageId": "Musoq.DataSources.Archives",
+      "projectPath": "Musoq.DataSources.Archives/Musoq.DataSources.Archives.csproj"
+    },
+    {
+      "slug": "canbus",
+      "packageId": "Musoq.DataSources.CANBus",
+      "projectPath": "Musoq.DataSources.CANBus/Musoq.DataSources.CANBus.csproj"
+    },
+    {
+      "slug": "docker",
+      "packageId": "Musoq.DataSources.Docker",
+      "projectPath": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj"
+    },
+    {
+      "slug": "flatfile",
+      "packageId": "Musoq.DataSources.FlatFile",
+      "projectPath": "Musoq.DataSources.FlatFile/Musoq.DataSources.FlatFile.csproj"
+    },
+    {
+      "slug": "git",
+      "packageId": "Musoq.DataSources.Git",
+      "projectPath": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj"
+    },
+    {
+      "slug": "github",
+      "packageId": "Musoq.DataSources.GitHub",
+      "projectPath": "Musoq.DataSources.GitHub/Musoq.DataSources.GitHub.csproj"
+    },
+    {
+      "slug": "jira",
+      "packageId": "Musoq.DataSources.Jira",
+      "projectPath": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj"
+    },
+    {
+      "slug": "json",
+      "packageId": "Musoq.DataSources.Json",
+      "projectPath": "Musoq.DataSources.Json/Musoq.DataSources.Json.csproj"
+    },
+    {
+      "slug": "ollama",
+      "packageId": "Musoq.DataSources.Ollama",
+      "projectPath": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj"
+    },
+    {
+      "slug": "openai",
+      "packageId": "Musoq.DataSources.OpenAI",
+      "projectPath": "Musoq.DataSources.OpenAI/Musoq.DataSources.OpenAI.csproj"
+    },
+    {
+      "slug": "os",
+      "packageId": "Musoq.DataSources.Os",
+      "projectPath": "Musoq.DataSources.Os/Musoq.DataSources.Os.csproj"
+    },
+    {
+      "slug": "roslyn",
+      "packageId": "Musoq.DataSources.Roslyn",
+      "projectPath": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj"
+    },
+    {
+      "slug": "separatedvalues",
+      "packageId": "Musoq.DataSources.SeparatedValues",
+      "projectPath": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj"
+    },
+    {
+      "slug": "system",
+      "packageId": "Musoq.DataSources.System",
+      "projectPath": "Musoq.DataSources.System/Musoq.DataSources.System.csproj"
+    },
+    {
+      "slug": "time",
+      "packageId": "Musoq.DataSources.Time",
+      "projectPath": "Musoq.DataSources.Time/Musoq.DataSources.Time.csproj"
+    }
+  ]
+}
