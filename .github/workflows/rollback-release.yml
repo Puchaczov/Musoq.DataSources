@@ -1,0 +1,70 @@
+name: Rollback Datasource Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Exact datasource release tag, for example 9.0.0-alpha.1-Musoq.DataSources.Json'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run: validate and show the release that would be deleted'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-rollback:
+    name: Validate rollback
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      # actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Validate rollback target
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          ./scripts/release/Rollback-Release.ps1 `
+            -Tag $env:RELEASE_TAG `
+            -Repository "${{ github.repository }}"
+
+  apply-rollback:
+    name: Apply rollback
+    needs: validate-rollback
+    if: inputs.dry_run == 'false'
+    runs-on: windows-latest
+    environment: nuget-production
+    permissions:
+      contents: write
+    concurrency:
+      group: plugin-registry
+      cancel-in-progress: false
+
+    steps:
+      # actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Delete release and regenerate registry
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          ./scripts/release/Rollback-Release.ps1 `
+            -Tag $env:RELEASE_TAG `
+            -Repository "${{ github.repository }}" `
+            -Apply

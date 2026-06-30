@@ -150,7 +150,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRUSTED_NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-          NUGET_MUSOQ_KEY: ${{ secrets.NUGET_MUSOQ_KEY || secrets.nuget_musoq_key }}
+          NUGET_MUSOQ_KEY: ${{ secrets.NUGET_MUSOQ_KEY }}
         run: |
           ./scripts/release/Publish-Release.ps1 `
             -Tag $env:RELEASE_TAG `

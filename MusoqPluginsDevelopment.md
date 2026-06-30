@@ -1068,8 +1068,9 @@ Portable release scripts should be copied as a set into a datasource repository:
 - `scripts/release`
 - `scripts/Pack-Plugin.ps1`
 - `scripts/Update-PluginRegistry.ps1`
-- `scripts/Rollback-PluginReleases.ps1`
 - `.github/workflows/release-datasource.yml`
+- `.github/workflows/rollback-release.yml`
+- `.github/workflows/validate-plugin-packages.yml`
 
 The workflow must pass the current GitHub repository as `owner/repo`. The generated registry is published at:
 
@@ -1078,6 +1079,8 @@ https://github.com/{owner}/{repo}/releases/download/plugin-registry/plugin-regis
 ```
 
 For a copy-ready external repository checklist, see `MusoqThirdPartyDatasourceRepositorySetup.md`.
+
+Rollback is tag-scoped through `scripts/release/Rollback-Release.ps1`. Helper NuGet-only packages that do not implement datasource schemas are not handled by the unified datasource release flow yet.
 
 The default import command for hosts using datasource packages is:
 

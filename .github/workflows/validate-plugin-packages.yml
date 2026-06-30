@@ -1,0 +1,47 @@
+name: Validate Plugin Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      plugin_name:
+        description: 'Specific Plugin Name (Leave empty for All)'
+        required: false
+        default: 'All'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-plugin-packages:
+    runs-on: windows-latest
+
+    steps:
+      # actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack Plugins
+        shell: pwsh
+        run: |
+          ./scripts/Pack-Plugin.ps1 -PluginName "${{ inputs.plugin_name }}"
+
+      - name: Smoke test plugin packages
+        shell: pwsh
+        run: |
+          $env:MUSOQ_PLUGIN_ARTIFACTS_DIR = (Resolve-Path artifacts).Path
+          dotnet test Musoq.DataSources.RepresentativeTests/Musoq.DataSources.RepresentativeTests.csproj `
+            --configuration Release `
+            --filter "FullyQualifiedName~PluginPackageSmokeTests" `
+            --nologo
+
+      # actions/upload-artifact@v4.6.2
+      - name: Upload plugin package artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: plugin-package-validation-artifacts
+          path: artifacts/*.zip
+          if-no-files-found: error
