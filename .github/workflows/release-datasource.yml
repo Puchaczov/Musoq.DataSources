@@ -135,8 +135,25 @@ jobs:
           name: datasource-release-artifacts
           path: artifacts/release
 
+      - name: Select NuGet credentials
+        id: nuget-credentials
+        shell: pwsh
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+          NUGET_MUSOQ_KEY: ${{ secrets.NUGET_MUSOQ_KEY }}
+        run: |
+          $useTrustedPublishing = -not [string]::IsNullOrWhiteSpace($env:NUGET_USER)
+          $hasApiKey = -not [string]::IsNullOrWhiteSpace($env:NUGET_MUSOQ_KEY)
+
+          if (-not $useTrustedPublishing -and -not $hasApiKey) {
+            throw 'Configure NUGET_USER for NuGet Trusted Publishing or NUGET_MUSOQ_KEY for API-key publishing.'
+          }
+
+          "use_trusted_publishing=$($useTrustedPublishing.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
       # NuGet/login@v1
       - name: NuGet login with Trusted Publishing
+        if: steps.nuget-credentials.outputs.use_trusted_publishing == 'true'
         id: nuget-login
         continue-on-error: true
         uses: NuGet/login@ebc737b6fc418a6ca0073cf116ec8dc156d8b81e
