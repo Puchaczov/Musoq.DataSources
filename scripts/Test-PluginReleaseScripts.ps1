@@ -160,11 +160,19 @@ function Test-SyntheticRegistryJsonShape {
 
     $json = $registry | ConvertTo-Json -Depth 20
     $parsed = $json | ConvertFrom-Json
+    $rootReleaseDate = if ($parsed.plugins[0].releaseDate -is [DateTime]) {
+        $parsed.plugins[0].releaseDate.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture)
+    } else {
+        [string]$parsed.plugins[0].releaseDate
+    }
 
     Assert-Equal "1.1" $parsed.schemaVersion "Synthetic registry should use schema 1.1."
     Assert-Equal "8.4.8" $parsed.plugins[0].latestVersion "latestVersion should stay stable in serialized JSON."
+    Assert-Equal "8.4.8-Musoq.DataSources.Json" $parsed.plugins[0].releaseTag "Root releaseTag should stay stable in serialized JSON."
+    Assert-Equal "2026-06-20T10:15:00Z" $rootReleaseDate "Root releaseDate should stay stable in serialized JSON."
     Assert-Equal "8.4.8" $parsed.plugins[0].latestStableVersion "latestStableVersion should serialize."
     Assert-Equal "8.4.9-alpha.1" $parsed.plugins[0].latestPrereleaseVersion "latestPrereleaseVersion should serialize."
+    Assert-Equal "8.4.8" $parsed.plugins[0].channels.stable.version "stable channel should serialize."
     Assert-Equal "8.4.9-alpha.1" $parsed.plugins[0].channels.alpha.version "alpha channel should serialize."
     Assert-Equal $false $parsed.versionHistory.'Musoq.DataSources.Json'.'8.4.8'.isPrerelease "Stable history entry should serialize prerelease flag."
     Assert-Equal "alpha" $parsed.versionHistory.'Musoq.DataSources.Json'.'8.4.9-alpha.1'.channel "Prerelease history channel should serialize."

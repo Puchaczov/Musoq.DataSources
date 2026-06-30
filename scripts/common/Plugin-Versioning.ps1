@@ -269,6 +269,7 @@ function Get-MusoqPluginRegistryProjection {
     $latestPrerelease = Get-MusoqLatestVersion -Versions $versionKeys -PrereleaseOnly
     $latestAny = Get-MusoqLatestVersion -Versions $versionKeys
     $latestDefault = if ($latestStable) { $latestStable } else { $latestAny }
+    $latestDefaultInfo = $Versions[$latestDefault]
 
     $channels = @{}
     $channelNames = @($versionKeys | ForEach-Object { Get-MusoqVersionChannel -Version $_ } | Sort-Object -Unique)
@@ -281,6 +282,8 @@ function Get-MusoqPluginRegistryProjection {
 
     return @{
         LatestVersion = $latestDefault
+        ReleaseTag = $latestDefaultInfo.releaseTag
+        ReleaseDate = $latestDefaultInfo.releaseDate
         LatestStableVersion = $latestStable
         LatestPrereleaseVersion = $latestPrerelease
         Channels = $channels
