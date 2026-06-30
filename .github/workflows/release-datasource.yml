@@ -24,6 +24,8 @@ jobs:
     outputs:
       release_tag: ${{ steps.release.outputs.release_tag }}
       release_version: ${{ steps.release.outputs.release_version }}
+      release_project_path: ${{ steps.release.outputs.release_project_path }}
+      release_test_project_path: ${{ steps.release.outputs.release_test_project_path }}
       is_prerelease: ${{ steps.release.outputs.is_prerelease }}
       is_dry_run: ${{ steps.release.outputs.is_dry_run }}
 
@@ -70,17 +72,49 @@ jobs:
 
           "release_tag=$($summary.tag)" >> $env:GITHUB_OUTPUT
           "release_version=$($summary.version)" >> $env:GITHUB_OUTPUT
+          "release_project_path=$($summary.projectPath)" >> $env:GITHUB_OUTPUT
+
+          $testProjectPath = "$($summary.packageId).Tests/$($summary.packageId).Tests.csproj"
+          if (Test-Path $testProjectPath) {
+            "release_test_project_path=$testProjectPath" >> $env:GITHUB_OUTPUT
+          }
+          else {
+            Write-Host "No matching test project found at '$testProjectPath'."
+            "release_test_project_path=" >> $env:GITHUB_OUTPUT
+          }
+
           "is_prerelease=$($summary.isPrerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           "is_dry_run=$isDryRun" >> $env:GITHUB_OUTPUT
 
       - name: Restore
-        run: dotnet restore Musoq.DataSources.sln --nologo
+        shell: pwsh
+        env:
+          RELEASE_PROJECT_PATH: ${{ steps.release.outputs.release_project_path }}
+          RELEASE_TEST_PROJECT_PATH: ${{ steps.release.outputs.release_test_project_path }}
+        run: |
+          dotnet restore $env:RELEASE_PROJECT_PATH --nologo
+          if ($env:RELEASE_TEST_PROJECT_PATH) {
+            dotnet restore $env:RELEASE_TEST_PROJECT_PATH --nologo
+          }
 
       - name: Build
-        run: dotnet build Musoq.DataSources.sln --configuration Release --no-restore --nologo
+        shell: pwsh
+        env:
+          RELEASE_PROJECT_PATH: ${{ steps.release.outputs.release_project_path }}
+        run: |
+          dotnet build $env:RELEASE_PROJECT_PATH --configuration Release --no-restore --nologo
 
       - name: Test
-        run: dotnet test Musoq.DataSources.sln --configuration Release --no-build --nologo --logger "console;verbosity=minimal"
+        shell: pwsh
+        env:
+          RELEASE_TEST_PROJECT_PATH: ${{ steps.release.outputs.release_test_project_path }}
+        run: |
+          if (-not $env:RELEASE_TEST_PROJECT_PATH) {
+            Write-Host "No matching test project found for this datasource; skipping targeted tests."
+            return
+          }
+
+          dotnet test $env:RELEASE_TEST_PROJECT_PATH --configuration Release --no-restore --nologo --logger "console;verbosity=minimal"
 
       - name: Pack release artifacts
         shell: pwsh
