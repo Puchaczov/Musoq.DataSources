@@ -27,6 +27,22 @@ function Assert-Equal {
     }
 }
 
+function Assert-Throws {
+    param(
+        [scriptblock]$Action,
+        [string]$Message
+    )
+
+    try {
+        & $Action
+    }
+    catch {
+        return
+    }
+
+    throw $Message
+}
+
 function Test-SemVerValidation {
     Assert-True (Test-ValidVersion "1.2.3") "Stable SemVer should be valid."
     Assert-True (Test-ValidVersion "1.2.3-alpha") "Alpha SemVer should be valid."
@@ -154,6 +170,21 @@ function Test-SyntheticRegistryJsonShape {
     Assert-Equal "alpha" $parsed.versionHistory.'Musoq.DataSources.Json'.'8.4.9-alpha.1'.channel "Prerelease history channel should serialize."
 }
 
+function Test-DatasourceReleaseValidation {
+    $summary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag "9.0.0-alpha.1-Musoq.DataSources.Json" -Json | ConvertFrom-Json
+    Assert-Equal "9.0.0-alpha.1-Musoq.DataSources.Json" $summary.tag "Datasource release validation should preserve tag."
+    Assert-Equal "Musoq.DataSources.Json" $summary.packageId "Datasource release validation should resolve package id."
+    Assert-Equal "alpha" $summary.channel "Datasource release validation should resolve channel."
+
+    Assert-Throws {
+        & "$PSScriptRoot/release/Validate-Release.ps1" -Tag "3.0.0-alpha.1-Musoq.DataSources.AsyncRowsSource" | Out-Null
+    } "Datasource release validation should reject helper packages."
+
+    Assert-Throws {
+        & "$PSScriptRoot/release/Validate-Release.ps1" -Tag "0.0.1-Musoq.DataSources.Json" | Out-Null
+    } "Datasource release validation should reject version mismatches."
+}
+
 Test-SemVerValidation
 Test-SemVerOrdering
 Test-ReleaseTagParsing
@@ -162,5 +193,6 @@ Test-RegistryProjectionPrereleaseOnly
 Test-RollbackProjectionRecompute
 Test-PackageVersionTextPreservesPrerelease
 Test-SyntheticRegistryJsonShape
+Test-DatasourceReleaseValidation
 
 Write-Host "Plugin release script tests passed." -ForegroundColor Green
