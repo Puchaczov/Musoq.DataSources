@@ -178,9 +178,16 @@ function Test-SyntheticRegistryJsonShape {
     Assert-Equal "alpha" $parsed.versionHistory.'Musoq.DataSources.Json'.'8.4.9-alpha.1'.channel "Prerelease history channel should serialize."
 }
 
+function Get-CurrentJsonReleaseTag {
+    [xml]$project = Get-Content "$PSScriptRoot/../Musoq.DataSources.Json/Musoq.DataSources.Json.csproj"
+    $version = [string](@($project.Project.PropertyGroup | Where-Object { $_.Version })[0].Version)
+    return "$version-Musoq.DataSources.Json"
+}
+
 function Test-DatasourceReleaseValidation {
-    $summary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag "9.0.0-alpha.2-Musoq.DataSources.Json" -Json | ConvertFrom-Json
-    Assert-Equal "9.0.0-alpha.2-Musoq.DataSources.Json" $summary.tag "Datasource release validation should preserve tag."
+    $tag = Get-CurrentJsonReleaseTag
+    $summary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag $tag -Json | ConvertFrom-Json
+    Assert-Equal $tag $summary.tag "Datasource release validation should preserve tag."
     Assert-Equal "Musoq.DataSources.Json" $summary.packageId "Datasource release validation should resolve package id."
     Assert-Equal "alpha" $summary.channel "Datasource release validation should resolve channel."
 
@@ -194,9 +201,10 @@ function Test-DatasourceReleaseValidation {
 }
 
 function Test-BatchDatasourceReleaseResolution {
+    $tag = Get-CurrentJsonReleaseTag
     $jsonRelease = & "$PSScriptRoot/release/Resolve-BatchRelease.ps1" -Selection "json" -Json | ConvertFrom-Json
     Assert-Equal 1 @($jsonRelease).Count "Batch release selection should resolve one datasource."
-    Assert-Equal "9.0.0-alpha.2-Musoq.DataSources.Json" $jsonRelease[0].tag "Batch release selection should use current project version."
+    Assert-Equal $tag $jsonRelease[0].tag "Batch release selection should use current project version."
 
     $allReleases = & "$PSScriptRoot/release/Resolve-BatchRelease.ps1" -Selection "All" -Json | ConvertFrom-Json
     Assert-True (@($allReleases).Count -ge 1) "Batch release selection should resolve all datasource packages."

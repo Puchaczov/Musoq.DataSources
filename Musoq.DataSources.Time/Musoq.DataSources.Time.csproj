@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>8.0.0-alpha.1</Version>
+        <Version>8.0.0-alpha.2</Version>
         <Authors>Jakub Puchaa</Authors>
         <Product>Musoq</Product>
         <Description>Lets you generate dates, ranges, and time series, then query them with SQL-style queries to drive reports, schedules, and time-based joins.</Description>
@@ -29,10 +29,10 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1" />
-        <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1" />
-        <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.1" />
-        <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1">
+        <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.7" />
+        <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.7" />
+        <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.7" />
+        <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.7">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
     </ItemGroup>

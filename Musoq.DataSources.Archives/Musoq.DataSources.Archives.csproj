@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>6.0.0-alpha.1</Version>
+        <Version>6.0.0-alpha.2</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query ZIP, TAR, and other archives with SQL-style queries, exposing file lists and metadata as rows.</Description>
@@ -30,10 +30,10 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.1" />
-        <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.1" />
-        <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.1" />
-        <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.1">
+        <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.7" />
+        <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.7" />
+        <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.7" />
+        <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.7">
             <ExcludeAssets>runtime</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="SharpCompress" Version="0.37.2"/>
