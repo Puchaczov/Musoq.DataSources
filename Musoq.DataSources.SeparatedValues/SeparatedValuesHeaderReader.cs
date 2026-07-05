@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,14 +14,15 @@ internal static class SeparatedValuesHeaderReader
         int skipLines,
         int bufferSize)
     {
-        var modifiedCulture = CreateCulture(separator);
         using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize,
             FileOptions.SequentialScan);
         using var reader = new StreamReader(stream, Encoding.UTF8, true, bufferSize);
 
         SkipLines(reader, skipLines);
 
-        using var csvReader = new CsvReader(reader, modifiedCulture);
+        using var csvReader = new CsvReader(
+            reader,
+            SeparatedValuesCsvConfigurationFactory.Create(separator, bufferSize, false));
         if (!csvReader.Read())
             return [];
 
@@ -35,14 +35,15 @@ internal static class SeparatedValuesHeaderReader
         int skipLines,
         int bufferSize)
     {
-        var modifiedCulture = CreateCulture(separator);
         await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
             bufferSize, FileOptions.SequentialScan);
         using var reader = new StreamReader(stream, Encoding.UTF8, true, bufferSize);
 
         await SkipLinesAsync(reader, skipLines);
 
-        using var csvReader = new CsvReader(reader, modifiedCulture);
+        using var csvReader = new CsvReader(
+            reader,
+            SeparatedValuesCsvConfigurationFactory.Create(separator, bufferSize, false));
         if (!await csvReader.ReadAsync())
             return [];
 
@@ -64,14 +65,6 @@ internal static class SeparatedValuesHeaderReader
         }
 
         return indexToNameMap;
-    }
-
-    private static CultureInfo CreateCulture(string separator)
-    {
-        return new CultureInfo(CultureInfo.CurrentCulture.Name)
-        {
-            TextInfo = { ListSeparator = separator }
-        };
     }
 
     private static void SkipLines(TextReader reader, int linesToSkip)

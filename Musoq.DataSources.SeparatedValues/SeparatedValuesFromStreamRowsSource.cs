@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using CsvHelper;
-using CsvHelper.Configuration;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
@@ -26,6 +25,9 @@ internal class SeparatedValuesFromStreamRowsSource(
 
     protected override void CollectChunks(IChunkWriter<object?[]> writer)
     {
+        if (executionContext.Plan.AcceptedTake is 0)
+            return;
+
         var readPlan = SeparatedValuesReadPlan.From(executionContext.Plan);
         var columns = GetProjectedColumns(executionContext, readPlan);
         var indexToNameMap = executionContext.AllColumns.ToDictionary(
@@ -46,27 +48,25 @@ internal class SeparatedValuesFromStreamRowsSource(
 
         SkipLines(reader, hasHeader ? skipLines + 1 : skipLines);
 
-        using var csvReader = new CsvReader(reader, new CsvConfiguration(_modifiedCulture));
+        using var csvParser = new CsvParser(
+            reader,
+            SeparatedValuesCsvConfigurationFactory.Create(_modifiedCulture, strategy.StreamBufferSize, false));
         var parser = new SeparatedValuesRowParser(
             indexToNameMap,
             executionContext.AllColumns,
             columns,
             readPlan.ProjectionAccepted,
             readPlan.AcceptedPredicate);
+        var fieldReader = new SeparatedValuesCsvParserFieldReader(csvParser);
         var chunk = new List<object?[]>(strategy.RowChunkSize);
         long skipped = 0;
         long emitted = 0;
 
-        while (csvReader.Read())
+        while (csvParser.Read())
         {
             writer.CancellationToken.ThrowIfCancellationRequested();
 
-            var rawRow = csvReader.Context.Parser!.Record;
-
-            if (rawRow is null)
-                continue;
-
-            if (!parser.MatchesAcceptedPredicate(rawRow))
+            if (!parser.MatchesAcceptedPredicate(fieldReader))
                 continue;
 
             if (executionContext.Plan.AcceptedSkip.HasValue &&
@@ -81,7 +81,7 @@ internal class SeparatedValuesFromStreamRowsSource(
                 emitted >= executionContext.Plan.AcceptedTake.Value)
                 break;
 
-            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(rawRow));
+            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(fieldReader));
             emitted++;
 
             if (chunk.Count < strategy.RowChunkSize)

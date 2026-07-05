@@ -34,7 +34,7 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Docker.DotNet" Version="3.125.15"/>
         <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.7" />
-        <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.7" />
+        <PackageReference Include="Musoq.Evaluator" Version="17.0.1-alpha.1" />
         <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.7" />
         <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.7">
             <ExcludeAssets>runtime</ExcludeAssets>

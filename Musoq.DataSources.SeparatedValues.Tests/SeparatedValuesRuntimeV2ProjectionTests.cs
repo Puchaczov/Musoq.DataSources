@@ -290,6 +290,62 @@ public class SeparatedValuesRuntimeV2ProjectionTests
     }
 
     [TestMethod]
+    public void FileRowsSource_WhenAcceptedTakeIsZero_DoesNotRequireHeader()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
+        File.WriteAllText(tempFile, string.Empty, Encoding.UTF8);
+
+        try
+        {
+            var columns = CreateNameAgeColumns();
+            var request = CreateRequest(
+                null,
+                [new SourceColumnRef("Name")],
+                skip: null,
+                take: 0);
+            var plan = new SeparatedValuesSchema()
+                .TryPlanSource("comma", request, tempFile, true, 0)
+                .ExecutionPlan;
+            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                columns,
+                executionPlan: plan);
+            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
+
+            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
+
+            Assert.AreEqual(0, rows.Length);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+                File.Delete(tempFile);
+        }
+    }
+
+    [TestMethod]
+    public void RowParser_WhenProjectionIsAccepted_DoesNotReadUnprojectedFields()
+    {
+        var parser = new SeparatedValuesRowParser(
+            new Dictionary<int, string>
+            {
+                [0] = "Name",
+                [1] = "Payload"
+            },
+            CreateColumnsWithUnsupportedPayload(),
+            [new SchemaColumn("Name", 0, typeof(string))],
+            true,
+            null);
+        var row = new TrackingFieldReader(["Alice", "unsupported"], 1);
+
+        var parsed = parser.Parse(row);
+
+        Assert.AreEqual(1, parsed.Length);
+        Assert.AreEqual("Alice", parsed[0]);
+        CollectionAssert.AreEqual(new[] { 0 }, row.AccessedIndexes.ToArray());
+    }
+
+    [TestMethod]
     public void FileRowsSource_WhenAcceptedPredicateColumnIsMissing_Throws()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
@@ -431,5 +487,23 @@ public class SeparatedValuesRuntimeV2ProjectionTests
             comparisonOperator,
             new SourcePredicateColumn(new SourceColumnRef(columnName)),
             new SourcePredicateLiteral(value));
+    }
+
+    private sealed class TrackingFieldReader(string[] fields, params int[] forbiddenIndexes) : ISeparatedValuesFieldReader
+    {
+        private readonly HashSet<int> _forbiddenIndexes = forbiddenIndexes.ToHashSet();
+
+        public List<int> AccessedIndexes { get; } = [];
+
+        public int FieldCount => fields.Length;
+
+        public string GetField(int index)
+        {
+            if (_forbiddenIndexes.Contains(index))
+                throw new InvalidOperationException($"Field index {index} should not be accessed.");
+
+            AccessedIndexes.Add(index);
+            return fields[index];
+        }
     }
 }

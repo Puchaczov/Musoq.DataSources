@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CsvHelper;
-using CsvHelper.Configuration;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -73,10 +71,9 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         if (!file.Exists)
             return;
 
-        var modifiedCulture = new CultureInfo(CultureInfo.CurrentCulture.Name)
-        {
-            TextInfo = { ListSeparator = csvFile.Separator }
-        };
+        if (_executionContext.Plan.AcceptedTake is 0)
+            return;
+
         var readPlan = SeparatedValuesReadPlan.From(_executionContext.Plan);
         var columns = GetProjectedColumns(_executionContext, readPlan);
         var strategy = SeparatedValuesReadStrategySelector.Select(
@@ -90,7 +87,6 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
             csvFile,
             writer,
             indexToNameMap,
-            modifiedCulture,
             columns,
             readPlan,
             strategy,
@@ -119,7 +115,6 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         SeparatedValueInfo csvFile,
         IChunkWriter<object?[]> writer,
         IReadOnlyDictionary<int, string> indexToNameMap,
-        CultureInfo modifiedCulture,
         IReadOnlyCollection<ISchemaColumn> columns,
         SeparatedValuesReadPlan readPlan,
         SeparatedValuesReadStrategy strategy,
@@ -131,10 +126,12 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
 
         await SkipLinesAsync(reader, csvFile.SkipLines);
 
-        using var csvReader = new CsvReader(reader, new CsvConfiguration(modifiedCulture) { BadDataFound = _ => { } });
+        using var csvParser = new CsvParser(
+            reader,
+            SeparatedValuesCsvConfigurationFactory.Create(csvFile.Separator!, strategy.StreamBufferSize, true));
 
         if (csvFile.HasHeader)
-            await csvReader.ReadAsync();
+            await csvParser.ReadAsync();
 
         var parser = new SeparatedValuesRowParser(
             indexToNameMap,
@@ -142,20 +139,16 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
             columns,
             readPlan.ProjectionAccepted,
             readPlan.AcceptedPredicate);
+        var fieldReader = new SeparatedValuesCsvParserFieldReader(csvParser);
         var chunk = new List<object?[]>(strategy.RowChunkSize);
         long skipped = 0;
         long emitted = 0;
 
-        while (await csvReader.ReadAsync())
+        while (await csvParser.ReadAsync())
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var rawRow = csvReader.Context.Parser!.Record;
-
-            if (rawRow is null)
-                continue;
-
-            if (!parser.MatchesAcceptedPredicate(rawRow))
+            if (!parser.MatchesAcceptedPredicate(fieldReader))
                 continue;
 
             if (_executionContext.Plan.AcceptedSkip.HasValue &&
@@ -170,7 +163,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
                 emitted >= _executionContext.Plan.AcceptedTake.Value)
                 break;
 
-            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(rawRow));
+            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(fieldReader));
             emitted++;
             _totalRowsProcessed++;
 

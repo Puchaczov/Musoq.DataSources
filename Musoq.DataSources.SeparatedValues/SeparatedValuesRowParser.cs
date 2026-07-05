@@ -10,10 +10,9 @@ namespace Musoq.DataSources.SeparatedValues;
 
 internal sealed class SeparatedValuesRowParser
 {
-    private readonly IReadOnlyDictionary<int, string> _indexToNameMap;
     private readonly Dictionary<string, ColumnBinding> _bindingsByName;
     private readonly OutputBinding[] _outputBindings;
-    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly PredicateBinding? _acceptedPredicate;
     private readonly bool _projectionAccepted;
     private readonly int _outputLength;
 
@@ -24,78 +23,62 @@ internal sealed class SeparatedValuesRowParser
         bool projectionAccepted,
         SourcePredicateExpression? acceptedPredicate)
     {
-        _indexToNameMap = indexToNameMap;
-        _acceptedPredicate = acceptedPredicate;
         _projectionAccepted = projectionAccepted;
         _bindingsByName = CreateBindings(indexToNameMap, allColumns);
         _outputBindings = CreateOutputBindings(indexToNameMap, outputColumns, projectionAccepted);
         _outputLength = projectionAccepted
             ? outputColumns.Count == 0 ? 0 : outputColumns.Max(column => column.ColumnIndex) + 1
             : -1;
-        ValidatePredicateColumns(_acceptedPredicate);
+        _acceptedPredicate = CreatePredicateBinding(acceptedPredicate);
     }
 
-    public bool MatchesAcceptedPredicate(string?[] rawRow)
+    public bool MatchesAcceptedPredicate(ISeparatedValuesFieldReader row)
     {
-        return Matches(_acceptedPredicate, rawRow);
+        return Matches(_acceptedPredicate, row);
     }
 
-    public object?[] Parse(string?[] rawRow)
+    public object?[] Parse(ISeparatedValuesFieldReader row)
     {
         if (_projectionAccepted && _outputLength == 0)
             return [];
 
-        var parsedRecords = new object?[_projectionAccepted ? _outputLength : rawRow.Length];
+        var parsedRecords = new object?[_projectionAccepted ? _outputLength : row.FieldCount];
 
         foreach (var binding in _outputBindings)
         {
-            if (binding.SourceIndex >= rawRow.Length || binding.OutputIndex >= parsedRecords.Length)
+            if (binding.SourceIndex >= row.FieldCount || binding.OutputIndex >= parsedRecords.Length)
                 continue;
 
-            parsedRecords[binding.OutputIndex] = ConvertOutputValue(rawRow[binding.SourceIndex], binding.Type);
+            parsedRecords[binding.OutputIndex] = binding.Convert(row.GetField(binding.SourceIndex));
         }
 
         return parsedRecords;
     }
 
-    private bool Matches(SourcePredicateExpression? predicate, string?[] rawRow)
+    private bool Matches(PredicateBinding? predicate, ISeparatedValuesFieldReader row)
     {
-        return predicate switch
-        {
-            null => true,
-            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
-                Matches(logical.Left, rawRow) && Matches(logical.Right, rawRow),
-            SourcePredicateComparison comparison => EvaluateComparison(comparison, rawRow),
-            _ => true
-        };
-    }
-
-    private bool EvaluateComparison(SourcePredicateComparison comparison, string?[] rawRow)
-    {
-        if (!SeparatedValuesSourcePlanner.TryGetComparisonParts(
-                comparison,
-                out var columnName,
-                out var literal,
-                out var op))
+        if (predicate is null)
             return true;
 
-        if (!_bindingsByName.TryGetValue(columnName, out var binding))
-            throw new InvalidOperationException(
-                $"Accepted predicate references column '{columnName}' that is not available in separated values source.");
+        if (predicate.IsLogical)
+            return Matches(predicate.Left, row) && Matches(predicate.Right, row);
 
-        if (binding.SourceIndex >= rawRow.Length)
+        return EvaluateComparison(predicate, row);
+    }
+
+    private bool EvaluateComparison(PredicateBinding predicate, ISeparatedValuesFieldReader row)
+    {
+        if (!predicate.LiteralCanCompare || predicate.SourceIndex >= row.FieldCount)
             return false;
 
-        var comparisonType = GetPredicateComparisonType(binding.Type);
-        if (!TryConvertValue(rawRow[binding.SourceIndex], comparisonType, out var left) ||
+        if (!TryConvertValue(row.GetField(predicate.SourceIndex), predicate.ComparisonType, out var left) ||
             left is null ||
-            !TryConvertLiteral(literal.Value, comparisonType, out var right) ||
-            right is null)
+            predicate.LiteralValue is null)
             return false;
 
-        var compare = Compare(left, right, comparisonType);
+        var compare = Compare(left, predicate.LiteralValue, predicate.ComparisonType);
 
-        return op switch
+        return predicate.Operator switch
         {
             SourcePredicateComparisonOperator.Equal => compare == 0,
             SourcePredicateComparisonOperator.NotEqual => compare != 0,
@@ -107,15 +90,12 @@ internal sealed class SeparatedValuesRowParser
         };
     }
 
-    private object? ConvertOutputValue(string? value, Type? type)
+    private static ValueConverter CreateValueConverter(Type? type)
     {
         if (type is null)
-            return value;
+            return value => value;
 
-        if (!TryConvertValue(value, type, out var converted))
-            return null;
-
-        return converted;
+        return value => TryConvertValue(value, type, out var converted) ? converted : null;
     }
 
     private static Dictionary<string, ColumnBinding> CreateBindings(
@@ -158,7 +138,7 @@ internal sealed class SeparatedValuesRowParser
                 continue;
 
             _bindingsByName.TryGetValue(pair.Value, out var binding);
-            bindings.Add(new OutputBinding(pair.Key, pair.Key, binding.Type));
+            bindings.Add(new OutputBinding(pair.Key, pair.Key, CreateValueConverter(binding.Type)));
         }
 
         return bindings.ToArray();
@@ -172,27 +152,43 @@ internal sealed class SeparatedValuesRowParser
         return type;
     }
 
-    private void ValidatePredicateColumns(SourcePredicateExpression? predicate)
+    private PredicateBinding? CreatePredicateBinding(SourcePredicateExpression? predicate)
     {
-        switch (predicate)
+        return predicate switch
         {
-            case null:
-                return;
-            case SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical:
-                ValidatePredicateColumns(logical.Left);
-                ValidatePredicateColumns(logical.Right);
-                return;
-            case SourcePredicateComparison comparison:
-                if (SeparatedValuesSourcePlanner.TryGetComparisonParts(
-                        comparison,
-                        out var columnName,
-                        out _,
-                        out _) &&
-                    !_bindingsByName.ContainsKey(columnName))
-                    throw new InvalidOperationException(
-                        $"Accepted predicate references column '{columnName}' that is not available in separated values source.");
-                return;
-        }
+            null => null,
+            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
+                PredicateBinding.CreateLogical(
+                    CreatePredicateBinding(logical.Left),
+                    CreatePredicateBinding(logical.Right)),
+            SourcePredicateComparison comparison => CreateComparisonPredicateBinding(comparison),
+            _ => null
+        };
+    }
+
+    private PredicateBinding? CreateComparisonPredicateBinding(SourcePredicateComparison comparison)
+    {
+        if (!SeparatedValuesSourcePlanner.TryGetComparisonParts(
+                comparison,
+                out var columnName,
+                out var literal,
+                out var op))
+            return null;
+
+        if (!_bindingsByName.TryGetValue(columnName, out var binding))
+            throw new InvalidOperationException(
+                $"Accepted predicate references column '{columnName}' that is not available in separated values source.");
+
+        var comparisonType = GetPredicateComparisonType(binding.Type);
+        var literalCanCompare = TryConvertLiteral(literal.Value, comparisonType, out var literalValue) &&
+                                literalValue is not null;
+
+        return PredicateBinding.CreateComparison(
+            binding.SourceIndex,
+            comparisonType,
+            op,
+            literalValue,
+            literalCanCompare);
     }
 
     private static bool TryConvertLiteral(object? value, Type type, out object? converted)
@@ -318,5 +314,69 @@ internal sealed class SeparatedValuesRowParser
 
     private readonly record struct ColumnBinding(int SourceIndex, Type? Type);
 
-    private readonly record struct OutputBinding(int SourceIndex, int OutputIndex, Type? Type);
+    private readonly record struct OutputBinding(int SourceIndex, int OutputIndex, ValueConverter Convert);
+
+    private delegate object? ValueConverter(string? value);
+
+    private sealed class PredicateBinding
+    {
+        private PredicateBinding(PredicateBinding? left, PredicateBinding? right)
+        {
+            Left = left;
+            Right = right;
+            IsLogical = true;
+            ComparisonType = typeof(string);
+        }
+
+        private PredicateBinding(
+            int sourceIndex,
+            Type comparisonType,
+            SourcePredicateComparisonOperator op,
+            object? literalValue,
+            bool literalCanCompare)
+        {
+            SourceIndex = sourceIndex;
+            ComparisonType = comparisonType;
+            Operator = op;
+            LiteralValue = literalValue;
+            LiteralCanCompare = literalCanCompare;
+        }
+
+        public bool IsLogical { get; }
+
+        public PredicateBinding? Left { get; }
+
+        public PredicateBinding? Right { get; }
+
+        public int SourceIndex { get; }
+
+        public Type ComparisonType { get; }
+
+        public SourcePredicateComparisonOperator Operator { get; }
+
+        public object? LiteralValue { get; }
+
+        public bool LiteralCanCompare { get; }
+
+        public static PredicateBinding? CreateLogical(PredicateBinding? left, PredicateBinding? right)
+        {
+            return (left, right) switch
+            {
+                (null, null) => null,
+                (not null, null) => left,
+                (null, not null) => right,
+                _ => new PredicateBinding(left, right)
+            };
+        }
+
+        public static PredicateBinding CreateComparison(
+            int sourceIndex,
+            Type comparisonType,
+            SourcePredicateComparisonOperator op,
+            object? literalValue,
+            bool literalCanCompare)
+        {
+            return new PredicateBinding(sourceIndex, comparisonType, op, literalValue, literalCanCompare);
+        }
+    }
 }

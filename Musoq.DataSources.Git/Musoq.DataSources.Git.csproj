@@ -32,7 +32,7 @@
     <ItemGroup>
         <PackageReference Include="LibGit2Sharp" Version="0.31.0"/>
         <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.7" />
-        <PackageReference Include="Musoq.Evaluator" Version="17.0.0-alpha.7" />
+        <PackageReference Include="Musoq.Evaluator" Version="17.0.1-alpha.1" />
         <PackageReference Include="Musoq.Plugins" Version="17.0.0-alpha.7" />
         <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.7">
             <ExcludeAssets>runtime</ExcludeAssets>
