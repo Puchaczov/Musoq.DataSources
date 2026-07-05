@@ -13,8 +13,8 @@
 
 ## Input modes
 - Public constructors are only `#separatedvalues.comma(path, hasHeader, skipLines)`, `tab(...)`, and `semicolon(...)`.
-- `GetRowSource()` supports three first-argument shapes internally: `string` path, `Stream`, or `IReadOnlyTable`.
-- `IReadOnlyTable` input is the coupling/cross-apply mode and expects rows shaped like `(filePath, hasHeader, skipLines)`.
+- `GetRowSource()` supports two first-argument shapes internally: `string` path or `Stream`.
+- `IReadOnlyTable` file-list input is intentionally unsupported; single-file path performance is the priority.
 - Stream mode is mainly used through archive cross-apply scenarios; it depends on externally provided column metadata rather than self-inference.
 
 ## Dynamic table rules
@@ -27,7 +27,7 @@
 ## Patterns to preserve
 - Preserve header sanitization via `SeparatedValuesHelper.MakeHeaderNameValidColumnName()`.
 - Preserve chunked async reading, cancellation, and runtime-v2 data-source begin/end reporting.
-- `Stream` and `IReadOnlyTable` inputs are part of the query contract and support coupling/cross-apply scenarios.
+- `Stream` input remains part of the query contract for archive/cross-apply scenarios.
 
 ## Header and type behavior
 - Header names are normalized by `SeparatedValuesHelper.MakeHeaderNameValidColumnName()`; tests treat this as part of the public contract.
@@ -37,8 +37,8 @@
 - Duplicate headers after sanitization currently collide in dictionary maps; treat that behavior carefully.
 
 ## Runtime and chunking behavior
-- File mode uses `AsyncRowsSourceBase` with large chunking and explicit runtime reporting under the `separated_values` source name.
-- Multi-file `IReadOnlyTable` input is processed with `Parallel.ForEachAsync`, so cross-file output order is not guaranteed.
+- File mode uses `AsyncRowsSourceBase` with adaptive chunking and explicit runtime reporting under the `separated_values` source name.
+- File mode processes one file per source instance; table-backed multi-file processing is not supported.
 - Missing files are treated as empty input rather than immediate errors.
 - File mode suppresses CsvHelper `BadDataFound`, so malformed CSV is tolerated more than a strict parser would be.
 

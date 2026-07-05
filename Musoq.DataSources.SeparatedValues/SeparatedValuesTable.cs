@@ -25,32 +25,24 @@ internal class SeparatedValuesTable(string fileName, string separator, bool hasH
                 throw new InvalidOperationException("Inferred columns cannot be null.");
 
             var file = new FileInfo(fileName);
-            using var stream = new StreamReader(file.OpenRead());
-            var line = string.Empty;
+            var columns = SeparatedValuesHeaderReader.ReadFirstRecord(file, separator, skipLines, 65536);
 
-            var currentLine = 0;
-            while (!stream.EndOfStream && ((line = stream.ReadLine()) == string.Empty || currentLine < skipLines))
-                currentLine += 1;
-
-            if (line is null)
+            if (columns.Length == 0)
                 throw new InvalidOperationException("File is empty.");
-
-            var columns = line.Split([separator], StringSplitOptions.None);
 
             if (hasHeader)
                 _columns = columns
                     .Select((header, i) =>
                     {
-                        var type = InferredColumns.SingleOrDefault(f => f.ColumnName == header)?.ColumnType;
+                        var columnName = SeparatedValuesHelper.MakeHeaderNameValidColumnName(header ?? string.Empty);
+                        var type = InferredColumns.SingleOrDefault(f => f.ColumnName == columnName)?.ColumnType;
 
                         if (type == null)
-                            return new SchemaColumn(SeparatedValuesHelper.MakeHeaderNameValidColumnName(header), i,
-                                typeof(string));
+                            return new SchemaColumn(columnName, i, typeof(string));
 
                         return type == typeof(object)
-                            ? new SchemaColumn(SeparatedValuesHelper.MakeHeaderNameValidColumnName(header), i,
-                                typeof(string))
-                            : new SchemaColumn(SeparatedValuesHelper.MakeHeaderNameValidColumnName(header), i, type);
+                            ? new SchemaColumn(columnName, i, typeof(string))
+                            : new SchemaColumn(columnName, i, type);
                     })
                     .Cast<ISchemaColumn>()
                     .ToArray();

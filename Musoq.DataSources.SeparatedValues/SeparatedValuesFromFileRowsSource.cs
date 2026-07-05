@@ -11,7 +11,6 @@ using CsvHelper.Configuration;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues;
@@ -19,10 +18,8 @@ namespace Musoq.DataSources.SeparatedValues;
 internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]>
 {
     private const string SeparatedValuesSourceName = "separated_values";
-    private const int BufferSize = 65536;
-    private const int ChunkSize = 100000;
     private readonly SourceExecutionContext _executionContext;
-    private readonly SeparatedValueInfo[] _files;
+    private readonly SeparatedValueInfo _file;
     private long _totalRowsProcessed;
 
     public SeparatedValuesFromFileRowsSource(
@@ -34,38 +31,13 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         : base(executionContext.EndWorkToken)
     {
         _executionContext = executionContext;
-        _files =
-        [
-            new SeparatedValueInfo
-            {
-                FilePath = filePath,
-                HasHeader = hasHeader,
-                Separator = separator,
-                SkipLines = skipLines
-            }
-        ];
-    }
-
-    public SeparatedValuesFromFileRowsSource(
-        IReadOnlyTable table,
-        string separator,
-        SourceExecutionContext executionContext)
-        : base(executionContext.EndWorkToken)
-    {
-        _executionContext = executionContext;
-        _files = new SeparatedValueInfo[table.Count];
-
-        for (var i = 0; i < table.Count; ++i)
+        _file = new SeparatedValueInfo
         {
-            var row = table.Rows[i];
-            _files[i] = new SeparatedValueInfo
-            {
-                FilePath = (string)row[0],
-                Separator = separator,
-                HasHeader = (bool)row[1],
-                SkipLines = (int)row[2]
-            };
-        }
+            FilePath = filePath,
+            HasHeader = hasHeader,
+            Separator = separator,
+            SkipLines = skipLines
+        };
     }
 
     protected override async Task CollectChunksAsync(
@@ -77,8 +49,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
 
         try
         {
-            await Parallel.ForEachAsync(_files, cancellationToken,
-                async (file, loopToken) => await ProcessFileAsync(file, writer, loopToken));
+            await ProcessFileAsync(_file, writer, cancellationToken);
         }
         finally
         {
@@ -102,44 +73,45 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         if (!file.Exists)
             return;
 
-        var indexToNameMap = new Dictionary<int, string>();
-
         var modifiedCulture = new CultureInfo(CultureInfo.CurrentCulture.Name)
         {
             TextInfo = { ListSeparator = csvFile.Separator }
         };
+        var readPlan = SeparatedValuesReadPlan.From(_executionContext.Plan);
+        var columns = GetProjectedColumns(_executionContext, readPlan);
+        var strategy = SeparatedValuesReadStrategySelector.Select(
+            CreateStrategyContext(file.Length, columns.Length, readPlan, _executionContext.AllColumns.Count > 0));
+        var indexToNameMap = strategy.AvoidSecondHeaderOpen
+            ? CreateIndexToNameMap(_executionContext.AllColumns)
+            : await ProcessHeaderAsync(file, csvFile, strategy);
 
-        await ProcessHeaderAsync(file, csvFile, indexToNameMap, modifiedCulture);
-        await ProcessDataAsync(file, csvFile, writer, indexToNameMap, modifiedCulture, cancellationToken);
+        await ProcessDataAsync(
+            file,
+            csvFile,
+            writer,
+            indexToNameMap,
+            modifiedCulture,
+            columns,
+            readPlan,
+            strategy,
+            cancellationToken);
     }
 
-    private static async Task ProcessHeaderAsync(
+    private static async Task<IReadOnlyDictionary<int, string>> ProcessHeaderAsync(
         FileInfo file,
         SeparatedValueInfo csvFile,
-        Dictionary<int, string> indexToNameMap,
-        CultureInfo modifiedCulture)
+        SeparatedValuesReadStrategy strategy)
     {
-        await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
-            BufferSize, FileOptions.SequentialScan);
-        using var reader = new StreamReader(stream, Encoding.UTF8, true, BufferSize);
+        var header = await SeparatedValuesHeaderReader.ReadFirstRecordAsync(
+            file,
+            csvFile.Separator!,
+            csvFile.SkipLines,
+            strategy.StreamBufferSize);
 
-        await SkipLinesAsync(reader, csvFile.SkipLines);
-
-        using var csvReader = new CsvReader(reader, modifiedCulture);
-        await csvReader.ReadAsync();
-
-        var header = csvReader.Context.Parser!.Record;
-
-        if (header == null)
+        if (header.Length == 0)
             throw new NotSupportedException("File has no header or no data. Please check if file is not empty.");
 
-        for (var i = 0; i < header.Length; ++i)
-        {
-            var headerName = csvFile.HasHeader
-                ? SeparatedValuesHelper.MakeHeaderNameValidColumnName(header[i])
-                : string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
-            indexToNameMap.Add(i, headerName);
-        }
+        return SeparatedValuesHeaderReader.CreateIndexToNameMap(header, csvFile.HasHeader);
     }
 
     private async Task ProcessDataAsync(
@@ -148,18 +120,14 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         IChunkWriter<object?[]> writer,
         IReadOnlyDictionary<int, string> indexToNameMap,
         CultureInfo modifiedCulture,
+        IReadOnlyCollection<ISchemaColumn> columns,
+        SeparatedValuesReadPlan readPlan,
+        SeparatedValuesReadStrategy strategy,
         CancellationToken cancellationToken)
     {
-        var columns = GetProjectedColumns(_executionContext, out var projectionAccepted);
-        var types = columns.ToDictionary(
-            col => col.ColumnName,
-            col => col.ColumnType.GetUnderlyingNullable());
-        var activeIndexes = GetActiveIndexes(indexToNameMap, columns, projectionAccepted);
-        var outputLength = GetOutputLength(columns, projectionAccepted);
-
         await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
-            BufferSize, FileOptions.SequentialScan);
-        using var reader = new StreamReader(stream, Encoding.UTF8, true, BufferSize);
+            strategy.StreamBufferSize, FileOptions.SequentialScan);
+        using var reader = new StreamReader(stream, Encoding.UTF8, true, strategy.StreamBufferSize);
 
         await SkipLinesAsync(reader, csvFile.SkipLines);
 
@@ -168,7 +136,15 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         if (csvFile.HasHeader)
             await csvReader.ReadAsync();
 
-        var chunk = new List<object?[]>(ChunkSize);
+        var parser = new SeparatedValuesRowParser(
+            indexToNameMap,
+            _executionContext.AllColumns,
+            columns,
+            readPlan.ProjectionAccepted,
+            readPlan.AcceptedPredicate);
+        var chunk = new List<object?[]>(strategy.RowChunkSize);
+        long skipped = 0;
+        long emitted = 0;
 
         while (await csvReader.ReadAsync())
         {
@@ -179,27 +155,35 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
             if (rawRow is null)
                 continue;
 
-            chunk.Add(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap, activeIndexes, outputLength));
-            Interlocked.Increment(ref _totalRowsProcessed);
-
-            if (chunk.Count < ChunkSize)
+            if (!parser.MatchesAcceptedPredicate(rawRow))
                 continue;
 
-            lock (writer)
+            if (_executionContext.Plan.AcceptedSkip.HasValue &&
+                skipped < _executionContext.Plan.AcceptedSkip.Value)
             {
-                writer.Write(chunk);
+                skipped++;
+                continue;
             }
 
-            chunk = new List<object?[]>(ChunkSize);
+            if (strategy.EnableEarlyTakeFastPath &&
+                _executionContext.Plan.AcceptedTake.HasValue &&
+                emitted >= _executionContext.Plan.AcceptedTake.Value)
+                break;
+
+            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(rawRow));
+            emitted++;
+            _totalRowsProcessed++;
+
+            if (chunk.Count < strategy.RowChunkSize)
+                continue;
+
+            writer.Write(chunk);
+
+            chunk = new List<object?[]>(strategy.RowChunkSize);
         }
 
         if (chunk.Count > 0)
-        {
-            lock (writer)
-            {
-                writer.Write(chunk);
-            }
-        }
+            writer.Write(chunk);
     }
 
     private static async Task SkipLinesAsync(TextReader reader, int linesToSkip)
@@ -208,14 +192,35 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
             await reader.ReadLineAsync();
     }
 
+    private SeparatedValuesReadStrategyContext CreateStrategyContext(
+        long? fileSize,
+        int projectedColumnCount,
+        SeparatedValuesReadPlan readPlan,
+        bool canAvoidSecondHeaderOpen)
+    {
+        return new SeparatedValuesReadStrategyContext(
+            fileSize,
+            false,
+            projectedColumnCount,
+            _executionContext.AllColumns.Count,
+            _executionContext.Plan.AcceptedTake,
+            readPlan.HasResidualWork,
+            canAvoidSecondHeaderOpen,
+            readPlan.ProjectionAccepted);
+    }
+
+    private static Dictionary<int, string> CreateIndexToNameMap(IReadOnlyCollection<ISchemaColumn> columns)
+    {
+        return columns.ToDictionary(column => column.ColumnIndex, column => column.ColumnName);
+    }
+
     private static ISchemaColumn[] GetProjectedColumns(
         SourceExecutionContext executionContext,
-        out bool projectionAccepted)
+        SeparatedValuesReadPlan readPlan)
     {
         var acceptedColumns = executionContext.Plan.AcceptedColumns;
-        projectionAccepted = acceptedColumns.Count > 0;
 
-        if (!projectionAccepted)
+        if (!readPlan.ProjectionAccepted)
             return executionContext.AllColumns.ToArray();
 
         var acceptedNames = CreateAcceptedColumnNameSet(acceptedColumns, executionContext.AllColumns);
@@ -223,32 +228,6 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         return executionContext.AllColumns
             .Where(column => acceptedNames.Contains(column.ColumnName))
             .ToArray();
-    }
-
-    private static IReadOnlySet<int>? GetActiveIndexes(
-        IReadOnlyDictionary<int, string> indexToNameMap,
-        IReadOnlyCollection<ISchemaColumn> columns,
-        bool projectionAccepted)
-    {
-        if (!projectionAccepted)
-            return null;
-
-        var selectedNames = columns
-            .Select(column => column.ColumnName)
-            .ToHashSet(StringComparer.Ordinal);
-
-        return indexToNameMap
-            .Where(pair => selectedNames.Contains(pair.Value))
-            .Select(pair => pair.Key)
-            .ToHashSet();
-    }
-
-    private static int? GetOutputLength(IReadOnlyCollection<ISchemaColumn> columns, bool projectionAccepted)
-    {
-        if (!projectionAccepted)
-            return null;
-
-        return columns.Count == 0 ? 0 : columns.Max(column => column.ColumnIndex) + 1;
     }
 
     private static HashSet<string> CreateAcceptedColumnNameSet(

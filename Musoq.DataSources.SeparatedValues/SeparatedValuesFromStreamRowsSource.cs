@@ -8,7 +8,6 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Helpers;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues;
@@ -27,23 +26,36 @@ internal class SeparatedValuesFromStreamRowsSource(
 
     protected override void CollectChunks(IChunkWriter<object?[]> writer)
     {
-        var columns = GetProjectedColumns(executionContext, out var projectionAccepted);
-        var types = columns.ToDictionary(
-            col => col.ColumnName,
-            col => col.ColumnType.GetUnderlyingNullable());
-
+        var readPlan = SeparatedValuesReadPlan.From(executionContext.Plan);
+        var columns = GetProjectedColumns(executionContext, readPlan);
         var indexToNameMap = executionContext.AllColumns.ToDictionary(
             col => col.ColumnIndex,
             col => col.ColumnName);
-        var activeIndexes = GetActiveIndexes(indexToNameMap, columns, projectionAccepted);
-        var outputLength = GetOutputLength(columns, projectionAccepted);
+        var strategy = SeparatedValuesReadStrategySelector.Select(
+            new SeparatedValuesReadStrategyContext(
+                null,
+                true,
+                columns.Length,
+                executionContext.AllColumns.Count,
+                executionContext.Plan.AcceptedTake,
+                readPlan.HasResidualWork,
+                false,
+                readPlan.ProjectionAccepted));
 
-        using var reader = new StreamReader(stream, Encoding.UTF8, true, 1024);
+        using var reader = new StreamReader(stream, Encoding.UTF8, true, strategy.StreamBufferSize);
 
         SkipLines(reader, hasHeader ? skipLines + 1 : skipLines);
 
         using var csvReader = new CsvReader(reader, new CsvConfiguration(_modifiedCulture));
-        var chunk = new List<object?[]>();
+        var parser = new SeparatedValuesRowParser(
+            indexToNameMap,
+            executionContext.AllColumns,
+            columns,
+            readPlan.ProjectionAccepted,
+            readPlan.AcceptedPredicate);
+        var chunk = new List<object?[]>(strategy.RowChunkSize);
+        long skipped = 0;
+        long emitted = 0;
 
         while (csvReader.Read())
         {
@@ -54,13 +66,29 @@ internal class SeparatedValuesFromStreamRowsSource(
             if (rawRow is null)
                 continue;
 
-            chunk.Add(ParseHelpers.ParseRecords(types, rawRow, indexToNameMap, activeIndexes, outputLength));
+            if (!parser.MatchesAcceptedPredicate(rawRow))
+                continue;
 
-            if (chunk.Count < RowChunking.DefaultChunkSize)
+            if (executionContext.Plan.AcceptedSkip.HasValue &&
+                skipped < executionContext.Plan.AcceptedSkip.Value)
+            {
+                skipped++;
+                continue;
+            }
+
+            if (strategy.EnableEarlyTakeFastPath &&
+                executionContext.Plan.AcceptedTake.HasValue &&
+                emitted >= executionContext.Plan.AcceptedTake.Value)
+                break;
+
+            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(rawRow));
+            emitted++;
+
+            if (chunk.Count < strategy.RowChunkSize)
                 continue;
 
             writer.Write(chunk);
-            chunk = [];
+            chunk = new List<object?[]>(strategy.RowChunkSize);
         }
 
         if (chunk.Count > 0)
@@ -75,12 +103,11 @@ internal class SeparatedValuesFromStreamRowsSource(
 
     private static ISchemaColumn[] GetProjectedColumns(
         SourceExecutionContext context,
-        out bool projectionAccepted)
+        SeparatedValuesReadPlan readPlan)
     {
         var acceptedColumns = context.Plan.AcceptedColumns;
-        projectionAccepted = acceptedColumns.Count > 0;
 
-        if (!projectionAccepted)
+        if (!readPlan.ProjectionAccepted)
             return context.AllColumns.ToArray();
 
         var acceptedNames = CreateAcceptedColumnNameSet(acceptedColumns, context.AllColumns);
@@ -88,32 +115,6 @@ internal class SeparatedValuesFromStreamRowsSource(
         return context.AllColumns
             .Where(column => acceptedNames.Contains(column.ColumnName))
             .ToArray();
-    }
-
-    private static IReadOnlySet<int>? GetActiveIndexes(
-        IReadOnlyDictionary<int, string> indexToNameMap,
-        IReadOnlyCollection<ISchemaColumn> columns,
-        bool projectionAccepted)
-    {
-        if (!projectionAccepted)
-            return null;
-
-        var selectedNames = columns
-            .Select(column => column.ColumnName)
-            .ToHashSet(StringComparer.Ordinal);
-
-        return indexToNameMap
-            .Where(pair => selectedNames.Contains(pair.Value))
-            .Select(pair => pair.Key)
-            .ToHashSet();
-    }
-
-    private static int? GetOutputLength(IReadOnlyCollection<ISchemaColumn> columns, bool projectionAccepted)
-    {
-        if (!projectionAccepted)
-            return null;
-
-        return columns.Count == 0 ? 0 : columns.Max(column => column.ColumnIndex) + 1;
     }
 
     private static HashSet<string> CreateAcceptedColumnNameSet(

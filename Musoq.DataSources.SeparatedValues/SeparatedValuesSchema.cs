@@ -137,7 +137,7 @@ public class SeparatedValuesSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            CommaTable or TabTable or SemicolonTable => PlanProjectionOnly(request),
+            CommaTable or TabTable or SemicolonTable => SeparatedValuesSourcePlanner.Plan(request),
             _ => SourcePlanResult.RejectAll(request)
         };
     }
@@ -213,7 +213,6 @@ public class SeparatedValuesSchema : SchemaBase
     {
         RowSource<object?[]> source = parameters[0] switch
         {
-            IReadOnlyTable table => new SeparatedValuesFromFileRowsSource(table, separator, executionContext),
             Stream stream => new SeparatedValuesFromStreamRowsSource(
                 stream,
                 separator,
@@ -272,33 +271,6 @@ public class SeparatedValuesSchema : SchemaBase
             ]);
 
         return new SchemaMethodInfo(SemicolonTable, constructorInfo);
-    }
-
-    private static SourcePlanResult PlanProjectionOnly(SourcePlanRequest request)
-    {
-        var acceptedColumns = request.RequiredColumns ?? [];
-
-        return new SourcePlanResult
-        {
-            ExecutionPlan = new SourceExecutionPlan
-            {
-                Identity = request.Identity,
-                AcceptedColumns = acceptedColumns,
-                AcceptedPredicate = null,
-                AcceptedOrderBy = [],
-                Properties = new Dictionary<string, object?>()
-            },
-            AcceptedColumns = acceptedColumns,
-            AcceptedPredicate = null,
-            ResidualPredicate = request.Predicate,
-            AcceptedOrderBy = [],
-            ResidualOrderBy = request.OrderBy ?? [],
-            ResidualSkip = request.Skip,
-            ResidualTake = request.Take,
-            Cardinality = CardinalityEstimate.Unknown("Separated values source cardinality depends on file contents."),
-            Diagnostics = [],
-            ContractDiagnostics = []
-        };
     }
 
     private static MethodsAggregator CreateLibrary()

@@ -184,46 +184,18 @@ public class CsvTests
     }
 
     [TestMethod]
-    public void CsvSource_FromTableRows_ShouldReadSingleFile()
+    public void CsvSource_FromTableRows_ShouldBeUnsupported()
     {
-        var source = CreateTableBackedSource(
-            ["./Files/BankingTransactionsWithSkippedLines.csv", true, 2]);
+        var schema = new SeparatedValuesSchema();
+        var context = RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None);
 
-        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-        Assert.IsTrue(rows.Length == 11, "Table should have 11 entries");
-
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Salary") == 2, "Should have 2 'Salary' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Restaurant A") == 2,
-            "Should have 2 'Restaurant A' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Bus ticket") == 2,
-            "Should have 2 'Bus ticket' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Tesco") == 2, "Should have 2 'Tesco' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Restaurant B") == 2,
-            "Should have 2 'Restaurant B' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Service") == 1, "Should have 1 'Service' entry");
-    }
-
-    [TestMethod]
-    public void CsvSource_FromTableRows_ShouldReadSameFileTwice()
-    {
-        var source = CreateTableBackedSource(
-            ["./Files/BankingTransactionsWithSkippedLines.csv", true, 2],
-            ["./Files/BankingTransactionsWithSkippedLines.csv", true, 2]);
-
-        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-        Assert.IsTrue(rows.Length == 22, "Table should have 22 entries");
-
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Salary") == 4, "Should have 4 'Salary' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Restaurant A") == 4,
-            "Should have 4 'Restaurant A' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Bus ticket") == 4,
-            "Should have 4 'Bus ticket' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Tesco") == 4, "Should have 4 'Tesco' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Restaurant B") == 4,
-            "Should have 4 'Restaurant B' entries");
-        Assert.IsTrue(rows.Count(row => (string)row[2] == "Service") == 2, "Should have 2 'Service' entries");
+        Assert.ThrowsException<NotSupportedException>(() =>
+            schema.GetRowSource<object[]>(
+                "comma",
+                context,
+                new TestReadOnlyTable([["./Files/BankingTransactionsWithSkippedLines.csv", true, 2]]),
+                true,
+                0));
     }
 
     [TestMethod]
@@ -793,24 +765,6 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
     {
         return InstanceCreatorHelpers.CompileForExecution(script, Guid.NewGuid().ToString(), new CsvSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    private static SeparatedValuesFromFileRowsSource CreateTableBackedSource(params object[][] rows)
-    {
-        var mockLogger = new Mock<ILogger>();
-        var columns = new List<ISchemaColumn>
-        {
-            new Column("OperationDate", typeof(string), 0),
-            new Column("Category", typeof(string), 1),
-            new Column("Name", typeof(string), 2),
-            new Column("Money", typeof(string), 3)
-        };
-        var context = RuntimeV2TestContexts.CreateExecutionContext(
-            CancellationToken.None,
-            columns,
-            logger: mockLogger.Object);
-
-        return new SeparatedValuesFromFileRowsSource(new TestReadOnlyTable(rows), ",", context);
     }
 
     private sealed class TestReadOnlyTable : IReadOnlyTable
