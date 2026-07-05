@@ -14,6 +14,7 @@ using Musoq.DataSources.Os.Files;
 using Musoq.DataSources.Os.Tests.Utils;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Tests;
 
@@ -212,12 +213,19 @@ public class QueryDiskTests
     public void DirectoriesSource_FullLoadTest()
     {
         var mockLogger = new Mock<ILogger>();
+        var capture = new DataSourceProgressCapture();
         var source = new DirectoriesSource("./Directories", true,
-            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                logger: mockLogger.Object,
+                dataSourceProgressCallback: capture.Handler));
 
         var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(3, fired);
+        Assert.AreEqual(1, capture.For("directories", DataSourcePhase.Begin).Count);
+        Assert.AreEqual(3L, capture.For("directories", DataSourcePhase.RowsRead).Single().RowsProcessed);
+        Assert.AreEqual(3L, capture.For("directories", DataSourcePhase.End).Single().RowsProcessed);
     }
 
     [TestMethod]

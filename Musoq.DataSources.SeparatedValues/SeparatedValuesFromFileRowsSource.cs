@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CsvHelper;
 using Musoq.DataSources.AsyncRowsSource;
+using Musoq.DataSources.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
@@ -42,22 +43,24 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         IChunkWriter<object?[]> writer,
         CancellationToken cancellationToken)
     {
-        _executionContext.ReportDataSourceBegin(SeparatedValuesSourceName);
+        var progress = new DataSourceProgressReporter(_executionContext, SeparatedValuesSourceName);
+        progress.Begin();
         _totalRowsProcessed = 0;
 
         try
         {
-            await ProcessFileAsync(_file, writer, cancellationToken);
+            await ProcessFileAsync(_file, writer, progress, cancellationToken);
         }
         finally
         {
-            _executionContext.ReportDataSourceEnd(SeparatedValuesSourceName, _totalRowsProcessed);
+            progress.End(_totalRowsProcessed);
         }
     }
 
     private async Task ProcessFileAsync(
         SeparatedValueInfo csvFile,
         IChunkWriter<object?[]> writer,
+        DataSourceProgressReporter progress,
         CancellationToken cancellationToken)
     {
         if (csvFile.FilePath is null)
@@ -90,6 +93,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
             columns,
             readPlan,
             strategy,
+            progress,
             cancellationToken);
     }
 
@@ -118,8 +122,11 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         IReadOnlyCollection<ISchemaColumn> columns,
         SeparatedValuesReadPlan readPlan,
         SeparatedValuesReadStrategy strategy,
+        DataSourceProgressReporter progress,
         CancellationToken cancellationToken)
     {
+        progress.SetRowsReadReportInterval(strategy.RowChunkSize);
+
         await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
             strategy.StreamBufferSize, FileOptions.SequentialScan);
         using var reader = new StreamReader(stream, Encoding.UTF8, true, strategy.StreamBufferSize);
@@ -147,6 +154,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         while (await csvParser.ReadAsync())
         {
             cancellationToken.ThrowIfCancellationRequested();
+            progress.RowRead();
 
             if (!parser.MatchesAcceptedPredicate(fieldReader))
                 continue;
@@ -158,14 +166,14 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
                 continue;
             }
 
+            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(fieldReader));
+            emitted++;
+            _totalRowsProcessed++;
+
             if (strategy.EnableEarlyTakeFastPath &&
                 _executionContext.Plan.AcceptedTake.HasValue &&
                 emitted >= _executionContext.Plan.AcceptedTake.Value)
                 break;
-
-            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(fieldReader));
-            emitted++;
-            _totalRowsProcessed++;
 
             if (chunk.Count < strategy.RowChunkSize)
                 continue;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -11,16 +12,20 @@ internal class ProcessesSource(SourceExecutionContext executionContext) : RowSou
 
     protected override void CollectChunks(IChunkWriter<System.Diagnostics.Process> writer)
     {
-        executionContext.ReportDataSourceBegin(ProcessesSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, ProcessesSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
         {
             var chunk = new List<System.Diagnostics.Process>(ChunkSize);
+            var processes = System.Diagnostics.Process.GetProcesses();
+            progress.RowsKnown(processes.Length);
 
-            foreach (var process in System.Diagnostics.Process.GetProcesses())
+            foreach (var process in processes)
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
+                progress.RowRead();
 
                 chunk.Add(process);
                 totalRowsProcessed++;
@@ -37,7 +42,7 @@ internal class ProcessesSource(SourceExecutionContext executionContext) : RowSou
         }
         finally
         {
-            executionContext.ReportDataSourceEnd(ProcessesSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 }

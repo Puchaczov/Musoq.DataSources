@@ -14,6 +14,7 @@ public static class RuntimeV2TestContexts
         IReadOnlyCollection<ISchemaColumn> allColumns = null,
         IReadOnlyDictionary<string, string> sourceRuntimeSettings = null,
         ILogger logger = null,
+        DataSourceEventHandler dataSourceProgressCallback = null,
         SourceExecutionPlan executionPlan = null)
     {
         return new SourceExecutionContext(
@@ -26,7 +27,7 @@ public static class RuntimeV2TestContexts
             allColumns ?? [],
             sourceRuntimeSettings ?? new Dictionary<string, string>(),
             logger ?? new Mock<ILogger>().Object,
-            null,
+            dataSourceProgressCallback,
             null);
     }
 }

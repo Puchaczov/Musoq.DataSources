@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -28,7 +29,8 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
 
     protected override Task CollectChunksAsync(IChunkWriter<TEntity> writer, CancellationToken cancellationToken)
     {
-        executionContext.ReportDataSourceBegin(DataSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, DataSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
@@ -40,7 +42,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
                 if (!Directory.Exists(source.Path))
                     continue;
 
-                foreach (var chunk in EnumerateChunks(source, cancellationToken))
+                foreach (var chunk in EnumerateChunks(source, progress, cancellationToken))
                 {
                     writer.Write(chunk);
                     totalRowsProcessed += chunk.Count;
@@ -49,7 +51,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
         }
         finally
         {
-            executionContext.ReportDataSourceEnd(DataSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
 
         return Task.CompletedTask;
@@ -57,6 +59,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
 
     private IEnumerable<IReadOnlyList<TEntity>> EnumerateChunks(
         DirectorySourceSearchOptions source,
+        DataSourceProgressReporter progress,
         CancellationToken cancellationToken)
     {
         var sources = new Stack<DirectorySourceSearchOptions>();
@@ -87,6 +90,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
             foreach (var file in files)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                progress.RowRead();
 
                 ProcessFile(file, source, chunk);
 

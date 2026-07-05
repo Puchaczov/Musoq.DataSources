@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -27,7 +28,8 @@ internal class TimeSource(
 
     protected override void CollectChunks(IChunkWriter<TimeEntity> writer)
     {
-        executionContext.ReportDataSourceBegin(TimeSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, TimeSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
@@ -57,6 +59,7 @@ internal class TimeSource(
                 writer.CancellationToken.ThrowIfCancellationRequested();
                 var entity = new TimeEntity(currentTime);
                 currentTime = modify(currentTime);
+                progress.RowRead();
 
                 if (!TimeSourcePlanner.Matches(plan.AcceptedPredicate, entity))
                     continue;
@@ -86,7 +89,7 @@ internal class TimeSource(
         }
         finally
         {
-            executionContext.ReportDataSourceEnd(TimeSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Os.Files;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
@@ -19,7 +20,8 @@ internal class CompareDirectoriesSource(
 
     protected override void CollectChunks(IChunkWriter<CompareDirectoriesResult> writer)
     {
-        executionContext.ReportDataSourceBegin(CompareDirectoriesSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, CompareDirectoriesSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
@@ -43,6 +45,7 @@ internal class CompareDirectoriesSource(
             foreach (var files in allFiles)
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
+                progress.RowRead();
 
                 State result;
 
@@ -73,7 +76,7 @@ internal class CompareDirectoriesSource(
         }
         finally
         {
-            executionContext.ReportDataSourceEnd(CompareDirectoriesSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 

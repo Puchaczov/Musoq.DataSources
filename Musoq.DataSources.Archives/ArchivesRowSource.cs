@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 using SharpCompress.Readers;
@@ -12,7 +13,8 @@ internal class ArchivesRowSource(string path, SourceExecutionContext executionCo
 
     protected override void CollectChunks(IChunkWriter<EntryWrapper> writer)
     {
-        executionContext.ReportDataSourceBegin(ArchivesSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, ArchivesSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
@@ -30,6 +32,7 @@ internal class ArchivesRowSource(string path, SourceExecutionContext executionCo
             while (reader.MoveToNextEntry())
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
+                progress.RowRead();
                 var entry = new EntryWrapper(reader.Entry, path, index++);
 
                 if (!ArchivesSourcePlanner.Matches(acceptedPredicate, entry))
@@ -50,7 +53,7 @@ internal class ArchivesRowSource(string path, SourceExecutionContext executionCo
         }
         finally
         {
-            executionContext.ReportDataSourceEnd(ArchivesSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 }

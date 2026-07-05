@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -37,7 +38,8 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         IChunkWriter<DirectoryInfo> writer,
         CancellationToken cancellationToken)
     {
-        _executionContext.ReportDataSourceBegin(DirectoriesSourceName);
+        var progress = new DataSourceProgressReporter(_executionContext, DirectoriesSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
@@ -52,6 +54,8 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 
             await foreach (var dir in EnumerateDirectoriesAsync(_path, _recursive, cancellationToken))
             {
+                progress.RowRead();
+
                 if (_directoryFilters.Name is not null &&
                     !Path.GetFileName(dir).Equals(_directoryFilters.Name, StringComparison.Ordinal))
                     continue;
@@ -79,7 +83,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         }
         finally
         {
-            _executionContext.ReportDataSourceEnd(DirectoriesSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 

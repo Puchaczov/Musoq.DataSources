@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Schema;
 
 namespace Musoq.DataSources.Json.Tests;
 
@@ -122,12 +123,20 @@ public class JsonTests
     public void JsonSource_FullLoadTest()
     {
         var mockLogger = new Mock<ILogger>();
-        var executionContext = RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object);
+        var capture = new DataSourceProgressCapture();
+        var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
+            CancellationToken.None,
+            logger: mockLogger.Object,
+            dataSourceProgressCallback: capture.Handler);
         var source = new JsonSource("./JsonTestFile_First.json", executionContext);
 
         var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(3, fired);
+        Assert.AreEqual(1, capture.For("json", DataSourcePhase.Begin).Count);
+        Assert.AreEqual(3L, capture.For("json", DataSourcePhase.RowsKnown).Single().TotalRows);
+        Assert.AreEqual(3L, capture.For("json", DataSourcePhase.RowsRead).Single().RowsProcessed);
+        Assert.AreEqual(3L, capture.For("json", DataSourcePhase.End).Single().RowsProcessed);
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

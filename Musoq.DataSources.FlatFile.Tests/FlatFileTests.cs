@@ -7,6 +7,7 @@ using Moq;
 using Musoq.DataSources.FlatFile;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Schema;
 
 namespace Musoq.Schema.FlatFile.Tests;
 
@@ -83,12 +84,19 @@ public class FlatFileTests
     public void FlatFileSource_FullLoadTest()
     {
         var mockLogger = new Mock<ILogger>();
+        var capture = new DataSourceProgressCapture();
         var schema = new FlatFileSource("./TestMultilineFile.txt",
-            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                logger: mockLogger.Object,
+                dataSourceProgressCallback: capture.Handler));
 
         var fires = schema.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(6, fires);
+        Assert.AreEqual(1, capture.For("flatfile", DataSourcePhase.Begin).Count);
+        Assert.AreEqual(6L, capture.For("flatfile", DataSourcePhase.RowsRead).Single().RowsProcessed);
+        Assert.AreEqual(6L, capture.For("flatfile", DataSourcePhase.End).Single().RowsProcessed);
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

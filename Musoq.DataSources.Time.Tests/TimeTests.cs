@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Schema;
 
 namespace Musoq.DataSources.Time.Tests;
 
@@ -50,14 +51,21 @@ public class TimeTests
     public void TimeSource_FullLoadTest()
     {
         var mockLogger = new Mock<ILogger>();
+        var capture = new DataSourceProgressCapture();
         var now = DateTimeOffset.Parse("01/01/2000");
         var nextHour = now.AddHours(1);
         var source = new TimeSource(now, nextHour, "minutes",
-            RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                logger: mockLogger.Object,
+                dataSourceProgressCallback: capture.Handler));
 
         var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(61, fired);
+        Assert.AreEqual(1, capture.For("time", DataSourcePhase.Begin).Count);
+        Assert.AreEqual(61L, capture.For("time", DataSourcePhase.RowsRead).Single().RowsProcessed);
+        Assert.AreEqual(61L, capture.For("time", DataSourcePhase.End).Single().RowsProcessed);
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

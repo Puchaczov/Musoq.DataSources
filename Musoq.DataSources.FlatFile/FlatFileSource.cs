@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -12,7 +13,8 @@ internal class FlatFileSource(string filePath, SourceExecutionContext executionC
 
     protected override void CollectChunks(IChunkWriter<FlatFileEntity> writer)
     {
-        executionContext.ReportDataSourceBegin(FlatFileSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, FlatFileSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
@@ -41,6 +43,7 @@ internal class FlatFileSource(string filePath, SourceExecutionContext executionC
                     Line = reader.ReadLine(),
                     LineNumber = ++rowNum
                 };
+                progress.RowRead();
 
                 if (!FlatFileSourcePlanner.Matches(plan.AcceptedPredicate, entity))
                     continue;
@@ -70,7 +73,7 @@ internal class FlatFileSource(string filePath, SourceExecutionContext executionC
         }
         finally
         {
-            executionContext.ReportDataSourceEnd(FlatFileSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 }

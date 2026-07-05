@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
+using Musoq.Schema;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Archives.Tests;
@@ -49,6 +50,7 @@ public class ArchivesRuntimeV2PushdownTests
     [TestMethod]
     public void ArchivesRowSource_WhenExecutionPlanHasPredicate_EmitsFilteredRows()
     {
+        var capture = new DataSourceProgressCapture();
         var predicate = Equal("Key", "text1.txt");
         var executionPlan = new SourceExecutionPlan
         {
@@ -58,7 +60,9 @@ public class ArchivesRuntimeV2PushdownTests
         };
         var source = new ArchivesSchema().GetRowSource<EntryWrapper>(
             "file",
-            RuntimeV2TestContexts.CreateExecutionContext(executionPlan: executionPlan),
+            RuntimeV2TestContexts.CreateExecutionContext(
+                dataSourceProgressCallback: capture.Handler,
+                executionPlan: executionPlan),
             "./Files/Example1/archives.zip");
 
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
@@ -66,6 +70,9 @@ public class ArchivesRuntimeV2PushdownTests
         Assert.AreEqual(1, rows.Length);
         Assert.AreEqual("text1.txt", rows[0].Key);
         Assert.IsFalse(rows[0].IsDirectory);
+        Assert.AreEqual(1, capture.For("archives", DataSourcePhase.Begin).Count);
+        Assert.IsTrue(capture.For("archives", DataSourcePhase.RowsRead).Single().RowsProcessed >= rows.Length);
+        Assert.AreEqual(1L, capture.For("archives", DataSourcePhase.End).Single().RowsProcessed);
     }
 
     private static SourcePlanRequest CreateRequest(

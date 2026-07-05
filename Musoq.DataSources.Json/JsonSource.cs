@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.JsonHelpers;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -48,7 +49,8 @@ public class JsonSource : RowSourceBase<object[]>
     /// <exception cref="NotSupportedException">Thrown when json shape is not supported.</exception>
     protected override void CollectChunks(IChunkWriter<object[]> writer)
     {
-        _executionContext.ReportDataSourceBegin(JsonSourceName);
+        var progress = new DataSourceProgressReporter(_executionContext, JsonSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
@@ -74,12 +76,16 @@ public class JsonSource : RowSourceBase<object[]>
             if (rows == null)
                 throw new NotSupportedException("This type of .json file is not supported.");
 
+            if (rows.TryGetNonEnumeratedCount(out var totalRows))
+                progress.RowsKnown(totalRows);
+
             var columns = GetProjectedColumns(_executionContext, out var projectionAccepted);
             var chunk = new List<object[]>();
 
             foreach (var row in rows)
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
+                progress.RowRead();
 
                 var dictionary = (IDictionary<string, object>)row;
                 chunk.Add(ProjectRow(dictionary, columns, projectionAccepted));
@@ -97,7 +103,7 @@ public class JsonSource : RowSourceBase<object[]>
         }
         finally
         {
-            _executionContext.ReportDataSourceEnd(JsonSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 
