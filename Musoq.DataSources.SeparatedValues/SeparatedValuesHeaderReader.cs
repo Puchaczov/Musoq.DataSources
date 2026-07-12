@@ -12,11 +12,12 @@ internal static class SeparatedValuesHeaderReader
         FileInfo file,
         string separator,
         int skipLines,
-        int bufferSize)
+        int bufferSize,
+        Encoding? encoding = null)
     {
         using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize,
             FileOptions.SequentialScan);
-        using var reader = new StreamReader(stream, Encoding.UTF8, true, bufferSize);
+        using var reader = new StreamReader(stream, encoding ?? Encoding.UTF8, true, bufferSize);
 
         SkipLines(reader, skipLines);
 
@@ -33,11 +34,12 @@ internal static class SeparatedValuesHeaderReader
         FileInfo file,
         string separator,
         int skipLines,
-        int bufferSize)
+        int bufferSize,
+        Encoding? encoding = null)
     {
         await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
             bufferSize, FileOptions.SequentialScan);
-        using var reader = new StreamReader(stream, Encoding.UTF8, true, bufferSize);
+        using var reader = new StreamReader(stream, encoding ?? Encoding.UTF8, true, bufferSize);
 
         await SkipLinesAsync(reader, skipLines);
 

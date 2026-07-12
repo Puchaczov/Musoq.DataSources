@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using Musoq.DataSources.Os.Compare.Directories;
 using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
 using Musoq.DataSources.Os.Files;
 using Musoq.DataSources.Os.Metadata;
 using Musoq.DataSources.Os.Process;
+using Musoq.DataSources.Os.Runtime;
 using Musoq.DataSources.Os.Zip;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -28,12 +30,51 @@ public class OsSchema : SchemaBase
 {
     private const string SchemaName = "os";
     private const string DirectoriesTable = "directories";
+    private const string FileTable = "file";
     private const string FilesTable = "files";
     private const string DllsTable = "dlls";
     private const string ZipTable = "zip";
     private const string ProcessesName = "processes";
     private const string DirsCompare = "dirscompare";
     private const string Metadata = "metadata";
+    private const string Cultures = "cultures";
+    private const string CurrentCulture = "currentculture";
+    private const string Encodings = "encodings";
+    private const string TimeZones = "timezones";
+    private const string Runtime = "runtime";
+    private const string Drives = "drives";
+    private const string SpecialFolders = "specialfolders";
+    private const string FileAttributes = "fileattributes";
+    private const string EnvironmentVariables = "environmentvariables";
+    private const string PathInfo = "pathinfo";
+
+    private static readonly SchemaMethodRegistration[] MethodRegistrations =
+    [
+        new(FileTable, static () => [CreateFileMethodInfo()]),
+        new(FilesTable, static () => [CreateFilesMethodInfo()]),
+        new(DirectoriesTable, static () => [CreateDirectoriesMethodInfo()]),
+        new(ZipTable, static () => [CreateZipMethodInfo()]),
+        new(ProcessesName, static () => [CreateProcessesMethodInfo()]),
+        new(DllsTable, static () => [CreateDllsMethodInfo()]),
+        new(DirsCompare, static () => [CreateDirsCompareMethodInfo()]),
+        new(Cultures, static () => [CreateCulturesMethodInfo()]),
+        new(CurrentCulture, static () => [CreateCurrentCultureMethodInfo()]),
+        new(Encodings, static () => [CreateEncodingsMethodInfo()]),
+        new(TimeZones, static () => [CreateTimeZonesMethodInfo()]),
+        new(Runtime, static () => [CreateRuntimeMethodInfo()]),
+        new(Drives, static () => [CreateDrivesMethodInfo()]),
+        new(SpecialFolders, static () => [CreateSpecialFoldersMethodInfo()]),
+        new(FileAttributes, static () => [CreateFileAttributesMethodInfo()]),
+        new(EnvironmentVariables, static () => [CreateEnvironmentVariablesMethodInfo()]),
+        new(PathInfo, static () => [CreatePathInfoMethodInfo()]),
+        new(Metadata, CreateMetadataMethodInfos)
+    ];
+
+    private static readonly IReadOnlyDictionary<string, SchemaMethodRegistration> MethodRegistrationsByName =
+        MethodRegistrations.ToDictionary(
+            static registration => registration.Name,
+            static registration => registration,
+            StringComparer.OrdinalIgnoreCase);
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
@@ -117,6 +158,32 @@ public class OsSchema : SchemaBase
     ///                     <column name="FileInfo" type="FileInfo">Gets the metadata about the DLL file</column>
     ///                     <column name="Assembly" type="Assembly">Gets the Assembly object</column>
     ///                     <column name="Version" type="FileVersionInfo">Gets the assembly version</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param>Path to file</virtual-param>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>#os.file(string path)</from>
+    ///                 <description>Gets metadata for a single file</description>
+    ///                 <columns>
+    ///                     <column name="Name" type="string">Name of the file</column>
+    ///                     <column name="FileName" type="string">Name of the file</column>
+    ///                     <column name="CreationTime" type="DateTime">Creation time</column>
+    ///                     <column name="CreationTimeUtc" type="DateTime">Creation time in UTC</column>
+    ///                     <column name="LastAccessTime" type="DateTime">Last access time</column>
+    ///                     <column name="LastAccessTimeUtc" type="DateTime">Last access time in UTC</column>
+    ///                     <column name="LastWriteTime" type="DateTime">Last write time</column>
+    ///                     <column name="LastWriteTimeUtc" type="DateTime">Last write time in UTC</column>
+    ///                     <column name="Extension" type="string">Gets the extension part of the file name</column>
+    ///                     <column name="FullPath" type="string">Gets the full path of file</column>
+    ///                     <column name="DirectoryName" type="string">Gets the directory name</column>
+    ///                     <column name="DirectoryPath" type="string">Gets the directory path</column>
+    ///                     <column name="Exists" type="bool">Determine whether file exists or not</column>
+    ///                     <column name="IsReadOnly" type="bool">Determine whether the file is readonly</column>
+    ///                     <column name="Length" type="long">Gets the length of file</column>
     ///                 </columns>
     ///             </example>
     ///         </examples>
@@ -257,6 +324,50 @@ public class OsSchema : SchemaBase
     ///             </example>
     ///         </examples>
     ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>#os.cultures()</from>
+    ///                 <description>Lists cultures available to the current .NET runtime process</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.currentculture()</from>
+    ///                 <description>Shows current culture and formatting defaults</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.encodings()</from>
+    ///                 <description>Lists text encodings available to the current .NET runtime process</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.timezones()</from>
+    ///                 <description>Lists system time zones</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.runtime()</from>
+    ///                 <description>Shows safe runtime and operating system facts</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.drives()</from>
+    ///                 <description>Lists drives without enumerating their contents</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.specialfolders()</from>
+    ///                 <description>Lists special folder names and paths</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.fileattributes()</from>
+    ///                 <description>Lists file attribute enum values</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.environmentvariables()</from>
+    ///                 <description>Lists environment variable names without values</description>
+    ///             </example>
+    ///             <example>
+    ///                 <from>#os.pathinfo(string path)</from>
+    ///                 <description>Shows safe metadata for one path</description>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
     /// </virtual-constructors>
     public OsSchema()
         : base(SchemaName, CreateLibrary())
@@ -277,6 +388,7 @@ public class OsSchema : SchemaBase
     {
         switch (name.ToLowerInvariant())
         {
+            case FileTable:
             case FilesTable:
                 return new FilesBasedTable();
             case DirectoriesTable:
@@ -291,6 +403,26 @@ public class OsSchema : SchemaBase
                 return new DirsCompareBasedTable();
             case Metadata:
                 return new MetadataTable();
+            case Cultures:
+                return new CulturesTable();
+            case CurrentCulture:
+                return new CurrentCultureTable();
+            case Encodings:
+                return new EncodingsTable();
+            case TimeZones:
+                return new TimeZonesTable();
+            case Runtime:
+                return new RuntimeTable();
+            case Drives:
+                return new DrivesTable();
+            case SpecialFolders:
+                return new SpecialFoldersTable();
+            case FileAttributes:
+                return new FileAttributesTable();
+            case EnvironmentVariables:
+                return new EnvironmentVariablesTable();
+            case PathInfo:
+                return new PathInfoTable();
         }
 
         throw new NotSupportedException($"Unsupported table {name}.");
@@ -310,6 +442,10 @@ public class OsSchema : SchemaBase
     {
         switch (name.ToLowerInvariant())
         {
+            case FileTable:
+                return EnsureSourceType<T, FileEntity>(
+                    name,
+                    new FileSource((string)parameters[0], executionContext));
             case FilesTable:
                 return EnsureSourceType<T, FileEntity>(
                     name,
@@ -334,6 +470,46 @@ public class OsSchema : SchemaBase
                 return EnsureSourceType<T, CompareDirectoriesResult>(
                     name,
                     new CompareDirectoriesSource((string)parameters[0], (string)parameters[1], executionContext));
+            case Cultures:
+                return EnsureSourceType<T, CultureEntity>(
+                    name,
+                    new CulturesSource(executionContext));
+            case CurrentCulture:
+                return EnsureSourceType<T, CurrentCultureEntity>(
+                    name,
+                    new CurrentCultureSource(executionContext));
+            case Encodings:
+                return EnsureSourceType<T, EncodingEntity>(
+                    name,
+                    new EncodingsSource(executionContext));
+            case TimeZones:
+                return EnsureSourceType<T, TimeZoneEntity>(
+                    name,
+                    new TimeZonesSource(executionContext));
+            case Runtime:
+                return EnsureSourceType<T, RuntimeEntity>(
+                    name,
+                    new RuntimeSource(executionContext));
+            case Drives:
+                return EnsureSourceType<T, DriveEntity>(
+                    name,
+                    new DrivesSource(executionContext));
+            case SpecialFolders:
+                return EnsureSourceType<T, SpecialFolderEntity>(
+                    name,
+                    new SpecialFoldersSource(executionContext));
+            case FileAttributes:
+                return EnsureSourceType<T, FileAttributeEntity>(
+                    name,
+                    new FileAttributesSource(executionContext));
+            case EnvironmentVariables:
+                return EnsureSourceType<T, EnvironmentVariableEntity>(
+                    name,
+                    new EnvironmentVariablesSource(executionContext));
+            case PathInfo:
+                return EnsureSourceType<T, PathInfoEntity>(
+                    name,
+                    new PathInfoSource((string)parameters[0], executionContext));
             case Metadata:
             {
                 {
@@ -408,19 +584,12 @@ public class OsSchema : SchemaBase
         string methodName,
         SourceMetadataContext metadataContext)
     {
-        return methodName.ToLowerInvariant() switch
-        {
-            FilesTable => [CreateFilesMethodInfo()],
-            DirectoriesTable => [CreateDirectoriesMethodInfo()],
-            ZipTable => [CreateZipMethodInfo()],
-            ProcessesName => [CreateProcessesMethodInfo()],
-            DllsTable => [CreateDllsMethodInfo()],
-            DirsCompare => [CreateDirsCompareMethodInfo()],
-            Metadata => CreateMetadataMethodInfos(),
-            _ => throw new NotSupportedException(
-                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {string.Join(", ", FilesTable, DirectoriesTable, ZipTable, ProcessesName, DllsTable, DirsCompare, Metadata)}")
-        };
+        if (MethodRegistrationsByName.TryGetValue(methodName, out var registration))
+            return registration.CreateConstructors();
+
+        throw new NotSupportedException(
+            $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
+            $"Available data sources: {string.Join(", ", MethodRegistrations.Select(static item => item.Name))}");
     }
 
     /// <summary>
@@ -469,19 +638,9 @@ public class OsSchema : SchemaBase
     /// <returns>Array of SchemaMethodInfo objects for all data source methods</returns>
     public override SchemaMethodInfo[] GetConstructors()
     {
-        var constructors = new List<SchemaMethodInfo>
-        {
-            CreateFilesMethodInfo(),
-            CreateDirectoriesMethodInfo(),
-            CreateZipMethodInfo(),
-            CreateProcessesMethodInfo(),
-            CreateDllsMethodInfo(),
-            CreateDirsCompareMethodInfo()
-        };
-
-        constructors.AddRange(CreateMetadataMethodInfos());
-
-        return constructors.ToArray();
+        return MethodRegistrations
+            .SelectMany(static registration => registration.CreateConstructors())
+            .ToArray();
     }
 
     private static SchemaMethodInfo CreateFilesMethodInfo()
@@ -495,6 +654,18 @@ public class OsSchema : SchemaBase
             ]);
 
         return new SchemaMethodInfo(FilesTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateFileMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("path", typeof(string))
+            ]);
+
+        return new SchemaMethodInfo(FileTable, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateDirectoriesMethodInfo()
@@ -553,6 +724,63 @@ public class OsSchema : SchemaBase
         return new SchemaMethodInfo(DirsCompare, constructorInfo);
     }
 
+    private static SchemaMethodInfo CreateCulturesMethodInfo()
+    {
+        return new SchemaMethodInfo(Cultures, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreateCurrentCultureMethodInfo()
+    {
+        return new SchemaMethodInfo(CurrentCulture, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreateEncodingsMethodInfo()
+    {
+        return new SchemaMethodInfo(Encodings, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreateTimeZonesMethodInfo()
+    {
+        return new SchemaMethodInfo(TimeZones, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreateRuntimeMethodInfo()
+    {
+        return new SchemaMethodInfo(Runtime, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreateDrivesMethodInfo()
+    {
+        return new SchemaMethodInfo(Drives, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreateSpecialFoldersMethodInfo()
+    {
+        return new SchemaMethodInfo(SpecialFolders, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreateFileAttributesMethodInfo()
+    {
+        return new SchemaMethodInfo(FileAttributes, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreateEnvironmentVariablesMethodInfo()
+    {
+        return new SchemaMethodInfo(EnvironmentVariables, new ConstructorInfo(null!, false, []));
+    }
+
+    private static SchemaMethodInfo CreatePathInfoMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("path", typeof(string))
+            ]);
+
+        return new SchemaMethodInfo(PathInfo, constructorInfo);
+    }
+
     private static SchemaMethodInfo[] CreateMetadataMethodInfos()
     {
         var metadataInfo1 = new ConstructorInfo(
@@ -599,4 +827,8 @@ public class OsSchema : SchemaBase
 
         return new MethodsAggregator(methodsManager);
     }
+
+    private sealed record SchemaMethodRegistration(
+        string Name,
+        Func<SchemaMethodInfo[]> CreateConstructors);
 }

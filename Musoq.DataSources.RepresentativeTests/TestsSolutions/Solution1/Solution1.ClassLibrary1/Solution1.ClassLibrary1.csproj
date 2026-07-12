@@ -7,9 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Musoq.Converter" Version="17.0.0-alpha.7"/>
-        <PackageReference Include="Musoq.Evaluator" Version="17.0.1-alpha.2"/>
-        <PackageReference Include="Musoq.Schema" Version="17.0.0-alpha.7"/>
+        <PackageReference Include="Musoq.Converter" Version="17.0.2-alpha.1"/>
+        <PackageReference Include="Musoq.Evaluator" Version="17.0.2-alpha.1"/>
+        <PackageReference Include="Musoq.Schema" Version="17.0.2-alpha.1"/>
     </ItemGroup>
 
 </Project>

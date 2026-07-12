@@ -54,7 +54,8 @@ internal class SeparatedValuesFromStreamRowsSource(
             if (executionContext.Plan.AcceptedTake is 0)
                 return;
 
-            using var reader = new StreamReader(stream, Encoding.UTF8, true, strategy.StreamBufferSize);
+            var encoding = SeparatedValuesReadModifiers.ResolveFileEncodingOrThrow(executionContext.AllColumns);
+            using var reader = new StreamReader(stream, encoding, true, strategy.StreamBufferSize);
 
             SkipLines(reader, hasHeader ? skipLines + 1 : skipLines);
 

@@ -81,9 +81,10 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         var columns = GetProjectedColumns(_executionContext, readPlan);
         var strategy = SeparatedValuesReadStrategySelector.Select(
             CreateStrategyContext(file.Length, columns.Length, readPlan, _executionContext.AllColumns.Count > 0));
+        var encoding = SeparatedValuesReadModifiers.ResolveFileEncodingOrThrow(_executionContext.AllColumns);
         var indexToNameMap = strategy.AvoidSecondHeaderOpen
             ? CreateIndexToNameMap(_executionContext.AllColumns)
-            : await ProcessHeaderAsync(file, csvFile, strategy);
+            : await ProcessHeaderAsync(file, csvFile, strategy, encoding);
 
         await ProcessDataAsync(
             file,
@@ -93,6 +94,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
             columns,
             readPlan,
             strategy,
+            encoding,
             progress,
             cancellationToken);
     }
@@ -100,13 +102,15 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
     private static async Task<IReadOnlyDictionary<int, string>> ProcessHeaderAsync(
         FileInfo file,
         SeparatedValueInfo csvFile,
-        SeparatedValuesReadStrategy strategy)
+        SeparatedValuesReadStrategy strategy,
+        Encoding encoding)
     {
         var header = await SeparatedValuesHeaderReader.ReadFirstRecordAsync(
             file,
             csvFile.Separator!,
             csvFile.SkipLines,
-            strategy.StreamBufferSize);
+            strategy.StreamBufferSize,
+            encoding);
 
         if (header.Length == 0)
             throw new NotSupportedException("File has no header or no data. Please check if file is not empty.");
@@ -122,6 +126,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         IReadOnlyCollection<ISchemaColumn> columns,
         SeparatedValuesReadPlan readPlan,
         SeparatedValuesReadStrategy strategy,
+        Encoding encoding,
         DataSourceProgressReporter progress,
         CancellationToken cancellationToken)
     {
@@ -129,7 +134,7 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
 
         await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
             strategy.StreamBufferSize, FileOptions.SequentialScan);
-        using var reader = new StreamReader(stream, Encoding.UTF8, true, strategy.StreamBufferSize);
+        using var reader = new StreamReader(stream, encoding, true, strategy.StreamBufferSize);
 
         await SkipLinesAsync(reader, csvFile.SkipLines);
 

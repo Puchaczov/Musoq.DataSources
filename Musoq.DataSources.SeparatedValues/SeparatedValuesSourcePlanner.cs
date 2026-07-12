@@ -42,7 +42,7 @@ internal static class SeparatedValuesSourcePlanner
             ResidualTake = acceptsSlice ? null : request.Take,
             Cardinality = CardinalityEstimate.Unknown("Separated values source cardinality depends on file contents."),
             Diagnostics = [],
-            ContractDiagnostics = []
+            ContractDiagnostics = SeparatedValuesReadModifiers.Plan(requiredColumns)
         };
     }
 

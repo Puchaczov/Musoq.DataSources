@@ -43,6 +43,7 @@ internal static class OsSourcePlanner
         var properties = new Dictionary<string, object?>();
         switch (tableName)
         {
+            case "file":
             case "files":
             case "dlls":
             case "metadata":
@@ -160,7 +161,7 @@ internal static class OsSourcePlanner
             literal.Value is not string value)
             return false;
 
-        if (tableName is "files" or "dlls" or "metadata")
+        if (tableName is "file" or "files" or "dlls" or "metadata")
         {
             return (columnName.Equals(nameof(FileEntity.Extension), StringComparison.OrdinalIgnoreCase) ||
                     columnName.Equals(nameof(FileEntity.Name), StringComparison.OrdinalIgnoreCase) ||

@@ -40,6 +40,50 @@ from #os.dirscompare('./source', './destination')
 where State <> 'TheSame'
 ```
 
+### Discover Cultures for CSV Parsing
+Find culture names and formatting defaults that can be used by separated-values column modifiers.
+
+```sql
+select
+    Name,
+    EnglishName,
+    DecimalSeparator,
+    ShortDatePattern
+from #os.cultures()
+where Name like 'pl%'
+```
+
+### Discover Text Encodings
+Find runtime-supported text encodings before using an `encoding` read modifier.
+
+```sql
+select
+    WebName,
+    CodePage,
+    EncodingName
+from #os.encodings()
+where WebName like '%1250%' or CodePage = 65001
+```
+
+### Inspect Current Culture Defaults
+See the default parsing behavior used when no culture modifier is declared.
+
+```sql
+select
+    CurrentCulture,
+    DecimalSeparator,
+    ShortDatePattern
+from #os.currentculture()
+```
+
+### List Safe Environment Variable Names
+Inspect available variable names without exposing environment variable values.
+
+```sql
+select Name, Target
+from #os.environmentvariables()
+```
+
 ---
 
 ## 📊 CSV/Separated Values (`#separatedvalues`)

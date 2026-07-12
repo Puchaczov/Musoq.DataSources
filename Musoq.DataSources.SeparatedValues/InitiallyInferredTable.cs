@@ -24,7 +24,7 @@ internal class InitiallyInferredTable(IReadOnlyCollection<ISchemaColumn> columns
     private static ISchemaColumn NormalizeColumn(ISchemaColumn column)
     {
         return column.ColumnType == typeof(object)
-            ? new SchemaColumn(column.ColumnName, column.ColumnIndex, typeof(string))
+            ? new SchemaColumn(column.ColumnName, column.ColumnIndex, typeof(string), column.ReadModifiers)
             : column;
     }
 }

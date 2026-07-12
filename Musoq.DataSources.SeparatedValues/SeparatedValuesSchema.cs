@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -113,6 +114,19 @@ public class SeparatedValuesSchema : SchemaBase
         SourceDescribeContext context,
         params object?[] parameters)
     {
+        var declaredDiagnostics = SeparatedValuesReadModifiers.Describe(context.MetadataContext.AllColumns);
+        if (IsKnownSourceName(name) && declaredDiagnostics.Any(IsContractError))
+        {
+            return new SourceDescriptor
+            {
+                Identity = context.Identity,
+                Columns = context.MetadataContext.AllColumns.ToArray(),
+                RowType = typeof(object[]),
+                Diagnostics = [],
+                ContractDiagnostics = declaredDiagnostics
+            };
+        }
+
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
         return new SourceDescriptor
@@ -121,7 +135,7 @@ public class SeparatedValuesSchema : SchemaBase
             Columns = table.Columns,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
-            ContractDiagnostics = []
+            ContractDiagnostics = SeparatedValuesReadModifiers.Describe(table.Columns)
         };
     }
 
@@ -203,6 +217,18 @@ public class SeparatedValuesSchema : SchemaBase
         {
             InferredColumns = metadataContext.AllColumns
         };
+    }
+
+    private static bool IsKnownSourceName(string name)
+    {
+        return name.Equals(CommaTable, StringComparison.OrdinalIgnoreCase) ||
+               name.Equals(TabTable, StringComparison.OrdinalIgnoreCase) ||
+               name.Equals(SemicolonTable, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsContractError(SourceContractDiagnostic diagnostic)
+    {
+        return diagnostic.Severity == SourceContractDiagnosticSeverity.Error;
     }
 
     private RowSource<T> CreateSource<T>(

@@ -34,18 +34,34 @@ public class OsSchemaDescribeTests
         Assert.AreEqual("Param 1", table.Columns.ElementAt(2).ColumnName);
         Assert.AreEqual("Param 2", table.Columns.ElementAt(3).ColumnName);
 
-        Assert.AreEqual(9, table.Count, "Should have 9 rows (6 unique methods + 3 metadata overloads)");
+        Assert.AreEqual(20, table.Count, "Should have 20 rows (17 single-overload methods + 3 metadata overloads)");
 
         var methodNames = table.Select(row => (string)row[0]).ToList();
 
+        Assert.AreEqual(1, methodNames.Count(m => m == "file"), "Should contain 'file' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "files"), "Should contain 'files' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "directories"), "Should contain 'directories' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "zip"), "Should contain 'zip' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "processes"), "Should contain 'processes' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "dlls"), "Should contain 'dlls' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "dirscompare"), "Should contain 'dirscompare' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "cultures"), "Should contain 'cultures' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "currentculture"), "Should contain 'currentculture' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "encodings"), "Should contain 'encodings' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "timezones"), "Should contain 'timezones' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "runtime"), "Should contain 'runtime' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "drives"), "Should contain 'drives' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "specialfolders"), "Should contain 'specialfolders' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "fileattributes"), "Should contain 'fileattributes' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "environmentvariables"), "Should contain 'environmentvariables' method once");
+        Assert.AreEqual(1, methodNames.Count(m => m == "pathinfo"), "Should contain 'pathinfo' method once");
         Assert.AreEqual(3, methodNames.Count(m => m == "metadata"),
             "Should contain 'metadata' method 3 times (3 overloads)");
+
+        var fileRow = table.First(row => (string)row[0] == "file");
+        Assert.AreEqual("path: System.String", (string)fileRow[1]);
+        Assert.IsNull(fileRow[2], "Second parameter should be null for file method");
+        Assert.IsNull(fileRow[3], "Third parameter should be null for file method");
 
         var filesRow = table.First(row => (string)row[0] == "files");
         Assert.AreEqual("directory: System.String", (string)filesRow[1]);
@@ -62,6 +78,16 @@ public class OsSchemaDescribeTests
         Assert.AreEqual("sourceDirectory: System.String", (string)dirsCompareRow[1]);
         Assert.AreEqual("destinationDirectory: System.String", (string)dirsCompareRow[2]);
         Assert.IsNull(dirsCompareRow[3]);
+
+        var culturesRow = table.First(row => (string)row[0] == "cultures");
+        Assert.IsNull(culturesRow[1]);
+        Assert.IsNull(culturesRow[2]);
+        Assert.IsNull(culturesRow[3]);
+
+        var pathInfoRow = table.First(row => (string)row[0] == "pathinfo");
+        Assert.AreEqual("path: System.String", (string)pathInfoRow[1]);
+        Assert.IsNull(pathInfoRow[2]);
+        Assert.IsNull(pathInfoRow[3]);
     }
 
     [TestMethod]
@@ -83,6 +109,25 @@ public class OsSchemaDescribeTests
         Assert.AreEqual("files", (string)row[0]);
         Assert.AreEqual("directory: System.String", (string)row[1]);
         Assert.AreEqual("useSubdirectories: System.Boolean", (string)row[2]);
+    }
+
+    [TestMethod]
+    public void DescFile_ShouldReturnMethodSignature()
+    {
+        var query = "desc #os.file";
+
+        var vm = CreateAndRunVirtualMachine(query);
+        var table = vm.Run();
+
+        Assert.AreEqual(2, table.Columns.Count(), "Should have 2 columns");
+        Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
+        Assert.AreEqual("Param 0", table.Columns.ElementAt(1).ColumnName);
+
+        Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
+
+        var row = table.First();
+        Assert.AreEqual("file", (string)row[0]);
+        Assert.AreEqual("path: System.String", (string)row[1]);
     }
 
     [TestMethod]
@@ -300,7 +345,8 @@ public class OsSchemaDescribeTests
 
         var methodNames = table.Select(row => (string)row[0]).Distinct().ToList();
 
-        Assert.AreEqual(7, methodNames.Count, "Should have 7 distinct method names");
+        Assert.AreEqual(18, methodNames.Count, "Should have 18 distinct method names");
+        Assert.IsTrue(methodNames.Contains("file"));
         Assert.IsTrue(methodNames.Contains("files"));
         Assert.IsTrue(methodNames.Contains("directories"));
         Assert.IsTrue(methodNames.Contains("zip"));
@@ -308,6 +354,16 @@ public class OsSchemaDescribeTests
         Assert.IsTrue(methodNames.Contains("dlls"));
         Assert.IsTrue(methodNames.Contains("dirscompare"));
         Assert.IsTrue(methodNames.Contains("metadata"));
+        Assert.IsTrue(methodNames.Contains("cultures"));
+        Assert.IsTrue(methodNames.Contains("currentculture"));
+        Assert.IsTrue(methodNames.Contains("encodings"));
+        Assert.IsTrue(methodNames.Contains("timezones"));
+        Assert.IsTrue(methodNames.Contains("runtime"));
+        Assert.IsTrue(methodNames.Contains("drives"));
+        Assert.IsTrue(methodNames.Contains("specialfolders"));
+        Assert.IsTrue(methodNames.Contains("fileattributes"));
+        Assert.IsTrue(methodNames.Contains("environmentvariables"));
+        Assert.IsTrue(methodNames.Contains("pathinfo"));
     }
 
     [TestMethod]
@@ -345,6 +401,26 @@ public class OsSchemaDescribeTests
         foreach (var expectedColumn in expectedColumns)
             Assert.IsTrue(columnNames.Contains(expectedColumn),
                 $"Should have '{expectedColumn}' column");
+    }
+
+    [TestMethod]
+    public void DescFileWithArgs_ShouldReturnSameTableSchemaAsFiles()
+    {
+        var fileQuery = "desc #os.file('./Files/File1.txt')";
+        var filesQuery = "desc #os.files('./Files', false)";
+
+        var fileTable = CreateAndRunVirtualMachine(fileQuery).Run();
+        var filesTable = CreateAndRunVirtualMachine(filesQuery).Run();
+
+        Assert.AreEqual(filesTable.Count, fileTable.Count);
+        Assert.AreEqual(filesTable.Columns.Count(), fileTable.Columns.Count());
+
+        for (var i = 0; i < filesTable.Count; i++)
+        {
+            Assert.AreEqual(filesTable[i][0], fileTable[i][0]);
+            Assert.AreEqual(filesTable[i][1], fileTable[i][1]);
+            Assert.AreEqual(filesTable[i][2], fileTable[i][2]);
+        }
     }
 
     [TestMethod]

@@ -25,7 +25,8 @@ internal class SeparatedValuesTable(string fileName, string separator, bool hasH
                 throw new InvalidOperationException("Inferred columns cannot be null.");
 
             var file = new FileInfo(fileName);
-            var columns = SeparatedValuesHeaderReader.ReadFirstRecord(file, separator, skipLines, 65536);
+            var encoding = SeparatedValuesReadModifiers.ResolveFileEncodingOrDefault(InferredColumns);
+            var columns = SeparatedValuesHeaderReader.ReadFirstRecord(file, separator, skipLines, 65536, encoding);
 
             if (columns.Length == 0)
                 throw new InvalidOperationException("File is empty.");
@@ -35,21 +36,33 @@ internal class SeparatedValuesTable(string fileName, string separator, bool hasH
                     .Select((header, i) =>
                     {
                         var columnName = SeparatedValuesHelper.MakeHeaderNameValidColumnName(header ?? string.Empty);
-                        var type = InferredColumns.SingleOrDefault(f => f.ColumnName == columnName)?.ColumnType;
+                        var inferredColumn = InferredColumns.SingleOrDefault(f => f.ColumnName == columnName);
 
-                        if (type == null)
+                        if (inferredColumn == null)
                             return new SchemaColumn(columnName, i, typeof(string));
 
+                        var type = inferredColumn.ColumnType;
                         return type == typeof(object)
-                            ? new SchemaColumn(columnName, i, typeof(string))
-                            : new SchemaColumn(columnName, i, type);
+                            ? new SchemaColumn(columnName, i, typeof(string), inferredColumn.ReadModifiers)
+                            : new SchemaColumn(columnName, i, type, inferredColumn.ReadModifiers);
                     })
                     .Cast<ISchemaColumn>()
                     .ToArray();
             else
                 _columns = columns
-                    .Select((f, i) => new SchemaColumn(string.Format(SeparatedValuesHelper.AutoColumnName, i + 1), i,
-                        typeof(string)))
+                    .Select((f, i) =>
+                    {
+                        var columnName = string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
+                        var inferredColumn = InferredColumns.SingleOrDefault(f => f.ColumnName == columnName);
+
+                        if (inferredColumn == null)
+                            return new SchemaColumn(columnName, i, typeof(string));
+
+                        var type = inferredColumn.ColumnType;
+                        return type == typeof(object)
+                            ? new SchemaColumn(columnName, i, typeof(string), inferredColumn.ReadModifiers)
+                            : new SchemaColumn(columnName, i, type, inferredColumn.ReadModifiers);
+                    })
                     .Cast<ISchemaColumn>()
                     .ToArray();
 
