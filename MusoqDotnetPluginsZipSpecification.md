@@ -40,18 +40,21 @@ Examples:
 - `8.4.9-beta.1-Musoq.DataSources.Json`
 - `8.4.9-rc.1-Musoq.DataSources.Json`
 
-The plugin registry is backwards-compatible. Schema `1.1` keeps the schema `1.0` fields used by existing clients and adds optional channel metadata for newer clients:
+The plugin registry is backwards-compatible. Schema `1.2` keeps every schema `1.0` and `1.1` top-level field used by existing clients and adds authoritative compatibility and integrity metadata to eligible version-history entries:
 
 - `latestVersion`, `releaseTag`, and `releaseDate` remain present and point to the latest stable version when a stable version exists.
 - `versionHistory` remains present and maps every exact version to its release tag and date.
 - `latestStableVersion`, `latestPrereleaseVersion`, and `channels` are optional additive fields.
 - `versionHistory` entries may also include `channel` and `isPrerelease`.
+- New releases with a valid `plugin-release-metadata.json` add `runtimeCompatibility` and four per-platform artifact records to their exact version-history entry.
+- Releases without immutable release metadata remain visible as legacy history, but are not runtime-v2 candidates.
+- Registry regeneration downloads release metadata; it never infers historical compatibility from the current checkout or old ZIP contents.
 
 Example registry entry:
 
 ```json
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "1.2",
   "lastUpdated": "2026-06-28T12:00:00Z",
   "repository": "https://github.com/Puchaczov/Musoq.DataSources",
   "plugins": [
@@ -97,7 +100,48 @@ Example registry entry:
         "releaseTag": "8.4.9-alpha.1-Musoq.DataSources.Json",
         "releaseDate": "2026-06-28T12:00:00Z",
         "channel": "alpha",
-        "isPrerelease": true
+        "isPrerelease": true,
+        "runtimeCompatibility": {
+          "formatVersion": 1,
+          "runtimeFamily": "musoq-runtime-v2",
+          "targetFramework": "net10.0",
+          "hostPackages": {
+            "Musoq.Schema": {
+              "minimumVersionInclusive": "17.0.2-alpha.1",
+              "maximumVersionExclusive": "18.0.0"
+            },
+            "Musoq.Plugins": {
+              "minimumVersionInclusive": "17.0.2-alpha.1",
+              "maximumVersionExclusive": "18.0.0"
+            }
+          }
+        },
+        "artifacts": {
+          "windows-x64": {
+            "fileName": "Musoq.DataSources.Json-windows-x64.zip",
+            "sizeBytes": 12345678,
+            "md5": "0123456789abcdef0123456789abcdef",
+            "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+          },
+          "linux-x64": {
+            "fileName": "Musoq.DataSources.Json-linux-x64.zip",
+            "sizeBytes": 12345679,
+            "md5": "1123456789abcdef0123456789abcdef",
+            "sha256": "1123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+          },
+          "macos-arm64": {
+            "fileName": "Musoq.DataSources.Json-macos-arm64.zip",
+            "sizeBytes": 12345680,
+            "md5": "2123456789abcdef0123456789abcdef",
+            "sha256": "2123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+          },
+          "alpine-x64": {
+            "fileName": "Musoq.DataSources.Json-alpine-x64.zip",
+            "sizeBytes": 12345681,
+            "md5": "3123456789abcdef0123456789abcdef",
+            "sha256": "3123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+          }
+        }
       }
     }
   }
@@ -111,7 +155,7 @@ Release selection rules:
 - `latestStableVersion` may be `null` or omitted when no stable release exists.
 - `latestPrereleaseVersion` points to the highest SemVer prerelease across all prerelease channels.
 - `channels.stable`, `channels.alpha`, `channels.beta`, and `channels.rc` point to the latest version in each channel when present.
-- Existing clients can continue using only `latestVersion`, `releaseTag`, and `artifacts`.
+- Existing clients can continue using only `latestVersion`, `releaseTag`, and top-level `artifacts`; unknown schema-1.2 fields are additive.
 
 ## Unified NuGet and Plugin Release Flow
 
@@ -158,6 +202,7 @@ The `Plugin.zip` file must contain the published output of the plugin project.
 - The XML documentation file for the main plugin DLL (e.g., `Musoq.DataSources.Git.xml`)
 - The dependency configuration file (`.deps.json`)
 - The runtime configuration file (`.runtimeconfig.json`)
+- The generated runtime compatibility manifest (`MusoqPluginCompatibility.json`)
 - All required third-party dependency DLLs (e.g., `LibGit2Sharp.dll`)
 - A `third-party-notices` folder containing license files for all dependencies
 
@@ -168,6 +213,35 @@ The following core Musoq assemblies **MUST NOT** be included in the `Plugin.zip`
 - `Musoq.Parser.dll`
 - `Musoq.Converter.dll`
 - `Musoq.Evaluator.dll`
+- `Musoq.Targets.*.dll`
+
+### Runtime Compatibility Manifest
+
+`MusoqPluginCompatibility.json` is generated for every RID from evaluated MSBuild properties and package references. It must not be maintained by hand. Packaging fails unless the project targets `net10.0`, references matching supported versions of `Musoq.Schema` and `Musoq.Plugins`, and excludes their runtime assets.
+
+```json
+{
+  "formatVersion": 1,
+  "runtimeFamily": "musoq-runtime-v2",
+  "targetFramework": "net10.0",
+  "hostPackages": {
+    "Musoq.Schema": {
+      "minimumVersionInclusive": "17.0.2-alpha.1",
+      "maximumVersionExclusive": "18.0.0"
+    },
+    "Musoq.Plugins": {
+      "minimumVersionInclusive": "17.0.2-alpha.1",
+      "maximumVersionExclusive": "18.0.0"
+    }
+  }
+}
+```
+
+### Release Artifact Integrity
+
+After all four outer datasource ZIPs are finalized, the release pipeline generates `plugin-release-metadata.json`. For every platform it records the exact outer ZIP filename, byte length, lowercase MD5, and lowercase SHA-256. It also copies the validated embedded runtime compatibility contract into the release metadata.
+
+The metadata file is uploaded as a release asset beside the datasource ZIPs. Hash records are immutable for a `(plugin, version, platform)` tuple. Publishing an existing asset downloads and verifies its bytes; matching assets are retained, while any size, MD5, SHA-256, or metadata difference fails the release. Release assets are never clobbered. SHA-256 is the security-relevant digest; MD5 is retained only as an additional consistency check.
 
 ## Visual Hierarchy
 
@@ -183,6 +257,7 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
     ├── Musoq.DataSources.MyPlugin.deps.json
     ├── Musoq.DataSources.MyPlugin.runtimeconfig.json
     ├── Musoq.DataSources.MyPlugin.xml   # XML documentation
+    ├── MusoqPluginCompatibility.json    # Generated host ABI contract
     ├── ThirdParty.Dependency.dll
     ├── third-party-notices/    # License files folder
     │   ├── report.json
@@ -199,7 +274,8 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
    ```
 
 2. **Prepare the Inner Zip:**
-   - Remove excluded assemblies (`Musoq.Schema.dll`, `Musoq.Plugins.dll`, `Musoq.Parser.dll`, `Musoq.Converter.dll`, `Musoq.Evaluator.dll`) from `./publish`.
+   - Remove host-owned assemblies (`Musoq.Schema.dll`, `Musoq.Plugins.dll`, `Musoq.Parser.dll`, `Musoq.Converter.dll`, `Musoq.Evaluator.dll`, and `Musoq.Targets.*.dll`) recursively from `./publish`, then fail if any remain before compression.
+   - Generate `MusoqPluginCompatibility.json` from evaluated MSBuild data.
    - Verify the main plugin XML documentation file exists in `./publish`.
    - Gather and place all license files into a `third-party-notices` folder within `./publish`.
    - Zip the contents of `./publish` into `Plugin.zip`.

@@ -12,6 +12,7 @@ param(
 )
 
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
+. (Join-Path $PSScriptRoot "../common/Plugin-ArtifactIntegrity.ps1")
 
 if (-not (Test-ValidRepository -Repository $Repository)) {
     throw "Invalid repository format: $Repository. Expected 'owner/repo'."
@@ -61,12 +62,119 @@ if ($manifest.tag -ne $release.Tag) {
     throw "Release artifact manifest tag '$($manifest.tag)' does not match '$($release.Tag)'."
 }
 
+$pluginReleaseMetadataPath = [string]$manifest.pluginReleaseMetadata
+if ([string]::IsNullOrWhiteSpace($pluginReleaseMetadataPath)) {
+    throw "Release artifact manifest is missing pluginReleaseMetadata."
+}
+$pluginReleaseMetadata = Read-MusoqPluginReleaseMetadata -Path $pluginReleaseMetadataPath
+if ($pluginReleaseMetadata.plugin -ne $release.PackageId -or
+    $pluginReleaseMetadata.version -ne $release.Version -or
+    $pluginReleaseMetadata.releaseTag -ne $release.Tag) {
+    throw "Plugin release metadata identity does not match '$($release.Tag)'."
+}
+
 $nugetPackageFiles = @($manifest.nupkg, $manifest.snupkg)
-foreach ($packageFile in $nugetPackageFiles) {
-    if (-not (Test-Path -LiteralPath $packageFile)) {
-        throw "NuGet package listed in manifest was not found: $packageFile"
+$assetPaths = @()
+$assetPaths += $nugetPackageFiles
+$assetPaths += @($manifest.pluginArtifacts)
+$assetPaths += $pluginReleaseMetadataPath
+foreach ($assetPath in $assetPaths) {
+    if (-not (Test-Path -LiteralPath $assetPath)) {
+        throw "Release asset listed in manifest was not found: $assetPath"
+    }
+}
+
+$pluginRecordsByFileName = @{}
+foreach ($platform in $script:MusoqRequiredArtifactPlatforms) {
+    $record = $pluginReleaseMetadata.artifacts.$platform
+    $pluginRecordsByFileName[[string]$record.fileName] = $record
+}
+
+$releaseExists = $false
+gh release view $release.Tag --repo $Repository 1>$null 2>$null
+if ($LASTEXITCODE -eq 0) {
+    $releaseExists = $true
+}
+
+$uploadPaths = @($assetPaths)
+$remoteValidationDirectory = $null
+if ($releaseExists) {
+    $releaseAssetsJson = gh release view $release.Tag --repo $Repository --json assets 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not inspect assets on existing GitHub release '$($release.Tag)': $($releaseAssetsJson -join "`n")"
     }
 
+    $releaseAssets = @((($releaseAssetsJson -join "`n") | ConvertFrom-Json).assets)
+    $existingAssetNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($asset in $releaseAssets) {
+        if (-not $existingAssetNames.Add([string]$asset.name)) {
+            throw "GitHub release '$($release.Tag)' contains duplicate asset name '$($asset.name)'."
+        }
+    }
+
+    $metadataFileName = [System.IO.Path]::GetFileName($pluginReleaseMetadataPath)
+    $hasExistingPluginArtifact = @($pluginRecordsByFileName.Keys | Where-Object { $existingAssetNames.Contains($_) }).Count -gt 0
+    if ($hasExistingPluginArtifact -and -not $existingAssetNames.Contains($metadataFileName)) {
+        throw "Existing plugin assets cannot be accepted without '$metadataFileName'; refusing to overwrite legacy release '$($release.Tag)'."
+    }
+
+    $remoteValidationDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "musoq-release-assets-$([guid]::NewGuid().ToString('N'))"
+    New-Item -ItemType Directory -Force -Path $remoteValidationDirectory | Out-Null
+    try {
+        $uploadPaths = @()
+        foreach ($assetPath in $assetPaths) {
+            $assetName = [System.IO.Path]::GetFileName([string]$assetPath)
+            if (-not $existingAssetNames.Contains($assetName)) {
+                $uploadPaths += $assetPath
+                continue
+            }
+
+            $assetDirectory = Join-Path $remoteValidationDirectory ([guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Force -Path $assetDirectory | Out-Null
+            gh release download $release.Tag --repo $Repository --pattern $assetName --dir $assetDirectory
+            if ($LASTEXITCODE -ne 0) {
+                throw "Could not download existing release asset '$assetName' for immutable verification."
+            }
+
+            $remoteAssetPath = Join-Path $assetDirectory $assetName
+            if (-not (Test-Path -LiteralPath $remoteAssetPath -PathType Leaf)) {
+                throw "Downloaded release asset was not found: $remoteAssetPath"
+            }
+
+            if ($assetName -eq $metadataFileName) {
+                $remoteMetadata = Read-MusoqPluginReleaseMetadata -Path $remoteAssetPath
+                $localJson = ConvertTo-MusoqCanonicalReleaseMetadataJson -Metadata $pluginReleaseMetadata
+                $remoteJson = ConvertTo-MusoqCanonicalReleaseMetadataJson -Metadata $remoteMetadata
+                if ($localJson -cne $remoteJson) {
+                    throw "Existing '$metadataFileName' differs from local immutable release metadata."
+                }
+            }
+
+            if ($pluginRecordsByFileName.ContainsKey($assetName)) {
+                Assert-MusoqArtifactMatchesRecord `
+                    -Path $remoteAssetPath `
+                    -Expected $pluginRecordsByFileName[$assetName] `
+                    -Context "Existing release asset '$assetName'" | Out-Null
+            }
+            else {
+                $localIntegrity = Get-MusoqArtifactIntegrity -Path $assetPath
+                Assert-MusoqArtifactMatchesRecord `
+                    -Path $remoteAssetPath `
+                    -Expected $localIntegrity `
+                    -Context "Existing release asset '$assetName'" | Out-Null
+            }
+
+            Write-Host "Accepted immutable existing release asset: $assetName" -ForegroundColor Gray
+        }
+    }
+    finally {
+        if (Test-Path -LiteralPath $remoteValidationDirectory) {
+            Remove-Item -LiteralPath $remoteValidationDirectory -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+foreach ($packageFile in $nugetPackageFiles) {
     Write-Host "Publishing $([System.IO.Path]::GetFileName($packageFile)) to NuGet..." -ForegroundColor Cyan
     dotnet nuget push $packageFile `
         --source $NuGetSource `
@@ -78,26 +186,16 @@ foreach ($packageFile in $nugetPackageFiles) {
     }
 }
 
-$assetPaths = @()
-$assetPaths += $nugetPackageFiles
-$assetPaths += @($manifest.pluginArtifacts)
-foreach ($assetPath in $assetPaths) {
-    if (-not (Test-Path -LiteralPath $assetPath)) {
-        throw "Release asset listed in manifest was not found: $assetPath"
-    }
-}
-
-$releaseExists = $false
-gh release view $release.Tag --repo $Repository 1>$null 2>$null
-if ($LASTEXITCODE -eq 0) {
-    $releaseExists = $true
-}
-
 if ($releaseExists) {
-    Write-Host "Uploading assets to existing GitHub release $($release.Tag)..." -ForegroundColor Cyan
-    gh release upload $release.Tag @assetPaths --clobber --repo $Repository
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to upload assets to GitHub release $($release.Tag)."
+    if ($uploadPaths.Count -gt 0) {
+        Write-Host "Uploading missing assets to existing GitHub release $($release.Tag)..." -ForegroundColor Cyan
+        gh release upload $release.Tag @uploadPaths --repo $Repository
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to upload missing assets to GitHub release $($release.Tag)."
+        }
+    }
+    else {
+        Write-Host "All GitHub release assets already exist with matching bytes." -ForegroundColor Gray
     }
 }
 else {

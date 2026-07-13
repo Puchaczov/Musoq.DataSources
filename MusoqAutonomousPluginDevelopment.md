@@ -1669,7 +1669,7 @@ Confirm the exact package convention used by your Musoq host. If the host uses a
 
 `Version.txt` must contain the exact project SemVer. Stable versions such as `1.2.3` and prerelease versions such as `1.2.3-alpha.1`, `1.2.3-beta.1`, and `1.2.3-rc.1` are valid. Keep the same exact version in the project file, NuGet package, GitHub release tag, package metadata, and registry `versionHistory`.
 
-Repository registries use schema `1.1`, which is additive over schema `1.0`. Existing clients continue reading `latestVersion`, `releaseTag`, `releaseDate`, `artifacts`, and `versionHistory`. Channel-aware clients can also read `latestStableVersion`, `latestPrereleaseVersion`, and `channels`. Release tags are path-safe:
+Repository registries use schema `1.2`, which is additive over schemas `1.0` and `1.1`. Existing clients continue reading `latestVersion`, `releaseTag`, `releaseDate`, `artifacts`, and `versionHistory`. Channel-aware clients can also read `latestStableVersion`, `latestPrereleaseVersion`, and `channels`; runtime-v2 clients use per-version compatibility and integrity metadata. Release tags are path-safe:
 
 ```text
 8.4.8-Musoq.DataSources.Weather

@@ -227,16 +227,27 @@ function New-MusoqVersionHistoryEntry {
         [Parameter(Mandatory=$true)]
         [string]$ReleaseDate,
         [Parameter(Mandatory=$true)]
-        [string]$Version
+        [string]$Version,
+        [object]$RuntimeCompatibility = $null,
+        [object]$Artifacts = $null
     )
 
     $parsed = ConvertTo-MusoqSemVer -Version $Version
-    return @{
+    $entry = @{
         releaseTag = $ReleaseTag
         releaseDate = $ReleaseDate
         channel = $parsed.Channel
         isPrerelease = $parsed.IsPrerelease
     }
+
+    if ($null -ne $RuntimeCompatibility) {
+        $entry.runtimeCompatibility = $RuntimeCompatibility
+    }
+    if ($null -ne $Artifacts) {
+        $entry.artifacts = $Artifacts
+    }
+
+    return $entry
 }
 
 function New-MusoqChannelInfo {

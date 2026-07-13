@@ -6,6 +6,7 @@ param(
 )
 
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
+. (Join-Path $PSScriptRoot "../common/Plugin-ArtifactIntegrity.ps1")
 
 $release = Resolve-DatasourceReleaseTag -Tag $Tag
 $repositoryRoot = Get-ReleaseRepositoryRoot
@@ -21,6 +22,24 @@ $nupkgOutputPath = Join-Path $resolvedOutputPath "nupkgs"
 $pluginOutputPath = Join-Path $resolvedOutputPath "plugins"
 New-Item -ItemType Directory -Force -Path $nupkgOutputPath | Out-Null
 New-Item -ItemType Directory -Force -Path $pluginOutputPath | Out-Null
+
+$pluginReleaseMetadataPath = Join-Path $resolvedOutputPath $script:MusoqPluginReleaseMetadataFileName
+if (Test-Path -LiteralPath $pluginReleaseMetadataPath) {
+    $existingMetadata = Read-MusoqPluginReleaseMetadata -Path $pluginReleaseMetadataPath
+    if ($existingMetadata.plugin -ne $release.PackageId -or
+        $existingMetadata.version -ne $release.Version -or
+        $existingMetadata.releaseTag -ne $release.Tag) {
+        throw "Release output already contains immutable metadata for a different plugin release: $pluginReleaseMetadataPath"
+    }
+
+    & (Join-Path $PSScriptRoot "Test-ReleaseSmoke.ps1") -Tag $Tag -ArtifactDirectory $resolvedOutputPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Existing immutable release output failed verification for $Tag."
+    }
+
+    Write-Host "Accepted existing immutable release output for $Tag." -ForegroundColor Gray
+    return
+}
 
 Write-Host "Packing NuGet package for $($release.PackageId) $($release.Version)" -ForegroundColor Cyan
 Invoke-ReleaseCommand -FilePath "dotnet" -Arguments @(
@@ -60,14 +79,24 @@ finally {
 }
 
 $pluginArtifacts = @()
-foreach ($artifactName in (Get-ArtifactNames -ProjectName $release.PackageId).Values) {
+$pluginArtifactPaths = [ordered]@{}
+foreach ($artifactEntry in (Get-ArtifactNames -ProjectName $release.PackageId).GetEnumerator()) {
+    $artifactName = $artifactEntry.Value
     $artifactPath = Join-Path $pluginOutputPath $artifactName
     if (-not (Test-Path -LiteralPath $artifactPath)) {
         throw "Expected plugin zip was not produced: $artifactPath"
     }
 
     $pluginArtifacts += $artifactPath
+    $pluginArtifactPaths[$artifactEntry.Key] = $artifactPath
 }
+
+$pluginReleaseMetadata = New-MusoqPluginReleaseMetadata `
+    -PluginName $release.PackageId `
+    -Version $release.Version `
+    -ReleaseTag $release.Tag `
+    -ArtifactPaths $pluginArtifactPaths
+Write-MusoqImmutablePluginReleaseMetadata -Metadata $pluginReleaseMetadata -Path $pluginReleaseMetadataPath
 
 $manifest = [PSCustomObject]@{
     tag = $release.Tag
@@ -79,6 +108,9 @@ $manifest = [PSCustomObject]@{
     nupkg = $nupkgPath
     snupkg = $snupkgPath
     pluginArtifacts = @($pluginArtifacts)
+    pluginArtifactIntegrity = $pluginReleaseMetadata.artifacts
+    runtimeCompatibility = $pluginReleaseMetadata.runtimeCompatibility
+    pluginReleaseMetadata = $pluginReleaseMetadataPath
 }
 
 $manifestPath = Join-Path $resolvedOutputPath "release-artifacts.json"

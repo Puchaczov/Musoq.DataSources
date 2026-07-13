@@ -3,6 +3,8 @@ param()
 $ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/common/Plugin-Config.ps1"
+. "$PSScriptRoot/common/Plugin-Compatibility.ps1"
+. "$PSScriptRoot/common/Plugin-ArtifactIntegrity.ps1"
 
 function Assert-True {
     param(
@@ -214,6 +216,193 @@ function Test-BatchDatasourceReleaseResolution {
     } "Batch release selection should reject helper packages."
 }
 
+function Test-PluginCompatibilityManifestGeneration {
+    $compatibility = New-MusoqPluginCompatibility `
+        -TargetFramework "net10.0" `
+        -SchemaVersion "17.0.2-alpha.2" `
+        -PluginsVersion "17.0.2-alpha.2"
+
+    Assert-Equal 1 $compatibility.formatVersion "Compatibility format should be versioned."
+    Assert-Equal "musoq-runtime-v2" $compatibility.runtimeFamily "Runtime family should identify runtime-v2."
+    Assert-Equal "net10.0" $compatibility.targetFramework "Target framework should come from evaluated project data."
+    Assert-Equal "17.0.2-alpha.2" $compatibility.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Schema minimum should be the evaluated package version."
+    Assert-Equal "18.0.0" $compatibility.hostPackages.'Musoq.Schema'.maximumVersionExclusive "Schema maximum should be the next major."
+    Assert-Equal "17.0.2-alpha.2" $compatibility.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Plugins minimum should be the evaluated package version."
+    Assert-Equal "18.0.0" $compatibility.hostPackages.'Musoq.Plugins'.maximumVersionExclusive "Plugins maximum should be the next major."
+
+    Assert-Throws {
+        New-MusoqPluginCompatibility -TargetFramework "net8.0" -SchemaVersion "17.0.2-alpha.2" -PluginsVersion "17.0.2-alpha.2" | Out-Null
+    } "Unsupported target frameworks must fail packaging."
+    Assert-Throws {
+        New-MusoqPluginCompatibility -TargetFramework "net10.0" -SchemaVersion "invalid" -PluginsVersion "17.0.2-alpha.2" | Out-Null
+    } "Malformed ABI versions must fail packaging."
+    Assert-Throws {
+        New-MusoqPluginCompatibility -TargetFramework "net10.0" -SchemaVersion "17.0.2-alpha.2" -PluginsVersion "17.0.1" | Out-Null
+    } "Inconsistent ABI package versions must fail packaging."
+
+    $systemProject = Join-Path $PSScriptRoot "../Musoq.DataSources.System/Musoq.DataSources.System.csproj"
+    $evaluated = Get-MusoqPluginCompatibility -ProjectPath $systemProject
+    Assert-Equal "17.0.2-alpha.2" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
+    Assert-Equal "17.0.2-alpha.2" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
+}
+
+function Test-PluginArtifactIntegrityMetadata {
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "musoq-integrity-test-$([guid]::NewGuid().ToString('N'))"
+    try {
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+        $compatibility = New-MusoqPluginCompatibility `
+            -TargetFramework "net10.0" `
+            -SchemaVersion "17.0.2-alpha.2" `
+            -PluginsVersion "17.0.2-alpha.2"
+        $compatibilityJson = ConvertTo-MusoqPluginCompatibilityJson -Compatibility $compatibility
+        $artifactPaths = [ordered]@{}
+
+        foreach ($platform in $script:MusoqRequiredArtifactPlatforms) {
+            $packageDirectory = Join-Path $tempDir "package-$platform"
+            $pluginDirectory = Join-Path $tempDir "plugin-$platform"
+            New-Item -ItemType Directory -Path $packageDirectory, $pluginDirectory -Force | Out-Null
+            [System.IO.File]::WriteAllText(
+                (Join-Path $pluginDirectory $script:MusoqPluginCompatibilityFileName),
+                $compatibilityJson,
+                [System.Text.UTF8Encoding]::new($false))
+            Set-Content -LiteralPath (Join-Path $pluginDirectory "payload-$platform.txt") -Value $platform -NoNewline
+            Compress-Archive -Path (Join-Path $pluginDirectory "*") -DestinationPath (Join-Path $packageDirectory "Plugin.zip") -Force
+            Set-Content -LiteralPath (Join-Path $packageDirectory "Platform.txt") -Value $platform -NoNewline
+
+            $artifactPath = Join-Path $tempDir "Musoq.DataSources.System-$platform.zip"
+            Compress-Archive -Path (Join-Path $packageDirectory "*") -DestinationPath $artifactPath -Force
+            $artifactPaths[$platform] = $artifactPath
+        }
+
+        $metadata = New-MusoqPluginReleaseMetadata `
+            -PluginName "Musoq.DataSources.System" `
+            -Version "8.0.2-alpha.1" `
+            -ReleaseTag "8.0.2-alpha.1-Musoq.DataSources.System" `
+            -ArtifactPaths $artifactPaths
+        Assert-MusoqPluginReleaseMetadata -Metadata $metadata
+        Assert-Equal 4 $metadata.artifacts.Count "Release metadata should contain all required platforms."
+
+        foreach ($platform in $script:MusoqRequiredArtifactPlatforms) {
+            $record = $metadata.artifacts[$platform]
+            Assert-True ($record.sizeBytes -gt 0) "$platform should record artifact size."
+            Assert-True ($record.md5 -cmatch '^[0-9a-f]{32}$') "$platform should record lowercase MD5."
+            Assert-True ($record.sha256 -cmatch '^[0-9a-f]{64}$') "$platform should record lowercase SHA-256."
+            Assert-MusoqArtifactMatchesRecord -Path $artifactPaths[$platform] -Expected $record -Context $platform | Out-Null
+        }
+
+        $metadataPath = Join-Path $tempDir $script:MusoqPluginReleaseMetadataFileName
+        Write-MusoqImmutablePluginReleaseMetadata -Metadata $metadata -Path $metadataPath
+        $roundTripped = Read-MusoqPluginReleaseMetadata -Path $metadataPath
+        Assert-Equal "Musoq.DataSources.System" $roundTripped.plugin "Release metadata should preserve plugin identity."
+
+        $changedMetadata = (ConvertTo-MusoqCanonicalReleaseMetadataJson -Metadata $metadata) | ConvertFrom-Json -Depth 100
+        $changedMetadata.artifacts.'windows-x64'.md5 = "00000000000000000000000000000000"
+        Assert-Throws {
+            Write-MusoqImmutablePluginReleaseMetadata -Metadata $changedMetadata -Path $metadataPath
+        } "An existing plugin/version/platform hash record must be immutable."
+
+        Add-Content -LiteralPath $artifactPaths['windows-x64'] -Value "corruption" -NoNewline
+        Assert-Throws {
+            Assert-MusoqArtifactMatchesRecord `
+                -Path $artifactPaths['windows-x64'] `
+                -Expected $metadata.artifacts['windows-x64'] `
+                -Context "corrupted artifact" | Out-Null
+        } "Artifact verification must reject changed bytes."
+
+        $publishScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot "release/Publish-Release.ps1") -Raw
+        Assert-True ($publishScript -notmatch '--clobber') "Datasource publishing must never clobber an existing release asset."
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempDir) {
+            Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Test-Registry12RuntimeMetadataContract {
+    $compatibility = New-MusoqPluginCompatibility `
+        -TargetFramework "net10.0" `
+        -SchemaVersion "17.0.2-alpha.2" `
+        -PluginsVersion "17.0.2-alpha.2"
+    $artifactIntegrity = [ordered]@{}
+    foreach ($platform in $script:MusoqRequiredArtifactPlatforms) {
+        $artifactIntegrity[$platform] = [ordered]@{
+            fileName = "Musoq.DataSources.System-$platform.zip"
+            sizeBytes = 123
+            md5 = "0123456789abcdef0123456789abcdef"
+            sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        }
+    }
+
+    $legacyStable = New-MusoqVersionHistoryEntry `
+        -ReleaseTag "8.0.0-Musoq.DataSources.System" `
+        -ReleaseDate "2026-06-20T12:00:00Z" `
+        -Version "8.0.0"
+    $compatibleAlpha = New-MusoqVersionHistoryEntry `
+        -ReleaseTag "8.0.2-alpha.1-Musoq.DataSources.System" `
+        -ReleaseDate "2026-07-20T12:00:00Z" `
+        -Version "8.0.2-alpha.1" `
+        -RuntimeCompatibility $compatibility `
+        -Artifacts $artifactIntegrity
+
+    Assert-True (-not $legacyStable.ContainsKey('runtimeCompatibility')) "Legacy entries must remain visible without inferred compatibility."
+    Assert-True (-not $legacyStable.ContainsKey('artifacts')) "Legacy entries must remain visible without inferred hashes."
+    Assert-Equal "musoq-runtime-v2" $compatibleAlpha.runtimeCompatibility.runtimeFamily "Compatible history should carry runtime metadata."
+    Assert-Equal 4 $compatibleAlpha.artifacts.Count "Compatible history should carry all platform hashes."
+
+    $versions = @{
+        "8.0.0" = $legacyStable
+        "8.0.2-alpha.1" = $compatibleAlpha
+    }
+    $projection = Get-MusoqPluginRegistryProjection -Versions $versions
+    $registry = [ordered]@{
+        schemaVersion = "1.2"
+        lastUpdated = "2026-07-20T12:00:00Z"
+        repository = "https://github.com/Puchaczov/Musoq.DataSources"
+        plugins = @([ordered]@{
+            name = "Musoq.DataSources.System"
+            shortName = "system"
+            latestVersion = $projection.LatestVersion
+            releaseTag = $projection.ReleaseTag
+            releaseDate = $projection.ReleaseDate
+            latestStableVersion = $projection.LatestStableVersion
+            latestPrereleaseVersion = $projection.LatestPrereleaseVersion
+            channels = $projection.Channels
+            artifacts = Get-ArtifactNames -ProjectName "Musoq.DataSources.System"
+        })
+        versionHistory = @{
+            "Musoq.DataSources.System" = $versions
+        }
+    }
+
+    $parsed = ($registry | ConvertTo-Json -Depth 30) | ConvertFrom-Json -Depth 100
+    Assert-Equal "1.2" $parsed.schemaVersion "Runtime metadata registry should use schema 1.2."
+    Assert-Equal "8.0.0" $parsed.plugins[0].latestVersion "Legacy top-level resolution should remain on stable."
+    Assert-Equal "8.0.0-Musoq.DataSources.System" $parsed.plugins[0].releaseTag "Legacy top-level release tag should remain stable."
+    Assert-Equal "musoq-runtime-v2" $parsed.versionHistory.'Musoq.DataSources.System'.'8.0.2-alpha.1'.runtimeCompatibility.runtimeFamily "Compatible version metadata should serialize."
+    Assert-Equal 123 $parsed.versionHistory.'Musoq.DataSources.System'.'8.0.2-alpha.1'.artifacts.'windows-x64'.sizeBytes "Artifact integrity should serialize."
+
+    $updateScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot "Update-PluginRegistry.ps1") -Raw
+    Assert-True ($updateScript -match 'Read-MusoqPluginReleaseMetadata') "Registry regeneration must read immutable release metadata."
+    Assert-True ($updateScript -notmatch 'Get-MusoqPluginCompatibility\s+-ProjectPath') "Registry regeneration must not infer historical compatibility from current projects."
+}
+
+function Test-RuntimeV2Alpha1ReleaseTrain {
+    $registryPath = Join-Path $PSScriptRoot "release/packages.json"
+    $registry = Get-Content -LiteralPath $registryPath -Raw | ConvertFrom-Json
+    $packages = @($registry.packages)
+    Assert-Equal 15 $packages.Count "Runtime-v2 release train should contain all 15 datasource packages."
+
+    foreach ($package in $packages) {
+        $version = [string]$package.version
+        Assert-True ($version -match '-alpha\.1$') "$($package.packageId) should be pinned to alpha.1 in packages.json."
+        $projectPath = Join-Path $PSScriptRoot "../$($package.projectPath)"
+        [xml]$project = Get-Content -LiteralPath $projectPath
+        $projectVersion = [string](@($project.Project.PropertyGroup | Where-Object { $_.Version })[0].Version)
+        Assert-Equal $version $projectVersion "$($package.packageId) project and release registry versions should match."
+    }
+}
+
 Test-SemVerValidation
 Test-SemVerOrdering
 Test-ReleaseTagParsing
@@ -224,5 +413,9 @@ Test-PackageVersionTextPreservesPrerelease
 Test-SyntheticRegistryJsonShape
 Test-DatasourceReleaseValidation
 Test-BatchDatasourceReleaseResolution
+Test-PluginCompatibilityManifestGeneration
+Test-PluginArtifactIntegrityMetadata
+Test-Registry12RuntimeMetadataContract
+Test-RuntimeV2Alpha1ReleaseTrain
 
 Write-Host "Plugin release script tests passed." -ForegroundColor Green

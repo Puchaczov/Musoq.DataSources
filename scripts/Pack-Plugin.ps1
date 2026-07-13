@@ -5,19 +5,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot/common/Plugin-Compatibility.ps1"
+
 $Targets = @(
     @{ Rid = "win-x64";        Platform = "windows"; Architecture = "x64" },
     @{ Rid = "linux-x64";      Platform = "linux";   Architecture = "x64" },
     @{ Rid = "osx-arm64";      Platform = "macos";   Architecture = "arm64" },
     @{ Rid = "linux-musl-x64"; Platform = "alpine";  Architecture = "x64" }
-)
-
-$ExcludedAssemblies = @(
-    "Musoq.Schema.dll",
-    "Musoq.Plugins.dll",
-    "Musoq.Parser.dll",
-    "Musoq.Converter.dll",
-    "Musoq.Evaluator.dll"
 )
 
 $IgnorePatterns = @(
@@ -168,7 +162,7 @@ foreach ($Project in $Projects) {
 Write-Host "Starting Build..." -ForegroundColor Cyan
 
 $BuildScriptBlock = {
-    param($ProjectFullName, $ProjectBaseName, $ProjectVersion, $OutputDirectory, $Targets, $ExcludedAssemblies, $ProjectLicensesDir)
+    param($ProjectFullName, $ProjectBaseName, $ProjectVersion, $OutputDirectory, $Targets, $HostOwnedAssemblyPatterns, $CompatibilityJson, $CompatibilityFileName, $ProjectLicensesDir)
     
     $ErrorActionPreference = "Stop"
     $MinPluginZipSizeBytes = 1000
@@ -188,6 +182,7 @@ $BuildScriptBlock = {
                 "-f", "net10.0",
                 "-r", $Rid,
                 "--no-self-contained",
+                "-p:CopyLocalLockFileAssemblies=false",
                 "-o", $PublishDir
             )
             $PublishOutput = dotnet @PublishArgs 2>&1
@@ -197,9 +192,28 @@ $BuildScriptBlock = {
 
             New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
             
-            foreach ($Dll in $ExcludedAssemblies) {
-                Remove-Item (Join-Path $PublishDir $Dll) -ErrorAction SilentlyContinue
+            $hostOwnedAssemblies = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File | Where-Object {
+                $fileName = $_.Name
+                @($HostOwnedAssemblyPatterns | Where-Object { $fileName -like $_ }).Count -gt 0
+            })
+            foreach ($hostOwnedAssembly in $hostOwnedAssemblies) {
+                Remove-Item -LiteralPath $hostOwnedAssembly.FullName -Force
             }
+
+            $remainingHostOwnedAssemblies = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File | Where-Object {
+                $fileName = $_.Name
+                @($HostOwnedAssemblyPatterns | Where-Object { $fileName -like $_ }).Count -gt 0
+            })
+            if ($remainingHostOwnedAssemblies.Count -gt 0) {
+                $names = @($remainingHostOwnedAssemblies | ForEach-Object { $_.Name } | Sort-Object -Unique) -join ", "
+                throw "Could not remove host-owned Musoq assemblies from publish output: $names"
+            }
+
+            $compatibilityPath = Join-Path $PublishDir $CompatibilityFileName
+            [System.IO.File]::WriteAllText(
+                $compatibilityPath,
+                $CompatibilityJson,
+                [System.Text.UTF8Encoding]::new($false))
 
             if ($ProjectLicensesDir -and (Test-Path $ProjectLicensesDir)) {
                 $DestLicensesDir = Join-Path $PublishDir "third-party-notices"
@@ -264,6 +278,9 @@ $BuildScriptBlock = {
 
 foreach ($Project in $Projects) {
     Write-Host "Building: $($Project.BaseName)" -ForegroundColor Gray
+
+    $Compatibility = Get-MusoqPluginCompatibility -ProjectPath $Project.FullName
+    $CompatibilityJson = ConvertTo-MusoqPluginCompatibilityJson -Compatibility $Compatibility
     
     $JobParams = @(
         $Project.FullName,
@@ -271,7 +288,9 @@ foreach ($Project in $Projects) {
         (Get-ProjectVersion -Project $Project),
         $OutputDirectory,
         $Targets,
-        $ExcludedAssemblies,
+        $script:MusoqHostOwnedAssemblyPatterns,
+        $CompatibilityJson,
+        $script:MusoqPluginCompatibilityFileName,
         $ProjectLicenseMap[$Project.FullName]
     )
     

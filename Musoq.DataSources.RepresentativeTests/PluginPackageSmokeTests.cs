@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Musoq.DataSources.RepresentativeTests;
@@ -84,15 +85,50 @@ public class PluginPackageSmokeTests
             foreach (var assemblyName in HostProvidedAssemblies)
             {
                 Assert.IsFalse(
-                    File.Exists(Path.Combine(pluginDirectory, assemblyName)),
+                    Directory.GetFiles(pluginDirectory, assemblyName, SearchOption.AllDirectories).Any(),
                     $"Plugin.zip should not include host-provided assembly '{assemblyName}': {packagePath}");
             }
+
+            Assert.IsFalse(
+                Directory.GetFiles(pluginDirectory, "Musoq.Targets.*.dll", SearchOption.AllDirectories).Any(),
+                $"Plugin.zip should not include host-provided Musoq.Targets assemblies: {packagePath}");
+
+            ValidateCompatibilityManifest(pluginDirectory, packagePath);
         }
         finally
         {
             if (Directory.Exists(tempDirectory))
                 Directory.Delete(tempDirectory, true);
         }
+    }
+
+    private static void ValidateCompatibilityManifest(string pluginDirectory, string packagePath)
+    {
+        var manifestPath = Path.Combine(pluginDirectory, "MusoqPluginCompatibility.json");
+        Assert.IsTrue(File.Exists(manifestPath), $"Plugin.zip is missing MusoqPluginCompatibility.json: {packagePath}");
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        var root = manifest.RootElement;
+        Assert.AreEqual(1, root.GetProperty("formatVersion").GetInt32(), $"Unexpected compatibility format: {packagePath}");
+        Assert.AreEqual("musoq-runtime-v2", root.GetProperty("runtimeFamily").GetString(), $"Unexpected runtime family: {packagePath}");
+        Assert.AreEqual("net10.0", root.GetProperty("targetFramework").GetString(), $"Unexpected target framework: {packagePath}");
+
+        var hostPackages = root.GetProperty("hostPackages");
+        ValidateHostPackage(hostPackages, "Musoq.Schema", packagePath);
+        ValidateHostPackage(hostPackages, "Musoq.Plugins", packagePath);
+    }
+
+    private static void ValidateHostPackage(JsonElement hostPackages, string packageName, string packagePath)
+    {
+        var package = hostPackages.GetProperty(packageName);
+        Assert.AreEqual(
+            "17.0.2-alpha.2",
+            package.GetProperty("minimumVersionInclusive").GetString(),
+            $"Unexpected {packageName} minimum: {packagePath}");
+        Assert.AreEqual(
+            "18.0.0",
+            package.GetProperty("maximumVersionExclusive").GetString(),
+            $"Unexpected {packageName} maximum: {packagePath}");
     }
 
     private static string FindSolutionRoot()

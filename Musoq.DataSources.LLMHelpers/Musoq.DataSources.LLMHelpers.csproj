@@ -6,11 +6,4 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Musoq.Converter" Version="17.0.2-alpha.1" />
-        <PackageReference Include="Musoq.Evaluator" Version="17.0.2-alpha.1" />
-        <PackageReference Include="Musoq.Plugins" Version="17.0.2-alpha.1" />
-        <PackageReference Include="Musoq.Schema" Version="17.0.2-alpha.1" />
-    </ItemGroup>
-
 </Project>

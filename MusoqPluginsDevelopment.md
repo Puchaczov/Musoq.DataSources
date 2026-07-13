@@ -1051,7 +1051,7 @@ If the XML is missing, Musoq tooling may be unable to list the plugin's tables a
 
 `Version.txt` must match the exact project SemVer. Stable versions such as `1.2.3` and prerelease versions such as `1.2.3-alpha.1`, `1.2.3-beta.1`, and `1.2.3-rc.1` are valid. Do not strip prerelease suffixes from `Version.txt`, release tags, NuGet packages, or registry history.
 
-Repository plugin registries use the package shape described in `MusoqDotnetPluginsZipSpecification.md`. Registry schema `1.1` is backwards-compatible with schema `1.0`: `latestVersion`, `releaseTag`, `releaseDate`, `artifacts`, and `versionHistory` remain present for existing clients, while newer clients can read `latestStableVersion`, `latestPrereleaseVersion`, and `channels`.
+Repository plugin registries use the package shape described in `MusoqDotnetPluginsZipSpecification.md`. Registry schema `1.2` is backwards-compatible with schemas `1.0` and `1.1`: `latestVersion`, `releaseTag`, `releaseDate`, `artifacts`, and `versionHistory` remain present for existing clients, while newer clients can read channel data plus per-version runtime compatibility and artifact integrity.
 
 The unified release flow uses one compatible tag for both NuGet and plugin zip assets:
 

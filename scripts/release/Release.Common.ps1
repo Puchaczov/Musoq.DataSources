@@ -68,6 +68,7 @@ function Get-ReleasePackages {
     foreach ($package in $registry.packages) {
         $slug = [string]$package.slug
         $packageId = [string]$package.packageId
+        $configuredVersion = [string]$package.version
         $projectPath = [string]$package.projectPath
 
         if ($slug -notmatch '^[a-z][a-z0-9]*$') {
@@ -86,6 +87,10 @@ function Get-ReleasePackages {
             throw "Release package registry contains a duplicate package id: $packageId"
         }
 
+        if (-not (Test-ValidVersion -Version $configuredVersion)) {
+            throw "Release package registry contains an invalid version for '$packageId': $configuredVersion"
+        }
+
         $fullProjectPath = Resolve-ReleaseRepositoryPath -RelativePath $projectPath
         if (-not (Test-Path -LiteralPath $fullProjectPath)) {
             throw "Release package project was not found: $projectPath"
@@ -99,10 +104,14 @@ function Get-ReleasePackages {
         if ($metadata.Name -ne $packageId) {
             throw "Release package id '$packageId' does not match project '$($metadata.Name)'."
         }
+        if ($metadata.Version -ne $configuredVersion) {
+            throw "Release package '$packageId' project version '$($metadata.Version)' does not match configured version '$configuredVersion'."
+        }
 
         $packages += [PSCustomObject]@{
             Slug = $slug
             PackageId = $packageId
+            Version = $configuredVersion
             ProjectPath = $projectPath
             FullProjectPath = $fullProjectPath
             ShortName = $metadata.ShortName

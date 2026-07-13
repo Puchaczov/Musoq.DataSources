@@ -15,10 +15,10 @@
         <PackageReference Include="Moq" Version="4.20.72"/>
         <PackageReference Include="MSTest.TestAdapter" Version="3.1.1"/>
         <PackageReference Include="MSTest.TestFramework" Version="3.1.1"/>
-        <PackageReference Include="Musoq.Converter" Version="17.0.2-alpha.1" />
-        <PackageReference Include="Musoq.Evaluator" Version="17.0.2-alpha.1" />
-        <PackageReference Include="Musoq.Plugins" Version="17.0.2-alpha.1" />
-        <PackageReference Include="Musoq.Schema" Version="17.0.2-alpha.1" />
+        <PackageReference Include="Musoq.Converter" Version="$(MusoqConverterVersion)" />
+        <PackageReference Include="Musoq.Evaluator" Version="$(MusoqEvaluatorVersion)" />
+        <PackageReference Include="Musoq.Plugins" Version="$(MusoqPluginsVersion)" />
+        <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" />
     </ItemGroup>
 
     <ItemGroup>

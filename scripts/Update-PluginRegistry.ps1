@@ -9,6 +9,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/common/Plugin-Config.ps1"
+. "$PSScriptRoot/common/Plugin-ArtifactIntegrity.ps1"
 
 function ConvertTo-Iso8601String {
     param([object]$Value)
@@ -33,7 +34,7 @@ function Get-Field {
         [string]$Name
     )
 
-    if ($Object -is [hashtable]) {
+    if ($Object -is [System.Collections.IDictionary]) {
         return $Object[$Name]
     }
 
@@ -51,17 +52,23 @@ function Set-RegistryVersionHistory {
         [Parameter(Mandatory=$true)]
         [string]$ReleaseTag,
         [Parameter(Mandatory=$true)]
-        [string]$ReleaseDate
+        [string]$ReleaseDate,
+        [object]$RuntimeCompatibility = $null,
+        [object]$ArtifactIntegrity = $null
     )
 
     if (-not $Registry.versionHistory.ContainsKey($PluginName)) {
         $Registry.versionHistory[$PluginName] = @{}
     }
 
-    $Registry.versionHistory[$PluginName][$Version] = New-MusoqVersionHistoryEntry `
+    $entry = New-MusoqVersionHistoryEntry `
         -ReleaseTag $ReleaseTag `
         -ReleaseDate $ReleaseDate `
-        -Version $Version
+        -Version $Version `
+        -RuntimeCompatibility $RuntimeCompatibility `
+        -Artifacts $ArtifactIntegrity
+
+    $Registry.versionHistory[$PluginName][$Version] = $entry
 }
 
 function Test-ValidPluginData {
@@ -76,6 +83,8 @@ function Test-ValidPluginData {
     $description = Get-Field -Object $Plugin -Name "Description"
     $tags = Get-Field -Object $Plugin -Name "Tags"
     $artifacts = Get-Field -Object $Plugin -Name "Artifacts"
+    $runtimeCompatibility = Get-Field -Object $Plugin -Name "RuntimeCompatibility"
+    $artifactIntegrity = Get-Field -Object $Plugin -Name "ArtifactIntegrity"
 
     if (-not $name) {
         $errors += "Missing Name"
@@ -139,6 +148,31 @@ function Test-ValidPluginData {
         }
     }
 
+    if (($null -eq $runtimeCompatibility) -xor ($null -eq $artifactIntegrity)) {
+        $errors += "RuntimeCompatibility and ArtifactIntegrity must be supplied together"
+    }
+    elseif ($null -ne $runtimeCompatibility) {
+        try {
+            Assert-MusoqPluginCompatibility -Compatibility $runtimeCompatibility
+            foreach ($platform in $script:MusoqRequiredArtifactPlatforms) {
+                $record = Get-Field -Object $artifactIntegrity -Name $platform
+                if ($null -eq $record) {
+                    throw "Missing required artifact integrity platform '$platform'."
+                }
+
+                $fileName = [string](Get-Field -Object $record -Name "fileName")
+                $expectedFileName = "$name-$platform.zip"
+                if ($fileName -ne $expectedFileName) {
+                    throw "Invalid artifact filename '$fileName' for '$platform'. Expected '$expectedFileName'."
+                }
+                Assert-MusoqArtifactRecord -Record $record -Context "$name $version $platform"
+            }
+        }
+        catch {
+            $errors += "Invalid runtime compatibility or artifact integrity metadata: $_"
+        }
+    }
+
     return @{
         IsValid = ($errors.Count -eq 0)
         Errors = $errors
@@ -171,14 +205,18 @@ function Get-PluginDataFromRelease {
         return $null
     }
 
-    $releaseInfo = gh release view $ReleaseTag --repo $Repository --json createdAt 2>$null | ConvertFrom-Json
+    $releaseInfoJson = gh release view $ReleaseTag --repo $Repository --json createdAt,assets 2>$null
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($releaseInfoJson)) {
+        return $null
+    }
+    $releaseInfo = $releaseInfoJson | ConvertFrom-Json
     $releaseDate = if ($releaseInfo.createdAt) {
         ConvertTo-Iso8601String -Value $releaseInfo.createdAt
     } else {
         (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", [System.Globalization.CultureInfo]::InvariantCulture)
     }
 
-    return @{
+    $pluginData = @{
         Name = $pluginName
         ShortName = $metadata.ShortName
         Description = $metadata.Description
@@ -188,13 +226,60 @@ function Get-PluginDataFromRelease {
         ReleaseDate = $releaseDate
         Artifacts = Get-ArtifactNames -ProjectName $pluginName
     }
+
+    $releaseMetadataAssets = @($releaseInfo.assets | Where-Object { $_.name -eq $script:MusoqPluginReleaseMetadataFileName })
+    if ($releaseMetadataAssets.Count -eq 0) {
+        return $pluginData
+    }
+    if ($releaseMetadataAssets.Count -ne 1) {
+        Write-Warning "Release '$ReleaseTag' has duplicate plugin release metadata assets and will remain legacy-only."
+        return $pluginData
+    }
+
+    $metadataDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "plugin-release-metadata-$([guid]::NewGuid().ToString('N'))"
+    try {
+        New-Item -ItemType Directory -Path $metadataDirectory -Force | Out-Null
+        gh release download $ReleaseTag `
+            --repo $Repository `
+            --pattern $script:MusoqPluginReleaseMetadataFileName `
+            --dir $metadataDirectory 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Could not download plugin release metadata for '$ReleaseTag'; entry will remain legacy-only."
+            return $pluginData
+        }
+
+        $metadataPath = Join-Path $metadataDirectory $script:MusoqPluginReleaseMetadataFileName
+        try {
+            $releaseMetadata = Read-MusoqPluginReleaseMetadata -Path $metadataPath
+        }
+        catch {
+            Write-Warning "Invalid plugin release metadata for '$ReleaseTag'; entry will remain legacy-only. $_"
+            return $pluginData
+        }
+
+        if ($releaseMetadata.plugin -ne $pluginName -or
+            $releaseMetadata.version -ne $version -or
+            $releaseMetadata.releaseTag -ne $ReleaseTag) {
+            Write-Warning "Plugin release metadata identity does not match '$ReleaseTag'; entry will remain legacy-only."
+            return $pluginData
+        }
+
+        $pluginData.RuntimeCompatibility = $releaseMetadata.runtimeCompatibility
+        $pluginData.ArtifactIntegrity = $releaseMetadata.artifacts
+        return $pluginData
+    }
+    finally {
+        if (Test-Path -LiteralPath $metadataDirectory) {
+            Remove-Item -LiteralPath $metadataDirectory -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function New-EmptyRegistry {
     param([string]$Repository)
 
     return @{
-        schemaVersion = "1.1"
+        schemaVersion = "1.2"
         lastUpdated = ""
         repository = "https://github.com/$Repository"
         plugins = @()
@@ -257,10 +342,14 @@ function Repair-VersionHistory {
                 continue
             }
 
-            $cleanVersions[$version] = New-MusoqVersionHistoryEntry `
+            $cleanEntry = New-MusoqVersionHistoryEntry `
                 -ReleaseTag $releaseTag `
                 -ReleaseDate $releaseDate `
-                -Version $version
+                -Version $version `
+                -RuntimeCompatibility (Get-Field -Object $entry -Name "runtimeCompatibility") `
+                -Artifacts (Get-Field -Object $entry -Name "artifacts")
+
+            $cleanVersions[$version] = $cleanEntry
         }
 
         if ($cleanVersions.Count -gt 0) {
@@ -411,7 +500,7 @@ try {
         $registry = New-EmptyRegistry -Repository $Repository
     }
 
-    $registry.schemaVersion = "1.1"
+    $registry.schemaVersion = "1.2"
     $registry.repository = "https://github.com/$Repository"
     Repair-VersionHistory -Registry $registry
 
@@ -451,7 +540,9 @@ try {
                     -PluginName $pluginFromRelease.Name `
                     -Version $pluginFromRelease.Version `
                     -ReleaseTag $pluginFromRelease.ReleaseTag `
-                    -ReleaseDate $pluginFromRelease.ReleaseDate
+                    -ReleaseDate $pluginFromRelease.ReleaseDate `
+                    -RuntimeCompatibility $pluginFromRelease.RuntimeCompatibility `
+                    -ArtifactIntegrity $pluginFromRelease.ArtifactIntegrity
 
                 Write-Host "    Found release: $tag" -ForegroundColor Gray
             }
@@ -459,10 +550,22 @@ try {
     }
 
     foreach ($plugin in $PublishedPlugins) {
-        $pluginName = Get-Field -Object $plugin -Name "Name"
-        $version = Get-Field -Object $plugin -Name "Version"
         $releaseTag = Get-Field -Object $plugin -Name "ReleaseTag"
-        $releaseDate = ConvertTo-Iso8601String -Value (Get-Field -Object $plugin -Name "ReleaseDate")
+        $pluginFromRelease = Get-PluginDataFromRelease -ReleaseTag $releaseTag -Repository $Repository
+        if (-not $pluginFromRelease) {
+            Write-Warning "Skipping '$releaseTag' because authoritative GitHub release metadata could not be read."
+            continue
+        }
+
+        $validation = Test-ValidPluginData -Plugin $pluginFromRelease
+        if (-not $validation.IsValid) {
+            Write-Warning "Skipping invalid authoritative release '$releaseTag': $($validation.Errors -join ', ')"
+            continue
+        }
+
+        $pluginName = $pluginFromRelease.Name
+        $version = $pluginFromRelease.Version
+        $releaseDate = $pluginFromRelease.ReleaseDate
 
         Write-Host "  Adding $pluginName v$version to registry..." -ForegroundColor Gray
 
@@ -470,8 +573,10 @@ try {
             -Registry $registry `
             -PluginName $pluginName `
             -Version $version `
-            -ReleaseTag $releaseTag `
-            -ReleaseDate $releaseDate
+            -ReleaseTag $pluginFromRelease.ReleaseTag `
+            -ReleaseDate $releaseDate `
+            -RuntimeCompatibility $pluginFromRelease.RuntimeCompatibility `
+            -ArtifactIntegrity $pluginFromRelease.ArtifactIntegrity
     }
 
     Rebuild-RegistryPlugins -Registry $registry

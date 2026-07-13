@@ -6,6 +6,8 @@ param(
 )
 
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
+. (Join-Path $PSScriptRoot "../common/Plugin-Compatibility.ps1")
+. (Join-Path $PSScriptRoot "../common/Plugin-ArtifactIntegrity.ps1")
 
 $release = Resolve-DatasourceReleaseTag -Tag $Tag
 $repositoryRoot = Get-ReleaseRepositoryRoot
@@ -126,9 +128,25 @@ function Test-PluginPackage {
         }
 
         foreach ($assembly in $hostProvidedAssemblies) {
-            if (Test-Path -LiteralPath (Join-Path $pluginDirectory $assembly)) {
+            if (@(Get-ChildItem -LiteralPath $pluginDirectory -Recurse -File -Filter $assembly).Count -gt 0) {
                 throw "Plugin.zip contains host-provided assembly '$assembly': $PackagePath"
             }
+        }
+
+        $targetsAssemblies = @(Get-ChildItem -LiteralPath $pluginDirectory -Recurse -File -Filter "Musoq.Targets.*.dll")
+        if ($targetsAssemblies.Count -gt 0) {
+            throw "Plugin.zip contains host-provided Musoq.Targets assembly '$($targetsAssemblies[0].Name)': $PackagePath"
+        }
+
+        $compatibilityPath = Join-Path $pluginDirectory $script:MusoqPluginCompatibilityFileName
+        $compatibility = Read-MusoqPluginCompatibilityManifest -Path $compatibilityPath
+        $schemaRange = $compatibility.hostPackages.'Musoq.Schema'
+        $pluginsRange = $compatibility.hostPackages.'Musoq.Plugins'
+        if ($schemaRange.minimumVersionInclusive -ne "17.0.2-alpha.2" -or
+            $pluginsRange.minimumVersionInclusive -ne "17.0.2-alpha.2" -or
+            $schemaRange.maximumVersionExclusive -ne "18.0.0" -or
+            $pluginsRange.maximumVersionExclusive -ne "18.0.0") {
+            throw "Plugin compatibility manifest does not match the supported runtime-v2 ABI: $PackagePath"
         }
     }
     finally {
@@ -140,13 +158,52 @@ function Test-PluginPackage {
 
 Test-NuGetPackage -PackagePath $nupkgPath
 
-foreach ($artifactName in (Get-ArtifactNames -ProjectName $release.PackageId).Values) {
+$releaseManifestPath = Join-Path $resolvedArtifactDirectory "release-artifacts.json"
+if (-not (Test-Path -LiteralPath $releaseManifestPath)) {
+    throw "Release artifact manifest was not found: $releaseManifestPath"
+}
+
+$releaseManifest = Get-Content -LiteralPath $releaseManifestPath -Raw | ConvertFrom-Json -Depth 100
+$metadataPath = [string]$releaseManifest.pluginReleaseMetadata
+if ([string]::IsNullOrWhiteSpace($metadataPath)) {
+    throw "Release artifact manifest is missing pluginReleaseMetadata."
+}
+
+$metadata = Read-MusoqPluginReleaseMetadata -Path $metadataPath
+if ($metadata.plugin -ne $release.PackageId -or $metadata.version -ne $release.Version -or $metadata.releaseTag -ne $release.Tag) {
+    throw "Plugin release metadata identity does not match release '$Tag'."
+}
+if ($null -eq $releaseManifest.pluginArtifactIntegrity -or $null -eq $releaseManifest.runtimeCompatibility) {
+    throw "Release artifact manifest is missing compatibility or integrity metadata."
+}
+if (-not (Test-MusoqCompatibilityEqual -Left $metadata.runtimeCompatibility -Right $releaseManifest.runtimeCompatibility)) {
+    throw "Release artifact manifest compatibility differs from public release metadata."
+}
+
+foreach ($artifactEntry in (Get-ArtifactNames -ProjectName $release.PackageId).GetEnumerator()) {
+    $artifactName = $artifactEntry.Value
     $pluginPackagePath = Join-Path $resolvedArtifactDirectory "plugins/$artifactName"
     if (-not (Test-Path -LiteralPath $pluginPackagePath)) {
         throw "Plugin package was not found: $pluginPackagePath"
     }
 
     Test-PluginPackage -PackagePath $pluginPackagePath
+    $artifactRecord = $metadata.artifacts.($artifactEntry.Key)
+    $localManifestRecord = $releaseManifest.pluginArtifactIntegrity.($artifactEntry.Key)
+    foreach ($propertyName in @("fileName", "sizeBytes", "md5", "sha256")) {
+        if ($artifactRecord.$propertyName -cne $localManifestRecord.$propertyName) {
+            throw "Release artifact manifest $($artifactEntry.Key) $propertyName differs from public release metadata."
+        }
+    }
+    Assert-MusoqArtifactMatchesRecord `
+        -Path $pluginPackagePath `
+        -Expected $artifactRecord `
+        -Context "$($release.PackageId) $($release.Version) $($artifactEntry.Key)" | Out-Null
+
+    $embeddedCompatibility = Get-MusoqPluginPackageCompatibility -PackagePath $pluginPackagePath
+    if (-not (Test-MusoqCompatibilityEqual -Left $metadata.runtimeCompatibility -Right $embeddedCompatibility)) {
+        throw "Plugin package compatibility differs from release metadata: $pluginPackagePath"
+    }
 }
 
 Write-Host "Release smoke test passed for $Tag." -ForegroundColor Green
