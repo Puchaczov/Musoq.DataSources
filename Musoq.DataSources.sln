@@ -81,6 +81,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Jira", "M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Jira.Tests", "Musoq.DataSources.Jira.Tests\Musoq.DataSources.Jira.Tests.csproj", "{94224FB3-4A39-4C07-AEAF-5D9B1A2B7185}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "Musoq.DataSources.Roslyn.CommandLineArguments.Tests\Musoq.DataSources.Roslyn.CommandLineArguments.Tests.csproj", "{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -547,6 +549,18 @@ Global
 		{94224FB3-4A39-4C07-AEAF-5D9B1A2B7185}.Release|x64.Build.0 = Release|Any CPU
 		{94224FB3-4A39-4C07-AEAF-5D9B1A2B7185}.Release|x86.ActiveCfg = Release|Any CPU
 		{94224FB3-4A39-4C07-AEAF-5D9B1A2B7185}.Release|x86.Build.0 = Release|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Debug|x64.Build.0 = Debug|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Debug|x86.Build.0 = Debug|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Release|x64.ActiveCfg = Release|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Release|x64.Build.0 = Release|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Release|x86.ActiveCfg = Release|Any CPU
+		{ECCC120C-1AD2-40E7-AA24-D9C5B2AE8F8B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
