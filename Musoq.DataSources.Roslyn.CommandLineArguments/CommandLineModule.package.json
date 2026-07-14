@@ -1,0 +1,16 @@
+{
+  "formatVersion": 1,
+  "moduleId": "musoq.datasource.roslyn",
+  "moduleVersion": "1.0.0",
+  "entryAssembly": "Musoq.DataSources.Roslyn.CommandLineArguments.dll",
+  "framework": {
+    "packageId": "Musoq.CommandLine",
+    "versionRange": "[0.0.1,0.1.0)"
+  },
+  "requiredInvocationItems": [
+    {
+      "name": "musoq.datasource.http-request.v1",
+      "contract": "http-request-v1"
+    }
+  ]
+}

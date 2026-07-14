@@ -8,6 +8,7 @@ param(
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
 . (Join-Path $PSScriptRoot "../common/Plugin-Compatibility.ps1")
 . (Join-Path $PSScriptRoot "../common/Plugin-ArtifactIntegrity.ps1")
+. (Join-Path $PSScriptRoot "../common/CommandLineModule-Packaging.ps1")
 
 $release = Resolve-DatasourceReleaseTag -Tag $Tag
 $repositoryRoot = Get-ReleaseRepositoryRoot
@@ -136,6 +137,31 @@ function Test-PluginPackage {
         $targetsAssemblies = @(Get-ChildItem -LiteralPath $pluginDirectory -Recurse -File -Filter "Musoq.Targets.*.dll")
         if ($targetsAssemblies.Count -gt 0) {
             throw "Plugin.zip contains host-provided Musoq.Targets assembly '$($targetsAssemblies[0].Name)': $PackagePath"
+        }
+        $embeddedCommandLineFiles = @(Get-ChildItem -LiteralPath $pluginDirectory -Recurse -File | Where-Object {
+            $_.Name -eq 'Musoq.CommandLine.dll' -or $_.Name -like '*.CommandLineArguments.*'
+        })
+        if ($embeddedCommandLineFiles.Count -gt 0) {
+            throw "Plugin.zip contains command-line module or host ABI files: $PackagePath"
+        }
+
+        if ($release.PackageId -eq 'Musoq.DataSources.Roslyn') {
+            $modulesRoot = Join-Path $outerDirectory $script:MusoqCommandLineModulesDirectoryName
+            if (-not (Test-Path -LiteralPath $modulesRoot -PathType Container)) {
+                throw "Roslyn package is missing $($script:MusoqCommandLineModulesDirectoryName): $PackagePath"
+            }
+            $moduleDirectories = @(Get-ChildItem -LiteralPath $modulesRoot -Directory)
+            if ($moduleDirectories.Count -ne 1 -or $moduleDirectories[0].Name -ne 'musoq.datasource.roslyn') {
+                throw "Roslyn package must contain exactly the musoq.datasource.roslyn command module: $PackagePath"
+            }
+            $moduleManifest = Read-MusoqCommandLineModuleManifest -ModuleDirectory $moduleDirectories[0].FullName
+            if ($moduleManifest.entryAssembly -ne 'Musoq.DataSources.Roslyn.CommandLineArguments.dll' -or
+                $moduleManifest.framework.versionRange -ne '[0.0.1,0.1.0)' -or
+                @($moduleManifest.requiredInvocationItems).Count -ne 1 -or
+                $moduleManifest.requiredInvocationItems[0].name -ne 'musoq.datasource.http-request.v1' -or
+                $moduleManifest.requiredInvocationItems[0].contract -ne 'http-request-v1') {
+                throw "Roslyn command-line module manifest has an unexpected contract: $PackagePath"
+            }
         }
 
         $compatibilityPath = Join-Path $pluginDirectory $script:MusoqPluginCompatibilityFileName

@@ -54,7 +54,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj"/>
-        <ProjectReference Include="..\Musoq.DataSources.Roslyn.CommandLineArguments\Musoq.DataSources.Roslyn.CommandLineArguments.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

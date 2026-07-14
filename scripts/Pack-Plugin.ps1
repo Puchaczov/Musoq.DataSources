@@ -6,6 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/common/Plugin-Compatibility.ps1"
+. "$PSScriptRoot/common/CommandLineModule-Packaging.ps1"
 
 $Targets = @(
     @{ Rid = "win-x64";        Platform = "windows"; Architecture = "x64" },
@@ -162,7 +163,7 @@ foreach ($Project in $Projects) {
 Write-Host "Starting Build..." -ForegroundColor Cyan
 
 $BuildScriptBlock = {
-    param($ProjectFullName, $ProjectBaseName, $ProjectVersion, $OutputDirectory, $Targets, $HostOwnedAssemblyPatterns, $CompatibilityJson, $CompatibilityFileName, $ProjectLicensesDir)
+    param($ProjectFullName, $ProjectBaseName, $ProjectVersion, $OutputDirectory, $Targets, $HostOwnedAssemblyPatterns, $CompatibilityJson, $CompatibilityFileName, $ProjectLicensesDir, $CommandLineModuleProjectPath)
     
     $ErrorActionPreference = "Stop"
     $MinPluginZipSizeBytes = 1000
@@ -207,6 +208,13 @@ $BuildScriptBlock = {
             if ($remainingHostOwnedAssemblies.Count -gt 0) {
                 $names = @($remainingHostOwnedAssemblies | ForEach-Object { $_.Name } | Sort-Object -Unique) -join ", "
                 throw "Could not remove host-owned Musoq assemblies from publish output: $names"
+            }
+
+            $embeddedCommandModules = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File | Where-Object {
+                $_.Name -like '*.CommandLineArguments.*' -or $_.Name -eq 'Musoq.CommandLine.dll'
+            })
+            if ($embeddedCommandModules.Count -gt 0) {
+                throw "Plugin publish contains command-line module or host ABI files: $(@($embeddedCommandModules.Name | Sort-Object -Unique) -join ', ')"
             }
 
             $compatibilityPath = Join-Path $PublishDir $CompatibilityFileName
@@ -260,6 +268,14 @@ $BuildScriptBlock = {
             Set-Content -Path "$PackageDir\Platform.txt" -Value $Target.Platform
             Set-Content -Path "$PackageDir\Architecture.txt" -Value $Target.Architecture
 
+            if ($CommandLineModuleProjectPath) {
+                $commandLineModulesRoot = Join-Path $PackageDir $script:MusoqCommandLineModulesDirectoryName
+                Publish-MusoqCommandLineModule `
+                    -ProjectPath $CommandLineModuleProjectPath `
+                    -DestinationRoot $commandLineModulesRoot `
+                    -HostOwnedAssemblyPatterns $HostOwnedAssemblyPatterns | Out-Null
+            }
+
             $ZipPath = Join-Path $OutputDirectory $ZipName
             $PackageContents = Get-ChildItem -Path $PackageDir -Force | Select-Object -ExpandProperty FullName
             Compress-Archive -Path $PackageContents -DestinationPath $ZipPath -Force
@@ -281,6 +297,12 @@ foreach ($Project in $Projects) {
 
     $Compatibility = Get-MusoqPluginCompatibility -ProjectPath $Project.FullName
     $CompatibilityJson = ConvertTo-MusoqPluginCompatibilityJson -Compatibility $Compatibility
+    $commandLineModuleProjectPath = Join-Path `
+        $SolutionRoot `
+        "$($Project.BaseName).CommandLineArguments/$($Project.BaseName).CommandLineArguments.csproj"
+    if (-not (Test-Path -LiteralPath $commandLineModuleProjectPath -PathType Leaf)) {
+        $commandLineModuleProjectPath = $null
+    }
     
     $JobParams = @(
         $Project.FullName,
@@ -291,7 +313,8 @@ foreach ($Project in $Projects) {
         $script:MusoqHostOwnedAssemblyPatterns,
         $CompatibilityJson,
         $script:MusoqPluginCompatibilityFileName,
-        $ProjectLicenseMap[$Project.FullName]
+        $ProjectLicenseMap[$Project.FullName],
+        $commandLineModuleProjectPath
     )
     
     $Results = & $BuildScriptBlock @JobParams

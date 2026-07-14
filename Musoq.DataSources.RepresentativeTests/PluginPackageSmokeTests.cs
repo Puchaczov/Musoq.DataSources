@@ -16,7 +16,8 @@ public class PluginPackageSmokeTests
         "Musoq.Plugins.dll",
         "Musoq.Parser.dll",
         "Musoq.Converter.dll",
-        "Musoq.Evaluator.dll"
+        "Musoq.Evaluator.dll",
+        "Musoq.CommandLine.dll"
     ];
 
     [TestMethod]
@@ -92,6 +93,13 @@ public class PluginPackageSmokeTests
             Assert.IsFalse(
                 Directory.GetFiles(pluginDirectory, "Musoq.Targets.*.dll", SearchOption.AllDirectories).Any(),
                 $"Plugin.zip should not include host-provided Musoq.Targets assemblies: {packagePath}");
+            Assert.IsFalse(
+                Directory.GetFiles(pluginDirectory, "*.CommandLineArguments.*", SearchOption.AllDirectories).Any(),
+                $"Plugin.zip should not include datasource command modules: {packagePath}");
+
+            var libraryName = File.ReadAllText(libraryNamePath).Trim();
+            if (libraryName == "Musoq.DataSources.Roslyn")
+                ValidateRoslynCommandLineModule(outerDirectory, packagePath);
 
             ValidateCompatibilityManifest(pluginDirectory, packagePath);
         }
@@ -99,6 +107,41 @@ public class PluginPackageSmokeTests
         {
             if (Directory.Exists(tempDirectory))
                 Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    private static void ValidateRoslynCommandLineModule(string outerDirectory, string packagePath)
+    {
+        var moduleDirectory = Path.Combine(outerDirectory, "CommandLineModules", "musoq.datasource.roslyn");
+        var manifestPath = Path.Combine(moduleDirectory, "CommandLineModule.json");
+        Assert.IsTrue(File.Exists(manifestPath), $"Roslyn package is missing its command module manifest: {packagePath}");
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        var root = manifest.RootElement;
+        Assert.AreEqual(1, root.GetProperty("formatVersion").GetInt32());
+        Assert.AreEqual("musoq.datasource.roslyn", root.GetProperty("moduleId").GetString());
+        Assert.AreEqual(
+            "Musoq.DataSources.Roslyn.CommandLineArguments.dll",
+            root.GetProperty("entryAssembly").GetString());
+        Assert.AreEqual("Musoq.CommandLine", root.GetProperty("framework").GetProperty("packageId").GetString());
+        Assert.AreEqual("[0.0.1,0.1.0)", root.GetProperty("framework").GetProperty("versionRange").GetString());
+
+        var requirements = root.GetProperty("requiredInvocationItems").EnumerateArray().ToArray();
+        Assert.HasCount(1, requirements);
+        Assert.AreEqual("musoq.datasource.http-request.v1", requirements[0].GetProperty("name").GetString());
+        Assert.AreEqual("http-request-v1", requirements[0].GetProperty("contract").GetString());
+
+        var declaredFiles = root.GetProperty("files").EnumerateArray().ToArray();
+        Assert.IsTrue(declaredFiles.Length > 0, "Command module manifest must declare its file closure.");
+        foreach (var file in declaredFiles)
+        {
+            var relativePath = file.GetProperty("path").GetString()!;
+            var filePath = Path.Combine(moduleDirectory, relativePath);
+            Assert.IsTrue(File.Exists(filePath), $"Declared command module file is missing: {relativePath}");
+            Assert.AreEqual(new FileInfo(filePath).Length, file.GetProperty("sizeBytes").GetInt64());
+            Assert.AreEqual(
+                Convert.ToHexStringLower(global::System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(filePath))),
+                file.GetProperty("sha256").GetString());
         }
     }
 

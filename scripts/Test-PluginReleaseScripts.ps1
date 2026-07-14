@@ -5,6 +5,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 . "$PSScriptRoot/common/Plugin-Compatibility.ps1"
 . "$PSScriptRoot/common/Plugin-ArtifactIntegrity.ps1"
+. "$PSScriptRoot/common/CommandLineModule-Packaging.ps1"
 
 function Assert-True {
     param(
@@ -403,6 +404,50 @@ function Test-RuntimeV2Alpha1ReleaseTrain {
     }
 }
 
+function Test-CommandLineModuleManifestContract {
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "musoq-command-module-test-$([guid]::NewGuid().ToString('N'))"
+    try {
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $tempDir "Example.CommandLineArguments.dll") -Value "assembly" -NoNewline
+        Set-Content -LiteralPath (Join-Path $tempDir "Example.CommandLineArguments.pdb") -Value "symbols" -NoNewline
+        $definition = [PSCustomObject]@{
+            formatVersion = 1
+            moduleId = "example.command-line"
+            moduleVersion = "1.2.3"
+            entryAssembly = "Example.CommandLineArguments.dll"
+            framework = [PSCustomObject]@{
+                packageId = "Musoq.CommandLine"
+                versionRange = "[0.0.1,0.1.0)"
+            }
+            requiredInvocationItems = @([PSCustomObject]@{
+                name = "example.transport.v1"
+                contract = "transport-v1"
+            })
+        }
+
+        $written = Write-MusoqCommandLineModuleManifest -Definition $definition -ModuleDirectory $tempDir
+        Assert-Equal 2 @($written.files).Count "Manifest should hash the complete module closure."
+        $read = Read-MusoqCommandLineModuleManifest -ModuleDirectory $tempDir
+        Assert-Equal "example.command-line" $read.moduleId "Manifest should preserve module identity."
+        Assert-Equal "[0.0.1,0.1.0)" $read.framework.versionRange "Manifest should preserve the framework range."
+
+        Add-Content -LiteralPath (Join-Path $tempDir "Example.CommandLineArguments.dll") -Value "corruption" -NoNewline
+        Assert-Throws {
+            Read-MusoqCommandLineModuleManifest -ModuleDirectory $tempDir | Out-Null
+        } "Manifest validation should reject changed module bytes."
+
+        $roslynProject = Join-Path $PSScriptRoot "../Musoq.DataSources.Roslyn.CommandLineArguments/Musoq.DataSources.Roslyn.CommandLineArguments.csproj"
+        $roslyn = Read-MusoqCommandLineModuleDefinition -ProjectPath $roslynProject
+        Assert-Equal "musoq.datasource.roslyn" $roslyn.moduleId "Roslyn should declare its stable module ID."
+        Assert-Equal "musoq.datasource.http-request.v1" $roslyn.requiredInvocationItems[0].name "Roslyn should declare its callback requirement."
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempDir) {
+            Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 Test-SemVerValidation
 Test-SemVerOrdering
 Test-ReleaseTagParsing
@@ -417,5 +462,6 @@ Test-PluginCompatibilityManifestGeneration
 Test-PluginArtifactIntegrityMetadata
 Test-Registry12RuntimeMetadataContract
 Test-RuntimeV2Alpha1ReleaseTrain
+Test-CommandLineModuleManifestContract
 
 Write-Host "Plugin release script tests passed." -ForegroundColor Green

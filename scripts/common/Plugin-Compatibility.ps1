@@ -9,6 +9,7 @@ $script:MusoqHostOwnedAssemblyPatterns = @(
     "Musoq.Parser.dll",
     "Musoq.Converter.dll",
     "Musoq.Evaluator.dll",
+    "Musoq.CommandLine.dll",
     "Musoq.Targets.*.dll"
 )
 
