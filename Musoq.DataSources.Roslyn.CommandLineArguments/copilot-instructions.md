@@ -17,7 +17,7 @@
 ## Integrations
 - Exact `Musoq.CommandLine` package version 0.0.1, with runtime assets excluded because the host owns the ABI.
 - BCL HTTP and JSON types only.
-- The module must not reference Musoq.Cloud, AgentLocal, Autofac, or Spectre.
+- Keep the module limited to BCL types and the published `Musoq.CommandLine` contract; host implementation services and presentation libraries stay outside this project.
 
 ## Validate with
 - Run `Musoq.DataSources.Roslyn.CommandLineArguments.Tests`.

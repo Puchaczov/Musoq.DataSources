@@ -22,7 +22,7 @@ public class NugetToSqlPlaygroundTests
     public void Playground_WithTransitivePackages()
     {
         var query =
-            "select p.Name, np.Id, np.Version, np.License, np.LicenseUrl, np.IsTransitive, np.TransitivityLevel from #csharp.solution('D:\\\\repos\\\\Musoq.Cloud\\\\src\\\\dotnet\\\\Musoq.Cloud.sln') sln cross apply sln.Projects p cross apply p.GetNugetPackages(true) np";
+            $"select p.Name, np.Id, np.Version, np.License, np.LicenseUrl, np.IsTransitive, np.TransitivityLevel from #csharp.solution('{RoslynTestPaths.SampleSolution.Escape()}') sln cross apply sln.Projects p cross apply p.GetNugetPackages(true) np";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
         var table = vm.Run();
@@ -33,7 +33,7 @@ public class NugetToSqlPlaygroundTests
     public void Playground_WithoutTransitivePackages()
     {
         var query =
-            "select p.Name, np.Id, np.Version, np.License, np.LicenseUrl, np.IsTransitive, np.TransitivityLevel from #csharp.solution('D:\\\\repos\\\\Musoq.DataSources\\\\Musoq.DataSources.sln') sln cross apply sln.Projects p cross apply p.GetNugetPackages(false) np";
+            $"select p.Name, np.Id, np.Version, np.License, np.LicenseUrl, np.IsTransitive, np.TransitivityLevel from #csharp.solution('{RoslynTestPaths.SampleSolution.Escape()}') sln cross apply sln.Projects p cross apply p.GetNugetPackages(false) np";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
         var table = vm.Run();

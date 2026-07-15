@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
@@ -22,7 +21,7 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
 
         // Arrange
         var retriever = new NuGetPackageMetadataRetriever(
-            new NuGetCachePathResolver(@"D:\repos\Musoq.Cloud\src\dotnet\Musoq.Cloud.sln", OSPlatform.Windows,
+            new NuGetCachePathResolver(RoslynTestPaths.SampleSolution, RoslynTestPaths.CurrentPlatform,
                 NullLogger.Instance),
             null,
             new NuGetRetrievalService(
@@ -65,7 +64,7 @@ public class NugetPackageMetadataRetrieverPlaygroundTests
 
         // Arrange
         var retriever = new NuGetPackageMetadataRetriever(
-            new NuGetCachePathResolver(@"D:\repos\Musoq.Cloud\src\dotnet\Musoq.Cloud.sln", OSPlatform.Windows,
+            new NuGetCachePathResolver(RoslynTestPaths.SampleSolution, RoslynTestPaths.CurrentPlatform,
                 NullLogger.Instance),
             null,
             new NuGetRetrievalService(

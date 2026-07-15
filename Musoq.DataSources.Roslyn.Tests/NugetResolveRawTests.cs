@@ -47,7 +47,7 @@ public class NugetResolveRawTests
 
         var httpClient = new DefaultHttpClient(() => new HttpClient(httpClientHandler));
         var fileSystem = new DefaultFileSystem();
-        var solutionFilePath = "D:\\repos\\Musoq.Cloud\\src\\dotnet\\Musoq.Cloud.sln";
+        var solutionFilePath = RoslynTestPaths.SampleSolution;
         var withTransitivePackages = true;
         var solutionEntity = await CreateSolutionAsync(solutionFilePath, httpClient, fileSystem, null,
             new NuGetPropertiesResolver("https://localhost:7137", httpClient), NullLogger.Instance,
