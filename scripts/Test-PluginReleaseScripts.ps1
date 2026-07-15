@@ -402,6 +402,21 @@ function Test-RuntimeV2Alpha1ReleaseTrain {
         $projectVersion = [string](@($project.Project.PropertyGroup | Where-Object { $_.Version })[0].Version)
         Assert-Equal $version $projectVersion "$($package.packageId) project and release registry versions should match."
     }
+
+    $roslyn = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Roslyn' })
+    Assert-Equal 1 $roslyn.Count "Runtime-v2 release train should contain exactly one Roslyn package."
+    Assert-Equal "3.0.3-alpha.1" ([string]$roslyn[0].version) "Roslyn should use the command-module release version."
+}
+
+function Test-RoslynReleaseWorkflowGates {
+    $workflowPath = Join-Path $PSScriptRoot "../.github/workflows/release-datasource.yml"
+    $workflow = Get-Content -LiteralPath $workflowPath -Raw
+
+    Assert-True ($workflow -match 'release_command_line_test_project_path') "Datasource releases should discover companion command-line module tests."
+    Assert-True ($workflow -match 'dotnet test \$env:RELEASE_COMMAND_LINE_TEST_PROJECT_PATH') "Datasource releases should execute companion command-line module tests."
+    Assert-True ($workflow -match '\./scripts/Test-PluginReleaseScripts\.ps1') "Datasource releases should execute release-script tests."
+    Assert-True ($workflow -match 'Pack four-RID release artifacts') "Datasource releases should identify four-RID packaging as a required gate."
+    Assert-True ($workflow -match 'Smoke test four-RID release artifacts') "Datasource releases should identify four-RID smoke verification as a required gate."
 }
 
 function Test-CommandLineModuleManifestContract {
@@ -462,6 +477,7 @@ Test-PluginCompatibilityManifestGeneration
 Test-PluginArtifactIntegrityMetadata
 Test-Registry12RuntimeMetadataContract
 Test-RuntimeV2Alpha1ReleaseTrain
+Test-RoslynReleaseWorkflowGates
 Test-CommandLineModuleManifestContract
 
 Write-Host "Plugin release script tests passed." -ForegroundColor Green

@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>3.0.2-alpha.1</Version>
+        <Version>3.0.3-alpha.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you inspect and analyze C# source code with SQL-style queries via Roslyn, so you can search symbols, structure, and metrics as data.</Description>

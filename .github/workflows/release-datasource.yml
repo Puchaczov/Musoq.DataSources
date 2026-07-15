@@ -26,6 +26,7 @@ jobs:
       release_version: ${{ steps.release.outputs.release_version }}
       release_project_path: ${{ steps.release.outputs.release_project_path }}
       release_test_project_path: ${{ steps.release.outputs.release_test_project_path }}
+      release_command_line_test_project_path: ${{ steps.release.outputs.release_command_line_test_project_path }}
       is_prerelease: ${{ steps.release.outputs.is_prerelease }}
       is_dry_run: ${{ steps.release.outputs.is_dry_run }}
 
@@ -83,6 +84,15 @@ jobs:
             "release_test_project_path=" >> $env:GITHUB_OUTPUT
           }
 
+          $commandLineTestProjectPath = "$($summary.packageId).CommandLineArguments.Tests/$($summary.packageId).CommandLineArguments.Tests.csproj"
+          if (Test-Path $commandLineTestProjectPath) {
+            "release_command_line_test_project_path=$commandLineTestProjectPath" >> $env:GITHUB_OUTPUT
+          }
+          else {
+            Write-Host "No command-line module test project found at '$commandLineTestProjectPath'."
+            "release_command_line_test_project_path=" >> $env:GITHUB_OUTPUT
+          }
+
           "is_prerelease=$($summary.isPrerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           "is_dry_run=$isDryRun" >> $env:GITHUB_OUTPUT
 
@@ -91,10 +101,14 @@ jobs:
         env:
           RELEASE_PROJECT_PATH: ${{ steps.release.outputs.release_project_path }}
           RELEASE_TEST_PROJECT_PATH: ${{ steps.release.outputs.release_test_project_path }}
+          RELEASE_COMMAND_LINE_TEST_PROJECT_PATH: ${{ steps.release.outputs.release_command_line_test_project_path }}
         run: |
           dotnet restore $env:RELEASE_PROJECT_PATH --nologo
           if ($env:RELEASE_TEST_PROJECT_PATH) {
             dotnet restore $env:RELEASE_TEST_PROJECT_PATH --nologo
+          }
+          if ($env:RELEASE_COMMAND_LINE_TEST_PROJECT_PATH) {
+            dotnet restore $env:RELEASE_COMMAND_LINE_TEST_PROJECT_PATH --nologo
           }
 
       - name: Build
@@ -108,22 +122,34 @@ jobs:
         shell: pwsh
         env:
           RELEASE_TEST_PROJECT_PATH: ${{ steps.release.outputs.release_test_project_path }}
+          RELEASE_COMMAND_LINE_TEST_PROJECT_PATH: ${{ steps.release.outputs.release_command_line_test_project_path }}
         run: |
-          if (-not $env:RELEASE_TEST_PROJECT_PATH) {
-            Write-Host "No matching test project found for this datasource; skipping targeted tests."
-            return
+          if ($env:RELEASE_TEST_PROJECT_PATH) {
+            dotnet test $env:RELEASE_TEST_PROJECT_PATH --configuration Release --no-restore --nologo --logger "console;verbosity=minimal"
+          }
+          else {
+            Write-Host "No matching test project found for this datasource."
           }
 
-          dotnet test $env:RELEASE_TEST_PROJECT_PATH --configuration Release --no-restore --nologo --logger "console;verbosity=minimal"
+          if ($env:RELEASE_COMMAND_LINE_TEST_PROJECT_PATH) {
+            dotnet test $env:RELEASE_COMMAND_LINE_TEST_PROJECT_PATH --configuration Release --no-restore --nologo --logger "console;verbosity=minimal"
+          }
+          else {
+            Write-Host "No command-line module test project found for this datasource."
+          }
 
-      - name: Pack release artifacts
+      - name: Test release scripts
+        shell: pwsh
+        run: ./scripts/Test-PluginReleaseScripts.ps1
+
+      - name: Pack four-RID release artifacts
         shell: pwsh
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
         run: |
           ./scripts/release/Pack-Release.ps1 -Tag $env:RELEASE_TAG -OutputPath artifacts/release
 
-      - name: Smoke test release artifacts
+      - name: Smoke test four-RID release artifacts
         shell: pwsh
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
