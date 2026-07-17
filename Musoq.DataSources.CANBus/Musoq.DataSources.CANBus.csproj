@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>4.0.2-alpha.1</Version>
+        <Version>4.0.3-alpha.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query CAN bus data and DBC files with SQL-style queries, turning frames into a tabular view.</Description>
