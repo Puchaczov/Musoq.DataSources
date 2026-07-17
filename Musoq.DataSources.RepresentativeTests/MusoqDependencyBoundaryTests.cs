@@ -25,7 +25,7 @@ public sealed class MusoqDependencyBoundaryTests
         foreach (var propertyName in VersionProperties.Values.Select(GetPropertyName).Distinct(StringComparer.Ordinal))
         {
             var value = properties.Descendants(propertyName).SingleOrDefault()?.Value;
-            Assert.AreEqual("17.0.3-alpha.2", value, $"Unexpected value for {propertyName}.");
+            Assert.AreEqual("17.0.2-alpha.3", value, $"Unexpected value for {propertyName}.");
         }
 
         foreach (var projectPath in EnumerateProjectPaths(root))

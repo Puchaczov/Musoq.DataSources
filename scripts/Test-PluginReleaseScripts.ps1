@@ -220,31 +220,31 @@ function Test-BatchDatasourceReleaseResolution {
 function Test-PluginCompatibilityManifestGeneration {
     $compatibility = New-MusoqPluginCompatibility `
         -TargetFramework "net10.0" `
-        -SchemaVersion "17.0.3-alpha.2" `
-        -PluginsVersion "17.0.3-alpha.2"
+        -SchemaVersion "17.0.2-alpha.3" `
+        -PluginsVersion "17.0.2-alpha.3"
 
     Assert-Equal 1 $compatibility.formatVersion "Compatibility format should be versioned."
     Assert-Equal "musoq-runtime-v2" $compatibility.runtimeFamily "Runtime family should identify runtime-v2."
     Assert-Equal "net10.0" $compatibility.targetFramework "Target framework should come from evaluated project data."
-    Assert-Equal "17.0.3-alpha.2" $compatibility.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Schema minimum should be the evaluated package version."
+    Assert-Equal "17.0.2-alpha.3" $compatibility.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Schema minimum should be the evaluated package version."
     Assert-Equal "18.0.0" $compatibility.hostPackages.'Musoq.Schema'.maximumVersionExclusive "Schema maximum should be the next major."
-    Assert-Equal "17.0.3-alpha.2" $compatibility.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Plugins minimum should be the evaluated package version."
+    Assert-Equal "17.0.2-alpha.3" $compatibility.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Plugins minimum should be the evaluated package version."
     Assert-Equal "18.0.0" $compatibility.hostPackages.'Musoq.Plugins'.maximumVersionExclusive "Plugins maximum should be the next major."
 
     Assert-Throws {
-        New-MusoqPluginCompatibility -TargetFramework "net8.0" -SchemaVersion "17.0.3-alpha.2" -PluginsVersion "17.0.3-alpha.2" | Out-Null
+        New-MusoqPluginCompatibility -TargetFramework "net8.0" -SchemaVersion "17.0.2-alpha.3" -PluginsVersion "17.0.2-alpha.3" | Out-Null
     } "Unsupported target frameworks must fail packaging."
     Assert-Throws {
-        New-MusoqPluginCompatibility -TargetFramework "net10.0" -SchemaVersion "invalid" -PluginsVersion "17.0.3-alpha.2" | Out-Null
+        New-MusoqPluginCompatibility -TargetFramework "net10.0" -SchemaVersion "invalid" -PluginsVersion "17.0.2-alpha.3" | Out-Null
     } "Malformed ABI versions must fail packaging."
     Assert-Throws {
-        New-MusoqPluginCompatibility -TargetFramework "net10.0" -SchemaVersion "17.0.3-alpha.2" -PluginsVersion "17.0.1" | Out-Null
+        New-MusoqPluginCompatibility -TargetFramework "net10.0" -SchemaVersion "17.0.2-alpha.3" -PluginsVersion "17.0.1" | Out-Null
     } "Inconsistent ABI package versions must fail packaging."
 
     $systemProject = Join-Path $PSScriptRoot "../Musoq.DataSources.System/Musoq.DataSources.System.csproj"
     $evaluated = Get-MusoqPluginCompatibility -ProjectPath $systemProject
-    Assert-Equal "17.0.3-alpha.2" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
-    Assert-Equal "17.0.3-alpha.2" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
+    Assert-Equal "17.0.2-alpha.3" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
+    Assert-Equal "17.0.2-alpha.3" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
 }
 
 function Test-PluginArtifactIntegrityMetadata {
@@ -253,8 +253,8 @@ function Test-PluginArtifactIntegrityMetadata {
         New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
         $compatibility = New-MusoqPluginCompatibility `
             -TargetFramework "net10.0" `
-            -SchemaVersion "17.0.3-alpha.2" `
-            -PluginsVersion "17.0.3-alpha.2"
+            -SchemaVersion "17.0.2-alpha.3" `
+            -PluginsVersion "17.0.2-alpha.3"
         $compatibilityJson = ConvertTo-MusoqPluginCompatibilityJson -Compatibility $compatibility
         $artifactPaths = [ordered]@{}
 
@@ -323,8 +323,8 @@ function Test-PluginArtifactIntegrityMetadata {
 function Test-Registry12RuntimeMetadataContract {
     $compatibility = New-MusoqPluginCompatibility `
         -TargetFramework "net10.0" `
-        -SchemaVersion "17.0.3-alpha.2" `
-        -PluginsVersion "17.0.3-alpha.2"
+        -SchemaVersion "17.0.2-alpha.3" `
+        -PluginsVersion "17.0.2-alpha.3"
     $artifactIntegrity = [ordered]@{}
     foreach ($platform in $script:MusoqRequiredArtifactPlatforms) {
         $artifactIntegrity[$platform] = [ordered]@{
