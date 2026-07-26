@@ -21,7 +21,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingIsContentAbout_ShouldBeTrue()
     {
-        const string script = "select IsContentAbout('abc', 'abc') from #ollama.model()";
+        const string script = "select IsContentAbout('abc', 'abc') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "yes");
         var table = vm.Run();
@@ -33,7 +33,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingIsContentAbout_ShouldBeFalse()
     {
-        const string script = "select IsContentAbout('abc', 'abc') from #ollama.model()";
+        const string script = "select IsContentAbout('abc', 'abc') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "no");
         var table = vm.Run();
@@ -45,7 +45,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingSentiment_ShouldBePositive()
     {
-        const string script = "select Sentiment('abc') from #ollama.model()";
+        const string script = "select Sentiment('abc') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "POSITIVE");
         var table = vm.Run();
@@ -57,7 +57,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingSentiment_ShouldBeNegative()
     {
-        const string script = "select Sentiment('abc') from #ollama.model()";
+        const string script = "select Sentiment('abc') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "NEGATIVE");
         var table = vm.Run();
@@ -69,7 +69,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingSentiment_ShouldBeNeutral()
     {
-        const string script = "select Sentiment('abc') from #ollama.model()";
+        const string script = "select Sentiment('abc') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "NEUTRAL");
         var table = vm.Run();
@@ -81,7 +81,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingSentiment_ShouldBeUnknown()
     {
-        const string script = "select Sentiment('abc') from #ollama.model()";
+        const string script = "select Sentiment('abc') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "UNKNOWN");
         var table = vm.Run();
@@ -93,7 +93,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingSummarizeContent_ShouldBeSummarized()
     {
-        const string script = "select SummarizeContent('abc') from #ollama.model()";
+        const string script = "select SummarizeContent('abc') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "summarized");
         var table = vm.Run();
@@ -105,7 +105,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingTranslateContent_ShouldBeTranslated()
     {
-        const string script = "select TranslateContent('abc', 'en', 'pl') from #ollama.model()";
+        const string script = "select TranslateContent('abc', 'en', 'pl') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "translated");
         var table = vm.Run();
@@ -117,7 +117,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingEntities_ShouldExtractEntities()
     {
-        const string script = "select Entities('abc') from #ollama.model()";
+        const string script = "select Entities('abc') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "{ entities: ['a', 'b', 'c'] }");
         var table = vm.Run();
@@ -131,7 +131,7 @@ public class OllamaQueryTests
     public void WhenCallingLlmPerform_ShouldDoWhateverInstructedFor()
     {
         const string script =
-            "select LlmPerform('extract email from text', 'example email is me@you.com and here is something else') from #ollama.model()";
+            "select LlmPerform('extract email from text', 'example email is me@you.com and here is something else') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "me@you.com");
         var table = vm.Run();
@@ -143,7 +143,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingDescribeImage_ShouldReturnImageDescription()
     {
-        const string script = "select DescribeImage('base64OfImage') from #ollama.model()";
+        const string script = "select DescribeImage('base64OfImage') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "image description");
         var table = vm.Run();
@@ -156,7 +156,7 @@ public class OllamaQueryTests
     public void WhenCallingAskImage_ShouldReturnResponse()
     {
         const string script =
-            "select AskImage('what color is the water in the picture?', 'base64OfImage') from #ollama.model()";
+            "select AskImage('what color is the water in the picture?', 'base64OfImage') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "dirty blue");
         var table = vm.Run();
@@ -169,7 +169,7 @@ public class OllamaQueryTests
     public void WhenCallingIsQuestionApplicableToImage_ShouldReturnResponse()
     {
         const string script =
-            "select IsQuestionApplicableToImage('does it contain plane in the background?', 'base64OfImage') from #ollama.model()";
+            "select IsQuestionApplicableToImage('does it contain plane in the background?', 'base64OfImage') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "{ result: true }");
         var table = vm.Run();
@@ -181,7 +181,7 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCountingTokens_ShouldReturnTokenCount()
     {
-        const string script = "select CountTokens('Hello world!') from #ollama.model()";
+        const string script = "select CountTokens('Hello world!') from #ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, string.Empty);
         var table = vm.Run();

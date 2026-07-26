@@ -165,7 +165,7 @@ public class PluginPackageSmokeTests
     {
         var package = hostPackages.GetProperty(packageName);
         Assert.AreEqual(
-            "17.0.2-alpha.4",
+            "17.0.3-alpha.2",
             package.GetProperty("minimumVersionInclusive").GetString(),
             $"Unexpected {packageName} minimum: {packagePath}");
         Assert.AreEqual(

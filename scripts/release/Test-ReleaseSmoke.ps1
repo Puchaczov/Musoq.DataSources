@@ -168,8 +168,8 @@ function Test-PluginPackage {
         $compatibility = Read-MusoqPluginCompatibilityManifest -Path $compatibilityPath
         $schemaRange = $compatibility.hostPackages.'Musoq.Schema'
         $pluginsRange = $compatibility.hostPackages.'Musoq.Plugins'
-        if ($schemaRange.minimumVersionInclusive -ne "17.0.2-alpha.4" -or
-            $pluginsRange.minimumVersionInclusive -ne "17.0.2-alpha.4" -or
+        if ($schemaRange.minimumVersionInclusive -ne "17.0.3-alpha.2" -or
+            $pluginsRange.minimumVersionInclusive -ne "17.0.3-alpha.2" -or
             $schemaRange.maximumVersionExclusive -ne "18.0.0" -or
             $pluginsRange.maximumVersionExclusive -ne "18.0.0") {
             throw "Plugin compatibility manifest does not match the supported runtime-v2 ABI: $PackagePath"
