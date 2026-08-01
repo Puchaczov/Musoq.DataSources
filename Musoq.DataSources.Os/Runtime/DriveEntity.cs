@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Musoq.DataSources.Os.Runtime;
 
-internal sealed class DriveEntity
+public sealed class DriveEntity
 {
     public DriveEntity(DriveInfo drive)
     {

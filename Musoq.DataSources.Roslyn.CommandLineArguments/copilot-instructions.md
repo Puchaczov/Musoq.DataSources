@@ -11,7 +11,7 @@
 ## Patterns to preserve
 - Keep this project transport-focused, not analysis-focused.
 - `RoslynCommandLineModule.Configure(...)` defines the public command tree; command names and parameters are part of the contract.
-- The host supplies `musoq.datasource.http-request.v1` as a typed invocation item only after validation.
+- The host supplies `musoq.datasource.http-request.v2` as a typed response-aware invocation item only after validation.
 - Each command should translate settings into HTTP or DTO calls, not embed Roslyn analysis logic.
 
 ## Integrations

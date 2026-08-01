@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Musoq.DataSources.Os.Runtime;
 
-internal sealed class RuntimeEntity
+public sealed class RuntimeEntity
 {
     public string DotNetVersion => Environment.Version.ToString();
     public string FrameworkDescription => RuntimeInformation.FrameworkDescription;

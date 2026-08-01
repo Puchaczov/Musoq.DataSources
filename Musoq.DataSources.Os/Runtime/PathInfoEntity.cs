@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Musoq.DataSources.Os.Runtime;
 
-internal sealed class PathInfoEntity
+public sealed class PathInfoEntity
 {
     public PathInfoEntity(string inputPath)
     {

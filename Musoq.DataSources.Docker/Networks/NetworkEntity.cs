@@ -3,7 +3,7 @@ using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Docker.Networks;
 
-internal class NetworkEntity(NetworkResponse response)
+public class NetworkEntity(NetworkResponse response)
 {
     [EntityProperty]
     public string? Name => response.Name;

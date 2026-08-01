@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Musoq.DataSources.Os.Runtime;
 
-internal sealed class CurrentCultureEntity(CultureInfo culture, CultureInfo uiCulture)
+public sealed class CurrentCultureEntity(CultureInfo culture, CultureInfo uiCulture)
 {
     public string CurrentCulture => culture.Name;
     public string CurrentUICulture => uiCulture.Name;

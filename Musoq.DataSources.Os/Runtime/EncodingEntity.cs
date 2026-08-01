@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Musoq.DataSources.Os.Runtime;
 
-internal sealed class EncodingEntity(EncodingInfo encodingInfo)
+public sealed class EncodingEntity(EncodingInfo encodingInfo)
 {
     private readonly Encoding _encoding = encodingInfo.GetEncoding();
 

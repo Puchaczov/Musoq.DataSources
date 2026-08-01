@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -164,6 +165,24 @@ internal class SolutionOperationsCommand(ILogger logger)
             throw new InvalidOperationException("Resolve value strategy is not set.");
 
         return ResolveValueStrategy.ToString();
+    }
+
+    public string GetStatus()
+    {
+        var solutions = Solutions.Keys.OrderBy(path => path, StringComparer.Ordinal).ToArray();
+        var builder = new StringBuilder()
+            .Append("Loaded solutions: ").AppendLine(solutions.Length.ToString())
+            .Append("Cache directory: ").AppendLine(GetCacheDirectoryPath())
+            .Append("Resolve value strategy: ").AppendLine(GetResolveValueStrategy());
+
+        if (solutions.Length > 0)
+        {
+            builder.AppendLine("Solutions:");
+            foreach (var solution in solutions)
+                builder.Append("  ").AppendLine(solution);
+        }
+
+        return builder.ToString().TrimEnd('\r', '\n');
     }
 
     public static void Initialize()

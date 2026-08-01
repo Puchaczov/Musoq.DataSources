@@ -4,7 +4,7 @@ using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Os.Zip;
 
-internal class ZipEntryEntity(ZipArchiveEntry entry)
+public class ZipEntryEntity(ZipArchiveEntry entry)
 {
     [EntityProperty]
     public string Name { get; } = entry.Name;

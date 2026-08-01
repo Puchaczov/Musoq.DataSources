@@ -3,7 +3,7 @@ using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Docker.Images;
 
-internal class ImageEntity(ImagesListResponse response)
+public class ImageEntity(ImagesListResponse response)
 {
     [EntityProperty]
     public long Containers => response.Containers;

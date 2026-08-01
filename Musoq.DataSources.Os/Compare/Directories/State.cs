@@ -1,6 +1,6 @@
 ﻿namespace Musoq.DataSources.Os.Compare.Directories;
 
-internal enum State
+public enum State
 {
     TheSame,
     Modified,

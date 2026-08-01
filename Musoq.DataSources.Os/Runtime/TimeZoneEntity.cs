@@ -2,7 +2,7 @@ using System;
 
 namespace Musoq.DataSources.Os.Runtime;
 
-internal sealed class TimeZoneEntity(TimeZoneInfo timeZone)
+public sealed class TimeZoneEntity(TimeZoneInfo timeZone)
 {
     public string Id => timeZone.Id;
     public string DisplayName => timeZone.DisplayName;

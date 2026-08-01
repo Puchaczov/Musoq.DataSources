@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using Musoq.CommandLine;
 
@@ -7,6 +8,10 @@ namespace Musoq.DataSources.Roslyn.CommandLineArguments.Tests;
 [TestClass]
 public sealed class RoslynCommandLineModuleTests
 {
+    private static readonly Func<HttpRequestMessage, CancellationToken,
+        ValueTask<(int ExitCode, HttpResponseMessage Response)>> SuccessfulMutation = (_, _) =>
+        ValueTask.FromResult((0, Response("{}")));
+
     public static IEnumerable<object[]> RequestCases
     {
         get
@@ -43,6 +48,10 @@ public sealed class RoslynCommandLineModuleTests
                 ["csharp", "solution", "resolve-value-strategy", "set", "work", "--value", "UseCustomApiOnly"],
                 "bucket/set/work",
                 ["solution", "resolve", "value", "strategy", "set", "--value", "UseCustomApiOnly"]);
+            yield return Case(
+                ["csharp", "solution", "status", "work"],
+                "bucket/get/work",
+                ["solution", "status"]);
         }
     }
 
@@ -55,20 +64,19 @@ public sealed class RoslynCommandLineModuleTests
         var application = CreateApplication();
         Assert.HasCount(1, application.Schema.Modules);
         Assert.AreEqual("musoq.datasource.roslyn", application.Schema.Modules.Single().Id);
+        Assert.AreEqual("2.0.0", application.Schema.Modules.Single().Version);
 
-        Assert.HasCount(1, application.Schema.Root.Children);
-        var csharp = application.Schema.Root.Children.Single();
-        Assert.HasCount(1, csharp.Children);
-        var solution = csharp.Children.Single();
+        var solution = application.Schema.Root.Children.Single().Children.Single();
         CollectionAssert.AreEqual(
-            new[] { "load", "unload", "cache", "resolve-value-strategy" },
+            new[] { "load", "unload", "cache", "resolve-value-strategy", "status" },
             solution.Children.Select(command => command.Name).ToArray());
         CollectionAssert.AreEqual(
             new[] { "clear", "get", "set" },
             solution.Children.Single(command => command.Name == "cache").Children.Select(command => command.Name).ToArray());
         CollectionAssert.AreEqual(
             new[] { "get", "set" },
-            solution.Children.Single(command => command.Name == "resolve-value-strategy").Children.Select(command => command.Name).ToArray());
+            solution.Children.Single(command => command.Name == "resolve-value-strategy").Children
+                .Select(command => command.Name).ToArray());
     }
 
     [TestMethod]
@@ -81,13 +89,14 @@ public sealed class RoslynCommandLineModuleTests
         HttpRequestMessage? capturedRequest = null;
         string? capturedJson = null;
         var callbackToken = default(CancellationToken);
-        Func<HttpRequestMessage, CancellationToken, ValueTask<int>> callback = async (request, cancellationToken) =>
-        {
-            capturedRequest = request;
-            callbackToken = cancellationToken;
-            capturedJson = await request.Content!.ReadAsStringAsync(cancellationToken);
-            return 37;
-        };
+        Func<HttpRequestMessage, CancellationToken, ValueTask<(int ExitCode, HttpResponseMessage Response)>> callback =
+            async (request, cancellationToken) =>
+            {
+                capturedRequest = request;
+                callbackToken = cancellationToken;
+                capturedJson = await request.Content!.ReadAsStringAsync(cancellationToken);
+                return (37, Response("{\"value\":\"result\"}"));
+            };
         using var cancellation = new CancellationTokenSource();
 
         var result = await InvokeAsync(arguments, callback, cancellation.Token);
@@ -111,11 +120,12 @@ public sealed class RoslynCommandLineModuleTests
     public async Task StrategyValidationPreventsTransportInvocation()
     {
         var calls = 0;
-        Func<HttpRequestMessage, CancellationToken, ValueTask<int>> callback = (_, _) =>
+        var callback = new Func<HttpRequestMessage, CancellationToken,
+            ValueTask<(int ExitCode, HttpResponseMessage Response)>>((_, _) =>
         {
             calls++;
-            return ValueTask.FromResult(0);
-        };
+            return ValueTask.FromResult((0, Response("{}")));
+        });
         var application = CreateApplication();
         var parse = await application.ParseAsync(application.Route(
             "csharp", "solution", "resolve-value-strategy", "set", "work", "--value", "invalid"));
@@ -130,11 +140,9 @@ public sealed class RoslynCommandLineModuleTests
     [TestMethod]
     public async Task StrategyAcceptsLegacyCaseInsensitiveValues()
     {
-        Func<HttpRequestMessage, CancellationToken, ValueTask<int>> callback = (_, _) => ValueTask.FromResult(0);
-
         var result = await InvokeAsync(
             ["csharp", "solution", "resolve-value-strategy", "set", "work", "--value", "usecustomapionly"],
-            callback);
+            SuccessfulMutation);
 
         Assert.AreEqual(0, result);
     }
@@ -143,11 +151,12 @@ public sealed class RoslynCommandLineModuleTests
     public async Task CancellationFlowsToTransport()
     {
         using var cancellation = new CancellationTokenSource();
-        Func<HttpRequestMessage, CancellationToken, ValueTask<int>> callback = (_, cancellationToken) =>
+        var callback = new Func<HttpRequestMessage, CancellationToken,
+            ValueTask<(int ExitCode, HttpResponseMessage Response)>>((_, cancellationToken) =>
         {
             Assert.AreEqual(cancellation.Token, cancellationToken);
             throw new OperationCanceledException(cancellationToken);
-        };
+        });
 
         await Assert.ThrowsExactlyAsync<OperationCanceledException>(async () =>
             await InvokeAsync(
@@ -167,7 +176,112 @@ public sealed class RoslynCommandLineModuleTests
         var exception = await Assert.ThrowsExactlyAsync<KeyNotFoundException>(async () =>
             await application.InvokeAsync(validation.Invocation!));
 
-        StringAssert.Contains(exception.Message, "musoq.datasource.http-request.v1");
+        StringAssert.Contains(exception.Message, "musoq.datasource.http-request.v2");
+    }
+
+    [TestMethod]
+    public async Task ValueCommandsWriteReturnedValueAndMutationsStaySilent()
+    {
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var result = await InvokeAsync(
+            ["csharp", "solution", "resolve-value-strategy", "get", "work"],
+            (_, _) => ValueTask.FromResult((0, Response("{\"value\":\"UseCustomApiOnly\"}"))),
+            output: output,
+            error: error);
+
+        Assert.AreEqual(0, result);
+        Assert.AreEqual("UseCustomApiOnly" + Environment.NewLine, output.ToString());
+        Assert.AreEqual(string.Empty, error.ToString());
+
+        output.GetStringBuilder().Clear();
+        var mutation = await InvokeAsync(
+            ["csharp", "solution", "cache", "set", "work", "--cache-directory-path", "cache"],
+            SuccessfulMutation,
+            output: output,
+            error: error);
+        Assert.AreEqual(0, mutation);
+        Assert.AreEqual(string.Empty, output.ToString());
+        Assert.AreEqual(string.Empty, error.ToString());
+    }
+
+    [TestMethod]
+    public async Task StatusWritesDeterministicBucketPrefixedValue()
+    {
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var result = await InvokeAsync(
+            ["csharp", "solution", "status", "work"],
+            (_, _) => ValueTask.FromResult((0, Response(JsonSerializer.Serialize(new
+            {
+                value = string.Join(Environment.NewLine,
+                    "Loaded solutions: 0",
+                    "Cache directory: C:\\cache",
+                    "Resolve value strategy: UseNugetOrgApiOnly")
+            })))),
+            output: output,
+            error: error);
+
+        Assert.AreEqual(0, result);
+        Assert.AreEqual(
+            $"Bucket: work{Environment.NewLine}Loaded solutions: 0{Environment.NewLine}Cache directory: C:\\cache{Environment.NewLine}Resolve value strategy: UseNugetOrgApiOnly{Environment.NewLine}",
+            output.ToString());
+        Assert.AreEqual(string.Empty, error.ToString());
+    }
+
+    [TestMethod]
+    public async Task HttpFailureAndMalformedOrNullSuccessUseStandardError()
+    {
+        var failureOutput = new StringWriter();
+        var failureError = new StringWriter();
+        var failure = await InvokeAsync(
+            ["csharp", "solution", "cache", "get", "work"],
+            (_, _) => ValueTask.FromResult((23, new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("{\"message\":\"bucket missing\"}")
+            })),
+            output: failureOutput,
+            error: failureError);
+
+        Assert.AreEqual(23, failure);
+        Assert.AreEqual(string.Empty, failureOutput.ToString());
+        Assert.AreEqual("bucket missing" + Environment.NewLine, failureError.ToString());
+
+        foreach (var body in new[] { "not-json", "{\"result\":\"ok\",\"value\":null}" })
+        {
+            var output = new StringWriter();
+            var error = new StringWriter();
+            var response = Response(body);
+            var malformed = await InvokeAsync(
+                ["csharp", "solution", "cache", "get", "work"],
+                (_, _) => ValueTask.FromResult((0, response)),
+                output: output,
+                error: error);
+
+            Assert.AreEqual(1, malformed);
+            Assert.AreEqual(string.Empty, output.ToString());
+            StringAssert.Contains(error.ToString(), "Datasource protocol error:");
+            await Assert.ThrowsExactlyAsync<ObjectDisposedException>(async () => await response.Content.ReadAsStringAsync());
+        }
+    }
+
+    [TestMethod]
+    public async Task ResponseIsDisposedAfterSuccessAndFailure()
+    {
+        var success = Response("{\"value\":\"value\"}");
+        await InvokeAsync(
+            ["csharp", "solution", "cache", "get", "work"],
+            (_, _) => ValueTask.FromResult((0, success)));
+        await Assert.ThrowsExactlyAsync<ObjectDisposedException>(async () => await success.Content.ReadAsStringAsync());
+
+        var failure = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent("{\"message\":\"failed\"}")
+        };
+        await InvokeAsync(
+            ["csharp", "solution", "cache", "get", "work"],
+            (_, _) => ValueTask.FromResult((9, failure)));
+        await Assert.ThrowsExactlyAsync<ObjectDisposedException>(async () => await failure.Content.ReadAsStringAsync());
     }
 
     [TestMethod]
@@ -197,8 +311,10 @@ public sealed class RoslynCommandLineModuleTests
 
     private static async Task<int> InvokeAsync(
         string[] arguments,
-        Func<HttpRequestMessage, CancellationToken, ValueTask<int>> callback,
-        CancellationToken cancellationToken = default)
+        Func<HttpRequestMessage, CancellationToken, ValueTask<(int ExitCode, HttpResponseMessage Response)>> callback,
+        CancellationToken cancellationToken = default,
+        StringWriter? output = null,
+        StringWriter? error = null)
     {
         var application = CreateApplication();
         var parse = await application.ParseAsync(application.Route(arguments), cancellationToken: cancellationToken);
@@ -212,12 +328,19 @@ public sealed class RoslynCommandLineModuleTests
         return await application.InvokeAsync(
             validation.Invocation!,
             new CommandLineInvocationContext(
+                StandardOutput: output ?? new StringWriter(),
+                StandardError: error ?? new StringWriter(),
                 Items: new Dictionary<object, object?>
                 {
-                    [RoslynCommandLineModule.HttpRequestItem] = callback
+                    [RoslynCommandLineModule.HttpRequestV2] = callback
                 }),
             cancellationToken);
     }
+
+    private static HttpResponseMessage Response(string body) => new(HttpStatusCode.OK)
+    {
+        Content = new StringContent(body, Encoding.UTF8, "application/json")
+    };
 
     private static object[] Case(string[] arguments, string uri, string?[] payloadArguments) =>
         [arguments, uri, payloadArguments];

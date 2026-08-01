@@ -3,7 +3,7 @@ using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Docker.Containers;
 
-internal class ContainerEntity(ContainerListResponse response)
+public class ContainerEntity(ContainerListResponse response)
 {
     [EntityProperty]
     public string? ID => response.ID;

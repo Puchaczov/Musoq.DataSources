@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Musoq.DataSources.Os.Runtime;
 
-internal sealed class SpecialFolderEntity
+public sealed class SpecialFolderEntity
 {
     public SpecialFolderEntity(string name, Environment.SpecialFolder folder)
     {

@@ -161,6 +161,13 @@ public static class LifecycleHooks
                 value = command.GetResolveValueStrategy();
             });
 
+            app.Add("solution status", () =>
+            {
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
+
+                value = command.GetStatus();
+            });
+
             await app.RunAsync(args);
 
             return (0, [], value);

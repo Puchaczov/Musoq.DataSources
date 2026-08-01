@@ -33,7 +33,7 @@ internal static class CompareDirectoriesHelper
         {
             { 0, info => info.SourceFile },
             { 1, info => info.DestinationFile },
-            { 2, info => info.State.ToString() },
+            { 2, info => info.State },
             { 3, info => info.SourceRoot },
             { 4, info => info.DestinationRoot },
             { 5, info => info.SourceFileRelative },
@@ -44,7 +44,7 @@ internal static class CompareDirectoriesHelper
         [
             new SchemaColumn(nameof(CompareDirectoriesResult.SourceFile), 0, typeof(FileEntity)),
             new SchemaColumn(nameof(CompareDirectoriesResult.DestinationFile), 1, typeof(FileEntity)),
-            new SchemaColumn(nameof(CompareDirectoriesResult.State), 2, typeof(string)),
+            new SchemaColumn(nameof(CompareDirectoriesResult.State), 2, typeof(State)),
             new SchemaColumn(nameof(CompareDirectoriesResult.SourceRoot), 3, typeof(DirectoryInfo)),
             new SchemaColumn(nameof(CompareDirectoriesResult.DestinationRoot), 4, typeof(DirectoryInfo)),
             new SchemaColumn(nameof(CompareDirectoriesResult.SourceFileRelative), 5, typeof(string)),

@@ -158,8 +158,8 @@ function Test-PluginPackage {
             if ($moduleManifest.entryAssembly -ne 'Musoq.DataSources.Roslyn.CommandLineArguments.dll' -or
                 $moduleManifest.framework.versionRange -ne '[0.0.1,0.1.0)' -or
                 @($moduleManifest.requiredInvocationItems).Count -ne 1 -or
-                $moduleManifest.requiredInvocationItems[0].name -ne 'musoq.datasource.http-request.v1' -or
-                $moduleManifest.requiredInvocationItems[0].contract -ne 'http-request-v1') {
+                $moduleManifest.requiredInvocationItems[0].name -ne 'musoq.datasource.http-request.v2' -or
+                $moduleManifest.requiredInvocationItems[0].contract -ne 'http-request-v2') {
                 throw "Roslyn command-line module manifest has an unexpected contract: $PackagePath"
             }
         }
@@ -168,8 +168,8 @@ function Test-PluginPackage {
         $compatibility = Read-MusoqPluginCompatibilityManifest -Path $compatibilityPath
         $schemaRange = $compatibility.hostPackages.'Musoq.Schema'
         $pluginsRange = $compatibility.hostPackages.'Musoq.Plugins'
-        if ($schemaRange.minimumVersionInclusive -ne "17.0.3-alpha.2" -or
-            $pluginsRange.minimumVersionInclusive -ne "17.0.3-alpha.2" -or
+        if ($schemaRange.minimumVersionInclusive -ne "17.0.4-alpha.3" -or
+            $pluginsRange.minimumVersionInclusive -ne "17.0.4-alpha.3" -or
             $schemaRange.maximumVersionExclusive -ne "18.0.0" -or
             $pluginsRange.maximumVersionExclusive -ne "18.0.0") {
             throw "Plugin compatibility manifest does not match the supported runtime-v2 ABI: $PackagePath"

@@ -128,8 +128,8 @@ public class PluginPackageSmokeTests
 
         var requirements = root.GetProperty("requiredInvocationItems").EnumerateArray().ToArray();
         Assert.HasCount(1, requirements);
-        Assert.AreEqual("musoq.datasource.http-request.v1", requirements[0].GetProperty("name").GetString());
-        Assert.AreEqual("http-request-v1", requirements[0].GetProperty("contract").GetString());
+        Assert.AreEqual("musoq.datasource.http-request.v2", requirements[0].GetProperty("name").GetString());
+        Assert.AreEqual("http-request-v2", requirements[0].GetProperty("contract").GetString());
 
         var declaredFiles = root.GetProperty("files").EnumerateArray().ToArray();
         Assert.IsTrue(declaredFiles.Length > 0, "Command module manifest must declare its file closure.");
@@ -165,7 +165,7 @@ public class PluginPackageSmokeTests
     {
         var package = hostPackages.GetProperty(packageName);
         Assert.AreEqual(
-            "17.0.3-alpha.2",
+            "17.0.4-alpha.3",
             package.GetProperty("minimumVersionInclusive").GetString(),
             $"Unexpected {packageName} minimum: {packagePath}");
         Assert.AreEqual(

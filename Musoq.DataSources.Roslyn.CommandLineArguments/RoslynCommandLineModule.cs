@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using Musoq.CommandLine;
 using Musoq.DataSources.Roslyn.CommandLineArguments.Dtos;
 
@@ -13,11 +14,12 @@ public sealed class RoslynCommandLineModule : ICommandModule
         "UseNugetOrgApiAndCustomApi"
     ];
 
-    public static CommandLineItemKey<Func<HttpRequestMessage, CancellationToken, ValueTask<int>>> HttpRequestItem { get; } =
-        new("musoq.datasource.http-request.v1");
+    public static CommandLineItemKey<
+        Func<HttpRequestMessage, CancellationToken, ValueTask<(int ExitCode, HttpResponseMessage Response)>>> HttpRequestV2 { get; } =
+        new("musoq.datasource.http-request.v2");
 
     public CommandModuleDescriptor Descriptor { get; } =
-        new("musoq.datasource.roslyn", "1.0.0");
+        new("musoq.datasource.roslyn", "2.0.0");
 
     public void Configure(CommandModuleBuilder module)
     {
@@ -34,6 +36,7 @@ public sealed class RoslynCommandLineModule : ICommandModule
                     ConfigureUnload(solution);
                     ConfigureCache(solution);
                     ConfigureResolveValueStrategy(solution);
+                    ConfigureStatus(solution);
                 });
             }));
     }
@@ -126,7 +129,8 @@ public sealed class RoslynCommandLineModule : ICommandModule
                         {
                             SchemaName = "csharp",
                             Arguments = ["solution", "cache", "get"]
-                        }));
+                        },
+                        writeValue: true));
             });
             cache.Command("set", command => ConfigureCacheMutation(command, "Sets cache directory path", "set"));
         });
@@ -183,7 +187,8 @@ public sealed class RoslynCommandLineModule : ICommandModule
                         {
                             SchemaName = "csharp",
                             Arguments = ["solution", "resolve", "value", "strategy", "get"]
-                        }));
+                        },
+                        writeValue: true));
             });
 
             resolveValueStrategy.Command("set", command =>
@@ -225,17 +230,119 @@ public sealed class RoslynCommandLineModule : ICommandModule
         });
     }
 
+    private static void ConfigureStatus(CommandBuilder solution)
+    {
+        solution.Command("status", command =>
+        {
+            command.Description("Prints the loaded solution status.");
+            var bucket = command.Argument<string>("bucket")
+                .Description("Bucket identifier");
+
+            command.HandleWithContext((context, cancellationToken) =>
+                InvokeAsync(
+                    context,
+                    cancellationToken,
+                    $"bucket/get/{bucket.Get(context.Values)}",
+                    new GetBucketRequestDto
+                    {
+                        SchemaName = "csharp",
+                        Arguments = ["solution", "status"]
+                    },
+                    writeValue: true,
+                    formatStatus: value => $"Bucket: {bucket.Get(context.Values)}{Environment.NewLine}{value}"));
+        });
+    }
+
     private static async ValueTask<int> InvokeAsync<TRequest>(
         CommandExecutionContext context,
         CancellationToken cancellationToken,
         string requestUri,
-        TRequest payload)
+        TRequest payload,
+        bool writeValue = false,
+        Func<string, string>? formatStatus = null)
     {
-        var invokeAsync = context.GetRequiredItem(HttpRequestItem);
+        var invokeAsync = context.GetRequiredItem(HttpRequestV2);
         using var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
         {
             Content = JsonContent.Create(payload)
         };
-        return await invokeAsync(request, cancellationToken).ConfigureAwait(false);
+        var (exitCode, response) = await invokeAsync(request, cancellationToken).ConfigureAwait(false);
+        using (response)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                await context.StandardError.WriteLineAsync(
+                    ExtractErrorMessage(body, response).AsMemory(),
+                    cancellationToken).ConfigureAwait(false);
+                return exitCode;
+            }
+
+            if (!writeValue)
+                return exitCode;
+
+            if (!TryReadValue(body, out var value, out var protocolError))
+            {
+                await context.StandardError.WriteLineAsync(protocolError.AsMemory(), cancellationToken)
+                    .ConfigureAwait(false);
+                return 1;
+            }
+
+            value = formatStatus is null ? value : formatStatus(value);
+            await context.StandardOutput.WriteLineAsync(value.AsMemory(), cancellationToken).ConfigureAwait(false);
+            return exitCode;
+        }
+    }
+
+    private static bool TryReadValue(string body, out string value, out string error)
+    {
+        value = string.Empty;
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (!document.RootElement.TryGetProperty("value", out var valueElement) ||
+                valueElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            {
+                error = "Datasource protocol error: successful AgentLocal response is missing a value.";
+                return false;
+            }
+
+            value = valueElement.ValueKind == JsonValueKind.String
+                ? valueElement.GetString() ?? string.Empty
+                : valueElement.GetRawText();
+            if (value.Length == 0)
+            {
+                error = "Datasource protocol error: successful AgentLocal response is missing a value.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+        catch (JsonException)
+        {
+            error = "Datasource protocol error: successful AgentLocal response was not valid JSON.";
+            return false;
+        }
+    }
+
+    private static string ExtractErrorMessage(string body, HttpResponseMessage response)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (document.RootElement.TryGetProperty("message", out var message) &&
+                message.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(message.GetString()))
+                return message.GetString()!;
+        }
+        catch (JsonException)
+        {
+        }
+
+        return !string.IsNullOrWhiteSpace(response.ReasonPhrase)
+            ? response.ReasonPhrase!
+            : "AgentLocal request failed.";
     }
 }

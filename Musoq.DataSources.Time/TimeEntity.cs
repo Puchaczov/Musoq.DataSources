@@ -3,7 +3,7 @@ using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Time;
 
-internal class TimeEntity(DateTimeOffset value)
+public class TimeEntity(DateTimeOffset value)
 {
     [EntityProperty]
     public DateTimeOffset DateTime { get; } = value;

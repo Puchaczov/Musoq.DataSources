@@ -3,7 +3,7 @@ using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Docker.Volumes;
 
-internal class VolumeEntity(VolumeResponse response)
+public class VolumeEntity(VolumeResponse response)
 {
     [EntityProperty]
     public string? CreatedAt => response.CreatedAt;
