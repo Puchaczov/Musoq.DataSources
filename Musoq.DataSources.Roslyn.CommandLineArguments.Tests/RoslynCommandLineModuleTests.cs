@@ -175,6 +175,37 @@ public sealed class RoslynCommandLineModuleTests
     }
 
     [TestMethod]
+    public async Task LoadFailureLeavesCreatedBucketAvailable()
+    {
+        var requests = new List<string>();
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var callback = new Func<HttpRequestMessage, CancellationToken,
+            ValueTask<(int ExitCode, HttpResponseMessage Response)>>((request, _) =>
+        {
+            requests.Add(request.RequestUri!.OriginalString);
+            return ValueTask.FromResult(
+                requests.Count == 1
+                    ? (0, Response("{}"))
+                    : (19, new HttpResponseMessage(HttpStatusCode.BadGateway)
+                    {
+                        Content = new StringContent("{\"message\":\"solution load failed\"}")
+                    }));
+        });
+
+        var result = await InvokeAsync(
+            ["csharp", "solution", "load", "work", "repo.sln"],
+            callback,
+            output: output,
+            error: error);
+
+        Assert.AreEqual(19, result);
+        CollectionAssert.AreEqual(new[] { "bucket/create/work", "bucket/load/work" }, requests);
+        Assert.AreEqual(string.Empty, output.ToString());
+        Assert.AreEqual("solution load failed" + Environment.NewLine, error.ToString());
+    }
+
+    [TestMethod]
     public async Task LoadDisposesCreateAndLoadResponses()
     {
         var createResponse = Response("{}");
