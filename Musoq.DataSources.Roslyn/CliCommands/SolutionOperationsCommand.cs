@@ -20,13 +20,11 @@ internal class SolutionOperationsCommand(ILogger logger)
 {
     private static readonly object Locker = new();
 
-    // This cannot be AppContext.BaseDirectory as it must point to the plugin directory
-    private static readonly string RateLimitingOptionsFilePath = IFileSystem.Combine(
-        new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!, "RateLimitingOptions.json");
+    // Prefer the plugin directory, but collectible loaders may provide no physical assembly location.
+    // The files are optional in that case so command/lifecycle operations remain usable.
+    private static readonly string RateLimitingOptionsFilePath = GetPluginFilePath("RateLimitingOptions.json");
 
-    private static readonly string BannedPropertiesValuesFilePath = IFileSystem.Combine(
-        new FileInfo(typeof(SolutionOperationsCommand).Assembly.Location).DirectoryName!,
-        "BannedPropertiesValues.json");
+    private static readonly string BannedPropertiesValuesFilePath = GetPluginFilePath("BannedPropertiesValues.json");
 
     internal static readonly ConcurrentDictionary<string, Solution> Solutions = new();
 
@@ -200,7 +198,7 @@ internal class SolutionOperationsCommand(ILogger logger)
         cancellationToken.ThrowIfCancellationRequested();
 
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile(RateLimitingOptionsFilePath);
+            .AddJsonFile(RateLimitingOptionsFilePath, optional: true);
 
         var rateLimitingOptions = configuration.Build();
         var unauthorizedSection = rateLimitingOptions.GetSection("Unauthorized");
@@ -253,7 +251,7 @@ internal class SolutionOperationsCommand(ILogger logger)
     private static IReadOnlyDictionary<string, HashSet<string>> ReadBannedPropertiesValues()
     {
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile(BannedPropertiesValuesFilePath);
+            .AddJsonFile(BannedPropertiesValuesFilePath, optional: true);
 
         var bannedPropertiesValues = configuration.Build();
         var propertiesArray = bannedPropertiesValues.GetSection("BannedPropertiesValues").GetChildren();
@@ -277,5 +275,13 @@ internal class SolutionOperationsCommand(ILogger logger)
         }
 
         return result;
+    }
+
+    private static string GetPluginFilePath(string fileName)
+    {
+        var assemblyDirectory = Path.GetDirectoryName(typeof(SolutionOperationsCommand).Assembly.Location);
+        return string.IsNullOrWhiteSpace(assemblyDirectory)
+            ? fileName
+            : IFileSystem.Combine(assemblyDirectory, fileName);
     }
 }
