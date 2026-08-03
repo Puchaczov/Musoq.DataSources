@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "moduleId": "musoq.datasource.roslyn",
-  "moduleVersion": "2.0.0",
+  "moduleVersion": "3.0.0",
   "entryAssembly": "Musoq.DataSources.Roslyn.CommandLineArguments.dll",
   "framework": {
     "packageId": "Musoq.CommandLine",

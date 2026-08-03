@@ -19,7 +19,7 @@ public sealed class RoslynCommandLineModule : ICommandModule
         new("musoq.datasource.http-request.v2");
 
     public CommandModuleDescriptor Descriptor { get; } =
-        new("musoq.datasource.roslyn", "2.0.0");
+        new("musoq.datasource.roslyn", "3.0.0");
 
     public void Configure(CommandModuleBuilder module)
     {
@@ -46,34 +46,58 @@ public sealed class RoslynCommandLineModule : ICommandModule
         solution.Command("load", command =>
         {
             command.Description("Loads solution to memory");
+            var bucket = command.Argument<string>("bucket")
+                .Description("Bucket identifier");
             var path = command.Argument<string>("path")
                 .Description("Path to the solution file")
                 .CompleteFiles();
-            var bucket = command.Argument<string>("bucket")
-                .Description("Bucket identifier");
             var cacheDirectoryPath = command.Option<string?>("--cache-directory-path", null)
                 .Description("Optional cache directory path")
                 .CompleteDirectories();
 
             command.HandleWithContext((context, cancellationToken) =>
-                InvokeAsync(
+                LoadSolutionAsync(
                     context,
                     cancellationToken,
-                    $"bucket/load/{bucket.Get(context.Values)}",
-                    new LoadBucketRequestDto
-                    {
-                        SchemaName = "csharp",
-                        Arguments =
-                        [
-                            "solution",
-                            "load",
-                            "--solution-file-path",
-                            path.Get(context.Values),
-                            "--cache-directory-path",
-                            cacheDirectoryPath.Get(context.Values)
-                        ]
-                    }));
+                    bucket.Get(context.Values),
+                    path.Get(context.Values),
+                    cacheDirectoryPath.Get(context.Values)));
         });
+    }
+
+    private static async ValueTask<int> LoadSolutionAsync(
+        CommandExecutionContext context,
+        CancellationToken cancellationToken,
+        string bucket,
+        string path,
+        string? cacheDirectoryPath)
+    {
+        var createExitCode = await InvokeAsync(
+                context,
+                cancellationToken,
+                new HttpRequestMessage(HttpMethod.Post, $"bucket/create/{bucket}"))
+            .ConfigureAwait(false);
+        if (createExitCode != 0)
+            return createExitCode;
+
+        return await InvokeAsync(
+                context,
+                cancellationToken,
+                $"bucket/load/{bucket}",
+                new LoadBucketRequestDto
+                {
+                    SchemaName = "csharp",
+                    Arguments =
+                    [
+                        "solution",
+                        "load",
+                        "--solution-file-path",
+                        path,
+                        "--cache-directory-path",
+                        cacheDirectoryPath
+                    ]
+                })
+            .ConfigureAwait(false);
     }
 
     private static void ConfigureUnload(CommandBuilder solution)
@@ -261,37 +285,55 @@ public sealed class RoslynCommandLineModule : ICommandModule
         bool writeValue = false,
         Func<string, string>? formatStatus = null)
     {
-        var invokeAsync = context.GetRequiredItem(HttpRequestV2);
-        using var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
-        {
-            Content = JsonContent.Create(payload)
-        };
-        var (exitCode, response) = await invokeAsync(request, cancellationToken).ConfigureAwait(false);
-        using (response)
-        {
-            var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        return await InvokeAsync(
+                context,
+                cancellationToken,
+                new HttpRequestMessage(HttpMethod.Post, requestUri)
+                {
+                    Content = JsonContent.Create(payload)
+                },
+                writeValue,
+                formatStatus)
+            .ConfigureAwait(false);
+    }
 
-            if (!response.IsSuccessStatusCode)
+    private static async ValueTask<int> InvokeAsync(
+        CommandExecutionContext context,
+        CancellationToken cancellationToken,
+        HttpRequestMessage request,
+        bool writeValue = false,
+        Func<string, string>? formatStatus = null)
+    {
+        using (request)
+        {
+            var invokeAsync = context.GetRequiredItem(HttpRequestV2);
+            var (exitCode, response) = await invokeAsync(request, cancellationToken).ConfigureAwait(false);
+            using (response)
             {
-                await context.StandardError.WriteLineAsync(
-                    ExtractErrorMessage(body, response).AsMemory(),
-                    cancellationToken).ConfigureAwait(false);
+                var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await context.StandardError.WriteLineAsync(
+                        ExtractErrorMessage(body, response).AsMemory(),
+                        cancellationToken).ConfigureAwait(false);
+                    return exitCode;
+                }
+
+                if (!writeValue)
+                    return exitCode;
+
+                if (!TryReadValue(body, out var value, out var protocolError))
+                {
+                    await context.StandardError.WriteLineAsync(protocolError.AsMemory(), cancellationToken)
+                        .ConfigureAwait(false);
+                    return 1;
+                }
+
+                value = formatStatus is null ? value : formatStatus(value);
+                await context.StandardOutput.WriteLineAsync(value.AsMemory(), cancellationToken).ConfigureAwait(false);
                 return exitCode;
             }
-
-            if (!writeValue)
-                return exitCode;
-
-            if (!TryReadValue(body, out var value, out var protocolError))
-            {
-                await context.StandardError.WriteLineAsync(protocolError.AsMemory(), cancellationToken)
-                    .ConfigureAwait(false);
-                return 1;
-            }
-
-            value = formatStatus is null ? value : formatStatus(value);
-            await context.StandardOutput.WriteLineAsync(value.AsMemory(), cancellationToken).ConfigureAwait(false);
-            return exitCode;
         }
     }
 

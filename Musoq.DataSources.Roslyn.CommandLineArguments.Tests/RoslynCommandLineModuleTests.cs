@@ -17,14 +17,6 @@ public sealed class RoslynCommandLineModuleTests
         get
         {
             yield return Case(
-                ["csharp", "solution", "load", "repo.sln", "work", "--cache-directory-path", "cache"],
-                "bucket/load/work",
-                ["solution", "load", "--solution-file-path", "repo.sln", "--cache-directory-path", "cache"]);
-            yield return Case(
-                ["csharp", "solution", "load", "repo.sln", "work"],
-                "bucket/load/work",
-                ["solution", "load", "--solution-file-path", "repo.sln", "--cache-directory-path", null]);
-            yield return Case(
                 ["csharp", "solution", "unload", "repo.sln", "work"],
                 "bucket/unload/work",
                 ["solution", "unload", "--solution-file-path", "repo.sln"]);
@@ -64,7 +56,7 @@ public sealed class RoslynCommandLineModuleTests
         var application = CreateApplication();
         Assert.HasCount(1, application.Schema.Modules);
         Assert.AreEqual("musoq.datasource.roslyn", application.Schema.Modules.Single().Id);
-        Assert.AreEqual("2.0.0", application.Schema.Modules.Single().Version);
+        Assert.AreEqual("3.0.0", application.Schema.Modules.Single().Version);
 
         var solution = application.Schema.Root.Children.Single().Children.Single();
         CollectionAssert.AreEqual(
@@ -114,6 +106,117 @@ public sealed class RoslynCommandLineModuleTests
             document.RootElement.GetProperty("arguments").EnumerateArray()
                 .Select(value => value.ValueKind == JsonValueKind.Null ? null : value.GetString())
                 .ToArray());
+    }
+
+    [TestMethod]
+    public async Task LoadCreatesBucketBeforeLoadingSolution()
+    {
+        var requests = new List<(string Uri, string? Body)>();
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var callback = new Func<HttpRequestMessage, CancellationToken,
+            ValueTask<(int ExitCode, HttpResponseMessage Response)>>(async (request, _) =>
+            {
+                requests.Add((
+                    request.RequestUri!.OriginalString,
+                    request.Content is null
+                        ? null
+                        : await request.Content.ReadAsStringAsync()));
+                return (0, Response("{}"));
+            });
+
+        var result = await InvokeAsync(
+            ["csharp", "solution", "load", "work", "repo.sln", "--cache-directory-path", "cache"],
+            callback,
+            output: output,
+            error: error);
+
+        Assert.AreEqual(0, result);
+        Assert.HasCount(2, requests);
+        Assert.AreEqual("bucket/create/work", requests[0].Uri);
+        Assert.IsNull(requests[0].Body);
+        Assert.AreEqual("bucket/load/work", requests[1].Uri);
+        using var document = JsonDocument.Parse(requests[1].Body!);
+        CollectionAssert.AreEqual(
+            new[] { "solution", "load", "--solution-file-path", "repo.sln", "--cache-directory-path", "cache" },
+            document.RootElement.GetProperty("arguments").EnumerateArray()
+                .Select(value => value.ValueKind == JsonValueKind.Null ? null : value.GetString())
+                .ToArray());
+        Assert.AreEqual(string.Empty, output.ToString());
+        Assert.AreEqual(string.Empty, error.ToString());
+    }
+
+    [TestMethod]
+    public async Task LoadCreationFailureSkipsSolutionRequest()
+    {
+        var calls = 0;
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var callback = new Func<HttpRequestMessage, CancellationToken,
+            ValueTask<(int ExitCode, HttpResponseMessage Response)>>((_, _) =>
+        {
+            calls++;
+            return ValueTask.FromResult((23, new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("{\"message\":\"cannot create bucket\"}")
+            }));
+        });
+
+        var result = await InvokeAsync(
+            ["csharp", "solution", "load", "work", "repo.sln"],
+            callback,
+            output: output,
+            error: error);
+
+        Assert.AreEqual(23, result);
+        Assert.AreEqual(1, calls);
+        Assert.AreEqual(string.Empty, output.ToString());
+        Assert.AreEqual("cannot create bucket" + Environment.NewLine, error.ToString());
+    }
+
+    [TestMethod]
+    public async Task LoadDisposesCreateAndLoadResponses()
+    {
+        var createResponse = Response("{}");
+        var loadResponse = Response("{}");
+        var calls = 0;
+        var callback = new Func<HttpRequestMessage, CancellationToken,
+            ValueTask<(int ExitCode, HttpResponseMessage Response)>>((_, _) =>
+        {
+            calls++;
+            return ValueTask.FromResult((0, calls == 1 ? createResponse : loadResponse));
+        });
+
+        var result = await InvokeAsync(
+            ["csharp", "solution", "load", "work", "repo.sln"],
+            callback);
+
+        Assert.AreEqual(0, result);
+        await Assert.ThrowsExactlyAsync<ObjectDisposedException>(async () => await createResponse.Content.ReadAsStringAsync());
+        await Assert.ThrowsExactlyAsync<ObjectDisposedException>(async () => await loadResponse.Content.ReadAsStringAsync());
+    }
+
+    [TestMethod]
+    public async Task LoadCancellationFlowsToSolutionRequest()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var calls = 0;
+        var callback = new Func<HttpRequestMessage, CancellationToken,
+            ValueTask<(int ExitCode, HttpResponseMessage Response)>>((_, cancellationToken) =>
+        {
+            Assert.AreEqual(cancellation.Token, cancellationToken);
+            calls++;
+            if (calls == 2)
+                throw new OperationCanceledException(cancellationToken);
+            return ValueTask.FromResult((0, Response("{}")));
+        });
+
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(async () =>
+            await InvokeAsync(
+                ["csharp", "solution", "load", "work", "repo.sln"],
+                callback,
+                cancellation.Token));
+        Assert.AreEqual(2, calls);
     }
 
     [TestMethod]
@@ -296,6 +399,9 @@ public sealed class RoslynCommandLineModuleTests
         Assert.AreEqual(
             Musoq.CommandLine.Completion.CompletionDirective.FileCompletion,
             load.Symbols.Single(symbol => symbol.Name == "path").CompletionDirective);
+        CollectionAssert.AreEqual(
+            new[] { "bucket", "path" },
+            load.Symbols.Where(symbol => symbol.Kind == SymbolKind.Argument).Select(symbol => symbol.Name).ToArray());
         Assert.AreEqual(
             Musoq.CommandLine.Completion.CompletionDirective.DirectoryCompletion,
             load.Symbols.Single(symbol => symbol.Name == "--cache-directory-path").CompletionDirective);
