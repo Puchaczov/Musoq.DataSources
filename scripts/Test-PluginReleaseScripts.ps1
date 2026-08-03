@@ -396,7 +396,12 @@ function Test-RuntimeV2Alpha4ReleaseTrain {
 
     foreach ($package in $packages) {
         $version = [string]$package.version
-        Assert-True ($version -match '-alpha\.4$') "$($package.packageId) should be pinned to alpha.4 in packages.json."
+        if ($package.packageId -eq 'Musoq.DataSources.Roslyn') {
+            Assert-Equal "3.0.4-alpha.5" $version "Roslyn should use the next prerelease command-module version."
+        }
+        else {
+            Assert-True ($version -match '-alpha\.4$') "$($package.packageId) should be pinned to alpha.4 in packages.json."
+        }
         $projectPath = Join-Path $PSScriptRoot "../$($package.projectPath)"
         [xml]$project = Get-Content -LiteralPath $projectPath
         $projectVersion = [string](@($project.Project.PropertyGroup | Where-Object { $_.Version })[0].Version)
@@ -405,7 +410,7 @@ function Test-RuntimeV2Alpha4ReleaseTrain {
 
     $roslyn = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Roslyn' })
     Assert-Equal 1 $roslyn.Count "Runtime-v2 release train should contain exactly one Roslyn package."
-    Assert-Equal "3.0.4-alpha.4" ([string]$roslyn[0].version) "Roslyn should use the command-module release version."
+    Assert-Equal "3.0.4-alpha.5" ([string]$roslyn[0].version) "Roslyn should use the next prerelease command-module version."
 }
 
 function Test-RoslynReleaseWorkflowGates {
