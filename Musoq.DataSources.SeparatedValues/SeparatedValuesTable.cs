@@ -1,84 +1,67 @@
-﻿using System;
+#nullable enable
+
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using Musoq.DataSources.Structured;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Managers;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues;
 
-internal class SeparatedValuesTable(string fileName, string separator, bool hasHeader, int skipLines)
-    : ISchemaTable
+internal sealed class SeparatedValuesTable : ISchemaTable
 {
-    private ISchemaColumn[]? _columns;
+    private readonly ISchemaColumn[] _columns;
 
-    public IReadOnlyCollection<ISchemaColumn>? InferredColumns { get; init; }
-
-    public ISchemaColumn[] Columns
+    public SeparatedValuesTable(
+        StructuredSchemaSnapshot snapshot,
+        SourceMetadataContext metadataContext)
     {
-        get
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(metadataContext);
+
+        var requestedColumns = metadataContext.AllColumns
+            .Where(column => snapshot.TryGetColumn(column.ColumnName, out _))
+            .ToArray();
+        var layout = StructuredExecutionLayout.Bind(
+            snapshot,
+            requestedColumns.Select(column => column.ColumnName),
+            metadataContext.AllColumns.Count == 0);
+        var explicitColumns = requestedColumns
+            .GroupBy(column => column.ColumnName, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+
+        _columns = new ISchemaColumn[layout.Bindings.Length];
+        foreach (var binding in layout.Bindings)
         {
-            if (_columns != null)
-                return _columns;
+            var type = binding.ClrType;
+            if (explicitColumns.TryGetValue(binding.Name, out var explicitColumn) &&
+                explicitColumn.ColumnType != typeof(object))
+                type = explicitColumn.ColumnType;
 
-            if (InferredColumns is null)
-                throw new InvalidOperationException("Inferred columns cannot be null.");
-
-            var file = new FileInfo(fileName);
-            var encoding = SeparatedValuesReadModifiers.ResolveFileEncodingOrDefault(InferredColumns);
-            var columns = SeparatedValuesHeaderReader.ReadFirstRecord(file, separator, skipLines, 65536, encoding);
-
-            if (columns.Length == 0)
-                throw new InvalidOperationException("File is empty.");
-
-            if (hasHeader)
-                _columns = columns
-                    .Select((header, i) =>
-                    {
-                        var columnName = SeparatedValuesHelper.MakeHeaderNameValidColumnName(header ?? string.Empty);
-                        var inferredColumn = InferredColumns.SingleOrDefault(f => f.ColumnName == columnName);
-
-                        if (inferredColumn == null)
-                            return new SchemaColumn(columnName, i, typeof(string));
-
-                        var type = inferredColumn.ColumnType;
-                        return type == typeof(object)
-                            ? new SchemaColumn(columnName, i, typeof(string), inferredColumn.ReadModifiers)
-                            : new SchemaColumn(columnName, i, type, inferredColumn.ReadModifiers);
-                    })
-                    .Cast<ISchemaColumn>()
-                    .ToArray();
-            else
-                _columns = columns
-                    .Select((f, i) =>
-                    {
-                        var columnName = string.Format(SeparatedValuesHelper.AutoColumnName, i + 1);
-                        var inferredColumn = InferredColumns.SingleOrDefault(f => f.ColumnName == columnName);
-
-                        if (inferredColumn == null)
-                            return new SchemaColumn(columnName, i, typeof(string));
-
-                        var type = inferredColumn.ColumnType;
-                        return type == typeof(object)
-                            ? new SchemaColumn(columnName, i, typeof(string), inferredColumn.ReadModifiers)
-                            : new SchemaColumn(columnName, i, type, inferredColumn.ReadModifiers);
-                    })
-                    .Cast<ISchemaColumn>()
-                    .ToArray();
-
-            return _columns;
+            _columns[binding.OutputOrdinal] = new SchemaColumn(
+                binding.Name,
+                binding.OutputOrdinal,
+                type);
         }
     }
+
+    public ISchemaColumn[] Columns => _columns;
 
     public SchemaTableMetadata Metadata { get; } = new(typeof(object[]));
 
     public ISchemaColumn? GetColumnByName(string name)
     {
-        return Columns.SingleOrDefault(column => column.ColumnName == name);
+        return _columns.FirstOrDefault(column =>
+            string.Equals(column.ColumnName, name, StringComparison.Ordinal));
     }
 
     public ISchemaColumn[] GetColumnsByName(string name)
     {
-        return Columns.Where(column => column.ColumnName == name).ToArray();
+        return _columns.Where(column =>
+                string.Equals(column.ColumnName, name, StringComparison.Ordinal))
+            .ToArray();
     }
 }

@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -11,10 +9,10 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.SeparatedValues;
 
 /// <description>
-///     Provides schema to work with separated values like .csv, .tsv, semicolon.
+///     Streams strict UTF-8 comma-, tab-, and semicolon-separated files after exact schema discovery.
 /// </description>
 /// <short-description>
-///     Provides schema to work with separated values like .csv, .tsv, semicolon.
+///     Streams strict UTF-8 separated-values files with dynamic columns.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class SeparatedValuesSchema : SchemaBase
@@ -26,37 +24,37 @@ public class SeparatedValuesSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to the given file</virtual-param>
-    ///         <virtual-param>Does the file has header</virtual-param>
-    ///         <virtual-param>How many lines should be skipped</virtual-param>
+    ///         <virtual-param>Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
+    ///         <virtual-param>Whether the first logical record is a header</virtual-param>
+    ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>#separatedvalues.comma(string path, bool hasHeader, int skipLines)</from>
-    ///                 <description>Gives the ability to process .CSV files</description>
+    ///                 <description>Discovers the complete CSV schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to the given file</virtual-param>
-    ///         <virtual-param>Does the file has header</virtual-param>
-    ///         <virtual-param>How many lines should be skipped</virtual-param>
+    ///         <virtual-param>Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
+    ///         <virtual-param>Whether the first logical record is a header</virtual-param>
+    ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>#separatedvalues.tab(string path, bool hasHeader, int skipLines)</from>
-    ///                 <description>Gives the ability to process .TSV files</description>
+    ///                 <description>Discovers the complete TSV schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to the given file</virtual-param>
-    ///         <virtual-param>Does the file has header</virtual-param>
-    ///         <virtual-param>How many lines should be skipped</virtual-param>
+    ///         <virtual-param>Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
+    ///         <virtual-param>Whether the first logical record is a header</virtual-param>
+    ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>#separatedvalues.semicolon(string path, bool hasHeader, int skipLines)</from>
-    ///                 <description>Gives the ability to process semicolon files</description>
+    ///                 <description>Discovers the complete semicolon-separated schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
     ///         </examples>
@@ -79,11 +77,13 @@ public class SeparatedValuesSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object?[] parameters)
     {
+        var sourceParameters = ParseParameters(parameters);
+
         return name.ToLowerInvariant() switch
         {
-            CommaTable => CreateTable(",", metadataContext, parameters),
-            TabTable => CreateTable("\t", metadataContext, parameters),
-            SemicolonTable => CreateTable(";", metadataContext, parameters),
+            CommaTable => CreateTable(",", metadataContext, sourceParameters),
+            TabTable => CreateTable("\t", metadataContext, sourceParameters),
+            SemicolonTable => CreateTable(";", metadataContext, sourceParameters),
             _ => base.GetTableByName(name, metadataContext, parameters)
         };
     }
@@ -100,33 +100,25 @@ public class SeparatedValuesSchema : SchemaBase
         SourceExecutionContext executionContext,
         params object?[] parameters)
     {
+        var sourceParameters = ParseParameters(parameters);
+
         return name.ToLowerInvariant() switch
         {
-            CommaTable => CreateSource<T>(name, ",", executionContext, parameters),
-            TabTable => CreateSource<T>(name, "\t", executionContext, parameters),
-            SemicolonTable => CreateSource<T>(name, ";", executionContext, parameters),
+            CommaTable => CreateSource<T>(name, ",", executionContext, sourceParameters),
+            TabTable => CreateSource<T>(name, "\t", executionContext, sourceParameters),
+            SemicolonTable => CreateSource<T>(name, ";", executionContext, sourceParameters),
             _ => base.GetRowSource<T>(name, executionContext, parameters)
         };
     }
 
+    /// <summary>
+    ///     Describes the exact schema discovered for a separated-values file.
+    /// </summary>
     public override SourceDescriptor DescribeSource(
         string name,
         SourceDescribeContext context,
         params object?[] parameters)
     {
-        var declaredDiagnostics = SeparatedValuesReadModifiers.Describe(context.MetadataContext.AllColumns);
-        if (IsKnownSourceName(name) && declaredDiagnostics.Any(IsContractError))
-        {
-            return new SourceDescriptor
-            {
-                Identity = context.Identity,
-                Columns = context.MetadataContext.AllColumns.ToArray(),
-                RowType = typeof(object[]),
-                Diagnostics = [],
-                ContractDiagnostics = declaredDiagnostics
-            };
-        }
-
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
         return new SourceDescriptor
@@ -135,23 +127,59 @@ public class SeparatedValuesSchema : SchemaBase
             Columns = table.Columns,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
-            ContractDiagnostics = SeparatedValuesReadModifiers.Describe(table.Columns)
+            ContractDiagnostics = []
         };
     }
 
+    /// <summary>
+    ///     Describes optional runtime settings for separated-values sources.
+    /// </summary>
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
         string name,
         SourceRuntimeSettingsDescribeContext context,
         params object?[] parameters)
     {
-        return [];
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesParallelScanOptions.MaximumParallelismSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "Maximum file-scan parallelism. Missing or 0 selects automatically; 1 forces sequential scanning.")
+        ];
     }
 
+    /// <summary>
+    ///     Plans projection, scalar predicate, and safe slicing pushdown.
+    /// </summary>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
+        var sourceParameters = ParseParameters(parameters);
+
         return name.ToLowerInvariant() switch
         {
-            CommaTable or TabTable or SemicolonTable => SeparatedValuesSourcePlanner.Plan(request),
+            CommaTable => SeparatedValuesSourcePlanner.Plan(
+                SeparatedValuesSchemaDiscovery.GetSnapshot(
+                    sourceParameters.Path,
+                    ",",
+                    sourceParameters.HasHeader,
+                    sourceParameters.SkipLines),
+                request),
+            TabTable => SeparatedValuesSourcePlanner.Plan(
+                SeparatedValuesSchemaDiscovery.GetSnapshot(
+                    sourceParameters.Path,
+                    "\t",
+                    sourceParameters.HasHeader,
+                    sourceParameters.SkipLines),
+                request),
+            SemicolonTable => SeparatedValuesSourcePlanner.Plan(
+                SeparatedValuesSchemaDiscovery.GetSnapshot(
+                    sourceParameters.Path,
+                    ";",
+                    sourceParameters.HasHeader,
+                    sourceParameters.SkipLines),
+                request),
             _ => SourcePlanResult.RejectAll(request)
         };
     }
@@ -204,57 +232,46 @@ public class SeparatedValuesSchema : SchemaBase
     private static ISchemaTable CreateTable(
         string separator,
         SourceMetadataContext metadataContext,
-        object?[] parameters)
+        SourceParameters parameters)
     {
-        if (metadataContext.AllColumns.Count > 0 && parameters[0] is not string)
-            return new InitiallyInferredTable(metadataContext.AllColumns);
-
         return new SeparatedValuesTable(
-            (string)parameters[0]!,
-            separator,
-            (bool)parameters[1]!,
-            (int)parameters[2]!)
-        {
-            InferredColumns = metadataContext.AllColumns
-        };
+            SeparatedValuesSchemaDiscovery.GetSnapshot(
+                parameters.Path,
+                separator,
+                parameters.HasHeader,
+                parameters.SkipLines,
+                metadataContext.EndWorkToken),
+            metadataContext);
     }
 
-    private static bool IsKnownSourceName(string name)
-    {
-        return name.Equals(CommaTable, StringComparison.OrdinalIgnoreCase) ||
-               name.Equals(TabTable, StringComparison.OrdinalIgnoreCase) ||
-               name.Equals(SemicolonTable, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsContractError(SourceContractDiagnostic diagnostic)
-    {
-        return diagnostic.Severity == SourceContractDiagnosticSeverity.Error;
-    }
-
-    private RowSource<T> CreateSource<T>(
+    private static RowSource<T> CreateSource<T>(
         string name,
         string separator,
         SourceExecutionContext executionContext,
-        object?[] parameters)
+        SourceParameters parameters)
     {
-        RowSource<object?[]> source = parameters[0] switch
-        {
-            Stream stream => new SeparatedValuesFromStreamRowsSource(
-                stream,
-                separator,
-                (bool)parameters[1]!,
-                (int)parameters[2]!,
-                executionContext),
-            string path => new SeparatedValuesFromFileRowsSource(
-                path,
-                separator,
-                (bool)parameters[1]!,
-                (int)parameters[2]!,
-                executionContext),
-            _ => throw new NotSupportedException($"Source parameter type '{parameters[0]?.GetType().Name}' is not supported.")
-        };
+        RowSource<object?[]> source = new SeparatedValuesFromFileRowsSource(
+            parameters.Path,
+            separator,
+            parameters.HasHeader,
+            parameters.SkipLines,
+            executionContext);
 
         return EnsureSourceType<T, object?[]>(name, source);
+    }
+
+    private static SourceParameters ParseParameters(object?[] parameters)
+    {
+        if (parameters is not [string path, bool hasHeader, int skipLines])
+        {
+            throw new ArgumentException(
+                "Separated-values sources require exactly (string path, bool hasHeader, int skipLines).",
+                nameof(parameters));
+        }
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentOutOfRangeException.ThrowIfNegative(skipLines);
+        return new SourceParameters(path, hasHeader, skipLines);
     }
 
     private static SchemaMethodInfo CreateCommaMethodInfo()
@@ -308,4 +325,6 @@ public class SeparatedValuesSchema : SchemaBase
 
         return new MethodsAggregator(methodsManager);
     }
+
+    private readonly record struct SourceParameters(string Path, bool HasHeader, int SkipLines);
 }

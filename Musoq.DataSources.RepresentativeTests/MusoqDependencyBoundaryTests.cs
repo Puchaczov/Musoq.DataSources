@@ -25,7 +25,7 @@ public sealed class MusoqDependencyBoundaryTests
         foreach (var propertyName in VersionProperties.Values.Select(GetPropertyName).Distinct(StringComparer.Ordinal))
         {
             var value = properties.Descendants(propertyName).SingleOrDefault()?.Value;
-            Assert.AreEqual("17.0.4-alpha.3", value, $"Unexpected value for {propertyName}.");
+            Assert.AreEqual("17.0.5-alpha.1", value, $"Unexpected value for {propertyName}.");
         }
 
         foreach (var projectPath in EnumerateProjectPaths(root))
@@ -87,6 +87,7 @@ public sealed class MusoqDependencyBoundaryTests
         return !path.Contains($"{Path.DirectorySeparatorChar}TestsSolutions{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
                && !name.Contains(".Tests", StringComparison.OrdinalIgnoreCase)
                && !name.EndsWith("Tests", StringComparison.OrdinalIgnoreCase)
+               && !name.Contains(".Playground", StringComparison.OrdinalIgnoreCase)
                && !name.EndsWith("Benchmarks", StringComparison.OrdinalIgnoreCase);
     }
 

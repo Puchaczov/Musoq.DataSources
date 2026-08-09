@@ -7,7 +7,7 @@ internal class ProcessBasedTable : ISchemaTable
 {
     public ISchemaColumn[] Columns => ProcessHelper.ProcessColumns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(System.Diagnostics.Process));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(ProcessEntity));
 
     public ISchemaColumn GetColumnByName(string name)
     {

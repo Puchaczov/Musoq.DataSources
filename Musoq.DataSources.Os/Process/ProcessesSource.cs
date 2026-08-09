@@ -5,12 +5,12 @@ using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Process;
 
-internal class ProcessesSource(SourceExecutionContext executionContext) : RowSourceBase<System.Diagnostics.Process>
+internal class ProcessesSource(SourceExecutionContext executionContext) : RowSourceBase<ProcessEntity>
 {
     private const string ProcessesSourceName = "processes";
     private const int ChunkSize = 20;
 
-    protected override void CollectChunks(IChunkWriter<System.Diagnostics.Process> writer)
+    protected override void CollectChunks(IChunkWriter<ProcessEntity> writer)
     {
         var progress = new DataSourceProgressReporter(executionContext, ProcessesSourceName);
         progress.Begin();
@@ -18,7 +18,7 @@ internal class ProcessesSource(SourceExecutionContext executionContext) : RowSou
 
         try
         {
-            var chunk = new List<System.Diagnostics.Process>(ChunkSize);
+            var chunk = new List<ProcessEntity>(ChunkSize);
             var processes = System.Diagnostics.Process.GetProcesses();
             progress.RowsKnown(processes.Length);
 
@@ -27,7 +27,7 @@ internal class ProcessesSource(SourceExecutionContext executionContext) : RowSou
                 writer.CancellationToken.ThrowIfCancellationRequested();
                 progress.RowRead();
 
-                chunk.Add(process);
+                chunk.Add(new ProcessEntity(process));
                 totalRowsProcessed++;
 
                 if (chunk.Count < ChunkSize)

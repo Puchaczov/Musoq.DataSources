@@ -17,7 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Musoq.DataSources.SeparatedValues\Musoq.DataSources.SeparatedValues.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.Archives\Musoq.DataSources.Archives.csproj"/>
     </ItemGroup>

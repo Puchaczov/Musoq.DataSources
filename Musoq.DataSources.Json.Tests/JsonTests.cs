@@ -22,7 +22,7 @@ public class JsonTests
     public void SimpleSelectTest()
     {
         var query =
-            @"select Name, Age from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
+            @"select Name, Age from #json.file('./JsonTestFile_First.json')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -52,10 +52,10 @@ public class JsonTests
     }
 
     [TestMethod]
-    public void SelectWithArrayLengthTest()
+    public void SelectWithNestedArrayTest()
     {
         var query =
-            @"select Name, Length(Books) from #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
+            @"select Name, Books from #json.file('./JsonTestFile_First.json')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -63,46 +63,46 @@ public class JsonTests
         Assert.AreEqual(2, table.Columns.Count());
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
-        Assert.AreEqual("Length(Books)", table.Columns.ElementAt(1).ColumnName);
-        Assert.AreEqual(typeof(int), table.Columns.ElementAt(1).ColumnType);
+        Assert.AreEqual("Books", table.Columns.ElementAt(1).ColumnName);
+        Assert.AreEqual(typeof(object), table.Columns.ElementAt(1).ColumnType);
 
         Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Aleksander" && (int)r.Values[1] == 2),
+                (string)r.Values[0] == "Aleksander" && ((System.Collections.Generic.List<object>)r.Values[1]).Count == 2),
             "Missing record for Aleksander with value 2");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Mikolaj" && (int)r.Values[1] == 0),
+                (string)r.Values[0] == "Mikolaj" && ((System.Collections.Generic.List<object>)r.Values[1]).Count == 0),
             "Missing record for Mikolaj with value 0");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Marek" && (int)r.Values[1] == 0),
+                (string)r.Values[0] == "Marek" && ((System.Collections.Generic.List<object>)r.Values[1]).Count == 0),
             "Missing record for Marek with value 0");
     }
 
     [TestMethod]
-    public void MakeFlatArrayTest()
+    public void SelectNestedArrayTest()
     {
         var query =
-            @"select MakeFlat(Array) from #json.file('./JsonTestFile_MakeFlatArray.json', './JsonTestFile_MakeFlatArray.schema.json')";
+            @"select Array from #json.file('./JsonTestFile_MakeFlatArray.json')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Columns.Count());
-        Assert.AreEqual("MakeFlat(Array)", table.Columns.ElementAt(0).ColumnName);
-        Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
+        Assert.AreEqual("Array", table.Columns.ElementAt(0).ColumnName);
+        Assert.AreEqual(typeof(object), table.Columns.ElementAt(0).ColumnType);
 
         Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "1, 2, 3"
-        ), "First entry should be '1, 2, 3'");
+            ((System.Collections.Generic.List<object>)row.Values[0]).Count == 3
+        ), "First entry should contain three values");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == string.Empty
-        ), "Second entry should be an empty string");
+            ((System.Collections.Generic.List<object>)row.Values[0]).Count == 0
+        ), "Second entry should be an empty array");
     }
 
     [TestMethod]

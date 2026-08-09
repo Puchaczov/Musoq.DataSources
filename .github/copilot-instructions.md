@@ -7,7 +7,7 @@
 - The engine itself is outside this repo. Stay focused on plugin-side schema, row shaping, SQL-callable helpers, and integration code.
 
 ## Repository-wide conventions
-- Dynamic plugins commonly override `GetTableByName()` / `GetRowSource()` and may return `InitiallyInferredTable` when query-side types are supplied.
+- Dynamic plugins commonly override `GetTableByName()` / `GetRowSource()` and may combine exact source discovery with query-side type metadata.
 - Static table classes are intentionally thin: expose `Entity.Columns` and `SchemaTableMetadata(typeof(EntityType))`.
 - SQL-callable helpers live in `LibraryBase` subclasses and use `[BindableClass]` / `[BindableMethod]`; injected source entities often use `[InjectSpecificSource(typeof(...))]`.
 - Streaming sources often inherit `AsyncRowsSourceBase<T>` and should preserve chunking plus `RuntimeContext.ReportDataSourceBegin/End(...)` behavior.
@@ -21,7 +21,6 @@
 
 ### Core helpers
 - AsyncRowsSource: `Musoq.DataSources.AsyncRowsSource/copilot-instructions.md`
-- JsonHelpers: `Musoq.DataSources.JsonHelpers/copilot-instructions.md`
 - LLMHelpers: `Musoq.DataSources.LLMHelpers/copilot-instructions.md`
 - Roslyn.CommandLineArguments: `Musoq.DataSources.Roslyn.CommandLineArguments/copilot-instructions.md`
 

@@ -1,23 +1,35 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using Musoq.DataSources.Structured;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues;
 
 internal static class SeparatedValuesSourcePlanner
 {
-    public static SourcePlanResult Plan(SourcePlanRequest request)
+    public static SourcePlanResult Plan(
+        StructuredSchemaSnapshot snapshot,
+        SourcePlanRequest request)
     {
         var requiredColumns = request.RequiredColumns ?? [];
-        var (acceptedPredicate, residualPredicate) = SplitPredicate(request.Predicate, IsSupportedPredicate);
+        var (acceptedPredicate, residualPredicate) = SplitPredicate(
+            request.Predicate,
+            expression => IsSupportedPredicate(snapshot, expression));
         var residualOrderBy = request.OrderBy ?? [];
         var acceptsSlice = residualPredicate is null && residualOrderBy.Count == 0;
+        var layout = StructuredExecutionLayout.Bind(
+            snapshot,
+            GetColumnNames(requiredColumns),
+            IncludesCompleteSchema(snapshot, request.RequiredColumns));
         var readPlan = new SeparatedValuesReadPlan
         {
             ProjectionAccepted = request.RequiredColumns is not null,
             AcceptedPredicate = acceptedPredicate,
             HasResidualWork = residualPredicate is not null || residualOrderBy.Count > 0
         };
+        var properties = SeparatedValuesReadPlan.CreateProperties(readPlan);
+        properties[SeparatedValuesPlanning.LayoutPropertyName] = layout;
 
         return new SourcePlanResult
         {
@@ -29,7 +41,7 @@ internal static class SeparatedValuesSourcePlanner
                 AcceptedOrderBy = [],
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
-                Properties = SeparatedValuesReadPlan.CreateProperties(readPlan)
+                Properties = properties
             },
             AcceptedColumns = requiredColumns,
             AcceptedPredicate = acceptedPredicate,
@@ -40,9 +52,15 @@ internal static class SeparatedValuesSourcePlanner
             ResidualSkip = acceptsSlice ? null : request.Skip,
             AcceptedTake = acceptsSlice ? request.Take : null,
             ResidualTake = acceptsSlice ? null : request.Take,
-            Cardinality = CardinalityEstimate.Unknown("Separated values source cardinality depends on file contents."),
+            Cardinality = acceptedPredicate is null
+                ? CardinalityEstimate.Exact(snapshot.RowCount, "Exact separated-values discovery row count.")
+                : CardinalityEstimate.Bounded(
+                    0,
+                    snapshot.RowCount,
+                    1.0,
+                    "Separated-values predicate pushdown bounds the discovered rows."),
             Diagnostics = [],
-            ContractDiagnostics = SeparatedValuesReadModifiers.Plan(requiredColumns)
+            ContractDiagnostics = []
         };
     }
 
@@ -82,12 +100,66 @@ internal static class SeparatedValuesSourcePlanner
         return dotIndex >= 0 ? name[(dotIndex + 1)..] : name;
     }
 
-    private static bool IsSupportedPredicate(SourcePredicateExpression expression)
+    private static IEnumerable<string> GetColumnNames(IReadOnlyList<SourceColumnRef> columns)
     {
-        return expression is SourcePredicateComparison comparison &&
-               TryGetComparisonParts(comparison, out _, out var literal, out var op) &&
-               literal.Value is not null &&
-               IsSupportedOperator(op);
+        foreach (var column in columns)
+            yield return NormalizeColumnName(column.Name);
+    }
+
+    private static bool IncludesCompleteSchema(
+        StructuredSchemaSnapshot snapshot,
+        IReadOnlyList<SourceColumnRef>? requiredColumns)
+    {
+        if (requiredColumns is null)
+            return true;
+        if (requiredColumns.Count != snapshot.Columns.Length)
+            return false;
+
+        for (var index = 0; index < requiredColumns.Count; index++)
+        {
+            if (!string.Equals(
+                    NormalizeColumnName(requiredColumns[index].Name),
+                    snapshot.Columns[index].Name,
+                    StringComparison.Ordinal))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsSupportedPredicate(
+        StructuredSchemaSnapshot snapshot,
+        SourcePredicateExpression expression)
+    {
+        if (expression is not SourcePredicateComparison comparison ||
+            !TryGetComparisonParts(comparison, out var name, out var literal, out var op) ||
+            literal.Value is null ||
+            !IsSupportedOperator(op) ||
+            !snapshot.TryGetColumn(name, out var column))
+            return false;
+
+        return column.TypeState.Kind switch
+        {
+            StructuredValueKind.Long => CanConvert<long>(literal.Value),
+            StructuredValueKind.Decimal => CanConvert<decimal>(literal.Value),
+            StructuredValueKind.Double => CanConvert<double>(literal.Value),
+            StructuredValueKind.Boolean => IsEqualityOperator(op) && literal.Value is bool,
+            StructuredValueKind.String => IsEqualityOperator(op) && literal.Value is string,
+            _ => false
+        };
+    }
+
+    private static bool CanConvert<T>(object value)
+    {
+        try
+        {
+            _ = Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (Exception exception) when (exception is InvalidCastException or FormatException or OverflowException)
+        {
+            return false;
+        }
     }
 
     private static bool IsSupportedOperator(SourcePredicateComparisonOperator op)
@@ -98,6 +170,11 @@ internal static class SeparatedValuesSourcePlanner
             SourcePredicateComparisonOperator.GreaterOrEqual or
             SourcePredicateComparisonOperator.LessThan or
             SourcePredicateComparisonOperator.LessOrEqual;
+    }
+
+    private static bool IsEqualityOperator(SourcePredicateComparisonOperator op)
+    {
+        return op is SourcePredicateComparisonOperator.Equal or SourcePredicateComparisonOperator.NotEqual;
     }
 
     private static (SourcePredicateExpression? Accepted, SourcePredicateExpression? Residual) SplitPredicate(

@@ -248,7 +248,7 @@ public class OsSchema : SchemaBase
     ///                         The name that the system uses to identify the process to
     ///                         the user
     ///                     </column>
-    ///                     <column name="ProcessorAffinity" type="IntPtr">
+    ///                     <column name="ProcessorAffinity" type="IntPtr?">
     ///                         Gets the processors on which the threads in this
     ///                         process can be scheduled to run
     ///                     </column>
@@ -459,7 +459,7 @@ public class OsSchema : SchemaBase
                     name,
                     new ZipSource((string)parameters[0], executionContext));
             case ProcessesName:
-                return EnsureSourceType<T, System.Diagnostics.Process>(
+                return EnsureSourceType<T, ProcessEntity>(
                     name,
                     new ProcessesSource(executionContext));
             case DllsTable:

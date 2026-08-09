@@ -1,25 +1,30 @@
+#nullable enable
+
 using System;
-using System.Collections.Generic;
+using System.Buffers;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using CsvHelper;
-using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Common;
+using Musoq.DataSources.Structured;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues;
 
-internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]>
+internal sealed class SeparatedValuesFromFileRowsSource : RowSourceBase<object?[]>
 {
+    private const int EarlyTakeInputBufferSize = 64 * 1024;
+    private const int EarlyTakeRowLimit = 4096;
+    private const int SequentialInputBufferSize = 1024 * 1024;
+    private const int ZeroColumnInputBufferSize = 64 * 1024;
     private const string SeparatedValuesSourceName = "separated_values";
     private readonly SourceExecutionContext _executionContext;
-    private readonly SeparatedValueInfo _file;
-    private long _totalRowsProcessed;
+    private readonly bool _hasHeader;
+    private readonly string _path;
+    private readonly string _separator;
+    private readonly byte _separatorByte;
+    private readonly int _skipLines;
 
     public SeparatedValuesFromFileRowsSource(
         string filePath,
@@ -27,249 +32,274 @@ internal class SeparatedValuesFromFileRowsSource : AsyncRowsSourceBase<object?[]
         bool hasHeader,
         int skipLines,
         SourceExecutionContext executionContext)
-        : base(executionContext.EndWorkToken)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+        ArgumentNullException.ThrowIfNull(separator);
+        ArgumentNullException.ThrowIfNull(executionContext);
+        ArgumentOutOfRangeException.ThrowIfNegative(skipLines);
+        if (separator.Length != 1 || separator[0] > 0x7f)
+            throw new ArgumentException("The separator must be one ASCII character.", nameof(separator));
+
+        _path = Path.GetFullPath(filePath);
+        _separator = separator;
+        _separatorByte = checked((byte)separator[0]);
+        _hasHeader = hasHeader;
+        _skipLines = skipLines;
         _executionContext = executionContext;
-        _file = new SeparatedValueInfo
-        {
-            FilePath = filePath,
-            HasHeader = hasHeader,
-            Separator = separator,
-            SkipLines = skipLines
-        };
     }
 
-    protected override async Task CollectChunksAsync(
-        IChunkWriter<object?[]> writer,
-        CancellationToken cancellationToken)
+    protected override void CollectChunks(IChunkWriter<object?[]> writer)
     {
         var progress = new DataSourceProgressReporter(_executionContext, SeparatedValuesSourceName);
         progress.Begin();
-        _totalRowsProcessed = 0;
+        CancellationTokenSource? linkedCancellation = null;
+        long rowsEmitted = 0;
 
         try
         {
-            await ProcessFileAsync(_file, writer, progress, cancellationToken);
+            if (_executionContext.EndWorkToken.IsCancellationRequested || writer.CancellationToken.IsCancellationRequested)
+                return;
+
+            var cancellationToken = writer.CancellationToken;
+            if (_executionContext.EndWorkToken.CanBeCanceled &&
+                !_executionContext.EndWorkToken.Equals(writer.CancellationToken))
+            {
+                linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                    writer.CancellationToken,
+                    _executionContext.EndWorkToken);
+                cancellationToken = linkedCancellation.Token;
+            }
+
+            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(
+                _path,
+                _separator,
+                _hasHeader,
+                _skipLines,
+                cancellationToken);
+            EnsurePlanStillMatches(snapshot);
+            progress.RowsKnown(snapshot.RowCount);
+
+            var readPlan = SeparatedValuesReadPlan.From(_executionContext.Plan);
+            var projectedColumns = readPlan.ProjectionAccepted
+                ? _executionContext.Plan.AcceptedColumns.Count
+                : _executionContext.AllColumns.Count > 0
+                    ? _executionContext.AllColumns.Count
+                    : snapshot.Columns.Length;
+            var strategy = SeparatedValuesReadStrategySelector.Select(new SeparatedValuesReadStrategyContext(
+                snapshot.Identity.Length,
+                projectedColumns,
+                snapshot.Columns.Length,
+                _executionContext.Plan.AcceptedTake,
+                readPlan.HasResidualWork,
+                readPlan.ProjectionAccepted));
+            progress.SetRowsReadReportInterval(strategy.RowChunkSize);
+
+            if (_executionContext.Plan.AcceptedTake is 0)
+                return;
+
+            if (CanUseZeroColumnScan(readPlan))
+            {
+                rowsEmitted = ProcessZeroColumnScan(
+                    snapshot,
+                    writer,
+                    progress,
+                    strategy.RowChunkSize,
+                    cancellationToken);
+                return;
+            }
+
+            var maximumParallelism = SeparatedValuesParallelScanOptions.Resolve(snapshot, _executionContext);
+            if (maximumParallelism > 1)
+            {
+                rowsEmitted = OrderedParallelPartitionRunner.Run(
+                    snapshot.Partitions,
+                    maximumParallelism,
+                    writer,
+                    (partition, partitionWriter, token) => ProcessPartition(
+                        snapshot,
+                        partition,
+                        partitionWriter,
+                        strategy.RowChunkSize,
+                        token),
+                    progress.RowsRead,
+                    cancellationToken);
+            }
+            else
+            {
+                rowsEmitted = ProcessSequential(snapshot, writer, progress, strategy.RowChunkSize, cancellationToken);
+            }
         }
         finally
         {
-            progress.End(_totalRowsProcessed);
+            linkedCancellation?.Dispose();
+            progress.End(rowsEmitted);
         }
     }
 
-    private async Task ProcessFileAsync(
-        SeparatedValueInfo csvFile,
-        IChunkWriter<object?[]> writer,
-        DataSourceProgressReporter progress,
-        CancellationToken cancellationToken)
+    private bool CanUseZeroColumnScan(SeparatedValuesReadPlan readPlan)
     {
-        if (csvFile.FilePath is null)
-            throw new InvalidOperationException("File path cannot be null.");
-
-        if (csvFile.Separator is null)
-            throw new InvalidOperationException("Separator cannot be null.");
-
-        var file = new FileInfo(csvFile.FilePath);
-
-        if (!file.Exists)
-            return;
-
-        if (_executionContext.Plan.AcceptedTake is 0)
-            return;
-
-        var readPlan = SeparatedValuesReadPlan.From(_executionContext.Plan);
-        var columns = GetProjectedColumns(_executionContext, readPlan);
-        var strategy = SeparatedValuesReadStrategySelector.Select(
-            CreateStrategyContext(file.Length, columns.Length, readPlan, _executionContext.AllColumns.Count > 0));
-        var encoding = SeparatedValuesReadModifiers.ResolveFileEncodingOrThrow(_executionContext.AllColumns);
-        var indexToNameMap = strategy.AvoidSecondHeaderOpen
-            ? CreateIndexToNameMap(_executionContext.AllColumns)
-            : await ProcessHeaderAsync(file, csvFile, strategy, encoding);
-
-        await ProcessDataAsync(
-            file,
-            csvFile,
-            writer,
-            indexToNameMap,
-            columns,
-            readPlan,
-            strategy,
-            encoding,
-            progress,
-            cancellationToken);
+        var plan = _executionContext.Plan;
+        return readPlan.ProjectionAccepted &&
+               !readPlan.HasResidualWork &&
+               plan.AcceptedColumns.Count == 0 &&
+               plan.AcceptedPredicate is null &&
+               plan.AcceptedSkip is null &&
+               plan.AcceptedTake is null;
     }
 
-    private static async Task<IReadOnlyDictionary<int, string>> ProcessHeaderAsync(
-        FileInfo file,
-        SeparatedValueInfo csvFile,
-        SeparatedValuesReadStrategy strategy,
-        Encoding encoding)
-    {
-        var header = await SeparatedValuesHeaderReader.ReadFirstRecordAsync(
-            file,
-            csvFile.Separator!,
-            csvFile.SkipLines,
-            strategy.StreamBufferSize,
-            encoding);
-
-        if (header.Length == 0)
-            throw new NotSupportedException("File has no header or no data. Please check if file is not empty.");
-
-        return SeparatedValuesHeaderReader.CreateIndexToNameMap(header, csvFile.HasHeader);
-    }
-
-    private async Task ProcessDataAsync(
-        FileInfo file,
-        SeparatedValueInfo csvFile,
+    private static long ProcessZeroColumnScan(
+        StructuredSchemaSnapshot snapshot,
         IChunkWriter<object?[]> writer,
-        IReadOnlyDictionary<int, string> indexToNameMap,
-        IReadOnlyCollection<ISchemaColumn> columns,
-        SeparatedValuesReadPlan readPlan,
-        SeparatedValuesReadStrategy strategy,
-        Encoding encoding,
         DataSourceProgressReporter progress,
+        int chunkSize,
         CancellationToken cancellationToken)
     {
-        progress.SetRowsReadReportInterval(strategy.RowChunkSize);
+        using var stream = new FileStream(
+            snapshot.Identity.CanonicalPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            1,
+            FileOptions.SequentialScan);
+        if (stream.Length != snapshot.Identity.Length)
+            throw new StructuredSourceChangedException(snapshot.Identity.CanonicalPath);
 
-        await using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read,
-            strategy.StreamBufferSize, FileOptions.SequentialScan);
-        using var reader = new StreamReader(stream, encoding, true, strategy.StreamBufferSize);
+        var buffer = ArrayPool<byte>.Shared.Rent(ZeroColumnInputBufferSize);
+        var position = 0L;
+        var partitionIndex = 0;
+        var rowsRead = 0L;
+        var pendingRows = 0L;
 
-        await SkipLinesAsync(reader, csvFile.SkipLines);
-
-        using var csvParser = new CsvParser(
-            reader,
-            SeparatedValuesCsvConfigurationFactory.Create(csvFile.Separator!, strategy.StreamBufferSize, true));
-
-        if (csvFile.HasHeader)
-            await csvParser.ReadAsync();
-
-        var parser = new SeparatedValuesRowParser(
-            indexToNameMap,
-            _executionContext.AllColumns,
-            columns,
-            readPlan.ProjectionAccepted,
-            readPlan.AcceptedPredicate);
-        var fieldReader = new SeparatedValuesCsvParserFieldReader(csvParser);
-        var chunk = new List<object?[]>(strategy.RowChunkSize);
-        long skipped = 0;
-        long emitted = 0;
-
-        while (await csvParser.ReadAsync())
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            progress.RowRead();
-
-            if (!parser.MatchesAcceptedPredicate(fieldReader))
-                continue;
-
-            if (_executionContext.Plan.AcceptedSkip.HasValue &&
-                skipped < _executionContext.Plan.AcceptedSkip.Value)
+            while (true)
             {
-                skipped++;
-                continue;
+                cancellationToken.ThrowIfCancellationRequested();
+                var read = stream.Read(buffer, 0, buffer.Length);
+                if (read == 0)
+                    break;
+
+                position += read;
+                while (partitionIndex < snapshot.Partitions.Length &&
+                       position >= snapshot.Partitions[partitionIndex].EndOffset)
+                {
+                    var partitionRows = snapshot.Partitions[partitionIndex].RowCount;
+                    progress.RowsRead(partitionRows);
+                    rowsRead += partitionRows;
+                    pendingRows += partitionRows;
+                    while (pendingRows >= chunkSize)
+                    {
+                        WriteRepeatedRows(writer, chunkSize, chunkSize);
+                        pendingRows -= chunkSize;
+                    }
+
+                    partitionIndex++;
+                }
             }
 
-            chunk.Add(strategy.EnableZeroColumnFastPath ? [] : parser.Parse(fieldReader));
-            emitted++;
-            _totalRowsProcessed++;
+            if (position != snapshot.Identity.Length ||
+                partitionIndex != snapshot.Partitions.Length ||
+                rowsRead != snapshot.RowCount)
+                throw new StructuredSourceChangedException(snapshot.Identity.CanonicalPath);
 
-            if (strategy.EnableEarlyTakeFastPath &&
-                _executionContext.Plan.AcceptedTake.HasValue &&
-                emitted >= _executionContext.Plan.AcceptedTake.Value)
-                break;
-
-            if (chunk.Count < strategy.RowChunkSize)
-                continue;
-
-            writer.Write(chunk);
-
-            chunk = new List<object?[]>(strategy.RowChunkSize);
+            WriteRepeatedRows(writer, pendingRows, chunkSize);
+            return rowsRead;
         }
-
-        if (chunk.Count > 0)
-            writer.Write(chunk);
-    }
-
-    private static async Task SkipLinesAsync(TextReader reader, int linesToSkip)
-    {
-        for (var i = 0; i < linesToSkip; i++)
-            await reader.ReadLineAsync();
-    }
-
-    private SeparatedValuesReadStrategyContext CreateStrategyContext(
-        long? fileSize,
-        int projectedColumnCount,
-        SeparatedValuesReadPlan readPlan,
-        bool canAvoidSecondHeaderOpen)
-    {
-        return new SeparatedValuesReadStrategyContext(
-            fileSize,
-            false,
-            projectedColumnCount,
-            _executionContext.AllColumns.Count,
-            _executionContext.Plan.AcceptedTake,
-            readPlan.HasResidualWork,
-            canAvoidSecondHeaderOpen,
-            readPlan.ProjectionAccepted);
-    }
-
-    private static Dictionary<int, string> CreateIndexToNameMap(IReadOnlyCollection<ISchemaColumn> columns)
-    {
-        return columns.ToDictionary(column => column.ColumnIndex, column => column.ColumnName);
-    }
-
-    private static ISchemaColumn[] GetProjectedColumns(
-        SourceExecutionContext executionContext,
-        SeparatedValuesReadPlan readPlan)
-    {
-        var acceptedColumns = executionContext.Plan.AcceptedColumns;
-
-        if (!readPlan.ProjectionAccepted)
-            return executionContext.AllColumns.ToArray();
-
-        var acceptedNames = CreateAcceptedColumnNameSet(acceptedColumns, executionContext.AllColumns);
-
-        return executionContext.AllColumns
-            .Where(column => acceptedNames.Contains(column.ColumnName))
-            .ToArray();
-    }
-
-    private static HashSet<string> CreateAcceptedColumnNameSet(
-        IReadOnlyCollection<SourceColumnRef> acceptedColumns,
-        IReadOnlyCollection<ISchemaColumn> allColumns)
-    {
-        var allNames = allColumns
-            .Select(column => column.ColumnName)
-            .ToHashSet(StringComparer.Ordinal);
-        var acceptedNames = new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (var acceptedColumn in acceptedColumns)
+        finally
         {
-            AddIfKnown(acceptedColumn.Name);
-
-            foreach (var part in acceptedColumn.Name.Split('.'))
-                AddIfKnown(part);
-        }
-
-        return acceptedNames;
-
-        void AddIfKnown(string name)
-        {
-            if (allNames.Count == 0 || allNames.Contains(name))
-                acceptedNames.Add(name);
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
-    private class SeparatedValueInfo
+    private static void WriteRepeatedRows(
+        IChunkWriter<object?[]> writer,
+        long rowCount,
+        int chunkSize)
     {
-        public string? FilePath { get; init; }
+        while (rowCount > 0)
+        {
+            var count = (int)Math.Min(chunkSize, rowCount);
+            writer.Write(new RepeatedValueChunk<object?[]>(Array.Empty<object?>(), count));
+            rowCount -= count;
+        }
+    }
 
-        public string? Separator { get; init; }
+    private long ProcessSequential(
+        StructuredSchemaSnapshot snapshot,
+        IChunkWriter<object?[]> writer,
+        DataSourceProgressReporter progress,
+        int chunkSize,
+        CancellationToken cancellationToken)
+    {
+        var processor = new SeparatedValuesRowProcessor(
+            snapshot,
+            _executionContext,
+            writer,
+            progress,
+            chunkSize,
+            cancellationToken);
+        using var reader = new SeparatedValuesUtf8Reader(
+            snapshot.Identity.CanonicalPath,
+            _separatorByte,
+            _skipLines,
+            _executionContext.Plan.AcceptedTake is > 0 and <= EarlyTakeRowLimit &&
+            !_executionContext.Plan.AcceptedSkip.HasValue
+                ? EarlyTakeInputBufferSize
+                : SequentialInputBufferSize,
+            cancellationToken);
+        if (_hasHeader && !reader.TryRead(out _))
+            throw new StructuredSchemaDriftException(snapshot.Identity.CanonicalPath, "the header disappeared");
 
-        public bool HasHeader { get; init; }
+        while (reader.TryRead(out var record) && processor.Process(record))
+        {
+        }
 
-        public int SkipLines { get; init; }
+        processor.Complete();
+        return processor.RowsEmitted;
+    }
+
+    private void ProcessPartition(
+        StructuredSchemaSnapshot snapshot,
+        StructuredPartition partition,
+        IChunkWriter<object?[]> writer,
+        int chunkSize,
+        CancellationToken cancellationToken)
+    {
+        var processor = new SeparatedValuesRowProcessor(
+            snapshot,
+            _executionContext,
+            writer,
+            null,
+            chunkSize,
+            cancellationToken,
+            partition.StartRow);
+        using var reader = new SeparatedValuesUtf8Reader(
+            snapshot.Identity.CanonicalPath,
+            _separatorByte,
+            partition.StartOffset,
+            partition.EndOffset,
+            cancellationToken);
+
+        while (reader.TryRead(out var record) && processor.Process(record))
+        {
+        }
+
+        processor.Complete();
+        if (processor.RowsRead != partition.RowCount)
+        {
+            throw new StructuredSchemaDriftException(
+                snapshot.Identity.CanonicalPath,
+                $"partition expected {partition.RowCount:N0} rows but read {processor.RowsRead:N0}");
+        }
+    }
+
+    private void EnsurePlanStillMatches(StructuredSchemaSnapshot snapshot)
+    {
+        if (_executionContext.Plan.Properties is null ||
+            !_executionContext.Plan.Properties.TryGetValue(SeparatedValuesPlanning.LayoutPropertyName, out var value) ||
+            value is not StructuredExecutionLayout layout)
+            return;
+
+        layout.EnsureCompatibleWith(snapshot);
     }
 }

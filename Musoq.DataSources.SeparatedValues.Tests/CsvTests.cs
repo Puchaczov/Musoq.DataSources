@@ -29,14 +29,6 @@ public class CsvTests
     }
 
     [TestMethod]
-    public void ReplaceNotValidCharacters()
-    {
-        var columnName = SeparatedValuesHelper.MakeHeaderNameValidColumnName("#Column name 123 22@");
-
-        Assert.AreEqual("ColumnName12322", columnName);
-    }
-
-    [TestMethod]
     public void SimpleSelectWithSkipLinesTest()
     {
         var query =
@@ -189,7 +181,7 @@ public class CsvTests
         var schema = new SeparatedValuesSchema();
         var context = RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None);
 
-        Assert.ThrowsException<NotSupportedException>(() =>
+        Assert.ThrowsException<ArgumentException>(() =>
             schema.GetRowSource<object[]>(
                 "comma",
                 context,

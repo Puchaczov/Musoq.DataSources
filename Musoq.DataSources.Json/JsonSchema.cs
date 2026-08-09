@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -10,10 +9,10 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Json;
 
 /// <description>
-///     Provides schema to work with json files
+///     Streams strict UTF-8 JSON files after exact source-driven schema discovery.
 /// </description>
 /// <short-description>
-///     Provides schema to work with json files
+///     Streams strict UTF-8 JSON files with dynamic top-level columns.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class JsonSchema : SchemaBase
@@ -23,12 +22,11 @@ public class JsonSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to the json file</virtual-param>
-    ///         <virtual-param>Path to the json schema file</virtual-param>
+    ///         <virtual-param>Path to a strict UTF-8 JSON file; UTF-8 BOM is allowed</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#json.file(string jsonFilePath, string jsonSchemaFilePath)</from>
-    ///                 <description>Gives the ability to process json files</description>
+    ///                 <from>#json.file(string jsonFilePath)</from>
+    ///                 <description>Discovers the complete top-level schema and streams the requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
     ///         </examples>
@@ -51,11 +49,15 @@ public class JsonSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object[] parameters)
     {
-        return name.ToLowerInvariant() switch
-        {
-            FileTable => new JsonTable((string)parameters[1]),
-            _ => throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.")
-        };
+        if (parameters is not [string path])
+            throw new ArgumentException("#json.file requires exactly one string path parameter.", nameof(parameters));
+
+        if (!string.Equals(name, FileTable, StringComparison.OrdinalIgnoreCase))
+            throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.");
+
+        return new JsonTable(
+            JsonSchemaDiscovery.GetSnapshot(path, metadataContext.EndWorkToken),
+            metadataContext);
     }
 
     /// <summary>
@@ -72,16 +74,19 @@ public class JsonSchema : SchemaBase
     {
         return name.ToLowerInvariant() switch
         {
-            FileTable when parameters[0] is Stream stream => EnsureSourceType<T, object[]>(
+            FileTable when parameters is [string path] => EnsureSourceType<T, object[]>(
                 name,
-                new JsonSource(stream, executionContext)),
-            FileTable => EnsureSourceType<T, object[]>(
-                name,
-                new JsonSource((string)parameters[0], executionContext)),
+                new JsonSource(path, executionContext)),
+            FileTable => throw new ArgumentException(
+                "#json.file requires exactly one string path parameter.",
+                nameof(parameters)),
             _ => throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.")
         };
     }
 
+    /// <summary>
+    ///     Describes the exact schema discovered for a JSON file.
+    /// </summary>
     public override SourceDescriptor DescribeSource(
         string name,
         SourceDescribeContext context,
@@ -99,19 +104,38 @@ public class JsonSchema : SchemaBase
         };
     }
 
+    /// <summary>
+    ///     Describes optional runtime settings for the JSON source.
+    /// </summary>
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
         string name,
         SourceRuntimeSettingsDescribeContext context,
         params object[] parameters)
     {
-        return [];
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                JsonParallelScanOptions.MaximumParallelismSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "Maximum file-scan parallelism. Missing or 0 selects automatically; 1 forces sequential scanning.")
+        ];
     }
 
+    /// <summary>
+    ///     Plans JSON projection, scalar predicate, and safe slicing pushdown.
+    /// </summary>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
-            FileTable => PlanProjectionOnly(request),
+            FileTable when parameters is [string path] => JsonSourcePlanner.Plan(
+                JsonSchemaDiscovery.GetSnapshot(path),
+                request),
+            FileTable => throw new ArgumentException(
+                "#json.file requires exactly one string path parameter.",
+                nameof(parameters)),
             _ => SourcePlanResult.RejectAll(request)
         };
     }
@@ -159,39 +183,9 @@ public class JsonSchema : SchemaBase
         var constructorInfo = new ConstructorInfo(
             null!,
             false,
-            [
-                ("jsonFilePath", typeof(string)),
-                ("jsonSchemaFilePath", typeof(string))
-            ]);
+            [("jsonFilePath", typeof(string))]);
 
         return new SchemaMethodInfo(FileTable, constructorInfo);
-    }
-
-    private static SourcePlanResult PlanProjectionOnly(SourcePlanRequest request)
-    {
-        var acceptedColumns = request.RequiredColumns ?? [];
-
-        return new SourcePlanResult
-        {
-            ExecutionPlan = new SourceExecutionPlan
-            {
-                Identity = request.Identity,
-                AcceptedColumns = acceptedColumns,
-                AcceptedPredicate = null,
-                AcceptedOrderBy = [],
-                Properties = new Dictionary<string, object>()
-            },
-            AcceptedColumns = acceptedColumns,
-            AcceptedPredicate = null,
-            ResidualPredicate = request.Predicate,
-            AcceptedOrderBy = [],
-            ResidualOrderBy = request.OrderBy ?? [],
-            ResidualSkip = request.Skip,
-            ResidualTake = request.Take,
-            Cardinality = CardinalityEstimate.Unknown("JSON source cardinality depends on file contents."),
-            Diagnostics = [],
-            ContractDiagnostics = []
-        };
     }
 
     private static MethodsAggregator CreateLibrary()

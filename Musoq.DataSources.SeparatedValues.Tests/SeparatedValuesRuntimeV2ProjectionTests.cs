@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Musoq.DataSources.Structured;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -15,6 +18,8 @@ namespace Musoq.DataSources.SeparatedValues.Tests;
 [TestClass]
 public class SeparatedValuesRuntimeV2ProjectionTests
 {
+    private const string PlanningFixture = "./Files/BankingTransactions.csv";
+
     [TestMethod]
     public void TryPlanSource_WhenRequiredColumnsAndSupportedPredicateArePresent_AcceptsProjectionPredicateAndSlice()
     {
@@ -22,11 +27,10 @@ public class SeparatedValuesRuntimeV2ProjectionTests
         var predicate = Equal("Name", "Alice");
         var request = CreateRequest(predicate, [new SourceColumnRef("Name")]);
 
-        var result = schema.TryPlanSource("comma", request, "data.csv", true, 0);
+        var result = schema.TryPlanSource("comma", request, PlanningFixture, true, 0);
 
         Assert.AreEqual(1, result.AcceptedColumns.Count);
         Assert.AreEqual("Name", result.AcceptedColumns[0].Name);
-        Assert.AreEqual(1, result.ExecutionPlan.AcceptedColumns.Count);
         Assert.AreEqual(predicate, result.AcceptedPredicate);
         Assert.IsNull(result.ResidualPredicate);
         Assert.AreEqual(request.Skip, result.AcceptedSkip);
@@ -36,43 +40,17 @@ public class SeparatedValuesRuntimeV2ProjectionTests
     }
 
     [TestMethod]
-    public void TryPlanSource_WhenNoColumnsAreRequired_AcceptsZeroColumnProjection()
+    public void TryPlanSource_WhenStringOrderingPredicateIsPresent_KeepsPredicateResidual()
     {
-        var schema = new SeparatedValuesSchema();
-        var request = CreateRequest(null, []);
-
-        var result = schema.TryPlanSource("comma", request, "data.csv", true, 0);
-        var readPlan = SeparatedValuesReadPlan.From(result.ExecutionPlan);
-
-        Assert.AreEqual(0, result.AcceptedColumns.Count);
-        Assert.AreEqual(0, result.ExecutionPlan.AcceptedColumns.Count);
-        Assert.IsTrue(readPlan.ProjectionAccepted);
-    }
-
-    [TestMethod]
-    public void TryPlanSource_WhenRequiredColumnsAreNull_DoesNotAcceptProjection()
-    {
-        var schema = new SeparatedValuesSchema();
-        var request = CreateRequest(null, null);
-
-        var result = schema.TryPlanSource("comma", request, "data.csv", true, 0);
-        var readPlan = SeparatedValuesReadPlan.From(result.ExecutionPlan);
-
-        Assert.AreEqual(0, result.AcceptedColumns.Count);
-        Assert.IsFalse(readPlan.ProjectionAccepted);
-    }
-
-    [TestMethod]
-    public void TryPlanSource_WhenOrPredicateIsPresent_KeepsPredicateResidual()
-    {
-        var schema = new SeparatedValuesSchema();
-        var predicate = new SourcePredicateLogical(
-            SourcePredicateLogicalOperator.Or,
-            Equal("Name", "Alice"),
-            Equal("Name", "Bob"));
+        var predicate = GreaterThan("Name", "Alice");
         var request = CreateRequest(predicate, [new SourceColumnRef("Name")]);
 
-        var result = schema.TryPlanSource("comma", request, "data.csv", true, 0);
+        var result = new SeparatedValuesSchema().TryPlanSource(
+            "comma",
+            request,
+            PlanningFixture,
+            true,
+            0);
 
         Assert.IsNull(result.AcceptedPredicate);
         Assert.AreEqual(predicate, result.ResidualPredicate);
@@ -81,369 +59,328 @@ public class SeparatedValuesRuntimeV2ProjectionTests
     }
 
     [TestMethod]
-    public void StreamRowsSource_WhenProjectionIsAccepted_SkipsUnrequestedColumnConversion()
+    public void TryPlanSource_WhenNoColumnsAreRequired_AcceptsZeroColumnProjection()
     {
-        var columns = CreateColumnsWithUnsupportedPayload();
-        var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
-            CancellationToken.None,
-            columns,
-            executionPlan: CreateExecutionPlan([new SourceColumnRef("Name")]));
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("Name,Payload\r\nAlice,unsupported\r\n"));
-        var source = new SeparatedValuesFromStreamRowsSource(stream, ",", true, 0, executionContext);
+        var result = new SeparatedValuesSchema().TryPlanSource(
+            "comma",
+            CreateRequest(null, []),
+            PlanningFixture,
+            true,
+            0);
 
-        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-        Assert.AreEqual(1, rows.Length);
-        Assert.AreEqual(1, rows[0].Length);
-        Assert.AreEqual("Alice", rows[0][0]);
+        Assert.AreEqual(0, result.AcceptedColumns.Count);
+        Assert.IsTrue(SeparatedValuesReadPlan.From(result.ExecutionPlan).ProjectionAccepted);
     }
 
     [TestMethod]
-    public void FileRowsSource_WhenProjectionIsAccepted_SkipsUnrequestedColumnConversion()
+    public void TryPlanSource_WhenRequiredColumnsAreNull_DoesNotAcceptProjection()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, "Name,Payload\r\nAlice,unsupported\r\n", Encoding.UTF8);
+        var result = new SeparatedValuesSchema().TryPlanSource(
+            "comma",
+            CreateRequest(null, null),
+            PlanningFixture,
+            true,
+            0);
 
-        try
-        {
-            var columns = CreateColumnsWithUnsupportedPayload();
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
-                CancellationToken.None,
-                columns,
-                executionPlan: CreateExecutionPlan([new SourceColumnRef("Name")]));
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
-
-            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-            Assert.AreEqual(1, rows.Length);
-            Assert.AreEqual(1, rows[0].Length);
-            Assert.AreEqual("Alice", rows[0][0]);
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
+        Assert.IsFalse(SeparatedValuesReadPlan.From(result.ExecutionPlan).ProjectionAccepted);
     }
 
     [TestMethod]
-    public void FileRowsSource_WhenExecutionPlanHasNoProperties_StillUsesProjectionFallback()
+    public void TryPlanSource_WhenOrPredicateIsPresent_KeepsPredicateResidual()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, "Name,Payload\r\nAlice,unsupported\r\n", Encoding.UTF8);
+        var predicate = new SourcePredicateLogical(
+            SourcePredicateLogicalOperator.Or,
+            Equal("Name", "Alice"),
+            Equal("Name", "Bob"));
+        var request = CreateRequest(predicate, [new SourceColumnRef("Name")]);
 
-        try
+        var result = new SeparatedValuesSchema().TryPlanSource(
+            "comma",
+            request,
+            PlanningFixture,
+            true,
+            0);
+
+        Assert.IsNull(result.AcceptedPredicate);
+        Assert.AreEqual(predicate, result.ResidualPredicate);
+        Assert.IsNull(result.AcceptedSkip);
+        Assert.AreEqual(request.Skip, result.ResidualSkip);
+    }
+
+    [TestMethod]
+    public void FileRowsSource_WhenProjectionIsAccepted_UsesDenseOutputAndSkipsUnrequestedConversion()
+    {
+        WithCsv("Name,Payload,Age\nAlice,unsupported,31\n", path =>
         {
-            var columns = CreateColumnsWithUnsupportedPayload();
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
+            var plan = Plan(path, null, [new SourceColumnRef("Age")]);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                columns,
-                executionPlan: CreateExecutionPlan([new SourceColumnRef("Name")]));
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
-
-            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
+                [
+                    new SchemaColumn("Age", 0, typeof(long)),
+                    new SchemaColumn("Payload", 1, typeof(Uri))
+                ],
+                executionPlan: plan);
+            var rows = ReadRows(path, context);
 
             Assert.AreEqual(1, rows.Length);
             Assert.AreEqual(1, rows[0].Length);
-            Assert.AreEqual("Alice", rows[0][0]);
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
+            Assert.AreEqual(31L, rows[0][0]);
+        });
     }
 
+    [TestMethod]
+    public void FileRowsSource_WhenExecutionPlanHasNoProperties_UsesDenseProjectionFallback()
+    {
+        WithCsv("A,B,C\n1,2,3\n", path =>
+        {
+            var plan = new SourceExecutionPlan
+            {
+                Identity = CreateIdentity(),
+                AcceptedColumns = [new SourceColumnRef("C")],
+                AcceptedOrderBy = []
+            };
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [new SchemaColumn("C", 0, typeof(long))],
+                executionPlan: plan);
+            var rows = ReadRows(path, context);
+
+            Assert.AreEqual(1, rows[0].Length);
+            Assert.AreEqual(3L, rows[0][0]);
+        });
+    }
 
     [TestMethod]
     public void FileRowsSource_WhenZeroColumnProjectionIsAccepted_EmitsEmptyRows()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, "Name,Age\r\nAlice,31\r\nBob,42\r\n", Encoding.UTF8);
-
-        try
+        WithCsv("Name,Age\nAlice,31\nBob,42\n", path =>
         {
-            var columns = CreateNameAgeColumns();
-            var plan = new SeparatedValuesSchema()
-                .TryPlanSource("comma", CreateRequest(null, [], skip: null, take: null), tempFile, true, 0)
-                .ExecutionPlan;
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
+            var plan = Plan(path, null, []);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                columns,
+                [],
                 executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
+            var chunks = new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context)
+                .Chunks
+                .ToArray();
+            var rows = chunks.SelectMany(chunk => chunk).ToArray();
 
-            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
+            Assert.IsTrue(chunks.Length > 0);
+            Assert.IsTrue(chunks.All(chunk =>
+                chunk is RowChunk<object?[]> { Source: RepeatedValueChunk<object?[]> }));
+            Assert.AreEqual(2, rows.Length);
+            Assert.IsTrue(rows.All(row => ReferenceEquals(row, Array.Empty<object?>())));
+        });
+    }
+
+    [TestMethod]
+    public void FileRowsSource_WhenUnescapedStringRepeats_ReusesSnapshotStringInstance()
+    {
+        WithCsv("Name\nStation-A\nStation-A\n", path =>
+        {
+            var plan = Plan(path, null, [new SourceColumnRef("Name")]);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [new SchemaColumn("Name", 0, typeof(string))],
+                executionPlan: plan);
+            var rows = ReadRows(path, context);
 
             Assert.AreEqual(2, rows.Length);
-            Assert.IsTrue(rows.All(row => row.Length == 0));
-        }
-        finally
+            Assert.AreSame(rows[0][0], rows[1][0]);
+        });
+    }
+
+    [TestMethod]
+    public void FileRowsSource_WhenZeroColumnProjectionHasPredicate_StillParsesAndFiltersRows()
+    {
+        WithCsv("Name,Age\nAlice,31\nBob,42\nCarol,53\n", path =>
         {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
+            var plan = Plan(path, GreaterThan("Age", 40L), []);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [],
+                executionPlan: plan);
+            var rows = ReadRows(path, context);
+
+            Assert.AreEqual(2, rows.Length);
+            Assert.IsTrue(rows.All(row => ReferenceEquals(row, Array.Empty<object?>())));
+        });
     }
 
     [TestMethod]
     public void FileRowsSource_WhenAcceptedPredicateUsesUnprojectedColumn_FiltersBeforeProjection()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, "Name,Age\r\nAlice,31\r\nBob,42\r\n", Encoding.UTF8);
-
-        try
+        WithCsv("Name,Age\nAlice,31\nBob,42\nCarol,53\n", path =>
         {
-            var columns = CreateNameAgeColumns();
-            var request = CreateRequest(
-                GreaterThan("Age", 40),
-                [new SourceColumnRef("Name")],
-                skip: null,
-                take: null);
-            var plan = new SeparatedValuesSchema()
-                .TryPlanSource("comma", request, tempFile, true, 0)
-                .ExecutionPlan;
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
+            var plan = Plan(
+                path,
+                GreaterThan("Age", 40L),
+                [new SourceColumnRef("Name")]);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                columns,
+                [new SchemaColumn("Name", 0, typeof(string))],
                 executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
+            var rows = ReadRows(path, context);
 
-            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-            Assert.AreEqual(1, rows.Length);
-            Assert.AreEqual("Bob", rows[0][0]);
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
+            CollectionAssert.AreEqual(new object?[] { "Bob", "Carol" }, rows.Select(row => row[0]).ToArray());
+        });
     }
 
     [TestMethod]
-    public void FileRowsSource_WhenAcceptedSkipAndTakeArePresent_AppliesSliceInSource()
+    public void FileRowsSource_WhenStringPredicateContainsEscapedQuote_MatchesWithoutMaterializingPredicateField()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, "Name,Age\r\nAlice,31\r\nBob,42\r\nCarol,53\r\n", Encoding.UTF8);
-
-        try
+        WithCsv("Name,Payload\n\"a\"\"b\",first\nother,second\n", path =>
         {
-            var columns = CreateNameAgeColumns();
+            var plan = Plan(path, Equal("Name", "a\"b"), [new SourceColumnRef("Payload")]);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [new SchemaColumn("Payload", 0, typeof(string))],
+                executionPlan: plan);
+            var rows = ReadRows(path, context);
+
+            Assert.AreEqual(1, rows.Length);
+            Assert.AreEqual("first", rows[0][0]);
+        });
+    }
+
+    [TestMethod]
+    public void FileRowsSource_WhenAcceptedSkipAndTakeArePresent_AppliesSliceAfterPredicate()
+    {
+        WithCsv("Name,Age\nAlice,31\nBob,42\nCarol,53\nDan,64\n", path =>
+        {
             var request = CreateRequest(
-                null,
+                GreaterThan("Age", 40L),
                 [new SourceColumnRef("Name")],
                 skip: 1,
                 take: 1);
             var plan = new SeparatedValuesSchema()
-                .TryPlanSource("comma", request, tempFile, true, 0)
+                .TryPlanSource("comma", request, path, true, 0)
                 .ExecutionPlan;
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                columns,
+                [new SchemaColumn("Name", 0, typeof(string))],
                 executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
-
-            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-            Assert.AreEqual(1, rows.Length);
-            Assert.AreEqual("Bob", rows[0][0]);
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
-    }
-
-    [TestMethod]
-    public void FileRowsSource_WhenAcceptedTakeIsZero_ReturnsNoRows()
-    {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, "Name,Age\r\nAlice,31\r\nBob,42\r\n", Encoding.UTF8);
-
-        try
-        {
-            var columns = CreateNameAgeColumns();
-            var request = CreateRequest(
-                null,
-                [new SourceColumnRef("Name")],
-                skip: null,
-                take: 0);
-            var plan = new SeparatedValuesSchema()
-                .TryPlanSource("comma", request, tempFile, true, 0)
-                .ExecutionPlan;
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
-                CancellationToken.None,
-                columns,
-                executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
-
-            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-            Assert.AreEqual(0, rows.Length);
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
-    }
-
-    [TestMethod]
-    public void FileRowsSource_WhenAcceptedTakeIsZero_DoesNotRequireHeader()
-    {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, string.Empty, Encoding.UTF8);
-
-        try
-        {
-            var columns = CreateNameAgeColumns();
-            var request = CreateRequest(
-                null,
-                [new SourceColumnRef("Name")],
-                skip: null,
-                take: 0);
-            var plan = new SeparatedValuesSchema()
-                .TryPlanSource("comma", request, tempFile, true, 0)
-                .ExecutionPlan;
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
-                CancellationToken.None,
-                columns,
-                executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
-
-            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-            Assert.AreEqual(0, rows.Length);
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
-    }
-
-    [TestMethod]
-    public void RowParser_WhenProjectionIsAccepted_DoesNotReadUnprojectedFields()
-    {
-        var parser = new SeparatedValuesRowParser(
-            new Dictionary<int, string>
-            {
-                [0] = "Name",
-                [1] = "Payload"
-            },
-            CreateColumnsWithUnsupportedPayload(),
-            [new SchemaColumn("Name", 0, typeof(string))],
-            true,
-            null);
-        var row = new TrackingFieldReader(["Alice", "unsupported"], 1);
-
-        var parsed = parser.Parse(row);
-
-        Assert.AreEqual(1, parsed.Length);
-        Assert.AreEqual("Alice", parsed[0]);
-        CollectionAssert.AreEqual(new[] { 0 }, row.AccessedIndexes.ToArray());
-    }
-
-    [TestMethod]
-    public void FileRowsSource_WhenAcceptedPredicateColumnIsMissing_Throws()
-    {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, "Name,Age\r\nAlice,31\r\n", Encoding.UTF8);
-
-        try
-        {
-            var columns = CreateNameAgeColumns();
-            var request = CreateRequest(
-                Equal("Missing", "value"),
-                [new SourceColumnRef("Name")],
-                skip: null,
-                take: null);
-            var plan = new SeparatedValuesSchema()
-                .TryPlanSource("comma", request, tempFile, true, 0)
-                .ExecutionPlan;
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
-                CancellationToken.None,
-                columns,
-                executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
-
-            var exception = Assert.ThrowsException<InvalidOperationException>(() =>
-                source.Chunks.SelectMany(chunk => chunk).ToArray());
-
-            StringAssert.Contains(exception.Message, "Missing");
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
-    }
-
-    [TestMethod]
-    public void FileRowsSource_WhenAcceptedPredicateValueCannotBeParsed_TreatsRowAsNotMatched()
-    {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, "Name,Age\r\nAlice,not-number\r\nBob,\r\nCarol,42\r\n", Encoding.UTF8);
-
-        try
-        {
-            var columns = CreateNameAgeColumns();
-            var request = CreateRequest(
-                GreaterThan("Age", 40),
-                [new SourceColumnRef("Name")],
-                skip: null,
-                take: null);
-            var plan = new SeparatedValuesSchema()
-                .TryPlanSource("comma", request, tempFile, true, 0)
-                .ExecutionPlan;
-            var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
-                CancellationToken.None,
-                columns,
-                executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, executionContext);
-
-            var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
+            var rows = ReadRows(path, context);
 
             Assert.AreEqual(1, rows.Length);
             Assert.AreEqual("Carol", rows[0][0]);
-        }
-        finally
+        });
+    }
+
+    [TestMethod]
+    public void FileRowsSource_WhenAcceptedTakeIsZero_DiscoversValidSourceButReadsNoDataRows()
+    {
+        WithCsv("Name,Age\nAlice,31\n", path =>
         {
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
-        }
+            var request = CreateRequest(
+                null,
+                [new SourceColumnRef("Name")],
+                skip: null,
+                take: 0);
+            var plan = new SeparatedValuesSchema()
+                .TryPlanSource("comma", request, path, true, 0)
+                .ExecutionPlan;
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [new SchemaColumn("Name", 0, typeof(string))],
+                executionPlan: plan);
+
+            Assert.AreEqual(0, ReadRows(path, context).Length);
+        });
     }
 
-
-    private static ISchemaColumn[] CreateColumnsWithUnsupportedPayload()
+    [TestMethod]
+    public void FileRowsSource_PreservesQuotedEmptyNullShortRowsAndCsvGrammar()
     {
-        return
-        [
-            new SchemaColumn("Name", 0, typeof(string)),
-            new SchemaColumn("Payload", 1, typeof(object))
-        ];
+        WithCsv(
+            "Name,Note,QuotedEmpty,NullValue,Age\r\n" +
+            "Ada,\"line one\r\nline two\",\"\",,31\r\n" +
+            "\r\n" +
+            "Bob,\"said \"\"hello\"\"\",text\r\n",
+            path =>
+            {
+                var required = new[]
+                {
+                    new SourceColumnRef("Name"),
+                    new SourceColumnRef("Note"),
+                    new SourceColumnRef("QuotedEmpty"),
+                    new SourceColumnRef("NullValue"),
+                    new SourceColumnRef("Age")
+                };
+                var plan = Plan(path, null, required);
+                var context = RuntimeV2TestContexts.CreateExecutionContext(
+                    CancellationToken.None,
+                    [
+                        new SchemaColumn("Name", 0, typeof(string)),
+                        new SchemaColumn("Note", 1, typeof(string)),
+                        new SchemaColumn("QuotedEmpty", 2, typeof(string)),
+                        new SchemaColumn("NullValue", 3, typeof(string)),
+                        new SchemaColumn("Age", 4, typeof(long?))
+                    ],
+                    executionPlan: plan);
+                var rows = ReadRows(path, context);
+
+                Assert.AreEqual(2, rows.Length);
+                CollectionAssert.AreEqual(
+                    new object?[] { "Ada", "line one\r\nline two", string.Empty, null, 31L },
+                    rows[0]);
+                CollectionAssert.AreEqual(
+                    new object?[] { "Bob", "said \"hello\"", "text", null, null },
+                    rows[1]);
+            });
     }
 
-    private static ISchemaColumn[] CreateNameAgeColumns()
+    [TestMethod]
+    public void FileRowsSource_WhenExplicitConversionFails_ThrowsInsteadOfReturningNull()
     {
-        return
-        [
-            new SchemaColumn("Name", 0, typeof(string)),
-            new SchemaColumn("Age", 1, typeof(int))
-        ];
+        WithCsv("Age\nnot-number\n", path =>
+        {
+            var plan = Plan(path, null, [new SourceColumnRef("Age")]);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [new SchemaColumn("Age", 0, typeof(int))],
+                executionPlan: plan);
+
+            var exception = Assert.ThrowsExactly<FormatException>(() => ReadRows(path, context));
+
+            StringAssert.Contains(FlattenMessages(exception), "column 'Age'");
+            StringAssert.Contains(FlattenMessages(exception), "Int32");
+        });
+    }
+
+    private static SourceExecutionPlan Plan(
+        string path,
+        SourcePredicateExpression? predicate,
+        IReadOnlyList<SourceColumnRef> requiredColumns)
+    {
+        return new SeparatedValuesSchema()
+            .TryPlanSource(
+                "comma",
+                CreateRequest(predicate, requiredColumns, skip: null, take: null),
+                path,
+                true,
+                0)
+            .ExecutionPlan;
+    }
+
+    private static object?[][] ReadRows(string path, SourceExecutionContext context)
+    {
+        return new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context)
+            .Chunks
+            .SelectMany(chunk => chunk)
+            .ToArray();
     }
 
     private static SourcePlanRequest CreateRequest(
-        SourcePredicateExpression predicate,
-        IReadOnlyList<SourceColumnRef> requiredColumns,
+        SourcePredicateExpression? predicate,
+        IReadOnlyList<SourceColumnRef>? requiredColumns,
         long? skip = 1,
         long? take = 2)
     {
         return new SourcePlanRequest
         {
-            Identity = new SourceIdentity("separatedvalues", "separatedvalues", "separatedvalues", "comma"),
-            RequiredColumns = requiredColumns,
+            Identity = CreateIdentity(),
+            RequiredColumns = requiredColumns!,
             SourceRuntimeSettings = new Dictionary<string, string>(),
             Predicate = predicate,
             OrderBy = [],
@@ -452,30 +389,19 @@ public class SeparatedValuesRuntimeV2ProjectionTests
         };
     }
 
-    private static SourceExecutionPlan CreateExecutionPlan(IReadOnlyList<SourceColumnRef> acceptedColumns)
+    private static SourceIdentity CreateIdentity()
     {
-        return new SourceExecutionPlan
-        {
-            Identity = new SourceIdentity("separatedvalues", "separatedvalues", "separatedvalues", "comma"),
-            AcceptedColumns = acceptedColumns,
-            AcceptedOrderBy = []
-        };
+        return new SourceIdentity("separatedvalues", "separatedvalues", "separatedvalues", "comma");
     }
 
     private static SourcePredicateComparison Equal(string columnName, object value)
     {
-        return Comparison(
-            SourcePredicateComparisonOperator.Equal,
-            columnName,
-            value);
+        return Comparison(SourcePredicateComparisonOperator.Equal, columnName, value);
     }
 
     private static SourcePredicateComparison GreaterThan(string columnName, object value)
     {
-        return Comparison(
-            SourcePredicateComparisonOperator.GreaterThan,
-            columnName,
-            value);
+        return Comparison(SourcePredicateComparisonOperator.GreaterThan, columnName, value);
     }
 
     private static SourcePredicateComparison Comparison(
@@ -489,21 +415,26 @@ public class SeparatedValuesRuntimeV2ProjectionTests
             new SourcePredicateLiteral(value));
     }
 
-    private sealed class TrackingFieldReader(string[] fields, params int[] forbiddenIndexes) : ISeparatedValuesFieldReader
+    private static string FlattenMessages(Exception exception)
     {
-        private readonly HashSet<int> _forbiddenIndexes = forbiddenIndexes.ToHashSet();
+        var messages = string.Empty;
+        for (var current = exception; current is not null; current = current.InnerException)
+            messages += current.Message + Environment.NewLine;
+        return messages;
+    }
 
-        public List<int> AccessedIndexes { get; } = [];
+    private static void WithCsv(string contents, Action<string> assertion)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"musoq-csv-runtime-{Guid.NewGuid():N}.csv");
+        File.WriteAllText(path, contents, new UTF8Encoding(false, true));
 
-        public int FieldCount => fields.Length;
-
-        public string GetField(int index)
+        try
         {
-            if (_forbiddenIndexes.Contains(index))
-                throw new InvalidOperationException($"Field index {index} should not be accessed.");
-
-            AccessedIndexes.Add(index);
-            return fields[index];
+            assertion(path);
+        }
+        finally
+        {
+            File.Delete(path);
         }
     }
 }

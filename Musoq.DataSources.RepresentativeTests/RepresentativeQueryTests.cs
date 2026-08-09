@@ -379,7 +379,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Name, Age
-                    from #json.file('./Files/People.json', './Files/People.schema.json')
+                    from #json.file('./Files/People.json')
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -398,7 +398,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Name, Age
-                    from #json.file('./Files/People.json', './Files/People.schema.json')
+                    from #json.file('./Files/People.json')
                     where Age > 30
                     """;
 
@@ -410,15 +410,15 @@ public class RepresentativeQueryTests
     }
 
     /// <summary>
-    ///     Demonstrates array length in JSON.
-    ///     Query: Count skills per person.
+    ///     Demonstrates nested-array materialization in JSON.
+    ///     Query: Read skills only for rows that request them.
     /// </summary>
     [TestMethod]
-    public void Json_ArrayLength_ShouldCountItems()
+    public void Json_NestedArray_ShouldMaterializeItems()
     {
         var query = """
-                    select Name, Length(Skills) as SkillCount
-                    from #json.file('./Files/People.json', './Files/People.schema.json')
+                    select Name, Skills
+                    from #json.file('./Files/People.json')
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -427,10 +427,10 @@ public class RepresentativeQueryTests
         Assert.AreEqual(3, table.Count);
 
         var bobRow = table.First(r => (string)r[0] == "Bob");
-        Assert.AreEqual(3, bobRow[1], "Bob should have 3 skills");
+        Assert.AreEqual(3, ((List<object>)bobRow[1]).Count, "Bob should have 3 skills");
 
         var charlieRow = table.First(r => (string)r[0] == "Charlie");
-        Assert.AreEqual(0, charlieRow[1], "Charlie should have 0 skills");
+        Assert.AreEqual(0, ((List<object>)charlieRow[1]).Count, "Charlie should have 0 skills");
     }
 
     #endregion

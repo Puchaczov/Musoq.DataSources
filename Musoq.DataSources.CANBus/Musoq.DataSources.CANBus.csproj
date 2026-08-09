@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>4.0.3-alpha.4</Version>
+        <Version>4.0.3-alpha.5</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query CAN bus data and DBC files with SQL-style queries, turning frames into a tabular view.</Description>
@@ -35,6 +35,7 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Musoq.Plugins" Version="$(MusoqPluginsVersion)" ExcludeAssets="runtime" />
         <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" ExcludeAssets="runtime" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="Iot.Device.Bindings" Version="3.2.0"/>
         <PackageReference Include="System.Device.Gpio" Version="3.2.0"/>
     </ItemGroup>

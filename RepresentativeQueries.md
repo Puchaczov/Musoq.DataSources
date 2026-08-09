@@ -40,8 +40,8 @@ from #os.dirscompare('./source', './destination')
 where State <> 'TheSame'
 ```
 
-### Discover Cultures for CSV Parsing
-Find culture names and formatting defaults that can be used by separated-values column modifiers.
+### Discover Cultures
+Find culture names and formatting defaults exposed by the operating system.
 
 ```sql
 select
@@ -54,7 +54,7 @@ where Name like 'pl%'
 ```
 
 ### Discover Text Encodings
-Find runtime-supported text encodings before using an `encoding` read modifier.
+Find text encodings supported by the runtime. JSON and SeparatedValues themselves accept strict UTF-8 only.
 
 ```sql
 select
@@ -66,7 +66,7 @@ where WebName like '%1250%' or CodePage = 65001
 ```
 
 ### Inspect Current Culture Defaults
-See the default parsing behavior used when no culture modifier is declared.
+Inspect the process culture used by culture-aware plugins and helper functions.
 
 ```sql
 select
@@ -89,16 +89,16 @@ from #os.environmentvariables()
 ## 📊 CSV/Separated Values (`#separatedvalues`)
 
 ### Basic CSV Query with Aggregation
-Analyze banking transactions and calculate monthly income/outcome.
+Aggregate a dynamically discovered 1BRC-shaped file. `Temperature` is inferred as a numeric column.
 
 ```sql
-select 
-    ExtractFromDate(OperationDate, 'month') as Month,
-    SumIncome(ToDecimal(Money)) as Income,
-    SumOutcome(ToDecimal(Money)) as Outcome,
-    SumIncome(ToDecimal(Money)) + SumOutcome(ToDecimal(Money)) as Balance
-from #separatedvalues.comma('./transactions.csv', true, 0)
-group by ExtractFromDate(OperationDate, 'month')
+select
+    Station,
+    Min(Temperature) as Minimum,
+    Max(Temperature) as Maximum,
+    Avg(Temperature) as Average
+from #separatedvalues.semicolon('./measurements.csv', true, 0)
+group by Station
 ```
 
 ### Join Two CSV Files
@@ -134,16 +134,18 @@ where Salary > 50000
 ## 🗂️ JSON Queries (`#json`)
 
 ### Query JSON Array
-Extract data from a JSON file using a schema definition.
+Extract data from a JSON file. The complete top-level schema is discovered from the source; no schema file is needed.
 
 ```sql
 select 
     Name, 
     Age, 
-    Length(Books) as BookCount
-from #json.file('./data.json', './data.schema.json')
+    Books
+from #json.file('./data.json')
 where Age > 18
 ```
+
+JSON and SeparatedValues accept file paths rather than streams. To query a JSON or separated-values entry from an archive, extract it to a UTF-8 file first.
 
 ---
 

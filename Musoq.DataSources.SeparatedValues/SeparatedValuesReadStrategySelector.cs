@@ -1,15 +1,9 @@
 using System;
-using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.SeparatedValues;
 
 internal static class SeparatedValuesReadStrategySelector
 {
-    private const int UnknownStreamBufferSize = 64 * 1024;
-    private const int SmallFileBufferSize = 64 * 1024;
-    private const int MediumFileBufferSize = 256 * 1024;
-    private const int LargeFileBufferSize = 1024 * 1024;
-    private const int HugeFileBufferSize = 4 * 1024 * 1024;
     private const int SmallFileChunkRows = 4096;
     private const int MediumFileChunkRows = 8192;
     private const int LargeFileChunkRows = 4096;
@@ -27,48 +21,22 @@ internal static class SeparatedValuesReadStrategySelector
         var profile = SelectProfile(context);
         var rowChunkSize = CapChunkRows(profile.ChunkRows, context);
 
-        return new SeparatedValuesReadStrategy(
-            profile.BufferSize,
-            rowChunkSize,
-            context.CanAvoidSecondHeaderOpen && !context.IsStream,
-            context.ProjectionAccepted && context.ProjectedColumnCount == 0,
-            context.AcceptedTake.HasValue && !context.HasResidualWork);
+        return new SeparatedValuesReadStrategy(rowChunkSize);
     }
 
     private static StrategyProfile SelectProfile(SeparatedValuesReadStrategyContext context)
     {
-        if (context.IsStream || !context.FileSize.HasValue)
-        {
-            return new StrategyProfile(
-                UnknownStreamBufferSize,
-                RowChunking.DefaultChunkSize);
-        }
-
-        var fileSize = context.FileSize.Value;
+        var fileSize = context.FileSize;
         if (fileSize < SmallFileLimit)
-        {
-            return new StrategyProfile(
-                SmallFileBufferSize,
-                SmallFileChunkRows);
-        }
+            return new StrategyProfile(SmallFileChunkRows);
 
         if (fileSize <= MediumFileLimit)
-        {
-            return new StrategyProfile(
-                MediumFileBufferSize,
-                MediumFileChunkRows);
-        }
+            return new StrategyProfile(MediumFileChunkRows);
 
         if (fileSize <= LargeFileLimit)
-        {
-            return new StrategyProfile(
-                LargeFileBufferSize,
-                LargeFileChunkRows);
-        }
+            return new StrategyProfile(LargeFileChunkRows);
 
-        return new StrategyProfile(
-            HugeFileBufferSize,
-            HugeFileChunkRows);
+        return new StrategyProfile(HugeFileChunkRows);
     }
 
     private static int CapChunkRows(int baseChunkRows, SeparatedValuesReadStrategyContext context)
@@ -89,7 +57,5 @@ internal static class SeparatedValuesReadStrategySelector
         return Math.Max(1, chunkRows);
     }
 
-    private readonly record struct StrategyProfile(
-        int BufferSize,
-        int ChunkRows);
+    private readonly record struct StrategyProfile(int ChunkRows);
 }

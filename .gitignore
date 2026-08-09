@@ -266,9 +266,14 @@ __pycache__/
 *.pyc
 /Musoq.Tools.CopyReleased/conf.mrf
 
+# BenchmarkDotNet output is machine-local evidence. Curated results belong in docs/performance.
+BenchmarkDotNet.Artifacts/
+
 # License cache
 .licenses-cache/
 LinksCache.json
 
 # NuGet cache in TestsSolutions
 **/TestsSolutions/NugetCache/
+
+.codex/

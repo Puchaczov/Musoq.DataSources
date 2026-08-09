@@ -56,31 +56,10 @@ public class SeparatedValuesProgressReportingTests
     }
 
     [TestMethod]
-    public void StreamRowsSource_ReportsRowsReadAndEmittedRows()
-    {
-        var capture = new DataSourceProgressCapture();
-        var plan = CreateExecutionPlan([new SourceColumnRef("Name")]);
-        var context = RuntimeV2TestContexts.CreateExecutionContext(
-            CancellationToken.None,
-            CreateNameAgeColumns(),
-            dataSourceProgressCallback: capture.Handler,
-            executionPlan: plan);
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("Name,Age\r\nAlice,31\r\nBob,42\r\n"));
-        var source = new SeparatedValuesFromStreamRowsSource(stream, ",", true, 0, context);
-
-        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-        Assert.AreEqual(2, rows.Length);
-        Assert.AreEqual(1, capture.For("separated_values", DataSourcePhase.Begin).Count);
-        Assert.AreEqual(2, capture.For("separated_values", DataSourcePhase.RowsRead).Single().RowsProcessed);
-        Assert.AreEqual(2, capture.For("separated_values", DataSourcePhase.End).Single().RowsProcessed);
-    }
-
-    [TestMethod]
     public void FileRowsSource_WhenAcceptedTakeIsZero_ReportsEndWithoutRowsRead()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
-        File.WriteAllText(tempFile, string.Empty, Encoding.UTF8);
+        File.WriteAllText(tempFile, "Name,Age\r\nAlice,31\r\n", Encoding.UTF8);
 
         try
         {
@@ -121,15 +100,6 @@ public class SeparatedValuesProgressReportingTests
             new SchemaColumn("Name", 0, typeof(string)),
             new SchemaColumn("Age", 1, typeof(int))
         ];
-    }
-
-    private static SourceExecutionPlan CreateExecutionPlan(IReadOnlyList<SourceColumnRef> acceptedColumns)
-    {
-        return new SourceExecutionPlan
-        {
-            Identity = CreateIdentity(),
-            AcceptedColumns = acceptedColumns
-        };
     }
 
     private static SourcePlanRequest CreateRequest(

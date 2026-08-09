@@ -14,23 +14,26 @@ namespace Musoq.DataSources.Json.Tests;
 public class JsonRuntimeV2ProjectionTests
 {
     [TestMethod]
-    public void TryPlanSource_WhenRequiredColumnsArePresent_AcceptsProjectionOnly()
+    public void TryPlanSource_WhenScalarPredicateIsSupported_AcceptsProjectionPredicateAndSlice()
     {
         var schema = new JsonSchema();
         var predicate = Equal("Name", "Aleksander");
         var request = CreateRequest(predicate, [new SourceColumnRef("Name")]);
 
-        var result = schema.TryPlanSource("file", request, "data.json", "schema.json");
+        var result = schema.TryPlanSource("file", request, "./JsonTestFile_First.json");
 
         Assert.AreEqual(1, result.AcceptedColumns.Count);
         Assert.AreEqual("Name", result.AcceptedColumns[0].Name);
         Assert.AreEqual(1, result.ExecutionPlan.AcceptedColumns.Count);
-        Assert.IsNull(result.AcceptedPredicate);
-        Assert.AreEqual(predicate, result.ResidualPredicate);
+        Assert.AreEqual(predicate, result.AcceptedPredicate);
+        Assert.IsNull(result.ResidualPredicate);
         Assert.AreEqual(0, result.AcceptedOrderBy.Count);
         Assert.AreEqual(request.OrderBy.Count, result.ResidualOrderBy.Count);
-        Assert.AreEqual(request.Skip, result.ResidualSkip);
-        Assert.AreEqual(request.Take, result.ResidualTake);
+        Assert.AreEqual(request.Skip, result.AcceptedSkip);
+        Assert.AreEqual(request.Take, result.AcceptedTake);
+        Assert.IsNull(result.ResidualSkip);
+        Assert.IsNull(result.ResidualTake);
+        Assert.IsTrue(result.ExecutionPlan.Properties.ContainsKey(JsonPlanning.LayoutPropertyName));
     }
 
     [TestMethod]
@@ -38,9 +41,7 @@ public class JsonRuntimeV2ProjectionTests
     {
         var columns = new ISchemaColumn[]
         {
-            new SchemaColumn("Name", 0, typeof(string)),
-            new SchemaColumn("Age", 1, typeof(long)),
-            new SchemaColumn("Books", 2, typeof(List<object>))
+            new SchemaColumn("Age", 0, typeof(long))
         };
         var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
             CancellationToken.None,
@@ -51,9 +52,28 @@ public class JsonRuntimeV2ProjectionTests
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
         Assert.AreEqual(3, rows.Length);
-        Assert.IsTrue(rows.All(row => row.Length == 2));
-        Assert.IsTrue(rows.All(row => row[0] is null));
-        CollectionAssert.AreEquivalent(new object[] { 24L, 11L, 45L }, rows.Select(row => row[1]).ToArray());
+        Assert.IsTrue(rows.All(row => row.Length == 1));
+        CollectionAssert.AreEquivalent(new object[] { 24L, 11L, 45L }, rows.Select(row => row[0]).ToArray());
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenPredicateContainsOr_LeavesPredicateAndSliceResidual()
+    {
+        var schema = new JsonSchema();
+        var predicate = new SourcePredicateLogical(
+            SourcePredicateLogicalOperator.Or,
+            Equal("Age", 11L),
+            Equal("Age", 45L));
+        var request = CreateRequest(predicate, [new SourceColumnRef("Age")]);
+
+        var result = schema.TryPlanSource("file", request, "./JsonTestFile_First.json");
+
+        Assert.IsNull(result.AcceptedPredicate);
+        Assert.AreEqual(predicate, result.ResidualPredicate);
+        Assert.IsNull(result.AcceptedSkip);
+        Assert.IsNull(result.AcceptedTake);
+        Assert.AreEqual(request.Skip, result.ResidualSkip);
+        Assert.AreEqual(request.Take, result.ResidualTake);
     }
 
     private static SourcePlanRequest CreateRequest(

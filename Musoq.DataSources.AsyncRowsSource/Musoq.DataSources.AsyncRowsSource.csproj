@@ -28,9 +28,4 @@
         <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" ExcludeAssets="runtime" />
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Musoq.DataSources.JsonHelpers\Musoq.DataSources.JsonHelpers.csproj"/>
-    </ItemGroup>
-
-
 </Project>

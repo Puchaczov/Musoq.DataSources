@@ -101,7 +101,7 @@ internal static class ProcessHelper
             new SchemaColumn(nameof(System.Diagnostics.Process.MainWindowTitle), 9, typeof(string)),
             new SchemaColumn(nameof(System.Diagnostics.Process.PagedMemorySize64), 10, typeof(long)),
             new SchemaColumn(nameof(System.Diagnostics.Process.ProcessName), 11, typeof(string)),
-            new SchemaColumn(nameof(System.Diagnostics.Process.ProcessorAffinity), 12, typeof(IntPtr)),
+            new SchemaColumn(nameof(System.Diagnostics.Process.ProcessorAffinity), 12, typeof(IntPtr?)),
             new SchemaColumn(nameof(System.Diagnostics.Process.Responding), 13, typeof(bool)),
             new SchemaColumn(nameof(System.Diagnostics.Process.StartTime), 14, typeof(DateTime)),
             new SchemaColumn(nameof(System.Diagnostics.Process.TotalProcessorTime), 15, typeof(TimeSpan)),

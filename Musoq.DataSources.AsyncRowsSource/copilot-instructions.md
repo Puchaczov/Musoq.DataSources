@@ -16,9 +16,9 @@
 - Do not swallow producer exceptions; the base class is responsible for surfacing them.
 
 ## Cross-project impact
-- Changes here affect many plugins, especially `SeparatedValues`, `Roslyn`, `Git`, `GitHub`, `Jira`, and `Os` row sources.
-- `Musoq.DataSources.JsonHelpers` is referenced here, so object-resolution changes can leak into multiple consumers.
+- Changes here affect typed asynchronous sources in `CANBus`, `Roslyn`, `Git`, `GitHub`, `Jira`, and `Os`.
+- JSON and SeparatedValues use their own synchronous, format-specific row sources and do not depend on this package.
 
 ## Validate with
 - `Musoq.DataSources.AsyncRowsSource.Tests/AsyncRowsSourceBaseTests.cs`
-- A real consumer such as `Musoq.DataSources.SeparatedValues/SeparatedValuesFromFileRowsSource.cs`
+- A real consumer such as `Musoq.DataSources.Git/CommitsRowsSource.cs`

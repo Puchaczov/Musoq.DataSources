@@ -69,12 +69,10 @@ public class SeparatedValuesManualPerformanceTests
         var fileSize = new FileInfo(filePath).Length;
         var strategy = SeparatedValuesReadStrategySelector.Select(new SeparatedValuesReadStrategyContext(
             fileSize,
-            false,
             requiredColumns.Count,
             columns.Length,
             plan.AcceptedTake,
             readPlan.HasResidualWork,
-            true,
             readPlan.ProjectionAccepted));
         var context = RuntimeV2TestContexts.CreateExecutionContext(
             CancellationToken.None,
@@ -96,7 +94,7 @@ public class SeparatedValuesManualPerformanceTests
 
         Console.WriteLine(
             $"{profileName}/{scenarioName}: fileBytes={fileSize:n0}, rows={rowCount:n0}, " +
-            $"buffer={strategy.StreamBufferSize:n0}, chunkRows={strategy.RowChunkSize:n0}, " +
+            $"chunkRows={strategy.RowChunkSize:n0}, " +
             $"elapsed={stopwatch.Elapsed}, allocated={allocatedAfter - allocatedBefore:n0}, " +
             $"peakWorkingSet={process.PeakWorkingSet64:n0}");
     }
