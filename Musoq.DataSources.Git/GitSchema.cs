@@ -15,6 +15,7 @@ namespace Musoq.DataSources.Git;
 /// <description>
 ///     Provides schema to work with Git repositories.
 /// </description>
+/// <summary>Provides Musoq tables and planning metadata for Git repositories.</summary>
 /// <short-description>
 ///     Provides schema to work with Git repositories.
 /// </short-description>
@@ -447,6 +448,7 @@ public class GitSchema : SchemaBase
     ///         </columns>
     ///     </additional-table>
     /// </additional-tables>
+    /// <summary>Initializes the Git schema and registers its library methods.</summary>
     public GitSchema()
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
@@ -460,6 +462,7 @@ public class GitSchema : SchemaBase
     /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
+    /// <remarks>Supported tables are repository, tags, commits, branches, filehistory, status, remotes, and blame.</remarks>
     public override ISchemaTable GetTableByName(
         string name,
         SourceMetadataContext metadataContext,
@@ -488,7 +491,11 @@ public class GitSchema : SchemaBase
         return base.GetTableByName(name, metadataContext, parameters);
     }
 
-    /// <inheritdoc />
+    /// <summary>Gets constructor metadata for one named Git table.</summary>
+    /// <param name="methodName">The Git table name.</param>
+    /// <param name="metadataContext">The metadata context supplied by Musoq.</param>
+    /// <returns>The constructor overloads supported by the requested table.</returns>
+    /// <remarks>An unsupported table name produces an actionable <see cref="NotSupportedException"/>.</remarks>
     public override SchemaMethodInfo[] GetRawConstructors(
         string methodName,
         SourceMetadataContext metadataContext)
@@ -509,7 +516,9 @@ public class GitSchema : SchemaBase
         };
     }
 
-    /// <inheritdoc />
+    /// <summary>Gets constructor metadata for every Git table.</summary>
+    /// <param name="metadataContext">The metadata context supplied by Musoq.</param>
+    /// <returns>Constructor overloads for repository, tags, commits, branches, filehistory, status, remotes, and blame.</returns>
     public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return
@@ -697,7 +706,7 @@ public class GitSchema : SchemaBase
             case RepositoryTable:
                 return EnsureSourceType<T, RepositoryEntity>(
                     name,
-                    new RepositoryRowsSource((string)parameters[0], _createRepository, executionContext.EndWorkToken));
+                    new RepositoryRowsSource((string)parameters[0], _createRepository, executionContext));
             case TagsTable:
                 return EnsureSourceType<T, TagEntity>(
                     name,
@@ -717,7 +726,7 @@ public class GitSchema : SchemaBase
                 return EnsureSourceType<T, FileHistoryEntity>(
                     name,
                     new FileHistoryRowsSource((string)parameters[0], (string)parameters[1], skip, take,
-                        _createRepository, executionContext.EndWorkToken));
+                        _createRepository, executionContext));
             case StatusTable:
                 return EnsureSourceType<T, StatusEntity>(
                     name,
@@ -733,12 +742,18 @@ public class GitSchema : SchemaBase
                 return EnsureSourceType<T, BlameHunkEntity>(
                     name,
                     new BlameRowsSource(repositoryPath, filePath, revision, _createRepository,
-                        executionContext.EndWorkToken));
+                        executionContext));
         }
 
         return base.GetRowSource<T>(name, executionContext, parameters);
     }
 
+    /// <summary>Describes a Git table, including its columns and row type.</summary>
+    /// <param name="name">The Git table name.</param>
+    /// <param name="context">The source-description context supplied by Musoq.</param>
+    /// <param name="parameters">Constructor parameters for the table.</param>
+    /// <returns>A descriptor containing the table columns, row type, and diagnostics.</returns>
+    /// <remarks>Table-specific planning is exposed separately through <see cref="TryPlanSource"/>.</remarks>
     public override SourceDescriptor DescribeSource(
         string name,
         SourceDescribeContext context,
@@ -756,19 +771,51 @@ public class GitSchema : SchemaBase
         };
     }
 
+    /// <summary>Describes the runtime settings accepted by Git sources.</summary>
+    /// <param name="name">The Git table name.</param>
+    /// <param name="context">The runtime-settings description context supplied by Musoq.</param>
+    /// <param name="parameters">Constructor parameters for the table.</param>
+    /// <returns>The optional <c>GIT_HISTORY_BACKEND</c> and <c>GIT_EXECUTABLE</c> settings.</returns>
+    /// <remarks>
+    ///     <c>GIT_HISTORY_BACKEND</c> accepts <c>auto</c>, <c>git-cli</c>, or <c>libgit2</c>; invalid values produce an
+    ///     actionable configuration error. <c>GIT_EXECUTABLE</c> selects the Git executable for the CLI backend and
+    ///     defaults to <c>git</c> resolved from <c>PATH</c>.
+    /// </remarks>
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
         string name,
         SourceRuntimeSettingsDescribeContext context,
         params object[] parameters)
     {
-        return [];
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                GitHistoryBackendOptions.BackendSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "History backend: auto (qualified CLI), git-cli, or the unqualified libgit2 compatibility fallback."),
+            new SourceRuntimeSettingRequirement(
+                GitHistoryBackendOptions.ExecutableSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "Git executable path for the git-cli backend. Defaults to git resolved from PATH.")
+        ];
     }
 
+    /// <summary>Builds the executable portion of a Git source plan.</summary>
+    /// <param name="name">The Git table name.</param>
+    /// <param name="request">The projection, predicate, ordering, and window requested by Musoq.</param>
+    /// <param name="parameters">Constructor parameters for the table.</param>
+    /// <returns>A source plan that records accepted work and leaves unsupported work as residual operations.</returns>
+    /// <remarks>Projection pruning and predicate/window acceptance are source-specific; residual expressions remain in Musoq.</remarks>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
         return GitSourcePlanner.Plan(name, request);
     }
 
+    /// <summary>Gets all virtual constructors exposed by the Git schema.</summary>
+    /// <returns>Constructor metadata for repository, tags, commits, branches, filehistory, status, remotes, and blame.</returns>
     public override SchemaMethodInfo[] GetConstructors()
     {
         return

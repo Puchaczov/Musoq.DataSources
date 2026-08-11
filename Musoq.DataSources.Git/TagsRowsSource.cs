@@ -1,63 +1,53 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using LibGit2Sharp;
-using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git;
 
-internal sealed class TagsRowsSource : AsyncRowsSourceBase<TagEntity>
+internal sealed class TagsRowsSource : GitDiagnosticRowsSourceBase<TagEntity>
 {
     private readonly SourcePredicateExpression? _acceptedPredicate;
     private readonly Func<string, Repository> _createRepository;
     private readonly GitFilterParameters _filters;
+    private readonly GitProjection _projection;
     private readonly string _repositoryPath;
 
-    public TagsRowsSource(
-        string repositoryPath,
-        Func<string, Repository> createRepository,
-        SourceExecutionContext executionContext)
-        : base(executionContext.EndWorkToken)
+    public TagsRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
+        : base(executionContext, "git.tags")
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;
         _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
         _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
+        _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
     }
 
-    protected override Task CollectChunksAsync(IChunkWriter<TagEntity> writer, CancellationToken cancellationToken)
+    protected override long CollectRows(DiagnosticChunkWriter<TagEntity> writer, CancellationToken cancellationToken)
     {
-        var repository = _createRepository(_repositoryPath);
-        var chunk = new List<TagEntity>(100);
+        var chunk = new List<TagEntity>(128);
+        long rowsRead = 0;
+        var reader = GitOperationReaders.Tags;
 
-        foreach (var tag in repository.Tags)
+        reader.Read(_repositoryPath, _projection, _createRepository, cancellationToken, tag =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             if (!GitSourcePlanner.Matches(_filters, tag))
-                continue;
-
-            var entity = new TagEntity(tag, repository);
-
+                return true;
+            var entity = GitEntitySnapshots.Tag(tag, _projection);
             if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
-                continue;
+                return true;
 
             chunk.Add(entity);
+            if (chunk.Count == 128)
+                rowsRead += WriteChunk(writer, chunk, rowsRead);
+            return true;
+        });
 
-            if (chunk.Count < 100)
-                continue;
-
-            writer.Write(chunk);
-            chunk = [];
-        }
-
-        if (chunk.Count > 0)
-            writer.Write(chunk);
-
-        return Task.CompletedTask;
+        rowsRead += WriteChunk(writer, chunk, rowsRead);
+        Context.Diagnostics.AddMetric("Git.Tags.Backend", reader.Backend == "git-cli" ? 1 : 2);
+        return rowsRead;
     }
 }

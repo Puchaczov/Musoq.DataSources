@@ -8,407 +8,329 @@ using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Git;
 
-/// <summary>
-///     Represents a Git library with various methods for querying Git repositories.
-/// </summary>
+/// <summary>Library methods for Git snapshots. Native repositories are scoped to an individual operation.</summary>
 public class GitLibrary : LibraryBase
 {
-    /// <summary>
-    ///     Gets the differences between two commits.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="first">The first commit entity.</param>
-    /// <param name="second">The second commit entity.</param>
-    /// <returns>An enumerable of difference entities.</returns>
+    /// <summary>Initializes the Git library.</summary>
+    public GitLibrary()
+    {
+    }
+
+    /// <summary>Returns the tree differences between two commits.</summary>
+    /// <param name="repository">The repository containing both commits.</param>
+    /// <param name="first">The older or left-hand commit.</param>
+    /// <param name="second">The newer or right-hand commit.</param>
+    /// <returns>Detached difference snapshots; an empty sequence is returned when either commit cannot be resolved.</returns>
     [BindableMethod]
     public IEnumerable<DifferenceEntity> DifferenceBetween(
-        [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         CommitEntity first,
         CommitEntity second)
     {
-        var firstLibGitCommit = first.LibGitCommit;
-
-        if (firstLibGitCommit == null)
-            yield break;
-
-        var secondLibGitCommit = second.LibGitCommit;
-
-        if (secondLibGitCommit == null)
-            yield break;
-
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(firstLibGitCommit.Tree,
-            secondLibGitCommit.Tree);
-
-        foreach (var treeEntryChange in diff)
-            yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
+        return repository.Read(libGitRepository =>
+        {
+            var firstCommit = LookupCommit(libGitRepository, first);
+            var secondCommit = LookupCommit(libGitRepository, second);
+            return firstCommit is null || secondCommit is null
+                ? []
+                : libGitRepository.Diff.Compare<TreeChanges>(firstCommit.Tree, secondCommit.Tree)
+                    .Select(change => new DifferenceEntity(change, libGitRepository)).ToArray();
+        });
     }
 
-    /// <summary>
-    ///     Gets the differences between two branches.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="first">The first branch entity.</param>
-    /// <param name="second">The second branch entity.</param>
-    /// <returns>An enumerable of difference entities.</returns>
+    /// <summary>Returns the tree differences between the tips of two branches.</summary>
+    /// <param name="repository">The repository containing both branches.</param>
+    /// <param name="first">The older or left-hand branch.</param>
+    /// <param name="second">The newer or right-hand branch.</param>
+    /// <returns>Detached difference snapshots; an empty sequence is returned when either tip cannot be resolved.</returns>
     [BindableMethod]
     public IEnumerable<DifferenceEntity> DifferenceBetween(
-        [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         BranchEntity first,
         BranchEntity second)
     {
-        var firstLibGitBranch = first.LibGitBranch;
-        var secondLibGitBranch = second.LibGitBranch;
-        var firstLibGitCommit = firstLibGitBranch.Tip;
-        var secondLibGitCommit = secondLibGitBranch.Tip;
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(firstLibGitCommit.Tree,
-            secondLibGitCommit.Tree);
-
-        foreach (var treeEntryChange in diff)
-            yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
+        return repository.Read(libGitRepository =>
+        {
+            var firstCommit = LookupBranchTip(libGitRepository, first);
+            var secondCommit = LookupBranchTip(libGitRepository, second);
+            return firstCommit is null || secondCommit is null
+                ? []
+                : libGitRepository.Diff.Compare<TreeChanges>(firstCommit.Tree, secondCommit.Tree)
+                    .Select(change => new DifferenceEntity(change, libGitRepository)).ToArray();
+        });
     }
 
-    /// <summary>
-    ///     Gets the differences between the current branch and a specified branch.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="branch">The branch entity.</param>
-    /// <returns>An enumerable of difference entities.</returns>
+    /// <summary>Returns the tree differences between the current HEAD and a branch tip.</summary>
+    /// <param name="repository">The repository to inspect.</param>
+    /// <param name="branch">The branch to compare with HEAD.</param>
+    /// <returns>Detached difference snapshots, or an empty sequence when either side has no commit.</returns>
     [BindableMethod]
     public IEnumerable<DifferenceEntity> DifferenceBetweenCurrentAndBranch(
-        [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         BranchEntity branch)
     {
-        var currentBranch = repository.LibGitRepository.Head;
-        var branchLibGitBranch = branch.LibGitBranch;
-        var currentLibGitCommit = currentBranch.Tip;
-        var branchLibGitCommit = branchLibGitBranch.Tip;
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(currentLibGitCommit.Tree,
-            branchLibGitCommit.Tree);
-
-        foreach (var treeEntryChange in diff)
-            yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
+        return repository.Read(libGitRepository =>
+        {
+            var current = libGitRepository.Head?.Tip;
+            var target = LookupBranchTip(libGitRepository, branch);
+            return current is null || target is null
+                ? []
+                : libGitRepository.Diff.Compare<TreeChanges>(current.Tree, target.Tree)
+                    .Select(change => new DifferenceEntity(change, libGitRepository)).ToArray();
+        });
     }
 
-    /// <summary>
-    ///     Gets the differences between a commit and a branch.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="commit">The commit entity.</param>
-    /// <param name="branch">The branch entity.</param>
-    /// <returns>An enumerable of difference entities.</returns>
+    /// <summary>Returns differences from a commit to a branch tip.</summary>
+    /// <param name="repository">The repository containing the commit and branch.</param>
+    /// <param name="commit">The commit on the left-hand side.</param>
+    /// <param name="branch">The branch on the right-hand side.</param>
+    /// <returns>Detached difference snapshots.</returns>
     [BindableMethod]
     public IEnumerable<DifferenceEntity> DifferenceBetweenCommitAndBranch(
-        [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         CommitEntity commit,
         BranchEntity branch)
     {
-        var branchLibGitBranch = branch.LibGitBranch;
-        var commitLibGitCommit = commit.LibGitCommit;
-
-        if (commitLibGitCommit == null)
-            yield break;
-
-        var branchLibGitCommit = branchLibGitBranch.Tip;
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(commitLibGitCommit.Tree,
-            branchLibGitCommit.Tree);
-
-        foreach (var treeEntryChange in diff)
-            yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
+        return DifferenceBetweenCommitAndBranchCore(repository, commit, branch, reverse: false);
     }
 
-    /// <summary>
-    ///     Gets the differences between a branch and a commit.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="branch">The branch entity.</param>
-    /// <param name="commit">The commit entity.</param>
-    /// <returns>An enumerable of difference entities.</returns>
+    /// <summary>Returns differences from a branch tip to a commit.</summary>
+    /// <param name="repository">The repository containing the branch and commit.</param>
+    /// <param name="branch">The branch on the left-hand side.</param>
+    /// <param name="commit">The commit on the right-hand side.</param>
+    /// <returns>Detached difference snapshots.</returns>
     [BindableMethod]
     public IEnumerable<DifferenceEntity> DifferenceBetweenBranchAndCommit(
-        [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         BranchEntity branch,
         CommitEntity commit)
     {
-        var branchLibGitBranch = branch.LibGitBranch;
-        var commitLibGitCommit = commit.LibGitCommit;
-
-        if (commitLibGitCommit == null)
-            yield break;
-
-        var branchLibGitCommit = branchLibGitBranch.Tip;
-        var diff = repository.LibGitRepository.Diff.Compare<TreeChanges>(branchLibGitCommit.Tree,
-            commitLibGitCommit.Tree);
-
-        foreach (var treeEntryChange in diff)
-            yield return new DifferenceEntity(treeEntryChange, repository.LibGitRepository);
+        return DifferenceBetweenCommitAndBranchCore(repository, commit, branch, reverse: true);
     }
 
-    /// <summary>
-    ///     Gets a commit entity from a SHA.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="sha">The SHA of the commit.</param>
-    /// <returns>The commit entity.</returns>
+    /// <summary>Looks up a commit by SHA and returns a detached commit snapshot.</summary>
+    /// <param name="repository">The repository to search.</param>
+    /// <param name="sha">The commit SHA or resolvable object identifier.</param>
+    /// <returns>The resolved commit snapshot.</returns>
     [BindableMethod]
-    public CommitEntity CommitFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
-        string sha)
+    public CommitEntity CommitFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository, string sha)
     {
-        var commit = repository.LibGitRepository.Lookup<Commit>(sha);
-        return new CommitEntity(commit, repository.LibGitRepository);
+        return repository.Read(libGitRepository => new CommitEntity(libGitRepository.Lookup<Commit>(sha), libGitRepository));
     }
 
-    /// <summary>
-    ///     Gets a branch entity from a canonical name.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="canonicalName">The canonical name of the branch.</param>
-    /// <returns>The branch entity.</returns>
+    /// <summary>Looks up a branch by canonical name and returns a detached branch snapshot.</summary>
+    /// <param name="repository">The repository to search.</param>
+    /// <param name="canonicalName">The branch's canonical Git name.</param>
+    /// <returns>The resolved branch snapshot.</returns>
     [BindableMethod]
-    public BranchEntity BranchFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
-        string canonicalName)
+    public BranchEntity BranchFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository, string canonicalName)
     {
-        var branch = repository.LibGitRepository.Branches[canonicalName];
-        return new BranchEntity(branch, repository.LibGitRepository);
+        return repository.Read(libGitRepository => new BranchEntity(libGitRepository.Branches[canonicalName], libGitRepository));
     }
 
-    /// <summary>
-    ///     Gets the patch between two commits.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="first">The first commit entity.</param>
-    /// <param name="second">The second commit entity.</param>
-    /// <returns>The patch entity.</returns>
+    /// <summary>Returns a lazily materialized patch between two commits.</summary>
+    /// <param name="repository">The repository containing both commits.</param>
+    /// <param name="first">The first commit in the comparison.</param>
+    /// <param name="second">The second commit in the comparison.</param>
+    /// <returns>A sequence containing one detached patch snapshot, or an empty sequence for missing SHAs.</returns>
+    /// <remarks>Large patch content is loaded only when a patch property is projected or accessed.</remarks>
     [BindableMethod]
     public IEnumerable<PatchEntity> PatchBetween(
-        [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         CommitEntity first,
         CommitEntity second)
     {
-        var firstLibGitCommit = first.LibGitCommit;
+        if (string.IsNullOrWhiteSpace(first.Sha) || string.IsNullOrWhiteSpace(second.Sha))
+            return [];
 
-        if (firstLibGitCommit == null)
-            yield break;
-
-        var secondLibGitCommit = second.LibGitCommit;
-
-        if (secondLibGitCommit == null)
-            yield break;
-
-        yield return new PatchEntity(
-            repository.LibGitRepository.Diff.Compare<Patch>(firstLibGitCommit.Tree, secondLibGitCommit.Tree),
-            repository.LibGitRepository);
+        // The returned row keeps only identifiers. The potentially large textual patch is resolved in a short-lived
+        // repository scope if a projected patch property is actually accessed.
+        return [new PatchEntity(repository.RepositoryPath, first.Sha, second.Sha)];
     }
 
-    /// <summary>
-    ///     Gets the branches that match a search pattern.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="searchPatternRegex">The search pattern regex.</param>
-    /// <returns>An enumerable of branch entities.</returns>
+    /// <summary>Finds branches whose friendly names match a regular expression.</summary>
+    /// <param name="repository">The repository to inspect.</param>
+    /// <param name="searchPatternRegex">The regular expression applied to each friendly branch name.</param>
+    /// <returns>Detached branch snapshots matching the expression.</returns>
     [BindableMethod]
     public IEnumerable<BranchEntity> SearchForBranches(
-        [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         string searchPatternRegex)
     {
-        var branches = repository.LibGitRepository.Branches;
-
-        foreach (var branch in branches)
-            if (Regex.IsMatch(branch.FriendlyName, searchPatternRegex))
-                yield return new BranchEntity(branch, repository.LibGitRepository);
+        return repository.Read(libGitRepository => libGitRepository.Branches
+            .Where(branch => Regex.IsMatch(branch.FriendlyName, searchPatternRegex))
+            .Select(branch => new BranchEntity(branch, libGitRepository)).ToArray());
     }
 
-
-    /// <summary>
-    ///     Gets commits unique to this branch since it diverged from its parent.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="branch">The branch entity.</param>
-    /// <param name="excludeMergeBase">Whether to exclude the merge base commit</param>
-    /// <returns>Collection of commits unique to this branch</returns>
+    /// <summary>Returns commits reachable from a branch after its merge base.</summary>
+    /// <param name="repository">The repository containing the branch.</param>
+    /// <param name="branch">The branch whose commits are requested.</param>
+    /// <param name="excludeMergeBase">Whether to exclude the merge-base commit itself; defaults to <see langword="true"/>.</param>
+    /// <returns>Detached commits in topological and commit-time order.</returns>
     [BindableMethod]
     public IEnumerable<CommitEntity> GetBranchSpecificCommits(
-        [InjectSpecificSource(typeof(RepositoryEntity))]
-        RepositoryEntity repository,
+        [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         BranchEntity branch,
         bool excludeMergeBase = true)
     {
         var mergeBase = FindMergeBase(repository, branch);
-
-        if (mergeBase == null)
+        if (mergeBase is null || string.IsNullOrWhiteSpace(mergeBase.MergeBaseCommit.Sha))
             return [];
 
-        var filter = new CommitFilter
+        return repository.Read(libGitRepository =>
         {
-            IncludeReachableFrom = branch.LibGitBranch.Tip,
-            ExcludeReachableFrom = excludeMergeBase
-                ? mergeBase.MergeBaseCommit.LibGitCommit
-                : mergeBase.MergeBaseCommit.LibGitCommit?.Parents.FirstOrDefault(),
-            SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
-        };
+            var target = libGitRepository.Branches[branch.CanonicalName]?.Tip;
+            var mergeBaseCommit = libGitRepository.Lookup<Commit>(mergeBase.MergeBaseCommit.Sha);
+            if (target is null || mergeBaseCommit is null)
+                return [];
 
-        return repository.LibGitRepository.Commits.QueryBy(filter)
-            .Select(c => new CommitEntity(c, repository.LibGitRepository));
+            var filter = new CommitFilter
+            {
+                IncludeReachableFrom = target,
+                ExcludeReachableFrom = excludeMergeBase ? mergeBaseCommit : mergeBaseCommit.Parents.FirstOrDefault(),
+                SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
+            };
+            return libGitRepository.Commits.QueryBy(filter)
+                .Select(commit => new CommitEntity(commit, libGitRepository)).ToArray();
+        });
     }
 
-    /// <summary>
-    ///     Finds the merge base between this branch and another branch.
-    /// </summary>
-    /// <param name="repository">The repository entity.</param>
-    /// <param name="branch">The branch entity.</param>
-    /// <returns>Merge base result or null if no merge base found</returns>
+    /// <summary>Finds the merge base between a branch and its parent branch.</summary>
+    /// <param name="repository">The repository to inspect, or <see langword="null"/>.</param>
+    /// <param name="branch">The branch to compare, or <see langword="null"/>.</param>
+    /// <returns>A detached merge-base snapshot, or <see langword="null"/> when no parent or merge base exists.</returns>
     [BindableMethod]
-    public MergeBaseEntity? FindMergeBase(
-        RepositoryEntity? repository,
-        BranchEntity? branch
-    )
+    public MergeBaseEntity? FindMergeBase(RepositoryEntity? repository, BranchEntity? branch)
     {
-        var first = branch;
-
-        if (first == null)
+        if (repository is null || branch is null)
             return null;
 
-        var second = branch!.ParentBranch;
-
-        if (second == null)
+        var parent = branch.ParentBranch;
+        if (parent is null)
             return null;
 
-        if (repository == null)
-            return null;
-
-        var mergeBase = repository.LibGitRepository.ObjectDatabase.FindMergeBase(
-            first.LibGitBranch.Tip,
-            second.LibGitBranch.Tip
-        );
-
-        if (mergeBase == null)
-            return null;
-
-        return new MergeBaseEntity(
-            new CommitEntity(mergeBase, repository.LibGitRepository),
-            first,
-            second,
-            repository.LibGitRepository
-        );
+        return repository.Read(libGitRepository =>
+        {
+            var first = LookupBranchTip(libGitRepository, branch);
+            var second = LookupBranchTip(libGitRepository, parent);
+            var mergeBase = first is null || second is null
+                ? null
+                : libGitRepository.ObjectDatabase.FindMergeBase(first, second);
+            return mergeBase is null
+                ? null
+                : new MergeBaseEntity(new CommitEntity(mergeBase, libGitRepository), branch, parent, libGitRepository);
+        });
     }
 
-    /// <summary>
-    ///     Gets the max commit from the current aggregation group.
-    /// </summary>
-    /// <param name="value">The commit to aggregate.</param>
-    /// <returns>The latest commit by committer date.</returns>
+    /// <summary>Declares the maximum-commit aggregate to the Musoq engine.</summary>
+    /// <param name="value">The commit value supplied for the current row.</param>
+    /// <returns>The aggregate result supplied by <see cref="MaxCommitAggregateKernel"/>.</returns>
     [AggregateFunction(typeof(MaxCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
-    public CommitEntity? MaxCommit(CommitEntity? value)
-    {
-        return AggregateFunction.NotInvoked<CommitEntity?>();
-    }
+    public CommitEntity? MaxCommit(CommitEntity? value) => AggregateFunction.NotInvoked<CommitEntity?>();
 
-    /// <summary>
-    ///     Gets the max commit from a parent aggregation group.
-    /// </summary>
-    /// <param name="value">The commit to aggregate.</param>
-    /// <param name="parent">The parent group index.</param>
-    /// <returns>The latest commit by committer date.</returns>
+    /// <summary>Declares the parent-aware maximum-commit aggregate to the Musoq engine.</summary>
+    /// <param name="value">The commit value supplied for the current row.</param>
+    /// <param name="parent">The engine-provided aggregate parent identifier.</param>
+    /// <returns>The aggregate result supplied by <see cref="MaxCommitAggregateKernel"/>.</returns>
     [AggregateFunction(typeof(MaxCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
-    public CommitEntity? MaxCommit(CommitEntity? value, [AggregateParent] int parent)
+    public CommitEntity? MaxCommit(CommitEntity? value, [AggregateParent] int parent) => AggregateFunction.NotInvoked<CommitEntity?>();
+
+    /// <summary>Declares the minimum-commit aggregate to the Musoq engine.</summary>
+    /// <param name="value">The commit value supplied for the current row.</param>
+    /// <returns>The aggregate result supplied by <see cref="MinCommitAggregateKernel"/>.</returns>
+    [AggregateFunction(typeof(MinCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
+    public CommitEntity? MinCommit(CommitEntity? value) => AggregateFunction.NotInvoked<CommitEntity?>();
+
+    /// <summary>Declares the parent-aware minimum-commit aggregate to the Musoq engine.</summary>
+    /// <param name="value">The commit value supplied for the current row.</param>
+    /// <param name="parent">The engine-provided aggregate parent identifier.</param>
+    /// <returns>The aggregate result supplied by <see cref="MinCommitAggregateKernel"/>.</returns>
+    [AggregateFunction(typeof(MinCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
+    public CommitEntity? MinCommit(CommitEntity? value, [AggregateParent] int parent) => AggregateFunction.NotInvoked<CommitEntity?>();
+
+    private static IEnumerable<DifferenceEntity> DifferenceBetweenCommitAndBranchCore(
+        RepositoryEntity repository,
+        CommitEntity commit,
+        BranchEntity branch,
+        bool reverse)
     {
-        return AggregateFunction.NotInvoked<CommitEntity?>();
+        return repository.Read(libGitRepository =>
+        {
+            var first = LookupCommit(libGitRepository, commit);
+            var second = LookupBranchTip(libGitRepository, branch);
+            if (first is null || second is null)
+                return [];
+
+            var diff = reverse
+                ? libGitRepository.Diff.Compare<TreeChanges>(second.Tree, first.Tree)
+                : libGitRepository.Diff.Compare<TreeChanges>(first.Tree, second.Tree);
+            return diff.Select(change => new DifferenceEntity(change, libGitRepository)).ToArray();
+        });
     }
 
-    /// <summary>
-    ///     Gets the min commit from the current aggregation group.
-    /// </summary>
-    /// <param name="value">The commit to aggregate.</param>
-    /// <returns>The earliest commit by committer date.</returns>
-    [AggregateFunction(typeof(MinCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
-    public CommitEntity? MinCommit(CommitEntity? value)
+    private static Commit? LookupCommit(Repository repository, CommitEntity entity)
     {
-        return AggregateFunction.NotInvoked<CommitEntity?>();
+        return string.IsNullOrWhiteSpace(entity.Sha) ? null : repository.Lookup<Commit>(entity.Sha);
     }
 
-    /// <summary>
-    ///     Gets the min commit from a parent aggregation group.
-    /// </summary>
-    /// <param name="value">The commit to aggregate.</param>
-    /// <param name="parent">The parent group index.</param>
-    /// <returns>The earliest commit by committer date.</returns>
-    [AggregateFunction(typeof(MinCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
-    public CommitEntity? MinCommit(CommitEntity? value, [AggregateParent] int parent)
+    private static Commit? LookupBranchTip(Repository repository, BranchEntity entity)
     {
-        return AggregateFunction.NotInvoked<CommitEntity?>();
+        return repository.Branches[entity.CanonicalName]?.Tip;
     }
 }
 
+/// <summary>Implements the engine kernel that selects the newest non-null commit.</summary>
 public static class MaxCommitAggregateKernel
 {
+    /// <summary>Stores the current maximum-commit aggregate value.</summary>
     public struct State
     {
+        /// <summary>Gets or sets the current newest commit.</summary>
         public CommitEntity? Value;
     }
 
-    public static void Set(ref State state, CommitEntity? value)
-    {
-        if (IsNewer(value, state.Value))
-            state.Value = value;
-    }
+    /// <summary>Includes a commit in the aggregate state when it is newer than the current value.</summary>
+    /// <param name="state">The state to update.</param>
+    /// <param name="value">The candidate commit.</param>
+    public static void Set(ref State state, CommitEntity? value) { if (IsNewer(value, state.Value)) state.Value = value; }
 
-    public static CommitEntity? Get(in State state)
-    {
-        return state.Value;
-    }
+    /// <summary>Gets the aggregate value.</summary>
+    /// <param name="state">The aggregate state.</param>
+    /// <returns>The newest commit, or <see langword="null"/> when no value was supplied.</returns>
+    public static CommitEntity? Get(in State state) => state.Value;
 
-    public static void Merge(ref State state, in State other)
-    {
-        if (IsNewer(other.Value, state.Value))
-            state.Value = other.Value;
-    }
-
-    private static bool IsNewer(CommitEntity? candidate, CommitEntity? current)
-    {
-        if (candidate?.LibGitCommit == null)
-            return false;
-
-        return current?.LibGitCommit == null ||
-               candidate.LibGitCommit.Committer.When > current.LibGitCommit.Committer.When;
-    }
+    /// <summary>Merges another partial aggregate state into the current state.</summary>
+    /// <param name="state">The state to update.</param>
+    /// <param name="other">The partial state to merge.</param>
+    public static void Merge(ref State state, in State other) { if (IsNewer(other.Value, state.Value)) state.Value = other.Value; }
+    private static bool IsNewer(CommitEntity? candidate, CommitEntity? current) =>
+        candidate is not null && (current is null || candidate.CommittedWhen > current.CommittedWhen);
 }
 
+/// <summary>Implements the engine kernel that selects the oldest non-null commit.</summary>
 public static class MinCommitAggregateKernel
 {
+    /// <summary>Stores the current minimum-commit aggregate value.</summary>
     public struct State
     {
+        /// <summary>Gets or sets the current oldest commit.</summary>
         public CommitEntity? Value;
     }
 
-    public static void Set(ref State state, CommitEntity? value)
-    {
-        if (IsOlder(value, state.Value))
-            state.Value = value;
-    }
+    /// <summary>Includes a commit in the aggregate state when it is older than the current value.</summary>
+    /// <param name="state">The state to update.</param>
+    /// <param name="value">The candidate commit.</param>
+    public static void Set(ref State state, CommitEntity? value) { if (IsOlder(value, state.Value)) state.Value = value; }
 
-    public static CommitEntity? Get(in State state)
-    {
-        return state.Value;
-    }
+    /// <summary>Gets the aggregate value.</summary>
+    /// <param name="state">The aggregate state.</param>
+    /// <returns>The oldest commit, or <see langword="null"/> when no value was supplied.</returns>
+    public static CommitEntity? Get(in State state) => state.Value;
 
-    public static void Merge(ref State state, in State other)
-    {
-        if (IsOlder(other.Value, state.Value))
-            state.Value = other.Value;
-    }
-
-    private static bool IsOlder(CommitEntity? candidate, CommitEntity? current)
-    {
-        if (candidate?.LibGitCommit == null)
-            return false;
-
-        return current?.LibGitCommit == null ||
-               candidate.LibGitCommit.Committer.When < current.LibGitCommit.Committer.When;
-    }
+    /// <summary>Merges another partial aggregate state into the current state.</summary>
+    /// <param name="state">The state to update.</param>
+    /// <param name="other">The partial state to merge.</param>
+    public static void Merge(ref State state, in State other) { if (IsOlder(other.Value, state.Value)) state.Value = other.Value; }
+    private static bool IsOlder(CommitEntity? candidate, CommitEntity? current) =>
+        candidate is not null && (current is null || candidate.CommittedWhen < current.CommittedWhen);
 }

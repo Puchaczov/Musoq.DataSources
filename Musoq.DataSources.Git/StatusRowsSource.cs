@@ -1,64 +1,53 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using LibGit2Sharp;
-using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git;
 
-internal sealed class StatusRowsSource : AsyncRowsSourceBase<StatusEntity>
+internal sealed class StatusRowsSource : GitDiagnosticRowsSourceBase<StatusEntity>
 {
     private readonly SourcePredicateExpression? _acceptedPredicate;
     private readonly Func<string, Repository> _createRepository;
     private readonly GitFilterParameters _filters;
+    private readonly GitProjection _projection;
     private readonly string _repositoryPath;
 
-    public StatusRowsSource(
-        string repositoryPath,
-        Func<string, Repository> createRepository,
-        SourceExecutionContext executionContext)
-        : base(executionContext.EndWorkToken)
+    public StatusRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
+        : base(executionContext, "git.status")
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;
         _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
         _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
+        _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
     }
 
-    protected override Task CollectChunksAsync(IChunkWriter<StatusEntity> writer, CancellationToken cancellationToken)
+    protected override long CollectRows(DiagnosticChunkWriter<StatusEntity> writer, CancellationToken cancellationToken)
     {
-        var repository = _createRepository(_repositoryPath);
-        var status = repository.RetrieveStatus();
-        var chunk = new List<StatusEntity>(100);
+        var chunk = new List<StatusEntity>(128);
+        long rowsRead = 0;
+        var reader = GitOperationReaders.Status;
 
-        foreach (var entry in status)
+        reader.Read(_repositoryPath, _createRepository, cancellationToken, entry =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             if (!GitSourcePlanner.Matches(_filters, entry))
-                continue;
-
-            var entity = new StatusEntity(entry);
-
+                return true;
+            var entity = GitEntitySnapshots.Status(entry, _projection);
             if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
-                continue;
+                return true;
 
             chunk.Add(entity);
+            if (chunk.Count == 128)
+                rowsRead += WriteChunk(writer, chunk, rowsRead);
+            return true;
+        });
 
-            if (chunk.Count < 100)
-                continue;
-
-            writer.Write(chunk);
-            chunk = [];
-        }
-
-        if (chunk.Count > 0)
-            writer.Write(chunk);
-
-        return Task.CompletedTask;
+        rowsRead += WriteChunk(writer, chunk, rowsRead);
+        Context.Diagnostics.AddMetric("Git.Status.Backend", reader.Backend == "git-cli" ? 1 : 2);
+        return rowsRead;
     }
 }

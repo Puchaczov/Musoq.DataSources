@@ -39,7 +39,16 @@ public class CommitEntity
         new SchemaColumn(nameof(Self), 9, typeof(CommitEntity))
     ];
 
-    internal readonly Repository LibGitRepository;
+    private readonly string? _repositoryPath;
+    private readonly string? _sha;
+    private readonly string? _message;
+    private readonly string? _messageShort;
+    private readonly string? _author;
+    private readonly string? _authorEmail;
+    private readonly string? _committer;
+    private readonly string? _committerEmail;
+    private readonly DateTimeOffset _committedWhen;
+    private readonly GitNestedSnapshot<IReadOnlyList<CommitEntity>> _parents = new();
 
     /// <summary>
     ///     Static constructor to initialize the static read-only dictionaries.
@@ -82,63 +91,103 @@ public class CommitEntity
     /// <param name="repository">The repository the commit belongs to.</param>
     public CommitEntity(Commit? commit, Repository repository)
     {
-        LibGitCommit = commit;
-        LibGitRepository = repository;
+        _repositoryPath = repository.Info.Path;
+        _sha = commit?.Sha;
+        _message = commit?.Message;
+        _messageShort = commit?.MessageShort;
+        _author = commit?.Author?.Name;
+        _authorEmail = commit?.Author?.Email;
+        _committer = commit?.Committer?.Name;
+        _committerEmail = commit?.Committer?.Email;
+        _committedWhen = commit?.Committer?.When ?? default;
+    }
+
+    internal CommitEntity(
+        string? repositoryPath,
+        string? sha,
+        string? message,
+        string? messageShort,
+        string? author,
+        string? authorEmail,
+        string? committer,
+        string? committerEmail,
+        DateTimeOffset committedWhen)
+    {
+        _repositoryPath = repositoryPath;
+        _sha = sha;
+        _message = message;
+        _messageShort = messageShort;
+        _author = author;
+        _authorEmail = authorEmail;
+        _committer = committer;
+        _committerEmail = committerEmail;
+        _committedWhen = committedWhen;
     }
 
     /// <summary>
     ///     Gets the SHA hash of the commit.
     /// </summary>
-    public string? Sha => LibGitCommit?.Sha;
+    public string? Sha => _sha;
 
     /// <summary>
     ///     Gets the full commit message.
     /// </summary>
-    public string? Message => LibGitCommit?.Message;
+    public string? Message => _message;
 
     /// <summary>
     ///     Gets the short commit message.
     /// </summary>
-    public string? MessageShort => LibGitCommit?.MessageShort;
+    public string? MessageShort => _messageShort;
 
     /// <summary>
     ///     Gets the name of the author of the commit.
     /// </summary>
-    public string? Author => LibGitCommit?.Author?.Name;
+    public string? Author => _author;
 
     /// <summary>
     ///     Gets the email of the author of the commit.
     /// </summary>
-    public string? AuthorEmail => LibGitCommit?.Author?.Email;
+    public string? AuthorEmail => _authorEmail;
 
     /// <summary>
     ///     Gets the name of the committer of the commit.
     /// </summary>
-    public string? Committer => LibGitCommit?.Committer?.Name;
+    public string? Committer => _committer;
 
     /// <summary>
     ///     Gets the email of the committer.
     /// </summary>
-    public string? CommitterEmail => LibGitCommit?.Committer?.Email;
+    public string? CommitterEmail => _committerEmail;
 
     /// <summary>
     ///     Gets the date and time when the commit was made.
     /// </summary>
-    public DateTimeOffset CommittedWhen => LibGitCommit?.Committer?.When ?? default;
+    public DateTimeOffset CommittedWhen => _committedWhen;
 
     /// <summary>
     ///     Gets the parent commits of this commit.
     /// </summary>
-    public IEnumerable<CommitEntity> Parents =>
-        LibGitCommit?.Parents?.Select(p => new CommitEntity(p, LibGitRepository)) ?? Enumerable.Empty<CommitEntity>();
+    public IEnumerable<CommitEntity> Parents
+    {
+        get
+        {
+            return _parents.GetOrCreate(() =>
+            {
+                if (string.IsNullOrWhiteSpace(_repositoryPath) || string.IsNullOrWhiteSpace(_sha))
+                    return Array.Empty<CommitEntity>();
+
+                using var repository = new Repository(_repositoryPath);
+                return repository.Lookup<Commit>(_sha)?.Parents
+                    .Select(parent => new CommitEntity(parent, repository))
+                    .ToArray() ?? Array.Empty<CommitEntity>();
+            }) ?? Array.Empty<CommitEntity>();
+        }
+    }
 
     /// <summary>
     ///     Gets the commit itself.
     /// </summary>
     public CommitEntity Self => this;
 
-    /// <summary>
-    ///     Gets the underlying LibGit2Sharp commit object.
-    /// </summary>
-    internal Commit? LibGitCommit { get; }
+    internal string? RepositoryPath => _repositoryPath;
 }

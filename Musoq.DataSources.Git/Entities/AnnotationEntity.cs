@@ -7,8 +7,10 @@ namespace Musoq.DataSources.Git.Entities;
 /// </summary>
 public class AnnotationEntity
 {
-    private readonly TagAnnotation _annotation;
-    private readonly Repository _libGitRepository;
+    private readonly string? _message;
+    private readonly string? _name;
+    private readonly string? _sha;
+    private readonly TaggerEntity? _tagger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AnnotationEntity" /> class.
@@ -17,28 +19,39 @@ public class AnnotationEntity
     /// <param name="repository">The repository.</param>
     public AnnotationEntity(TagAnnotation annotation, Repository repository)
     {
-        _annotation = annotation;
-        _libGitRepository = repository;
+        _message = annotation?.Message;
+        _name = annotation?.Name;
+        _sha = annotation?.Sha;
+        _tagger = annotation?.Tagger is { } tagger
+            ? new TaggerEntity(tagger, repository)
+            : null;
+    }
+
+    internal AnnotationEntity(string? message, string? name, string? sha, TaggerEntity? tagger)
+    {
+        _message = message;
+        _name = name;
+        _sha = sha;
+        _tagger = tagger;
     }
 
     /// <summary>
     ///     Gets the message of the tag annotation.
     /// </summary>
-    public string? Message => _annotation.Message;
+    public string? Message => _message;
 
     /// <summary>
     ///     Gets the name of the tag annotation.
     /// </summary>
-    public string? Name => _annotation.Name;
+    public string? Name => _name;
 
     /// <summary>
     ///     Gets the SHA of the tag annotation.
     /// </summary>
-    public string? Sha => _annotation.Sha;
+    public string? Sha => _sha;
 
     /// <summary>
     ///     Gets the tagger entity of the tag annotation.
     /// </summary>
-    public TaggerEntity? Tagger =>
-        _annotation.Tagger != null ? new TaggerEntity(_annotation.Tagger, _libGitRepository) : null;
+    public TaggerEntity? Tagger => _tagger;
 }

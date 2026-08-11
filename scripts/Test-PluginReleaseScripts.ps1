@@ -402,6 +402,9 @@ function Test-RuntimeV2ReleaseTrain {
         elseif ($package.packageId -eq 'Musoq.DataSources.Json' -or $package.packageId -eq 'Musoq.DataSources.SeparatedValues') {
             Assert-Equal "10.0.3-alpha.1" $version "$($package.packageId) should use its next major alpha version."
         }
+        elseif ($package.packageId -eq 'Musoq.DataSources.Git') {
+            Assert-Equal "3.0.0-alpha.1" $version "Git should use its next major alpha version."
+        }
         else {
             Assert-True ($version -match '-alpha\.5$') "$($package.packageId) should be pinned to alpha.5 in packages.json."
         }

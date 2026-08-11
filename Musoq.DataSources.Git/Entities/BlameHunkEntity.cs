@@ -1,30 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using LibGit2Sharp;
+using Musoq.DataSources.Git;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git.Entities;
 
 /// <summary>
-///     Represents a contiguous group of lines sharing the same attribution (blame hunk).
+/// Detached metadata for a contiguous blame hunk. Accessing <see cref="Lines"/> opens a short-lived repository scope
+/// only when the column is projected, so metadata-only blame never reads file content or retains a native handle.
 /// </summary>
 public class BlameHunkEntity
 {
-    /// <summary>
-    ///     A read-only dictionary mapping column names to their respective indices.
-    /// </summary>
+    /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-
-    /// <summary>
-    ///     A read-only dictionary mapping column indices to functions that access the corresponding properties.
-    /// </summary>
+    /// <summary>Maps row indexes to the corresponding property accessors used by the Musoq runtime.</summary>
     public static readonly IReadOnlyDictionary<int, Func<BlameHunkEntity, object?>> IndexToObjectAccessMap;
 
-    /// <summary>
-    ///     An array of schema columns representing the structure of the blame hunk entity.
-    /// </summary>
+    /// <summary>Describes the columns exposed by a blame-hunk row.</summary>
     public static readonly ISchemaColumn[] Columns =
     [
         new SchemaColumn(nameof(StartLineNumber), 0, typeof(int)),
@@ -44,193 +40,147 @@ public class BlameHunkEntity
         new SchemaColumn(nameof(Self), 14, typeof(BlameHunkEntity))
     ];
 
+    private readonly string _author;
+    private readonly DateTimeOffset _authorDate;
+    private readonly string _authorEmail;
+    private readonly string _commitSha;
+    private readonly string _committer;
+    private readonly DateTimeOffset _committerDate;
+    private readonly string _committerEmail;
+    private readonly string _contentCommitSha;
     private readonly string _filePath;
-    private readonly BlameHunk _hunk;
-    private readonly Repository _repository;
-    private IEnumerable<BlameLineEntity>? _lines;
+    private readonly int _finalStartLineNumber;
+    private readonly int _lineCount;
+    private readonly string? _originalFilePath;
+    private readonly int? _originalStartLineNumber;
+    private readonly string _repositoryPath;
+    private readonly string _summary;
+    private readonly GitNestedSnapshot<IReadOnlyList<BlameLineEntity>> _lines = new();
 
-    /// <summary>
-    ///     Static constructor to initialize the static read-only dictionaries.
-    /// </summary>
     static BlameHunkEntity()
     {
         NameToIndexMap = new Dictionary<string, int>
         {
-            { nameof(StartLineNumber), 0 },
-            { nameof(EndLineNumber), 1 },
-            { nameof(LineCount), 2 },
-            { nameof(CommitSha), 3 },
-            { nameof(Author), 4 },
-            { nameof(AuthorEmail), 5 },
-            { nameof(AuthorDate), 6 },
-            { nameof(Committer), 7 },
-            { nameof(CommitterEmail), 8 },
-            { nameof(CommitterDate), 9 },
-            { nameof(Summary), 10 },
-            { nameof(OriginalStartLineNumber), 11 },
-            { nameof(OriginalFilePath), 12 },
-            { nameof(Lines), 13 },
-            { nameof(Self), 14 }
+            { nameof(StartLineNumber), 0 }, { nameof(EndLineNumber), 1 }, { nameof(LineCount), 2 },
+            { nameof(CommitSha), 3 }, { nameof(Author), 4 }, { nameof(AuthorEmail), 5 },
+            { nameof(AuthorDate), 6 }, { nameof(Committer), 7 }, { nameof(CommitterEmail), 8 },
+            { nameof(CommitterDate), 9 }, { nameof(Summary), 10 }, { nameof(OriginalStartLineNumber), 11 },
+            { nameof(OriginalFilePath), 12 }, { nameof(Lines), 13 }, { nameof(Self), 14 }
         };
-
         IndexToObjectAccessMap = new Dictionary<int, Func<BlameHunkEntity, object?>>
         {
-            { 0, entity => entity.StartLineNumber },
-            { 1, entity => entity.EndLineNumber },
-            { 2, entity => entity.LineCount },
-            { 3, entity => entity.CommitSha },
-            { 4, entity => entity.Author },
-            { 5, entity => entity.AuthorEmail },
-            { 6, entity => entity.AuthorDate },
-            { 7, entity => entity.Committer },
-            { 8, entity => entity.CommitterEmail },
-            { 9, entity => entity.CommitterDate },
-            { 10, entity => entity.Summary },
-            { 11, entity => entity.OriginalStartLineNumber },
-            { 12, entity => entity.OriginalFilePath },
-            { 13, entity => entity.Lines },
-            { 14, entity => entity.Self }
+            { 0, entity => entity.StartLineNumber }, { 1, entity => entity.EndLineNumber },
+            { 2, entity => entity.LineCount }, { 3, entity => entity.CommitSha }, { 4, entity => entity.Author },
+            { 5, entity => entity.AuthorEmail }, { 6, entity => entity.AuthorDate }, { 7, entity => entity.Committer },
+            { 8, entity => entity.CommitterEmail }, { 9, entity => entity.CommitterDate },
+            { 10, entity => entity.Summary }, { 11, entity => entity.OriginalStartLineNumber },
+            { 12, entity => entity.OriginalFilePath }, { 13, entity => entity.Lines }, { 14, entity => entity.Self }
         };
     }
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="BlameHunkEntity" /> class.
-    /// </summary>
-    /// <param name="hunk">The LibGit2Sharp blame hunk.</param>
-    /// <param name="repository">The repository.</param>
-    /// <param name="filePath">The file path.</param>
+    /// <summary>Compatibility constructor. Returned rows no longer retain the supplied repository.</summary>
     public BlameHunkEntity(BlameHunk hunk, Repository repository, string filePath)
+        : this(hunk, repository.Info.WorkingDirectory ?? repository.Info.Path, filePath)
     {
-        _hunk = hunk;
-        _repository = repository;
-        _filePath = filePath;
     }
 
-    /// <summary>
-    ///     Gets the first line of the hunk (1-based).
-    /// </summary>
-    public int StartLineNumber => _hunk.FinalStartLineNumber + 1;
-
-    /// <summary>
-    ///     Gets the last line of the hunk (1-based).
-    /// </summary>
-    public int EndLineNumber => _hunk.FinalStartLineNumber + _hunk.LineCount;
-
-    /// <summary>
-    ///     Gets the number of lines in the hunk.
-    /// </summary>
-    public int LineCount => _hunk.LineCount;
-
-    /// <summary>
-    ///     Gets the SHA of the commit that last modified these lines.
-    /// </summary>
-    public string CommitSha => _hunk.FinalCommit.Sha;
-
-    /// <summary>
-    ///     Gets the author name.
-    /// </summary>
-    public string Author => _hunk.FinalCommit.Author.Name;
-
-    /// <summary>
-    ///     Gets the author email.
-    /// </summary>
-    public string AuthorEmail => _hunk.FinalCommit.Author.Email;
-
-    /// <summary>
-    ///     Gets when the author made the change.
-    /// </summary>
-    public DateTimeOffset AuthorDate => _hunk.FinalCommit.Author.When;
-
-    /// <summary>
-    ///     Gets the committer name.
-    /// </summary>
-    public string Committer => _hunk.FinalCommit.Committer.Name;
-
-    /// <summary>
-    ///     Gets the committer email.
-    /// </summary>
-    public string CommitterEmail => _hunk.FinalCommit.Committer.Email;
-
-    /// <summary>
-    ///     Gets when the commit was applied.
-    /// </summary>
-    public DateTimeOffset CommitterDate => _hunk.FinalCommit.Committer.When;
-
-    /// <summary>
-    ///     Gets the first line of the commit message.
-    /// </summary>
-    public string Summary => _hunk.FinalCommit.MessageShort;
-
-    /// <summary>
-    ///     Gets the original line number if moved/copied.
-    /// </summary>
-    public int? OriginalStartLineNumber
+    internal BlameHunkEntity(BlameHunk hunk, string repositoryPath, string filePath)
+        : this(hunk, repositoryPath, filePath, new GitProjection(true, Columns.Select(column => column.ColumnName)))
     {
-        get
-        {
-            if (_hunk.InitialStartLineNumber != _hunk.FinalStartLineNumber)
-                return _hunk.InitialStartLineNumber + 1;
-
-            return null;
-        }
     }
 
-    /// <summary>
-    ///     Gets the original file path if moved/copied (null if same file).
-    /// </summary>
-    public string? OriginalFilePath
+    internal BlameHunkEntity(BlameHunk hunk, string repositoryPath, string filePath, GitProjection projection)
     {
-        get
-        {
-            if (_hunk.InitialPath != _filePath)
-                return _hunk.InitialPath;
+        ArgumentNullException.ThrowIfNull(hunk);
+        ArgumentException.ThrowIfNullOrWhiteSpace(repositoryPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
 
-            return null;
-        }
+        var all = projection.Includes(nameof(Self));
+        var needsLines = all || projection.Includes(nameof(Lines));
+        var needsGeometry = all || needsLines || projection.Includes(nameof(StartLineNumber)) ||
+                            projection.Includes(nameof(EndLineNumber)) || projection.Includes(nameof(LineCount));
+        var needsCommit = all || needsLines || projection.Includes(nameof(CommitSha)) ||
+                          projection.Includes(nameof(Author)) || projection.Includes(nameof(AuthorEmail)) ||
+                          projection.Includes(nameof(AuthorDate)) || projection.Includes(nameof(Committer)) ||
+                          projection.Includes(nameof(CommitterEmail)) || projection.Includes(nameof(CommitterDate)) ||
+                          projection.Includes(nameof(Summary));
+        var commit = needsCommit ? hunk.FinalCommit : null;
+        var finalStart = needsGeometry ? hunk.FinalStartLineNumber : 0;
+
+        _repositoryPath = needsLines ? repositoryPath : string.Empty;
+        _filePath = needsLines ? filePath : string.Empty;
+        _contentCommitSha = needsLines ? commit!.Sha : string.Empty;
+        _finalStartLineNumber = finalStart;
+        _lineCount = needsGeometry ? hunk.LineCount : 0;
+        _commitSha = projection.Includes(nameof(CommitSha)) || all ? commit!.Sha : string.Empty;
+        _author = projection.Includes(nameof(Author)) || all ? commit!.Author.Name : string.Empty;
+        _authorEmail = projection.Includes(nameof(AuthorEmail)) || all ? commit!.Author.Email : string.Empty;
+        _authorDate = projection.Includes(nameof(AuthorDate)) || all ? commit!.Author.When : default;
+        _committer = projection.Includes(nameof(Committer)) || all ? commit!.Committer.Name : string.Empty;
+        _committerEmail = projection.Includes(nameof(CommitterEmail)) || all ? commit!.Committer.Email : string.Empty;
+        _committerDate = projection.Includes(nameof(CommitterDate)) || all ? commit!.Committer.When : default;
+        _summary = projection.Includes(nameof(Summary)) || all ? commit!.MessageShort : string.Empty;
+        _originalStartLineNumber = (projection.Includes(nameof(OriginalStartLineNumber)) || all) &&
+                                  hunk.InitialStartLineNumber != hunk.FinalStartLineNumber
+            ? hunk.InitialStartLineNumber + 1
+            : null;
+        _originalFilePath = (projection.Includes(nameof(OriginalFilePath)) || all) && hunk.InitialPath != filePath
+            ? hunk.InitialPath
+            : null;
     }
 
-    /// <summary>
-    ///     Gets line details with content (lazy loaded).
-    /// </summary>
-    public IEnumerable<BlameLineEntity> Lines
-    {
-        get
-        {
-            if (_lines != null)
-                return _lines;
+    /// <summary>Gets the one-based first line in the blamed file covered by this hunk.</summary>
+    public int StartLineNumber => _finalStartLineNumber + 1;
+    /// <summary>Gets the one-based last line in the blamed file covered by this hunk.</summary>
+    public int EndLineNumber => _finalStartLineNumber + _lineCount;
+    /// <summary>Gets the number of lines covered by this hunk.</summary>
+    public int LineCount => _lineCount;
+    /// <summary>Gets the SHA of the commit that supplied this hunk.</summary>
+    public string CommitSha => _commitSha;
+    /// <summary>Gets the author name recorded on the supplying commit.</summary>
+    public string Author => _author;
+    /// <summary>Gets the author email recorded on the supplying commit.</summary>
+    public string AuthorEmail => _authorEmail;
+    /// <summary>Gets the author timestamp recorded on the supplying commit.</summary>
+    public DateTimeOffset AuthorDate => _authorDate;
+    /// <summary>Gets the committer name recorded on the supplying commit.</summary>
+    public string Committer => _committer;
+    /// <summary>Gets the committer email recorded on the supplying commit.</summary>
+    public string CommitterEmail => _committerEmail;
+    /// <summary>Gets the committer timestamp recorded on the supplying commit.</summary>
+    public DateTimeOffset CommitterDate => _committerDate;
+    /// <summary>Gets the short commit message for the supplying commit.</summary>
+    public string Summary => _summary;
+    /// <summary>Gets the one-based original line when Git reports a moved hunk; otherwise <see langword="null"/>.</summary>
+    public int? OriginalStartLineNumber => _originalStartLineNumber;
+    /// <summary>Gets the original path when Git reports a moved hunk; otherwise <see langword="null"/>.</summary>
+    public string? OriginalFilePath => _originalFilePath;
 
-            var lines = new List<BlameLineEntity>();
+    /// <summary>Gets the blamed lines, loading and caching file content only on first access; binary files return no lines.</summary>
+    public IEnumerable<BlameLineEntity> Lines => _lines.GetOrCreate(ReadLines) ?? Array.Empty<BlameLineEntity>();
 
-            try
-            {
-                var commit = _hunk.FinalCommit;
-                var treeEntry = commit[_filePath];
-
-                if (treeEntry?.TargetType == TreeEntryTargetType.Blob)
-                {
-                    var blob = (Blob)treeEntry.Target;
-
-                    using var reader = new StreamReader(blob.GetContentStream());
-                    var content = reader.ReadToEnd();
-                    var allLines = content.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-
-                    var startIndex = _hunk.FinalStartLineNumber;
-                    var endIndex = Math.Min(startIndex + _hunk.LineCount, allLines.Length);
-
-                    for (var i = startIndex; i < endIndex; i++) lines.Add(new BlameLineEntity(i + 1, allLines[i]));
-                }
-            }
-            catch
-            {
-            }
-
-            _lines = lines;
-            return _lines;
-        }
-    }
-
-    /// <summary>
-    ///     Gets this instance.
-    /// </summary>
+    /// <summary>Gets this row instance.</summary>
     public BlameHunkEntity Self => this;
+
+    private IReadOnlyList<BlameLineEntity> ReadLines()
+    {
+        using var repository = new Repository(_repositoryPath);
+        var commit = repository.Lookup<Commit>(_contentCommitSha) ??
+                     throw new InvalidOperationException($"Blame commit '{_contentCommitSha}' is no longer available.");
+        var treeEntry = commit[_filePath] ??
+                        throw new FileNotFoundException($"Blamed file '{_filePath}' is no longer available in '{_contentCommitSha}'.");
+        if (treeEntry.TargetType != TreeEntryTargetType.Blob || ((Blob)treeEntry.Target).IsBinary)
+            return [];
+
+        var blob = (Blob)treeEntry.Target;
+        using var stream = blob.GetContentStream();
+        using var reader = new StreamReader(stream);
+        var content = reader.ReadToEnd();
+        var allLines = content.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
+        var endIndex = Math.Min(_finalStartLineNumber + _lineCount, allLines.Length);
+        var lines = new List<BlameLineEntity>(Math.Max(0, endIndex - _finalStartLineNumber));
+        for (var index = _finalStartLineNumber; index < endIndex; index++)
+            lines.Add(new BlameLineEntity(index + 1, allLines[index]));
+        return lines;
+    }
 }

@@ -11,9 +11,13 @@ namespace Musoq.DataSources.Git.Entities;
 /// </summary>
 public class FileHistoryEntity
 {
+    /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
+
+    /// <summary>Maps row indexes to property accessors used by the Musoq runtime.</summary>
     public static readonly IReadOnlyDictionary<int, Func<FileHistoryEntity, object?>> IndexToObjectAccessMap;
 
+    /// <summary>Describes the columns exposed by a file-history row.</summary>
     public static readonly ISchemaColumn[] Columns =
     [
         new SchemaColumn(nameof(CommitSha), 0, typeof(string)),
@@ -25,10 +29,13 @@ public class FileHistoryEntity
         new SchemaColumn(nameof(OldPath), 6, typeof(string))
     ];
 
-    private readonly TreeEntryChanges? _change;
-    private readonly ChangeKind? _changeKind;
-    private readonly Commit? _commit;
-    private readonly string? _path;
+    private readonly string? _commitSha;
+    private readonly string? _author;
+    private readonly string? _authorEmail;
+    private readonly DateTimeOffset? _committedWhen;
+    private readonly string? _filePath;
+    private readonly string? _changeType;
+    private readonly string? _oldPath;
 
     static FileHistoryEntity()
     {
@@ -55,24 +62,70 @@ public class FileHistoryEntity
         };
     }
 
+    /// <summary>Creates a detached file-history snapshot from a commit and tree change.</summary>
+    /// <param name="commit">The commit containing the change, or <see langword="null"/> for a cardinality row.</param>
+    /// <param name="change">The changed entry, or <see langword="null"/> when no entry is available.</param>
     public FileHistoryEntity(Commit? commit, TreeEntryChanges? change)
     {
-        _commit = commit;
-        _change = change;
+        _commitSha = commit?.Sha;
+        _author = commit?.Author?.Name;
+        _authorEmail = commit?.Author?.Email;
+        _committedWhen = commit?.Committer?.When;
+        _filePath = change?.Path;
+        _changeType = change?.Status.ToString();
+        _oldPath = change?.OldPath;
     }
 
+    /// <summary>Creates a detached file-history snapshot from a commit, path, and change kind.</summary>
+    /// <param name="commit">The commit containing the change, or <see langword="null"/> for a cardinality row.</param>
+    /// <param name="path">The changed path, or <see langword="null"/> when it is unavailable.</param>
+    /// <param name="changeKind">The Git change kind.</param>
     public FileHistoryEntity(Commit? commit, string? path, ChangeKind changeKind)
     {
-        _commit = commit;
-        _path = path;
-        _changeKind = changeKind;
+        _commitSha = commit?.Sha;
+        _author = commit?.Author?.Name;
+        _authorEmail = commit?.Author?.Email;
+        _committedWhen = commit?.Committer?.When;
+        _filePath = path;
+        _changeType = changeKind.ToString();
     }
 
-    public string? CommitSha => _commit?.Sha;
-    public string? Author => _commit?.Author?.Name;
-    public string? AuthorEmail => _commit?.Author?.Email;
-    public DateTimeOffset CommittedWhen => _commit?.Committer?.When ?? default;
-    public string? FilePath => _change?.Path ?? _path;
-    public string? ChangeType => _change?.Status.ToString() ?? _changeKind?.ToString();
-    public string? OldPath => _change?.OldPath;
+    internal FileHistoryEntity(
+        string commitSha,
+        string author,
+        string authorEmail,
+        DateTimeOffset committedWhen,
+        string filePath,
+        string changeType,
+        string? oldPath)
+    {
+        _commitSha = commitSha;
+        _author = author;
+        _authorEmail = authorEmail;
+        _committedWhen = committedWhen;
+        _filePath = filePath;
+        _changeType = changeType;
+        _oldPath = oldPath;
+    }
+
+    /// <summary>Gets the commit SHA, or <see langword="null"/> when no commit was supplied.</summary>
+    public string? CommitSha => _commitSha;
+
+    /// <summary>Gets the commit author's display name.</summary>
+    public string? Author => _author;
+
+    /// <summary>Gets the commit author's email address.</summary>
+    public string? AuthorEmail => _authorEmail;
+
+    /// <summary>Gets the commit timestamp, or the default value when no commit was supplied.</summary>
+    public DateTimeOffset CommittedWhen => _committedWhen ?? default;
+
+    /// <summary>Gets the changed path in the newer tree.</summary>
+    public string? FilePath => _filePath;
+
+    /// <summary>Gets the Git change-kind name.</summary>
+    public string? ChangeType => _changeType;
+
+    /// <summary>Gets the path in the older tree for a rename or copy, when available.</summary>
+    public string? OldPath => _oldPath;
 }

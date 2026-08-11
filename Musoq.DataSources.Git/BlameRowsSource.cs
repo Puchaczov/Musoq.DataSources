@@ -2,103 +2,76 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using LibGit2Sharp;
-using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git;
 
-internal sealed class BlameRowsSource : AsyncRowsSourceBase<BlameHunkEntity>
+/// <summary>Streams detached blame hunk metadata; file content remains lazy on <see cref="BlameHunkEntity.Lines"/>.</summary>
+internal sealed class BlameRowsSource : GitDiagnosticRowsSourceBase<BlameHunkEntity>
 {
     private readonly Func<string, Repository> _createRepository;
     private readonly string _filePath;
     private readonly string _repositoryPath;
     private readonly string _revision;
+    private readonly GitProjection _projection;
 
     public BlameRowsSource(
         string repositoryPath,
         string filePath,
         string revision,
         Func<string, Repository> createRepository,
-        CancellationToken cancellationToken)
-        : base(cancellationToken)
+        SourceExecutionContext executionContext)
+        : base(executionContext, "git.blame")
     {
         _repositoryPath = repositoryPath;
         _filePath = filePath;
         _revision = revision;
         _createRepository = createRepository;
+        _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
     }
 
-    protected override Task CollectChunksAsync(
-        IChunkWriter<BlameHunkEntity> writer,
-        CancellationToken cancellationToken)
+    protected override long CollectRows(DiagnosticChunkWriter<BlameHunkEntity> writer, CancellationToken cancellationToken)
     {
         if (!Directory.Exists(_repositoryPath))
-            throw new DirectoryNotFoundException($"Repository path '{_repositoryPath}' does not exist");
+            throw new DirectoryNotFoundException($"Repository path '{_repositoryPath}' does not exist.");
 
-        var repository = _createRepository(_repositoryPath);
+        using var repository = _createRepository(_repositoryPath);
+        cancellationToken.ThrowIfCancellationRequested();
+        var gitObject = repository.Lookup(_revision) ??
+                        throw new ArgumentException($"Invalid revision '{_revision}': not found.", nameof(_revision));
+        var commit = gitObject.Peel<Commit>() ??
+                     throw new ArgumentException($"Invalid revision '{_revision}': does not point to a commit.", nameof(_revision));
+        var treeEntry = commit[_filePath] ??
+                        throw new FileNotFoundException($"File '{_filePath}' does not exist at revision '{_revision}'.");
 
-        Commit? commit = null;
-
-        try
-        {
-            var gitObject = repository.Lookup(_revision);
-
-            if (gitObject == null)
-                throw new ArgumentException($"Invalid revision '{_revision}': not found", "revision");
-
-            var peeledCommit = gitObject.Peel<Commit>();
-            if (peeledCommit != null)
-                commit = peeledCommit;
-            else
-                throw new ArgumentException($"Invalid revision '{_revision}': does not point to a commit", "revision");
-        }
-        catch (Exception ex) when (ex is not ArgumentException)
-        {
-            throw new ArgumentException($"Invalid revision '{_revision}': {ex.Message}", "revision", ex);
-        }
-
-        var treeEntry = commit[_filePath];
-        if (treeEntry == null)
-            throw new FileNotFoundException($"File '{_filePath}' does not exist at revision '{_revision}'");
-
-        if (treeEntry.TargetType == TreeEntryTargetType.Blob)
-        {
-            var blob = (Blob)treeEntry.Target;
-            if (blob.IsBinary) return Task.CompletedTask;
-        }
+        if (treeEntry.TargetType == TreeEntryTargetType.Blob && ((Blob)treeEntry.Target).IsBinary)
+            return 0;
 
         BlameHunkCollection blameHunks;
         try
         {
             blameHunks = repository.Blame(_filePath, new BlameOptions { StartingAt = commit });
         }
-        catch
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            return Task.CompletedTask;
+            throw new InvalidOperationException(
+                $"Git could not calculate blame for '{_filePath}' at revision '{_revision}'.", exception);
         }
 
-        var chunk = new List<BlameHunkEntity>(100);
-
+        var chunk = new List<BlameHunkEntity>(128);
+        long rowsRead = 0;
         foreach (var hunk in blameHunks)
         {
-            if (cancellationToken.IsCancellationRequested)
-                break;
-
-            var entity = new BlameHunkEntity(hunk, repository, _filePath);
-            chunk.Add(entity);
-
-            if (chunk.Count >= 100)
-            {
-                writer.Write(chunk);
-                chunk = [];
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            chunk.Add(new BlameHunkEntity(hunk, _repositoryPath, _filePath, _projection));
+            if (chunk.Count == 128)
+                rowsRead += WriteChunk(writer, chunk, rowsRead);
         }
 
-        if (chunk.Count > 0) writer.Write(chunk);
-
-        return Task.CompletedTask;
+        rowsRead += WriteChunk(writer, chunk, rowsRead);
+        return rowsRead;
     }
 }

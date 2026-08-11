@@ -6,24 +6,16 @@ using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git.Entities;
 
-/// <summary>
-///     Represents a tag entity in a Git repository.
-/// </summary>
+/// <summary>Represents a detached Git tag snapshot.</summary>
 public class TagEntity
 {
-    /// <summary>
-    ///     A read-only dictionary mapping column names to their respective indices.
-    /// </summary>
+    /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
-    /// <summary>
-    ///     A read-only dictionary mapping column indices to functions that access the corresponding properties.
-    /// </summary>
+    /// <summary>Maps row indexes to property accessors used by the Musoq runtime.</summary>
     public static readonly IReadOnlyDictionary<int, Func<TagEntity, object?>> IndexToObjectAccessMap;
 
-    /// <summary>
-    ///     An array of schema columns representing the structure of the tag entity.
-    /// </summary>
+    /// <summary>Describes the columns exposed by a tag row.</summary>
     public static readonly ISchemaColumn[] Columns =
     [
         new SchemaColumn(nameof(FriendlyName), 0, typeof(string)),
@@ -34,81 +26,90 @@ public class TagEntity
         new SchemaColumn(nameof(Commit), 5, typeof(CommitEntity))
     ];
 
-    private readonly Repository _libGitRepository;
-    private readonly Tag _tag;
+    private readonly string _repositoryPath;
+    private readonly string? _friendlyName;
+    private readonly string? _canonicalName;
+    private readonly string? _message;
+    private readonly bool _isAnnotated;
+    private readonly AnnotationEntity? _annotation;
+    private readonly string? _commitSha;
+    private readonly GitNestedSnapshot<CommitEntity> _commit = new();
 
-    /// <summary>
-    ///     Static constructor to initialize the static read-only dictionaries.
-    /// </summary>
     static TagEntity()
     {
         NameToIndexMap = new Dictionary<string, int>
         {
-            { nameof(FriendlyName), 0 },
-            { nameof(CanonicalName), 1 },
-            { nameof(Message), 2 },
-            { nameof(IsAnnotated), 3 },
-            { nameof(Annotation), 4 },
-            { nameof(Commit), 5 }
+            { nameof(FriendlyName), 0 }, { nameof(CanonicalName), 1 }, { nameof(Message), 2 },
+            { nameof(IsAnnotated), 3 }, { nameof(Annotation), 4 }, { nameof(Commit), 5 }
         };
-
         IndexToObjectAccessMap = new Dictionary<int, Func<TagEntity, object?>>
         {
-            { 0, entity => entity.FriendlyName },
-            { 1, entity => entity.CanonicalName },
-            { 2, entity => entity.Message },
-            { 3, entity => entity.IsAnnotated },
-            { 4, entity => entity.Annotation },
-            { 5, entity => entity.Commit }
+            { 0, entity => entity.FriendlyName }, { 1, entity => entity.CanonicalName },
+            { 2, entity => entity.Message }, { 3, entity => entity.IsAnnotated },
+            { 4, entity => entity.Annotation }, { 5, entity => entity.Commit }
         };
     }
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="TagEntity" /> class.
-    /// </summary>
-    /// <param name="tag">The tag object from LibGit2Sharp.</param>
-    /// <param name="repository">The Git repository.</param>
+    /// <summary>Creates a detached tag snapshot from a LibGit2Sharp tag.</summary>
+    /// <param name="tag">The tag to copy.</param>
+    /// <param name="repository">The source repository used to capture annotation and target identifiers.</param>
     public TagEntity(Tag tag, Repository repository)
+        : this(
+            repository.Info.Path,
+            tag.FriendlyName,
+            tag.CanonicalName,
+            tag.Annotation?.Message,
+            tag.IsAnnotated,
+            tag.Annotation is { } annotation ? new AnnotationEntity(annotation, repository) : null,
+            (tag.Target as Commit)?.Sha)
     {
-        _tag = tag;
-        _libGitRepository = repository;
     }
 
-    /// <summary>
-    ///     Gets the friendly name of the tag.
-    /// </summary>
-    public string? FriendlyName => _tag.FriendlyName;
+    internal TagEntity(
+        string repositoryPath,
+        string? friendlyName,
+        string? canonicalName,
+        string? message,
+        bool isAnnotated,
+        AnnotationEntity? annotation,
+        string? commitSha)
+    {
+        _repositoryPath = repositoryPath;
+        _friendlyName = friendlyName;
+        _canonicalName = canonicalName;
+        _message = message;
+        _isAnnotated = isAnnotated;
+        _annotation = annotation;
+        _commitSha = commitSha;
+    }
 
-    /// <summary>
-    ///     Gets the canonical name of the tag.
-    /// </summary>
-    public string? CanonicalName => _tag.CanonicalName;
+    /// <summary>Gets the friendly tag name.</summary>
+    public string? FriendlyName => _friendlyName;
 
-    /// <summary>
-    ///     Gets the message of the tag annotation.
-    /// </summary>
-    public string? Message => _tag.Annotation?.Message;
+    /// <summary>Gets the canonical fully qualified tag name.</summary>
+    public string? CanonicalName => _canonicalName;
 
-    /// <summary>
-    ///     Gets a value indicating whether the tag is annotated.
-    /// </summary>
-    public bool IsAnnotated => _tag.IsAnnotated;
+    /// <summary>Gets the annotation message, or <see langword="null"/> for an unannotated tag.</summary>
+    public string? Message => _message;
 
-    /// <summary>
-    ///     Gets the annotation entity of the tag.
-    /// </summary>
-    public AnnotationEntity Annotation => new(_tag.Annotation, _libGitRepository);
+    /// <summary>Gets whether the tag has an annotation.</summary>
+    public bool IsAnnotated => _isAnnotated;
 
-    /// <summary>
-    ///     Gets the commit entity that the tag points to.
-    /// </summary>
+    /// <summary>Gets the detached annotation, or <see langword="null"/> for an unannotated tag.</summary>
+    public AnnotationEntity? Annotation => _annotation;
+
+    /// <summary>Gets the tagged commit, resolving it lazily from the captured identifier.</summary>
+    /// <remarks>The returned commit is a detached snapshot and does not retain a native repository handle.</remarks>
     public CommitEntity? Commit
     {
-        get
+        get => _commit.GetOrCreate(() =>
         {
-            if (_tag.Target is Commit commit) return new CommitEntity(commit, _libGitRepository);
+            if (string.IsNullOrWhiteSpace(_commitSha))
+                return null;
 
-            return null;
-        }
+            using var repository = new Repository(_repositoryPath);
+            var commit = repository.Lookup<Commit>(_commitSha);
+            return commit is null ? null : new CommitEntity(commit, repository);
+        });
     }
 }

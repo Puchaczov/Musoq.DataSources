@@ -35,7 +35,8 @@
 - `CommitEntity.Parents` is another nested traversal point that should stay cheap and null-safe.
 - `TagEntity.Commit` is optional because lightweight tags do not always resolve the same way as annotated tags.
 - `BranchEntity.ParentBranch` is intentionally defensive and relatively expensive: it computes merge-base candidates and falls back to `main` / `master` on failure. Treat changes there as behavior-sensitive.
-- `RepositoryEntity` owns a `LibGit2Sharp.Repository` and disposes it in the finalizer. Avoid introducing extra ownership ambiguity when adding nested entities.
+- Direct rows are detached snapshots. Do not retain LibGit2Sharp objects or repository handles in returned entities;
+  nested access must open a short-lived repository scope from a path plus SHA/ref identity.
 
 ## Simple predicate optimization
 - Predicate extraction lives in the runtime-v2 source-planning path.
@@ -51,8 +52,8 @@
 ## Common pitfalls
 - Path validation happens before source creation: queries must point at a repository root directory or a `.git` directory. Non-existent paths and non-repositories should keep failing early in `GitSchema`.
 - Test and query paths often need `.Escape()` because Windows paths are passed into Musoq scripts as string literals.
-- `filehistory` normalizes absolute paths back to repository-relative paths and matches either file names or full relative paths against the HEAD tree. Preserve that before touching wildcard logic.
-- Negative `take` in `filehistory` means “oldest N changes”, implemented by reversing the commit history in memory. Keep tests in sync if you optimize that path.
+- `filehistory` normalizes absolute paths back to repository-relative paths and matches either file names or full relative paths against every historical raw change, including both rename sides. Preserve that before touching wildcard logic.
+- Negative `take` in `filehistory` means “oldest N changes”. It uses Git's reverse history traversal, which remains a full-history-costed operation without a persistent index; keep the diagnostic metric and tests in sync if you optimize that path.
 - `BlameRowsSource` returns empty results for binary blobs and for blame operations that LibGit2Sharp cannot resolve; invalid revisions and missing files still throw.
 - `StatusRowsSource` currently emits one-row chunks, unlike the 100-row batching used by most other Git row sources. Do not normalize that casually unless you validate behavior and cancellation.
 - Runtime-v2 source planning works on source field names, so aliasing or computed predicates should not be baked into pushdown assumptions.
