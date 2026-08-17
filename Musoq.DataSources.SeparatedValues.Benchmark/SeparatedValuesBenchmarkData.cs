@@ -52,6 +52,55 @@ internal static class SeparatedValuesBenchmarkData
         return path;
     }
 
+    public static string EnsureNvmeFile(int sizeGiB)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeGiB);
+        var targetBytes = checked(sizeGiB * 1024L * 1024L * 1024L);
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            "Musoq.DataSources.Benchmarks",
+            "separated-values",
+            "v1",
+            $"nvme-{sizeGiB}gib.csv");
+
+        if (File.Exists(path) && new FileInfo(path).Length >= targetBytes)
+            return path;
+
+        EnsureFreeSpace(path, targetBytes);
+        var directory = Path.GetDirectoryName(path)!;
+        Directory.CreateDirectory(directory);
+        var line = "station-000;0.0\n"u8;
+        var block = GC.AllocateUninitializedArray<byte>(4 * 1024 * 1024);
+        var written = 0;
+        while (written + line.Length <= block.Length)
+        {
+            line.CopyTo(block.AsSpan(written));
+            written += line.Length;
+        }
+
+        using var stream = new FileStream(
+            path,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            block.Length,
+            FileOptions.SequentialScan);
+        long total = 0;
+        while (total + written <= targetBytes)
+        {
+            stream.Write(block, 0, written);
+            total += written;
+        }
+
+        while (total < targetBytes)
+        {
+            stream.Write(line);
+            total += line.Length;
+        }
+
+        return path;
+    }
+
     public static string EnsureUniqueStringsFile(int rowCount)
     {
         var path = GetFixturePath("unique-strings", rowCount);

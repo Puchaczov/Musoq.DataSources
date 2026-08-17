@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Structured;
 using Musoq.DataSources.Tests.Common;
@@ -55,7 +56,7 @@ public class SeparatedValuesParallelExecutionTests
                 .ToArray();
 
             Assert.AreEqual(4_000, rows.Length);
-            Assert.AreEqual(20_000L, capture.For("separated_values", DataSourcePhase.RowsKnown).Single().TotalRows);
+            Assert.AreEqual(0, capture.For("separated_values", DataSourcePhase.RowsKnown).Count);
             Assert.AreEqual(20_000L, capture.For("separated_values", DataSourcePhase.RowsRead).Last().RowsProcessed);
             Assert.AreEqual(4_000L, capture.For("separated_values", DataSourcePhase.End).Single().RowsProcessed);
         });
@@ -117,12 +118,29 @@ public class SeparatedValuesParallelExecutionTests
     }
 
     [TestMethod]
+    public void FileRowsSource_ConcurrentParallelQueries_ShareThePipelineWithoutCorruptingOrder()
+    {
+        WithGeneratedCsv(25_000, path =>
+        {
+            var plan = Plan(path, GreaterThanOrEqual("Group", 7L), [new SourceColumnRef("Index")]);
+            var first = Task.Run(() => ReadRows(path, plan, MaximumParallelism("8")));
+            var second = Task.Run(() => ReadRows(path, plan, MaximumParallelism("8")));
+
+            Task.WaitAll(first, second);
+            Assert.AreEqual(7_500, first.Result.Length);
+            Assert.AreEqual(7_500, second.Result.Length);
+            for (var index = 0; index < first.Result.Length; index++)
+                CollectionAssert.AreEqual(first.Result[index], second.Result[index]);
+        });
+    }
+
+    [TestMethod]
     public void ParallelOptions_WhenSliceIsAccepted_ForceSequentialExecution()
     {
         WithGeneratedCsv(1_000, path =>
         {
             var plan = Plan(path, null, [new SourceColumnRef("Index")], take: 10);
-            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", true, 0);
+            var snapshot = SeparatedValuesSourceContract.From(plan).Snapshot;
             var context = Context(plan, MaximumParallelism("8"));
 
             Assert.AreEqual(1, SeparatedValuesParallelScanOptions.Resolve(snapshot, context));
@@ -135,7 +153,7 @@ public class SeparatedValuesParallelExecutionTests
         WithGeneratedCsv(100, path =>
         {
             var plan = Plan(path, null, [new SourceColumnRef("Index")]);
-            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", true, 0);
+            var snapshot = SeparatedValuesSourceContract.From(plan).Snapshot;
             var context = Context(plan, MaximumParallelism("many"));
 
             var exception = Assert.ThrowsExactly<ArgumentException>(() =>
@@ -159,7 +177,7 @@ public class SeparatedValuesParallelExecutionTests
                     Snapshot(SeparatedValuesParallelScanOptions.AutomaticCrossoverBytes - 1),
                     context));
             Assert.AreEqual(
-                Math.Min(SeparatedValuesParallelScanOptions.AutomaticMaximumParallelism, Environment.ProcessorCount),
+                SeparatedValuesParallelScanOptions.AutomaticMaximumParallelism,
                 SeparatedValuesParallelScanOptions.Resolve(
                     Snapshot(SeparatedValuesParallelScanOptions.AutomaticCrossoverBytes),
                     context));
@@ -167,7 +185,7 @@ public class SeparatedValuesParallelExecutionTests
     }
 
     [TestMethod]
-    public void ParallelOptions_WhenPredicateIsAccepted_UsesSelectiveQueryCrossover()
+    public void ParallelOptions_WhenPredicateIsAccepted_UsesTheLargeFileCrossover()
     {
         WithGeneratedCsv(10, path =>
         {
@@ -180,12 +198,12 @@ public class SeparatedValuesParallelExecutionTests
             Assert.AreEqual(
                 1,
                 SeparatedValuesParallelScanOptions.Resolve(
-                    Snapshot(SeparatedValuesParallelScanOptions.PredicateCrossoverBytes - 1),
+                    Snapshot(SeparatedValuesParallelScanOptions.AutomaticCrossoverBytes - 1),
                     context));
             Assert.AreEqual(
-                Math.Min(SeparatedValuesParallelScanOptions.AutomaticMaximumParallelism, Environment.ProcessorCount),
+                SeparatedValuesParallelScanOptions.AutomaticMaximumParallelism,
                 SeparatedValuesParallelScanOptions.Resolve(
-                    Snapshot(SeparatedValuesParallelScanOptions.PredicateCrossoverBytes),
+                    Snapshot(SeparatedValuesParallelScanOptions.AutomaticCrossoverBytes),
                     context));
         });
     }
@@ -193,14 +211,25 @@ public class SeparatedValuesParallelExecutionTests
     [TestMethod]
     public void Schema_DeclaresOptionalMaximumParallelismSetting()
     {
-        var requirement = new SeparatedValuesSchema()
+        var requirements = new SeparatedValuesSchema()
             .DescribeSourceRuntimeSettings("comma", null!)
-            .Single();
+            .ToDictionary(requirement => requirement.Name);
+        var requirement = requirements[SeparatedValuesParallelScanOptions.MaximumParallelismSettingName];
 
         Assert.AreEqual(SeparatedValuesParallelScanOptions.MaximumParallelismSettingName, requirement.Name);
         Assert.IsFalse(requirement.Required);
         Assert.IsFalse(requirement.Secret);
         Assert.AreEqual(SourceRuntimeSettingPhase.Execution, requirement.Phases);
+        Assert.AreEqual(4, requirements.Count);
+        Assert.AreEqual(
+            SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning,
+            requirements[SeparatedValuesInferenceOptions.MaximumBytesSettingName].Phases);
+        Assert.AreEqual(
+            SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning,
+            requirements[SeparatedValuesInferenceOptions.MaximumRowsSettingName].Phases);
+        Assert.AreEqual(
+            SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning,
+            requirements[SeparatedValuesInferenceOptions.MaximumTimeMillisecondsSettingName].Phases);
     }
 
     private static object?[][] ReadRows(

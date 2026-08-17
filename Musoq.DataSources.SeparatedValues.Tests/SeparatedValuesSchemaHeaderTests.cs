@@ -23,14 +23,14 @@ public class SeparatedValuesSchemaHeaderTests
     {
         WithCsv("\"First,Name\",Age\r\nAlice,31\r\n", path =>
         {
-            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", true, 0);
+            var snapshot = Snapshot(path);
             var table = new SeparatedValuesTable(snapshot, MetadataContext([]));
 
             Assert.AreEqual(2, table.Columns.Length);
             Assert.AreEqual("First,Name", table.Columns[0].ColumnName);
             Assert.AreEqual("Age", table.Columns[1].ColumnName);
             Assert.AreEqual(typeof(string), table.Columns[0].ColumnType);
-            Assert.AreEqual(typeof(long), table.Columns[1].ColumnType);
+            Assert.AreEqual(typeof(long?), table.Columns[1].ColumnType);
         });
     }
 
@@ -39,7 +39,7 @@ public class SeparatedValuesSchemaHeaderTests
     {
         WithCsv("Name,Age\nAda,36\n", path =>
         {
-            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", true, 0);
+            var snapshot = Snapshot(path);
             var table = new SeparatedValuesTable(
                 snapshot,
                 MetadataContext([new SchemaColumn("Age", 7, typeof(decimal))]));
@@ -56,7 +56,7 @@ public class SeparatedValuesSchemaHeaderTests
     {
         WithCsv("Name\nAda\n", path =>
         {
-            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", true, 0);
+            var snapshot = Snapshot(path);
 
             var table = new SeparatedValuesTable(
                 snapshot,
@@ -74,6 +74,22 @@ public class SeparatedValuesSchemaHeaderTests
             columns,
             new Dictionary<string, string>(),
             new Mock<ILogger>().Object);
+    }
+
+    private static StructuredSchemaSnapshot Snapshot(string path)
+    {
+        return new BoundedSeparatedValuesSchemaResolver().Resolve(
+            new SeparatedValuesSchemaResolutionRequest(
+                path,
+                ",",
+                true,
+                0,
+                [],
+                new Dictionary<string, string>
+                {
+                    [SeparatedValuesInferenceOptions.MaximumTimeMillisecondsSettingName] = "1000"
+                },
+                CancellationToken.None)).Snapshot;
     }
 
     private static void WithCsv(string contents, Action<string> assertion)

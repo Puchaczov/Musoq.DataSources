@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -9,7 +11,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.SeparatedValues;
 
 /// <description>
-///     Streams strict UTF-8 comma-, tab-, and semicolon-separated files after exact schema discovery.
+///     Streams strict UTF-8 comma-, tab-, and semicolon-separated files with bounded schema resolution.
 /// </description>
 /// <short-description>
 ///     Streams strict UTF-8 separated-values files with dynamic columns.
@@ -21,6 +23,9 @@ public class SeparatedValuesSchema : SchemaBase
     private const string CommaTable = "comma";
     private const string TabTable = "tab";
     private const string SemicolonTable = "semicolon";
+    private const string DelimitedTable = "delimited";
+    private readonly SeparatedValuesPipelineModules _modules;
+    private readonly AsyncLocal<PendingContract?> _pendingContract = new();
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
@@ -30,7 +35,7 @@ public class SeparatedValuesSchema : SchemaBase
     ///         <examples>
     ///             <example>
     ///                 <from>#separatedvalues.comma(string path, bool hasHeader, int skipLines)</from>
-    ///                 <description>Discovers the complete CSV schema and streams requested columns</description>
+    ///                 <description>Resolves a bounded CSV schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
     ///         </examples>
@@ -42,7 +47,7 @@ public class SeparatedValuesSchema : SchemaBase
     ///         <examples>
     ///             <example>
     ///                 <from>#separatedvalues.tab(string path, bool hasHeader, int skipLines)</from>
-    ///                 <description>Discovers the complete TSV schema and streams requested columns</description>
+    ///                 <description>Resolves a bounded TSV schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
     ///         </examples>
@@ -54,15 +59,21 @@ public class SeparatedValuesSchema : SchemaBase
     ///         <examples>
     ///             <example>
     ///                 <from>#separatedvalues.semicolon(string path, bool hasHeader, int skipLines)</from>
-    ///                 <description>Discovers the complete semicolon-separated schema and streams requested columns</description>
+    ///                 <description>Resolves a bounded semicolon-separated schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
     ///         </examples>
     ///     </virtual-constructor>
     /// </virtual-constructors>
     public SeparatedValuesSchema()
+        : this(SeparatedValuesPipelineModules.Default)
+    {
+    }
+
+    internal SeparatedValuesSchema(SeparatedValuesPipelineModules modules)
         : base(SchemaName.ToLowerInvariant(), CreateLibrary())
     {
+        _modules = modules ?? throw new ArgumentNullException(nameof(modules));
     }
 
     /// <summary>
@@ -77,13 +88,14 @@ public class SeparatedValuesSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object?[] parameters)
     {
-        var sourceParameters = ParseParameters(parameters);
+        var sourceParameters = ParseParameters(name, parameters);
 
         return name.ToLowerInvariant() switch
         {
-            CommaTable => CreateTable(",", metadataContext, sourceParameters),
-            TabTable => CreateTable("\t", metadataContext, sourceParameters),
-            SemicolonTable => CreateTable(";", metadataContext, sourceParameters),
+            CommaTable or TabTable or SemicolonTable or DelimitedTable => CreateTable(
+                sourceParameters.Separator,
+                metadataContext,
+                sourceParameters),
             _ => base.GetTableByName(name, metadataContext, parameters)
         };
     }
@@ -100,33 +112,47 @@ public class SeparatedValuesSchema : SchemaBase
         SourceExecutionContext executionContext,
         params object?[] parameters)
     {
-        var sourceParameters = ParseParameters(parameters);
+        var sourceParameters = ParseParameters(name, parameters);
 
         return name.ToLowerInvariant() switch
         {
-            CommaTable => CreateSource<T>(name, ",", executionContext, sourceParameters),
-            TabTable => CreateSource<T>(name, "\t", executionContext, sourceParameters),
-            SemicolonTable => CreateSource<T>(name, ";", executionContext, sourceParameters),
+            CommaTable or TabTable or SemicolonTable or DelimitedTable => CreateSource<T>(
+                name,
+                sourceParameters.Separator,
+                executionContext,
+                sourceParameters),
             _ => base.GetRowSource<T>(name, executionContext, parameters)
         };
     }
 
     /// <summary>
-    ///     Describes the exact schema discovered for a separated-values file.
+    ///     Describes the declared or bounded-sample schema for a separated-values file.
     /// </summary>
     public override SourceDescriptor DescribeSource(
         string name,
         SourceDescribeContext context,
         params object?[] parameters)
     {
-        var table = GetTableByName(name, context.MetadataContext, parameters);
+        var sourceParameters = ParseParameters(name, parameters);
+        var separator = sourceParameters.Separator;
+        var dialect = _modules.DialectResolver.Resolve(separator, context.MetadataContext.SourceRuntimeSettings);
+        var contract = Resolve(
+            sourceParameters,
+            dialect,
+            context.MetadataContext.AllColumns,
+            context.MetadataContext.SourceRuntimeSettings,
+            context.MetadataContext.EndWorkToken);
+        _pendingContract.Value = new PendingContract(
+            CreateContractKey(sourceParameters, dialect),
+            contract);
+        var table = new SeparatedValuesTable(contract.Snapshot, context.MetadataContext);
 
         return new SourceDescriptor
         {
             Identity = context.Identity,
             Columns = table.Columns,
             RowType = table.Metadata.TableEntityType,
-            Diagnostics = [],
+            Diagnostics = contract.Diagnostics,
             ContractDiagnostics = []
         };
     }
@@ -139,15 +165,102 @@ public class SeparatedValuesSchema : SchemaBase
         SourceRuntimeSettingsDescribeContext context,
         params object?[] parameters)
     {
-        return
-        [
+        var requirements = new List<SourceRuntimeSettingRequirement>
+        {
             new SourceRuntimeSettingRequirement(
                 SeparatedValuesParallelScanOptions.MaximumParallelismSettingName,
                 false,
                 false,
                 SourceRuntimeSettingPhase.Execution,
-                "Maximum file-scan parallelism. Missing or 0 selects automatically; 1 forces sequential scanning.")
-        ];
+                "Maximum file-scan parallelism. Missing or 0 selects automatically; 1 forces sequential scanning."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesInferenceOptions.MaximumBytesSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning,
+                $"Maximum bytes read while resolving a dynamic schema. Default: {SeparatedValuesInferenceOptions.DefaultMaximumBytes:N0}."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesInferenceOptions.MaximumRowsSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning,
+                $"Maximum complete rows inspected while resolving a dynamic schema. Default: {SeparatedValuesInferenceOptions.DefaultMaximumRows:N0}."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesInferenceOptions.MaximumTimeMillisecondsSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning,
+                $"Cooperative schema-resolution deadline in milliseconds. Default: {SeparatedValuesInferenceOptions.DefaultMaximumTimeMilliseconds:N0}.")
+        };
+
+        if (string.Equals(name, DelimitedTable, StringComparison.OrdinalIgnoreCase))
+        {
+            requirements.AddRange(
+            [
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.QuoteSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                "Quote character, or 'none'. Default: double quote."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.EscapeSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                "Quote escape mode: double, backslash, or none."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.WhitespaceSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                "Whether unquoted field whitespace is preserved or trimmed."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.BlankRecordSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                "Whether blank records are skipped or emitted."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.CommentPrefixSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                "Optional UTF-8 prefix for comment records."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.NullTokensSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                "JSON array of unquoted null tokens."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.CultureSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                "Culture used for bounded inference and materializing typed values. Default: invariant."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.RecordEndingsSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                "Record endings: lf_crlf (default) or any."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.MaximumRecordBytesSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                $"Maximum logical record bytes. Default: {SeparatedValuesDialect.DefaultMaximumRecordBytes:N0}."),
+            new SourceRuntimeSettingRequirement(
+                SeparatedValuesDialect.MaximumBufferedBytesSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Metadata | SourceRuntimeSettingPhase.Planning | SourceRuntimeSettingPhase.Execution,
+                $"Maximum buffered bytes. Default: {SeparatedValuesDialect.DefaultMaximumBufferedBytes:N0}.")
+            ]);
+        }
+
+        return requirements;
     }
 
     /// <summary>
@@ -155,30 +268,15 @@ public class SeparatedValuesSchema : SchemaBase
     /// </summary>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
-        var sourceParameters = ParseParameters(parameters);
+        var sourceParameters = ParseParameters(name, parameters);
+        var dialect = _modules.DialectResolver.Resolve(sourceParameters.Separator, request.SourceRuntimeSettings);
+        var contract = ConsumePendingContract(sourceParameters, dialect) ??
+                       Resolve(sourceParameters, dialect, [], request.SourceRuntimeSettings, default);
 
         return name.ToLowerInvariant() switch
         {
-            CommaTable => SeparatedValuesSourcePlanner.Plan(
-                SeparatedValuesSchemaDiscovery.GetSnapshot(
-                    sourceParameters.Path,
-                    ",",
-                    sourceParameters.HasHeader,
-                    sourceParameters.SkipLines),
-                request),
-            TabTable => SeparatedValuesSourcePlanner.Plan(
-                SeparatedValuesSchemaDiscovery.GetSnapshot(
-                    sourceParameters.Path,
-                    "\t",
-                    sourceParameters.HasHeader,
-                    sourceParameters.SkipLines),
-                request),
-            SemicolonTable => SeparatedValuesSourcePlanner.Plan(
-                SeparatedValuesSchemaDiscovery.GetSnapshot(
-                    sourceParameters.Path,
-                    ";",
-                    sourceParameters.HasHeader,
-                    sourceParameters.SkipLines),
+            CommaTable or TabTable or SemicolonTable or DelimitedTable => SeparatedValuesSourcePlanner.Plan(
+                contract,
                 request),
             _ => SourcePlanResult.RejectAll(request)
         };
@@ -213,9 +311,10 @@ public class SeparatedValuesSchema : SchemaBase
             CommaTable => [CreateCommaMethodInfo()],
             TabTable => [CreateTabMethodInfo()],
             SemicolonTable => [CreateSemicolonMethodInfo()],
+            DelimitedTable => [CreateDelimitedMethodInfo()],
             _ => throw new NotSupportedException(
                 $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {CommaTable}, {TabTable}, {SemicolonTable}")
+                $"Available data sources: {CommaTable}, {TabTable}, {SemicolonTable}, {DelimitedTable}")
         };
     }
 
@@ -229,22 +328,22 @@ public class SeparatedValuesSchema : SchemaBase
         return GetConstructors();
     }
 
-    private static ISchemaTable CreateTable(
+    private ISchemaTable CreateTable(
         string separator,
         SourceMetadataContext metadataContext,
         SourceParameters parameters)
     {
         return new SeparatedValuesTable(
-            SeparatedValuesSchemaDiscovery.GetSnapshot(
-                parameters.Path,
-                separator,
-                parameters.HasHeader,
-                parameters.SkipLines,
-                metadataContext.EndWorkToken),
+            Resolve(
+                parameters,
+                _modules.DialectResolver.Resolve(separator, metadataContext.SourceRuntimeSettings),
+                metadataContext.AllColumns,
+                metadataContext.SourceRuntimeSettings,
+                metadataContext.EndWorkToken).Snapshot,
             metadataContext);
     }
 
-    private static RowSource<T> CreateSource<T>(
+    private RowSource<T> CreateSource<T>(
         string name,
         string separator,
         SourceExecutionContext executionContext,
@@ -255,13 +354,82 @@ public class SeparatedValuesSchema : SchemaBase
             separator,
             parameters.HasHeader,
             parameters.SkipLines,
-            executionContext);
+            executionContext,
+            _modules.ScanPipeline,
+            _modules.DialectResolver.Resolve(separator, executionContext.SourceRuntimeSettings));
 
         return EnsureSourceType<T, object?[]>(name, source);
     }
 
-    private static SourceParameters ParseParameters(object?[] parameters)
+    private SeparatedValuesSourceContract Resolve(
+        SourceParameters parameters,
+        SeparatedValuesDialect dialect,
+        IReadOnlyCollection<ISchemaColumn> declaredColumns,
+        IReadOnlyDictionary<string, string> runtimeSettings,
+        System.Threading.CancellationToken cancellationToken)
     {
+        return _modules.SchemaResolver.Resolve(new SeparatedValuesSchemaResolutionRequest(
+            parameters.Path,
+            ((char)dialect.Separator).ToString(),
+            parameters.HasHeader,
+            parameters.SkipLines,
+            declaredColumns,
+            runtimeSettings,
+            cancellationToken,
+            dialect));
+    }
+
+    private SeparatedValuesSourceContract? ConsumePendingContract(
+        SourceParameters parameters,
+        SeparatedValuesDialect dialect)
+    {
+        var pending = _pendingContract.Value;
+        _pendingContract.Value = null;
+        return pending is not null && pending.Key == CreateContractKey(parameters, dialect)
+            ? pending.Contract
+            : null;
+    }
+
+    private static ContractKey CreateContractKey(SourceParameters parameters, SeparatedValuesDialect dialect)
+    {
+        return new ContractKey(
+            Path.GetFullPath(parameters.Path),
+            dialect.Fingerprint,
+            parameters.HasHeader,
+            parameters.SkipLines);
+    }
+
+    private static string GetSeparator(string name)
+    {
+        return name.ToLowerInvariant() switch
+        {
+            CommaTable => ",",
+            TabTable => "\t",
+            SemicolonTable => ";",
+            _ => throw new NotSupportedException(
+                $"Data source '{name}' is not supported by {SchemaName} schema. " +
+                $"Available data sources: {CommaTable}, {TabTable}, {SemicolonTable}")
+        };
+    }
+
+    private static SourceParameters ParseParameters(string name, object?[] parameters)
+    {
+        if (string.Equals(name, DelimitedTable, StringComparison.OrdinalIgnoreCase))
+        {
+            if (parameters is not [string delimitedPath, string separator, bool delimitedHasHeader, int delimitedSkipLines])
+            {
+                throw new ArgumentException(
+                    "The delimited source requires exactly (string path, string delimiter, bool hasHeader, int skipLines).",
+                    nameof(parameters));
+            }
+
+            ArgumentException.ThrowIfNullOrWhiteSpace(separator);
+            _ = SeparatedValuesFormat.GetSeparatorByte(separator);
+            ArgumentException.ThrowIfNullOrWhiteSpace(delimitedPath);
+            ArgumentOutOfRangeException.ThrowIfNegative(delimitedSkipLines);
+            return new SourceParameters(delimitedPath, separator, delimitedHasHeader, delimitedSkipLines);
+        }
+
         if (parameters is not [string path, bool hasHeader, int skipLines])
         {
             throw new ArgumentException(
@@ -271,7 +439,7 @@ public class SeparatedValuesSchema : SchemaBase
 
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentOutOfRangeException.ThrowIfNegative(skipLines);
-        return new SourceParameters(path, hasHeader, skipLines);
+        return new SourceParameters(path, GetSeparator(name), hasHeader, skipLines);
     }
 
     private static SchemaMethodInfo CreateCommaMethodInfo()
@@ -316,6 +484,21 @@ public class SeparatedValuesSchema : SchemaBase
         return new SchemaMethodInfo(SemicolonTable, constructorInfo);
     }
 
+    private static SchemaMethodInfo CreateDelimitedMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("path", typeof(string)),
+                ("delimiter", typeof(string)),
+                ("hasHeader", typeof(bool)),
+                ("skipLines", typeof(int))
+            ]);
+
+        return new SchemaMethodInfo(DelimitedTable, constructorInfo);
+    }
+
     private static MethodsAggregator CreateLibrary()
     {
         var methodsManager = new MethodsManager();
@@ -326,5 +509,9 @@ public class SeparatedValuesSchema : SchemaBase
         return new MethodsAggregator(methodsManager);
     }
 
-    private readonly record struct SourceParameters(string Path, bool HasHeader, int SkipLines);
+    private readonly record struct SourceParameters(string Path, string Separator, bool HasHeader, int SkipLines);
+
+    private readonly record struct ContractKey(string Path, string DialectFingerprint, bool HasHeader, int SkipLines);
+
+    private sealed record PendingContract(ContractKey Key, SeparatedValuesSourceContract Contract);
 }

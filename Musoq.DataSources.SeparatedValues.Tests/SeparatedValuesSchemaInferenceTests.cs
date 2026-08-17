@@ -12,7 +12,7 @@ using Musoq.DataSources.Structured;
 namespace Musoq.DataSources.SeparatedValues.Tests;
 
 [TestClass]
-public class SeparatedValuesSchemaDiscoveryTests
+public class SeparatedValuesSchemaInferenceTests
 {
     [TestMethod]
     public void Discover_HeaderedFile_InfersEverySupportedTypeAndNullability()
@@ -26,23 +26,23 @@ public class SeparatedValuesSchemaDiscoveryTests
                 var snapshot = Discover(path);
 
                 Assert.AreEqual(2L, snapshot.RowCount);
-                AssertColumn(snapshot, "Boolean", typeof(bool), false);
-                AssertColumn(snapshot, "Integer", typeof(long), false);
-                AssertColumn(snapshot, "Fraction", typeof(decimal), false);
-                AssertColumn(snapshot, "Exponent", typeof(double), false);
-                AssertColumn(snapshot, "Text", typeof(string), false);
+                AssertColumn(snapshot, "Boolean", typeof(bool?), true);
+                AssertColumn(snapshot, "Integer", typeof(long?), true);
+                AssertColumn(snapshot, "Fraction", typeof(decimal?), true);
+                AssertColumn(snapshot, "Exponent", typeof(double?), true);
+                AssertColumn(snapshot, "Text", typeof(string), true);
                 AssertColumn(snapshot, "Optional", typeof(string), true);
             });
     }
 
     [TestMethod]
-    public void Discover_NumericKinds_WidenWithoutSampling()
+    public void Discover_NumericKinds_WidenWithinBoundedSample()
     {
         WithCsv("Value\n1\n1.5\n1e2\n", path =>
         {
             var snapshot = Discover(path);
 
-            AssertColumn(snapshot, "Value", typeof(double), false);
+            AssertColumn(snapshot, "Value", typeof(double?), true);
             Assert.AreEqual(3L, snapshot.RowCount);
         });
     }
@@ -51,21 +51,21 @@ public class SeparatedValuesSchemaDiscoveryTests
     public void Discover_DecimalOverflow_WidensToDouble()
     {
         WithCsv("Value\n79228162514264337593543950336.0\n", path =>
-            AssertColumn(Discover(path), "Value", typeof(double), false));
+            AssertColumn(Discover(path), "Value", typeof(double?), true));
     }
 
     [TestMethod]
     public void Discover_IntegerOverflow_FallsBackToString()
     {
         WithCsv("Value\n9223372036854775808\n", path =>
-            AssertColumn(Discover(path), "Value", typeof(string), false));
+            AssertColumn(Discover(path), "Value", typeof(string), true));
     }
 
     [TestMethod]
     public void Discover_ConflictingCsvKinds_WidenToString()
     {
         WithCsv("Value\n1\ntext\n", path =>
-            AssertColumn(Discover(path), "Value", typeof(string), false));
+            AssertColumn(Discover(path), "Value", typeof(string), true));
     }
 
     [TestMethod]
@@ -80,7 +80,7 @@ public class SeparatedValuesSchemaDiscoveryTests
             Assert.AreEqual(StructuredValueKind.String, nullValue.TypeState.Kind);
             Assert.IsTrue(nullValue.TypeState.IsNullable);
             Assert.AreEqual(StructuredValueKind.String, emptyString.TypeState.Kind);
-            Assert.IsFalse(emptyString.TypeState.IsNullable);
+            Assert.IsTrue(emptyString.TypeState.IsNullable);
         });
     }
 
@@ -91,7 +91,7 @@ public class SeparatedValuesSchemaDiscoveryTests
         {
             var snapshot = Discover(path);
 
-            AssertColumn(snapshot, "A", typeof(long), false);
+            AssertColumn(snapshot, "A", typeof(long?), true);
             AssertColumn(snapshot, "B", typeof(long?), true);
             AssertColumn(snapshot, "C", typeof(long?), true);
             Assert.AreEqual(2L, snapshot.RowCount);
@@ -110,12 +110,12 @@ public class SeparatedValuesSchemaDiscoveryTests
     {
         WithCsv("1\n2,3,4\n5,6\n", path =>
         {
-            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", false, 0);
+            var snapshot = Discover(path, false);
 
             CollectionAssert.AreEqual(
                 new[] { "Column1", "Column2", "Column3" },
                 snapshot.Columns.Select(column => column.Name).ToArray());
-            AssertColumn(snapshot, "Column1", typeof(long), false);
+            AssertColumn(snapshot, "Column1", typeof(long?), true);
             AssertColumn(snapshot, "Column2", typeof(long?), true);
             AssertColumn(snapshot, "Column3", typeof(long?), true);
             Assert.AreEqual(3L, snapshot.RowCount);
@@ -154,8 +154,8 @@ public class SeparatedValuesSchemaDiscoveryTests
             var snapshot = Discover(path);
 
             Assert.AreEqual(2L, snapshot.RowCount);
-            Assert.AreEqual(2, snapshot.Partitions.Sum(partition => checked((int)partition.RowCount)));
-            AssertColumn(snapshot, "Notes", typeof(string), false);
+            Assert.IsTrue(snapshot.Partitions.IsEmpty);
+            AssertColumn(snapshot, "Notes", typeof(string), true);
         });
     }
 
@@ -164,7 +164,7 @@ public class SeparatedValuesSchemaDiscoveryTests
     {
         WithCsv("ignored \" unmatched quote\nName,Value\nAda,1\n", path =>
         {
-            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", true, 1);
+            var snapshot = Discover(path, true, 1);
 
             Assert.AreEqual(1L, snapshot.RowCount);
             CollectionAssert.AreEqual(
@@ -177,7 +177,7 @@ public class SeparatedValuesSchemaDiscoveryTests
     public void Discover_Utf8BomIsAllowed()
     {
         WithCsv("Name\nZażółć\n", path =>
-            AssertColumn(Discover(path), "Name", typeof(string), false), true);
+            AssertColumn(Discover(path), "Name", typeof(string), true), true);
     }
 
     [TestMethod]
@@ -185,7 +185,7 @@ public class SeparatedValuesSchemaDiscoveryTests
     {
         WithCsv(string.Empty, path =>
         {
-            var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", false, 0);
+            var snapshot = Discover(path, false);
 
             Assert.AreEqual(0L, snapshot.RowCount);
             Assert.AreEqual(0, snapshot.Columns.Length);
@@ -207,8 +207,8 @@ public class SeparatedValuesSchemaDiscoveryTests
         {
             var snapshot = Discover(path);
 
-            AssertColumn(snapshot, "A", typeof(string), false);
-            AssertColumn(snapshot, "B", typeof(string), false);
+            AssertColumn(snapshot, "A", typeof(string), true);
+            AssertColumn(snapshot, "B", typeof(string), true);
             Assert.AreEqual(0L, snapshot.RowCount);
         });
     }
@@ -263,57 +263,81 @@ public class SeparatedValuesSchemaDiscoveryTests
             cancellation.Cancel();
 
             Assert.ThrowsExactly<OperationCanceledException>(() =>
-                SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", true, 0, cancellation.Token));
+                Resolve(path, true, 0, cancellation.Token));
         });
     }
 
     [TestMethod]
-    public void Discover_UnchangedIdentity_ReturnsProcessCacheHit()
+    public void Discover_UnchangedIdentity_ProducesEquivalentBoundedContracts()
     {
         WithCsv("Name\nAda\n", path =>
         {
-            var cold = SeparatedValuesSchemaDiscovery.GetSnapshotWithAccess(path, ",", true, 0);
-            var cached = SeparatedValuesSchemaDiscovery.GetSnapshotWithAccess(path, ",", true, 0);
+            var first = Resolve(path);
+            var second = Resolve(path);
 
-            Assert.AreEqual(StructuredSnapshotCacheAccess.Discovered, cold.Access);
-            Assert.AreEqual(StructuredSnapshotCacheAccess.Hit, cached.Access);
-            Assert.AreSame(cold.Snapshot, cached.Snapshot);
+            Assert.AreEqual(first.Snapshot.Identity, second.Snapshot.Identity);
+            Assert.AreEqual(first.InspectedRows, second.InspectedRows);
+            Assert.AreNotSame(first.Snapshot, second.Snapshot);
         });
     }
 
     [TestMethod]
-    public void Discover_ParserOptionsHaveIndependentCacheEntries()
+    public void Discover_ParserOptionsProduceDistinctIdentities()
     {
         WithCsv("A,B\n1,2\n", path =>
         {
-            var headered = SeparatedValuesSchemaDiscovery.GetSnapshotWithAccess(path, ",", true, 0);
-            var headerless = SeparatedValuesSchemaDiscovery.GetSnapshotWithAccess(path, ",", false, 0);
+            var headered = Resolve(path, true);
+            var headerless = Resolve(path, false);
 
             Assert.AreEqual(1L, headered.Snapshot.RowCount);
             Assert.AreEqual(2L, headerless.Snapshot.RowCount);
-            Assert.AreEqual(StructuredSnapshotCacheAccess.Discovered, headerless.Access);
+            Assert.AreNotEqual(
+                headered.Snapshot.Identity.ParserOptions,
+                headerless.Snapshot.Identity.ParserOptions);
         });
     }
 
     [TestMethod]
-    public void Discover_ChangedFingerprint_RediscoversSchema()
+    public void Discover_ChangedFingerprint_ProducesANewContract()
     {
         WithCsv("First\nvalue\n", path =>
         {
-            var before = SeparatedValuesSchemaDiscovery.GetSnapshotWithAccess(path, ",", true, 0);
+            var before = Resolve(path);
             File.WriteAllText(path, "Other\nvalue\n", new UTF8Encoding(false, true));
-            var after = SeparatedValuesSchemaDiscovery.GetSnapshotWithAccess(path, ",", true, 0);
+            var after = Resolve(path);
 
-            Assert.AreEqual(StructuredSnapshotCacheAccess.Discovered, before.Access);
-            Assert.AreEqual(StructuredSnapshotCacheAccess.Discovered, after.Access);
+            Assert.AreNotEqual(before.Snapshot.Identity.Fingerprint, after.Snapshot.Identity.Fingerprint);
             Assert.AreEqual("First", before.Snapshot.Columns[0].Name);
             Assert.AreEqual("Other", after.Snapshot.Columns[0].Name);
         });
     }
 
-    private static StructuredSchemaSnapshot Discover(string path)
+    private static StructuredSchemaSnapshot Discover(
+        string path,
+        bool hasHeader = true,
+        int skipLines = 0)
     {
-        return SeparatedValuesSchemaDiscovery.GetSnapshot(path, ",", true, 0);
+        return Resolve(path, hasHeader, skipLines).Snapshot;
+    }
+
+    private static SeparatedValuesSourceContract Resolve(
+        string path,
+        bool hasHeader = true,
+        int skipLines = 0,
+        CancellationToken cancellationToken = default)
+    {
+        return new BoundedSeparatedValuesSchemaResolver().Resolve(
+            new SeparatedValuesSchemaResolutionRequest(
+                path,
+                ",",
+                hasHeader,
+                skipLines,
+                [],
+                new Dictionary<string, string>
+                {
+                    [SeparatedValuesInferenceOptions.MaximumTimeMillisecondsSettingName] = "1000"
+                },
+                cancellationToken));
     }
 
     private static void AssertColumn(

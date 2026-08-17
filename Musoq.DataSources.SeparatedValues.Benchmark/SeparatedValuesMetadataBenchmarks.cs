@@ -2,6 +2,7 @@ using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Musoq.Schema;
+using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues.Benchmark;
@@ -10,37 +11,56 @@ namespace Musoq.DataSources.SeparatedValues.Benchmark;
 [ShortRunJob]
 public class SeparatedValuesMetadataBenchmarks
 {
-    private SourceMetadataContext _metadataContext = null!;
+    private SourceMetadataContext _declaredMetadataContext = null!;
+    private SourceMetadataContext _dynamicMetadataContext = null!;
     private string _path = null!;
 
-    [Params(100_000)]
+    [Params(100_000, 2_000_000)]
     public int RowCount { get; set; }
 
     [GlobalSetup]
     public void Setup()
     {
         _path = SeparatedValuesBenchmarkData.EnsureOneBrcFileWithHeader(RowCount);
-        _metadataContext = new SourceMetadataContext(
+        var settings = new Dictionary<string, string>();
+        _dynamicMetadataContext = new SourceMetadataContext(
             "benchmark",
             CancellationToken.None,
             [],
-            new Dictionary<string, string>(),
+            settings,
             new Mock<ILogger>().Object);
-        _ = SeparatedValuesSchemaDiscovery.GetSnapshot(_path, ";", true, 0);
+        _declaredMetadataContext = new SourceMetadataContext(
+            "benchmark",
+            CancellationToken.None,
+            [
+                new SchemaColumn("Station", 0, typeof(string)),
+                new SchemaColumn("Temperature", 1, typeof(decimal))
+            ],
+            settings,
+            new Mock<ILogger>().Object);
     }
 
     [Benchmark(Baseline = true)]
-    public int CachedDiscovery()
+    public int DeclaredHeaderResolution()
     {
-        var table = new SeparatedValuesSchema().GetTableByName("semicolon", _metadataContext, _path, true, 0);
+        var table = new SeparatedValuesSchema().GetTableByName(
+            "semicolon",
+            _declaredMetadataContext,
+            _path,
+            true,
+            0);
         return table.Columns.Length;
     }
 
     [Benchmark]
-    public int ColdDiscovery()
+    public int BoundedSampleResolution()
     {
-        SeparatedValuesSchemaDiscovery.ClearCache();
-        var table = new SeparatedValuesSchema().GetTableByName("semicolon", _metadataContext, _path, true, 0);
+        var table = new SeparatedValuesSchema().GetTableByName(
+            "semicolon",
+            _dynamicMetadataContext,
+            _path,
+            true,
+            0);
         return table.Columns.Length;
     }
 }

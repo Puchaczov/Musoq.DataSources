@@ -9,13 +9,15 @@ namespace Musoq.DataSources.SeparatedValues;
 internal static class SeparatedValuesSourcePlanner
 {
     public static SourcePlanResult Plan(
-        StructuredSchemaSnapshot snapshot,
+        SeparatedValuesSourceContract contract,
         SourcePlanRequest request)
     {
+        ArgumentNullException.ThrowIfNull(contract);
+        var snapshot = contract.Snapshot;
         var requiredColumns = request.RequiredColumns ?? [];
         var (acceptedPredicate, residualPredicate) = SplitPredicate(
             request.Predicate,
-            expression => IsSupportedPredicate(snapshot, expression));
+            expression => IsSupportedPredicate(contract, expression));
         var residualOrderBy = request.OrderBy ?? [];
         var acceptsSlice = residualPredicate is null && residualOrderBy.Count == 0;
         var layout = StructuredExecutionLayout.Bind(
@@ -30,6 +32,7 @@ internal static class SeparatedValuesSourcePlanner
         };
         var properties = SeparatedValuesReadPlan.CreateProperties(readPlan);
         properties[SeparatedValuesPlanning.LayoutPropertyName] = layout;
+        properties[SeparatedValuesSourceContract.PropertyName] = contract;
 
         return new SourcePlanResult
         {
@@ -52,16 +55,26 @@ internal static class SeparatedValuesSourcePlanner
             ResidualSkip = acceptsSlice ? null : request.Skip,
             AcceptedTake = acceptsSlice ? request.Take : null,
             ResidualTake = acceptsSlice ? null : request.Take,
-            Cardinality = acceptedPredicate is null
-                ? CardinalityEstimate.Exact(snapshot.RowCount, "Exact separated-values discovery row count.")
-                : CardinalityEstimate.Bounded(
-                    0,
-                    snapshot.RowCount,
-                    1.0,
-                    "Separated-values predicate pushdown bounds the discovered rows."),
-            Diagnostics = [],
+            Cardinality = CreateCardinality(contract, acceptedPredicate),
+            Diagnostics = contract.Diagnostics,
             ContractDiagnostics = []
         };
+    }
+
+    private static CardinalityEstimate CreateCardinality(
+        SeparatedValuesSourceContract contract,
+        SourcePredicateExpression? acceptedPredicate)
+    {
+        if (!contract.HasExactCardinality)
+            return CardinalityEstimate.Unknown("Separated-values cardinality is unknown after bounded schema resolution.");
+
+        return acceptedPredicate is null
+            ? CardinalityEstimate.Exact(contract.Snapshot.RowCount, "Exact separated-values completed-scan row count.")
+            : CardinalityEstimate.Bounded(
+                0,
+                contract.Snapshot.RowCount,
+                1.0,
+                "Separated-values predicate pushdown bounds the completed-scan rows.");
     }
 
     internal static bool TryGetComparisonParts(
@@ -128,15 +141,37 @@ internal static class SeparatedValuesSourcePlanner
     }
 
     private static bool IsSupportedPredicate(
-        StructuredSchemaSnapshot snapshot,
+        SeparatedValuesSourceContract contract,
         SourcePredicateExpression expression)
     {
+        var snapshot = contract.Snapshot;
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var name, out var literal, out var op) ||
             literal.Value is null ||
             !IsSupportedOperator(op) ||
             !snapshot.TryGetColumn(name, out var column))
             return false;
+
+        if (contract.Mode == SeparatedValuesSchemaResolutionMode.Declared &&
+            contract.ColumnContracts.Length > column.SourceOrdinal)
+        {
+            var exact = contract.ColumnContracts[column.SourceOrdinal];
+            var conversion = SeparatedValuesValueConverter.GetConversion(exact.ClrType, exact.TypeState);
+            return conversion switch
+            {
+                SeparatedValuesConversion.String or SeparatedValuesConversion.Character =>
+                    IsEqualityOperator(op) && literal.Value is string,
+                SeparatedValuesConversion.Boolean =>
+                    IsEqualityOperator(op) && literal.Value is bool,
+                SeparatedValuesConversion.DateTime or
+                    SeparatedValuesConversion.DateTimeOffset or
+                    SeparatedValuesConversion.DateOnly or
+                    SeparatedValuesConversion.TimeOnly or
+                    SeparatedValuesConversion.TimeSpan or
+                    SeparatedValuesConversion.Guid => IsEqualityOperator(op) && literal.Value is string,
+                _ => CanConvertLiteral(literal.Value, conversion)
+            };
+        }
 
         return column.TypeState.Kind switch
         {
@@ -147,6 +182,56 @@ internal static class SeparatedValuesSourcePlanner
             StructuredValueKind.String => IsEqualityOperator(op) && literal.Value is string,
             _ => false
         };
+    }
+
+    private static bool CanConvertLiteral(object value, SeparatedValuesConversion conversion)
+    {
+        try
+        {
+            switch (conversion)
+            {
+                case SeparatedValuesConversion.Byte:
+                    _ = Convert.ToByte(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.SByte:
+                    _ = Convert.ToSByte(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.Int16:
+                    _ = Convert.ToInt16(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.Int32:
+                    _ = Convert.ToInt32(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.Int64:
+                    _ = Convert.ToInt64(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.UInt16:
+                    _ = Convert.ToUInt16(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.UInt32:
+                    _ = Convert.ToUInt32(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.UInt64:
+                    _ = Convert.ToUInt64(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.Decimal:
+                    _ = Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.Single:
+                    _ = Convert.ToSingle(value, CultureInfo.InvariantCulture);
+                    break;
+                case SeparatedValuesConversion.Double:
+                    _ = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                    break;
+                default:
+                    throw new InvalidCastException();
+            }
+            return true;
+        }
+        catch (Exception exception) when (exception is InvalidCastException or FormatException or OverflowException)
+        {
+            return false;
+        }
     }
 
     private static bool CanConvert<T>(object value)

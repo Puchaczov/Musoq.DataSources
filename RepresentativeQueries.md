@@ -89,7 +89,7 @@ from #os.environmentvariables()
 ## 📊 CSV/Separated Values (`#separatedvalues`)
 
 ### Basic CSV Query with Aggregation
-Aggregate a dynamically discovered 1BRC-shaped file. `Temperature` is inferred as a numeric column.
+Aggregate a dynamically sampled 1BRC-shaped file. `Temperature` is inferred as a numeric column from at most 1 MiB, 4,096 complete records, or 10 ms of input; a contradictory value later in the scan is reported as schema drift.
 
 ```sql
 select
@@ -116,7 +116,7 @@ inner join #separatedvalues.comma('./Gradebook.csv', true, 0) grades
 ```
 
 ### Typed CSV Query
-Read CSV with explicit column types for proper data handling.
+Read CSV with explicit column types for deterministic handling. A coupled `TABLE` contract is authoritative, so metadata resolution maps only the header (or the first headerless width) and does not sample data values. Prefer this form for multi-gigabyte production files.
 
 ```sql
 table Employees {
@@ -128,6 +128,8 @@ couple #separatedvalues.comma with table Employees as SourceOfEmployees;
 select Id, Name, Salary from SourceOfEmployees('./employees.csv', true, 0)
 where Salary > 50000
 ```
+
+Dynamic inference limits can be raised for an individual query with the runtime settings `separatedvalues.inference_max_bytes`, `separatedvalues.inference_max_rows`, and `separatedvalues.inference_max_time_ms`. The time limit is cooperative between filesystem reads rather than a hard I/O deadline.
 
 ---
 

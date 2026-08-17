@@ -9,6 +9,7 @@
         <Description>Lets you query CSV/TSV and other separated-value files with SQL-style queries, including schema inference and easy filtering.</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageTags>sql, csv, tsv, delimited, musoq, plugin, datasource, dotnet</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
@@ -21,6 +22,7 @@
 
     <ItemGroup>
         <None Include="../LICENSE" Pack="true" Visible="false" PackagePath=""/>
+        <None Include="README.md" Pack="true" PackagePath=""/>
     </ItemGroup>
 
     <ItemGroup>

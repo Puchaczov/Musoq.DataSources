@@ -1,24 +1,15 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
-namespace Musoq.DataSources.SeparatedValues.Tests;
+namespace Musoq.DataSources.SeparatedValues.Playground;
 
-[TestClass]
-[Ignore("Manual performance probe. Remove Ignore locally when tuning SeparatedValues large-file behavior.")]
-public class SeparatedValuesManualPerformanceTests
+internal static class SeparatedValuesManualPerformanceProbe
 {
-    [TestMethod]
-    public void ProbeGeneratedProfiles()
+    public static int Run()
     {
         foreach (var profile in CreateProfiles())
         {
@@ -37,6 +28,8 @@ public class SeparatedValuesManualPerformanceTests
                     File.Delete(tempFile);
             }
         }
+
+        return 0;
     }
 
     private static void RunScenario(

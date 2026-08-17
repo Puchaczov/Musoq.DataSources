@@ -25,6 +25,6 @@ Whether you're integrating APIs, databases, files, or any other data source, thi
 - Time (allows to treat time as table)
 - Roslyn (allows to query C# code)
 
-JSON and SeparatedValues discover exact schemas from strict UTF-8 files and stream selected rows through the current Musoq row contract. See the [structured-source guide](docs/structured-sources.md), [breaking changes](docs/structured-sources-breaking-changes.md), and [performance evidence](docs/performance/structured-sources.md).
+JSON discovers an exact schema from strict UTF-8 input. SeparatedValues uses authoritative typed `TABLE` contracts or bounded dynamic sampling, then streams selected rows through the current Musoq row contract. See the [structured-source guide](docs/structured-sources.md), [breaking changes](docs/structured-sources-breaking-changes.md), and [performance evidence](docs/performance/structured-sources.md).
 
 ### To look at the engine itself go to [Musoq](https://github.com/Puchaczov/Musoq) repository.

@@ -2,6 +2,7 @@
 
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -16,8 +17,11 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
     private static readonly byte[] Utf8Bom = [0xef, 0xbb, 0xbf];
 
     private readonly CancellationToken _cancellationToken;
+    private readonly long _deadlineTimestamp;
+    private readonly long _maximumBytesRead;
     private readonly long _rangeEndOffset;
     private readonly FileStream _stream;
+    private SeparatedValuesDialect _dialect;
     private readonly byte _separator;
     private readonly int _skipLines;
     private byte[] _buffer;
@@ -29,6 +33,9 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
     private bool _endOfFile;
     private bool _initialized;
     private bool _disposed;
+    private bool _budgetExhausted;
+    private int _skippedLineCount;
+    private long _bytesRead;
 
     public SeparatedValuesUtf8Reader(
         string path,
@@ -61,11 +68,65 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
             FileShare.Read,
             1,
             FileOptions.SequentialScan);
+        _dialect = SeparatedValuesDialect.Strict(separator);
         _separator = separator;
         _skipLines = skipLines;
         _cancellationToken = cancellationToken;
         _rangeEndOffset = _stream.Length;
         _buffer = ArrayPool<byte>.Shared.Rent(initialBufferSize);
+        _maximumBytesRead = long.MaxValue;
+        _deadlineTimestamp = long.MaxValue;
+    }
+
+    internal SeparatedValuesUtf8Reader(
+        string path,
+        byte separator,
+        int skipLines,
+        int initialBufferSize,
+        long maximumBytesRead,
+        long deadlineTimestamp,
+        CancellationToken cancellationToken)
+        : this(path, separator, skipLines, initialBufferSize, cancellationToken)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(maximumBytesRead);
+        _maximumBytesRead = maximumBytesRead;
+        _deadlineTimestamp = deadlineTimestamp;
+    }
+
+    internal SeparatedValuesUtf8Reader(
+        string path,
+        SeparatedValuesDialect dialect,
+        int skipLines,
+        int initialBufferSize,
+        CancellationToken cancellationToken)
+        : this(
+            path,
+            dialect?.Separator ?? throw new ArgumentNullException(nameof(dialect)),
+            skipLines,
+            initialBufferSize,
+            cancellationToken)
+    {
+        _dialect = dialect;
+    }
+
+    internal SeparatedValuesUtf8Reader(
+        string path,
+        SeparatedValuesDialect dialect,
+        int skipLines,
+        int initialBufferSize,
+        long maximumBytesRead,
+        long deadlineTimestamp,
+        CancellationToken cancellationToken)
+        : this(
+            path,
+            dialect?.Separator ?? throw new ArgumentNullException(nameof(dialect)),
+            skipLines,
+            initialBufferSize,
+            maximumBytesRead,
+            deadlineTimestamp,
+            cancellationToken)
+    {
+        _dialect = dialect;
     }
 
     public SeparatedValuesUtf8Reader(
@@ -90,9 +151,13 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
             1,
             FileOptions.SequentialScan);
         if (endOffset > _stream.Length)
-            throw new ArgumentOutOfRangeException(nameof(endOffset));
+            throw new ArgumentOutOfRangeException(
+                nameof(endOffset),
+                endOffset,
+                $"The requested range ends at {endOffset}, but the current file length is {_stream.Length}.");
 
         _stream.Position = startOffset;
+        _dialect = SeparatedValuesDialect.Strict(separator);
         _separator = separator;
         _skipLines = 0;
         _cancellationToken = cancellationToken;
@@ -100,6 +165,46 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         _buffer = ArrayPool<byte>.Shared.Rent(PartitionInitialBufferSize);
         _bufferStartOffset = startOffset;
         _initialized = true;
+        _maximumBytesRead = long.MaxValue;
+        _deadlineTimestamp = long.MaxValue;
+    }
+
+    internal SeparatedValuesUtf8Reader(
+        string path,
+        SeparatedValuesDialect dialect,
+        long startOffset,
+        long endOffset,
+        CancellationToken cancellationToken = default)
+        : this(
+            path,
+            dialect?.Separator ?? throw new ArgumentNullException(nameof(dialect)),
+            startOffset,
+            endOffset,
+            cancellationToken)
+    {
+        _dialect = dialect;
+    }
+
+    public long BytesRead => _bytesRead;
+
+    public bool BudgetExhausted => _budgetExhausted;
+
+    public int SkippedLineCount => _skippedLineCount;
+
+    public long NextRecordOffset
+    {
+        get
+        {
+            Initialize();
+            return _bufferStartOffset + _recordStart;
+        }
+    }
+
+    public void Prepare()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _cancellationToken.ThrowIfCancellationRequested();
+        Initialize();
     }
 
     public bool TryRead(out SeparatedValuesUtf8Record record)
@@ -110,6 +215,9 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
 
         while (true)
         {
+            if (_state == ScanState.FieldStart && _recordStart == _scanOffset && TrySkipComment())
+                continue;
+
             while (_scanOffset < _bufferedLength)
             {
                 var value = _buffer[_scanOffset];
@@ -117,7 +225,14 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
                 switch (_state)
                 {
                     case ScanState.FieldStart:
-                        if (value == (byte)'"')
+                        if (_dialect.WhitespaceMode == SeparatedValuesWhitespaceMode.Trim &&
+                            value is (byte)' ' or (byte)'\t')
+                        {
+                            _scanOffset++;
+                            continue;
+                        }
+
+                        if (_dialect.Quote.HasValue && value == _dialect.Quote.Value)
                         {
                             _state = ScanState.Quoted;
                             _scanOffset++;
@@ -139,9 +254,10 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
 
                         if (value == (byte)'\r')
                         {
-                            if (!EnsureLineFeedAfterCarriageReturn())
+                            var terminatorLength = GetRecordEndingLength();
+                            if (terminatorLength == 0)
                                 throw InvalidData("A carriage return outside a quoted field must be followed by a line feed.");
-                            if (TryCompleteRecord(_scanOffset, 2, out record))
+                            if (TryCompleteRecord(_scanOffset, terminatorLength, out record))
                                 return true;
                             continue;
                         }
@@ -158,7 +274,7 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
                             continue;
                         }
 
-                        if (value == (byte)'"')
+                        if (_dialect.Quote.HasValue && value == _dialect.Quote.Value)
                             throw InvalidData("A quote may only appear at the beginning of a field.");
 
                         if (value == (byte)'\n')
@@ -170,9 +286,10 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
 
                         if (value == (byte)'\r')
                         {
-                            if (!EnsureLineFeedAfterCarriageReturn())
+                            var terminatorLength = GetRecordEndingLength();
+                            if (terminatorLength == 0)
                                 throw InvalidData("A carriage return outside a quoted field must be followed by a line feed.");
-                            if (TryCompleteRecord(_scanOffset, 2, out record))
+                            if (TryCompleteRecord(_scanOffset, terminatorLength, out record))
                                 return true;
                             continue;
                         }
@@ -181,13 +298,35 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
                         continue;
 
                     case ScanState.Quoted:
-                        if (value == (byte)'"')
+                        if (_dialect.EscapeMode == SeparatedValuesEscapeMode.Backslash &&
+                            value == (byte)'\\')
+                        {
+                            _state = ScanState.EscapedQuoted;
+                            _scanOffset++;
+                            continue;
+                        }
+
+                        if (_dialect.Quote.HasValue && value == _dialect.Quote.Value)
                             _state = ScanState.AfterQuote;
                         _scanOffset++;
                         continue;
 
+                    case ScanState.EscapedQuoted:
+                        _scanOffset++;
+                        _state = ScanState.Quoted;
+                        continue;
+
                     case ScanState.AfterQuote:
-                        if (value == (byte)'"')
+                        if (_dialect.WhitespaceMode == SeparatedValuesWhitespaceMode.Trim &&
+                            value is (byte)' ' or (byte)'\t')
+                        {
+                            _scanOffset++;
+                            continue;
+                        }
+
+                        if (_dialect.EscapeMode == SeparatedValuesEscapeMode.Double &&
+                            _dialect.Quote.HasValue &&
+                            value == _dialect.Quote.Value)
                         {
                             _state = ScanState.Quoted;
                             _scanOffset++;
@@ -210,9 +349,10 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
 
                         if (value == (byte)'\r')
                         {
-                            if (!EnsureLineFeedAfterCarriageReturn())
+                            var terminatorLength = GetRecordEndingLength();
+                            if (terminatorLength == 0)
                                 throw InvalidData("A carriage return outside a quoted field must be followed by a line feed.");
-                            if (TryCompleteRecord(_scanOffset, 2, out record))
+                            if (TryCompleteRecord(_scanOffset, terminatorLength, out record))
                                 return true;
                             continue;
                         }
@@ -224,9 +364,15 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
                 }
             }
 
+            if (_budgetExhausted)
+            {
+                record = default;
+                return false;
+            }
+
             if (_endOfFile)
             {
-                if (_state == ScanState.Quoted)
+                if (_state is ScanState.Quoted or ScanState.EscapedQuoted)
                     throw InvalidData("The final quoted field is not terminated.");
 
                 if (_recordStart == _bufferedLength)
@@ -236,12 +382,15 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
                 }
 
                 var bytes = _buffer.AsSpan(_recordStart, _bufferedLength - _recordStart);
+                if (bytes.Length > _dialect.MaximumRecordBytes)
+                    throw InvalidData($"A separated-values record exceeds {_dialect.MaximumRecordBytes:N0}-byte safety limit.");
                 ValidateUtf8(bytes);
                 record = new SeparatedValuesUtf8Record(
                     bytes,
                     _separator,
                     _bufferStartOffset + _recordStart,
-                    _bufferStartOffset + _bufferedLength);
+                    _bufferStartOffset + _bufferedLength,
+                    _dialect);
                 _recordStart = _bufferedLength;
                 _scanOffset = _bufferedLength;
                 _state = ScanState.FieldStart;
@@ -270,7 +419,7 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
 
         _initialized = true;
         FillBuffer();
-        while (_bufferedLength < Utf8Bom.Length && !_endOfFile)
+        while (_bufferedLength < Utf8Bom.Length && !_endOfFile && !_budgetExhausted)
             FillBuffer();
 
         if (_bufferedLength >= Utf8Bom.Length && _buffer.AsSpan(0, Utf8Bom.Length).SequenceEqual(Utf8Bom))
@@ -281,6 +430,7 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
 
         for (var line = 0; line < _skipLines && TrySkipPhysicalLine(); line++)
         {
+            _skippedLineCount++;
         }
     }
 
@@ -289,15 +439,47 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         while (true)
         {
             _cancellationToken.ThrowIfCancellationRequested();
-            var lineFeed = _buffer.AsSpan(_scanOffset, _bufferedLength - _scanOffset).IndexOf((byte)'\n');
-            if (lineFeed >= 0)
+            var remaining = _buffer.AsSpan(_scanOffset, _bufferedLength - _scanOffset);
+            var lineFeed = remaining.IndexOf((byte)'\n');
+            var carriage = remaining.IndexOf((byte)'\r');
+            var relativeTerminator = lineFeed < 0
+                ? carriage
+                : carriage < 0
+                    ? lineFeed
+                    : Math.Min(lineFeed, carriage);
+            if (relativeTerminator >= 0)
             {
-                var terminatorOffset = _scanOffset + lineFeed;
+                var terminatorOffset = _scanOffset + relativeTerminator;
+                var terminatorAbsoluteOffset = _bufferStartOffset + terminatorOffset;
+
+                if (_buffer[terminatorOffset] == (byte)'\r' &&
+                    _dialect.RecordEndingMode == SeparatedValuesRecordEndingMode.LfCrLf)
+                {
+                    if (terminatorOffset + 1 == _bufferedLength && !_endOfFile)
+                        FillBuffer();
+                    terminatorOffset = checked((int)(terminatorAbsoluteOffset - _bufferStartOffset));
+                    if (terminatorOffset + 1 >= _bufferedLength ||
+                        _buffer[terminatorOffset + 1] != (byte)'\n')
+                        throw InvalidData("A physical preamble line contains a bare carriage return.");
+                }
+                else if (_buffer[terminatorOffset] == (byte)'\r' &&
+                         _dialect.RecordEndingMode == SeparatedValuesRecordEndingMode.Any)
+                {
+                    if (terminatorOffset + 1 == _bufferedLength && !_endOfFile)
+                        FillBuffer();
+                }
+
+                terminatorOffset = checked((int)(terminatorAbsoluteOffset - _bufferStartOffset));
                 var contentEnd = terminatorOffset;
                 if (contentEnd > _recordStart && _buffer[contentEnd - 1] == (byte)'\r')
                     contentEnd--;
+                if (terminatorOffset + 1 < _bufferedLength &&
+                    _buffer[terminatorOffset] == (byte)'\r' &&
+                    _buffer[terminatorOffset + 1] == (byte)'\n')
+                    terminatorOffset++;
 
-                ValidatePhysicalLine(_buffer.AsSpan(_recordStart, contentEnd - _recordStart));
+                SeparatedValuesUtf8Reader.ValidateUtf8(
+                    _buffer.AsSpan(_recordStart, contentEnd - _recordStart));
                 _scanOffset = terminatorOffset + 1;
                 _recordStart = _scanOffset;
                 _state = ScanState.FieldStart;
@@ -305,6 +487,9 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
             }
 
             _scanOffset = _bufferedLength;
+            if (_budgetExhausted)
+                return false;
+
             if (_endOfFile)
             {
                 if (_recordStart == _bufferedLength)
@@ -328,12 +513,14 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
     {
         var start = _recordStart;
         var length = terminatorOffset - start;
+        if (length > _dialect.MaximumRecordBytes)
+            throw InvalidData($"A separated-values record exceeds the {_dialect.MaximumRecordBytes:N0}-byte safety limit.");
         var end = terminatorOffset + terminatorLength;
         _scanOffset = end;
         _recordStart = end;
         _state = ScanState.FieldStart;
 
-        if (length == 0)
+        if (length == 0 && _dialect.BlankRecordMode == SeparatedValuesBlankRecordMode.Skip)
         {
             record = default;
             return false;
@@ -345,16 +532,98 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
             bytes,
             _separator,
             _bufferStartOffset + start,
-            _bufferStartOffset + end);
+            _bufferStartOffset + end,
+            _dialect);
         return true;
     }
 
-    private bool EnsureLineFeedAfterCarriageReturn()
+    private int GetRecordEndingLength()
     {
+        if (_dialect.RecordEndingMode == SeparatedValuesRecordEndingMode.Any)
+        {
+            if (_scanOffset + 1 == _bufferedLength && !_endOfFile)
+                FillBuffer();
+            return _scanOffset + 1 < _bufferedLength && _buffer[_scanOffset + 1] == (byte)'\n'
+                ? 2
+                : 1;
+        }
+
         if (_scanOffset + 1 == _bufferedLength && !_endOfFile)
             FillBuffer();
 
-        return _scanOffset + 1 < _bufferedLength && _buffer[_scanOffset + 1] == (byte)'\n';
+        return _scanOffset + 1 < _bufferedLength && _buffer[_scanOffset + 1] == (byte)'\n' ? 2 : 0;
+    }
+
+    private bool TrySkipComment()
+    {
+        if (_dialect.CommentPrefix.IsEmpty)
+            return false;
+
+        while (_bufferedLength - _scanOffset < _dialect.CommentPrefix.Length &&
+               !_endOfFile &&
+               !_budgetExhausted)
+            FillBuffer();
+
+        if (_bufferedLength - _scanOffset < _dialect.CommentPrefix.Length ||
+            !_buffer.AsSpan(_scanOffset, _dialect.CommentPrefix.Length)
+                .SequenceEqual(_dialect.CommentPrefix.AsSpan()))
+            return false;
+
+        var commentStartAbsoluteOffset = _bufferStartOffset + _scanOffset;
+        _scanOffset += _dialect.CommentPrefix.Length;
+        while (true)
+        {
+            var remaining = _buffer.AsSpan(_scanOffset, _bufferedLength - _scanOffset);
+            var newline = remaining.IndexOf((byte)'\n');
+            var carriage = remaining.IndexOf((byte)'\r');
+            var terminator = newline < 0 ? carriage : carriage < 0 ? newline : Math.Min(newline, carriage);
+            if (terminator >= 0)
+            {
+                var offset = _scanOffset + terminator;
+                var terminatorAbsoluteOffset = _bufferStartOffset + offset;
+                if (_buffer[offset] == (byte)'\r' &&
+                    _dialect.RecordEndingMode == SeparatedValuesRecordEndingMode.LfCrLf)
+                {
+                    if (offset + 1 == _bufferedLength && !_endOfFile)
+                        FillBuffer();
+                    offset = checked((int)(terminatorAbsoluteOffset - _bufferStartOffset));
+                    if (offset + 1 >= _bufferedLength || _buffer[offset + 1] != (byte)'\n')
+                        throw InvalidData("A comment carriage return must be followed by a line feed.");
+                }
+                else if (_buffer[offset] == (byte)'\r' &&
+                         _dialect.RecordEndingMode == SeparatedValuesRecordEndingMode.Any)
+                {
+                    if (offset + 1 == _bufferedLength && !_endOfFile)
+                        FillBuffer();
+                }
+
+                offset = checked((int)(terminatorAbsoluteOffset - _bufferStartOffset));
+                var commentStart = checked((int)(commentStartAbsoluteOffset - _bufferStartOffset));
+                if (offset + 1 < _bufferedLength &&
+                    _buffer[offset] == (byte)'\r' &&
+                    _buffer[offset + 1] == (byte)'\n')
+                    offset++;
+                ValidateUtf8(_buffer.AsSpan(commentStart, offset - commentStart));
+                _scanOffset = offset + 1;
+                _recordStart = _scanOffset;
+                _state = ScanState.FieldStart;
+                return true;
+            }
+
+            _scanOffset = _bufferedLength;
+            if (_budgetExhausted)
+                return true;
+            if (_endOfFile)
+            {
+                var commentStart = checked((int)(commentStartAbsoluteOffset - _bufferStartOffset));
+                ValidateUtf8(_buffer.AsSpan(commentStart, _scanOffset - commentStart));
+                _recordStart = _scanOffset;
+                _state = ScanState.FieldStart;
+                return true;
+            }
+
+            FillBuffer();
+        }
     }
 
     private void FillBuffer()
@@ -363,6 +632,13 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
             return;
 
         _cancellationToken.ThrowIfCancellationRequested();
+
+        if (_bytesRead >= _maximumBytesRead ||
+            (_deadlineTimestamp != long.MaxValue && Stopwatch.GetTimestamp() >= _deadlineTimestamp))
+        {
+            _budgetExhausted = true;
+            return;
+        }
 
         if (_bufferedLength == _buffer.Length)
         {
@@ -378,8 +654,11 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
             }
             else
             {
-                if (_buffer.Length >= MaximumBufferSize)
-                    throw InvalidData($"A separated-values record exceeds the {MaximumBufferSize:N0}-byte safety limit.");
+                if (_buffer.Length >= Math.Min(
+                        MaximumBufferSize,
+                        Math.Min(_dialect.MaximumRecordBytes, _dialect.MaximumBufferedBytes)))
+                    throw InvalidData(
+                        $"A separated-values record exceeds the {_dialect.MaximumRecordBytes:N0}-byte safety limit.");
 
                 var replacement = ArrayPool<byte>.Shared.Rent(Math.Min(_buffer.Length * 2, MaximumBufferSize));
                 _buffer.AsSpan(0, _bufferedLength).CopyTo(replacement);
@@ -397,7 +676,13 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
 
         var capacity = _buffer.Length - _bufferedLength;
         var remainingBytes = _rangeEndOffset - absoluteBufferedEnd;
-        var requested = (int)Math.Min(capacity, remainingBytes);
+        var remainingBudget = _maximumBytesRead - _bytesRead;
+        var requested = (int)Math.Min(capacity, Math.Min(remainingBytes, remainingBudget));
+        if (requested <= 0)
+        {
+            _budgetExhausted = true;
+            return;
+        }
         var read = _stream.Read(_buffer, _bufferedLength, requested);
         if (read == 0)
         {
@@ -406,6 +691,9 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         }
 
         _bufferedLength += read;
+        _bytesRead += read;
+        if (_bufferedLength - _recordStart > _dialect.MaximumRecordBytes)
+            throw InvalidData($"A separated-values record exceeds the {_dialect.MaximumRecordBytes:N0}-byte safety limit.");
         if (absoluteBufferedEnd + read >= _rangeEndOffset)
             _endOfFile = true;
     }
@@ -422,7 +710,7 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         ValidateUtf8(bytes);
     }
 
-    private static void ValidateUtf8(ReadOnlySpan<byte> bytes)
+    internal static void ValidateUtf8(ReadOnlySpan<byte> bytes)
     {
         while (!bytes.IsEmpty)
         {
@@ -443,7 +731,8 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         FieldStart,
         Unquoted,
         Quoted,
-        AfterQuote
+        AfterQuote,
+        EscapedQuoted
     }
 }
 
@@ -451,15 +740,18 @@ internal readonly ref struct SeparatedValuesUtf8Record
 {
     private readonly ReadOnlySpan<byte> _bytes;
     private readonly byte _separator;
+    private readonly SeparatedValuesDialect _dialect;
 
     public SeparatedValuesUtf8Record(
         ReadOnlySpan<byte> bytes,
         byte separator,
         long startOffset,
-        long endOffset)
+        long endOffset,
+        SeparatedValuesDialect? dialect = null)
     {
         _bytes = bytes;
         _separator = separator;
+        _dialect = dialect ?? SeparatedValuesDialect.Strict(separator);
         StartOffset = startOffset;
         EndOffset = endOffset;
     }
@@ -470,24 +762,33 @@ internal readonly ref struct SeparatedValuesUtf8Record
 
     public SeparatedValuesUtf8FieldEnumerator GetEnumerator()
     {
-        return new SeparatedValuesUtf8FieldEnumerator(_bytes, _separator);
+        return new SeparatedValuesUtf8FieldEnumerator(_bytes, _dialect);
     }
+
+    public ReadOnlySpan<byte> Bytes => _bytes;
 }
 
 internal ref struct SeparatedValuesUtf8FieldEnumerator
 {
     private readonly ReadOnlySpan<byte> _record;
+    private readonly SeparatedValuesDialect _dialect;
     private readonly byte _separator;
     private int _nextOffset;
     private bool _finished;
 
-    public SeparatedValuesUtf8FieldEnumerator(ReadOnlySpan<byte> record, byte separator)
+    public SeparatedValuesUtf8FieldEnumerator(ReadOnlySpan<byte> record, SeparatedValuesDialect dialect)
     {
         _record = record;
-        _separator = separator;
+        _dialect = dialect;
+        _separator = dialect.Separator;
         _nextOffset = 0;
         _finished = false;
         Current = default;
+    }
+
+    public SeparatedValuesUtf8FieldEnumerator(ReadOnlySpan<byte> record, byte separator)
+        : this(record, SeparatedValuesDialect.Strict(separator))
+    {
     }
 
     public SeparatedValuesUtf8Field Current { get; private set; }
@@ -498,28 +799,48 @@ internal ref struct SeparatedValuesUtf8FieldEnumerator
             return false;
 
         var start = _nextOffset;
-        if (start < _record.Length && _record[start] == (byte)'"')
+        var trimmedStart = _dialect.WhitespaceMode == SeparatedValuesWhitespaceMode.Trim
+            ? TrimStart(_record, start)
+            : start;
+        if (_dialect.Quote.HasValue && trimmedStart < _record.Length && _record[trimmedStart] == _dialect.Quote.Value)
         {
-            var valueStart = start + 1;
+            var valueStart = trimmedStart + 1;
             var offset = valueStart;
             var needsUnescaping = false;
 
             while (offset < _record.Length)
             {
-                if (_record[offset] != (byte)'"')
+                if (_record[offset] != _dialect.Quote.Value)
                 {
+                    if (_dialect.EscapeMode == SeparatedValuesEscapeMode.Backslash &&
+                        _record[offset] == (byte)'\\' &&
+                        offset + 1 < _record.Length)
+                    {
+                        needsUnescaping = true;
+                        offset += 2;
+                        continue;
+                    }
                     offset++;
                     continue;
                 }
 
-                if (offset + 1 < _record.Length && _record[offset + 1] == (byte)'"')
+                if (_dialect.EscapeMode == SeparatedValuesEscapeMode.Double &&
+                    offset + 1 < _record.Length &&
+                    _record[offset + 1] == _dialect.Quote.Value)
                 {
                     needsUnescaping = true;
                     offset += 2;
                     continue;
                 }
 
-                Current = new SeparatedValuesUtf8Field(_record[valueStart..offset], true, needsUnescaping);
+                Current = new SeparatedValuesUtf8Field(
+                    _record[valueStart..offset],
+                    valueStart,
+                    true,
+                    needsUnescaping,
+                    _dialect.EscapeMode,
+                    false,
+                    _dialect.Quote);
                 SetNextOffset(offset + 1);
                 return true;
             }
@@ -527,17 +848,40 @@ internal ref struct SeparatedValuesUtf8FieldEnumerator
             throw new InvalidDataException("The quoted field is not terminated.");
         }
 
-        var end = start;
+        var end = trimmedStart;
         while (end < _record.Length && _record[end] != _separator)
+        {
+            if (_dialect.Quote.HasValue && _record[end] == _dialect.Quote.Value)
+                throw new InvalidDataException("A quote may only appear at the beginning of a field.");
+            if (_record[end] is (byte)'\r' or (byte)'\n')
+                throw new InvalidDataException("An unquoted field cannot contain a carriage return or line feed.");
             end++;
+        }
 
-        Current = new SeparatedValuesUtf8Field(_record[start..end], false, false);
+        var unquotedStart = trimmedStart;
+        var valueEnd = _dialect.WhitespaceMode == SeparatedValuesWhitespaceMode.Trim
+            ? TrimEnd(_record, unquotedStart, end)
+            : end;
+        Current = new SeparatedValuesUtf8Field(
+            _record[unquotedStart..valueEnd],
+            unquotedStart,
+            false,
+            false,
+            _dialect.EscapeMode,
+            _dialect.IsNullToken(_record[unquotedStart..valueEnd], false),
+            _dialect.Quote);
         SetNextOffset(end);
         return true;
     }
 
     private void SetNextOffset(int endOffset)
     {
+        if (_dialect.WhitespaceMode == SeparatedValuesWhitespaceMode.Trim)
+        {
+            while (endOffset < _record.Length && IsWhitespace(_record[endOffset]))
+                endOffset++;
+        }
+
         if (endOffset == _record.Length)
         {
             _finished = true;
@@ -549,25 +893,60 @@ internal ref struct SeparatedValuesUtf8FieldEnumerator
 
         _nextOffset = endOffset + 1;
     }
+
+    private static int TrimStart(ReadOnlySpan<byte> record, int start)
+    {
+        while (start < record.Length && IsWhitespace(record[start]))
+            start++;
+        return start;
+    }
+
+    private static int TrimEnd(ReadOnlySpan<byte> record, int start, int end)
+    {
+        while (end > start && IsWhitespace(record[end - 1]))
+            end--;
+        return end;
+    }
+
+    private static bool IsWhitespace(byte value)
+    {
+        return value is (byte)' ' or (byte)'\t';
+    }
 }
 
 internal readonly ref struct SeparatedValuesUtf8Field
 {
     public SeparatedValuesUtf8Field(
         ReadOnlySpan<byte> encodedValue,
+        int encodedOffset,
         bool wasQuoted,
-        bool needsUnescaping)
+        bool needsUnescaping,
+        SeparatedValuesEscapeMode escapeMode = SeparatedValuesEscapeMode.Double,
+        bool isNullToken = false,
+        byte? quote = (byte)'"')
     {
         EncodedValue = encodedValue;
+        EncodedOffset = encodedOffset;
         WasQuoted = wasQuoted;
         NeedsUnescaping = needsUnescaping;
+        EscapeMode = escapeMode;
+        IsNullToken = isNullToken;
+        Quote = quote;
     }
 
     public ReadOnlySpan<byte> EncodedValue { get; }
 
+    public int EncodedOffset { get; }
+
     public bool WasQuoted { get; }
 
     public bool NeedsUnescaping { get; }
+
+    public SeparatedValuesEscapeMode EscapeMode { get; }
+
+    public bool IsNullToken { get; }
+
+    public byte? Quote { get; }
 
     public string Decode()
     {
@@ -580,10 +959,17 @@ internal readonly ref struct SeparatedValuesUtf8Field
         for (var offset = 0; offset < EncodedValue.Length; offset++)
         {
             var value = EncodedValue[offset];
-            destination[written++] = value;
-
-            if (value == (byte)'"' && offset + 1 < EncodedValue.Length && EncodedValue[offset + 1] == (byte)'"')
+            if (EscapeMode == SeparatedValuesEscapeMode.Double &&
+                Quote.HasValue &&
+                value == Quote.Value &&
+                offset + 1 < EncodedValue.Length &&
+                EncodedValue[offset + 1] == Quote.Value)
                 offset++;
+            else if (EscapeMode == SeparatedValuesEscapeMode.Backslash &&
+                     value == (byte)'\\' &&
+                     offset + 1 < EncodedValue.Length)
+                value = EncodedValue[++offset];
+            destination[written++] = value;
         }
 
         return Encoding.UTF8.GetString(destination.AsSpan(0, written));
@@ -597,13 +983,22 @@ internal readonly ref struct SeparatedValuesUtf8Field
         var expectedOffset = 0;
         for (var offset = 0; offset < EncodedValue.Length; offset++)
         {
-            if (expectedOffset == expected.Length || EncodedValue[offset] != expected[expectedOffset])
+            if (expectedOffset == expected.Length)
                 return false;
-
-            expectedOffset++;
-            if (EncodedValue[offset] == (byte)'"' &&
-                offset + 1 < EncodedValue.Length && EncodedValue[offset + 1] == (byte)'"')
+            var value = EncodedValue[offset];
+            if (EscapeMode == SeparatedValuesEscapeMode.Double &&
+                Quote.HasValue &&
+                value == Quote.Value &&
+                offset + 1 < EncodedValue.Length &&
+                EncodedValue[offset + 1] == Quote.Value)
                 offset++;
+            else if (EscapeMode == SeparatedValuesEscapeMode.Backslash &&
+                     value == (byte)'\\' &&
+                     offset + 1 < EncodedValue.Length)
+                value = EncodedValue[++offset];
+            if (value != expected[expectedOffset])
+                return false;
+            expectedOffset++;
         }
 
         return expectedOffset == expected.Length;

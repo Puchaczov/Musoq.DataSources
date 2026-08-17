@@ -42,7 +42,7 @@ public class SeparatedValuesStringReuseBenchmarks
             _path,
             false,
             0).ExecutionPlan;
-        var snapshot = SeparatedValuesSchemaDiscovery.GetSnapshot(_path, ";", false, 0);
+        var snapshot = SeparatedValuesSourceContract.From(plan).Snapshot;
         if (!ReuseEnabled)
             snapshot.StringPool.Disable();
 
