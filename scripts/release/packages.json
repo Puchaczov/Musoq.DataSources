@@ -75,7 +75,7 @@
     {
       "slug": "separatedvalues",
       "packageId": "Musoq.DataSources.SeparatedValues",
-      "version": "10.0.3-alpha.1",
+      "version": "11.0.0-alpha.1",
       "projectPath": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj"
     },
     {

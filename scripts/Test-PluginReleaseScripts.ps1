@@ -399,8 +399,11 @@ function Test-RuntimeV2ReleaseTrain {
         if ($package.packageId -eq 'Musoq.DataSources.Roslyn') {
             Assert-Equal "3.0.4-alpha.6" $version "Roslyn should use the next prerelease command-module version."
         }
-        elseif ($package.packageId -eq 'Musoq.DataSources.Json' -or $package.packageId -eq 'Musoq.DataSources.SeparatedValues') {
+        elseif ($package.packageId -eq 'Musoq.DataSources.Json') {
             Assert-Equal "10.0.3-alpha.1" $version "$($package.packageId) should use its next major alpha version."
+        }
+        elseif ($package.packageId -eq 'Musoq.DataSources.SeparatedValues') {
+            Assert-Equal "11.0.0-alpha.1" $version "$($package.packageId) should use its next major alpha version."
         }
         elseif ($package.packageId -eq 'Musoq.DataSources.Git') {
             Assert-Equal "3.0.0-alpha.1" $version "Git should use its next major alpha version."
