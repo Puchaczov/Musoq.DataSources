@@ -47,14 +47,14 @@ public class OsAndGitToSqlTests
                         select 
                             dir.FullName as FullName,
                             dir.Parent.Name as Name
-                        from #os.directories('{RepositoriesDirectory}', true) dir
+                        from os.directories('{RepositoriesDirectory}', true) dir
                         where 
                             dir.Name = '.git'
                     )
                     select 
                         p.Name,
                         c.Sha
-                    from ProjectsToAnalyze p cross apply #git.repository(p.FullName) r cross apply r.Commits c
+                    from ProjectsToAnalyze p cross apply git.repository(p.FullName) r cross apply r.Commits c
                     order by c.CommittedWhen, p.Name
                     """;
 
@@ -108,14 +108,14 @@ public class OsAndGitToSqlTests
                         select 
                             dir.FullName as FullName,
                             dir.Parent.Name as Name
-                        from #os.directories('{RepositoriesDirectory}', true) dir
+                        from os.directories('{RepositoriesDirectory}', true) dir
                         where 
                             dir.Name = '.git'
                     )
                     select 
                         p.Name,
                         r.Count(c.Sha) as CommitsCount
-                    from ProjectsToAnalyze p cross apply #git.repository(p.FullName) r cross apply r.Commits c
+                    from ProjectsToAnalyze p cross apply git.repository(p.FullName) r cross apply r.Commits c
                     group by p.Name
                     order by p.Name
                     """;

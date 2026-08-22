@@ -37,7 +37,7 @@ public class RoslynWhereNodeOptimizationTests
     {
         var query = $@"
             select p.AssemblyName, p.Language
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p
             where p.AssemblyName = 'Solution1.ClassLibrary1'";
 
@@ -55,7 +55,7 @@ public class RoslynWhereNodeOptimizationTests
     {
         var query = $@"
             select p.AssemblyName, p.Language
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p
             where p.Language = 'C#'";
 
@@ -75,7 +75,7 @@ public class RoslynWhereNodeOptimizationTests
     {
         var query = $@"
             select p.AssemblyName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p
             where p.AssemblyName = 'NonExistentProject'";
 
@@ -90,7 +90,7 @@ public class RoslynWhereNodeOptimizationTests
     {
         var query = $@"
             select p.Name, p.DefaultNamespace
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p
             where p.Name = 'Solution1.ClassLibrary1.Tests'";
 

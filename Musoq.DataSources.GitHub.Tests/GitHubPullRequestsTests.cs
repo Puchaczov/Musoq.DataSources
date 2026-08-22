@@ -33,7 +33,7 @@ public class GitHubPullRequestsTests
                 MockEntityFactory.CreatePullRequest(2, 202, "Fix bug", state: "closed", merged: true)
             });
 
-        var query = "select Id, Number, Title, State, Merged from #github.pullrequests('testowner', 'testrepo')";
+        var query = "select Id, Number, Title, State, Merged from github.pullrequests('testowner', 'testrepo')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -73,7 +73,7 @@ public class GitHubPullRequestsTests
                 MockEntityFactory.CreatePullRequest(2, 202, "Closed PR", state: "closed")
             });
 
-        var query = "select Number, Title from #github.pullrequests('testowner', 'testrepo') where State = 'open'";
+        var query = "select Number, Title from github.pullrequests('testowner', 'testrepo') where State = 'open'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -97,7 +97,7 @@ public class GitHubPullRequestsTests
             });
 
         var query =
-            "select Number, Title, Merged from #github.pullrequests('testowner', 'testrepo') where Merged = true";
+            "select Number, Title, Merged from github.pullrequests('testowner', 'testrepo') where Merged = true";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -121,7 +121,7 @@ public class GitHubPullRequestsTests
                 MockEntityFactory.CreatePullRequest(2, 202, "Other PR", headRef: "other")
             });
 
-        var query = "select Number, HeadRef from #github.pullrequests('testowner', 'testrepo') where HeadRef = 'feature'";
+        var query = "select Number, HeadRef from github.pullrequests('testowner', 'testrepo') where HeadRef = 'feature'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 

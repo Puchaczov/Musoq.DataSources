@@ -34,7 +34,7 @@ public class JsonCompiledExecutionBenchmarks
     public void Setup()
     {
         var dataPath = QueryPath(JsonBenchmarkData.EnsureFlatFile(RowCount));
-        var source = $"#json.file('{dataPath}')";
+        var source = $"json.file('{dataPath}')";
         var queryText = QueryShape switch
         {
             JsonQueryShape.Count => $"select Count(Station) from {source}",

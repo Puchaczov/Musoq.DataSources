@@ -31,7 +31,7 @@ public class OpenAISchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #openai";
+        var query = "desc openai";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -53,7 +53,7 @@ public class OpenAISchemaDescribeTests
     [TestMethod]
     public void DescGpt_ShouldReturnAllOverloads()
     {
-        var query = "desc #openai.gpt";
+        var query = "desc openai.gpt";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -98,7 +98,7 @@ public class OpenAISchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #openai.unknownmethod";
+        var query = "desc openai.unknownmethod";
 
         try
         {
@@ -122,7 +122,7 @@ public class OpenAISchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #openai";
+        var query = "desc openai";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -135,7 +135,7 @@ public class OpenAISchemaDescribeTests
     [TestMethod]
     public void DescGptNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #openai.gpt";
+        var queryNoArgs = "desc openai.gpt";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 

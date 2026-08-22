@@ -25,7 +25,7 @@ public class OsWhereNodeOptimizationTests
     [TestMethod]
     public void WhenFilesFilteredByExtension_ShouldReturnOnlyMatchingFiles()
     {
-        var query = "select f.Name, f.Extension from #os.files('./Files', false) f where f.Extension = '.txt'";
+        var query = "select f.Name, f.Extension from os.files('./Files', false) f where f.Extension = '.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -40,7 +40,7 @@ public class OsWhereNodeOptimizationTests
     [TestMethod]
     public void WhenFilesFilteredByName_ShouldReturnOnlyMatchingFile()
     {
-        var query = "select f.Name, f.Extension from #os.files('./Files', false) f where f.Name = 'File1.txt'";
+        var query = "select f.Name, f.Extension from os.files('./Files', false) f where f.Name = 'File1.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -53,7 +53,7 @@ public class OsWhereNodeOptimizationTests
     [TestMethod]
     public void WhenFilesFilteredByNonExistentName_ShouldReturnNoFiles()
     {
-        var query = "select f.Name from #os.files('./Files', false) f where f.Name = 'NonExistent.txt'";
+        var query = "select f.Name from os.files('./Files', false) f where f.Name = 'NonExistent.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -64,7 +64,7 @@ public class OsWhereNodeOptimizationTests
     [TestMethod]
     public void WhenDirectoriesFilteredByName_ShouldReturnOnlyMatchingDirectory()
     {
-        var query = "select d.Name from #os.directories('./Directories', false) d where d.Name = 'Directory1'";
+        var query = "select d.Name from os.directories('./Directories', false) d where d.Name = 'Directory1'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();
@@ -76,7 +76,7 @@ public class OsWhereNodeOptimizationTests
     [TestMethod]
     public void WhenDirectoriesFilteredByNonExistentName_ShouldReturnNoDirectories()
     {
-        var query = "select d.Name from #os.directories('./Directories', false) d where d.Name = 'NonExistent'";
+        var query = "select d.Name from os.directories('./Directories', false) d where d.Name = 'NonExistent'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var result = vm.Run();

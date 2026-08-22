@@ -22,7 +22,7 @@ public class JsonTests
     public void SimpleSelectTest()
     {
         var query =
-            @"select Name, Age from #json.file('./JsonTestFile_First.json')";
+            @"select Name, Age from json.file('./JsonTestFile_First.json')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -55,7 +55,7 @@ public class JsonTests
     public void SelectWithNestedArrayTest()
     {
         var query =
-            @"select Name, Books from #json.file('./JsonTestFile_First.json')";
+            @"select Name, Books from json.file('./JsonTestFile_First.json')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -85,7 +85,7 @@ public class JsonTests
     public void SelectNestedArrayTest()
     {
         var query =
-            @"select Array from #json.file('./JsonTestFile_MakeFlatArray.json')";
+            @"select Array from json.file('./JsonTestFile_MakeFlatArray.json')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();

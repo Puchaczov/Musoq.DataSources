@@ -34,7 +34,7 @@ public class DockerSchema : SchemaBase
     ///     <virtual-constructor>
     ///         <examples>
     ///             <example>
-    ///                 <from>#docker.containers()</from>
+    ///                 <from>docker.containers()</from>
     ///                 <description>Gets containers of local docker</description>
     ///                 <columns>
     ///                     <column name="ID" type="string">Container ID</column>
@@ -61,7 +61,7 @@ public class DockerSchema : SchemaBase
     ///     <virtual-constructor>
     ///         <examples>
     ///             <example>
-    ///                 <from>#docker.images()</from>
+    ///                 <from>docker.images()</from>
     ///                 <description>Gets images of local docker</description>
     ///                 <columns>
     ///                     <column name="Containers" type="long">Number of containers</column>
@@ -81,7 +81,7 @@ public class DockerSchema : SchemaBase
     ///     <virtual-constructor>
     ///         <examples>
     ///             <example>
-    ///                 <from>#docker.volumes()</from>
+    ///                 <from>docker.volumes()</from>
     ///                 <description>Gets volumes of local docker</description>
     ///                 <columns>
     ///                     <column name="CreatedAt" type="string">Creation time of the volume</column>
@@ -100,7 +100,7 @@ public class DockerSchema : SchemaBase
     ///     <virtual-constructor>
     ///         <examples>
     ///             <example>
-    ///                 <from>#docker.networks()</from>
+    ///                 <from>docker.networks()</from>
     ///                 <description>Gets networks of local docker</description>
     ///                 <columns>
     ///                     <column name="Name" type="string">Name of the network</column>

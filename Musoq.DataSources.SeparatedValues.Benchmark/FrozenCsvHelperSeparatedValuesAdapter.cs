@@ -5,7 +5,7 @@ using CsvHelper.Configuration;
 
 namespace Musoq.DataSources.SeparatedValues.Benchmark;
 
-internal static class FrozenLegacySeparatedValuesAdapter
+internal static class FrozenCsvHelperSeparatedValuesAdapter
 {
     public static IEnumerable<object?[]> Read(string path, string delimiter)
     {

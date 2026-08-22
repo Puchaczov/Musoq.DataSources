@@ -27,7 +27,7 @@ A Musoq datasource plugin lets SQL query external data:
 
 ```sql
 select City, TemperatureC
-from #weather.current('Warsaw')
+from weather.current('Warsaw')
 where TemperatureC > 10
 order by ObservedAt desc
 take 5;
@@ -48,7 +48,7 @@ At runtime the engine follows this path:
 
 ```text
 SQL text
-  -> #weather.current('Warsaw')
+  -> weather.current('Warsaw')
   -> ISchemaProvider.GetSchema("weather")
   -> ISchema.GetTableByName("current", metadataContext, parameters)
   -> ISchema.DescribeSource("current", describeContext, parameters)
@@ -241,7 +241,7 @@ RowSource:
 
 ## Building Your First Plugin
 
-This walkthrough builds `#weather.current(city)`.
+This walkthrough builds `weather.current(city)`.
 
 ### Step 1: Create the Project Foundation
 
@@ -540,7 +540,7 @@ Usage:
 
 ```sql
 select City, CelsiusToFahrenheit(TemperatureC)
-from #weather.current('Warsaw');
+from weather.current('Warsaw');
 ```
 
 ### Step 9: Create the SchemaProvider
@@ -586,7 +586,7 @@ public sealed class WeatherSchema : SchemaBase
     {
         _client = client;
 
-        // Registers constructor metadata for desc #weather and static catalogs.
+        // Registers constructor metadata for desc weather and static catalogs.
         AddTable<WeatherTable>(Current);
     }
 
@@ -648,7 +648,7 @@ public sealed class WeatherSchema : SchemaBase
         EnsureCurrent(name);
 
         if (parameters.Length != 1 || parameters[0] is not string city)
-            throw new ArgumentException("#weather.current(city) requires one string argument.");
+            throw new ArgumentException("weather.current(city) requires one string argument.");
 
         return EnsureSourceType<T, WeatherEntity>(
             name,
@@ -775,7 +775,7 @@ new SchemaColumn("ColumnName", 0, typeof(string))
 new SchemaColumn("ColumnName", 0, typeof(string), readModifiers)
 ```
 
-Table constructors also describe source parameters for `desc #schema.method` and static catalogs. If users call `#weather.current('Warsaw')`, the table should expose a metadata-only constructor with the same public parameters:
+Table constructors also describe source parameters for `desc schema.method` and static catalogs. If users call `weather.current('Warsaw')`, the table should expose a metadata-only constructor with the same public parameters:
 
 ```csharp
 public sealed class WeatherTable : ISchemaTable
@@ -913,7 +913,7 @@ public sealed class WeatherSchema : SchemaBase
     ///     <virtual-param>City name, coordinates, or address.</virtual-param>
     ///     <examples>
     ///       <example>
-    ///         <from>#weather.current(string city)</from>
+    ///         <from>weather.current(string city)</from>
     ///         <description>Returns the current weather observation for one city.</description>
     ///         <columns>
     ///           <column name="City" type="string">Resolved city name.</column>
@@ -995,7 +995,7 @@ Value types are nullable in `TABLE` context because dynamic sources can omit or 
 Static typed source:
 
 ```sql
-select City, TemperatureC from #weather.current('Warsaw');
+select City, TemperatureC from weather.current('Warsaw');
 ```
 
 Dynamic source with explicit shape:
@@ -1181,7 +1181,7 @@ internal static class QueryRunner
 using Musoq.Converter;
 
 var compiled = InstanceCreator.CompileForExecution(
-    "select City from #weather.current('Warsaw')",
+    "select City from weather.current('Warsaw')",
     Guid.NewGuid().ToString("N"),
     new WeatherSchemaProvider(),
     new TestLoggerResolver());
@@ -1195,7 +1195,7 @@ Use this path for negative tests:
 
 ```csharp
 var result = InstanceCreator.CompileWithDiagnostics(
-    "select MissingColumn from #weather.current('Warsaw')",
+    "select MissingColumn from weather.current('Warsaw')",
     Guid.NewGuid().ToString("N"),
     new WeatherSchemaProvider(),
     new TestLoggerResolver());
@@ -1210,7 +1210,7 @@ Use inspection to verify planning, generated C#, and query description behavior:
 
 ```csharp
 var inspection = InstanceCreator.CompileForInspection(
-    "desc query (select City from #weather.current('Warsaw'))",
+    "desc query (select City from weather.current('Warsaw'))",
     Guid.NewGuid().ToString("N"),
     new WeatherSchemaProvider(),
     new TestLoggerResolver());
@@ -1258,7 +1258,7 @@ public void GetRawConstructors_WhenAskedForCurrent_ReturnsCityParameter()
 public void DescMethodWithArgs_ShouldReturnWeatherColumns()
 {
     var rows = QueryRunner.Run(
-        "desc #weather.current('Warsaw')",
+        "desc weather.current('Warsaw')",
         new WeatherSchemaProvider());
 
     Assert.IsTrue(rows.Any(row => string.Equals((string)row[0], nameof(WeatherEntity.City), StringComparison.Ordinal)));
@@ -1278,7 +1278,7 @@ public void XmlDocumentation_WhenBuilt_ContainsVirtualConstructorsAndColumns()
 
     var xml = File.ReadAllText(xmlPath);
     StringAssert.Contains(xml, "virtual-constructors");
-    StringAssert.Contains(xml, "#weather.current(string city)");
+    StringAssert.Contains(xml, "weather.current(string city)");
     StringAssert.Contains(xml, nameof(WeatherEntity.TemperatureC));
 }
 ```
@@ -1580,7 +1580,7 @@ using Musoq.Schema;
 using Musoq.Schema.Optimization;
 
 SourceContractDiagnostic.Error(
-    "Only utf-8 encoding is supported by #weather.dynamic().",
+    "Only utf-8 encoding is supported by weather.dynamic().",
     "UnsupportedEncoding") with
 {
     ColumnName = "City",
@@ -1808,7 +1808,7 @@ Fail fast for invalid source names and parameters:
 
 ```csharp
 if (parameters.Length != 1 || parameters[0] is not string city)
-    throw new ArgumentException("#weather.current(city) requires one string city argument.");
+    throw new ArgumentException("weather.current(city) requires one string city argument.");
 ```
 
 Use `SourceContractDiagnostic` when the query contract is invalid but discovered during metadata/planning.

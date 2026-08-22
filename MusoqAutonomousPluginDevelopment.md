@@ -323,7 +323,7 @@ using Musoq.Schema.Attributes;
 [assembly: AssemblyProduct("Musoq.DataSources.Weather")]
 ```
 
-`PluginSchemas("weather")` is the static discovery key for SQL such as `select * from #weather.current('Warsaw')`. Keep it lowercase and keep it identical to the schema name passed to `SchemaBase`.
+`PluginSchemas("weather")` is the static discovery key for SQL such as `select * from weather.current('Warsaw')`. Keep it lowercase and keep it identical to the schema name passed to `SchemaBase`.
 
 `Assembly.cs`:
 
@@ -577,7 +577,7 @@ public sealed class WeatherSchema : SchemaBase
     {
         _client = client;
 
-        // Registers constructor metadata used by desc #weather and desc #weather.current.
+        // Registers constructor metadata used by desc weather and desc weather.current.
         // Keep WeatherTable constructors aligned with supported source parameters.
         AddTable<WeatherTable>(Current);
     }
@@ -674,7 +674,7 @@ public sealed class WeatherSchema : SchemaBase
         EnsureSourceName(name);
 
         if (parameters.Length != 1 || parameters[0] is not string city)
-            throw new ArgumentException("#weather.current(city) requires one string city argument.");
+            throw new ArgumentException("weather.current(city) requires one string city argument.");
 
         return EnsureSourceType<T, WeatherEntity>(
             name,
@@ -717,7 +717,7 @@ public override SourcePlanResult TryPlanSource(
 
 ### 3.8.1 Raw Constructors and `desc` Support
 
-Musoq uses raw constructor metadata for `desc #schema`, `desc #schema.method`, and some static package catalogs. Runtime-v2 uses these exact signatures:
+Musoq uses raw constructor metadata for `desc schema`, `desc schema.method`, and some static package catalogs. Runtime-v2 uses these exact signatures:
 
 ```csharp
 public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext);
@@ -1099,7 +1099,7 @@ public sealed class WeatherSchema : SchemaBase
     ///     <virtual-param>City name, coordinates, or address.</virtual-param>
     ///     <examples>
     ///       <example>
-    ///         <from>#weather.current(string city)</from>
+    ///         <from>weather.current(string city)</from>
     ///         <description>Returns the current weather observation for one city.</description>
     ///         <columns>
     ///           <column name="City" type="string">Resolved city name.</column>
@@ -1142,7 +1142,7 @@ public sealed class WeatherSchemaProvider : ISchemaProvider
     /// <summary>
     /// Gets the weather schema.
     /// </summary>
-    /// <param name="schema">Schema name. Use weather or #weather.</param>
+/// <param name="schema">Schema name. Use weather or #weather.</param>
     /// <returns>Weather schema instance.</returns>
     public ISchema GetSchema(string schema)
     {
@@ -1225,7 +1225,7 @@ If the source supports multiple parameter sets, add one `<virtual-constructor>` 
 ///   <virtual-constructor>
 ///     <examples>
 ///       <example>
-///         <from>#weather.current()</from>
+///         <from>weather.current()</from>
 ///         <description>Uses the default city from host-resolved settings.</description>
 ///         <columns>...</columns>
 ///       </example>
@@ -1235,7 +1235,7 @@ If the source supports multiple parameter sets, add one `<virtual-constructor>` 
 ///     <virtual-param>City name.</virtual-param>
 ///     <examples>
 ///       <example>
-///         <from>#weather.current(string city)</from>
+///         <from>weather.current(string city)</from>
 ///         <description>Uses the supplied city.</description>
 ///         <columns>...</columns>
 ///       </example>
@@ -1381,7 +1381,7 @@ public sealed class WeatherQueryTests
         var provider = new WeatherSchemaProvider();
 
         var rows = QueryRunner.Run(
-            "select City, TemperatureC from #weather.current('Warsaw')",
+            "select City, TemperatureC from weather.current('Warsaw')",
             provider);
 
         Assert.AreEqual("Warsaw", rows[0][0]);
@@ -1448,7 +1448,7 @@ Verify `desc` through SQL, not only by direct method calls:
 public void DescSchema_ShouldListCurrentMethod()
 {
     var rows = QueryRunner.Run(
-        "desc #weather",
+        "desc weather",
         new WeatherSchemaProvider());
 
     Assert.IsTrue(rows.Any(row => string.Equals((string)row[0], "current", StringComparison.Ordinal)));
@@ -1458,7 +1458,7 @@ public void DescSchema_ShouldListCurrentMethod()
 public void DescMethodWithArgs_ShouldReturnColumns()
 {
     var rows = QueryRunner.Run(
-        "desc #weather.current('Warsaw')",
+        "desc weather.current('Warsaw')",
         new WeatherSchemaProvider());
 
     Assert.IsTrue(rows.Any(row => string.Equals((string)row[0], nameof(WeatherEntity.City), StringComparison.Ordinal)));
@@ -1479,7 +1479,7 @@ public void XmlDocumentation_WhenBuilt_ContainsStaticCatalog()
 
     var xml = File.ReadAllText(xmlPath);
     StringAssert.Contains(xml, "virtual-constructors");
-    StringAssert.Contains(xml, "#weather.current(string city)");
+    StringAssert.Contains(xml, "weather.current(string city)");
     StringAssert.Contains(xml, nameof(WeatherEntity.TemperatureC));
 }
 ```
@@ -1543,7 +1543,7 @@ Also test the settings description snapshot produced during analysis:
 public void DescSettings_WhenSourceDeclaresRequiredSetting_ReturnsRequirement()
 {
     var items = InstanceCreator.CreateForAnalyze(
-        "select City from #weather.current('Warsaw')",
+        "select City from weather.current('Warsaw')",
         Guid.NewGuid().ToString("N"),
         new WeatherSchemaProvider(),
         new TestLoggerResolver());
@@ -1585,7 +1585,7 @@ Test planning through SQL using `CompileForInspection` and `desc query` when the
 ```sql
 desc query (
     select City, TemperatureC
-    from #weather.current('Warsaw')
+    from weather.current('Warsaw')
     where City = 'Warsaw'
     order by ObservedAt desc
     take 10
@@ -1962,8 +1962,8 @@ musoq plugin install Musoq.DataSources.Weather --registry internal
 | missing setting diagnostic | resolver did not return required value | test with `CompilationOptions(sourceRuntimeSettingsResolver: ...)` |
 | contract warning/error | datasource rejected `TABLE` or read modifier | update `SourceDescriptor.ContractDiagnostics` or query table |
 | query compiles but source sees no columns | projection not requested or dynamic table not coupled | use `TABLE` + `COUPLE` or inspect `AllColumns` |
-| `desc #schema` lists only `empty` or no source methods | table constructors were not registered | call `AddTable<TTable>("method")` or override runtime-v2 `GetRawConstructors(SourceMetadataContext)` |
-| `desc #schema.method('arg')` has wrong parameters | table constructors do not mirror source parameters | add metadata-only table constructors such as `WeatherTable(string city)` |
+| `desc schema` lists only `empty` or no source methods | table constructors were not registered | call `AddTable<TTable>("method")` or override runtime-v2 `GetRawConstructors(SourceMetadataContext)` |
+| `desc schema.method('arg')` has wrong parameters | table constructors do not mirror source parameters | add metadata-only table constructors such as `WeatherTable(string city)` |
 
 ### A.3 Runtime and Packaging Issues
 

@@ -3,8 +3,8 @@
 ## Purpose
 
 - Streams UTF-8 comma-, tab-, semicolon-, and explicitly delimited files through a bounded, byte-native pipeline.
-- The public constructors are `#separatedvalues.comma(path, hasHeader, skipLines)`, `tab(...)`, and `semicolon(...)`.
-- `#separatedvalues.delimited(path, delimiter, hasHeader, skipLines)` selects one explicit ASCII delimiter; delimiter and header detection are never guessed.
+- The public constructors are `separatedvalues.comma(path, hasHeader, skipLines)`, `tab(...)`, and `semicolon(...)`.
+- `separatedvalues.delimited(path, delimiter, hasHeader, skipLines)` selects one explicit ASCII delimiter; delimiter and header detection are never guessed.
 - Inputs are file paths only. Stream input and archive cross-apply are not supported.
 
 ## Read first
@@ -38,10 +38,16 @@
 
 - Keep the sequential parser buffered and span-based, and the large-file path on pooled random-access byte blocks. Do not reintroduce `StreamReader`, CsvHelper, per-field delegates, or strings for skipped fields.
 - Keep field location, sampled-schema validation, accepted scalar predicates, and projection fused. Rejected rows must not allocate row arrays, strings, or boxed values.
-- Large files (currently at least 64 MiB) use asynchronous read-ahead, quote-state block summaries, shared process-wide CPU permits, dynamic workers, and a bounded ordered output window. Preserve complete CSV grammar including multiline quoted fields.
+- Large files (currently at least 64 MiB) use asynchronous read-ahead, quote-state block summaries, shared process-wide CPU permits, dynamic workers, and a bounded ordered output window. The crossover is deliberately a file-size heuristic; do not add platform-specific drive detection. Preserve complete CSV grammar including multiline quoted fields.
+- Keep I/O depth independent from CPU worker count. Production currently uses 2 MiB blocks and I/O depth 4; change either only after the framing, projected-numeric, and quoted/multiline scheduling matrix clears the documented median thresholds on target hardware.
+- Keep the cooperative pre-analysis yield unless direct scheduling improves median throughput by at least 3% without worsening first-chunk latency, cancellation, or worker utilization.
+- Strict quote-free blocks may use compact framing, one region-level UTF-8 validation, and the unquoted field executor for any supported ASCII separator. Quotes, custom escaping, trimming, null tokens, comments, blank-record emission, and nonstandard endings must retain the general grammar path.
+- Newline-index capacity belongs to the structural memory budget. Reordered materialized output belongs to the separate 256 MiB process-wide output budget; its lease follows work into the ordered result and is released on drain, failure, cancellation, or shutdown. One oversized result reserves the whole budget and runs exclusively.
+- A positive accepted `SKIP`, accepted `TAKE > 4096`, or their combination can use block-row intersections only when there is no accepted predicate or residual work. Keep standalone smaller `TAKE` and every predicate-plus-slice request sequential. Validate values and widths only inside the selected source window; structural work needed to locate it may still fail.
 - Preserve source order, cancellation, early `TAKE`, progress, bounded buffers, and deterministic error propagation.
 - Completed scans may publish memory-only coarse block summaries and an exact count under the current file identity. Never add sidecars or a persistent cache.
 - `separatedvalues.max_parallelism`: missing or `0` is automatic, `1` is sequential, and positive values cap workers.
+- Recommend concrete typed `TABLE` contracts for multi-gigabyte scans. Sampled sources intentionally validate every inferred typed column, including unprojected columns; declared contracts parse only required fields after width validation.
 - The generic source accepts normalized runtime settings: `separatedvalues.quote_char` (`"` or `none`), `escape_mode` (`double`, `backslash`, `none`), `whitespace_mode` (`preserve`, `trim`), `blank_record_mode` (`skip`, `emit`), `comment_prefix`, `null_tokens` (JSON string array), `value_culture`, `record_endings` (`lf_crlf`, `any`), `max_record_bytes`, and `max_buffered_bytes`. Existing comma/tab/semicolon calls retain strict defaults.
 - `null_tokens` apply only to unquoted fields; quoted tokens remain strings. Empty unquoted fields remain null and quoted empty fields remain empty strings.
 - Keep discovery state in the shared linked structured-source files and execution loops format-specific.

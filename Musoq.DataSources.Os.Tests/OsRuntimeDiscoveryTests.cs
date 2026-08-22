@@ -27,7 +27,7 @@ public class OsRuntimeDiscoveryTests
     [DataRow("environmentvariables")]
     public void DescNoParameterRuntimeDiscoverySource_ShouldReturnNoParameterSignature(string methodName)
     {
-        var table = CreateAndRunVirtualMachine($"desc #os.{methodName}").Run();
+        var table = CreateAndRunVirtualMachine($"desc os.{methodName}").Run();
 
         Assert.AreEqual(1, table.Columns.Count());
         Assert.AreEqual(1, table.Count);
@@ -37,7 +37,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void DescPathInfo_ShouldReturnPathParameterSignature()
     {
-        var table = CreateAndRunVirtualMachine("desc #os.pathinfo").Run();
+        var table = CreateAndRunVirtualMachine("desc os.pathinfo").Run();
 
         Assert.AreEqual(2, table.Columns.Count());
         Assert.AreEqual(1, table.Count);
@@ -48,7 +48,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void Cultures_ShouldExposeCurrentRuntimeCulturesAndFormattingColumns()
     {
-        var table = CreateAndRunVirtualMachine("select Name, DecimalSeparator, ShortDatePattern from #os.cultures()").Run();
+        var table = CreateAndRunVirtualMachine("select Name, DecimalSeparator, ShortDatePattern from os.cultures()").Run();
 
         Assert.IsTrue(table.Count > 0);
         Assert.IsTrue(table.Any(row => (string)row[0] == CultureInfo.CurrentCulture.Name));
@@ -59,7 +59,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void CurrentCulture_ShouldReturnSingleRow()
     {
-        var table = CreateAndRunVirtualMachine("select CurrentCulture, CurrentUICulture, DecimalSeparator from #os.currentculture()").Run();
+        var table = CreateAndRunVirtualMachine("select CurrentCulture, CurrentUICulture, DecimalSeparator from os.currentculture()").Run();
 
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual(CultureInfo.CurrentCulture.Name, (string)table[0][0]);
@@ -70,7 +70,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void Encodings_ShouldExposeUtf8AndCodePageEncodings()
     {
-        var table = CreateAndRunVirtualMachine("select WebName, CodePage from #os.encodings()").Run();
+        var table = CreateAndRunVirtualMachine("select WebName, CodePage from os.encodings()").Run();
 
         Assert.IsTrue(table.Any(row => string.Equals((string)row[0], "utf-8", StringComparison.OrdinalIgnoreCase)));
         Assert.IsTrue(table.Any(row => (int)row[1] == 1250), "Code page provider should expose windows-1250.");
@@ -79,7 +79,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void TimeZones_ShouldReturnSystemTimeZones()
     {
-        var table = CreateAndRunVirtualMachine("select Id, BaseUtcOffset from #os.timezones()").Run();
+        var table = CreateAndRunVirtualMachine("select Id, BaseUtcOffset from os.timezones()").Run();
 
         Assert.IsTrue(table.Count > 0);
         Assert.AreEqual("Id", table.Columns.ElementAt(0).ColumnName);
@@ -89,7 +89,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void Runtime_ShouldReturnSingleSafeRowWithoutIdentityColumns()
     {
-        var table = CreateAndRunVirtualMachine("select * from #os.runtime()").Run();
+        var table = CreateAndRunVirtualMachine("select * from os.runtime()").Run();
 
         Assert.AreEqual(1, table.Count);
         Assert.IsFalse(table.Columns.Any(column => column.ColumnName == "UserName"));
@@ -101,7 +101,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void Drives_ShouldReturnAtLeastOneDriveWithoutAssumingDriveLetters()
     {
-        var table = CreateAndRunVirtualMachine("select Name, IsReady from #os.drives()").Run();
+        var table = CreateAndRunVirtualMachine("select Name, IsReady from os.drives()").Run();
 
         Assert.IsTrue(table.Count > 0);
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
@@ -111,7 +111,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void SpecialFolders_ShouldExposeKnownFolderNames()
     {
-        var table = CreateAndRunVirtualMachine("select s.Name, s.Path, s.Exists from #os.specialfolders() s").Run();
+        var table = CreateAndRunVirtualMachine("select s.Name, s.Path, s.Exists from os.specialfolders() s").Run();
 
         Assert.IsTrue(table.Any(row => (string)row[0] == nameof(Environment.SpecialFolder.Desktop)));
     }
@@ -119,7 +119,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void FileAttributes_ShouldExposeCommonFileAttributeValues()
     {
-        var table = CreateAndRunVirtualMachine("select Name, Value from #os.fileattributes()").Run();
+        var table = CreateAndRunVirtualMachine("select Name, Value from os.fileattributes()").Run();
         var names = table.Select(row => (string)row[0]).ToArray();
 
         CollectionAssert.Contains(names, "Directory");
@@ -130,7 +130,7 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void EnvironmentVariables_ShouldExposeNamesAndTargetsOnly()
     {
-        var table = CreateAndRunVirtualMachine("select * from #os.environmentvariables()").Run();
+        var table = CreateAndRunVirtualMachine("select * from os.environmentvariables()").Run();
 
         Assert.IsTrue(table.Columns.Any(column => column.ColumnName == "Name"));
         Assert.IsTrue(table.Columns.Any(column => column.ColumnName == "Target"));
@@ -140,8 +140,8 @@ public class OsRuntimeDiscoveryTests
     [TestMethod]
     public void PathInfo_ShouldReturnSingleRowForExistingAndMissingPaths()
     {
-        var existing = CreateAndRunVirtualMachine("select p.Exists, p.IsDirectory, p.FileName from #os.pathinfo('./Files') p").Run();
-        var missing = CreateAndRunVirtualMachine("select p.Exists, p.IsFile, p.IsDirectory from #os.pathinfo('./MissingPathForRuntimeDiscoveryTests') p").Run();
+        var existing = CreateAndRunVirtualMachine("select p.Exists, p.IsDirectory, p.FileName from os.pathinfo('./Files') p").Run();
+        var missing = CreateAndRunVirtualMachine("select p.Exists, p.IsFile, p.IsDirectory from os.pathinfo('./MissingPathForRuntimeDiscoveryTests') p").Run();
 
         Assert.AreEqual(1, existing.Count);
         Assert.AreEqual(true, existing[0][0]);

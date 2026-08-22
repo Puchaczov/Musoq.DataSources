@@ -33,7 +33,7 @@ public class GitHubIssuesTests
                 MockEntityFactory.CreateIssue(2, 102, "Feature: Add new feature", state: "open")
             });
 
-        var query = "select Id, Number, Title, State from #github.issues('testowner', 'testrepo')";
+        var query = "select Id, Number, Title, State from github.issues('testowner', 'testrepo')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -68,7 +68,7 @@ public class GitHubIssuesTests
                 MockEntityFactory.CreateIssue(2, 102, "Closed issue", state: "closed")
             });
 
-        var query = "select Number, Title, State from #github.issues('testowner', 'testrepo') where State = 'open'";
+        var query = "select Number, Title, State from github.issues('testowner', 'testrepo') where State = 'open'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -102,7 +102,7 @@ public class GitHubIssuesTests
             });
 
         var query =
-            "select Number, Title, AuthorLogin from #github.issues('testowner', 'testrepo') where AuthorLogin = 'user1'";
+            "select Number, Title, AuthorLogin from github.issues('testowner', 'testrepo') where AuthorLogin = 'user1'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 

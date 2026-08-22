@@ -57,7 +57,7 @@ public class DockerTests
             });
 
         var query =
-            "select ID, Names, Image, ImageID, Command, Created, State, Status, Ports, Labels, SizeRw, SizeRootFs, NetworkSettings, Mounts, FlattenPorts from #docker.containers()";
+            "select ID, Names, Image, ImageID, Command, Created, State, Status, Ports, Labels, SizeRw, SizeRootFs, NetworkSettings, Mounts, FlattenPorts from docker.containers()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -128,7 +128,7 @@ public class DockerTests
             });
 
         var query =
-            "select Created, ID, ParentID, RepoDigests, RepoTags, SharedSize, Size, VirtualSize from #docker.images()";
+            "select Created, ID, ParentID, RepoDigests, RepoTags, SharedSize, Size, VirtualSize from docker.images()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -176,7 +176,7 @@ public class DockerTests
                 }
             });
 
-        var query = "select CreatedAt, Driver, Labels, Mountpoint, Name, Options, Scope from #docker.volumes()";
+        var query = "select CreatedAt, Driver, Labels, Mountpoint, Name, Options, Scope from docker.volumes()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -228,7 +228,7 @@ public class DockerTests
             });
 
         var query =
-            "select Created, Driver, EnableIPv6, ID, Internal, Labels, Name, Options, Scope from #docker.networks()";
+            "select Created, Driver, EnableIPv6, ID, Internal, Labels, Name, Options, Scope from docker.networks()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 

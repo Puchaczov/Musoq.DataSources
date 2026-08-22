@@ -23,7 +23,7 @@ select
     Message,
     Engine.Is_Turned_On,
     Engine.Oil_Temperature
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
+from can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where Engine is not null";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -53,7 +53,7 @@ where Engine is not null";
         const string query = @"
 select
     Data
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
+from can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where Engine is not null";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -79,7 +79,7 @@ select
     Timestamp,
     Message,
     Exhaust_System.Exhaust_Gas_Temperature
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
+from can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where Exhaust_System is not null";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -101,7 +101,7 @@ select
     Timestamp,
     Message,
     UnknownMessage.RawData
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
+from can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where IsWellKnown = false";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -121,7 +121,7 @@ where IsWellKnown = false";
         const string query = @"
 select
     Engine
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
+from can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big')
 where IsWellKnown = false";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -142,7 +142,7 @@ select
     Timestamp,
     Message,
     IsWellKnown
-from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc') s";
+from can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc') s";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -183,7 +183,7 @@ from #can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc') s";
     public void WhenNeedToRetrieveCanMessagesYoungerThan_ShouldSucceed()
     {
         const string query = @"
-select ID from #can.separatedvalues('./Data/5/5.csv', './Data/5/5.dbc')
+select ID from can.separatedvalues('./Data/5/5.csv', './Data/5/5.dbc')
 where FromTimestamp(Timestamp, 's') >= ToDateTimeOffset('2023-10-08T18:19:00','en-EN')
 ";
 
@@ -206,7 +206,7 @@ where FromTimestamp(Timestamp, 's') >= ToDateTimeOffset('2023-10-08T18:19:00','e
     public void WhenNeedToRetrieveCanMessagesOlderThan_ShouldSucceed()
     {
         const string query = @"
-select ID from #can.separatedvalues('./Data/5/5.csv', './Data/5/5.dbc')
+select ID from can.separatedvalues('./Data/5/5.csv', './Data/5/5.dbc')
 where FromTimestamp(Timestamp, 's') < ToDateTimeOffset('2023-10-08T18:19:00', 'en-EN')
 ";
 
@@ -227,7 +227,7 @@ where FromTimestamp(Timestamp, 's') < ToDateTimeOffset('2023-10-08T18:19:00', 'e
         const string query = @"
 select
     1
-from #can.separatedvalues('./Data/6/6.csv', './Data/6/6.dbc')";
+from can.separatedvalues('./Data/6/6.csv', './Data/6/6.dbc')";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -249,7 +249,7 @@ select
     Message,
     Engine.Is_Turned_On,
     Engine.Oil_Temperature
-from #can.separatedvalues('./Data/7/7.csv', './Data/7/7.dbc', 'hex', 'big')
+from can.separatedvalues('./Data/7/7.csv', './Data/7/7.dbc', 'hex', 'big')
 where Engine is not null";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -279,7 +279,7 @@ where Engine is not null";
         const string query = @"
 select
     Driving.Vehicle_Speed
-from #can.separatedvalues('./Data/8/8.csv', './Data/8/8.dbc', 'dec')";
+from can.separatedvalues('./Data/8/8.csv', './Data/8/8.dbc', 'dec')";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -297,7 +297,7 @@ from #can.separatedvalues('./Data/8/8.csv', './Data/8/8.dbc', 'dec')";
 select
     ID,
     Driving.Vehicle_Speed
-from #can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc', 'dec', 'big')";
+from can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc', 'dec', 'big')";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -315,8 +315,8 @@ from #can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc', 'dec', 'big')";
         const string query = @"
 select
     m.DecodeMessage('Is_Turned_On', s.Data)
-from #can.separatedvalues('./Data/10/10.csv', './Data/10/10.dbc', 'dec', 'little') s
-inner join #can.messages('./Data/10/10.dbc') m on s.ID = m.Id";
+from can.separatedvalues('./Data/10/10.csv', './Data/10/10.dbc', 'dec', 'little') s
+inner join can.messages('./Data/10/10.dbc') m on s.ID = m.Id";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -339,8 +339,8 @@ inner join #can.messages('./Data/10/10.dbc') m on s.ID = m.Id";
         const string query = @"
 select
     m.EncodeMessage('Vehicle_Speed', m.DecodeMessage('Vehicle_Speed', s.Data))
-from #can.separatedvalues('./Data/11/11.csv', './Data/11/11.dbc', 'dec', 'big') s
-inner join #can.messages('./Data/11/11.dbc') m on s.ID = m.Id";
+from can.separatedvalues('./Data/11/11.csv', './Data/11/11.dbc', 'dec', 'big') s
+inner join can.messages('./Data/11/11.dbc') m on s.ID = m.Id";
 
         var vm = CreateAndRunVirtualMachine(query);
 

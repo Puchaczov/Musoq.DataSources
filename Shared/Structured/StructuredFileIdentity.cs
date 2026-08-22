@@ -54,6 +54,45 @@ internal readonly record struct StructuredFileIdentity(
         return new StructuredFileIdentity(canonicalPath, length, lastWriteTicks, parserOptions, fingerprint);
     }
 
+    public bool MatchesCurrentMetadata(
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        cancellationToken.ThrowIfCancellationRequested();
+        var canonicalPath = Path.GetFullPath(path);
+        var pathComparer = OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+        if (!pathComparer.Equals(CanonicalPath, canonicalPath))
+            return false;
+
+        var current = new FileInfo(canonicalPath);
+        current.Refresh();
+        return current.Exists &&
+               current.Length == Length &&
+               current.LastWriteTimeUtc.Ticks == LastWriteTimeUtcTicks;
+    }
+
+    public static StructuredFileFingerprint ComputeFingerprint(ReadOnlySpan<byte> content)
+    {
+        Span<byte> digest = stackalloc byte[SHA256.HashSizeInBytes];
+        if (content.Length <= EdgeBytes * 2)
+        {
+            SHA256.HashData(content, digest);
+        }
+        else
+        {
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            hash.AppendData(content[..EdgeBytes]);
+            hash.AppendData(content[^EdgeBytes..]);
+            if (!hash.TryGetHashAndReset(digest, out var written) || written != digest.Length)
+                throw new CryptographicException("Could not compute the structured-source fingerprint.");
+        }
+
+        return FromDigest(digest);
+    }
+
     private static StructuredFileFingerprint CaptureFingerprint(
         string path,
         long length,
@@ -66,26 +105,25 @@ internal readonly record struct StructuredFileIdentity(
             FileShare.Read,
             EdgeBytes,
             FileOptions.SequentialScan);
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        var buffer = ArrayPool<byte>.Shared.Rent(EdgeBytes);
+        var fingerprintBytes = checked((int)Math.Min(length, EdgeBytes * 2L));
+        var buffer = ArrayPool<byte>.Shared.Rent(Math.Max(1, fingerprintBytes));
 
         try
         {
             if (length <= EdgeBytes * 2L)
             {
-                AppendBytes(stream, hash, buffer, length, cancellationToken);
+                ReadBytes(stream, buffer, 0, fingerprintBytes, cancellationToken);
             }
             else
             {
-                AppendBytes(stream, hash, buffer, EdgeBytes, cancellationToken);
+                ReadBytes(stream, buffer, 0, EdgeBytes, cancellationToken);
                 stream.Seek(-EdgeBytes, SeekOrigin.End);
-                AppendBytes(stream, hash, buffer, EdgeBytes, cancellationToken);
+                ReadBytes(stream, buffer, EdgeBytes, EdgeBytes, cancellationToken);
             }
 
-            var digest = hash.GetHashAndReset();
-            return new StructuredFileFingerprint(
-                BinaryPrimitives.ReadUInt64LittleEndian(digest.AsSpan(0, sizeof(ulong))),
-                BinaryPrimitives.ReadUInt64LittleEndian(digest.AsSpan(sizeof(ulong), sizeof(ulong))));
+            Span<byte> digest = stackalloc byte[SHA256.HashSizeInBytes];
+            SHA256.HashData(buffer.AsSpan(0, fingerprintBytes), digest);
+            return FromDigest(digest);
         }
         finally
         {
@@ -93,22 +131,28 @@ internal readonly record struct StructuredFileIdentity(
         }
     }
 
-    private static void AppendBytes(
+    private static StructuredFileFingerprint FromDigest(ReadOnlySpan<byte> digest)
+    {
+        return new StructuredFileFingerprint(
+            BinaryPrimitives.ReadUInt64LittleEndian(digest[..sizeof(ulong)]),
+            BinaryPrimitives.ReadUInt64LittleEndian(digest.Slice(sizeof(ulong), sizeof(ulong))));
+    }
+
+    private static void ReadBytes(
         Stream stream,
-        IncrementalHash hash,
         byte[] buffer,
-        long bytesToRead,
+        int offset,
+        int bytesToRead,
         CancellationToken cancellationToken)
     {
         var remaining = bytesToRead;
         while (remaining > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var requested = (int)Math.Min(buffer.Length, remaining);
-            var read = stream.Read(buffer, 0, requested);
+            var read = stream.Read(buffer, offset, remaining);
             if (read == 0)
                 throw new EndOfStreamException("Structured source ended while capturing its fingerprint.");
-            hash.AppendData(buffer, 0, read);
+            offset += read;
             remaining -= read;
         }
     }

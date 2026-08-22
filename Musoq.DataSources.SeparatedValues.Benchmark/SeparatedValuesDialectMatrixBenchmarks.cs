@@ -60,12 +60,12 @@ public class SeparatedValuesDialectMatrixBenchmarks
     [Benchmark]
     public long Scan()
     {
-        var source = new SeparatedValuesSchema().GetRowSource<object?[]>(
-            _tableName,
-            _context,
+        var separator = _tableName == "semicolon" ? ";" : ",";
+        var source = SeparatedValuesNativeBenchmarkSource.Create(
             _path,
+            separator,
             _hasHeader,
-            0);
+            _context);
         long rows = 0;
         foreach (var chunk in source.Chunks)
             rows += chunk.Count;

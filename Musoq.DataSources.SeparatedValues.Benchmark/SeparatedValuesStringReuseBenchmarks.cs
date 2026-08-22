@@ -62,17 +62,27 @@ public class SeparatedValuesStringReuseBenchmarks
     [Benchmark]
     public long Scan()
     {
-        var source = new SeparatedValuesSchema().GetRowSource<object?[]>(
-            "semicolon",
-            _context,
-            _path,
-            false,
-            0);
         long checksum = 0;
-        foreach (var chunk in source.Chunks)
-        foreach (var row in chunk)
-            foreach (var value in row)
-                checksum += value?.GetHashCode() ?? 0;
+        if (Cardinality == StringReuseCardinality.Low)
+        {
+            var source = SeparatedValuesNativeBenchmarkSource.Create<string, decimal>(
+                _path, ";", false, _context);
+            foreach (var chunk in source.Chunks)
+            foreach (var row in chunk)
+            {
+                checksum += row.Item0?.GetHashCode() ?? 0;
+                checksum += row.Item1.GetHashCode();
+            }
+        }
+        else
+        {
+            var source = SeparatedValuesNativeBenchmarkSource.Create<string>(
+                _path, ";", false, _context);
+            foreach (var chunk in source.Chunks)
+            foreach (var row in chunk)
+                checksum += row.Item0?.GetHashCode() ?? 0;
+        }
+
         return checksum;
     }
 

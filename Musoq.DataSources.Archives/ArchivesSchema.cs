@@ -25,7 +25,7 @@ public class ArchivesSchema : SchemaBase
     ///         <virtual-param>Path to the archive file</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#archives.file(string path)</from>
+    ///                 <from>archives.file(string path)</from>
     ///                 <description>Enumerate archive files like they were regular files</description>
     ///                 <columns>
     ///                     <column name="CompressionType" type="CompressionType">Compression type</column>

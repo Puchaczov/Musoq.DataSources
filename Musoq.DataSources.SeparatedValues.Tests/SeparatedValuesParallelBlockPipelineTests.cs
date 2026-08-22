@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Musoq.DataSources.Structured;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -47,7 +48,7 @@ public class SeparatedValuesParallelBlockPipelineTests
 
                 Assert.AreEqual(sequential.Length, parallel.Length, $"blockSize={blockSize}");
                 for (var row = 0; row < sequential.Length; row++)
-                    CollectionAssert.AreEqual(sequential[row], parallel[row], $"blockSize={blockSize}, row={row}");
+                    Assert.AreEqual(sequential[row], parallel[row], $"blockSize={blockSize}, row={row}");
                 Assert.IsTrue(analyzer.Calls > 1, $"blockSize={blockSize}");
             }
         });
@@ -100,7 +101,7 @@ public class SeparatedValuesParallelBlockPipelineTests
                 var pipeline = new SeparatedValuesScanPipeline(
                     new SeparatedValuesParallelBlockScanPipeline(blockSize: blockSize),
                     forceParallel: true);
-                var source = new SeparatedValuesFromFileRowsSource(
+                var source = SeparatedValuesNativeTestSource.Create<string, string>(
                     path,
                     ";",
                     true,
@@ -111,8 +112,126 @@ public class SeparatedValuesParallelBlockPipelineTests
 
                 Assert.AreEqual(sequential.Length, parallel.Length, $"blockSize={blockSize}");
                 for (var row = 0; row < sequential.Length; row++)
-                    CollectionAssert.AreEqual(sequential[row], parallel[row], $"blockSize={blockSize}, row={row}");
+                    Assert.AreEqual(sequential[row], parallel[row], $"blockSize={blockSize}, row={row}");
             }
+        });
+    }
+
+    [TestMethod]
+    public void ClassifiedUnquotedProjectedKernel_MatchesSequentialForAsciiDelimitersAndLineEndings()
+    {
+        foreach (var separator in new[] { ",", ";", "\t", "|" })
+        {
+            foreach (var ending in new[] { "\n", "\r\n" })
+            {
+                var contents = string.Join(
+                    ending,
+                    $"A{separator}B{separator}C",
+                    $"1{separator}alpha{separator}ten",
+                    $"2{separator}{separator}twenty",
+                    $"3{separator}omega",
+                    $"4{separator}café{separator}forty",
+                    string.Empty);
+                WithCsv(contents, path =>
+                {
+                    var plan = Plan(path, separator);
+                    var sequential = ReadRows(path, plan, "1", null, separator);
+
+                    foreach (var blockSize in new[] { 1, 17, 32 })
+                    {
+                        var analyzer = new ClassifyingAnalyzer();
+                        var scan = new SeparatedValuesScanPipeline(
+                            new SeparatedValuesParallelBlockScanPipeline(
+                                boundaryAnalyzer: analyzer,
+                                blockSize: blockSize),
+                            forceParallel: true);
+                        var parallel = ReadRows(path, plan, "4", scan, separator);
+
+                        Assert.AreEqual(sequential.Length, parallel.Length,
+                            $"separator={separator}, ending={Escape(ending)}, blockSize={blockSize}");
+                        for (var row = 0; row < sequential.Length; row++)
+                        {
+                            Assert.AreEqual(
+                                sequential[row],
+                                parallel[row],
+                                $"separator={separator}, ending={Escape(ending)}, blockSize={blockSize}, row={row}");
+                        }
+
+                        Assert.IsTrue(
+                            analyzer.CompactAnalyses > 0,
+                            $"separator={separator}, ending={Escape(ending)}, blockSize={blockSize}");
+                    }
+                });
+            }
+        }
+    }
+
+    [TestMethod]
+    public void ClassifiedUnquotedProjectedKernel_RejectsInvalidUtf8()
+    {
+        WithBytes([.. "A,B\n1,valid\n2,"u8, 0xff, (byte)'\n'], path =>
+        {
+            var plan = DeclaredProjectedPlan(path);
+            var analyzer = new ClassifyingAnalyzer();
+            var scan = new SeparatedValuesScanPipeline(
+                new SeparatedValuesParallelBlockScanPipeline(
+                    boundaryAnalyzer: analyzer,
+                    blockSize: 64),
+                forceParallel: true);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                allColumns:
+                [
+                    new SchemaColumn("A", 0, typeof(string)),
+                    new SchemaColumn("B", 1, typeof(string))
+                ],
+                sourceRuntimeSettings: new Dictionary<string, string>
+                {
+                    [SeparatedValuesParallelScanOptions.MaximumParallelismSettingName] = "4"
+                },
+                executionPlan: plan);
+            var source = SeparatedValuesNativeTestSource.Create<string, string>(
+                path, ",", true, 0, context, scan);
+
+            Assert.ThrowsExactly<InvalidDataException>(() => source.Chunks.ToArray());
+            Assert.IsTrue(analyzer.CompactAnalyses > 0);
+        });
+    }
+
+    [TestMethod]
+    public void OutputBudget_AllowsOneVeryLongProjectedRecordToRunExclusively()
+    {
+        var contents = "A,B\n1," + new string('x', 200_000) + "\n";
+        WithCsv(contents, path =>
+        {
+            var plan = DeclaredProjectedPlan(path);
+            var budget = new SeparatedValuesOutputMemoryBudget(64 * 1024, 1024);
+            var scan = new SeparatedValuesScanPipeline(
+                new SeparatedValuesParallelBlockScanPipeline(
+                    blockSize: 64 * 1024,
+                    outputMemoryBudget: budget),
+                forceParallel: true);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                allColumns:
+                [
+                    new SchemaColumn("A", 0, typeof(string)),
+                    new SchemaColumn("B", 1, typeof(string))
+                ],
+                sourceRuntimeSettings: new Dictionary<string, string>
+                {
+                    [SeparatedValuesParallelScanOptions.MaximumParallelismSettingName] = "4"
+                },
+                executionPlan: plan);
+            var rows = SeparatedValuesNativeTestSource.Create<string, string>(
+                    path, ",", true, 0, context, scan)
+                .Chunks
+                .SelectMany(chunk => chunk)
+                .ToArray();
+
+            Assert.AreEqual(1, rows.Length);
+            Assert.AreEqual(200_000, ((string)rows[0][1]!).Length);
+            Assert.AreEqual(0L, budget.CurrentReservedBytes);
+            Assert.AreEqual(1L, budget.OversizedReservationCount);
+            Assert.IsTrue(budget.LargestOversizedRequestBytes > budget.CapacityBytes);
         });
     }
 
@@ -138,6 +257,83 @@ public class SeparatedValuesParallelBlockPipelineTests
             Assert.AreEqual(100, rows.Length);
             Assert.IsTrue(factory.MaximumConcurrentReads > 1, $"max={factory.MaximumConcurrentReads}");
         });
+    }
+
+    [TestMethod]
+    public void BlockReader_IoDepthIsIndependentFromCpuWorkerCount()
+    {
+        var builder = new StringBuilder("A,B,C\n");
+        for (var row = 0; row < 200; row++)
+            builder.Append(row).Append(',').Append("value").Append(',').Append(row + 1).Append('\n');
+
+        WithCsv(builder.ToString(), path =>
+        {
+            var plan = Plan(path);
+            var factory = new TrackingBlockSourceFactory(File.ReadAllBytes(path));
+            var scan = new SeparatedValuesScanPipeline(
+                new SeparatedValuesParallelBlockScanPipeline(
+                    factory,
+                    blockSize: 32,
+                    ioDepth: 8),
+                forceParallel: true);
+
+            var rows = ReadRows(path, plan, "2", scan);
+
+            Assert.AreEqual(200, rows.Length);
+            Assert.IsTrue(factory.MaximumConcurrentReads > 2, $"max={factory.MaximumConcurrentReads}");
+        });
+    }
+
+    [TestMethod]
+    public async Task BlockReader_DrainsFinalizedWorkBeforeAwaitingBackpressuredRead()
+    {
+        var builder = new StringBuilder("A,B,C\n");
+        for (var row = 0; row < 200; row++)
+            builder.Append(row).Append(',').Append("value").Append(',').Append(row + 1).Append('\n');
+
+        var path = Path.Combine(Path.GetTempPath(), $"musoq-csv-blocks-{Guid.NewGuid():N}.csv");
+        File.WriteAllText(path, builder.ToString(), new UTF8Encoding(false, true));
+        var releaseBlockedRead = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            var plan = Plan(path);
+            var factory = new TrackingBlockSourceFactory(
+                File.ReadAllBytes(path),
+                releaseBlockedRead.Task,
+                blockedSequence: 4);
+            var budget = new SignalingOutputMemoryBudget(releaseBlockedRead);
+            var scan = new SeparatedValuesScanPipeline(
+                new SeparatedValuesParallelBlockScanPipeline(
+                    factory,
+                    blockSize: 32,
+                    outputMemoryBudget: budget,
+                    ioDepth: 8,
+                    yieldBeforeCpuWork: false),
+                forceParallel: true);
+
+            var readTask = Task.Run(() => ReadRows(path, plan, "2", scan));
+            TestRow2<long?, string>[] rows;
+            try
+            {
+                rows = await readTask.WaitAsync(TimeSpan.FromSeconds(10));
+            }
+            catch (TimeoutException)
+            {
+                releaseBlockedRead.TrySetResult(true);
+                await readTask.WaitAsync(TimeSpan.FromSeconds(10));
+                Assert.Fail("The producer waited for a backpressured read before draining finalized work.");
+                return;
+            }
+
+            Assert.AreEqual(200, rows.Length);
+            Assert.IsTrue(factory.MaximumConcurrentReads > 1, $"max={factory.MaximumConcurrentReads}");
+        }
+        finally
+        {
+            releaseBlockedRead.TrySetResult(true);
+            File.Delete(path);
+        }
     }
 
     [TestMethod]
@@ -183,9 +379,18 @@ public class SeparatedValuesParallelBlockPipelineTests
                         new SeparatedValuesParallelBlockScanPipeline(blockSize: blockSize),
                         forceParallel: true);
 
-                    Assert.ThrowsExactly<InvalidDataException>(
-                        () => ReadZeroColumnCount(path, plan, scan),
-                        $"blockSize={blockSize}");
+                    if (contents.Contains("3,4,5", StringComparison.Ordinal))
+                    {
+                        Assert.ThrowsExactly<StructuredSchemaDriftException>(
+                            () => ReadZeroColumnCount(path, plan, scan),
+                            $"blockSize={blockSize}");
+                    }
+                    else
+                    {
+                        Assert.ThrowsExactly<InvalidDataException>(
+                            () => ReadZeroColumnCount(path, plan, scan),
+                            $"blockSize={blockSize}");
+                    }
                 }
             });
         }
@@ -225,7 +430,7 @@ public class SeparatedValuesParallelBlockPipelineTests
                 new SeparatedValuesParallelBlockScanPipeline(blockSize: blockSize),
                 forceParallel: true);
 
-            var exception = Assert.ThrowsExactly<InvalidDataException>(() =>
+            var exception = Assert.ThrowsExactly<StructuredSchemaDriftException>(() =>
                 ReadZeroColumnCount(path, plan, scan));
 
             StringAssert.Contains(exception.Message, "row 2");
@@ -233,6 +438,11 @@ public class SeparatedValuesParallelBlockPipelineTests
     }
 
     private static SourceExecutionPlan Plan(string path)
+    {
+        return Plan(path, ",");
+    }
+
+    private static SourceExecutionPlan Plan(string path, string separator)
     {
         var request = new SourcePlanRequest
         {
@@ -247,8 +457,53 @@ public class SeparatedValuesParallelBlockPipelineTests
             Skip = null,
             Take = null
         };
-        return new SeparatedValuesSchema()
-            .TryPlanSource("comma", request, path, true, 0)
+        var schema = new SeparatedValuesSchema();
+        return separator switch
+        {
+            "," => schema.TryPlanSource("comma", request, path, true, 0).ExecutionPlan,
+            ";" => schema.TryPlanSource("semicolon", request, path, true, 0).ExecutionPlan,
+            "\t" => schema.TryPlanSource("tab", request, path, true, 0).ExecutionPlan,
+            _ => schema.TryPlanSource("delimited", request, path, separator, true, 0).ExecutionPlan
+        };
+    }
+
+    private static SourceExecutionPlan DeclaredProjectedPlan(string path)
+    {
+        var settings = new Dictionary<string, string>
+        {
+            [SeparatedValuesInferenceOptions.MaximumTimeMillisecondsSettingName] = "1000"
+        };
+        var schema = new SeparatedValuesSchema();
+        var metadata = new SourceMetadataContext(
+            "declared-projected-test",
+            CancellationToken.None,
+            [
+                new SchemaColumn("A", 0, typeof(string)),
+                new SchemaColumn("B", 1, typeof(string))
+            ],
+            settings,
+            new Mock<ILogger>().Object);
+        _ = schema.DescribeSource(
+            "comma",
+            new SourceDescribeContext(SourceIdentity.Empty, metadata),
+            path,
+            true,
+            0);
+        return schema.TryPlanSource(
+                "comma",
+                new SourcePlanRequest
+                {
+                    Identity = SourceIdentity.Empty,
+                    RequiredColumns = [new SourceColumnRef("A"), new SourceColumnRef("B")],
+                    SourceRuntimeSettings = settings,
+                    Predicate = null,
+                    OrderBy = [],
+                    Skip = null,
+                    Take = null
+                },
+                path,
+                true,
+                0)
             .ExecutionPlan;
     }
 
@@ -295,7 +550,7 @@ public class SeparatedValuesParallelBlockPipelineTests
     private static long ReadZeroColumnCount(
         string path,
         SourceExecutionPlan plan,
-        ISeparatedValuesScanPipeline pipeline)
+        ISeparatedValuesQueryScanPipeline pipeline)
     {
         var context = RuntimeV2TestContexts.CreateExecutionContext(
             allColumns: [],
@@ -304,15 +559,16 @@ public class SeparatedValuesParallelBlockPipelineTests
                 [SeparatedValuesParallelScanOptions.MaximumParallelismSettingName] = "4"
             },
             executionPlan: plan);
-        var source = new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context, pipeline);
+        var source = SeparatedValuesNativeTestSource.Create(path, ",", true, 0, context, pipeline);
         return source.Chunks.Sum(chunk => (long)chunk.Count);
     }
 
-    private static object?[][] ReadRows(
+    private static TestRow2<long?, string>[] ReadRows(
         string path,
         SourceExecutionPlan plan,
         string parallelism,
-        ISeparatedValuesScanPipeline? pipeline)
+        ISeparatedValuesQueryScanPipeline? pipeline,
+        string separator = ",")
     {
         var context = RuntimeV2TestContexts.CreateExecutionContext(
             allColumns:
@@ -325,13 +581,18 @@ public class SeparatedValuesParallelBlockPipelineTests
                 [SeparatedValuesParallelScanOptions.MaximumParallelismSettingName] = parallelism
             },
             executionPlan: plan);
-        var source = pipeline is null
-            ? new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context)
-            : new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context, pipeline);
+        var source = SeparatedValuesNativeTestSource.Create<long?, string>(
+            path, separator, true, 0, context, pipeline);
         return source.Chunks.SelectMany(chunk => chunk).ToArray();
     }
 
-    private static object?[][] ReadConfiguredRows(
+    private static string Escape(string value)
+    {
+        return value.Replace("\r", "\\r", StringComparison.Ordinal)
+            .Replace("\n", "\\n", StringComparison.Ordinal);
+    }
+
+    private static TestRow2<string, string>[] ReadConfiguredRows(
         string path,
         SourceExecutionPlan plan,
         IReadOnlyDictionary<string, string> settings,
@@ -349,7 +610,7 @@ public class SeparatedValuesParallelBlockPipelineTests
             ],
             sourceRuntimeSettings: executionSettings,
             executionPlan: plan);
-        var source = new SeparatedValuesFromFileRowsSource(
+        var source = SeparatedValuesNativeTestSource.Create<string, string>(
             path,
             ";",
             true,
@@ -398,10 +659,65 @@ public class SeparatedValuesParallelBlockPipelineTests
             return _inner.Analyze(block);
         }
 
+        public SeparatedValuesBlockAnalysis Analyze(
+            SeparatedValuesByteBlock block,
+            SeparatedValuesDialect dialect)
+        {
+            Interlocked.Increment(ref _calls);
+            return _inner.Analyze(block, dialect);
+        }
+
+        public SeparatedValuesBlockAnalysis AnalyzeFraming(
+            SeparatedValuesByteBlock block,
+            SeparatedValuesFramingAnalysisOptions options,
+            SeparatedValuesDialect dialect)
+        {
+            Interlocked.Increment(ref _calls);
+            return _inner.AnalyzeFraming(block, options, dialect);
+        }
+
         private int _calls;
     }
 
-    private sealed class TrackingBlockSourceFactory(byte[] bytes) : ISeparatedValuesByteBlockSourceFactory
+    private sealed class ClassifyingAnalyzer : ISeparatedValuesRecordBoundaryAnalyzer
+    {
+        private readonly QuoteParitySeparatedValuesRecordBoundaryAnalyzer _inner = new();
+        private int _compactAnalyses;
+
+        public int CompactAnalyses => Volatile.Read(ref _compactAnalyses);
+
+        public SeparatedValuesBlockAnalysis Analyze(SeparatedValuesByteBlock block)
+        {
+            return Classify(_inner.Analyze(block));
+        }
+
+        public SeparatedValuesBlockAnalysis Analyze(
+            SeparatedValuesByteBlock block,
+            SeparatedValuesDialect dialect)
+        {
+            return Classify(_inner.Analyze(block, dialect));
+        }
+
+        public SeparatedValuesBlockAnalysis AnalyzeFraming(
+            SeparatedValuesByteBlock block,
+            SeparatedValuesFramingAnalysisOptions options,
+            SeparatedValuesDialect dialect)
+        {
+            return Classify(_inner.AnalyzeFraming(block, options, dialect));
+        }
+
+        private SeparatedValuesBlockAnalysis Classify(SeparatedValuesBlockAnalysis analysis)
+        {
+            if (analysis.IsCompact)
+                Interlocked.Increment(ref _compactAnalyses);
+            return analysis;
+        }
+    }
+
+    private sealed class TrackingBlockSourceFactory(
+        byte[] bytes,
+        Task? blockedRead = null,
+        long blockedSequence = -1) : ISeparatedValuesByteBlockSourceFactory
     {
         private int _activeReads;
         private int _maximumConcurrentReads;
@@ -411,12 +727,14 @@ public class SeparatedValuesParallelBlockPipelineTests
         public ISeparatedValuesByteBlockSource Open(string path, long expectedLength)
         {
             Assert.AreEqual(bytes.LongLength, expectedLength);
-            return new TrackingBlockSource(this, bytes);
+            return new TrackingBlockSource(this, bytes, blockedRead, blockedSequence);
         }
 
         private sealed class TrackingBlockSource(
             TrackingBlockSourceFactory owner,
-            byte[] bytes) : ISeparatedValuesByteBlockSource
+            byte[] bytes,
+            Task? blockedRead,
+            long blockedSequence) : ISeparatedValuesByteBlockSource
         {
             public async ValueTask<SeparatedValuesByteBlock> ReadAsync(
                 long sequence,
@@ -429,6 +747,8 @@ public class SeparatedValuesParallelBlockPipelineTests
                 var buffer = ArrayPool<byte>.Shared.Rent(count);
                 try
                 {
+                    if (sequence == blockedSequence && blockedRead is not null)
+                        await blockedRead.WaitAsync(cancellationToken);
                     await Task.Delay(5, cancellationToken);
                     bytes.AsSpan((int)offset, count).CopyTo(buffer);
                     return new SeparatedValuesByteBlock(sequence, offset, buffer, count);
@@ -457,6 +777,42 @@ public class SeparatedValuesParallelBlockPipelineTests
                         Interlocked.CompareExchange(ref owner._maximumConcurrentReads, active, current) == current)
                         return;
                 }
+            }
+        }
+    }
+
+    private sealed class SignalingOutputMemoryBudget(TaskCompletionSource<bool> signal)
+        : ISeparatedValuesOutputMemoryBudget
+    {
+        public int CapacityBytes => int.MaxValue;
+
+        public long CurrentReservedBytes => 0;
+
+        public long HighWaterBytes => 0;
+
+        public long OversizedReservationCount => 0;
+
+        public long LargestOversizedRequestBytes => 0;
+
+        public ValueTask<ISeparatedValuesOutputMemoryLease> AcquireAsync(
+            long estimatedBytes,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            signal.TrySetResult(true);
+            return ValueTask.FromResult<ISeparatedValuesOutputMemoryLease>(new NoopOutputMemoryLease(estimatedBytes));
+        }
+
+        private sealed class NoopOutputMemoryLease(long requestedBytes) : ISeparatedValuesOutputMemoryLease
+        {
+            public long RequestedBytes { get; } = requestedBytes;
+
+            public long ReservedBytes => RequestedBytes;
+
+            public bool IsOversized => false;
+
+            public void Dispose()
+            {
             }
         }
     }

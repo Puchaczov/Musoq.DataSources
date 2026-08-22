@@ -49,16 +49,15 @@ public class SeparatedValuesParallelScanBenchmarks
     [Benchmark]
     public long Scan()
     {
-        var source = new SeparatedValuesSchema().GetRowSource<object?[]>(
-            "semicolon",
-            _context,
+        var source = SeparatedValuesNativeBenchmarkSource.Create<decimal>(
             _path,
+            ";",
             false,
-            0);
+            _context);
         long rows = 0;
         foreach (var chunk in source.Chunks)
         foreach (var row in chunk)
-            rows += row.Length;
+            rows += 1;
         return rows;
     }
 }

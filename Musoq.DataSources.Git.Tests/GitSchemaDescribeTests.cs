@@ -42,7 +42,7 @@ public class GitSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #git";
+        var query = "desc git";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -75,7 +75,7 @@ public class GitSchemaDescribeTests
     [TestMethod]
     public void DescRepository_ShouldReturnMethodSignature()
     {
-        var query = "desc #git.repository";
+        var query = "desc git.repository";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -98,7 +98,7 @@ public class GitSchemaDescribeTests
 
         try
         {
-            var query = $"desc #git.repository('{repositoryPath}')";
+            var query = $"desc git.repository('{repositoryPath}')";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -134,7 +134,7 @@ public class GitSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #git.unknownmethod";
+        var query = "desc git.unknownmethod";
 
         try
         {
@@ -158,7 +158,7 @@ public class GitSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #git";
+        var query = "desc git";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -175,11 +175,11 @@ public class GitSchemaDescribeTests
 
         try
         {
-            var queryNoArgs = "desc #git.repository";
+            var queryNoArgs = "desc git.repository";
             var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
             var tableNoArgs = vmNoArgs.Run();
 
-            var queryWithArgs = $"desc #git.repository('{repositoryPath}')";
+            var queryWithArgs = $"desc git.repository('{repositoryPath}')";
             var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
             var tableWithArgs = vmWithArgs.Run();
 

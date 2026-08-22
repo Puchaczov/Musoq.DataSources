@@ -121,7 +121,7 @@ public class SeparatedValuesBoundedInferenceTests
                 CancellationToken.None,
                 [new SchemaColumn("Value", 0, typeof(long?))],
                 executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context);
+            var source = SeparatedValuesNativeTestSource.Create<long?>(path, ",", true, 0, context);
 
             var exception = Assert.ThrowsExactly<FormatException>(() =>
                 source.Chunks.SelectMany(chunk => chunk).ToArray());
@@ -157,7 +157,7 @@ public class SeparatedValuesBoundedInferenceTests
                 executionPlan: plan);
 
             var exception = Assert.ThrowsExactly<StructuredSchemaDriftException>(() =>
-                new SeparatedValuesFromFileRowsSource(path, ",", false, 0, context)
+                SeparatedValuesNativeTestSource.Create<long?>(path, ",", false, 0, context)
                     .Chunks
                     .SelectMany(chunk => chunk)
                     .ToArray());
@@ -197,13 +197,13 @@ public class SeparatedValuesBoundedInferenceTests
                 [new SchemaColumn("Value", 0, typeof(long))],
                 executionPlan: plan);
 
-            var rows = new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context)
+            var rows = SeparatedValuesNativeTestSource.Create<long>(path, ",", true, 0, context)
                 .Chunks
                 .SelectMany(chunk => chunk)
                 .ToArray();
 
             Assert.AreEqual(1, rows.Length);
-            Assert.AreEqual(1L, rows[0][0]);
+            Assert.AreEqual(1L, rows[0].Item0);
         });
     }
 
@@ -237,13 +237,13 @@ public class SeparatedValuesBoundedInferenceTests
                 [new SchemaColumn("Value", 0, typeof(string))],
                 executionPlan: plan);
 
-            var rows = new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context)
+            var rows = SeparatedValuesNativeTestSource.Create<string>(path, ",", true, 0, context)
                 .Chunks
                 .SelectMany(chunk => chunk)
                 .ToArray();
 
             Assert.AreEqual(1, rows.Length);
-            Assert.AreEqual("first", rows[0][0]);
+            Assert.AreEqual("first", rows[0].Item0);
         });
     }
 

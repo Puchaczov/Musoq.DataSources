@@ -44,7 +44,9 @@ internal sealed class SeparatedValuesTable : ISchemaTable
             _columns[binding.OutputOrdinal] = new SchemaColumn(
                 binding.Name,
                 binding.OutputOrdinal,
-                type);
+                type,
+                explicitColumn?.IntendedTypeName,
+                explicitColumn?.ReadModifiers);
         }
     }
 

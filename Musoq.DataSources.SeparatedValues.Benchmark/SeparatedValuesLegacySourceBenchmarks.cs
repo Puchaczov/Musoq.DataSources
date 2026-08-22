@@ -123,12 +123,12 @@ public class SeparatedValuesLegacySourceBenchmarks
     [Benchmark]
     public long LegacyDataSource()
     {
-        var source = new SeparatedValuesSchema().GetRowSource<object?[]>(
-            "semicolon",
-            _executionContext,
+        var source = new FrozenByteNativeLegacySchema().GetRowSource(
             _path,
+            ";",
             false,
-            0);
+            0,
+            _executionContext);
         long checksum = 0;
 
         foreach (var chunk in source.Chunks)
@@ -145,12 +145,12 @@ public class SeparatedValuesLegacySourceBenchmarks
     [Benchmark]
     public long ZeroColumnDataSource()
     {
-        var source = new SeparatedValuesSchema().GetRowSource<object?[]>(
-            "semicolon",
-            _zeroColumnContext,
+        var source = new FrozenByteNativeLegacySchema().GetRowSource(
             _path,
+            ";",
             false,
-            0);
+            0,
+            _zeroColumnContext);
         long checksum = 0;
 
         foreach (var chunk in source.Chunks)
@@ -163,12 +163,12 @@ public class SeparatedValuesLegacySourceBenchmarks
     [Benchmark]
     public long OneColumnDataSource()
     {
-        var source = new SeparatedValuesSchema().GetRowSource<object?[]>(
-            "semicolon",
-            _oneColumnContext,
+        var source = new FrozenByteNativeLegacySchema().GetRowSource(
             _path,
+            ";",
             false,
-            0);
+            0,
+            _oneColumnContext);
         long checksum = 0;
 
         foreach (var chunk in source.Chunks)
@@ -181,12 +181,12 @@ public class SeparatedValuesLegacySourceBenchmarks
     [Benchmark]
     public long RejectedPredicateDataSource()
     {
-        var source = new SeparatedValuesSchema().GetRowSource<object?[]>(
-            "semicolon",
-            _rejectedPredicateContext,
+        var source = new FrozenByteNativeLegacySchema().GetRowSource(
             _path,
+            ";",
             false,
-            0);
+            0,
+            _rejectedPredicateContext);
         long checksum = 0;
 
         foreach (var chunk in source.Chunks)
@@ -200,7 +200,7 @@ public class SeparatedValuesLegacySourceBenchmarks
     {
         long checksum = 0;
 
-        foreach (var row in FrozenLegacySeparatedValuesAdapter.Read(_path, ";"))
+        foreach (var row in FrozenCsvHelperSeparatedValuesAdapter.Read(_path, ";"))
         {
             checksum += row.Length;
             checksum += row[0]?.GetHashCode() ?? 0;

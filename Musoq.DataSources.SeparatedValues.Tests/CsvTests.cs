@@ -11,6 +11,8 @@ using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Evaluator.Tables;
 using Musoq.Schema;
+using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues.Tests;
 
@@ -32,7 +34,7 @@ public class CsvTests
     public void SimpleSelectWithSkipLinesTest()
     {
         var query =
-            "SELECT Name FROM #separatedvalues.comma('./Files/BankingTransactionsWithSkippedLines.csv', true, 2)";
+            "SELECT Name FROM separatedvalues.comma('./Files/BankingTransactionsWithSkippedLines.csv', true, 2)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -61,7 +63,7 @@ public class CsvTests
                     "table CsvFile {" +
                     "   Name: string" +
                     "};" +
-                    "couple #separatedvalues.comma with table CsvFile as SourceCsvFile;" +
+                    "couple separatedvalues.comma with table CsvFile as SourceCsvFile;" +
                     "select Name from SourceCsvFile('./Files/BankingTransactionsWithSkippedLines.csv', true, 2);";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -92,7 +94,7 @@ public class CsvTests
                     "   Id: int," +
                     "   Name: string" +
                     "};" +
-                    "couple #separatedvalues.comma with table Persons as SourceOfPersons;" +
+                    "couple separatedvalues.comma with table Persons as SourceOfPersons;" +
                     "select Id, Name from SourceOfPersons('./Files/Persons.csv', true, 0)";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -140,7 +142,7 @@ public class CsvTests
                     "   Category: string," +
                     "   Money: decimal" +
                     "};" +
-                    "couple #separatedvalues.comma with table BankingTransactions as SourceOfBankingTransactions;" +
+                    "couple separatedvalues.comma with table BankingTransactions as SourceOfBankingTransactions;" +
                     "select Category, Money from SourceOfBankingTransactions('./Files/BankingTransactionsNullValues.csv', true, 0) where (Category is null) or (Money is null)";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -176,24 +178,26 @@ public class CsvTests
     }
 
     [TestMethod]
-    public void CsvSource_FromTableRows_ShouldBeUnsupported()
+    public void CsvSource_FromTableRows_IsRejectedByMandatoryQueryRowGuard()
     {
         var schema = new SeparatedValuesSchema();
         var context = RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None);
 
-        Assert.ThrowsException<ArgumentException>(() =>
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
             schema.GetRowSource<object[]>(
                 "comma",
                 context,
                 new TestReadOnlyTable([["./Files/BankingTransactionsWithSkippedLines.csv", true, 2]]),
                 true,
                 0));
+
+        StringAssert.Contains(exception.Message, "unsupported legacy row transfer");
     }
 
     [TestMethod]
     public void SimpleSelectTest()
     {
-        var query = "SELECT Name FROM #separatedvalues.comma('./Files/BankingTransactions.csv', true, 0)";
+        var query = "SELECT Name FROM separatedvalues.comma('./Files/BankingTransactions.csv', true, 0)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -218,7 +222,7 @@ public class CsvTests
     [TestMethod]
     public void SimpleSelectNoHeaderTest()
     {
-        var query = "SELECT Column3 FROM #separatedvalues.comma('./Files/BankingTransactionsNoHeader.csv', false, 0)";
+        var query = "SELECT Column3 FROM separatedvalues.comma('./Files/BankingTransactionsNoHeader.csv', false, 0)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -244,7 +248,7 @@ public class CsvTests
     public void SimpleCountTest()
     {
         var query =
-            "SELECT Count(OperationDate) FROM #separatedvalues.comma('./Files/BankingTransactions.csv', true, 0)";
+            "SELECT Count(OperationDate) FROM separatedvalues.comma('./Files/BankingTransactions.csv', true, 0)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -269,7 +273,7 @@ select
     SumIncome(ToDecimal(Money)), 
     SumOutcome(ToDecimal(Money)), 
     SumIncome(ToDecimal(Money)) - Abs(SumOutcome(ToDecimal(Money))) 
-from #separatedvalues.comma('./Files/BankingTransactions.csv', true, 0) 
+from separatedvalues.comma('./Files/BankingTransactions.csv', true, 0)
 group by ExtractFromDate(OperationDate, 'month')";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -320,8 +324,8 @@ select
     persons.Surname, 
     grades.Subject, 
     grades.ToDecimal(grades.Grade) 
-from #separatedvalues.comma('./Files/Persons.csv', true, 0) persons 
-inner join #separatedvalues.comma('./Files/Gradebook.csv', true, 0) grades on persons.Id = grades.PersonId";
+from separatedvalues.comma('./Files/Persons.csv', true, 0) persons
+inner join separatedvalues.comma('./Files/Gradebook.csv', true, 0) grades on persons.Id = grades.PersonId";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -449,7 +453,7 @@ with BasicIndicators as (
 		SumOutcome(ToDecimal(Amount), 1) as 'MonthlyOutcome',
 		SumIncome(ToDecimal(Amount), 1) + SumOutcome(ToDecimal(Amount), 1) as 'MoneysLeft',
 		SumIncome(ToDecimal(Amount), 2) + SumOutcome(ToDecimal(Amount), 2) as 'OvMoneysLeft'
-	from #separatedvalues.comma('./Files/FakeBankingTransactions.csv', true, 0) as csv
+	from separatedvalues.comma('./Files/FakeBankingTransactions.csv', true, 0) as csv
 	group by 
 		ExtractFromDate(DateTime, 'month'), 
 		ClusteredByContainsKey('./Files/Categories.txt', ChargeName)
@@ -537,7 +541,7 @@ with BasicIndicators as (
 		SumOutcome(ToDecimal(Amount), 1) as 'MonthlyOutcome',
 		SumIncome(ToDecimal(Amount), 1) + SumOutcome(ToDecimal(Amount), 1) as 'MoneysLeft',
 		SumIncome(ToDecimal(Amount), 2) + SumOutcome(ToDecimal(Amount), 2) as 'OvMoneysLeft'
-	from #separatedvalues.comma('./Files/FakeBankingTransactions.csv', true, 0) as csv
+	from separatedvalues.comma('./Files/FakeBankingTransactions.csv', true, 0) as csv
 	group by 
 		ExtractFromDate(DateTime, 'month'), 
 		ClusteredByContainsKey('./Files/Categories.txt', ChargeName)
@@ -652,13 +656,31 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
     {
         var mockLogger = new Mock<ILogger>();
         using var tokenSource = new CancellationTokenSource();
+        const string path = "./Files/BankingTransactionsWithSkippedLines.csv";
+        var request = new SourcePlanRequest
+        {
+            Identity = SourceIdentity.Empty,
+            RequiredColumns = [new SourceColumnRef("Name")],
+            SourceRuntimeSettings = new Dictionary<string, string>(),
+            Predicate = null,
+            OrderBy = [],
+            Skip = null,
+            Take = null
+        };
+        var plan = new SeparatedValuesSchema()
+            .TryPlanSource("comma", request, path, true, 2)
+            .ExecutionPlan;
         tokenSource.Cancel();
-        var source = new SeparatedValuesFromFileRowsSource(
-            "./Files/BankingTransactionsWithSkippedLines.csv",
+        var source = SeparatedValuesNativeTestSource.Create<string>(
+            path,
             ",",
             true,
             2,
-            RuntimeV2TestContexts.CreateExecutionContext(tokenSource.Token, logger: mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(
+                tokenSource.Token,
+                [new SchemaColumn("Name", 0, typeof(string))],
+                logger: mockLogger.Object,
+                executionPlan: plan));
 
         var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
@@ -666,61 +688,9 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
     }
 
     [TestMethod]
-    public void CsvSource_AllTypesSupportedTest()
-    {
-        var mockLogger = new Mock<ILogger>();
-        using var tokenSource = new CancellationTokenSource();
-        var columns = new List<ISchemaColumn>
-        {
-            new Column("boolColumn", typeof(bool?), 0),
-            new Column("byteColumn", typeof(byte?), 1),
-            new Column("charColumn", typeof(char?), 2),
-            new Column("dateTimeColumn", typeof(DateTime?), 3),
-            new Column("decimalColumn", typeof(decimal?), 4),
-            new Column("doubleColumn", typeof(double?), 5),
-            new Column("shortColumn", typeof(short?), 6),
-            new Column("intColumn", typeof(int?), 7),
-            new Column("longColumn", typeof(long?), 8),
-            new Column("sbyteColumn", typeof(sbyte?), 9),
-            new Column("singleColumn", typeof(float?), 10),
-            new Column("stringColumn", typeof(string), 11),
-            new Column("ushortColumn", typeof(ushort?), 12),
-            new Column("uintColumn", typeof(uint?), 13),
-            new Column("ulongColumn", typeof(ulong?), 14)
-        };
-
-        var context = RuntimeV2TestContexts.CreateExecutionContext(
-            tokenSource.Token,
-            columns,
-            logger: mockLogger.Object);
-
-        var source = new SeparatedValuesFromFileRowsSource("./Files/AllTypes.csv", ",", true, 0, context);
-
-        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
-
-        var row = rows.ElementAt(0);
-
-        Assert.AreEqual(true, row[0]);
-        Assert.AreEqual((byte)48, row[1]);
-        Assert.AreEqual('c', row[2]);
-        Assert.AreEqual(DateTime.Parse("12/12/2012"), row[3]);
-        Assert.AreEqual(10.23m, row[4]);
-        Assert.AreEqual(13.111d, row[5]);
-        Assert.AreEqual((short)-15, row[6]);
-        Assert.AreEqual(2147483647, row[7]);
-        Assert.AreEqual(9223372036854775807, row[8]);
-        Assert.AreEqual((sbyte)-3, row[9]);
-        Assert.AreEqual(1.11f, row[10]);
-        Assert.AreEqual("some text", row[11]);
-        Assert.AreEqual((ushort)256, row[12]);
-        Assert.AreEqual((uint)512, row[13]);
-        Assert.AreEqual((ulong)1024, row[14]);
-    }
-
-    [TestMethod]
     public void DescSchemaTest()
     {
-        var query = "desc #separatedvalues";
+        var query = "desc separatedvalues";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -732,25 +702,13 @@ from BasicIndicators inner join AggregatedCategories on BasicIndicators.Category
     [TestMethod]
     public void DescMethodTest()
     {
-        var query = "desc #separatedvalues.comma";
+        var query = "desc separatedvalues.comma";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
         Assert.AreEqual(4, table.Columns.Count());
         Assert.AreEqual(1, table.Count);
-    }
-
-    [TestMethod]
-    public void CsvSource_FullLoadTest()
-    {
-        var mockLogger = new Mock<ILogger>();
-        var source = new SeparatedValuesFromFileRowsSource("./Files/BankingTransactionsWithSkippedLines.csv", ",", true,
-            2, RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None, logger: mockLogger.Object));
-
-        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
-
-        Assert.AreEqual(11, fired);
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

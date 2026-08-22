@@ -25,7 +25,7 @@ public class OpenAiSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="OPENAI_API_KEY" isRequired="true">Open AI api key</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #openai.gpt()
+    ///                     openai.gpt()
     ///                 </from>
     ///                 <description>Gives the access to OpenAI api</description>
     ///                 <columns isDynamic="true"></columns>
@@ -40,7 +40,7 @@ public class OpenAiSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="OPENAI_API_KEY" isRequired="true">Open AI api key</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #openai.gpt(string model)
+    ///                     openai.gpt(string model)
     ///                 </from>
     ///                 <description>Gives the access to OpenAI api</description>
     ///                 <columns isDynamic="true"></columns>
@@ -59,7 +59,7 @@ public class OpenAiSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="OPENAI_API_KEY" isRequired="true">Open AI api key</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #openai.gpt(string model, int maxTokens)
+    ///                     openai.gpt(string model, int maxTokens)
     ///                 </from>
     ///                 <description>Gives the access to OpenAI api</description>
     ///                 <columns isDynamic="true"></columns>
@@ -79,7 +79,7 @@ public class OpenAiSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="OPENAI_API_KEY" isRequired="true">Open AI api key</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #openai.gpt(string model, int maxTokens, decimal temperature)
+    ///                     openai.gpt(string model, int maxTokens, decimal temperature)
     ///                 </from>
     ///                 <description>Gives the access to OpenAI api</description>
     ///                 <columns isDynamic="true"></columns>
@@ -100,7 +100,7 @@ public class OpenAiSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="OPENAI_API_KEY" isRequired="true">Open AI api key</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #openai.gpt(string model, int maxTokens, decimal temperature, decimal frequencyPenalty)
+    ///                     openai.gpt(string model, int maxTokens, decimal temperature, decimal frequencyPenalty)
     ///                 </from>
     ///                 <description>Gives the access to OpenAI api</description>
     ///                 <columns isDynamic="true"></columns>
@@ -122,7 +122,7 @@ public class OpenAiSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="OPENAI_API_KEY" isRequired="true">Open AI api key</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #openai.gpt(string model, int maxTokens, decimal temperature, decimal frequencyPenalty, decimal
+    ///                     openai.gpt(string model, int maxTokens, decimal temperature, decimal frequencyPenalty, decimal
     ///                     presencePenalty)
     ///                 </from>
     ///                 <description>Gives the access to OpenAI api</description>

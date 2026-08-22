@@ -4,7 +4,7 @@ This document contains a curated set of representative SQL queries demonstrating
 
 ---
 
-## 📁 File System Queries (`#os`)
+## 📁 File System Queries (`os`)
 
 ### List Files with Size Information
 Find all files in a directory with their sizes formatted in human-readable format.
@@ -13,7 +13,7 @@ Find all files in a directory with their sizes formatted in human-readable forma
 select 
     Name, 
     ToDecimal(Length) / 1024 as SizeInKB
-from #os.files('./directory', true)
+from os.files('./directory', true)
 where Extension = '.txt'
 ```
 
@@ -24,7 +24,7 @@ Compute cryptographic hashes for file integrity verification.
 select 
     Name, 
     Sha256File() as Hash
-from #os.files('./directory', false)
+from os.files('./directory', false)
 where Extension = '.dll'
 ```
 
@@ -36,7 +36,7 @@ select
     SourceFileRelative,
     DestinationFileRelative,
     State
-from #os.dirscompare('./source', './destination')
+from os.dirscompare('./source', './destination')
 where State <> 'TheSame'
 ```
 
@@ -49,7 +49,7 @@ select
     EnglishName,
     DecimalSeparator,
     ShortDatePattern
-from #os.cultures()
+from os.cultures()
 where Name like 'pl%'
 ```
 
@@ -61,7 +61,7 @@ select
     WebName,
     CodePage,
     EncodingName
-from #os.encodings()
+from os.encodings()
 where WebName like '%1250%' or CodePage = 65001
 ```
 
@@ -73,7 +73,7 @@ select
     CurrentCulture,
     DecimalSeparator,
     ShortDatePattern
-from #os.currentculture()
+from os.currentculture()
 ```
 
 ### List Safe Environment Variable Names
@@ -81,12 +81,12 @@ Inspect available variable names without exposing environment variable values.
 
 ```sql
 select Name, Target
-from #os.environmentvariables()
+from os.environmentvariables()
 ```
 
 ---
 
-## 📊 CSV/Separated Values (`#separatedvalues`)
+## 📊 CSV/Separated Values (`separatedvalues`)
 
 ### Basic CSV Query with Aggregation
 Aggregate a dynamically sampled 1BRC-shaped file. `Temperature` is inferred as a numeric column from at most 1 MiB, 4,096 complete records, or 10 ms of input; a contradictory value later in the scan is reported as schema drift.
@@ -97,7 +97,7 @@ select
     Min(Temperature) as Minimum,
     Max(Temperature) as Maximum,
     Avg(Temperature) as Average
-from #separatedvalues.semicolon('./measurements.csv', true, 0)
+from separatedvalues.semicolon('./measurements.csv', true, 0)
 group by Station
 ```
 
@@ -110,8 +110,8 @@ select
     persons.Surname, 
     grades.Subject, 
     grades.Grade
-from #separatedvalues.comma('./Persons.csv', true, 0) persons 
-inner join #separatedvalues.comma('./Gradebook.csv', true, 0) grades 
+from separatedvalues.comma('./Persons.csv', true, 0) persons
+inner join separatedvalues.comma('./Gradebook.csv', true, 0) grades
     on persons.Id = grades.PersonId
 ```
 
@@ -124,7 +124,7 @@ table Employees {
    Name 'System.String',
    Salary 'System.Decimal'
 };
-couple #separatedvalues.comma with table Employees as SourceOfEmployees;
+couple separatedvalues.comma with table Employees as SourceOfEmployees;
 select Id, Name, Salary from SourceOfEmployees('./employees.csv', true, 0)
 where Salary > 50000
 ```
@@ -133,7 +133,7 @@ Dynamic inference limits can be raised for an individual query with the runtime 
 
 ---
 
-## 🗂️ JSON Queries (`#json`)
+## 🗂️ JSON Queries (`json`)
 
 ### Query JSON Array
 Extract data from a JSON file. The complete top-level schema is discovered from the source; no schema file is needed.
@@ -143,7 +143,7 @@ select
     Name, 
     Age, 
     Books
-from #json.file('./data.json')
+from json.file('./data.json')
 where Age > 18
 ```
 
@@ -151,7 +151,7 @@ JSON and SeparatedValues accept file paths rather than streams. To query a JSON 
 
 ---
 
-## 📦 Archive Queries (`#archives`)
+## 📦 Archive Queries (`archives`)
 
 ### List Archive Contents
 Read contents of ZIP or TAR archives and extract text content.
@@ -161,13 +161,13 @@ select
     Key as FileName, 
     IsDirectory,
     (case when IsDirectory = false then GetTextContent() else '' end) as Content
-from #archives.file('./archive.zip')
+from archives.file('./archive.zip')
 where Key like '%.txt'
 ```
 
 ---
 
-## ⏰ Time Queries (`#time`)
+## ⏰ Time Queries (`time`)
 
 ### Generate Date Range
 Create a sequence of dates for reporting or analysis.
@@ -178,7 +178,7 @@ select
     Month, 
     Year, 
     DayOfWeek
-from #time.interval('2024-01-01 00:00:00', '2024-12-31 00:00:00', 'days')
+from time.interval('2024-01-01 00:00:00', '2024-12-31 00:00:00', 'days')
 ```
 
 ### Filter Weekend Days
@@ -186,20 +186,20 @@ Find only weekend days (Saturday=6, Sunday=0 in DayOfWeek).
 
 ```sql
 select Day, DayOfWeek
-from #time.interval('2024-01-01 00:00:00', '2024-01-31 00:00:00', 'days')
+from time.interval('2024-01-01 00:00:00', '2024-01-31 00:00:00', 'days')
 where DayOfWeek = 0 or DayOfWeek = 6
 ```
 
 ---
 
-## 🔧 System Utilities (`#system`)
+## 🔧 System Utilities (`system`)
 
 ### Number Range Generation
 Generate a sequence of numbers for various purposes.
 
 ```sql
 select Value 
-from #system.range(1, 100)
+from system.range(1, 100)
 where Value % 2 = 0
 ```
 
@@ -211,12 +211,12 @@ select
     2 + 2 as Sum,
     10 * 5 as Product,
     ToDecimal(7) / 3 as Division
-from #system.dual()
+from system.dual()
 ```
 
 ---
 
-## 🔀 Git Repository Queries (`#git`)
+## 🔀 Git Repository Queries (`git`)
 
 ### List Recent Commits
 Query commit history with author information.
@@ -227,7 +227,7 @@ select
     c.MessageShort,
     c.Author,
     c.CommittedWhen
-from #git.repository('./repo') r 
+from git.repository('./repo') r
 cross apply r.Commits c
 ```
 
@@ -239,7 +239,7 @@ select
     c.Sha,
     c.Author,
     c.Message
-from #git.commits('./repo') c
+from git.commits('./repo') c
 where c.Author = 'john.doe'
 ```
 
@@ -251,7 +251,7 @@ select
     b.FriendlyName,
     b.IsRemote,
     b.Tip.Sha
-from #git.branches('./repo') b
+from git.branches('./repo') b
 ```
 
 ### Compare Branches
@@ -261,7 +261,7 @@ Find differences between two branches.
 select 
     Difference.Path,
     Difference.ChangeKind
-from #git.repository('./repo') repository 
+from git.repository('./repo') repository
 cross apply repository.DifferenceBetween(
     repository.BranchFrom('main'), 
     repository.BranchFrom('feature/my-feature')
@@ -277,7 +277,7 @@ select
     t.Message,
     t.IsAnnotated,
     t.Commit.Sha
-from #git.tags('./repo') t
+from git.tags('./repo') t
 ```
 
 ### Track File History
@@ -289,7 +289,7 @@ select
     h.Author,
     h.FilePath,
     h.ChangeType
-from #git.filehistory('./repo', 'README.md') h
+from git.filehistory('./repo', 'README.md') h
 ```
 
 ### Analyze Branch-Specific Commits
@@ -301,7 +301,7 @@ with BranchInfo as (
         c.Sha as CommitSha,
         c.Message as CommitMessage,
         c.Author as CommitAuthor
-    from #git.repository('./repo') r 
+    from git.repository('./repo') r
     cross apply r.SearchForBranches('feature/my-feature') b
     cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
 )
@@ -315,13 +315,13 @@ Analyze commit relationships for merge analysis.
 select 
     c.Sha, 
     p.Sha as ParentSha
-from #git.commits('./repo') c 
+from git.commits('./repo') c
 cross apply c.Parents as p
 ```
 
 ---
 
-## 🔬 C# Code Analysis (`#csharp`)
+## 🔬 C# Code Analysis (`csharp`)
 
 ### List All Classes in Solution
 Find all classes across a C# solution with their metrics.
@@ -333,7 +333,7 @@ select
     c.MethodsCount,
     c.PropertiesCount,
     c.LinesOfCode
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -348,7 +348,7 @@ select
     t.IsClass,
     t.IsInterface,
     t.IsEnum
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Types t
 ```
@@ -362,7 +362,7 @@ select
     m.Name as MethodName,
     m.CyclomaticComplexity,
     m.LinesOfCode
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.GetClassesByNames('MyClass') c
 cross apply c.Methods m
 where m.CyclomaticComplexity > 5
@@ -378,7 +378,7 @@ select
     m.IsEmpty,
     m.StatementsCount,
     m.BodyContainsOnlyTrivia
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -397,7 +397,7 @@ select
     p.HasGetter,
     p.HasSetter,
     p.HasInitSetter
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -415,7 +415,7 @@ select
     rd.StartColumn,
     rd.EndLine,
     rd.EndColumn
-from #csharp.solution('./MySolution.sln') s
+from csharp.solution('./MySolution.sln') s
 cross apply s.GetClassesByNames('MyClass') c
 cross apply s.FindReferences(c.Self) rd
 cross apply rd.ReferencedClasses r
@@ -432,7 +432,7 @@ select
     i.BaseInterfaces,
     i.Methods,
     i.Properties
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects pr 
 cross apply pr.Documents d 
 cross apply d.Interfaces i
@@ -447,7 +447,7 @@ select
     e.FullName,
     e.Namespace,
     e.Members
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects pr 
 cross apply pr.Documents d 
 cross apply d.Enums e
@@ -460,7 +460,7 @@ List all project-to-project references.
 select
     p.Name as ProjectName,
     ref.Name as ReferencedProject
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.ProjectReferences ref
 ```
@@ -474,7 +474,7 @@ select
     lib.Name as LibraryName,
     lib.Version,
     lib.Location
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.LibraryReferences lib
 ```
@@ -490,7 +490,7 @@ select
     np.License,
     np.Authors,
     np.IsTransitive
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.GetNugetPackages(false) np
 ```
@@ -503,7 +503,7 @@ select
     c.Name,
     a.Name as AttributeName,
     a.ConstructorArguments
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects pr 
 cross apply pr.Documents d 
 cross apply d.Classes c
@@ -522,7 +522,7 @@ select
     p.IsParams,
     p.IsRef,
     p.IsOut
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects pr 
 cross apply pr.Documents d 
 cross apply d.Classes c
@@ -540,7 +540,7 @@ select
     c.FieldsCount,
     c.LackOfCohesion,
     c.InheritanceDepth
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -559,14 +559,14 @@ with GitRepos as (
     select 
         dir.Parent.Name as RepoName,
         dir.FullName as GitPath
-    from #os.directories('./projects', true) dir
+    from os.directories('./projects', true) dir
     where dir.Name = '.git'
 )
 select 
     r.RepoName,
     Count(c.Sha) as CommitCount
 from GitRepos r 
-cross apply #git.repository(r.GitPath) repo 
+cross apply git.repository(r.GitPath) repo
 cross apply repo.Commits c
 group by r.RepoName
 order by CommitCount desc
@@ -578,11 +578,11 @@ Compare directories using file hashes to detect modifications.
 ```sql
 with SourceFiles as (
     select GetRelativePath('./source') as RelPath, Sha256File() as Hash 
-    from #os.files('./source', true)
+    from os.files('./source', true)
 ), 
 TargetFiles as (
     select GetRelativePath('./target') as RelPath, Sha256File() as Hash 
-    from #os.files('./target', true)
+    from os.files('./target', true)
 )
 select 
     s.RelPath,
@@ -596,7 +596,7 @@ inner join TargetFiles t on s.RelPath = t.RelPath
 ## Notes
 
 - All queries use standard SQL syntax with Musoq-specific extensions
-- Table functions use `#datasource.table()` syntax
+- Table functions use `datasource.table()` syntax
 - Cross apply enables joining hierarchical data
 - CTEs (Common Table Expressions) are fully supported
 - Queries can combine multiple data sources in a single statement

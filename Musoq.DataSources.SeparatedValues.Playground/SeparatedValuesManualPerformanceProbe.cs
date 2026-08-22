@@ -67,11 +67,19 @@ internal static class SeparatedValuesManualPerformanceProbe
             plan.AcceptedTake,
             readPlan.HasResidualWork,
             readPlan.ProjectionAccepted));
-        var context = RuntimeV2TestContexts.CreateExecutionContext(
-            CancellationToken.None,
-            columns,
-            executionPlan: plan);
-        var source = new SeparatedValuesFromFileRowsSource(filePath, ",", true, 0, context);
+        var escapedPath = Path.GetFullPath(filePath)
+            .Replace('\\', '/')
+            .Replace("'", "''", StringComparison.Ordinal);
+        var projection = requiredColumns.Count == 0
+            ? "1"
+            : string.Join(", ", requiredColumns.Select(static column => column.Name));
+        var slice = $"{(skip.HasValue ? $" skip {skip.Value}" : string.Empty)}" +
+                    $"{(take.HasValue ? $" take {take.Value}" : string.Empty)}";
+        using var query = InstanceCreatorHelpers.CompileForExecution(
+            $"select {projection} from separatedvalues.comma('{escapedPath}', true, 0){slice}",
+            $"SeparatedValuesManual_{profileName}_{scenarioName}_{Guid.NewGuid():N}",
+            new ManualSchemaProvider(),
+            EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
 
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -80,7 +88,8 @@ internal static class SeparatedValuesManualPerformanceProbe
         using var process = Process.GetCurrentProcess();
         var allocatedBefore = GC.GetTotalAllocatedBytes(true);
         var stopwatch = Stopwatch.StartNew();
-        var rowCount = source.Chunks.Sum(chunk => chunk.Count);
+        using var table = query.Run();
+        var rowCount = table.Count;
         stopwatch.Stop();
         var allocatedAfter = GC.GetTotalAllocatedBytes(true);
         process.Refresh();
@@ -119,5 +128,10 @@ internal static class SeparatedValuesManualPerformanceProbe
         yield return ("small", 10000, 12);
         yield return ("large", 250000, 24);
         yield return ("huge-shaped", 1000000, 48);
+    }
+
+    private sealed class ManualSchemaProvider : ISchemaProvider
+    {
+        public ISchema GetSchema(string schema) => new SeparatedValuesSchema();
     }
 }

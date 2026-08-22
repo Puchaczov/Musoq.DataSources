@@ -23,7 +23,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #os";
+        var query = "desc os";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -93,7 +93,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescFiles_ShouldReturnMethodSignature()
     {
-        var query = "desc #os.files";
+        var query = "desc os.files";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -114,7 +114,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescFile_ShouldReturnMethodSignature()
     {
-        var query = "desc #os.file";
+        var query = "desc os.file";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -133,7 +133,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescDirectories_ShouldReturnMethodSignature()
     {
-        var query = "desc #os.directories";
+        var query = "desc os.directories";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -151,7 +151,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescZip_ShouldReturnMethodSignature()
     {
-        var query = "desc #os.zip";
+        var query = "desc os.zip";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -168,7 +168,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescProcesses_ShouldReturnMethodSignatureWithNoParameters()
     {
-        var query = "desc #os.processes";
+        var query = "desc os.processes";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -183,7 +183,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescDlls_ShouldReturnMethodSignature()
     {
-        var query = "desc #os.dlls";
+        var query = "desc os.dlls";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -200,7 +200,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescDirsCompare_ShouldReturnMethodSignature()
     {
-        var query = "desc #os.dirscompare";
+        var query = "desc os.dirscompare";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -219,7 +219,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescMetadata_ShouldReturnAllOverloads()
     {
-        var query = "desc #os.metadata";
+        var query = "desc os.metadata";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -252,7 +252,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #os.unknownmethod";
+        var query = "desc os.unknownmethod";
 
         try
         {
@@ -276,7 +276,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #os";
+        var query = "desc os";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -289,7 +289,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescFiles_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #os.files";
+        var query = "desc os.files";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -302,7 +302,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescMetadata_ShouldShowParameterTypesCorrectly()
     {
-        var query = "desc #os.metadata";
+        var query = "desc os.metadata";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -319,7 +319,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescDirsCompare_ShouldShowTwoStringParameters()
     {
-        var query = "desc #os.dirscompare";
+        var query = "desc os.dirscompare";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -338,7 +338,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldIncludeAllDataSourceTypes()
     {
-        var query = "desc #os";
+        var query = "desc os";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -369,7 +369,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescFilesWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #os.files('./Files', false)";
+        var query = "desc os.files('./Files', false)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -406,8 +406,8 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescFileWithArgs_ShouldReturnSameTableSchemaAsFiles()
     {
-        var fileQuery = "desc #os.file('./Files/File1.txt')";
-        var filesQuery = "desc #os.files('./Files', false)";
+        var fileQuery = "desc os.file('./Files/File1.txt')";
+        var filesQuery = "desc os.files('./Files', false)";
 
         var fileTable = CreateAndRunVirtualMachine(fileQuery).Run();
         var filesTable = CreateAndRunVirtualMachine(filesQuery).Run();
@@ -426,7 +426,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescDirectoriesWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #os.directories('./Directories', false)";
+        var query = "desc os.directories('./Directories', false)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -461,7 +461,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescProcessesWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #os.processes()";
+        var query = "desc os.processes()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -501,7 +501,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescDirsCompareWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #os.dirscompare('./Directories', './Directories')";
+        var query = "desc os.dirscompare('./Directories', './Directories')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -529,7 +529,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescMetadataWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #os.metadata('./Images')";
+        var query = "desc os.metadata('./Images')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -554,7 +554,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescZipWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #os.zip('./TestZip.zip')";
+        var query = "desc os.zip('./TestZip.zip')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -582,7 +582,7 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescDllsWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #os.dlls('./TestDll.dll')";
+        var query = "desc os.dlls('./TestDll.dll')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -606,11 +606,11 @@ public class OsSchemaDescribeTests
     [TestMethod]
     public void DescFilesNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #os.files";
+        var queryNoArgs = "desc os.files";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 
-        var queryWithArgs = "desc #os.files('./Files', false)";
+        var queryWithArgs = "desc os.files('./Files', false)";
         var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
         var tableWithArgs = vmWithArgs.Run();
 

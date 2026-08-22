@@ -12,7 +12,7 @@
 
 ## Patterns to preserve
 - Keep DBC parsing in `CANBusApi`, row production in source classes, and schema wiring in `CANBusSchema`.
-- `#can.separatedvalues(...)` is the dynamic surface: decoded message names and signal columns come from DBC metadata.
+- `can.separatedvalues(...)` is the dynamic surface: decoded message names and signal columns come from DBC metadata.
 - Unknown frames are part of the contract; preserve `IsWellKnown`, null `Message`, and raw-data behavior.
 - Avoid moving decoding logic into helper/library methods.
 

@@ -32,7 +32,7 @@ public class OllamaSchema : SchemaBase
     ///                             http://localhost:11434
     ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                     #ollama.llm(string model)
+    ///                     ollama.llm(string model)
     ///                 </from>
     ///                 <description>Gives the access to Ollama api</description>
     ///                 <columns isDynamic="true"></columns>
@@ -52,7 +52,7 @@ public class OllamaSchema : SchemaBase
     ///                             http://localhost:11434
     ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                     #ollama.llm(string model, decimal temperature)
+    ///                     ollama.llm(string model, decimal temperature)
     ///                 </from>
     ///                 <description>Gives the access to Ollama api</description>
     ///                 <columns isDynamic="true"></columns>

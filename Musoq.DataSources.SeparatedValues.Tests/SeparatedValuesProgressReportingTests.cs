@@ -36,10 +36,10 @@ public class SeparatedValuesProgressReportingTests
                 .ExecutionPlan;
             var context = RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                CreateNameAgeColumns(),
+                [new SchemaColumn("Name", 0, typeof(string))],
                 dataSourceProgressCallback: capture.Handler,
                 executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, context);
+            var source = SeparatedValuesNativeTestSource.Create<string>(tempFile, ",", true, 0, context);
 
             var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
@@ -74,10 +74,10 @@ public class SeparatedValuesProgressReportingTests
                 .ExecutionPlan;
             var context = RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                CreateNameAgeColumns(),
+                [new SchemaColumn("Name", 0, typeof(string))],
                 dataSourceProgressCallback: capture.Handler,
                 executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(tempFile, ",", true, 0, context);
+            var source = SeparatedValuesNativeTestSource.Create<string>(tempFile, ",", true, 0, context);
 
             var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
@@ -91,15 +91,6 @@ public class SeparatedValuesProgressReportingTests
             if (File.Exists(tempFile))
                 File.Delete(tempFile);
         }
-    }
-
-    private static ISchemaColumn[] CreateNameAgeColumns()
-    {
-        return
-        [
-            new SchemaColumn("Name", 0, typeof(string)),
-            new SchemaColumn("Age", 1, typeof(int))
-        ];
     }
 
     private static SourcePlanRequest CreateRequest(

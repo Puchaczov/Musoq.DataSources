@@ -36,7 +36,7 @@ public class QueryDiskTests
     [TestMethod]
     public void ComplexObjectPropertyTest()
     {
-        var query = "select Parent.Name from #disk.directories('./Directories', false)";
+        var query = "select Parent.Name from disk.directories('./Directories', false)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -53,7 +53,7 @@ public class QueryDiskTests
     [TestMethod]
     public void DescFilesTest()
     {
-        var query = "desc #os.files('./','false')";
+        var query = "desc os.files('./', false)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -87,7 +87,7 @@ public class QueryDiskTests
     [TestMethod]
     public void DescDllsTest()
     {
-        var query = "desc #os.dlls('./','false')";
+        var query = "desc os.dlls('./', false)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -231,7 +231,7 @@ public class QueryDiskTests
     [TestMethod]
     public void File_GetFirstByte_Test()
     {
-        var query = "select ToHex(GetFileBytes(2), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
+        var query = "select ToHex(GetFileBytes(2), '|') from disk.files('./Files', false) where Name = 'File1.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -245,7 +245,7 @@ public class QueryDiskTests
     public void File_SkipTwoBytesAndTakeFiveBytes_Test()
     {
         var query =
-            "select ToHex(EnumerableToArray(Take(Skip(GetFileBytes(), 2), 5)), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
+            "select ToHex(EnumerableToArray(Take(Skip(GetFileBytes(), 2), 5)), '|') from disk.files('./Files', false) where Name = 'File1.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -259,7 +259,7 @@ public class QueryDiskTests
     public void File_SkipTwoBytesAndTakeFiveBytes2_Test()
     {
         var query =
-            "select ToHex(EnumerableToArray(SkipAndTake(GetFileBytes(), 2, 5)), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
+            "select ToHex(EnumerableToArray(SkipAndTake(GetFileBytes(), 2, 5)), '|') from disk.files('./Files', false) where Name = 'File1.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -272,7 +272,7 @@ public class QueryDiskTests
     [TestMethod]
     public void File_GetHead_Test()
     {
-        var query = "select ToHex(Head(2), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
+        var query = "select ToHex(Head(2), '|') from disk.files('./Files', false) where Name = 'File1.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -285,7 +285,7 @@ public class QueryDiskTests
     [TestMethod]
     public void File_GetTail_Test()
     {
-        var query = "select ToHex(Tail(2), '|') from #disk.files('./Files', false) where Name = 'File1.txt'";
+        var query = "select ToHex(Tail(2), '|') from disk.files('./Files', false) where Name = 'File1.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -298,7 +298,7 @@ public class QueryDiskTests
     [TestMethod]
     public void File_GetBase64_Test()
     {
-        var query = "select Base64File() from #disk.files('./Files', false) where Name = 'File1.txt'";
+        var query = "select Base64File() from disk.files('./Files', false) where Name = 'File1.txt'";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -385,7 +385,7 @@ public class QueryDiskTests
     [TestMethod]
     public void Query_CompareTwoDirectories()
     {
-        var query = "select * from #disk.DirsCompare('./Directories/Directory1', './Directories/Directory2')";
+        var query = "select * from disk.DirsCompare('./Directories/Directory1', './Directories/Directory2')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -413,7 +413,7 @@ public class QueryDiskTests
     {
         var query = @"
 with IntersectedFiles as (
-	select a.Name as Name, a.Sha256File() as sha1, b.Sha256File() as sha2 from #os.files('.\Files', true) a inner join #os.files('.\Files', true) b on a.FullPath = b.FullPath
+	select a.Name as Name, a.Sha256File() as sha1, b.Sha256File() as sha2 from os.files('.\Files', true) a inner join os.files('.\Files', true) b on a.FullPath = b.FullPath
 )
 select * from IntersectedFiles";
 
@@ -438,9 +438,9 @@ select * from IntersectedFiles";
     {
         var query = @"
 with FirstDirectory as (
-    select a.GetRelativePath('.\Files') as RelativeName, a.Sha256File() as sha from #os.files('.\Files', true) a
+    select a.GetRelativePath('.\Files') as RelativeName, a.Sha256File() as sha from os.files('.\Files', true) a
 ), SecondDirectory as (
-    select a.GetRelativePath('.\Files2') as RelativeName, a.Sha256File() as sha from #os.files('.\Files2', true) a
+    select a.GetRelativePath('.\Files2') as RelativeName, a.Sha256File() as sha from os.files('.\Files2', true) a
 ), IntersectedFiles as (
 	select a.RelativeName as RelativeName, a.sha as sha1, b.sha as sha2 from FirstDirectory a inner join SecondDirectory b on a.RelativeName = b.RelativeName
 ), ThoseInLeft as (
@@ -479,7 +479,7 @@ select RelativeName, 'added' as state from ThoseInRight";
     public void Query_ShouldNotThrowException()
     {
         var query =
-            "select DestinationFileRelative, State from #os.dirscompare('./Files', './Files')";
+            "select DestinationFileRelative, State from os.dirscompare('./Files', './Files')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();

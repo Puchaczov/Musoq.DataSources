@@ -18,7 +18,7 @@ public class OsFileSourceTests
     public void File_ShouldReturnSingleMetadataRow()
     {
         var table = CreateAndRunVirtualMachine(
-            "select f.Name, f.Extension, f.Length from #os.file('./Files/File1.txt') f").Run();
+            "select f.Name, f.Extension, f.Length from os.file('./Files/File1.txt') f").Run();
 
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual("File1.txt", table[0][0]);
@@ -30,7 +30,7 @@ public class OsFileSourceTests
     public void File_ShouldUseExistingTextContentHelper()
     {
         var table = CreateAndRunVirtualMachine(
-            "select f.GetFileContent() from #os.file('./Files/File1.txt') f").Run();
+            "select f.GetFileContent() from os.file('./Files/File1.txt') f").Run();
 
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual("Example file 1.", table[0][0]);
@@ -40,7 +40,7 @@ public class OsFileSourceTests
     public void File_ShouldUseExistingByteContentHelpers()
     {
         var table = CreateAndRunVirtualMachine(
-            "select ToHex(f.Head(2), '|'), f.Base64File() from #os.file('./Files/File1.txt') f").Run();
+            "select ToHex(f.Head(2), '|'), f.Base64File() from os.file('./Files/File1.txt') f").Run();
 
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual("EF|BB", table[0][0]);
@@ -51,7 +51,7 @@ public class OsFileSourceTests
     public void File_ShouldApplyAcceptedNamePredicate()
     {
         var table = CreateAndRunVirtualMachine(
-            "select f.Name from #os.file('./Files/File1.txt') f where f.Name = 'File1.txt'").Run();
+            "select f.Name from os.file('./Files/File1.txt') f where f.Name = 'File1.txt'").Run();
 
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual("File1.txt", table[0][0]);
@@ -61,7 +61,7 @@ public class OsFileSourceTests
     public void File_ShouldReturnNoRowsWhenAcceptedNamePredicateDoesNotMatch()
     {
         var table = CreateAndRunVirtualMachine(
-            "select f.Name from #os.file('./Files/File1.txt') f where f.Name = 'Other.txt'").Run();
+            "select f.Name from os.file('./Files/File1.txt') f where f.Name = 'Other.txt'").Run();
 
         Assert.AreEqual(0, table.Count);
     }
@@ -70,9 +70,9 @@ public class OsFileSourceTests
     public void File_ShouldApplyAcceptedExtensionPredicate()
     {
         var matching = CreateAndRunVirtualMachine(
-            "select f.Name from #os.file('./Files/File1.txt') f where f.Extension = '.txt'").Run();
+            "select f.Name from os.file('./Files/File1.txt') f where f.Extension = '.txt'").Run();
         var nonMatching = CreateAndRunVirtualMachine(
-            "select f.Name from #os.file('./Files/File1.txt') f where f.Extension = '.bin'").Run();
+            "select f.Name from os.file('./Files/File1.txt') f where f.Extension = '.bin'").Run();
 
         Assert.AreEqual(1, matching.Count);
         Assert.AreEqual("File1.txt", matching[0][0]);
@@ -83,7 +83,7 @@ public class OsFileSourceTests
     public void File_ShouldReturnNoRowsForMissingPath()
     {
         var table = CreateAndRunVirtualMachine(
-            "select f.Name from #os.file('./Files/MissingFileForSingularSource.txt') f").Run();
+            "select f.Name from os.file('./Files/MissingFileForSingularSource.txt') f").Run();
 
         Assert.AreEqual(0, table.Count);
     }
@@ -92,7 +92,7 @@ public class OsFileSourceTests
     public void File_ShouldReturnNoRowsForDirectoryPath()
     {
         var table = CreateAndRunVirtualMachine(
-            "select f.Name from #os.file('./Files') f").Run();
+            "select f.Name from os.file('./Files') f").Run();
 
         Assert.AreEqual(0, table.Count);
     }

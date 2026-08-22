@@ -103,14 +103,9 @@ internal sealed class RandomAccessSeparatedValuesByteBlockSource : ISeparatedVal
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
         var buffer = ArrayPool<byte>.Shared.Rent(count);
-        SeparatedValuesStructuralMemoryBudget.Lease? memoryLease = null;
         var total = 0;
         try
         {
-            memoryLease = await SeparatedValuesStructuralMemoryBudget.AcquireAsync(
-                    buffer.Length,
-                    cancellationToken)
-                .ConfigureAwait(false);
             while (total < count)
             {
                 var read = await RandomAccess.ReadAsync(
@@ -124,12 +119,11 @@ internal sealed class RandomAccessSeparatedValuesByteBlockSource : ISeparatedVal
                 total += read;
             }
 
-            return new SeparatedValuesByteBlock(sequence, offset, buffer, total, memoryLease);
+            return new SeparatedValuesByteBlock(sequence, offset, buffer, total);
         }
         catch
         {
             ArrayPool<byte>.Shared.Return(buffer);
-            memoryLease?.Dispose();
             throw;
         }
     }
@@ -172,6 +166,16 @@ internal sealed class SeparatedValuesByteBlock : IDisposable
 
     public ReadOnlySpan<byte> Span => Buffer.AsSpan(0, Length);
 
+    public void AttachMemoryLease(SeparatedValuesStructuralMemoryBudget.Lease lease)
+    {
+        ArgumentNullException.ThrowIfNull(lease);
+        if (Interlocked.CompareExchange(ref _memoryLease, lease, null) is not null)
+        {
+            lease.Dispose();
+            throw new InvalidOperationException("A byte-block memory lease is already attached.");
+        }
+    }
+
     public void Dispose()
     {
         var buffer = Interlocked.Exchange(ref _buffer, null);
@@ -184,6 +188,7 @@ internal sealed class SeparatedValuesByteBlock : IDisposable
 internal sealed class SeparatedValuesBlockAnalysis : IDisposable
 {
     private readonly bool _compact;
+    private SeparatedValuesStructuralMemoryBudget.Lease? _newlineMemoryLease;
     private int[]? _newlines;
 
     public SeparatedValuesBlockAnalysis(
@@ -286,6 +291,24 @@ internal sealed class SeparatedValuesBlockAnalysis : IDisposable
         return newlines;
     }
 
+    public void AttachNewlineMemoryLease(SeparatedValuesStructuralMemoryBudget.Lease lease)
+    {
+        ArgumentNullException.ThrowIfNull(lease);
+        if (_newlineMemoryLease is not null)
+            throw new InvalidOperationException("A newline-index memory lease is already attached.");
+        _newlineMemoryLease = lease;
+    }
+
+    public SeparatedValuesStructuralMemoryBudget.Lease? DetachNewlineMemoryLease()
+    {
+        return Interlocked.Exchange(ref _newlineMemoryLease, null);
+    }
+
+    public void ReleaseNewlineMemoryLease()
+    {
+        Interlocked.Exchange(ref _newlineMemoryLease, null)?.Dispose();
+    }
+
     public static SeparatedValuesBlockAnalysis CompactUnquoted(
         SeparatedValuesByteBlock block,
         int newlineCount,
@@ -318,6 +341,7 @@ internal sealed class SeparatedValuesBlockAnalysis : IDisposable
         var newlines = Interlocked.Exchange(ref _newlines, null);
         if (newlines is not null)
             ArrayPool<int>.Shared.Return(newlines);
+        ReleaseNewlineMemoryLease();
     }
 }
 

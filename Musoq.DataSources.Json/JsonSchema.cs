@@ -25,7 +25,7 @@ public class JsonSchema : SchemaBase
     ///         <virtual-param>Path to a strict UTF-8 JSON file; UTF-8 BOM is allowed</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#json.file(string jsonFilePath)</from>
+    ///                 <from>json.file(string jsonFilePath)</from>
     ///                 <description>Discovers the complete top-level schema and streams the requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
@@ -50,7 +50,7 @@ public class JsonSchema : SchemaBase
         params object[] parameters)
     {
         if (parameters is not [string path])
-            throw new ArgumentException("#json.file requires exactly one string path parameter.", nameof(parameters));
+            throw new ArgumentException("json.file requires exactly one string path parameter.", nameof(parameters));
 
         if (!string.Equals(name, FileTable, StringComparison.OrdinalIgnoreCase))
             throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.");
@@ -78,7 +78,7 @@ public class JsonSchema : SchemaBase
                 name,
                 new JsonSource(path, executionContext)),
             FileTable => throw new ArgumentException(
-                "#json.file requires exactly one string path parameter.",
+                "json.file requires exactly one string path parameter.",
                 nameof(parameters)),
             _ => throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.")
         };
@@ -134,7 +134,7 @@ public class JsonSchema : SchemaBase
                 JsonSchemaDiscovery.GetSnapshot(path),
                 request),
             FileTable => throw new ArgumentException(
-                "#json.file requires exactly one string path parameter.",
+                "json.file requires exactly one string path parameter.",
                 nameof(parameters)),
             _ => SourcePlanResult.RejectAll(request)
         };

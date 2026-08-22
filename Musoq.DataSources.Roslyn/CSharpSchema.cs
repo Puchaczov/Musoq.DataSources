@@ -54,7 +54,7 @@ public class CSharpSchema : SchemaBase
     ///                             server endpoint to resolve properties
     ///                         </environmentVariable>
     ///                     </environmentVariables>
-    ///                     #csharp.solution(string path)
+    ///                     csharp.solution(string path)
     ///                 </from>
     ///                 <description>Allows to perform queries on the given solution file.</description>
     ///                 <columns>

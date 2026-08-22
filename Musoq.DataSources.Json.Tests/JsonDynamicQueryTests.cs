@@ -7,6 +7,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Musoq.Converter.Exceptions;
 using Musoq.DataSources.Tests.Common;
 using Musoq.DataSources.Structured;
 using Musoq.Evaluator;
@@ -24,7 +25,7 @@ public class JsonDynamicQueryTests
     {
         WithJson("{\"Name\":\"Ada\",\"Age\":36}", path =>
         {
-            var table = Compile($"select Name, Age from #json.file('{QueryPath(path)}')").Run();
+            var table = Compile($"select Name, Age from json.file('{QueryPath(path)}')").Run();
 
             Assert.AreEqual(1, table.Count);
             Assert.AreEqual("Ada", table[0][0]);
@@ -37,7 +38,7 @@ public class JsonDynamicQueryTests
     {
         WithJson("[{\"Id\":1},{\"Id\":2,\"Late\":\"yes\"}]", path =>
         {
-            var table = Compile($"select Id, Late from #json.file('{QueryPath(path)}') order by Id").Run();
+            var table = Compile($"select Id, Late from json.file('{QueryPath(path)}') order by Id").Run();
 
             Assert.AreEqual(typeof(long), table.Columns.ElementAt(0).ColumnType);
             Assert.AreEqual(typeof(string), table.Columns.ElementAt(1).ColumnType);
@@ -52,10 +53,11 @@ public class JsonDynamicQueryTests
     {
         WithJson("{\"Name\":\"Ada\"}", path =>
         {
-            var exception = Assert.ThrowsExactly<StructuredUnknownColumnException>(() =>
-                Compile($"select Missing from #json.file('{QueryPath(path)}')"));
+            var exception = Assert.ThrowsExactly<MusoqQueryException>(() =>
+                Compile($"select Missing from json.file('{QueryPath(path)}')"));
 
             StringAssert.Contains(FlattenMessages(exception), "Missing");
+            Assert.IsInstanceOfType<StructuredUnknownColumnException>(exception.GetBaseException());
         });
     }
 
@@ -64,10 +66,11 @@ public class JsonDynamicQueryTests
     {
         WithJson("{\"Name\":\"Ada\"}", path =>
         {
-            var exception = Assert.ThrowsExactly<StructuredUnknownColumnException>(() =>
-                Compile($"select name from #json.file('{QueryPath(path)}')"));
+            var exception = Assert.ThrowsExactly<MusoqQueryException>(() =>
+                Compile($"select name from json.file('{QueryPath(path)}')"));
 
             StringAssert.Contains(FlattenMessages(exception), "name");
+            Assert.IsInstanceOfType<StructuredUnknownColumnException>(exception.GetBaseException());
         });
     }
 

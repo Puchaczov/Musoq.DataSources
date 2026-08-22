@@ -5,6 +5,7 @@ using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Musoq.DataSources.Common;
@@ -16,29 +17,44 @@ using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues;
 
-internal sealed class SeparatedValuesRowProcessor
+internal interface ISeparatedValuesRowProjector<TRow>
+{
+    bool CanRepeatRow { get; }
+
+    TRow RepeatedRow { get; }
+
+    TRow Materialize(SeparatedValuesUtf8Record record, long rowNumber);
+}
+
+internal sealed class SeparatedValuesProjectedRowProcessor<TRow, TProjector>
+    where TProjector : struct, ISeparatedValuesRowProjector<TRow>
 {
     private readonly CancellationToken _cancellationToken;
     private readonly int _chunkSize;
     private readonly SeparatedValuesRecordKernel _kernel;
     private readonly DataSourceProgressReporter? _progress;
     private readonly long _rowNumberOffset;
+    private readonly bool _skipBeforeEvaluation;
     private readonly long? _take;
-    private readonly IChunkWriter<object?[]> _writer;
-    private List<object?[]>? _chunk;
+    private readonly IChunkWriter<TRow> _writer;
+    private TProjector _projector;
+    private List<TRow>? _chunk;
     private long _emittedRows;
     private long _skipRemaining;
     private int _zeroColumnRows;
 
-    public SeparatedValuesRowProcessor(
+    public SeparatedValuesProjectedRowProcessor(
         SeparatedValuesSourceContract contract,
         SourceExecutionContext executionContext,
-        IChunkWriter<object?[]> writer,
+        IChunkWriter<TRow> writer,
         DataSourceProgressReporter? progress,
         int chunkSize,
         CancellationToken cancellationToken,
+        SeparatedValuesRecordKernel kernel,
+        TProjector projector,
         long rowNumberOffset = 0,
-        long? skipOverride = null)
+        long? skipOverride = null,
+        bool sliceAlreadyApplied = false)
     {
         ArgumentNullException.ThrowIfNull(contract);
         var snapshot = contract.Snapshot;
@@ -47,9 +63,15 @@ internal sealed class SeparatedValuesRowProcessor
         _chunkSize = chunkSize;
         _cancellationToken = cancellationToken;
         _rowNumberOffset = rowNumberOffset;
-        _skipRemaining = skipOverride ?? executionContext.Plan.AcceptedSkip ?? 0;
-        _take = executionContext.Plan.AcceptedTake;
-        _kernel = SeparatedValuesRecordKernel.Create(contract, executionContext);
+        _projector = projector;
+        _skipRemaining = sliceAlreadyApplied ? 0 : skipOverride ?? executionContext.Plan.AcceptedSkip ?? 0;
+        _take = sliceAlreadyApplied ? null : executionContext.Plan.AcceptedTake;
+        var readPlan = SeparatedValuesReadPlan.From(executionContext.Plan);
+        _skipBeforeEvaluation = !sliceAlreadyApplied &&
+                                executionContext.Plan.AcceptedPredicate is null &&
+                                readPlan.AcceptedPredicate is null &&
+                                !readPlan.HasResidualWork;
+        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
     }
 
     public long RowsRead { get; private set; }
@@ -60,15 +82,37 @@ internal sealed class SeparatedValuesRowProcessor
 
     public bool Process(SeparatedValuesUtf8Record record)
     {
+        return ProcessCore(record, false, default);
+    }
+
+    public bool ProcessUnquoted(SeparatedValuesUtf8Record record, byte separator)
+    {
+        return ProcessCore(record, true, separator);
+    }
+
+    private bool ProcessCore(
+        SeparatedValuesUtf8Record record,
+        bool unquoted,
+        byte separator)
+    {
         _cancellationToken.ThrowIfCancellationRequested();
         RowsRead++;
         _progress?.RowRead();
         var rowNumber = _rowNumberOffset + RowsRead;
 
-        if (!_kernel.Prepare(record, rowNumber))
+        if (_skipBeforeEvaluation && _skipRemaining > 0)
+        {
+            _skipRemaining--;
+            return true;
+        }
+
+        var accepted = unquoted
+            ? _kernel.PrepareUnquoted(record, separator, rowNumber)
+            : _kernel.Prepare(record, rowNumber);
+        if (!accepted)
             return true;
 
-        if (_skipRemaining > 0)
+        if (!_skipBeforeEvaluation && _skipRemaining > 0)
         {
             _skipRemaining--;
             return true;
@@ -77,10 +121,10 @@ internal sealed class SeparatedValuesRowProcessor
         if (_take is not null && _emittedRows >= _take.Value)
             return false;
 
-        if (_kernel.HasOutputColumns)
+        if (!_projector.CanRepeatRow)
         {
-            _chunk ??= new List<object?[]>(_chunkSize);
-            _chunk.Add(_kernel.Materialize(record, rowNumber));
+            _chunk ??= new List<TRow>(_chunkSize);
+            _chunk.Add(_projector.Materialize(record, rowNumber));
         }
         else
         {
@@ -104,7 +148,7 @@ internal sealed class SeparatedValuesRowProcessor
     {
         if (_zeroColumnRows > 0)
         {
-            _writer.Write(new RepeatedValueChunk<object?[]>(Array.Empty<object?>(), _zeroColumnRows));
+            _writer.Write(new RepeatedValueChunk<TRow>(_projector.RepeatedRow, _zeroColumnRows));
             _zeroColumnRows = 0;
         }
 
@@ -116,43 +160,133 @@ internal sealed class SeparatedValuesRowProcessor
     }
 }
 
-internal sealed class SeparatedValuesRecordKernel
+internal sealed class SeparatedValuesRecordProgram
 {
-    private readonly SeparatedValuesRowLayout _layout;
+    private readonly SeparatedValuesFieldAction[] _actions;
+    private readonly int[] _captureSourceOrdinals;
+    private readonly IFormatProvider _culture;
     private readonly SeparatedValuesPredicateEvaluator _predicate;
+    private readonly SeparatedValuesQueryProjectionPlan _queryProjection;
     private readonly SeparatedValuesSchemaValidator _schemaValidator;
+    private readonly StructuredStringPool _stringPool;
 
-    private SeparatedValuesRecordKernel(
-        SeparatedValuesRowLayout layout,
+    private SeparatedValuesRecordProgram(
+        SeparatedValuesFieldAction[] actions,
+        int[] captureSourceOrdinals,
+        StructuredStringPool stringPool,
+        IFormatProvider culture,
+        SeparatedValuesQueryProjectionPlan queryProjection,
         SeparatedValuesPredicateEvaluator predicate,
         SeparatedValuesSchemaValidator schemaValidator)
     {
-        _layout = layout;
+        _actions = actions;
+        _captureSourceOrdinals = captureSourceOrdinals;
+        _stringPool = stringPool;
+        _culture = culture;
+        _queryProjection = queryProjection;
         _predicate = predicate;
         _schemaValidator = schemaValidator;
     }
 
-    public bool HasOutputColumns => _layout.HasOutputColumns;
+    public static SeparatedValuesRecordProgram CompileQuery(
+        SeparatedValuesSourceContract contract,
+        SourceExecutionContext executionContext,
+        SeparatedValuesQueryShapeMapping mapping)
+    {
+        ArgumentNullException.ThrowIfNull(contract);
+        ArgumentNullException.ThrowIfNull(executionContext);
+        ArgumentNullException.ThrowIfNull(mapping);
+        var projection = SeparatedValuesQueryProjectionPlan.Create(contract, mapping);
+        var predicate = SeparatedValuesPredicateEvaluator.Create(
+            contract,
+            executionContext.Plan.AcceptedPredicate);
+        var validator = SeparatedValuesSchemaValidator.Create(contract);
+        var actions = new SeparatedValuesFieldAction[contract.Snapshot.Columns.Length];
+        for (var sourceOrdinal = 0; sourceOrdinal < actions.Length; sourceOrdinal++)
+        {
+            var validatesSampledType = validator.TryGetValidationConversion(sourceOrdinal, out var validationConversion);
+            var parsesPredicate = predicate.TryGetConversion(sourceOrdinal, out var predicateConversion);
+            var parseConversion = validatesSampledType
+                ? validationConversion
+                : parsesPredicate
+                    ? predicateConversion
+                    : (SeparatedValuesConversion?)null;
+            actions[sourceOrdinal] = new SeparatedValuesFieldAction(
+                parseConversion,
+                validatesSampledType,
+                predicate.HasTermsAt(sourceOrdinal),
+                projection.HasProjectionAt(sourceOrdinal));
+        }
 
-    public long MaterializedRowCount { get; private set; }
+        return new SeparatedValuesRecordProgram(
+            actions,
+            projection.SourceOrdinals,
+            contract.Snapshot.StringPool,
+            SeparatedValuesValueConverter.GetCulture(contract.Dialect.CultureName),
+            projection,
+            predicate,
+            validator);
+    }
+
+    public SeparatedValuesRecordKernel CreateExecutor()
+    {
+        return new SeparatedValuesRecordKernel(
+            _actions,
+            new SeparatedValuesPhysicalFieldTraversal(
+                _captureSourceOrdinals,
+                _stringPool,
+                _culture),
+            _queryProjection,
+            _predicate,
+            _schemaValidator);
+    }
+}
+
+internal readonly record struct SeparatedValuesFieldAction(
+    SeparatedValuesConversion? ParseConversion,
+    bool ValidatesSampledType,
+    bool HasPredicate,
+    bool HasProjection);
+
+internal sealed class SeparatedValuesRecordKernel
+{
+    private readonly SeparatedValuesFieldAction[] _actions;
+    private readonly SeparatedValuesPhysicalFieldTraversal _fields;
+    private readonly SeparatedValuesPredicateEvaluator _predicate;
+    private readonly SeparatedValuesQueryProjectionPlan _queryProjection;
+    private readonly SeparatedValuesSchemaValidator _schemaValidator;
+
+    internal SeparatedValuesRecordKernel(
+        SeparatedValuesFieldAction[] actions,
+        SeparatedValuesPhysicalFieldTraversal fields,
+        SeparatedValuesQueryProjectionPlan queryProjection,
+        SeparatedValuesPredicateEvaluator predicate,
+        SeparatedValuesSchemaValidator schemaValidator)
+    {
+        _actions = actions;
+        _fields = fields;
+        _queryProjection = queryProjection;
+        _predicate = predicate;
+        _schemaValidator = schemaValidator;
+    }
+
+    public bool HasOutputColumns => _queryProjection.HasOutputColumns;
+
+    public long MaterializedRowCount => _fields.MaterializedRowCount;
 
     public long FieldsVisited { get; private set; }
 
-    public static SeparatedValuesRecordKernel Create(
-        SeparatedValuesSourceContract contract,
-        SourceExecutionContext executionContext)
+    public long ParsedFields { get; private set; }
+
+    public SeparatedValuesQueryRowProjector<TRow, TMaterializer> CreateQueryProjector<TRow, TMaterializer>()
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>
     {
-        return new SeparatedValuesRecordKernel(
-            SeparatedValuesRowLayout.Create(contract, executionContext),
-            SeparatedValuesPredicateEvaluator.Create(
-                contract,
-                executionContext.Plan.AcceptedPredicate),
-            SeparatedValuesSchemaValidator.Create(contract));
+        return new SeparatedValuesQueryRowProjector<TRow, TMaterializer>(_fields, _queryProjection);
     }
 
     public bool Prepare(SeparatedValuesUtf8Record record, long rowNumber)
     {
-        _layout.BeginRecord();
+        _fields.BeginRecord();
         var predicateTermIndex = 0;
         var predicateMatched = true;
         var bindingIndex = 0;
@@ -160,30 +294,107 @@ internal sealed class SeparatedValuesRecordKernel
 
         foreach (var field in record)
         {
-            FieldsVisited++;
-            _schemaValidator.ValidateField(fieldIndex, field, rowNumber);
-            if (predicateMatched)
-            {
-                predicateMatched = _predicate.EvaluateField(
-                    fieldIndex,
-                    field,
-                    rowNumber,
-                    ref predicateTermIndex);
-            }
-
-            if (predicateMatched || !_predicate.HasTerms)
-                _layout.CaptureField(fieldIndex, field, ref bindingIndex);
+            ProcessField(
+                fieldIndex,
+                field,
+                rowNumber,
+                ref predicateTermIndex,
+                ref predicateMatched,
+                ref bindingIndex);
             fieldIndex++;
         }
 
         return predicateMatched && _predicate.IsComplete(predicateTermIndex);
     }
 
-    public object?[] Materialize(SeparatedValuesUtf8Record record, long rowNumber)
+    public bool PrepareUnquoted(
+        SeparatedValuesUtf8Record record,
+        byte separator,
+        long rowNumber)
     {
-        MaterializedRowCount++;
-        return _layout.Materialize(record, rowNumber);
+        _fields.BeginRecord();
+        var predicateTermIndex = 0;
+        var predicateMatched = true;
+        var bindingIndex = 0;
+        var fieldIndex = 0;
+        var fieldStart = 0;
+        var bytes = record.Bytes;
+
+        while (true)
+        {
+            var relativeSeparator = bytes[fieldStart..].IndexOf(separator);
+            var fieldEnd = relativeSeparator < 0
+                ? bytes.Length
+                : fieldStart + relativeSeparator;
+            var field = new SeparatedValuesUtf8Field(
+                bytes[fieldStart..fieldEnd],
+                fieldStart,
+                false,
+                false);
+            ProcessField(
+                fieldIndex,
+                field,
+                rowNumber,
+                ref predicateTermIndex,
+                ref predicateMatched,
+                ref bindingIndex);
+            fieldIndex++;
+
+            if (relativeSeparator < 0)
+                break;
+            fieldStart = fieldEnd + 1;
+        }
+
+        return predicateMatched && _predicate.IsComplete(predicateTermIndex);
     }
+
+    private void ProcessField(
+        int fieldIndex,
+        SeparatedValuesUtf8Field field,
+        long rowNumber,
+        ref int predicateTermIndex,
+        ref bool predicateMatched,
+        ref int bindingIndex)
+    {
+        FieldsVisited++;
+        if (fieldIndex >= _actions.Length)
+            _schemaValidator.ThrowWidthDrift(rowNumber);
+        ref readonly var action = ref _actions[fieldIndex];
+        var parsed = default(SeparatedValuesParsedValue);
+        if (action.ParseConversion.HasValue)
+        {
+            if (SeparatedValuesValueConverter.IsNull(field))
+            {
+                parsed = SeparatedValuesParsedValue.Null(action.ParseConversion.Value);
+            }
+            else if (!SeparatedValuesParsedValue.TryParse(
+                         field,
+                         action.ParseConversion.Value,
+                         _fields.Culture,
+                         out parsed))
+            {
+                if (action.ValidatesSampledType)
+                    _schemaValidator.ThrowInvalidSampledValue(fieldIndex, field, rowNumber);
+                _predicate.ThrowInvalidValue(fieldIndex, field, rowNumber);
+            }
+
+            ParsedFields++;
+        }
+
+        if (predicateMatched && action.HasPredicate)
+        {
+            predicateMatched = _predicate.EvaluateField(
+                fieldIndex,
+                field,
+                parsed,
+                rowNumber,
+                ref predicateTermIndex);
+        }
+
+        if ((predicateMatched || !_predicate.HasTerms) && action.HasProjection)
+            _fields.CaptureField(fieldIndex, field, parsed, ref bindingIndex);
+    }
+
 }
 
 internal sealed class SeparatedValuesSchemaValidator
@@ -216,43 +427,43 @@ internal sealed class SeparatedValuesSchemaValidator
                 : new SeparatedValuesSchemaValidator(contract, [], contract.Snapshot.Identity.CanonicalPath);
     }
 
-    public void ValidateField(int fieldIndex, SeparatedValuesUtf8Field field, long rowNumber)
+    public bool TryGetValidationConversion(int fieldIndex, out SeparatedValuesConversion conversion)
     {
-        if (Contract is null)
-            return;
-
-        var expectedWidth = Contract.Snapshot.Columns.Length;
-        if (fieldIndex >= expectedWidth)
+        if (_columns.Length == 0)
         {
-            throw new StructuredSchemaDriftException(
-                _path,
-                $"row {rowNumber:N0} contains more than the bound {expectedWidth:N0} columns");
+            conversion = default;
+            return false;
         }
 
-        if (_columns.Length > 0)
-            ValidateSampledType(_columns[fieldIndex], field, rowNumber);
+        conversion = _columns[fieldIndex].TypeState.Kind switch
+        {
+            StructuredValueKind.Boolean => SeparatedValuesConversion.Boolean,
+            StructuredValueKind.Long => SeparatedValuesConversion.Int64,
+            StructuredValueKind.Decimal => SeparatedValuesConversion.Decimal,
+            StructuredValueKind.Double => SeparatedValuesConversion.Double,
+            _ => default
+        };
+        return _columns[fieldIndex].TypeState.Kind is
+            StructuredValueKind.Boolean or
+            StructuredValueKind.Long or
+            StructuredValueKind.Decimal or
+            StructuredValueKind.Double;
     }
 
-    private void ValidateSampledType(
-        StructuredColumnSnapshot column,
+    public void ThrowWidthDrift(long rowNumber)
+    {
+        var expectedWidth = Contract?.Snapshot.Columns.Length ?? 0;
+        throw new StructuredSchemaDriftException(
+            _path,
+            $"row {rowNumber:N0} contains more than the bound {expectedWidth:N0} columns");
+    }
+
+    public void ThrowInvalidSampledValue(
+        int fieldIndex,
         SeparatedValuesUtf8Field field,
         long rowNumber)
     {
-        if (SeparatedValuesValueConverter.IsNull(field))
-            return;
-
-        var valid = column.TypeState.Kind switch
-        {
-            StructuredValueKind.Boolean => SeparatedValuesValueConverter.TryParse(field, out bool _),
-            StructuredValueKind.Long => SeparatedValuesValueConverter.TryParse(field, out long _),
-            StructuredValueKind.Decimal => SeparatedValuesValueConverter.TryParse(field, out decimal _),
-            StructuredValueKind.Double => SeparatedValuesValueConverter.TryParse(field, out double _),
-            StructuredValueKind.String => true,
-            _ => true
-        };
-        if (valid)
-            return;
-
+        var column = _columns[fieldIndex];
         var observed = field.Decode();
         if (observed.Length > 96)
             observed = observed[..96] + "...";
@@ -262,77 +473,29 @@ internal sealed class SeparatedValuesSchemaValidator
     }
 }
 
-internal sealed class SeparatedValuesRowLayout
+internal sealed class SeparatedValuesPhysicalFieldTraversal
 {
-    private readonly BoundColumn[] _columns;
-    private readonly FieldLocation[] _locations;
-    private readonly int _outputCount;
-    private readonly StructuredStringPool _stringPool;
-    private readonly IFormatProvider _culture;
+    private readonly int[] _sourceOrdinals;
+    private readonly SeparatedValuesFieldLocation[] _locations;
 
-    private SeparatedValuesRowLayout(
-        BoundColumn[] columns,
-        int outputCount,
+    public SeparatedValuesPhysicalFieldTraversal(
+        int[] sourceOrdinals,
         StructuredStringPool stringPool,
         IFormatProvider culture)
     {
-        _columns = columns;
-        _locations = new FieldLocation[columns.Length];
-        _outputCount = outputCount;
-        _stringPool = stringPool;
-        _culture = culture;
+        _sourceOrdinals = sourceOrdinals ?? throw new ArgumentNullException(nameof(sourceOrdinals));
+        _locations = new SeparatedValuesFieldLocation[sourceOrdinals.Length];
+        StringPool = stringPool ?? throw new ArgumentNullException(nameof(stringPool));
+        Culture = culture ?? throw new ArgumentNullException(nameof(culture));
     }
 
-    public static SeparatedValuesRowLayout Create(
-        SeparatedValuesSourceContract contract,
-        SourceExecutionContext executionContext)
-    {
-        var snapshot = contract.Snapshot;
-        var columns = new List<BoundColumn>();
-        var outputCount = 0;
-        var readPlan = SeparatedValuesReadPlan.From(executionContext.Plan);
-        var projectionAccepted = readPlan.ProjectionAccepted || executionContext.Plan.AcceptedColumns.Count > 0;
+    public int BindingCount => _sourceOrdinals.Length;
 
-        if (projectionAccepted)
-        {
-            var denseFallback = 0;
-            foreach (var accepted in executionContext.Plan.AcceptedColumns)
-            {
-                var name = ResolveName(snapshot, accepted.Name);
-                var schemaColumn = FindSchemaColumn(executionContext.AllColumns, name);
-                var outputIndex = schemaColumn?.ColumnIndex ?? denseFallback;
-                var outputType = schemaColumn?.ColumnType ?? GetSnapshotColumn(snapshot, name).ClrType;
-                AddColumn(columns, snapshot, name, outputIndex, outputType);
-                outputCount = Math.Max(outputCount, outputIndex + 1);
-                denseFallback++;
-            }
-        }
-        else if (executionContext.AllColumns.Count > 0)
-        {
-            foreach (var schemaColumn in executionContext.AllColumns.OrderBy(column => column.ColumnIndex))
-            {
-                var name = ResolveName(snapshot, schemaColumn.ColumnName);
-                AddColumn(columns, snapshot, name, schemaColumn.ColumnIndex, schemaColumn.ColumnType);
-                outputCount = Math.Max(outputCount, schemaColumn.ColumnIndex + 1);
-            }
-        }
-        else
-        {
-            foreach (var column in snapshot.Columns)
-            {
-                AddColumn(columns, snapshot, column.Name, column.SourceOrdinal, column.ClrType);
-                outputCount++;
-            }
-        }
+    public StructuredStringPool StringPool { get; }
 
-        return new SeparatedValuesRowLayout(
-            columns.OrderBy(column => column.SourceOrdinal).ToArray(),
-            outputCount,
-            snapshot.StringPool,
-            SeparatedValuesValueConverter.GetCulture(contract.Dialect.CultureName));
-    }
+    public IFormatProvider Culture { get; }
 
-    public bool HasOutputColumns => _outputCount > 0;
+    public long MaterializedRowCount { get; private set; }
 
     public void BeginRecord()
     {
@@ -342,131 +505,79 @@ internal sealed class SeparatedValuesRowLayout
     public void CaptureField(
         int fieldIndex,
         SeparatedValuesUtf8Field field,
+        SeparatedValuesParsedValue parsed,
         ref int bindingIndex)
     {
-        while (bindingIndex < _columns.Length && _columns[bindingIndex].SourceOrdinal < fieldIndex)
+        while (bindingIndex < _sourceOrdinals.Length && _sourceOrdinals[bindingIndex] < fieldIndex)
             bindingIndex++;
 
-        while (bindingIndex < _columns.Length && _columns[bindingIndex].SourceOrdinal == fieldIndex)
+        while (bindingIndex < _sourceOrdinals.Length && _sourceOrdinals[bindingIndex] == fieldIndex)
         {
-            _locations[bindingIndex] = new FieldLocation(
-                field.EncodedOffset,
-                field.EncodedValue.Length,
-                field.WasQuoted,
-                field.NeedsUnescaping,
-                field.EscapeMode,
-                field.IsNullToken,
-                field.Quote,
-                true);
+            _locations[bindingIndex] = SeparatedValuesFieldLocation.Capture(field, parsed);
             bindingIndex++;
         }
     }
 
-    public object?[] Materialize(SeparatedValuesUtf8Record record, long rowNumber)
+    public ref readonly SeparatedValuesFieldLocation GetLocation(int bindingIndex)
     {
-        if (_outputCount == 0)
-            return Array.Empty<object?>();
-
-        var output = new object?[_outputCount];
-        for (var bindingIndex = 0; bindingIndex < _columns.Length; bindingIndex++)
-        {
-            ref readonly var binding = ref _columns[bindingIndex];
-            ref readonly var location = ref _locations[bindingIndex];
-            if (!location.Present)
-                continue;
-
-            var field = new SeparatedValuesUtf8Field(
-                record.Bytes.Slice(location.Offset, location.Length),
-                location.Offset,
-                location.WasQuoted,
-                location.NeedsUnescaping,
-                location.EscapeMode,
-                location.IsNullToken,
-                location.Quote);
-            output[binding.OutputOrdinal] = binding.Conversion == SeparatedValuesConversion.String &&
-                                             !SeparatedValuesValueConverter.IsNull(field) &&
-                                             !field.NeedsUnescaping
-                ? _stringPool.GetOrAddUtf8(binding.SourceOrdinal, field.EncodedValue)
-                : SeparatedValuesValueConverter.Convert(
-                    field,
-                    binding.Conversion,
-                    binding.Name,
-                    rowNumber,
-                    _culture);
-        }
-
-        return output;
+        return ref _locations[bindingIndex];
     }
 
-    private static void AddColumn(
-        List<BoundColumn> columns,
-        StructuredSchemaSnapshot snapshot,
-        string name,
-        int outputOrdinal,
-        Type outputType)
+    public void RecordMaterializedRow()
     {
-        var snapshotColumn = GetSnapshotColumn(snapshot, name);
-        columns.Add(new BoundColumn(
-            name,
-            snapshotColumn.SourceOrdinal,
-            outputOrdinal,
-            SeparatedValuesValueConverter.GetConversion(outputType, snapshotColumn.TypeState)));
+        MaterializedRowCount++;
+    }
+}
+
+internal readonly record struct SeparatedValuesFieldLocation(
+    int Offset,
+    int Length,
+    bool WasQuoted,
+    bool NeedsUnescaping,
+    SeparatedValuesEscapeMode EscapeMode,
+    bool IsNullToken,
+    byte? Quote,
+    SeparatedValuesParsedValue Parsed,
+    bool Present)
+{
+    public bool IsNull => !WasQuoted && (Length == 0 || IsNullToken);
+
+    public static SeparatedValuesFieldLocation Capture(
+        SeparatedValuesUtf8Field field,
+        SeparatedValuesParsedValue parsed)
+    {
+        return new SeparatedValuesFieldLocation(
+            field.EncodedOffset,
+            field.EncodedValue.Length,
+            field.WasQuoted,
+            field.NeedsUnescaping,
+            field.EscapeMode,
+            field.IsNullToken,
+            field.Quote,
+            parsed,
+            true);
     }
 
-    private static StructuredColumnSnapshot GetSnapshotColumn(
-        StructuredSchemaSnapshot snapshot,
-        string name)
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> GetEncodedValue(ReadOnlySpan<byte> recordBytes)
     {
-        if (snapshot.TryGetColumn(name, out var column))
-            return column;
-        throw new StructuredUnknownColumnException(name, snapshot.Identity.CanonicalPath);
+        return recordBytes.Slice(Offset, Length);
     }
 
-    private static string ResolveName(StructuredSchemaSnapshot snapshot, string name)
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public SeparatedValuesUtf8Field CreateField(ReadOnlySpan<byte> recordBytes)
     {
-        if (snapshot.TryGetColumn(name, out _))
-            return name;
-
-        var dotIndex = name.LastIndexOf('.');
-        if (dotIndex >= 0)
-        {
-            var unqualified = name[(dotIndex + 1)..];
-            if (snapshot.TryGetColumn(unqualified, out _))
-                return unqualified;
-        }
-
-        throw new StructuredUnknownColumnException(name, snapshot.Identity.CanonicalPath);
+        return new SeparatedValuesUtf8Field(
+            GetEncodedValue(recordBytes),
+            Offset,
+            WasQuoted,
+            NeedsUnescaping,
+            EscapeMode,
+            IsNullToken,
+            Quote);
     }
-
-    private static ISchemaColumn? FindSchemaColumn(
-        IReadOnlyCollection<ISchemaColumn> columns,
-        string name)
-    {
-        foreach (var column in columns)
-        {
-            if (string.Equals(column.ColumnName, name, StringComparison.Ordinal) ||
-                column.ColumnName.EndsWith('.' + name, StringComparison.Ordinal))
-                return column;
-        }
-
-        return null;
-    }
-
-    private readonly record struct BoundColumn(
-        string Name,
-        int SourceOrdinal,
-        int OutputOrdinal,
-        SeparatedValuesConversion Conversion);
-
-    private readonly record struct FieldLocation(
-        int Offset,
-        int Length,
-        bool WasQuoted,
-        bool NeedsUnescaping,
-        SeparatedValuesEscapeMode EscapeMode,
-        bool IsNullToken,
-        byte? Quote,
-        bool Present);
 }
 
 internal sealed class SeparatedValuesPredicateEvaluator
@@ -505,9 +616,55 @@ internal sealed class SeparatedValuesPredicateEvaluator
 
     public bool HasTerms => _terms.Length > 0;
 
+    public bool HasTermsAt(int sourceOrdinal)
+    {
+        return Array.Exists(_terms, term => term.SourceOrdinal == sourceOrdinal);
+    }
+
+    public bool TryGetConversion(int sourceOrdinal, out SeparatedValuesConversion conversion)
+    {
+        foreach (var term in _terms)
+        {
+            if (term.SourceOrdinal != sourceOrdinal)
+                continue;
+            conversion = term.Conversion;
+            return conversion is
+                SeparatedValuesConversion.Boolean or
+                SeparatedValuesConversion.Byte or
+                SeparatedValuesConversion.Decimal or
+                SeparatedValuesConversion.Double or
+                SeparatedValuesConversion.Int16 or
+                SeparatedValuesConversion.Int32 or
+                SeparatedValuesConversion.Int64 or
+                SeparatedValuesConversion.SByte or
+                SeparatedValuesConversion.Single or
+                SeparatedValuesConversion.UInt16 or
+                SeparatedValuesConversion.UInt32 or
+                SeparatedValuesConversion.UInt64;
+        }
+
+        conversion = default;
+        return false;
+    }
+
+    public void ThrowInvalidValue(
+        int sourceOrdinal,
+        SeparatedValuesUtf8Field field,
+        long rowNumber)
+    {
+        foreach (var term in _terms)
+        {
+            if (term.SourceOrdinal == sourceOrdinal)
+                throw term.InvalidPredicateValue(field, rowNumber, _path);
+        }
+
+        throw new InvalidOperationException("A field parse was requested without a predicate term.");
+    }
+
     public bool EvaluateField(
         int fieldIndex,
         SeparatedValuesUtf8Field field,
+        SeparatedValuesParsedValue parsed,
         long rowNumber,
         ref int termIndex)
     {
@@ -521,7 +678,7 @@ internal sealed class SeparatedValuesPredicateEvaluator
 
         while (termIndex < _terms.Length && _terms[termIndex].SourceOrdinal == fieldIndex)
         {
-            if (!_terms[termIndex].Evaluate(field, rowNumber, _path, _culture))
+            if (!_terms[termIndex].Evaluate(field, parsed, rowNumber, _path, _culture))
                 return false;
             termIndex++;
         }
@@ -607,6 +764,8 @@ internal sealed class SeparatedValuesPredicateEvaluator
         }
 
         public int SourceOrdinal { get; }
+
+        public SeparatedValuesConversion Conversion => _conversion;
 
         public static PredicateTerm Create(
             StructuredColumnSnapshot column,
@@ -721,12 +880,36 @@ internal sealed class SeparatedValuesPredicateEvaluator
 
         public bool Evaluate(
             SeparatedValuesUtf8Field field,
+            SeparatedValuesParsedValue parsed,
             long rowNumber,
             string path,
             IFormatProvider culture)
         {
             if (SeparatedValuesValueConverter.IsNull(field))
                 return false;
+
+            if (parsed.CanCompare(_conversion))
+            {
+                return _conversion switch
+                {
+                    SeparatedValuesConversion.Byte => Matches(parsed.Byte.CompareTo((byte)_long), _operator),
+                    SeparatedValuesConversion.SByte => Matches(parsed.SByte.CompareTo((sbyte)_long), _operator),
+                    SeparatedValuesConversion.Int16 => Matches(parsed.Int16.CompareTo((short)_long), _operator),
+                    SeparatedValuesConversion.Int32 => Matches(parsed.Int32.CompareTo((int)_long), _operator),
+                    SeparatedValuesConversion.Int64 => Matches(parsed.Int64.CompareTo(_long), _operator),
+                    SeparatedValuesConversion.UInt16 => Matches(parsed.UInt16.CompareTo((ushort)_ulong), _operator),
+                    SeparatedValuesConversion.UInt32 => Matches(parsed.UInt32.CompareTo((uint)_ulong), _operator),
+                    SeparatedValuesConversion.UInt64 => Matches(parsed.UInt64.CompareTo(_ulong), _operator),
+                    SeparatedValuesConversion.Decimal => Matches(decimal.Compare(parsed.Decimal, _decimal), _operator),
+                    SeparatedValuesConversion.Single => Matches(parsed.Single.CompareTo((float)_double), _operator),
+                    SeparatedValuesConversion.Double => Matches(parsed.Double.CompareTo(_double), _operator),
+                    SeparatedValuesConversion.Boolean =>
+                        _operator == SourcePredicateComparisonOperator.Equal
+                            ? parsed.Boolean == _boolean
+                            : parsed.Boolean != _boolean,
+                    _ => throw new InvalidOperationException("Unsupported parsed predicate conversion.")
+                };
+            }
 
             return _conversion switch
             {
@@ -829,7 +1012,7 @@ internal sealed class SeparatedValuesPredicateEvaluator
             return _operator == SourcePredicateComparisonOperator.Equal ? value == _boolean : value != _boolean;
         }
 
-        private FormatException InvalidPredicateValue(
+        internal FormatException InvalidPredicateValue(
             SeparatedValuesUtf8Field field,
             long rowNumber,
             string path)
@@ -855,6 +1038,197 @@ internal sealed class SeparatedValuesPredicateEvaluator
                 _ => false
             };
         }
+    }
+}
+
+internal readonly struct SeparatedValuesParsedValue
+{
+    private SeparatedValuesParsedValue(
+        SeparatedValuesConversion conversion,
+        bool isNull,
+        bool boolean = default,
+        byte byteValue = default,
+        sbyte sbyteValue = default,
+        short int16 = default,
+        int int32 = default,
+        long int64 = default,
+        ushort uint16 = default,
+        uint uint32 = default,
+        ulong uint64 = default,
+        decimal decimalValue = default,
+        float single = default,
+        double doubleValue = default)
+    {
+        IsAvailable = true;
+        IsNull = isNull;
+        Conversion = conversion;
+        _value = conversion switch
+        {
+            SeparatedValuesConversion.Boolean => new ParsedValueStorage(boolean),
+            SeparatedValuesConversion.Byte => new ParsedValueStorage(byteValue),
+            SeparatedValuesConversion.SByte => new ParsedValueStorage(sbyteValue),
+            SeparatedValuesConversion.Int16 => new ParsedValueStorage(int16),
+            SeparatedValuesConversion.Int32 => new ParsedValueStorage(int32),
+            SeparatedValuesConversion.Int64 => new ParsedValueStorage(int64),
+            SeparatedValuesConversion.UInt16 => new ParsedValueStorage(uint16),
+            SeparatedValuesConversion.UInt32 => new ParsedValueStorage(uint32),
+            SeparatedValuesConversion.UInt64 => new ParsedValueStorage(uint64),
+            SeparatedValuesConversion.Decimal => new ParsedValueStorage(decimalValue),
+            SeparatedValuesConversion.Single => new ParsedValueStorage(single),
+            SeparatedValuesConversion.Double => new ParsedValueStorage(doubleValue),
+            _ => default
+        };
+    }
+
+    public bool IsAvailable { get; }
+
+    public bool IsNull { get; }
+
+    public SeparatedValuesConversion Conversion { get; }
+
+    private readonly ParsedValueStorage _value;
+
+    public bool Boolean => _value.Boolean;
+
+    public byte Byte => _value.Byte;
+
+    public sbyte SByte => _value.SByte;
+
+    public short Int16 => _value.Int16;
+
+    public int Int32 => _value.Int32;
+
+    public long Int64 => _value.Int64;
+
+    public ushort UInt16 => _value.UInt16;
+
+    public uint UInt32 => _value.UInt32;
+
+    public ulong UInt64 => _value.UInt64;
+
+    public decimal Decimal => _value.Decimal;
+
+    public float Single => _value.Single;
+
+    public double Double => _value.Double;
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    private readonly struct ParsedValueStorage
+    {
+        [FieldOffset(0)] public readonly bool Boolean;
+        [FieldOffset(0)] public readonly byte Byte;
+        [FieldOffset(0)] public readonly sbyte SByte;
+        [FieldOffset(0)] public readonly short Int16;
+        [FieldOffset(0)] public readonly int Int32;
+        [FieldOffset(0)] public readonly long Int64;
+        [FieldOffset(0)] public readonly ushort UInt16;
+        [FieldOffset(0)] public readonly uint UInt32;
+        [FieldOffset(0)] public readonly ulong UInt64;
+        [FieldOffset(0)] public readonly decimal Decimal;
+        [FieldOffset(0)] public readonly float Single;
+        [FieldOffset(0)] public readonly double Double;
+
+        public ParsedValueStorage(bool value) : this() => Boolean = value;
+        public ParsedValueStorage(byte value) : this() => Byte = value;
+        public ParsedValueStorage(sbyte value) : this() => SByte = value;
+        public ParsedValueStorage(short value) : this() => Int16 = value;
+        public ParsedValueStorage(int value) : this() => Int32 = value;
+        public ParsedValueStorage(long value) : this() => Int64 = value;
+        public ParsedValueStorage(ushort value) : this() => UInt16 = value;
+        public ParsedValueStorage(uint value) : this() => UInt32 = value;
+        public ParsedValueStorage(ulong value) : this() => UInt64 = value;
+        public ParsedValueStorage(decimal value) : this() => Decimal = value;
+        public ParsedValueStorage(float value) : this() => Single = value;
+        public ParsedValueStorage(double value) : this() => Double = value;
+    }
+
+    public static SeparatedValuesParsedValue Null(SeparatedValuesConversion conversion)
+    {
+        return new SeparatedValuesParsedValue(conversion, true);
+    }
+
+    public static bool TryParse(
+        SeparatedValuesUtf8Field field,
+        SeparatedValuesConversion conversion,
+        IFormatProvider culture,
+        out SeparatedValuesParsedValue parsed)
+    {
+        switch (conversion)
+        {
+            case SeparatedValuesConversion.Boolean when SeparatedValuesValueConverter.TryParse(field, out bool value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, boolean: value);
+                return true;
+            case SeparatedValuesConversion.Byte when SeparatedValuesValueConverter.TryParse(field, out byte value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, byteValue: value);
+                return true;
+            case SeparatedValuesConversion.SByte when SeparatedValuesValueConverter.TryParse(field, out sbyte value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, sbyteValue: value);
+                return true;
+            case SeparatedValuesConversion.Int16 when SeparatedValuesValueConverter.TryParse(field, out short value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, int16: value);
+                return true;
+            case SeparatedValuesConversion.Int32 when SeparatedValuesValueConverter.TryParse(field, out int value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, int32: value);
+                return true;
+            case SeparatedValuesConversion.Int64 when SeparatedValuesValueConverter.TryParse(field, out long value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, int64: value);
+                return true;
+            case SeparatedValuesConversion.UInt16 when SeparatedValuesValueConverter.TryParse(field, out ushort value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, uint16: value);
+                return true;
+            case SeparatedValuesConversion.UInt32 when SeparatedValuesValueConverter.TryParse(field, out uint value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, uint32: value);
+                return true;
+            case SeparatedValuesConversion.UInt64 when SeparatedValuesValueConverter.TryParse(field, out ulong value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, uint64: value);
+                return true;
+            case SeparatedValuesConversion.Decimal when SeparatedValuesValueConverter.TryParse(field, out decimal value, culture):
+                parsed = new SeparatedValuesParsedValue(conversion, false, decimalValue: value);
+                return true;
+            case SeparatedValuesConversion.Single when SeparatedValuesValueConverter.TryParse(field, out float value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, single: value);
+                return true;
+            case SeparatedValuesConversion.Double when SeparatedValuesValueConverter.TryParse(field, out double value):
+                parsed = new SeparatedValuesParsedValue(conversion, false, doubleValue: value);
+                return true;
+            default:
+                parsed = default;
+                return false;
+        }
+    }
+
+    public bool CanCompare(SeparatedValuesConversion conversion)
+    {
+        return IsAvailable && !IsNull && Conversion == conversion;
+    }
+
+    public bool CanMaterialize(SeparatedValuesConversion conversion)
+    {
+        return IsAvailable && (IsNull || Conversion == conversion);
+    }
+
+    public object? Materialize(SeparatedValuesConversion conversion)
+    {
+        if (!CanMaterialize(conversion))
+            throw new InvalidOperationException("The parsed field cannot satisfy the requested conversion.");
+        if (IsNull)
+            return null;
+        return conversion switch
+        {
+            SeparatedValuesConversion.Boolean => Boolean,
+            SeparatedValuesConversion.Byte => Byte,
+            SeparatedValuesConversion.SByte => SByte,
+            SeparatedValuesConversion.Int16 => Int16,
+            SeparatedValuesConversion.Int32 => Int32,
+            SeparatedValuesConversion.Int64 => Int64,
+            SeparatedValuesConversion.UInt16 => UInt16,
+            SeparatedValuesConversion.UInt32 => UInt32,
+            SeparatedValuesConversion.UInt64 => UInt64,
+            SeparatedValuesConversion.Decimal => Decimal,
+            SeparatedValuesConversion.Single => Single,
+            SeparatedValuesConversion.Double => Double,
+            _ => throw new InvalidOperationException("The parsed conversion is not materializable.")
+        };
     }
 }
 
@@ -884,6 +1258,40 @@ internal enum SeparatedValuesConversion : byte
 
 internal static class SeparatedValuesValueConverter
 {
+    public static bool TryGetExactConversion(Type fieldType, out SeparatedValuesConversion conversion)
+    {
+        ArgumentNullException.ThrowIfNull(fieldType);
+        var type = Nullable.GetUnderlyingType(fieldType) ?? fieldType;
+
+        if (type == typeof(string)) conversion = SeparatedValuesConversion.String;
+        else if (type == typeof(bool)) conversion = SeparatedValuesConversion.Boolean;
+        else if (type == typeof(byte)) conversion = SeparatedValuesConversion.Byte;
+        else if (type == typeof(char)) conversion = SeparatedValuesConversion.Character;
+        else if (type == typeof(DateTime)) conversion = SeparatedValuesConversion.DateTime;
+        else if (type == typeof(DateTimeOffset)) conversion = SeparatedValuesConversion.DateTimeOffset;
+        else if (type == typeof(decimal)) conversion = SeparatedValuesConversion.Decimal;
+        else if (type == typeof(double)) conversion = SeparatedValuesConversion.Double;
+        else if (type == typeof(short)) conversion = SeparatedValuesConversion.Int16;
+        else if (type == typeof(int)) conversion = SeparatedValuesConversion.Int32;
+        else if (type == typeof(long)) conversion = SeparatedValuesConversion.Int64;
+        else if (type == typeof(sbyte)) conversion = SeparatedValuesConversion.SByte;
+        else if (type == typeof(float)) conversion = SeparatedValuesConversion.Single;
+        else if (type == typeof(TimeSpan)) conversion = SeparatedValuesConversion.TimeSpan;
+        else if (type == typeof(ushort)) conversion = SeparatedValuesConversion.UInt16;
+        else if (type == typeof(uint)) conversion = SeparatedValuesConversion.UInt32;
+        else if (type == typeof(ulong)) conversion = SeparatedValuesConversion.UInt64;
+        else if (type == typeof(Guid)) conversion = SeparatedValuesConversion.Guid;
+        else if (type == typeof(DateOnly)) conversion = SeparatedValuesConversion.DateOnly;
+        else if (type == typeof(TimeOnly)) conversion = SeparatedValuesConversion.TimeOnly;
+        else
+        {
+            conversion = default;
+            return false;
+        }
+
+        return fieldType == type || Nullable.GetUnderlyingType(fieldType) == type;
+    }
+
     public static SeparatedValuesConversion GetConversion(Type outputType, StructuredTypeState inferredType)
     {
         var type = outputType.GetUnderlyingNullable();
@@ -899,26 +1307,8 @@ internal static class SeparatedValuesValueConverter
             };
         }
 
-        if (type == typeof(string)) return SeparatedValuesConversion.String;
-        if (type == typeof(bool)) return SeparatedValuesConversion.Boolean;
-        if (type == typeof(byte)) return SeparatedValuesConversion.Byte;
-        if (type == typeof(char)) return SeparatedValuesConversion.Character;
-        if (type == typeof(DateTime)) return SeparatedValuesConversion.DateTime;
-        if (type == typeof(DateTimeOffset)) return SeparatedValuesConversion.DateTimeOffset;
-        if (type == typeof(decimal)) return SeparatedValuesConversion.Decimal;
-        if (type == typeof(double)) return SeparatedValuesConversion.Double;
-        if (type == typeof(short)) return SeparatedValuesConversion.Int16;
-        if (type == typeof(int)) return SeparatedValuesConversion.Int32;
-        if (type == typeof(long)) return SeparatedValuesConversion.Int64;
-        if (type == typeof(sbyte)) return SeparatedValuesConversion.SByte;
-        if (type == typeof(float)) return SeparatedValuesConversion.Single;
-        if (type == typeof(TimeSpan)) return SeparatedValuesConversion.TimeSpan;
-        if (type == typeof(ushort)) return SeparatedValuesConversion.UInt16;
-        if (type == typeof(uint)) return SeparatedValuesConversion.UInt32;
-        if (type == typeof(ulong)) return SeparatedValuesConversion.UInt64;
-        if (type == typeof(Guid)) return SeparatedValuesConversion.Guid;
-        if (type == typeof(DateOnly)) return SeparatedValuesConversion.DateOnly;
-        if (type == typeof(TimeOnly)) return SeparatedValuesConversion.TimeOnly;
+        if (TryGetExactConversion(type, out var conversion))
+            return conversion;
 
         throw new NotSupportedException($"Explicit separated-values type '{outputType}' is not supported.");
     }
@@ -1014,29 +1404,85 @@ internal static class SeparatedValuesValueConverter
         return false;
     }
 
-    public static bool TryParse(SeparatedValuesUtf8Field field, out byte value) =>
-        TryParseCore(field, Utf8Parser.TryParse, out value);
+    public static bool TryParse(SeparatedValuesUtf8Field field, out byte value)
+    {
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length)
+            return true;
+        value = default;
+        return false;
+    }
 
-    public static bool TryParse(SeparatedValuesUtf8Field field, out sbyte value) =>
-        TryParseCore(field, Utf8Parser.TryParse, out value);
+    public static bool TryParse(SeparatedValuesUtf8Field field, out sbyte value)
+    {
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length)
+            return true;
+        value = default;
+        return false;
+    }
 
-    public static bool TryParse(SeparatedValuesUtf8Field field, out short value) =>
-        TryParseCore(field, Utf8Parser.TryParse, out value);
+    public static bool TryParse(SeparatedValuesUtf8Field field, out short value)
+    {
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length)
+            return true;
+        value = default;
+        return false;
+    }
 
-    public static bool TryParse(SeparatedValuesUtf8Field field, out ushort value) =>
-        TryParseCore(field, Utf8Parser.TryParse, out value);
+    public static bool TryParse(SeparatedValuesUtf8Field field, out ushort value)
+    {
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length)
+            return true;
+        value = default;
+        return false;
+    }
 
-    public static bool TryParse(SeparatedValuesUtf8Field field, out int value) =>
-        TryParseCore(field, Utf8Parser.TryParse, out value);
+    public static bool TryParse(SeparatedValuesUtf8Field field, out int value)
+    {
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length)
+            return true;
+        value = default;
+        return false;
+    }
 
-    public static bool TryParse(SeparatedValuesUtf8Field field, out uint value) =>
-        TryParseCore(field, Utf8Parser.TryParse, out value);
+    public static bool TryParse(SeparatedValuesUtf8Field field, out uint value)
+    {
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length)
+            return true;
+        value = default;
+        return false;
+    }
 
-    public static bool TryParse(SeparatedValuesUtf8Field field, out long value) =>
-        TryParseCore(field, Utf8Parser.TryParse, out value);
+    public static bool TryParse(SeparatedValuesUtf8Field field, out long value)
+    {
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length)
+            return true;
+        value = default;
+        return false;
+    }
 
-    public static bool TryParse(SeparatedValuesUtf8Field field, out ulong value) =>
-        TryParseCore(field, Utf8Parser.TryParse, out value);
+    public static bool TryParse(SeparatedValuesUtf8Field field, out ulong value)
+    {
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length)
+            return true;
+        value = default;
+        return false;
+    }
 
     public static bool TryParse(SeparatedValuesUtf8Field field, out decimal value)
     {
@@ -1068,30 +1514,24 @@ internal static class SeparatedValuesValueConverter
 
     public static bool TryParse(SeparatedValuesUtf8Field field, out float value)
     {
-        var result = TryParseCore(field, Utf8Parser.TryParse, out value);
-        return result && float.IsFinite(value);
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length &&
+            float.IsFinite(value))
+            return true;
+        value = default;
+        return false;
     }
 
     public static bool TryParse(SeparatedValuesUtf8Field field, out double value)
     {
-        var result = TryParseCore(field, Utf8Parser.TryParse, out value);
-        return result && double.IsFinite(value);
-    }
-
-    private static bool TryParseCore<T>(
-        SeparatedValuesUtf8Field field,
-        Utf8TryParse<T> parser,
-        out T value)
-    {
-        if (field.NeedsUnescaping ||
-            !parser(field.EncodedValue, out value, out var consumed) ||
-            consumed != field.EncodedValue.Length)
-        {
-            value = default!;
-            return false;
-        }
-
-        return true;
+        if (!field.NeedsUnescaping &&
+            Utf8Parser.TryParse(field.EncodedValue, out value, out var consumed) &&
+            consumed == field.EncodedValue.Length &&
+            double.IsFinite(value))
+            return true;
+        value = default;
+        return false;
     }
 
     private static char ParseCharacter(SeparatedValuesUtf8Field field)
@@ -1147,5 +1587,4 @@ internal static class SeparatedValuesValueConverter
             : value;
     }
 
-    private delegate bool Utf8TryParse<T>(ReadOnlySpan<byte> source, out T value, out int bytesConsumed, char format = default);
 }

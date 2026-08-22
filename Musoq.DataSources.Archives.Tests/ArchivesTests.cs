@@ -18,7 +18,7 @@ public class ArchivesTests
     public void WhenWorkingWithZipArchive_ShouldRead()
     {
         const string script =
-            "select Key, IsDirectory, (case when IsDirectory = false then GetTextContent() else '' end) from #archives.file('./Files/Example1/archives.zip')";
+            "select Key, IsDirectory, (case when IsDirectory = false then GetTextContent() else '' end) from archives.file('./Files/Example1/archives.zip')";
 
         var vm = CreateAndRunVirtualMachine(script);
 
@@ -55,7 +55,7 @@ public class ArchivesTests
     public void WhenWorkingWithTarArchive_ShouldRead()
     {
         var script =
-            "select Key, IsDirectory, (case when IsDirectory = false then GetTextContent() else '' end) from #archives.file('./Files/Example1/archives.tar')";
+            "select Key, IsDirectory, (case when IsDirectory = false then GetTextContent() else '' end) from archives.file('./Files/Example1/archives.tar')";
 
         var vm = CreateAndRunVirtualMachine(script);
 

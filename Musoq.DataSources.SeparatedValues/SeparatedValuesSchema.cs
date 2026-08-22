@@ -17,7 +17,7 @@ namespace Musoq.DataSources.SeparatedValues;
 ///     Streams strict UTF-8 separated-values files with dynamic columns.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
-public class SeparatedValuesSchema : SchemaBase
+public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
 {
     private const string SchemaName = "SeparatedValues";
     private const string CommaTable = "comma";
@@ -34,7 +34,7 @@ public class SeparatedValuesSchema : SchemaBase
     ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#separatedvalues.comma(string path, bool hasHeader, int skipLines)</from>
+    ///                 <from>separatedvalues.comma(string path, bool hasHeader, int skipLines)</from>
     ///                 <description>Resolves a bounded CSV schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
@@ -46,7 +46,7 @@ public class SeparatedValuesSchema : SchemaBase
     ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#separatedvalues.tab(string path, bool hasHeader, int skipLines)</from>
+    ///                 <from>separatedvalues.tab(string path, bool hasHeader, int skipLines)</from>
     ///                 <description>Resolves a bounded TSV schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
@@ -58,7 +58,7 @@ public class SeparatedValuesSchema : SchemaBase
     ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#separatedvalues.semicolon(string path, bool hasHeader, int skipLines)</from>
+    ///                 <from>separatedvalues.semicolon(string path, bool hasHeader, int skipLines)</from>
     ///                 <description>Resolves a bounded semicolon-separated schema and streams requested columns</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
@@ -112,16 +112,47 @@ public class SeparatedValuesSchema : SchemaBase
         SourceExecutionContext executionContext,
         params object?[] parameters)
     {
-        var sourceParameters = ParseParameters(name, parameters);
+        ArgumentNullException.ThrowIfNull(executionContext);
 
         return name.ToLowerInvariant() switch
         {
-            CommaTable or TabTable or SemicolonTable or DelimitedTable => CreateSource<T>(
+            CommaTable or TabTable or SemicolonTable or DelimitedTable => throw LegacyRowTransferUnsupported(
+                executionContext.Plan.Identity,
                 name,
-                sourceParameters.Separator,
-                executionContext,
-                sourceParameters),
+                typeof(T)),
             _ => base.GetRowSource<T>(name, executionContext, parameters)
+        };
+    }
+
+    /// <summary>
+    ///     Gets a row source that materializes directly into the current query's private row carrier.
+    /// </summary>
+    public RowSource<TRow> GetQueryScopedRowSource<TRow, TMaterializer>(
+        string name,
+        QueryScopedRowSourceRequest request,
+        params object?[] parameters)
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var identity = request.ExecutionContext.Plan.Identity;
+        var sourceParameters = ParseParameters(name, parameters);
+        return name.ToLowerInvariant() switch
+        {
+            CommaTable or TabTable or SemicolonTable or DelimitedTable =>
+                new SeparatedValuesQueryRowSource<TRow, TMaterializer>(
+                    sourceParameters.Path,
+                    sourceParameters.Separator,
+                    sourceParameters.HasHeader,
+                    sourceParameters.SkipLines,
+                    request,
+                    _modules.ScanPipeline,
+                    _modules.DialectResolver.Resolve(
+                        sourceParameters.Separator,
+                        request.ExecutionContext.SourceRuntimeSettings)),
+            _ => throw QueryScopedRowsUnavailable(
+                identity,
+                request.Shape.Fingerprint,
+                $"data source '{name}' is not supported")
         };
     }
 
@@ -134,6 +165,11 @@ public class SeparatedValuesSchema : SchemaBase
         params object?[] parameters)
     {
         var sourceParameters = ParseParameters(name, parameters);
+        if (!SeparatedValuesQueryMetadata.TryValidateDeclaredColumns(
+                context.MetadataContext.AllColumns,
+                out var declaredMetadataReason))
+            throw MandatoryQueryRowsUnavailable(context.Identity, declaredMetadataReason);
+
         var separator = sourceParameters.Separator;
         var dialect = _modules.DialectResolver.Resolve(separator, context.MetadataContext.SourceRuntimeSettings);
         var contract = Resolve(
@@ -142,18 +178,29 @@ public class SeparatedValuesSchema : SchemaBase
             context.MetadataContext.AllColumns,
             context.MetadataContext.SourceRuntimeSettings,
             context.MetadataContext.EndWorkToken);
+        var table = new SeparatedValuesTable(contract.Snapshot, context.MetadataContext);
+
+        if (!SeparatedValuesQueryMetadata.TryCreateForDescriptor(
+                contract,
+                table.Columns,
+                out _,
+                out var eligibilityReason))
+            throw MandatoryQueryRowsUnavailable(context.Identity, eligibilityReason);
+
+        contract = contract.WithDescriptorColumns(table.Columns);
+
         _pendingContract.Value = new PendingContract(
             CreateContractKey(sourceParameters, dialect),
             contract);
-        var table = new SeparatedValuesTable(contract.Snapshot, context.MetadataContext);
 
         return new SourceDescriptor
         {
             Identity = context.Identity,
             Columns = table.Columns,
-            RowType = table.Metadata.TableEntityType,
+            RowType = typeof(object[]),
             Diagnostics = contract.Diagnostics,
-            ContractDiagnostics = []
+            ContractDiagnostics = [],
+            TransferCapabilities = SourceTransferCapabilities.QueryScopedRows
         };
     }
 
@@ -343,24 +390,6 @@ public class SeparatedValuesSchema : SchemaBase
             metadataContext);
     }
 
-    private RowSource<T> CreateSource<T>(
-        string name,
-        string separator,
-        SourceExecutionContext executionContext,
-        SourceParameters parameters)
-    {
-        RowSource<object?[]> source = new SeparatedValuesFromFileRowsSource(
-            parameters.Path,
-            separator,
-            parameters.HasHeader,
-            parameters.SkipLines,
-            executionContext,
-            _modules.ScanPipeline,
-            _modules.DialectResolver.Resolve(separator, executionContext.SourceRuntimeSettings));
-
-        return EnsureSourceType<T, object?[]>(name, source);
-    }
-
     private SeparatedValuesSourceContract Resolve(
         SourceParameters parameters,
         SeparatedValuesDialect dialect,
@@ -410,6 +439,45 @@ public class SeparatedValuesSchema : SchemaBase
                 $"Data source '{name}' is not supported by {SchemaName} schema. " +
                 $"Available data sources: {CommaTable}, {TabTable}, {SemicolonTable}")
         };
+    }
+
+    private static InvalidOperationException QueryScopedRowsUnavailable(
+        SourceIdentity identity,
+        string fingerprint,
+        string reason)
+    {
+        return new InvalidOperationException(
+            $"Separated-values source '{identity.SchemaName}.{identity.MethodName}' " +
+            $"(context '{identity.SourceContextId}', alias '{identity.Alias}') cannot materialize " +
+            $"query shape '{fingerprint}': {reason}.");
+    }
+
+    private static InvalidOperationException MandatoryQueryRowsUnavailable(
+        SourceIdentity identity,
+        string reason)
+    {
+        return new InvalidOperationException(
+            $"Separated-values source '{identity.SchemaName}.{identity.MethodName}' " +
+            $"(context '{identity.SourceContextId}', alias '{identity.Alias}') cannot be described " +
+            $"for mandatory query-scoped row transfer: {reason}.");
+    }
+
+    private static InvalidOperationException LegacyRowTransferUnsupported(
+        SourceIdentity identity,
+        string sourceName,
+        Type requestedRowType)
+    {
+        var schemaName = string.IsNullOrWhiteSpace(identity.SchemaName)
+            ? SchemaName.ToLowerInvariant()
+            : identity.SchemaName;
+        var methodName = string.IsNullOrWhiteSpace(identity.MethodName)
+            ? sourceName
+            : identity.MethodName;
+        return new InvalidOperationException(
+            $"Separated-values source '{schemaName}.{methodName}' " +
+            $"(context '{identity.SourceContextId}', alias '{identity.Alias}') cannot create legacy row type " +
+            $"'{requestedRowType}': the core planner selected unsupported legacy row transfer; " +
+            "SeparatedValues requires query-scoped row transfer.");
     }
 
     private static SourceParameters ParseParameters(string name, object?[] parameters)

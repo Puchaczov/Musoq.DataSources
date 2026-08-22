@@ -18,7 +18,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void FileHistoryPlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj')";
+        var query = $"select * from git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -28,7 +28,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void FileHistoryTakePlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj', 1)";
+        var query = $"select * from git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj', 1)";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -39,7 +39,7 @@ public class GitPlaygroundTests
     public void FileHistorySkipTakePlayground_ShouldBeIgnored()
     {
         var query =
-            $"select * from #git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj', 1, 2)";
+            $"select * from git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj', 1, 2)";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -49,7 +49,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void FileHistoryPlaygroundDesc_ShouldBeIgnored()
     {
-        var query = $"desc #git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj')";
+        var query = $"desc git.filehistory('{RepositoryPath.Escape()}', 'Musoq.DataSources.Git.csproj')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -59,7 +59,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void FileHistoryWildcardPlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.filehistory('{RepositoryPath.Escape()}', '*.csproj')";
+        var query = $"select * from git.filehistory('{RepositoryPath.Escape()}', '*.csproj')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -69,7 +69,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void RepositoryPlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.repository('{RepositoryPath.Escape()}')";
+        var query = $"select * from git.repository('{RepositoryPath.Escape()}')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -79,7 +79,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void CommitsPlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.commits('{RepositoryPath.Escape()}')";
+        var query = $"select * from git.commits('{RepositoryPath.Escape()}')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -89,7 +89,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void BranchesPlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.branches('{RepositoryPath.Escape()}')";
+        var query = $"select * from git.branches('{RepositoryPath.Escape()}')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -99,7 +99,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void TagsPlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.tags('{RepositoryPath.Escape()}')";
+        var query = $"select * from git.tags('{RepositoryPath.Escape()}')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -109,7 +109,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void StatusPlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.status('{RepositoryPath.Escape()}')";
+        var query = $"select * from git.status('{RepositoryPath.Escape()}')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -119,7 +119,7 @@ public class GitPlaygroundTests
     [TestMethod]
     public void RemotesPlayground_ShouldBeIgnored()
     {
-        var query = $"select * from #git.remotes('{RepositoryPath.Escape()}')";
+        var query = $"select * from git.remotes('{RepositoryPath.Escape()}')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 

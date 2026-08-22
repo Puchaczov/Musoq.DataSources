@@ -37,7 +37,7 @@ public class CANBusSchema : SchemaBase
     ///                 <from>
     ///                     <environmentVariables>
     ///                     </environmentVariables>
-    ///                     #can.separatedvalues(string csvData, string dbcData, string idOfType = "dec" | "hex" | "bin")
+    ///                     can.separatedvalues(string csvData, string dbcData, string idOfType = "dec" | "hex" | "bin")
     ///                 </from>
     ///                 <description>
     ///                     Treats csv, tsv or others separated values files as CAN bus records. The file must be of
@@ -67,7 +67,7 @@ public class CANBusSchema : SchemaBase
     ///                 <from>
     ///                     <environmentVariables>
     ///                     </environmentVariables>
-    ///                     #can.messages(string dbc)
+    ///                     can.messages(string dbc)
     ///                 </from>
     ///                 <description>Parses dbc file and returns all messages defined within it.</description>
     ///                 <columns>
@@ -89,7 +89,7 @@ public class CANBusSchema : SchemaBase
     ///                 <from>
     ///                     <environmentVariables>
     ///                     </environmentVariables>
-    ///                     #can.signals(string dbc)
+    ///                     can.signals(string dbc)
     ///                 </from>
     ///                 <description>Parses dbc file and returns all signals defined within it.</description>
     ///                 <columns>

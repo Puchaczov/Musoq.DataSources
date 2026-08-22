@@ -44,13 +44,14 @@ public class SeparatedValuesModuleConformanceTests
     {
         var pipeline = new CapturingScanPipeline();
         var context = RuntimeV2TestContexts.CreateExecutionContext(
+            allColumns: [new SchemaColumn("Name", 0, typeof(string))],
             executionPlan: new SourceExecutionPlan
             {
                 Identity = SourceIdentity.Empty,
                 AcceptedColumns = [],
                 AcceptedOrderBy = []
             });
-        var source = new SeparatedValuesFromFileRowsSource(
+        var source = SeparatedValuesNativeTestSource.Create<string?>(
             "unused.csv",
             ",",
             true,
@@ -62,7 +63,31 @@ public class SeparatedValuesModuleConformanceTests
 
         Assert.AreEqual(1, pipeline.Calls);
         Assert.AreEqual("unused.csv", System.IO.Path.GetFileName(pipeline.LastRequest.Path));
-        Assert.AreEqual("module-row", rows.Single()[0]);
+        Assert.AreEqual("module-row", rows.Single().Item0);
+    }
+
+    [TestMethod]
+    public void DescribeSource_WhenInjectedPipelineTransfersQueryRows_AdvertisesNativeCapability()
+    {
+        var schema = new SeparatedValuesSchema(new SeparatedValuesPipelineModules(
+            new CapturingSchemaResolver(CreateContract()),
+            new CapturingScanPipeline()));
+        var metadataContext = new SourceMetadataContext(
+            "module-test",
+            CancellationToken.None,
+            [],
+            new Dictionary<string, string>(),
+            new Mock<ILogger>().Object);
+        var identity = new SourceIdentity("separatedvalues", "comma", "module-test", "Rows");
+
+        var descriptor = schema.DescribeSource(
+            "comma",
+            new SourceDescribeContext(identity, metadataContext),
+            "unused.csv",
+            true,
+            0);
+
+        Assert.AreEqual(SourceTransferCapabilities.QueryScopedRows, descriptor.TransferCapabilities);
     }
 
     private static SeparatedValuesSourceContract CreateContract()
@@ -93,17 +118,31 @@ public class SeparatedValuesModuleConformanceTests
         }
     }
 
-    private sealed class CapturingScanPipeline : ISeparatedValuesScanPipeline
+    private sealed class CapturingScanPipeline : ISeparatedValuesQueryScanPipeline
     {
         public int Calls { get; private set; }
 
         public SeparatedValuesScanRequest LastRequest { get; private set; }
 
-        public void Execute(SeparatedValuesScanRequest request, IChunkWriter<object?[]> writer)
+        public void Execute<TRow, TMaterializer>(
+            SeparatedValuesScanRequest request,
+            QueryRowShape shape,
+            IChunkWriter<TRow> writer)
+            where TMaterializer : struct, IQueryRowMaterializer<TRow>
         {
             Calls++;
             LastRequest = request;
-            writer.Write([new object?[] { "module-row" }]);
+            var reader = new CapturingFieldReader();
+            writer.Write([TMaterializer.Materialize<CapturingFieldReader>(ref reader)]);
+        }
+
+        private struct CapturingFieldReader : IQuerySourceFieldReader
+        {
+            public T Read<T>(int slot)
+            {
+                Assert.AreEqual(0, slot);
+                return (T)(object)"module-row";
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Musoq.Schema;
+using Musoq.Schema.Diagnostics;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Tests.Common;
@@ -15,7 +16,8 @@ public static class RuntimeV2TestContexts
         IReadOnlyDictionary<string, string> sourceRuntimeSettings = null,
         ILogger logger = null,
         DataSourceEventHandler dataSourceProgressCallback = null,
-        SourceExecutionPlan executionPlan = null)
+        SourceExecutionPlan executionPlan = null,
+        SourceDiagnostics sourceDiagnostics = null)
     {
         return new SourceExecutionContext(
             "test",
@@ -28,6 +30,6 @@ public static class RuntimeV2TestContexts
             sourceRuntimeSettings ?? new Dictionary<string, string>(),
             logger ?? new Mock<ILogger>().Object,
             dataSourceProgressCallback,
-            null);
+            sourceDiagnostics);
     }
 }

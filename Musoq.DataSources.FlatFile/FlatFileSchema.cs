@@ -26,7 +26,7 @@ public class FlatFileSchema : SchemaBase
     ///         <virtual-param>Path of the given file</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#flat.file(string path)</from>
+    ///                 <from>flat.file(string path)</from>
     ///                 <description>Gives ability to process flat files</description>
     ///                 <columns>
     ///                     <column name="LineNumber" type="int">Line number of a given file</column>

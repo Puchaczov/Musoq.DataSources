@@ -10,52 +10,71 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Musoq.DataSources.Common;
 using Musoq.DataSources.Structured;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues;
 
-internal sealed class SeparatedValuesParallelBlockScanPipeline
+internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValuesParallelQueryScanPipeline
 {
     public const int DefaultBlockSize = 2 * 1024 * 1024;
+    public const int DefaultIoDepth = 4;
     public const int MaximumRecordSize = 256 * 1024 * 1024;
-    private const int ZeroColumnChunkRows = 1024 * 1024;
     private const int MaximumReadAhead = 32;
     private const int MaximumReorderDepth = 32;
-    private const int MaximumFramingWorkers = 4;
 
     private readonly ISeparatedValuesRecordBoundaryAnalyzer _boundaryAnalyzer;
     private readonly ISeparatedValuesByteBlockSourceFactory _blockSourceFactory;
     private readonly int _blockSize;
+    private readonly int _ioDepth;
+    private readonly ISeparatedValuesOutputMemoryBudget _outputMemoryBudget;
+    private readonly bool _yieldBeforeCpuWork;
 
     public SeparatedValuesParallelBlockScanPipeline(
         ISeparatedValuesByteBlockSourceFactory? blockSourceFactory = null,
         ISeparatedValuesRecordBoundaryAnalyzer? boundaryAnalyzer = null,
-        int blockSize = DefaultBlockSize)
+        int blockSize = DefaultBlockSize,
+        ISeparatedValuesOutputMemoryBudget? outputMemoryBudget = null,
+        int ioDepth = DefaultIoDepth,
+        bool yieldBeforeCpuWork = true)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(blockSize);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ioDepth);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(ioDepth, MaximumReadAhead);
         _blockSourceFactory = blockSourceFactory ?? new RandomAccessSeparatedValuesByteBlockSourceFactory();
         _boundaryAnalyzer = boundaryAnalyzer ?? new QuoteParitySeparatedValuesRecordBoundaryAnalyzer();
         _blockSize = blockSize;
+        _outputMemoryBudget = outputMemoryBudget ?? SeparatedValuesOutputMemoryBudget.Shared;
+        _ioDepth = ioDepth;
+        _yieldBeforeCpuWork = yieldBeforeCpuWork;
     }
 
-    public long Execute(
+    public long Execute<TRow, TMaterializer>(
         SeparatedValuesScanRequest request,
         SeparatedValuesSourceContract contract,
-        IChunkWriter<object?[]> writer,
+        SeparatedValuesQueryShapeMapping mapping,
+        QueryRowShape shape,
+        IChunkWriter<TRow> writer,
         DataSourceProgressReporter progress,
         int chunkSize,
         int workerCount,
         CancellationToken cancellationToken)
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>
     {
+        var materialization = new QueryParallelMaterialization<TRow, TMaterializer>(
+            SeparatedValuesRecordProgram.CompileQuery(contract, request.ExecutionContext, mapping),
+            SeparatedValuesQueryOutputMemoryEstimator.Create<TRow>(shape));
         try
         {
-            return RunAsync(
+            return RunAsync<TRow, QueryParallelMaterialization<TRow, TMaterializer>>(
                     request,
                     contract,
                     writer,
                     progress,
                     chunkSize,
                     workerCount,
+                    materialization,
                     cancellationToken)
                 .GetAwaiter()
                 .GetResult();
@@ -66,18 +85,20 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
         }
     }
 
-    private async Task<long> RunAsync(
+    private async Task<long> RunAsync<TRow, TMaterialization>(
         SeparatedValuesScanRequest request,
         SeparatedValuesSourceContract contract,
-        IChunkWriter<object?[]> writer,
+        IChunkWriter<TRow> writer,
         DataSourceProgressReporter progress,
         int chunkSize,
         int workerCount,
+        TMaterialization materialization,
         CancellationToken cancellationToken)
+        where TMaterialization : struct, IParallelMaterialization<TRow>
     {
-        var framingOnly = CanUseDeclaredFramingKernel(request, contract);
-        if (framingOnly)
-            workerCount = Math.Min(workerCount, MaximumFramingWorkers);
+        var dialect = request.Dialect ?? contract.Dialect;
+        var slice = ParallelSlice.From(request.ExecutionContext.Plan);
+        var useCompactAnalysis = dialect.IsStrict;
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var reorderSlots = new SemaphoreSlim(
             Math.Clamp(workerCount * 2, 4, MaximumReorderDepth),
@@ -89,7 +110,7 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
             SingleReader = false,
             FullMode = BoundedChannelFullMode.Wait
         });
-        var results = Channel.CreateUnbounded<SeparatedValuesBlockWorkResult>(new UnboundedChannelOptions
+        var results = Channel.CreateUnbounded<SeparatedValuesBlockWorkResult<TRow>>(new UnboundedChannelOptions
         {
             SingleWriter = false,
             SingleReader = true,
@@ -99,33 +120,32 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
         var framingOptions = new SeparatedValuesFramingAnalysisOptions(
             request.SeparatorByte,
             contract.Snapshot.Columns.Length);
-        var dialect = request.Dialect ?? contract.Dialect;
-        var producer = ProduceAsync(
+        var producer = ProduceAsync<TRow, TMaterialization>(
             contract,
             dialect,
             work.Writer,
             workerCount,
             reorderSlots,
-            framingOnly,
+            useCompactAnalysis,
             framingOptions,
+            materialization,
+            slice,
             stop.Token);
         var workers = new Task[workerCount];
         for (var index = 0; index < workers.Length; index++)
         {
-            workers[index] = Task.Run(() => WorkerAsync(
+            workers[index] = Task.Run(() => WorkerAsync<TRow, TMaterialization>(
                 request,
                 contract,
                 work.Reader,
                 results.Writer,
                 chunkSize,
+                materialization,
                 stop));
         }
 
         var completion = CompleteAsync(producer, workers, results.Writer, stop);
-        var pending = new SortedDictionary<long, SeparatedValuesBlockWorkResult>();
-        var summaryBuilder = new SeparatedValuesStructuralSummaryBuilder(
-            contract.Snapshot.Identity,
-            contract.DataStartOffset);
+        var pending = new SortedDictionary<long, SeparatedValuesBlockWorkResult<TRow>>();
         var nextSequence = 0L;
         var emitted = 0L;
 
@@ -136,31 +156,33 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                 pending.Add(result.Sequence, result);
                 while (pending.Remove(nextSequence, out var ready))
                 {
-                    if (ready.Exception is not null)
+                    try
                     {
-                        reorderSlots.Release();
-                        stop.Cancel();
-                        ExceptionDispatchInfo.Capture(ready.Exception).Throw();
-                    }
+                        if (ready.Exception is not null)
+                        {
+                            stop.Cancel();
+                            ExceptionDispatchInfo.Capture(ready.Exception).Throw();
+                        }
 
-                    summaryBuilder.ObserveRange(
-                        ready.StartRow,
-                        ready.RowsRead,
-                        ready.FirstRecordOffset,
-                        ready.LastRecordEndOffset);
-                    foreach (var chunk in ready.Chunks)
-                        writer.Write(chunk);
-                    progress.RowsRead(ready.RowsRead);
-                    emitted += ready.RowsEmitted;
-                    nextSequence++;
-                    reorderSlots.Release();
+                        foreach (var chunk in ready.Chunks)
+                            writer.Write(chunk);
+                        progress.RowsRead(ready.RowsRead);
+                        emitted += ready.RowsEmitted;
+                        nextSequence++;
+                    }
+                    finally
+                    {
+                        ready.Dispose();
+                        reorderSlots.Release();
+                    }
                 }
             }
 
-            await completion.ConfigureAwait(false);
+            var completedSummary = await completion.ConfigureAwait(false);
             if (pending.Count != 0)
                 throw new InvalidOperationException("Separated-values ordered output ended with missing block results.");
-            SeparatedValuesStructuralSummaryCache.Store(summaryBuilder.Build());
+            if (completedSummary is not null)
+                SeparatedValuesStructuralSummaryCache.Store(completedSummary);
             return emitted;
         }
         finally
@@ -176,33 +198,58 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
 
             while (work.Reader.TryRead(out var item))
                 item.Dispose();
+            foreach (var result in pending.Values)
+                result.Dispose();
+            while (results.Reader.TryRead(out var result))
+                result.Dispose();
         }
     }
 
-    private async Task ProduceAsync(
+    private async Task<SeparatedValuesStructuralSummary?> ProduceAsync<TRow, TMaterialization>(
         SeparatedValuesSourceContract contract,
         SeparatedValuesDialect dialect,
         ChannelWriter<SeparatedValuesBlockWorkItem> writer,
         int workerCount,
         SemaphoreSlim reorderSlots,
-        bool framingOnly,
+        bool useCompactAnalysis,
         SeparatedValuesFramingAnalysisOptions framingOptions,
+        TMaterialization materialization,
+        ParallelSlice slice,
         CancellationToken cancellationToken)
+        where TMaterialization : struct, IParallelMaterialization<TRow>
     {
         var snapshot = contract.Snapshot;
         var pending = new Queue<Task<SeparatedValuesBlockAnalysis>>();
         var finalized = new Queue<Task<SeparatedValuesFinalizedBlock>>();
+        using var readCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var source = _blockSourceFactory.Open(
             snapshot.Identity.CanonicalPath,
             snapshot.Identity.Length);
         using var carry = new PooledRecordAccumulator(MaximumRecordSize);
-        var readAhead = Math.Clamp(workerCount, 4, MaximumReadAhead);
+        var readAhead = _ioDepth;
         var nextOffset = contract.DataStartOffset;
         var blockSequence = 0L;
         var workSequence = 0L;
         var startRow = 0L;
         var incomingQuoted = false;
         var carryStartOffset = contract.DataStartOffset;
+        var sliceComplete = false;
+        var summaryBuilder = contract.StructuralSummary is null
+            ? new SeparatedValuesStructuralSummaryBuilder(snapshot.Identity, contract.DataStartOffset)
+            : null;
+
+        if (slice.Enabled && slice.StartRow > 0 && contract.StructuralSummary is not null)
+        {
+            if (!contract.StructuralSummary.TryFindRow(slice.StartRow, out var summaryBlock))
+            {
+                writer.TryComplete();
+                return null;
+            }
+
+            nextOffset = summaryBlock.FirstRecordOffset;
+            startRow = summaryBlock.StartRow;
+            carryStartOffset = summaryBlock.FirstRecordOffset;
+        }
 
         try
         {
@@ -212,14 +259,18 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
             while (pending.Count > 0 || finalized.Count > 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                while (finalized.Count < readAhead && pending.Count > 0)
+
+                // Await a pending analysis only when there is no finalized block available to
+                // drain. A later read may be waiting for structural-memory permits held by the
+                // already finalized blocks, so filling this queue eagerly can deadlock read-ahead.
+                if (finalized.Count == 0 && pending.Count > 0)
+                    await QueueNextFinalizedAsync().ConfigureAwait(false);
+
+                while (finalized.Count < readAhead &&
+                       pending.Count > 0 &&
+                       pending.Peek().IsCompletedSuccessfully)
                 {
-                    var readAnalysis = await pending.Dequeue().ConfigureAwait(false);
-                    while (pending.Count < readAhead && nextOffset < snapshot.Identity.Length)
-                        ScheduleNext();
-                    var startsQuoted = incomingQuoted;
-                    incomingQuoted ^= readAnalysis.QuoteParity;
-                    finalized.Enqueue(FinalizeAnalysisAsync(readAnalysis, startsQuoted, cancellationToken));
+                    await QueueNextFinalizedAsync().ConfigureAwait(false);
                 }
 
                 if (finalized.Count == 0)
@@ -245,6 +296,11 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                     var prefixStartOffset = carryStartOffset;
                     var prefixEndOffset = block.Offset + firstBoundary + 1L;
                     var rowCount = finalizedBlock.TailRowCount + (prefix.Length > 0 ? 1 : 0);
+                    var blockEndRow = checked(startRow + rowCount);
+                    var selectedStartRow = Math.Max(startRow, slice.StartRow);
+                    var selectedEndRow = Math.Min(blockEndRow, slice.EndRowExclusive);
+                    var selectedRowOffset = Math.Max(0, selectedStartRow - startRow);
+                    var selectedRowCount = Math.Max(0, selectedEndRow - selectedStartRow);
                     var firstRecordOffset = prefix.Length > 0 ? prefixStartOffset : 0L;
                     var lastRecordEndOffset = prefix.Length > 0 ? prefixEndOffset : 0L;
                     if (finalizedBlock.TailRowCount > 0)
@@ -253,18 +309,30 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                             firstRecordOffset = block.Offset + finalizedBlock.FirstTailRecordOffset;
                         lastRecordEndOffset = block.Offset + finalizedBlock.LastTailRecordEndOffset;
                     }
+                    if (rowCount > 0)
+                    {
+                        summaryBuilder?.ObserveRange(
+                            startRow,
+                            rowCount,
+                            firstRecordOffset,
+                            lastRecordEndOffset);
+                    }
 
                     var lastBoundary = finalizedBlock.LastBoundary;
                     carryStartOffset = block.Offset + lastBoundary + 1L;
                     carry.Append(block.Span[(lastBoundary + 1)..]);
 
                     var newlineBuffer = analysis.DetachNewlines();
+                    var newlineMemoryLease = analysis.DetachNewlineMemoryLease();
                     workItem = new SeparatedValuesBlockWorkItem(
                         workSequence,
                         startRow,
                         rowCount,
+                        selectedRowOffset,
+                        selectedRowCount,
                         block,
                         newlineBuffer,
+                        newlineMemoryLease,
                         analysis.NewlineCount,
                         firstBoundary,
                         lastBoundary,
@@ -280,7 +348,7 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                         lastRecordEndOffset);
                     analysis.Dispose();
 
-                    if (rowCount == 0)
+                    if (selectedRowCount == 0)
                     {
                         workItem.Dispose();
                         workItem = null;
@@ -289,11 +357,29 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                     {
                         await reorderSlots.WaitAsync(cancellationToken).ConfigureAwait(false);
                         reorderSlotOwned = true;
+                        var tailEncodedBytes = finalizedBlock.TailRowCount == 0
+                            ? 0L
+                            : finalizedBlock.LastTailRecordEndOffset - finalizedBlock.FirstTailRecordOffset;
+                        var estimatedOutputBytes = materialization.EstimateRetainedOutputBytes(
+                            selectedRowCount,
+                            prefix.Length + tailEncodedBytes);
+                        workItem.AttachOutputMemoryLease(
+                            await _outputMemoryBudget.AcquireAsync(
+                                    estimatedOutputBytes,
+                                    cancellationToken)
+                                .ConfigureAwait(false));
                         await writer.WriteAsync(workItem, cancellationToken).ConfigureAwait(false);
                         workItem = null;
                         reorderSlotOwned = false;
-                        startRow += rowCount;
                         workSequence++;
+                    }
+
+                    startRow = blockEndRow;
+                    if (slice.HasEnd && startRow >= slice.EndRowExclusive)
+                    {
+                        sliceComplete = true;
+                        readCancellation.Cancel();
+                        break;
                     }
                 }
                 catch
@@ -307,19 +393,28 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                 }
             }
 
-            if (incomingQuoted)
+            if (!sliceComplete && incomingQuoted)
             {
                 throw new InvalidDataException(
                     $"The final quoted field in '{snapshot.Identity.CanonicalPath}' is not terminated.");
             }
 
-            var finalRecord = carry.TakeFinalRecord();
+            var finalRecord = sliceComplete ? default : carry.TakeFinalRecord();
             if (finalRecord.Length > 0)
             {
+                var selectedRowCount = startRow >= slice.StartRow && startRow < slice.EndRowExclusive ? 1L : 0L;
+                summaryBuilder?.ObserveRange(
+                    startRow,
+                    1,
+                    carryStartOffset,
+                    snapshot.Identity.Length);
                 var finalItem = new SeparatedValuesBlockWorkItem(
                     workSequence,
                     startRow,
                     1,
+                    0,
+                    selectedRowCount,
+                    null,
                     null,
                     null,
                     0,
@@ -335,24 +430,37 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                     snapshot.Identity.Length,
                     carryStartOffset,
                     snapshot.Identity.Length);
-                var reorderSlotOwned = false;
-                try
+                if (selectedRowCount == 0)
                 {
-                    await reorderSlots.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    reorderSlotOwned = true;
-                    await writer.WriteAsync(finalItem, cancellationToken).ConfigureAwait(false);
-                    reorderSlotOwned = false;
-                }
-                catch
-                {
-                    if (reorderSlotOwned)
-                        reorderSlots.Release();
                     finalItem.Dispose();
-                    throw;
+                }
+                else
+                {
+                    var reorderSlotOwned = false;
+                    try
+                    {
+                        await reorderSlots.WaitAsync(cancellationToken).ConfigureAwait(false);
+                        reorderSlotOwned = true;
+                        finalItem.AttachOutputMemoryLease(
+                            await _outputMemoryBudget.AcquireAsync(
+                                    materialization.EstimateRetainedOutputBytes(1, finalRecord.Length),
+                                    cancellationToken)
+                                .ConfigureAwait(false));
+                        await writer.WriteAsync(finalItem, cancellationToken).ConfigureAwait(false);
+                        reorderSlotOwned = false;
+                    }
+                    catch
+                    {
+                        if (reorderSlotOwned)
+                            reorderSlots.Release();
+                        finalItem.Dispose();
+                        throw;
+                    }
                 }
             }
 
             writer.TryComplete();
+            return sliceComplete ? null : summaryBuilder?.Build();
         }
         catch (Exception exception)
         {
@@ -396,17 +504,33 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                 blockSequence++,
                 nextOffset,
                 count,
-                framingOnly,
+                useCompactAnalysis,
                 framingOptions,
                 dialect,
-                cancellationToken));
+                readCancellation.Token));
             nextOffset += count;
+        }
+
+        async Task QueueNextFinalizedAsync()
+        {
+            var readAnalysis = await pending.Dequeue().ConfigureAwait(false);
+            while (pending.Count < readAhead && nextOffset < snapshot.Identity.Length)
+                ScheduleNext();
+
+            var startsQuoted = incomingQuoted;
+            incomingQuoted ^= readAnalysis.QuoteParity;
+            finalized.Enqueue(FinalizeAnalysisAsync(
+                readAnalysis,
+                startsQuoted,
+                _yieldBeforeCpuWork,
+                cancellationToken));
         }
     }
 
     private static async Task<SeparatedValuesFinalizedBlock> FinalizeAnalysisAsync(
         SeparatedValuesBlockAnalysis analysis,
         bool startsQuoted,
+        bool yieldBeforeCpuWork,
         CancellationToken cancellationToken)
     {
         try
@@ -424,7 +548,8 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
             }
 
             using var lease = await SeparatedValuesCpuBudget.AcquireAsync(cancellationToken).ConfigureAwait(false);
-            await Task.Yield();
+            if (yieldBeforeCpuWork)
+                await Task.Yield();
             analysis.SelectRecordBoundaries(startsQuoted);
             var tailRowCount = 0L;
             var firstTailRecordOffset = 0;
@@ -469,41 +594,66 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
         long sequence,
         long offset,
         int count,
-        bool framingOnly,
+        bool useCompactAnalysis,
         SeparatedValuesFramingAnalysisOptions framingOptions,
         SeparatedValuesDialect dialect,
         CancellationToken cancellationToken)
     {
-        var block = await source.ReadAsync(sequence, offset, count, cancellationToken).ConfigureAwait(false);
-        if (block.Length != count)
-        {
-            block.Dispose();
-            throw new EndOfStreamException("Separated-values source ended during a random-access block read.");
-        }
-
+        SeparatedValuesByteBlock? block = null;
+        SeparatedValuesStructuralMemoryBudget.Lease? inputMemoryLease = null;
+        SeparatedValuesStructuralMemoryBudget.Lease? newlineMemoryLease = null;
+        SeparatedValuesBlockAnalysis? analysis = null;
         try
         {
+            var inputBytes = SeparatedValuesStructuralMemoryBudget.EstimatePooledByteArrayBytes(count);
+            var worstCaseNewlineBytes = SeparatedValuesStructuralMemoryBudget.EstimatePooledInt32ArrayBytes(
+                count);
+            var memoryLeases = await SeparatedValuesStructuralMemoryBudget.AcquirePairAsync(
+                    inputBytes,
+                    worstCaseNewlineBytes,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            inputMemoryLease = memoryLeases.First;
+            newlineMemoryLease = memoryLeases.Second;
+            block = await source.ReadAsync(sequence, offset, count, cancellationToken).ConfigureAwait(false);
+            block.AttachMemoryLease(inputMemoryLease);
+            inputMemoryLease = null;
+            if (block.Length != count)
+                throw new EndOfStreamException("Separated-values source ended during a random-access block read.");
+
             using var lease = await SeparatedValuesCpuBudget.AcquireAsync(cancellationToken).ConfigureAwait(false);
-            await Task.Yield();
-            return framingOnly
+            if (_yieldBeforeCpuWork)
+                await Task.Yield();
+            analysis = useCompactAnalysis
                 ? _boundaryAnalyzer.AnalyzeFraming(block, framingOptions, dialect)
                 : _boundaryAnalyzer.Analyze(block, dialect);
+            analysis.AttachNewlineMemoryLease(newlineMemoryLease);
+            newlineMemoryLease = null;
+            if (analysis.IsCompact)
+                analysis.ReleaseNewlineMemoryLease();
+            return analysis;
         }
         catch
         {
-            block.Dispose();
+            analysis?.Dispose();
+            inputMemoryLease?.Dispose();
+            newlineMemoryLease?.Dispose();
+            block?.Dispose();
             throw;
         }
     }
 
-    private static async Task WorkerAsync(
+    private static async Task WorkerAsync<TRow, TMaterialization>(
         SeparatedValuesScanRequest request,
         SeparatedValuesSourceContract contract,
         ChannelReader<SeparatedValuesBlockWorkItem> work,
-        ChannelWriter<SeparatedValuesBlockWorkResult> results,
+        ChannelWriter<SeparatedValuesBlockWorkResult<TRow>> results,
         int chunkSize,
+        TMaterialization materialization,
         CancellationTokenSource stop)
+        where TMaterialization : struct, IParallelMaterialization<TRow>
     {
+        var recordExecutor = materialization.RecordProgram.CreateExecutor();
         try
         {
             await foreach (var item in work.ReadAllAsync(stop.Token).ConfigureAwait(false))
@@ -511,7 +661,16 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                 try
                 {
                     using var lease = await SeparatedValuesCpuBudget.AcquireAsync(stop.Token).ConfigureAwait(false);
-                    results.TryWrite(ProcessWorkItem(request, contract, item, chunkSize, stop.Token));
+                    var result = materialization.ProcessWorkItem(
+                        request,
+                        contract,
+                        item,
+                        chunkSize,
+                        recordExecutor,
+                        stop.Token);
+                    result.AttachOutputMemoryLease(item.DetachOutputMemoryLease());
+                    if (!results.TryWrite(result))
+                        result.Dispose();
                 }
                 catch (OperationCanceledException) when (stop.IsCancellationRequested)
                 {
@@ -522,7 +681,10 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
                 }
                 catch (Exception exception)
                 {
-                    results.TryWrite(SeparatedValuesBlockWorkResult.Failed(item.Sequence, exception));
+                    var result = SeparatedValuesBlockWorkResult<TRow>.Failed(item.Sequence, exception);
+                    result.AttachOutputMemoryLease(item.DetachOutputMemoryLease());
+                    if (!results.TryWrite(result))
+                        result.Dispose();
                 }
                 finally
                 {
@@ -535,29 +697,35 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
         }
     }
 
-    private static SeparatedValuesBlockWorkResult ProcessWorkItem(
+    private static SeparatedValuesBlockWorkResult<TRow> ProcessProjectedWorkItem<TRow, TProjector>(
         SeparatedValuesScanRequest request,
         SeparatedValuesSourceContract contract,
         SeparatedValuesBlockWorkItem item,
         int chunkSize,
+        SeparatedValuesRecordKernel recordExecutor,
+        TProjector projector,
         CancellationToken cancellationToken)
+        where TProjector : struct, ISeparatedValuesRowProjector<TRow>
     {
-        if (CanUseDeclaredFramingKernel(request, contract))
-            return ProcessFramingWorkItem(request, contract, item, chunkSize, cancellationToken);
-
         var dialect = request.Dialect ?? contract.Dialect;
 
-        var output = new BufferedChunkWriter(cancellationToken);
-        var processor = new SeparatedValuesRowProcessor(
+        var output = new BufferedChunkWriter<TRow>(cancellationToken);
+        var processor = new SeparatedValuesProjectedRowProcessor<TRow, TProjector>(
             contract,
             request.ExecutionContext,
             output,
             null,
             chunkSize,
             cancellationToken,
-            item.StartRow);
+            recordExecutor,
+            projector,
+            item.StartRow + item.SelectedRowOffset,
+            sliceAlreadyApplied: true);
 
-        if (item.Prefix.Length > 0)
+        var selectedEnd = checked(item.SelectedRowOffset + item.SelectedRowCount);
+        var prefixRows = item.Prefix.Length > 0 ? 1L : 0L;
+
+        if (prefixRows > 0 && item.SelectedRowOffset == 0 && selectedEnd > 0)
             ProcessRecord(
                 item.Prefix.Span,
                 item.PrefixStartOffset,
@@ -569,36 +737,73 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
         if (item.Block is not null && item.NewlineCount > 1)
         {
             var bytes = item.Block.Span;
-            var boundaries = item.Newlines;
-            var recordStart = boundaries[0] + 1;
-            for (var index = 1; index < boundaries.Length; index++)
+            if (item.CompactTailValidated)
             {
-                var recordEnd = TrimCarriageReturn(bytes, recordStart, boundaries[index]);
-                if (recordEnd > recordStart)
+                var validationRow = prefixRows + item.CompactValidationErrorTailRow - 1;
+                if (item.CompactValidationError == SeparatedValuesCompactValidationError.BareCarriageReturn &&
+                    validationRow >= item.SelectedRowOffset &&
+                    validationRow < selectedEnd)
                 {
-                    ProcessRecord(
-                        bytes[recordStart..recordEnd],
-                        item.Block.Offset + recordStart,
-                        item.Block.Offset + boundaries[index] + 1L,
-                        request.SeparatorByte,
-                        dialect,
-                        processor);
+                    ThrowCompactValidationError(contract, item, prefixRows);
                 }
 
-                recordStart = boundaries[index] + 1;
+                var start = item.FirstBoundary + 1;
+                var end = item.LastBoundary + 1;
+                var tailSkip = Math.Max(0, item.SelectedRowOffset - prefixRows);
+                var selectedPrefixRows = item.SelectedRowOffset == 0 && prefixRows > 0 ? 1L : 0L;
+                var tailTake = item.SelectedRowCount - selectedPrefixRows;
+                ProcessUnquotedTerminatedRecords(
+                    bytes,
+                    start,
+                    end,
+                    item.Block.Offset,
+                    request.SeparatorByte,
+                    dialect,
+                    processor,
+                    item.CompactTailIsAscii,
+                    tailSkip,
+                    tailTake);
+            }
+            else
+            {
+                var boundaries = item.Newlines;
+                var recordStart = boundaries[0] + 1;
+                var physicalRow = prefixRows;
+                for (var index = 1; index < boundaries.Length; index++)
+                {
+                    var recordEnd = TrimCarriageReturn(bytes, recordStart, boundaries[index]);
+                    if (recordEnd > recordStart)
+                    {
+                        if (physicalRow >= item.SelectedRowOffset && physicalRow < selectedEnd)
+                        {
+                            ProcessRecord(
+                                bytes[recordStart..recordEnd],
+                                item.Block.Offset + recordStart,
+                                item.Block.Offset + boundaries[index] + 1L,
+                                request.SeparatorByte,
+                                dialect,
+                                processor);
+                        }
+
+                        physicalRow++;
+                    }
+
+                    recordStart = boundaries[index] + 1;
+                }
             }
         }
 
         processor.Complete();
-        if (processor.RowsRead != item.RowCount)
+        if (processor.RowsRead != item.SelectedRowCount)
         {
             throw new InvalidDataException(
-                $"Separated-values block expected {item.RowCount:N0} records but processed {processor.RowsRead:N0}.");
+                $"Separated-values block expected {item.SelectedRowCount:N0} selected records " +
+                $"but processed {processor.RowsRead:N0}.");
         }
 
-        return new SeparatedValuesBlockWorkResult(
+        return new SeparatedValuesBlockWorkResult<TRow>(
             item.Sequence,
-            item.StartRow,
+            item.StartRow + item.SelectedRowOffset,
             processor.RowsRead,
             processor.RowsEmitted,
             item.FirstRecordOffset,
@@ -607,125 +812,126 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
             null);
     }
 
-    private static bool CanUseDeclaredFramingKernel(
-        SeparatedValuesScanRequest request,
-        SeparatedValuesSourceContract contract)
-    {
-        var plan = request.ExecutionContext.Plan;
-        var readPlan = SeparatedValuesReadPlan.From(plan);
-        return contract.Mode == SeparatedValuesSchemaResolutionMode.Declared &&
-               (request.Dialect ?? contract.Dialect).IsStrict &&
-               readPlan.ProjectionAccepted &&
-               !readPlan.HasResidualWork &&
-               plan.AcceptedColumns.Count == 0 &&
-               plan.AcceptedPredicate is null &&
-               plan.AcceptedSkip is null &&
-               plan.AcceptedTake is null;
-    }
-
-    private static SeparatedValuesBlockWorkResult ProcessFramingWorkItem(
-        SeparatedValuesScanRequest request,
-        SeparatedValuesSourceContract contract,
-        SeparatedValuesBlockWorkItem item,
-        int chunkSize,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var validated = 0L;
-        if (item.Prefix.Length > 0)
-        {
-            SeparatedValuesFramingKernel.ValidateRecord(
-                item.Prefix.Span,
-                request.SeparatorByte,
-                contract.Snapshot.Columns.Length,
-                contract.Snapshot.Identity.CanonicalPath,
-                item.StartRow + 1,
-                item.PrefixStartOffset);
-            validated++;
-        }
-
-        if (item.Block is not null && item.NewlineCount > 1)
-        {
-            var start = item.FirstBoundary + 1;
-            var end = item.LastBoundary + 1;
-            if (item.CompactTailValidated)
-            {
-                if (item.CompactValidationError != SeparatedValuesCompactValidationError.None)
-                {
-                    var rowNumber = item.StartRow + validated + item.CompactValidationErrorTailRow;
-                    var message = item.CompactValidationError == SeparatedValuesCompactValidationError.ExcessColumns
-                        ? $"contains more than the bound {contract.Snapshot.Columns.Length:N0} columns"
-                        : "contains a carriage return outside a quoted field that is not followed by a line feed";
-                    throw new InvalidDataException(
-                        $"Separated-values source '{contract.Snapshot.Identity.CanonicalPath}' row {rowNumber:N0} " +
-                        $"{message}. Byte offset: {item.Block.Offset + item.CompactValidationErrorOffset:N0}.");
-                }
-
-                if (!item.CompactTailIsAscii)
-                    SeparatedValuesUtf8Reader.ValidateUtf8(item.Block.Span[start..end]);
-                validated += item.RowCount - validated;
-            }
-            else
-            {
-                validated += SeparatedValuesFramingKernel.ValidateTerminatedRecords(
-                    item.Block.Span[start..end],
-                    request.SeparatorByte,
-                    contract.Snapshot.Columns.Length,
-                    contract.Snapshot.Identity.CanonicalPath,
-                    item.StartRow + validated,
-                    item.Block.Offset + start);
-            }
-        }
-
-        if (validated != item.RowCount)
-        {
-            throw new InvalidDataException(
-                $"Separated-values block expected {item.RowCount:N0} records but validated {validated:N0}.");
-        }
-
-        var chunks = new List<IReadOnlyList<object?[]>>(1);
-        var remaining = validated;
-        while (remaining > 0)
-        {
-            var count = (int)Math.Min(Math.Max(chunkSize, ZeroColumnChunkRows), remaining);
-            chunks.Add(new RepeatedValueChunk<object?[]>(Array.Empty<object?>(), count));
-            remaining -= count;
-        }
-
-        return new SeparatedValuesBlockWorkResult(
-            item.Sequence,
-            item.StartRow,
-            validated,
-            validated,
-            item.FirstRecordOffset,
-            item.LastRecordEndOffset,
-            chunks,
-            null);
-    }
-
-    private static void ProcessRecord(
+    private static void ProcessRecord<TRow, TProjector>(
         ReadOnlySpan<byte> bytes,
         long startOffset,
         long endOffset,
         byte separator,
         SeparatedValuesDialect dialect,
-        SeparatedValuesRowProcessor processor)
+        SeparatedValuesProjectedRowProcessor<TRow, TProjector> processor)
+        where TProjector : struct, ISeparatedValuesRowProjector<TRow>
     {
         SeparatedValuesUtf8Reader.ValidateUtf8(bytes);
         var record = new SeparatedValuesUtf8Record(bytes, separator, startOffset, endOffset, dialect);
         _ = processor.Process(record);
     }
 
-    private static async Task CompleteAsync(
-        Task producer,
+    private static void ProcessUnquotedTerminatedRecords<TRow, TProjector>(
+        ReadOnlySpan<byte> bytes,
+        int start,
+        int end,
+        long blockOffset,
+        byte separator,
+        SeparatedValuesDialect dialect,
+        SeparatedValuesProjectedRowProcessor<TRow, TProjector> processor,
+        bool recordsAreAscii,
+        long skipRecords,
+        long takeRecords)
+        where TProjector : struct, ISeparatedValuesRowProjector<TRow>
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(skipRecords);
+        ArgumentOutOfRangeException.ThrowIfNegative(takeRecords);
+        if (takeRecords == 0)
+            return;
+
+        var selectedStart = -1;
+        var selectedEnd = -1;
+        var recordStart = start;
+        var recordIndex = 0L;
+        var selectedRecords = 0L;
+        while (recordStart < end)
+        {
+            var relativeNewline = bytes[recordStart..end].IndexOf((byte)'\n');
+            if (relativeNewline < 0)
+                throw new InvalidDataException("A compact separated-values block ended without its expected record boundary.");
+
+            var boundary = recordStart + relativeNewline;
+            var recordEnd = TrimCarriageReturn(bytes, recordStart, boundary);
+            if (recordEnd > recordStart)
+            {
+                if (recordIndex >= skipRecords && selectedRecords < takeRecords)
+                {
+                    if (selectedStart < 0)
+                        selectedStart = recordStart;
+                    selectedEnd = boundary + 1;
+                    selectedRecords++;
+                }
+
+                recordIndex++;
+            }
+
+            recordStart = boundary + 1;
+        }
+
+        if (selectedRecords != takeRecords || selectedStart < 0)
+        {
+            throw new InvalidDataException(
+                $"A compact separated-values block expected {takeRecords:N0} selected records but located " +
+                $"{selectedRecords:N0}.");
+        }
+
+        if (!recordsAreAscii)
+            SeparatedValuesUtf8Reader.ValidateUtf8(bytes[selectedStart..selectedEnd]);
+
+        recordStart = selectedStart;
+        while (recordStart < selectedEnd)
+        {
+            var relativeNewline = bytes[recordStart..selectedEnd].IndexOf((byte)'\n');
+            if (relativeNewline < 0)
+                throw new InvalidDataException("A compact selected range ended without its expected record boundary.");
+
+            var boundary = recordStart + relativeNewline;
+            var recordEnd = TrimCarriageReturn(bytes, recordStart, boundary);
+            if (recordEnd > recordStart)
+            {
+                var record = new SeparatedValuesUtf8Record(
+                    bytes[recordStart..recordEnd],
+                    separator,
+                    blockOffset + recordStart,
+                    blockOffset + boundary + 1L,
+                    dialect);
+                _ = processor.ProcessUnquoted(record, separator);
+            }
+
+            recordStart = boundary + 1;
+        }
+    }
+
+    private static void ThrowCompactValidationError(
+        SeparatedValuesSourceContract contract,
+        SeparatedValuesBlockWorkItem item,
+        long precedingRows)
+    {
+        var rowNumber = item.StartRow + precedingRows + item.CompactValidationErrorTailRow;
+        var message = item.CompactValidationError == SeparatedValuesCompactValidationError.ExcessColumns
+            ? $"contains more than the bound {contract.Snapshot.Columns.Length:N0} columns"
+            : "contains a carriage return outside a quoted field that is not followed by a line feed";
+        throw new InvalidDataException(
+            $"Separated-values source '{contract.Snapshot.Identity.CanonicalPath}' row {rowNumber:N0} " +
+            $"{message}. Byte offset: {item.Block!.Offset + item.CompactValidationErrorOffset:N0}.");
+    }
+
+    private static async Task<SeparatedValuesStructuralSummary?> CompleteAsync<TRow>(
+        Task<SeparatedValuesStructuralSummary?> producer,
         IReadOnlyCollection<Task> workers,
-        ChannelWriter<SeparatedValuesBlockWorkResult> results,
+        ChannelWriter<SeparatedValuesBlockWorkResult<TRow>> results,
         CancellationTokenSource stop)
     {
         Exception? completionException = null;
+        SeparatedValuesStructuralSummary? completedSummary = null;
         try
         {
-            await producer.ConfigureAwait(false);
+            completedSummary = await producer.ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (stop.IsCancellationRequested)
         {
@@ -754,6 +960,7 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
         }
 
         results.TryComplete(completionException);
+        return completedSummary;
     }
 
     private static int TrimCarriageReturn(ReadOnlySpan<byte> bytes, int start, int end)
@@ -761,15 +968,90 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
         return end > start && bytes[end - 1] == (byte)'\r' ? end - 1 : end;
     }
 
-    private sealed class BufferedChunkWriter(CancellationToken cancellationToken) : IChunkWriter<object?[]>
+    private interface IParallelMaterialization<TRow>
     {
-        private readonly List<IReadOnlyList<object?[]>> _chunks = [];
+        SeparatedValuesRecordProgram RecordProgram { get; }
+
+        long EstimateRetainedOutputBytes(long rowCount, long encodedBytes);
+
+        SeparatedValuesBlockWorkResult<TRow> ProcessWorkItem(
+            SeparatedValuesScanRequest request,
+            SeparatedValuesSourceContract contract,
+            SeparatedValuesBlockWorkItem item,
+            int chunkSize,
+            SeparatedValuesRecordKernel recordExecutor,
+            CancellationToken cancellationToken);
+    }
+
+    private readonly struct QueryParallelMaterialization<TRow, TMaterializer>
+        : IParallelMaterialization<TRow>
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>
+    {
+        private readonly SeparatedValuesQueryOutputMemoryEstimator _outputMemoryEstimator;
+
+        public QueryParallelMaterialization(
+            SeparatedValuesRecordProgram recordProgram,
+            SeparatedValuesQueryOutputMemoryEstimator outputMemoryEstimator)
+        {
+            RecordProgram = recordProgram;
+            _outputMemoryEstimator = outputMemoryEstimator;
+        }
+
+        public SeparatedValuesRecordProgram RecordProgram { get; }
+
+        public long EstimateRetainedOutputBytes(long rowCount, long encodedBytes)
+        {
+            return _outputMemoryEstimator.Estimate(rowCount, encodedBytes);
+        }
+
+        public SeparatedValuesBlockWorkResult<TRow> ProcessWorkItem(
+            SeparatedValuesScanRequest request,
+            SeparatedValuesSourceContract contract,
+            SeparatedValuesBlockWorkItem item,
+            int chunkSize,
+            SeparatedValuesRecordKernel recordExecutor,
+            CancellationToken cancellationToken)
+        {
+            return ProcessProjectedWorkItem<
+                TRow,
+                SeparatedValuesQueryRowProjector<TRow, TMaterializer>>(
+                request,
+                contract,
+                item,
+                chunkSize,
+                recordExecutor,
+                recordExecutor.CreateQueryProjector<TRow, TMaterializer>(),
+                cancellationToken);
+        }
+    }
+
+    private readonly record struct ParallelSlice(
+        bool Enabled,
+        long StartRow,
+        long EndRowExclusive,
+        bool HasEnd)
+    {
+        public static ParallelSlice From(SourceExecutionPlan plan)
+        {
+            var start = Math.Max(0, plan.AcceptedSkip.GetValueOrDefault());
+            if (!plan.AcceptedTake.HasValue)
+                return new ParallelSlice(start > 0, start, long.MaxValue, false);
+
+            var take = Math.Max(0, plan.AcceptedTake.Value);
+            var end = start > long.MaxValue - take ? long.MaxValue : start + take;
+            return new ParallelSlice(true, start, end, true);
+        }
+    }
+
+    private sealed class BufferedChunkWriter<TRow>(CancellationToken cancellationToken) : IChunkWriter<TRow>
+    {
+        private readonly List<IReadOnlyList<TRow>> _chunks = [];
 
         public CancellationToken CancellationToken { get; } = cancellationToken;
 
-        public IReadOnlyList<IReadOnlyList<object?[]>> Chunks => _chunks;
+        public IReadOnlyList<IReadOnlyList<TRow>> Chunks => _chunks;
 
-        public void Write(IReadOnlyList<object?[]> chunk)
+        public void Write(IReadOnlyList<TRow> chunk)
         {
             _chunks.Add(chunk);
         }
@@ -779,14 +1061,19 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline
 internal sealed class SeparatedValuesBlockWorkItem : IDisposable
 {
     private int _disposed;
+    private SeparatedValuesStructuralMemoryBudget.Lease? _newlineMemoryLease;
     private int[]? _newlines;
+    private ISeparatedValuesOutputMemoryLease? _outputMemoryLease;
 
     public SeparatedValuesBlockWorkItem(
         long sequence,
         long startRow,
         long rowCount,
+        long selectedRowOffset,
+        long selectedRowCount,
         SeparatedValuesByteBlock? block,
         int[]? newlines,
+        SeparatedValuesStructuralMemoryBudget.Lease? newlineMemoryLease,
         int newlineCount,
         int firstBoundary,
         int lastBoundary,
@@ -804,8 +1091,11 @@ internal sealed class SeparatedValuesBlockWorkItem : IDisposable
         Sequence = sequence;
         StartRow = startRow;
         RowCount = rowCount;
+        SelectedRowOffset = selectedRowOffset;
+        SelectedRowCount = selectedRowCount;
         Block = block;
         _newlines = newlines;
+        _newlineMemoryLease = newlineMemoryLease;
         NewlineCount = newlineCount;
         FirstBoundary = firstBoundary;
         LastBoundary = lastBoundary;
@@ -826,6 +1116,10 @@ internal sealed class SeparatedValuesBlockWorkItem : IDisposable
     public long StartRow { get; }
 
     public long RowCount { get; }
+
+    public long SelectedRowOffset { get; }
+
+    public long SelectedRowCount { get; }
 
     public SeparatedValuesByteBlock? Block { get; }
 
@@ -857,6 +1151,21 @@ internal sealed class SeparatedValuesBlockWorkItem : IDisposable
 
     public long LastRecordEndOffset { get; }
 
+    public void AttachOutputMemoryLease(ISeparatedValuesOutputMemoryLease lease)
+    {
+        ArgumentNullException.ThrowIfNull(lease);
+        if (Interlocked.CompareExchange(ref _outputMemoryLease, lease, null) is not null)
+        {
+            lease.Dispose();
+            throw new InvalidOperationException("An output-memory lease is already attached.");
+        }
+    }
+
+    public ISeparatedValuesOutputMemoryLease? DetachOutputMemoryLease()
+    {
+        return Interlocked.Exchange(ref _outputMemoryLease, null);
+    }
+
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -865,6 +1174,8 @@ internal sealed class SeparatedValuesBlockWorkItem : IDisposable
         var newlines = Interlocked.Exchange(ref _newlines, null);
         if (newlines is not null)
             ArrayPool<int>.Shared.Return(newlines);
+        Interlocked.Exchange(ref _newlineMemoryLease, null)?.Dispose();
+        Interlocked.Exchange(ref _outputMemoryLease, null)?.Dispose();
         Prefix.Dispose();
     }
 }
@@ -877,19 +1188,65 @@ internal sealed record SeparatedValuesFinalizedBlock(
     int FirstBoundary,
     int LastBoundary);
 
-internal sealed record SeparatedValuesBlockWorkResult(
-    long Sequence,
-    long StartRow,
-    long RowsRead,
-    long RowsEmitted,
-    long FirstRecordOffset,
-    long LastRecordEndOffset,
-    IReadOnlyList<IReadOnlyList<object?[]>> Chunks,
-    Exception? Exception)
+internal sealed class SeparatedValuesBlockWorkResult<TRow> : IDisposable
 {
-    public static SeparatedValuesBlockWorkResult Failed(long sequence, Exception exception)
+    private ISeparatedValuesOutputMemoryLease? _outputMemoryLease;
+
+    public SeparatedValuesBlockWorkResult(
+        long sequence,
+        long startRow,
+        long rowsRead,
+        long rowsEmitted,
+        long firstRecordOffset,
+        long lastRecordEndOffset,
+        IReadOnlyList<IReadOnlyList<TRow>> chunks,
+        Exception? exception)
     {
-        return new SeparatedValuesBlockWorkResult(sequence, 0, 0, 0, 0, 0, [], exception);
+        Sequence = sequence;
+        StartRow = startRow;
+        RowsRead = rowsRead;
+        RowsEmitted = rowsEmitted;
+        FirstRecordOffset = firstRecordOffset;
+        LastRecordEndOffset = lastRecordEndOffset;
+        Chunks = chunks;
+        Exception = exception;
+    }
+
+    public long Sequence { get; }
+
+    public long StartRow { get; }
+
+    public long RowsRead { get; }
+
+    public long RowsEmitted { get; }
+
+    public long FirstRecordOffset { get; }
+
+    public long LastRecordEndOffset { get; }
+
+    public IReadOnlyList<IReadOnlyList<TRow>> Chunks { get; }
+
+    public Exception? Exception { get; }
+
+    public void AttachOutputMemoryLease(ISeparatedValuesOutputMemoryLease? lease)
+    {
+        if (lease is null)
+            return;
+        if (Interlocked.CompareExchange(ref _outputMemoryLease, lease, null) is not null)
+        {
+            lease.Dispose();
+            throw new InvalidOperationException("An output-memory lease is already attached to the result.");
+        }
+    }
+
+    public void Dispose()
+    {
+        Interlocked.Exchange(ref _outputMemoryLease, null)?.Dispose();
+    }
+
+    public static SeparatedValuesBlockWorkResult<TRow> Failed(long sequence, Exception exception)
+    {
+        return new SeparatedValuesBlockWorkResult<TRow>(sequence, 0, 0, 0, 0, 0, [], exception);
     }
 }
 

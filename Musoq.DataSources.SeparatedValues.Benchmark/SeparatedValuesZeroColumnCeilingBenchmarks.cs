@@ -61,12 +61,11 @@ public class SeparatedValuesZeroColumnCeilingBenchmarks
     [Benchmark]
     public long ZeroColumnSourceScan()
     {
-        var source = new SeparatedValuesSchema().GetRowSource<object?[]>(
-            "semicolon",
-            _context,
+        var source = SeparatedValuesNativeBenchmarkSource.Create(
             _path,
+            ";",
             false,
-            0);
+            _context);
         long rows = 0;
         foreach (var chunk in source.Chunks)
             rows += chunk.Count;

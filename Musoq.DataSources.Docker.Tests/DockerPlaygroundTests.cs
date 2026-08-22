@@ -19,7 +19,7 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void ContainersPlaygroundDesc_ShouldBeIgnored()
     {
-        const string query = "desc #docker.containers()";
+        const string query = "desc docker.containers()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -29,7 +29,7 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void ContainersPlayground_ShouldBeIgnored()
     {
-        const string query = "select * from #docker.containers()";
+        const string query = "select * from docker.containers()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -39,7 +39,7 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void ImagesPlaygroundDesc_ShouldBeIgnored()
     {
-        const string query = "desc #docker.images()";
+        const string query = "desc docker.images()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -49,7 +49,7 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void ImagesPlayground_ShouldBeIgnored()
     {
-        const string query = "select * from #docker.images()";
+        const string query = "select * from docker.images()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -59,7 +59,7 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void NetworksPlaygroundDesc_ShouldBeIgnored()
     {
-        const string query = "desc #docker.networks()";
+        const string query = "desc docker.networks()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -69,7 +69,7 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void NetworksPlayground_ShouldBeIgnored()
     {
-        const string query = "select * from #docker.networks()";
+        const string query = "select * from docker.networks()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -79,7 +79,7 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void VolumesPlaygroundDesc_ShouldBeIgnored()
     {
-        const string query = "desc #docker.volumes()";
+        const string query = "desc docker.volumes()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -89,7 +89,7 @@ public class DockerPlaygroundTests
     [TestMethod]
     public void VolumesPlayground_ShouldBeIgnored()
     {
-        const string query = "select * from #docker.volumes()";
+        const string query = "select * from docker.volumes()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 
@@ -100,7 +100,7 @@ public class DockerPlaygroundTests
     public void JoinContainersWithImages_ShouldPass()
     {
         const string query =
-            "select containers.ID, containers.Command, containers.Status, images.ID, images.Size from #docker.containers() containers inner join #docker.images() images on containers.ImageID = images.ID";
+            "select containers.ID, containers.Command, containers.Status, images.ID, images.Size from docker.containers() containers inner join docker.images() images on containers.ImageID = images.ID";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query);
 

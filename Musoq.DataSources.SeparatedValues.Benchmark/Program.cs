@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Musoq.DataSources.SeparatedValues.Benchmark.Performance;
 
 namespace Musoq.DataSources.SeparatedValues.Benchmark;
 
@@ -7,6 +9,44 @@ internal static class Program
 {
     public static int Main(string[] args)
     {
+        if (args is ["gate-query-rows", .. var queryRowGateArgs])
+            return QueryRowQualificationGateCommand.Run(queryRowGateArgs, Console.Out, Console.Error);
+
+        if (args is ["jit-query-row"])
+            return QueryRowJitProbe.Run(Console.Out);
+
+        if (args is ["inspect-query-row", var scenarioText, var transfer] &&
+            Enum.TryParse<SeparatedValuesQueryRowCompiledScenario>(scenarioText, true, out var scenario) &&
+            transfer is "legacy" or "query")
+        {
+            Console.WriteLine(
+                SeparatedValuesQueryScopedCompiledExecutionBenchmarks.InspectGeneratedCode(
+                    scenario,
+                    transfer == "query"));
+            return 0;
+        }
+
+        if (args is ["profile-query-row", var fieldCountText] &&
+            int.TryParse(fieldCountText, out var fieldCount) &&
+            fieldCount is 2 or 8 or 32 or 64)
+        {
+            var benchmark = new SeparatedValuesQueryScopedSourceMaterializationBenchmarks
+            {
+                FieldCount = fieldCount
+            };
+            benchmark.Setup();
+            try
+            {
+                return RunProfile(
+                    $"separated-values-query-row-{fieldCount}",
+                    benchmark.QueryScopedNumericStructRows);
+            }
+            finally
+            {
+                benchmark.Cleanup();
+            }
+        }
+
         if (SeparatedValuesBenchmarkDataCommand.TryRun(args, out var exitCode))
             return exitCode;
 
@@ -53,6 +93,29 @@ internal static class Program
         if (args is ["bakeoff-verify"])
             return SeparatedValuesParserBakeoffVerification.Run();
 
+        if (args is ["query-row-smoke"])
+            return RunQueryRowSmoke();
+
+        if (args is ["scheduling-smoke", var rowText] &&
+            int.TryParse(rowText, out var schedulingRows) &&
+            schedulingRows > 0)
+            return SeparatedValuesSchedulingMatrixRunner.Run(schedulingRows);
+
+        if (args is ["scheduling-case", var caseRowsText, var caseShape, var blockText, var depthText, var yieldText] &&
+            int.TryParse(caseRowsText, out var caseRows) &&
+            int.TryParse(blockText, out var blockSizeMiB) &&
+            int.TryParse(depthText, out var ioDepth) &&
+            bool.TryParse(yieldText, out var yieldBeforeCpuWork) &&
+            caseRows > 0)
+        {
+            return SeparatedValuesSchedulingMatrixRunner.RunCase(
+                caseRows,
+                caseShape,
+                blockSizeMiB,
+                ioDepth,
+                yieldBeforeCpuWork);
+        }
+
         if (args is ["profile-nvme", var sizeText, var workerText] &&
             int.TryParse(sizeText, out var sizeGiB) &&
             int.TryParse(workerText, out var workers) &&
@@ -92,6 +155,74 @@ internal static class Program
 
         BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         return 0;
+    }
+
+    private static int RunQueryRowSmoke()
+    {
+        var sourceMethods = typeof(SeparatedValuesQueryScopedSourceMaterializationBenchmarks)
+            .GetMethods()
+            .Where(static method => method.GetCustomAttributes(typeof(BenchmarkAttribute), inherit: false).Length != 0)
+            .OrderBy(static method => method.Name, StringComparer.Ordinal)
+            .ToArray();
+        var compiledMethods = typeof(SeparatedValuesQueryScopedCompiledExecutionBenchmarks)
+            .GetMethods()
+            .Where(static method => method.GetCustomAttributes(typeof(BenchmarkAttribute), inherit: false).Length != 0)
+            .OrderBy(static method => method.Name, StringComparer.Ordinal)
+            .ToArray();
+        if (sourceMethods.Length != 24 || compiledMethods.Length != 4)
+        {
+            throw new InvalidOperationException(
+                $"Query-row cohort shape is incomplete: source={sourceMethods.Length}/24, compiled={compiledMethods.Length}/4.");
+        }
+
+        long checksum = 0;
+        var sourceIdentities = 0;
+        foreach (var fieldCount in new[] { 2, 8, 32, 64 })
+        {
+            var benchmark = new SeparatedValuesQueryScopedSourceMaterializationBenchmarks
+            {
+                FieldCount = fieldCount
+            };
+            benchmark.Setup();
+            try
+            {
+                foreach (var method in sourceMethods)
+                {
+                    checksum = unchecked(checksum * 31 + Convert.ToInt64(method.Invoke(benchmark, null)));
+                    sourceIdentities++;
+                }
+            }
+            finally
+            {
+                benchmark.Cleanup();
+            }
+        }
+
+        var compiledIdentities = 0;
+        foreach (var scenario in Enum.GetValues<SeparatedValuesQueryRowCompiledScenario>())
+        {
+            var benchmark = new SeparatedValuesQueryScopedCompiledExecutionBenchmarks
+            {
+                Scenario = scenario
+            };
+            benchmark.Setup();
+            try
+            {
+                foreach (var method in compiledMethods)
+                {
+                    checksum = unchecked(checksum * 31 + Convert.ToInt64(method.Invoke(benchmark, null)));
+                    compiledIdentities++;
+                }
+            }
+            finally
+            {
+                benchmark.Cleanup();
+            }
+        }
+
+        Console.WriteLine(
+            $"query-row-smoke: source={sourceIdentities}/96, compiled={compiledIdentities}/36, checksum={checksum}");
+        return sourceIdentities == 96 && compiledIdentities == 36 ? 0 : 1;
     }
 
     private static int RunProfile(string name, Func<long> operation)

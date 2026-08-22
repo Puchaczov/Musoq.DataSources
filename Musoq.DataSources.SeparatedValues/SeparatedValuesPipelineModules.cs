@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Structured;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -42,7 +43,8 @@ internal sealed class SeparatedValuesSourceContract
         IEnumerable<Type>? columnTypes = null,
         SeparatedValuesStructuralSummary? structuralSummary = null,
         SeparatedValuesDialect? dialect = null,
-        IEnumerable<SeparatedValuesColumnContract>? columnContracts = null)
+        IEnumerable<SeparatedValuesColumnContract>? columnContracts = null,
+        IEnumerable<SeparatedValuesDescriptorColumn>? descriptorColumns = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentOutOfRangeException.ThrowIfNegative(inspectedRows);
@@ -61,11 +63,11 @@ internal sealed class SeparatedValuesSourceContract
             throw new ArgumentException("Separated-values contract types must match its columns.", nameof(columnTypes));
         StructuralSummary = structuralSummary;
         Dialect = dialect ?? SeparatedValuesDialect.Strict((byte)',');
-        ColumnContracts = (columnContracts ?? snapshot.Columns.Select(column =>
+        ColumnContracts = (columnContracts ?? snapshot.Columns.Select((column, index) =>
                 new SeparatedValuesColumnContract(
                     column.Name,
                     column.SourceOrdinal,
-                    column.ClrType,
+                    ColumnTypes[index],
                     column.TypeState)))
             .ToImmutableArray();
         if (ColumnContracts.Length != snapshot.Columns.Length)
@@ -77,6 +79,7 @@ internal sealed class SeparatedValuesSourceContract
                 !string.Equals(column.Name, snapshot.Columns[index].Name, StringComparison.Ordinal))
                 throw new ArgumentException("Separated-values column contracts must follow snapshot order.", nameof(columnContracts));
         }
+        DescriptorColumns = (descriptorColumns ?? []).ToImmutableArray();
         Diagnostics =
         [
             new OptimizationDiagnostic(
@@ -108,6 +111,8 @@ internal sealed class SeparatedValuesSourceContract
 
     public ImmutableArray<SeparatedValuesColumnContract> ColumnContracts { get; }
 
+    public ImmutableArray<SeparatedValuesDescriptorColumn> DescriptorColumns { get; }
+
     public IReadOnlyList<OptimizationDiagnostic> Diagnostics { get; }
 
     public SeparatedValuesStructuralSummary? StructuralSummary { get; }
@@ -135,7 +140,46 @@ internal sealed class SeparatedValuesSourceContract
             ColumnTypes,
             summary,
             Dialect,
-            ColumnContracts);
+            ColumnContracts,
+            DescriptorColumns);
+    }
+
+    public SeparatedValuesSourceContract WithDescriptorColumns(IReadOnlyCollection<ISchemaColumn> columns)
+    {
+        ArgumentNullException.ThrowIfNull(columns);
+        var ordered = columns.OrderBy(static column => column.ColumnIndex).ToArray();
+        var descriptors = new SeparatedValuesDescriptorColumn[ordered.Length];
+        for (var index = 0; index < ordered.Length; index++)
+        {
+            var column = ordered[index];
+            if (column.ColumnIndex != index)
+            {
+                throw new ArgumentException(
+                    $"Descriptor column '{column.ColumnName}' has ordinal {column.ColumnIndex}; expected {index}.",
+                    nameof(columns));
+            }
+
+            descriptors[index] = new SeparatedValuesDescriptorColumn(
+                column.ColumnName,
+                column.ColumnIndex,
+                column.ColumnType,
+                column.IntendedTypeName,
+                column.ReadModifiers.ToImmutableDictionary(StringComparer.Ordinal));
+        }
+
+        return new SeparatedValuesSourceContract(
+            Snapshot,
+            Mode,
+            HasExactCardinality,
+            InspectedRows,
+            InspectedBytes,
+            Elapsed,
+            DataStartOffset,
+            ColumnTypes,
+            StructuralSummary,
+            Dialect,
+            ColumnContracts,
+            descriptors);
     }
 
     public static SeparatedValuesSourceContract From(SourceExecutionPlan plan)
@@ -150,6 +194,13 @@ internal sealed class SeparatedValuesSourceContract
         throw new InvalidOperationException("The separated-values execution plan does not contain a source contract.");
     }
 }
+
+internal readonly record struct SeparatedValuesDescriptorColumn(
+    string Name,
+    int SourceColumnIndex,
+    Type FieldType,
+    string? IntendedTypeName,
+    IReadOnlyDictionary<string, string> ReadModifiers);
 
 internal readonly record struct SeparatedValuesSchemaResolutionRequest(
     string Path,
@@ -175,9 +226,28 @@ internal readonly record struct SeparatedValuesScanRequest(
     SourceExecutionContext ExecutionContext,
     SeparatedValuesDialect? Dialect = null);
 
-internal interface ISeparatedValuesScanPipeline
+internal interface ISeparatedValuesQueryScanPipeline
 {
-    void Execute(SeparatedValuesScanRequest request, IChunkWriter<object?[]> writer);
+    void Execute<TRow, TMaterializer>(
+        SeparatedValuesScanRequest request,
+        QueryRowShape shape,
+        IChunkWriter<TRow> writer)
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>;
+}
+
+internal interface ISeparatedValuesParallelQueryScanPipeline
+{
+    long Execute<TRow, TMaterializer>(
+        SeparatedValuesScanRequest request,
+        SeparatedValuesSourceContract contract,
+        SeparatedValuesQueryShapeMapping mapping,
+        QueryRowShape shape,
+        IChunkWriter<TRow> writer,
+        DataSourceProgressReporter progress,
+        int chunkSize,
+        int workerCount,
+        CancellationToken cancellationToken)
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>;
 }
 
 internal interface ISeparatedValuesDialectResolver
@@ -242,7 +312,7 @@ internal sealed class SeparatedValuesPipelineModules
 
     public SeparatedValuesPipelineModules(
         ISeparatedValuesSchemaResolver schemaResolver,
-        ISeparatedValuesScanPipeline scanPipeline,
+        ISeparatedValuesQueryScanPipeline scanPipeline,
         ISeparatedValuesDialectResolver? dialectResolver = null,
         ISeparatedValuesContractStore? contractStore = null)
     {
@@ -254,7 +324,7 @@ internal sealed class SeparatedValuesPipelineModules
 
     public ISeparatedValuesSchemaResolver SchemaResolver { get; }
 
-    public ISeparatedValuesScanPipeline ScanPipeline { get; }
+    public ISeparatedValuesQueryScanPipeline ScanPipeline { get; }
 
     public ISeparatedValuesDialectResolver DialectResolver { get; }
 

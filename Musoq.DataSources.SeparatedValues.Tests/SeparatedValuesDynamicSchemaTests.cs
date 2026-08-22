@@ -25,7 +25,7 @@ public class SeparatedValuesDynamicSchemaTests
         WithCsv("Name\nAda\n", path =>
         {
             var exception = Assert.ThrowsExactly<MusoqQueryException>(() =>
-                Compile($"select Missing from #separatedvalues.comma('{QueryPath(path)}', true, 0)"));
+                Compile($"select Missing from separatedvalues.comma('{QueryPath(path)}', true, 0)"));
 
             StringAssert.Contains(FlattenMessages(exception), "Missing");
         });
@@ -37,7 +37,7 @@ public class SeparatedValuesDynamicSchemaTests
         WithCsv("Name\nAda\n", path =>
         {
             var exception = Assert.ThrowsExactly<MusoqQueryException>(() =>
-                Compile($"select name from #separatedvalues.comma('{QueryPath(path)}', true, 0)"));
+                Compile($"select name from separatedvalues.comma('{QueryPath(path)}', true, 0)"));
 
             StringAssert.Contains(FlattenMessages(exception), "name");
         });
@@ -93,7 +93,7 @@ public class SeparatedValuesDynamicSchemaTests
                 CancellationToken.None,
                 [new SchemaColumn("Value", 0, typeof(long))],
                 executionPlan: plan);
-            var source = new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context);
+            var source = SeparatedValuesNativeTestSource.Create<long>(path, ",", true, 0, context);
 
             var exception = Assert.ThrowsExactly<StructuredSchemaDriftException>(() =>
                 source.Chunks.SelectMany(chunk => chunk).ToArray());
@@ -103,13 +103,15 @@ public class SeparatedValuesDynamicSchemaTests
     }
 
     [TestMethod]
-    public void Schema_WhenStreamParameterIsUsed_RejectsIt()
+    public void Schema_WhenLegacyEntryPointReceivesStream_IsRejectedBeforeParameterAccess()
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("Name\nAda\n"));
         var context = RuntimeV2TestContexts.CreateExecutionContext();
 
-        Assert.ThrowsExactly<ArgumentException>(() =>
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
             new SeparatedValuesSchema().GetRowSource<object[]>("comma", context, stream, true, 0));
+
+        StringAssert.Contains(exception.Message, "unsupported legacy row transfer");
     }
 
     private static CompiledQuery Compile(string query)

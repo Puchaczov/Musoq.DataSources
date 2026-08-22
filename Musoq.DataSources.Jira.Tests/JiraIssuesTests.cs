@@ -28,7 +28,7 @@ public class JiraIssuesTests
                 MockEntityFactory.CreateIssue("TEST-2", summary: "Second issue", status: "In Progress")
             });
 
-        var query = "select Key, Summary, Status from #jira.issues('TEST')";
+        var query = "select Key, Summary, Status from jira.issues('TEST')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -51,7 +51,7 @@ public class JiraIssuesTests
                 MockEntityFactory.CreateIssue("TEST-2", summary: "Closed issue", status: "Closed")
             });
 
-        var query = "select Key, Summary, Status from #jira.issues('TEST') where Status = 'Open'";
+        var query = "select Key, Summary, Status from jira.issues('TEST') where Status = 'Open'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();
@@ -73,7 +73,7 @@ public class JiraIssuesTests
                 MockEntityFactory.CreateIssue("TEST-2", assignee: "jane.doe")
             });
 
-        var query = "select Key, Assignee from #jira.issues('TEST') where Assignee = 'john.doe'";
+        var query = "select Key, Assignee from jira.issues('TEST') where Assignee = 'john.doe'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();
@@ -94,7 +94,7 @@ public class JiraIssuesTests
                 MockEntityFactory.CreateIssue("TEST-2", type: "Story")
             });
 
-        var query = "select Key, Type from #jira.issues('TEST') where Type = 'Bug'";
+        var query = "select Key, Type from jira.issues('TEST') where Type = 'Bug'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();
@@ -116,7 +116,7 @@ public class JiraIssuesTests
                 MockEntityFactory.CreateIssue("TEST-3", status: "Closed", priority: "High")
             });
 
-        var query = "select Key from #jira.issues('TEST') where Status = 'Open' and Priority = 'High'";
+        var query = "select Key from jira.issues('TEST') where Status = 'Open' and Priority = 'High'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();
@@ -178,7 +178,7 @@ public class JiraIssuesTests
                 ProjectKey,
                 Labels,
                 Components
-            from #jira.issues('TEST')";
+            from jira.issues('TEST')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();
@@ -207,7 +207,7 @@ public class JiraIssuesTests
         api.Setup(f => f.GetIssuesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(new List<IJiraIssue>());
 
-        var query = "select Key, Summary from #jira.issues('EMPTY')";
+        var query = "select Key, Summary from jira.issues('EMPTY')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();

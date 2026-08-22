@@ -13,7 +13,7 @@
 - `JsonLibrary.cs`
 
 ## Patterns to preserve
-- `#json.file(jsonPath)` discovers its exact top-level union and scalar types from the complete UTF-8 source.
+- `json.file(jsonPath)` discovers its exact top-level union and scalar types from the complete UTF-8 source.
 - Object roots become one row; array roots become many rows.
 - Property names are exact, ordinal, and case-sensitive. Missing properties are null; source-wide unknown properties are compilation errors.
 - Reject duplicate properties, comments, trailing commas, multiple root documents, primitive array elements, malformed UTF-8, and schema drift.

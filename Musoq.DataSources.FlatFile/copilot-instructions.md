@@ -32,7 +32,7 @@
 - The fixture also shows the intended contract around ordering: blank rows keep their original positions.
 
 ## Extension points
-- `FlatFileSchema` exposes exactly one constructor today: `#flat.file(string path)`. If you add constructors, update both the XML docs and the `GetRawConstructors()` / `GetConstructors()` surface.
+- `FlatFileSchema` exposes exactly one constructor today: `flat.file(string path)`. If you add constructors, update both the XML docs and the `GetRawConstructors()` / `GetConstructors()` surface.
 - `FlatFileEntity` + `FlatFileHelper` define the public column set. If you add or rename columns, update:
 	- entity properties,
 	- `FlatFileHelper.FlatNameToIndexMap`,

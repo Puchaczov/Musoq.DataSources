@@ -11,7 +11,7 @@ public class DualTests
     [TestMethod]
     public void SimpleDualTest()
     {
-        var query = "select Dummy from #system.dual()";
+        var query = "select Dummy from system.dual()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -23,7 +23,7 @@ public class DualTests
     [TestMethod]
     public void SimpleComputedDualTest()
     {
-        var query = "select 2 + 1 from #system.dual()";
+        var query = "select 2 + 1 from system.dual()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -35,7 +35,7 @@ public class DualTests
     [TestMethod]
     public void SomeTest()
     {
-        var query = "select ToDecimal(1 + 2) / 5 from #system.dual()";
+        var query = "select ToDecimal(1 + 2) / 5 from system.dual()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -47,7 +47,7 @@ public class DualTests
     [TestMethod]
     public void UnionTest()
     {
-        var query = "select 1 as t from #system.dual() union (t) select 2 as t from #system.dual()";
+        var query = "select 1 as t from system.dual() union (t) select 2 as t from system.dual()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();

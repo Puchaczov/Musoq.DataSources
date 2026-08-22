@@ -115,21 +115,37 @@ public class SeparatedValuesRuntimeV2ProjectionTests
             var plan = Plan(path, null, [new SourceColumnRef("Age")]);
             var context = RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                [
-                    new SchemaColumn("Age", 0, typeof(long)),
-                    new SchemaColumn("Payload", 1, typeof(Uri))
-                ],
+                [new SchemaColumn("Age", 0, typeof(long))],
                 executionPlan: plan);
-            var rows = ReadRows(path, context);
+            var rows = ReadRows<long>(path, context);
 
             Assert.AreEqual(1, rows.Length);
-            Assert.AreEqual(1, rows[0].Length);
-            Assert.AreEqual(31L, rows[0][0]);
+            Assert.AreEqual(31L, rows[0].Item0);
         });
     }
 
     [TestMethod]
-    public void FileRowsSource_WhenExecutionPlanHasNoProperties_UsesDenseProjectionFallback()
+    public void FileRowsSource_WhenRuntimeProjectsLatePhysicalColumn_UsesDenseCarrierSlot()
+    {
+        var header = string.Join(',', Enumerable.Range(1, 100).Select(index => $"Column{index}"));
+        var row = string.Join(',', Enumerable.Range(1, 100));
+        WithCsv($"{header}\n{row}\n", path =>
+        {
+            var plan = Plan(path, null, [new SourceColumnRef("Column100")]);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [new SchemaColumn("Column100", 0, typeof(long))],
+                executionPlan: plan);
+
+            var rows = ReadRows<long>(path, context);
+
+            Assert.AreEqual(1, rows.Length);
+            Assert.AreEqual(100L, rows[0].Item0);
+        });
+    }
+
+    [TestMethod]
+    public void FileRowsSource_WhenExecutionPlanHasNoPhysicalLayout_RejectsTheShape()
     {
         WithCsv("A,B,C\n1,2,3\n", path =>
         {
@@ -143,10 +159,10 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                 CancellationToken.None,
                 [new SchemaColumn("C", 0, typeof(long))],
                 executionPlan: plan);
-            var rows = ReadRows(path, context);
+            var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                ReadRows<long>(path, context));
 
-            Assert.AreEqual(1, rows[0].Length);
-            Assert.AreEqual(3L, rows[0][0]);
+            StringAssert.Contains(exception.Message, "no immutable physical-column layout");
         });
     }
 
@@ -160,16 +176,13 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                 CancellationToken.None,
                 [],
                 executionPlan: plan);
-            var chunks = new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context)
+            var chunks = SeparatedValuesNativeTestSource.Create(path, ",", true, 0, context)
                 .Chunks
                 .ToArray();
             var rows = chunks.SelectMany(chunk => chunk).ToArray();
 
             Assert.IsTrue(chunks.Length > 0);
-            Assert.IsTrue(chunks.All(chunk =>
-                chunk is RowChunk<object?[]> { Source: RepeatedValueChunk<object?[]> }));
             Assert.AreEqual(2, rows.Length);
-            Assert.IsTrue(rows.All(row => ReferenceEquals(row, Array.Empty<object?>())));
         });
     }
 
@@ -183,10 +196,10 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                 CancellationToken.None,
                 [new SchemaColumn("Name", 0, typeof(string))],
                 executionPlan: plan);
-            var rows = ReadRows(path, context);
+            var rows = ReadRows<string>(path, context);
 
             Assert.AreEqual(2, rows.Length);
-            Assert.AreSame(rows[0][0], rows[1][0]);
+            Assert.AreSame(rows[0].Item0, rows[1].Item0);
         });
     }
 
@@ -203,7 +216,6 @@ public class SeparatedValuesRuntimeV2ProjectionTests
             var rows = ReadRows(path, context);
 
             Assert.AreEqual(2, rows.Length);
-            Assert.IsTrue(rows.All(row => ReferenceEquals(row, Array.Empty<object?>())));
         });
     }
 
@@ -220,9 +232,9 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                 CancellationToken.None,
                 [new SchemaColumn("Name", 0, typeof(string))],
                 executionPlan: plan);
-            var rows = ReadRows(path, context);
+            var rows = ReadRows<string>(path, context);
 
-            CollectionAssert.AreEqual(new object?[] { "Bob", "Carol" }, rows.Select(row => row[0]).ToArray());
+            CollectionAssert.AreEqual(new[] { "Bob", "Carol" }, rows.Select(row => row.Item0).ToArray());
         });
     }
 
@@ -236,10 +248,10 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                 CancellationToken.None,
                 [new SchemaColumn("Payload", 0, typeof(string))],
                 executionPlan: plan);
-            var rows = ReadRows(path, context);
+            var rows = ReadRows<string>(path, context);
 
             Assert.AreEqual(1, rows.Length);
-            Assert.AreEqual("first", rows[0][0]);
+            Assert.AreEqual("first", rows[0].Item0);
         });
     }
 
@@ -260,10 +272,10 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                 CancellationToken.None,
                 [new SchemaColumn("Name", 0, typeof(string))],
                 executionPlan: plan);
-            var rows = ReadRows(path, context);
+            var rows = ReadRows<string>(path, context);
 
             Assert.AreEqual(1, rows.Length);
-            Assert.AreEqual("Carol", rows[0][0]);
+            Assert.AreEqual("Carol", rows[0].Item0);
         });
     }
 
@@ -285,7 +297,7 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                 [new SchemaColumn("Name", 0, typeof(string))],
                 executionPlan: plan);
 
-            Assert.AreEqual(0, ReadRows(path, context).Length);
+            Assert.AreEqual(0, ReadRows<string>(path, context).Length);
         });
     }
 
@@ -318,14 +330,16 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                         new SchemaColumn("Age", 4, typeof(long?))
                     ],
                     executionPlan: plan);
-                var rows = ReadRows(path, context);
+                var rows = ReadRows<string, string, string, string, long?>(path, context);
 
                 Assert.AreEqual(2, rows.Length);
-                CollectionAssert.AreEqual(
-                    new object?[] { "Ada", "line one\r\nline two", string.Empty, null, 31L },
+                Assert.AreEqual(
+                    new TestRow5<string, string, string, string, long?>(
+                        "Ada", "line one\r\nline two", string.Empty, null!, 31L),
                     rows[0]);
-                CollectionAssert.AreEqual(
-                    new object?[] { "Bob", "said \"hello\"", "text", null, null },
+                Assert.AreEqual(
+                    new TestRow5<string, string, string, string, long?>(
+                        "Bob", "said \"hello\"", "text", null!, null),
                     rows[1]);
             });
     }
@@ -341,7 +355,7 @@ public class SeparatedValuesRuntimeV2ProjectionTests
                 [new SchemaColumn("Age", 0, typeof(int))],
                 executionPlan: plan);
 
-            var exception = Assert.ThrowsExactly<FormatException>(() => ReadRows(path, context));
+            var exception = Assert.ThrowsExactly<FormatException>(() => ReadRows<int>(path, context));
 
             StringAssert.Contains(FlattenMessages(exception), "column 'Age'");
             StringAssert.Contains(FlattenMessages(exception), "Int32");
@@ -363,9 +377,28 @@ public class SeparatedValuesRuntimeV2ProjectionTests
             .ExecutionPlan;
     }
 
-    private static object?[][] ReadRows(string path, SourceExecutionContext context)
+    private static TestRow0[] ReadRows(string path, SourceExecutionContext context)
     {
-        return new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context)
+        return SeparatedValuesNativeTestSource.Create(path, ",", true, 0, context)
+            .Chunks
+            .SelectMany(chunk => chunk)
+            .ToArray();
+    }
+
+    private static TestRow1<T0>[] ReadRows<T0>(string path, SourceExecutionContext context)
+    {
+        return SeparatedValuesNativeTestSource.Create<T0>(path, ",", true, 0, context)
+            .Chunks
+            .SelectMany(chunk => chunk)
+            .ToArray();
+    }
+
+    private static TestRow5<T0, T1, T2, T3, T4>[] ReadRows<T0, T1, T2, T3, T4>(
+        string path,
+        SourceExecutionContext context)
+    {
+        return SeparatedValuesNativeTestSource.Create<T0, T1, T2, T3, T4>(
+                path, ",", true, 0, context)
             .Chunks
             .SelectMany(chunk => chunk)
             .ToArray();

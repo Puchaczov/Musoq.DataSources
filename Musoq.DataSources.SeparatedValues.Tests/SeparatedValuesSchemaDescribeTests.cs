@@ -32,7 +32,7 @@ public class SeparatedValuesSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #separatedvalues";
+        var query = "desc separatedvalues";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -60,7 +60,7 @@ public class SeparatedValuesSchemaDescribeTests
     [TestMethod]
     public void DescComma_ShouldReturnMethodSignature()
     {
-        var query = "desc #separatedvalues.comma";
+        var query = "desc separatedvalues.comma";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -78,7 +78,7 @@ public class SeparatedValuesSchemaDescribeTests
     [TestMethod]
     public void DescTab_ShouldReturnMethodSignature()
     {
-        var query = "desc #separatedvalues.tab";
+        var query = "desc separatedvalues.tab";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -96,7 +96,7 @@ public class SeparatedValuesSchemaDescribeTests
     [TestMethod]
     public void DescSemicolon_ShouldReturnMethodSignature()
     {
-        var query = "desc #separatedvalues.semicolon";
+        var query = "desc separatedvalues.semicolon";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -114,7 +114,7 @@ public class SeparatedValuesSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #separatedvalues.unknownmethod";
+        var query = "desc separatedvalues.unknownmethod";
 
         try
         {
@@ -138,7 +138,7 @@ public class SeparatedValuesSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #separatedvalues";
+        var query = "desc separatedvalues";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();

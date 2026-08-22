@@ -3,7 +3,7 @@
 ## Big picture
 - This repo is a set of Musoq data source plugins plus a few shared runtime/helper libraries. Most production folders follow `Schema` + `Library` + `Table` + `RowSource`/`Source` patterns.
 - Start at the plugin `*Schema` class first. That is where sources and tables are registered and where dynamic behavior is usually wired.
-- Schema XML docs are part of the product surface. Tags like `<virtual-constructors>` and `<additional-tables>` drive `desc #schema` output, so keep them aligned with code.
+- Schema XML docs are part of the product surface. Tags like `<virtual-constructors>` and `<additional-tables>` drive `desc schema` output, so keep them aligned with code.
 - The engine itself is outside this repo. Stay focused on plugin-side schema, row shaping, SQL-callable helpers, and integration code.
 
 ## Repository-wide conventions

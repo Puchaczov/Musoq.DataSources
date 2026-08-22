@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Musoq.DataSources.Structured;
 
 namespace Musoq.DataSources.SeparatedValues;
 
@@ -34,6 +35,7 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
     private bool _initialized;
     private bool _disposed;
     private bool _budgetExhausted;
+    private bool _useStrictFramingFastPath = true;
     private int _skippedLineCount;
     private long _bytesRead;
 
@@ -114,6 +116,18 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         SeparatedValuesDialect dialect,
         int skipLines,
         int initialBufferSize,
+        CancellationToken cancellationToken,
+        bool useStrictFramingFastPath)
+        : this(path, dialect, skipLines, initialBufferSize, cancellationToken)
+    {
+        _useStrictFramingFastPath = useStrictFramingFastPath;
+    }
+
+    internal SeparatedValuesUtf8Reader(
+        string path,
+        SeparatedValuesDialect dialect,
+        int skipLines,
+        int initialBufferSize,
         long maximumBytesRead,
         long deadlineTimestamp,
         CancellationToken cancellationToken)
@@ -185,6 +199,18 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         _dialect = dialect;
     }
 
+    internal SeparatedValuesUtf8Reader(
+        string path,
+        SeparatedValuesDialect dialect,
+        long startOffset,
+        long endOffset,
+        CancellationToken cancellationToken,
+        bool useStrictFramingFastPath)
+        : this(path, dialect, startOffset, endOffset, cancellationToken)
+    {
+        _useStrictFramingFastPath = useStrictFramingFastPath;
+    }
+
     public long BytesRead => _bytesRead;
 
     public bool BudgetExhausted => _budgetExhausted;
@@ -207,6 +233,33 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         Initialize();
     }
 
+    internal void EnsureBufferedFingerprintMatches(StructuredFileIdentity identity)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_bufferStartOffset != 0 || _rangeEndOffset != identity.Length)
+        {
+            throw new InvalidOperationException(
+                "A structured-source fingerprint can only be validated from a full-file reader.");
+        }
+
+        Initialize();
+        while (!_endOfFile && !_budgetExhausted)
+            FillBuffer();
+        if (_budgetExhausted || _bufferedLength != identity.Length)
+        {
+            throw new InvalidOperationException(
+                "The full structured source did not fit in the fingerprint-validation buffer.");
+        }
+
+        var fingerprint = StructuredFileIdentity.ComputeFingerprint(_buffer.AsSpan(0, _bufferedLength));
+        if (fingerprint != identity.Fingerprint)
+        {
+            throw new StructuredSchemaDriftException(
+                identity.CanonicalPath,
+                "the file identity changed after planning");
+        }
+    }
+
     public bool TryRead(out SeparatedValuesUtf8Record record)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -217,6 +270,46 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
         {
             if (_state == ScanState.FieldStart && _recordStart == _scanOffset && TrySkipComment())
                 continue;
+
+            if (_useStrictFramingFastPath &&
+                _dialect.IsStrict &&
+                _state is ScanState.FieldStart or ScanState.Unquoted)
+            {
+                var remaining = _buffer.AsSpan(_scanOffset, _bufferedLength - _scanOffset);
+                var relativeSpecial = remaining.IndexOfAny((byte)'"', (byte)'\r', (byte)'\n');
+                if (relativeSpecial < 0)
+                {
+                    _scanOffset = _bufferedLength;
+                }
+                else
+                {
+                    _scanOffset += relativeSpecial;
+                    var special = _buffer[_scanOffset];
+                    if (special == (byte)'"')
+                    {
+                        if (_scanOffset != _recordStart && _buffer[_scanOffset - 1] != _separator)
+                            throw InvalidData("A quote may only appear at the beginning of a field.");
+
+                        _state = ScanState.Quoted;
+                        _scanOffset++;
+                        continue;
+                    }
+
+                    if (special == (byte)'\n')
+                    {
+                        if (TryCompleteRecord(_scanOffset, 1, out record))
+                            return true;
+                        continue;
+                    }
+
+                    var terminatorLength = GetRecordEndingLength();
+                    if (terminatorLength == 0)
+                        throw InvalidData("A carriage return outside a quoted field must be followed by a line feed.");
+                    if (TryCompleteRecord(_scanOffset, terminatorLength, out record))
+                        return true;
+                    continue;
+                }
+            }
 
             while (_scanOffset < _bufferedLength)
             {

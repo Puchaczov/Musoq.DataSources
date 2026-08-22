@@ -39,7 +39,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.repository(string path)
+    ///                     git.repository(string path)
     ///                 </from>
     ///                 <description>Allows to perform queries on the given Git repository path.</description>
     ///                 <columns>
@@ -62,7 +62,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.tags(string path)
+    ///                     git.tags(string path)
     ///                 </from>
     ///                 <description>Allows to query tags directly from a Git repository.</description>
     ///                 <columns>
@@ -81,7 +81,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.commits(string path)
+    ///                     git.commits(string path)
     ///                 </from>
     ///                 <description>Allows to query commits directly from a Git repository.</description>
     ///                 <columns>
@@ -103,7 +103,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.branches(string path)
+    ///                     git.branches(string path)
     ///                 </from>
     ///                 <description>Allows to query branches directly from a Git repository.</description>
     ///                 <columns>
@@ -129,7 +129,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.filehistory(string path, string filePattern)
+    ///                     git.filehistory(string path, string filePattern)
     ///                 </from>
     ///                 <description>Allows to query the history of file changes in a Git repository.</description>
     ///                 <columns>
@@ -145,7 +145,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.filehistory(string path, string filePattern, int take)
+    ///                     git.filehistory(string path, string filePattern, int take)
     ///                 </from>
     ///                 <description>
     ///                     Allows to query the history of file changes in a Git repository, limited to the first N
@@ -164,7 +164,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.filehistory(string path, string filePattern, int skip, int take)
+    ///                     git.filehistory(string path, string filePattern, int skip, int take)
     ///                 </from>
     ///                 <description>
     ///                     Allows to query the history of file changes in a Git repository, skipping the first N
@@ -187,7 +187,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.status(string path)
+    ///                     git.status(string path)
     ///                 </from>
     ///                 <description>Allows to query the working directory status of a Git repository.</description>
     ///                 <columns>
@@ -204,7 +204,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.remotes(string path)
+    ///                     git.remotes(string path)
     ///                 </from>
     ///                 <description>Allows to query Git remotes from a repository.</description>
     ///                 <columns>
@@ -220,7 +220,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.blame(string repositoryPath, string filePath)
+    ///                     git.blame(string repositoryPath, string filePath)
     ///                 </from>
     ///                 <description>Returns hunk-based blame information for a file at HEAD revision.</description>
     ///                 <columns>
@@ -247,7 +247,7 @@ public class GitSchema : SchemaBase
     ///             <example>
     ///                 <from>
     ///                     <environmentVariables></environmentVariables>
-    ///                     #git.blame(string repositoryPath, string filePath, string revision)
+    ///                     git.blame(string repositoryPath, string filePath, string revision)
     ///                 </from>
     ///                 <description>Returns hunk-based blame information for a file at a specific revision.</description>
     ///                 <columns>

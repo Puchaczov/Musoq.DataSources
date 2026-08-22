@@ -39,7 +39,7 @@ public class SeparatedValuesCompiledExecutionBenchmarks
                                   Station: string,
                                   Temperature: decimal
                               };
-                              couple #separatedvalues.semicolon with table Measurements as MeasurementRows;
+                              couple separatedvalues.semicolon with table Measurements as MeasurementRows;
                               """;
         var source = $"MeasurementRows('{path}', true, 0)";
         var queryText = QueryShape switch

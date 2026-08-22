@@ -22,7 +22,7 @@ public class FlatFileTests
     [TestMethod]
     public void HasSelectedAllLinesTest()
     {
-        var query = @"select LineNumber, Line from #FlatFile.file('./TestMultilineFile.txt')";
+        var query = @"select LineNumber, Line from FlatFile.file('./TestMultilineFile.txt')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();

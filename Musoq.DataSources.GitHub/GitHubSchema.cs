@@ -43,7 +43,7 @@ public class GitHubSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #github.repositories()
+    ///                     github.repositories()
     ///                 </from>
     ///                 <description>Gets repositories for the authenticated user</description>
     ///                 <columns>
@@ -86,7 +86,7 @@ public class GitHubSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #github.repositories(string owner)
+    ///                     github.repositories(string owner)
     ///                 </from>
     ///                 <description>Gets repositories for a specific owner (user or organization)</description>
     ///                 <columns>
@@ -113,7 +113,7 @@ public class GitHubSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #github.issues(string owner, string repo)
+    ///                     github.issues(string owner, string repo)
     ///                 </from>
     ///                 <description>
     ///                     Gets issues for a repository. Supports predicate pushdown for State, Author, Assignee, and
@@ -148,7 +148,7 @@ public class GitHubSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #github.pullrequests(string owner, string repo)
+    ///                     github.pullrequests(string owner, string repo)
     ///                 </from>
     ///                 <description>
     ///                     Gets pull requests for a repository. Supports predicate pushdown for State, Head, and Base
@@ -184,7 +184,7 @@ public class GitHubSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #github.commits(string owner, string repo)
+    ///                     github.commits(string owner, string repo)
     ///                 </from>
     ///                 <description>
     ///                     Gets commits for a repository. Supports predicate pushdown for SHA, Author, and Since
@@ -218,7 +218,7 @@ public class GitHubSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #github.commits(string owner, string repo, string sha)
+    ///                     github.commits(string owner, string repo, string sha)
     ///                 </from>
     ///                 <description>Gets commits for a specific branch or starting from a SHA</description>
     ///                 <columns>
@@ -239,7 +239,7 @@ public class GitHubSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #github.branches(string owner, string repo)
+    ///                     github.branches(string owner, string repo)
     ///                 </from>
     ///                 <description>Gets branches for a repository</description>
     ///                 <columns>
@@ -261,7 +261,7 @@ public class GitHubSchema : SchemaBase
     ///                     <environmentVariables>
     ///                         <environmentVariable name="GITHUB_TOKEN" isRequired="true">GitHub personal access token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #github.releases(string owner, string repo)
+    ///                     github.releases(string owner, string repo)
     ///                 </from>
     ///                 <description>Gets releases for a repository</description>
     ///                 <columns>

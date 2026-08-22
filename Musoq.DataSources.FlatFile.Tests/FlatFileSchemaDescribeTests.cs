@@ -27,7 +27,7 @@ public class FlatFileSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #flat";
+        var query = "desc flat";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -49,7 +49,7 @@ public class FlatFileSchemaDescribeTests
     [TestMethod]
     public void DescFile_ShouldReturnMethodSignature()
     {
-        var query = "desc #flat.file";
+        var query = "desc flat.file";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -73,7 +73,7 @@ public class FlatFileSchemaDescribeTests
 
         try
         {
-            var query = $"desc #flat.file('{tempFile.Replace("\\", "\\\\")}')";
+            var query = $"desc flat.file('{tempFile.Replace("\\", "\\\\")}')";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -102,7 +102,7 @@ public class FlatFileSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #flat.unknownmethod";
+        var query = "desc flat.unknownmethod";
 
         try
         {
@@ -126,7 +126,7 @@ public class FlatFileSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #flat";
+        var query = "desc flat";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -144,11 +144,11 @@ public class FlatFileSchemaDescribeTests
 
         try
         {
-            var queryNoArgs = "desc #flat.file";
+            var queryNoArgs = "desc flat.file";
             var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
             var tableNoArgs = vmNoArgs.Run();
 
-            var queryWithArgs = $"desc #flat.file('{tempFile.Replace("\\", "\\\\")}')";
+            var queryWithArgs = $"desc flat.file('{tempFile.Replace("\\", "\\\\")}')";
             var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
             var tableWithArgs = vmWithArgs.Run();
 

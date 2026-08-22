@@ -5,7 +5,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Structured;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Schema;
@@ -47,6 +50,27 @@ public class SeparatedValuesStructuralSummaryTests
     }
 
     [TestMethod]
+    public void CompletedScan_ForcedParallelReplayDoesNotInvokeScanner()
+    {
+        WithCsv(CreateRows(32), (path, _) =>
+        {
+            var firstPlan = Plan(path, [new SourceColumnRef("Value")]);
+            Assert.AreEqual(32, ReadRows(path, firstPlan).Length);
+
+            var replayPlan = Plan(path, []);
+            Assert.IsTrue(SeparatedValuesSourceContract.From(replayPlan).HasExactCardinality);
+            var parallel = new CapturingParallelPipeline();
+            var pipeline = new SeparatedValuesScanPipeline(parallel, forceParallel: true);
+
+            var rows = ReadRows(path, replayPlan, [], pipeline, "4");
+
+            Assert.AreEqual(32, rows.Length);
+            Assert.IsTrue(rows.All(row => row.Length == 0));
+            Assert.AreEqual(0, parallel.Calls);
+        });
+    }
+
+    [TestMethod]
     public void CompletedSequentialScan_UsesCoarseBlockForLaterSlice()
     {
         const int rowCount = 12_000;
@@ -73,6 +97,46 @@ public class SeparatedValuesStructuralSummaryTests
             Assert.AreEqual(2, rows.Length);
             Assert.AreEqual((long?)skip, rows[0][0]);
             Assert.AreEqual((long?)(skip + 1), rows[1][0]);
+
+            var trackingFactory = new TrackingOffsetBlockSourceFactory();
+            var parallelPipeline = new SeparatedValuesScanPipeline(
+                new SeparatedValuesParallelBlockScanPipeline(
+                    trackingFactory,
+                    blockSize: 257),
+                forceParallel: true);
+            var parallelPlan = Plan(path, [new SourceColumnRef("Value")], skip, 1000);
+            var parallelRows = ReadRows(
+                path,
+                parallelPlan,
+                pipeline: parallelPipeline,
+                maximumParallelism: "4");
+
+            Assert.AreEqual(1000, parallelRows.Length);
+            Assert.AreEqual((long?)skip, parallelRows[0][0]);
+            Assert.AreEqual(block.FirstRecordOffset, trackingFactory.MinimumReadOffset);
+        });
+    }
+
+    [TestMethod]
+    public void ColdParallelSkipOnlyScan_ReachesEofAndPublishesExactSummary()
+    {
+        const int rowCount = 10_000;
+        const int skip = 5_000;
+        WithCsv(CreateRows(rowCount), (path, _) =>
+        {
+            var plan = Plan(path, [new SourceColumnRef("Value")], skip);
+            var pipeline = new SeparatedValuesScanPipeline(
+                new SeparatedValuesParallelBlockScanPipeline(blockSize: 257),
+                forceParallel: true);
+
+            var rows = ReadRows(path, plan, pipeline: pipeline, maximumParallelism: "4");
+
+            Assert.AreEqual(rowCount - skip, rows.Length);
+            Assert.AreEqual((long?)skip, rows[0][0]);
+            var replay = SeparatedValuesSourceContract.From(
+                Plan(path, [new SourceColumnRef("Value")]));
+            Assert.IsNotNull(replay.StructuralSummary);
+            Assert.AreEqual(rowCount, replay.StructuralSummary.TotalRows);
         });
     }
 
@@ -229,24 +293,42 @@ public class SeparatedValuesStructuralSummaryTests
             .ExecutionPlan;
     }
 
-    private static object?[][] ReadRows(
+    private static StructuralTestRow[] ReadRows(
         string path,
         SourceExecutionPlan plan,
         IReadOnlyCollection<ISchemaColumn>? columns = null,
-        ISeparatedValuesScanPipeline? pipeline = null)
+        ISeparatedValuesQueryScanPipeline? pipeline = null,
+        string maximumParallelism = "1")
     {
         columns ??= [new SchemaColumn("Value", 0, typeof(long?))];
         var context = RuntimeV2TestContexts.CreateExecutionContext(
             allColumns: columns,
             sourceRuntimeSettings: new Dictionary<string, string>
             {
-                [SeparatedValuesParallelScanOptions.MaximumParallelismSettingName] = "1"
+                [SeparatedValuesParallelScanOptions.MaximumParallelismSettingName] = maximumParallelism
             },
             executionPlan: plan);
-        var source = pipeline is null
-            ? new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context)
-            : new SeparatedValuesFromFileRowsSource(path, ",", true, 0, context, pipeline);
-        return source.Chunks.SelectMany(chunk => chunk).ToArray();
+        if (columns.Count == 0)
+        {
+            return SeparatedValuesNativeTestSource.Create(path, ",", true, 0, context, pipeline)
+                .Chunks
+                .SelectMany(chunk => chunk)
+                .Select(static _ => new StructuralTestRow(null, 0))
+                .ToArray();
+        }
+
+        return SeparatedValuesNativeTestSource.Create<long?>(path, ",", true, 0, context, pipeline)
+            .Chunks
+            .SelectMany(chunk => chunk)
+            .Select(static row => new StructuralTestRow(row.Item0, 1))
+            .ToArray();
+    }
+
+    private readonly record struct StructuralTestRow(long? Item0, int Length)
+    {
+        public object? this[int index] => index == 0 && Length == 1
+            ? Item0
+            : throw new ArgumentOutOfRangeException(nameof(index));
     }
 
     private static Dictionary<string, string> Settings()
@@ -279,6 +361,72 @@ public class SeparatedValuesStructuralSummaryTests
         finally
         {
             Directory.Delete(directory, true);
+        }
+    }
+
+    private sealed class CapturingParallelPipeline : ISeparatedValuesParallelQueryScanPipeline
+    {
+        public int Calls { get; private set; }
+
+        public long Execute<TRow, TMaterializer>(
+            SeparatedValuesScanRequest request,
+            SeparatedValuesSourceContract contract,
+            SeparatedValuesQueryShapeMapping mapping,
+            QueryRowShape shape,
+            IChunkWriter<TRow> writer,
+            DataSourceProgressReporter progress,
+            int chunkSize,
+            int workerCount,
+            CancellationToken cancellationToken)
+            where TMaterializer : struct, IQueryRowMaterializer<TRow>
+        {
+            Calls++;
+            throw new AssertFailedException("The warm exact-count path must not invoke the parallel scanner.");
+        }
+    }
+
+    private sealed class TrackingOffsetBlockSourceFactory : ISeparatedValuesByteBlockSourceFactory
+    {
+        private long _minimumReadOffset = long.MaxValue;
+
+        public long MinimumReadOffset => Volatile.Read(ref _minimumReadOffset);
+
+        public ISeparatedValuesByteBlockSource Open(string path, long expectedLength)
+        {
+            return new TrackingOffsetBlockSource(
+                this,
+                new RandomAccessSeparatedValuesByteBlockSource(path, expectedLength));
+        }
+
+        private void Observe(long offset)
+        {
+            while (true)
+            {
+                var current = Volatile.Read(ref _minimumReadOffset);
+                if (offset >= current ||
+                    Interlocked.CompareExchange(ref _minimumReadOffset, offset, current) == current)
+                    return;
+            }
+        }
+
+        private sealed class TrackingOffsetBlockSource(
+            TrackingOffsetBlockSourceFactory owner,
+            ISeparatedValuesByteBlockSource inner) : ISeparatedValuesByteBlockSource
+        {
+            public ValueTask<SeparatedValuesByteBlock> ReadAsync(
+                long sequence,
+                long offset,
+                int count,
+                CancellationToken cancellationToken)
+            {
+                owner.Observe(offset);
+                return inner.ReadAsync(sequence, offset, count, cancellationToken);
+            }
+
+            public void Dispose()
+            {
+                inner.Dispose();
+            }
         }
     }
 }

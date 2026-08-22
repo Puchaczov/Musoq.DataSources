@@ -42,7 +42,7 @@ public class JiraSchema : SchemaBase
     ///                         <environmentVariable name="JIRA_USERNAME" isRequired="true">Jira username or email</environmentVariable>
     ///                         <environmentVariable name="JIRA_API_TOKEN" isRequired="true">Jira API token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #jira.issues(string projectKey)
+    ///                     jira.issues(string projectKey)
     ///                 </from>
     ///                 <description>
     ///                     Gets issues for a specific project. Supports predicate pushdown for Status, Type,
@@ -90,7 +90,7 @@ public class JiraSchema : SchemaBase
     ///                         <environmentVariable name="JIRA_USERNAME" isRequired="true">Jira username or email</environmentVariable>
     ///                         <environmentVariable name="JIRA_API_TOKEN" isRequired="true">Jira API token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #jira.issues(string jql)
+    ///                     jira.issues(string jql)
     ///                 </from>
     ///                 <description>Gets issues matching a JQL query</description>
     ///                 <columns>
@@ -110,7 +110,7 @@ public class JiraSchema : SchemaBase
     ///                         <environmentVariable name="JIRA_USERNAME" isRequired="true">Jira username or email</environmentVariable>
     ///                         <environmentVariable name="JIRA_API_TOKEN" isRequired="true">Jira API token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #jira.projects()
+    ///                     jira.projects()
     ///                 </from>
     ///                 <description>Gets all projects accessible to the user</description>
     ///                 <columns>
@@ -134,7 +134,7 @@ public class JiraSchema : SchemaBase
     ///                         <environmentVariable name="JIRA_USERNAME" isRequired="true">Jira username or email</environmentVariable>
     ///                         <environmentVariable name="JIRA_API_TOKEN" isRequired="true">Jira API token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     #jira.comments(string issueKey)
+    ///                     jira.comments(string issueKey)
     ///                 </from>
     ///                 <description>Gets comments for a specific issue</description>
     ///                 <columns>

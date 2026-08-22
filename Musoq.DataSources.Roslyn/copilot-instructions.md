@@ -20,7 +20,7 @@
 - `Tables/` is secondary here; the primary table metadata entry is `CSharpSolutionTable.cs`.
 
 ## Data flow
-- `#csharp.solution(path)` enters `CSharpSchema.GetRowSource()`.
+- `csharp.solution(path)` enters `CSharpSchema.GetRowSource()`.
 - If the solution is already preloaded in `SolutionOperationsCommand.Solutions`, the schema uses the in-memory path; otherwise it opens the solution directly through Roslyn/MSBuild workspace logic.
 - Row sources create a `SolutionEntity` and attach NuGet metadata retrieval services; `SolutionEntity.Projects` then lazily materializes `ProjectEntity` objects.
 - `ProjectEntity.Documents` lazily creates `DocumentEntity` objects, and `DocumentEntity.InitializeAsync()` is the gateway to syntax tree and semantic model work.
@@ -30,7 +30,7 @@
 
 ## Patterns to preserve
 - This is the most complex plugin in the repo; keep schema wiring, analysis logic, NuGet/network integration, and CLI/bootstrap concerns separated.
-- `CSharpSchema.cs` XML docs are a major part of the public contract for `desc #csharp` and additional entity tables.
+- `CSharpSchema.cs` XML docs are a major part of the public contract for `desc csharp` and additional entity tables.
 - Many query surfaces are entity-graph based (`Projects`, `Documents`, `Classes`, `Methods`, etc.), so entity property names and table metadata are user-visible.
 - External metadata and package-resolution behavior rely on existing fallback strategies; do not simplify them casually.
 - Rate limiting, cache/bucket behavior, and solution lifecycle hooks are part of runtime behavior, not just internal plumbing.

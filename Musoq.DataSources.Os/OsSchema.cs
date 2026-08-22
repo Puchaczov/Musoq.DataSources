@@ -82,7 +82,7 @@ public class OsSchema : SchemaBase
     ///         <virtual-param>Second directory</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.dirscompare(string sourceDirectory, string destinationDirectory)</from>
+    ///                 <from>os.dirscompare(string sourceDirectory, string destinationDirectory)</from>
     ///                 <description>Compares two directories</description>
     ///                 <columns>
     ///                     <column name="SourceFile" type="ExtendedFileInfo">Source file</column>
@@ -101,7 +101,7 @@ public class OsSchema : SchemaBase
     ///         <virtual-param>Move through subfolders</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.directories(string directory, bool useSubdirectories)</from>
+    ///                 <from>os.directories(string directory, bool useSubdirectories)</from>
     ///                 <description>Gets the directories</description>
     ///                 <columns>
     ///                     <column name="FullName" type="string">Full name of the directory</column>
@@ -138,7 +138,7 @@ public class OsSchema : SchemaBase
     ///         <virtual-param>Path to dll</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.dlls(string path)</from>
+    ///                 <from>os.dlls(string path)</from>
     ///                 <description>Gets the dlls</description>
     ///                 <columns>
     ///                     <column name="FileInfo" type="FileInfo">Gets the metadata about the DLL file</column>
@@ -152,7 +152,7 @@ public class OsSchema : SchemaBase
     ///         <virtual-param>Path to dll</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.dlls(string path)</from>
+    ///                 <from>os.dlls(string path)</from>
     ///                 <description>Gets the dlls</description>
     ///                 <columns>
     ///                     <column name="FileInfo" type="FileInfo">Gets the metadata about the DLL file</column>
@@ -166,7 +166,7 @@ public class OsSchema : SchemaBase
     ///         <virtual-param>Path to file</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.file(string path)</from>
+    ///                 <from>os.file(string path)</from>
     ///                 <description>Gets metadata for a single file</description>
     ///                 <columns>
     ///                     <column name="Name" type="string">Name of the file</column>
@@ -193,7 +193,7 @@ public class OsSchema : SchemaBase
     ///         <virtual-param>Move through subfolders</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.files(string directory, bool useSubdirectories)</from>
+    ///                 <from>os.files(string directory, bool useSubdirectories)</from>
     ///                 <description>Gets the files</description>
     ///                 <columns>
     ///                     <column name="Name" type="string">Name of the file</column>
@@ -218,7 +218,7 @@ public class OsSchema : SchemaBase
     ///     <virtual-constructor>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.processes()</from>
+    ///                 <from>os.processes()</from>
     ///                 <description>Gets the processes</description>
     ///                 <columns>
     ///                     <column name="BasePriority" type="int">Gets the base priority of associated process</column>
@@ -269,7 +269,7 @@ public class OsSchema : SchemaBase
     ///         <virtual-param>Path to zip file</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.zip(string path)</from>
+    ///                 <from>os.zip(string path)</from>
     ///                 <description>Gets the zip files</description>
     ///                 <columns>
     ///                     <column name="Name" type="string">Gets the file name of the entry in the zip archive</column>
@@ -293,7 +293,7 @@ public class OsSchema : SchemaBase
     ///         <virtual-param>Path to file</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.metadata(string directoryOrFile)</from>
+    ///                 <from>os.metadata(string directoryOrFile)</from>
     ///                 <description>Gets the metadata for file or for files within the directory</description>
     ///                 <columns>
     ///                     <column name="FullName" type="string">Gets the full path of the file</column>
@@ -303,7 +303,7 @@ public class OsSchema : SchemaBase
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.metadata(string directory, bool throwOnMetadataReadError)</from>
+    ///                 <from>os.metadata(string directory, bool throwOnMetadataReadError)</from>
     ///                 <description>Gets the metadata for files within directories</description>
     ///                 <columns>
     ///                     <column name="FullName" type="string">Gets the full path of the file</column>
@@ -313,7 +313,7 @@ public class OsSchema : SchemaBase
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.metadata(string directory, bool useSubdirectories, bool throwOnMetadataReadError)</from>
+    ///                 <from>os.metadata(string directory, bool useSubdirectories, bool throwOnMetadataReadError)</from>
     ///                 <description>Gets the metadata for files within directories</description>
     ///                 <columns>
     ///                     <column name="FullName" type="string">Gets the full path of the file</column>
@@ -327,43 +327,43 @@ public class OsSchema : SchemaBase
     ///     <virtual-constructor>
     ///         <examples>
     ///             <example>
-    ///                 <from>#os.cultures()</from>
+    ///                 <from>os.cultures()</from>
     ///                 <description>Lists cultures available to the current .NET runtime process</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.currentculture()</from>
+    ///                 <from>os.currentculture()</from>
     ///                 <description>Shows current culture and formatting defaults</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.encodings()</from>
+    ///                 <from>os.encodings()</from>
     ///                 <description>Lists text encodings available to the current .NET runtime process</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.timezones()</from>
+    ///                 <from>os.timezones()</from>
     ///                 <description>Lists system time zones</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.runtime()</from>
+    ///                 <from>os.runtime()</from>
     ///                 <description>Shows safe runtime and operating system facts</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.drives()</from>
+    ///                 <from>os.drives()</from>
     ///                 <description>Lists drives without enumerating their contents</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.specialfolders()</from>
+    ///                 <from>os.specialfolders()</from>
     ///                 <description>Lists special folder names and paths</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.fileattributes()</from>
+    ///                 <from>os.fileattributes()</from>
     ///                 <description>Lists file attribute enum values</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.environmentvariables()</from>
+    ///                 <from>os.environmentvariables()</from>
     ///                 <description>Lists environment variable names without values</description>
     ///             </example>
     ///             <example>
-    ///                 <from>#os.pathinfo(string path)</from>
+    ///                 <from>os.pathinfo(string path)</from>
     ///                 <description>Shows safe metadata for one path</description>
     ///             </example>
     ///         </examples>

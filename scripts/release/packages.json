@@ -3,91 +3,91 @@
     {
       "slug": "archives",
       "packageId": "Musoq.DataSources.Archives",
-      "version": "6.0.3-alpha.5",
+      "version": "6.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.Archives/Musoq.DataSources.Archives.csproj"
     },
     {
       "slug": "canbus",
       "packageId": "Musoq.DataSources.CANBus",
-      "version": "4.0.3-alpha.5",
+      "version": "4.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.CANBus/Musoq.DataSources.CANBus.csproj"
     },
     {
       "slug": "docker",
       "packageId": "Musoq.DataSources.Docker",
-      "version": "5.0.3-alpha.5",
+      "version": "5.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj"
     },
     {
       "slug": "flatfile",
       "packageId": "Musoq.DataSources.FlatFile",
-      "version": "8.0.3-alpha.5",
+      "version": "8.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.FlatFile/Musoq.DataSources.FlatFile.csproj"
     },
     {
       "slug": "git",
       "packageId": "Musoq.DataSources.Git",
-      "version": "3.0.0-alpha.1",
+      "version": "3.0.0-alpha.2",
       "projectPath": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj"
     },
     {
       "slug": "github",
       "packageId": "Musoq.DataSources.GitHub",
-      "version": "2.0.3-alpha.5",
+      "version": "2.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.GitHub/Musoq.DataSources.GitHub.csproj"
     },
     {
       "slug": "jira",
       "packageId": "Musoq.DataSources.Jira",
-      "version": "2.0.3-alpha.5",
+      "version": "2.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj"
     },
     {
       "slug": "json",
       "packageId": "Musoq.DataSources.Json",
-      "version": "10.0.3-alpha.1",
+      "version": "10.0.3-alpha.2",
       "projectPath": "Musoq.DataSources.Json/Musoq.DataSources.Json.csproj"
     },
     {
       "slug": "ollama",
       "packageId": "Musoq.DataSources.Ollama",
-      "version": "5.0.3-alpha.5",
+      "version": "5.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj"
     },
     {
       "slug": "openai",
       "packageId": "Musoq.DataSources.OpenAI",
-      "version": "6.0.3-alpha.5",
+      "version": "6.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.OpenAI/Musoq.DataSources.OpenAI.csproj"
     },
     {
       "slug": "os",
       "packageId": "Musoq.DataSources.Os",
-      "version": "9.0.3-alpha.5",
+      "version": "9.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.Os/Musoq.DataSources.Os.csproj"
     },
     {
       "slug": "roslyn",
       "packageId": "Musoq.DataSources.Roslyn",
-      "version": "3.0.4-alpha.6",
+      "version": "3.0.4-alpha.7",
       "projectPath": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj"
     },
     {
       "slug": "separatedvalues",
       "packageId": "Musoq.DataSources.SeparatedValues",
-      "version": "11.0.0-alpha.1",
+      "version": "11.0.0-alpha.2",
       "projectPath": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj"
     },
     {
       "slug": "system",
       "packageId": "Musoq.DataSources.System",
-      "version": "8.0.3-alpha.5",
+      "version": "8.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.System/Musoq.DataSources.System.csproj"
     },
     {
       "slug": "time",
       "packageId": "Musoq.DataSources.Time",
-      "version": "8.0.3-alpha.5",
+      "version": "8.0.3-alpha.6",
       "projectPath": "Musoq.DataSources.Time/Musoq.DataSources.Time.csproj"
     }
   ]

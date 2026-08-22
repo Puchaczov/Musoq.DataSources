@@ -2,7 +2,7 @@
 
 ## Purpose
 
-- Exposes archive entries as rows through `#archives.file(path)`.
+- Exposes archive entries as rows through `archives.file(path)`.
 - The public row shape is static; content access happens through helper methods rather than inferred columns.
 
 ## Read first

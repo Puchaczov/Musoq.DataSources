@@ -16,7 +16,7 @@
 ## Patterns to preserve
 - Keep each Git concept in its own entity/table/source pair instead of adding generic catch-all rows.
 - Many sources inherit from `AsyncRowsSourceBase`; preserve chunking and cancellation for large-history traversal.
-- `GitSchema` method names and overloads define the public query surface and `desc #git` behavior.
+- `GitSchema` method names and overloads define the public query surface and `desc git` behavior.
 - Simple `WHERE` pushdown happens through runtime-v2 source planning; keep optimization behavior aligned with tests.
 
 ## Source families
@@ -30,7 +30,7 @@
 - Library-driven source-like expansion lives in `GitLibrary`, especially `DifferenceBetween(...)`, `PatchBetween(...)`, `SearchForBranches(...)`, `GetBranchSpecificCommits(...)`, `FindMergeBase(...)`, `CommitFrom(...)`, `BranchFrom(...)`, and the `MinCommit` / `MaxCommit` aggregations.
 
 ## Where lazy or nested entities matter
-- `RepositoryEntity` and `BranchEntity` deliberately expose nested enumerable properties with `[BindablePropertyAsTable]`. If you change those shapes, validate `cross apply` scenarios, not just direct `#git.*(...)` queries.
+- `RepositoryEntity` and `BranchEntity` deliberately expose nested enumerable properties with `[BindablePropertyAsTable]`. If you change those shapes, validate `cross apply` scenarios, not just direct `git.*(...)` queries.
 - `BlameHunkEntity.Lines` is the most important lazy property: it reads blob content on demand, caches the expanded `BlameLineEntity` list, and powers `cross apply h.Lines` queries.
 - `CommitEntity.Parents` is another nested traversal point that should stay cheap and null-safe.
 - `TagEntity.Commit` is optional because lightweight tags do not always resolve the same way as annotated tags.
@@ -70,10 +70,10 @@
 	- repository basics and nested `Head` / `Information`
 	- `cross apply` over `repository.Branches`, `repository.Tags`, `repository.Commits`, and `commit.Parents`
 	- library methods like `DifferenceBetween(...)`, `SearchForBranches(...)`, `GetBranchSpecificCommits(...)`, `MinCommit(...)`, and `MaxCommit(...)`
-	- direct-source coverage for `#git.commits`, `#git.branches`, `#git.filehistory`, and `#git.remotes`
+	- direct-source coverage for `git.commits`, `git.branches`, `git.filehistory`, and `git.remotes`
 - `BlameTests.cs` is the best reference for lazy nested entities, binary-file handling, revision validation, and `cross apply h.Lines`.
 - `GitWhereNodeOptimizationTests.cs` is the contract for simple pushdown on commits, tags, and branches.
-- `GitSchemaDescribeTests.cs` guards constructor overload counts and `desc #git` / `desc #git.repository(...)` output.
+- `GitSchemaDescribeTests.cs` guards constructor overload counts and `desc git` / `desc git.repository(...)` output.
 
 ## Integrations
 - `LibGit2Sharp`

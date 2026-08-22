@@ -19,6 +19,24 @@ namespace Musoq.DataSources.SeparatedValues.Tests;
 public class SeparatedValuesSchemaHeaderTests
 {
     [TestMethod]
+    public void DescribeSource_WithExactMetadata_AdvertisesMandatoryQueryScopedRows()
+    {
+        WithCsv("Name,Age\nAda,36\n", path =>
+        {
+            var metadata = MetadataContext([]);
+            var descriptor = new SeparatedValuesSchema().DescribeSource(
+                "comma",
+                new SourceDescribeContext(SourceIdentity.Empty, metadata),
+                path,
+                true,
+                0);
+
+            Assert.AreEqual(SourceTransferCapabilities.QueryScopedRows, descriptor.TransferCapabilities);
+            Assert.AreEqual(typeof(object[]), descriptor.RowType);
+        });
+    }
+
+    [TestMethod]
     public void Columns_WhenHeaderContainsQuotedSeparator_PreservesExactName()
     {
         WithCsv("\"First,Name\",Age\r\nAlice,31\r\n", path =>

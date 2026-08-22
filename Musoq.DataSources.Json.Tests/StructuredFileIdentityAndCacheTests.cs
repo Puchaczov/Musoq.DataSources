@@ -13,6 +13,27 @@ namespace Musoq.DataSources.Json.Tests;
 [TestClass]
 public class StructuredFileIdentityAndCacheTests
 {
+    [DataTestMethod]
+    [DataRow(0)]
+    [DataRow(100)]
+    [DataRow(150_000)]
+    public void ComputeFingerprint_MatchesCapturedFileEdges(int length)
+    {
+        var path = WriteTempFile(new string('x', length));
+
+        try
+        {
+            var captured = StructuredFileIdentity.Capture(path, "test");
+            var buffered = StructuredFileIdentity.ComputeFingerprint(File.ReadAllBytes(path));
+
+            Assert.AreEqual(captured.Fingerprint, buffered);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     [TestMethod]
     public void Capture_WhenEdgeContentChanges_ChangesIdentity()
     {

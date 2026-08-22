@@ -12,6 +12,7 @@ internal static class SeparatedValuesParallelScanOptions
 {
     public const string MaximumParallelismSettingName = "separatedvalues.max_parallelism";
     public const long AutomaticCrossoverBytes = 64L * 1024L * 1024L;
+    public const long SequentialTakeThreshold = 4096;
 
     public static int AutomaticMaximumParallelism => SeparatedValuesCpuBudget.Capacity;
 
@@ -34,9 +35,7 @@ internal static class SeparatedValuesParallelScanOptions
 
     private static int Resolve(long fileLength, SourceExecutionContext executionContext)
     {
-        var slicingAccepted = executionContext.Plan.AcceptedSkip.HasValue ||
-                              executionContext.Plan.AcceptedTake.HasValue;
-        if (slicingAccepted)
+        if (!IsParallelShapeSupported(executionContext))
             return 1;
 
         var settings = executionContext.SourceRuntimeSettings;
@@ -53,5 +52,23 @@ internal static class SeparatedValuesParallelScanOptions
         if (configured == 0)
             return fileLength >= AutomaticCrossoverBytes ? AutomaticMaximumParallelism : 1;
         return Math.Max(1, Math.Min(configured, AutomaticMaximumParallelism));
+    }
+
+    public static bool IsParallelShapeSupported(SourceExecutionContext executionContext)
+    {
+        var plan = executionContext.Plan;
+        var acceptedSkip = plan.AcceptedSkip.GetValueOrDefault();
+        var acceptedTake = plan.AcceptedTake;
+        var hasSlice = acceptedSkip > 0 || acceptedTake.HasValue;
+        if (!hasSlice)
+            return true;
+
+        var readPlan = SeparatedValuesReadPlan.From(plan);
+        if (plan.AcceptedPredicate is not null ||
+            readPlan.AcceptedPredicate is not null ||
+            readPlan.HasResidualWork)
+            return false;
+
+        return acceptedSkip > 0 || acceptedTake > SequentialTakeThreshold;
     }
 }

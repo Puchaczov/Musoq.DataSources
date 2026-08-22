@@ -23,10 +23,10 @@ public sealed class GitCompiledQueryBenchmarks
     {
         var corpus = GitBenchmarkCorpusFactory.Ensure(GitBenchmarkProfile.Smoke);
         var repository = corpus.RepositoryPath.Replace("\\", "\\\\", StringComparison.Ordinal);
-        _fileHistory = Compile($"select CommitSha, FilePath, ChangeType, OldPath from #git.filehistory('{repository}', '*.cs', 5000)");
-        _commits = Compile($"select Sha, Author, CommittedWhen from #git.commits('{repository}')");
-        _refs = Compile($"select FriendlyName, CanonicalName from #git.branches('{repository}')");
-        _status = Compile($"select FilePath, State from #git.status('{repository}')");
+        _fileHistory = Compile($"select CommitSha, FilePath, ChangeType, OldPath from git.filehistory('{repository}', '*.cs', 5000)");
+        _commits = Compile($"select Sha, Author, CommittedWhen from git.commits('{repository}')");
+        _refs = Compile($"select FriendlyName, CanonicalName from git.branches('{repository}')");
+        _status = Compile($"select FilePath, State from git.status('{repository}')");
     }
 
     [Benchmark]

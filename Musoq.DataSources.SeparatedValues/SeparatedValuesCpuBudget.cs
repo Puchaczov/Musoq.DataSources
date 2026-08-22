@@ -11,6 +11,8 @@ internal static class SeparatedValuesCpuBudget
     public static int Capacity { get; } = Math.Max(1, Environment.ProcessorCount - 1);
     private static readonly SemaphoreSlim Permits = new(Capacity, Capacity);
 
+    internal static int CurrentLeases => Capacity - Permits.CurrentCount;
+
     public static async ValueTask<Lease> AcquireAsync(CancellationToken cancellationToken)
     {
         await Permits.WaitAsync(cancellationToken).ConfigureAwait(false);

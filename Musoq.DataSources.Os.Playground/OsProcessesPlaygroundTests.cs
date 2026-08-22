@@ -23,7 +23,7 @@ public sealed class OsProcessesPlaygroundTests : PlaygroundTestsBase
     {
         RunProbe(
             TestContext,
-            "select ProcessName, ProcessorAffinity from #os.processes()",
+            "select ProcessName, ProcessorAffinity from os.processes()",
             "ProcessName",
             "ProcessorAffinity");
     }
@@ -33,7 +33,7 @@ public sealed class OsProcessesPlaygroundTests : PlaygroundTestsBase
     {
         RunProbe(
             TestContext,
-            "select ProcessName from #os.processes()",
+            "select ProcessName from os.processes()",
             "ProcessName");
     }
 }

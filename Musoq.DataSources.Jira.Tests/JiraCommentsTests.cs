@@ -28,7 +28,7 @@ public class JiraCommentsTests
                 MockEntityFactory.CreateComment("2", "TEST-123", "Second comment", "user2")
             });
 
-        var query = "select Id, IssueKey, Body, Author from #jira.comments('TEST-123')";
+        var query = "select Id, IssueKey, Body, Author from jira.comments('TEST-123')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -47,7 +47,7 @@ public class JiraCommentsTests
         api.Setup(f => f.GetCommentsAsync("TEST-999"))
             .ReturnsAsync(new List<IJiraComment>());
 
-        var query = "select Id, Body from #jira.comments('TEST-999')";
+        var query = "select Id, Body from jira.comments('TEST-999')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();
@@ -68,7 +68,7 @@ public class JiraCommentsTests
                 MockEntityFactory.CreateComment("3", body: "Another by user1", author: "user1")
             });
 
-        var query = "select Id, Body, Author from #jira.comments('TEST-123') where Author = 'user1'";
+        var query = "select Id, Body, Author from jira.comments('TEST-123') where Author = 'user1'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();

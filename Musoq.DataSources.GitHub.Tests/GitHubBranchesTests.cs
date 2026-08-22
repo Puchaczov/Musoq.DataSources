@@ -33,7 +33,7 @@ public class GitHubBranchesTests
             });
 
         var query =
-            "select Name, CommitSha, Protected, RepositoryOwner, RepositoryName from #github.branches('testowner', 'testrepo')";
+            "select Name, CommitSha, Protected, RepositoryOwner, RepositoryName from github.branches('testowner', 'testrepo')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -71,7 +71,7 @@ public class GitHubBranchesTests
                 MockEntityFactory.CreateBranch("feature", "ghi789", false, "testowner", "testrepo")
             });
 
-        var query = "select Name from #github.branches('testowner', 'testrepo') where Protected = true";
+        var query = "select Name from github.branches('testowner', 'testrepo') where Protected = true";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 

@@ -21,7 +21,7 @@ public class RepresentativeQueryTests
 {
     private static readonly Lazy<SolutionEntity> Solution1 = new(LoadSolution1Core);
 
-    #region File System Queries (#os)
+    #region File System Queries (os)
 
     /// <summary>
     ///     Demonstrates listing files with their sizes.
@@ -34,7 +34,7 @@ public class RepresentativeQueryTests
                     select 
                         Name,
                         Length as SizeInBytes
-                    from #os.files('./Files', false)
+                    from os.files('./Files', false)
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -55,7 +55,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Name, Extension
-                    from #os.files('./Files', false)
+                    from os.files('./Files', false)
                     where Extension = '.csv'
                     """;
 
@@ -77,7 +77,7 @@ public class RepresentativeQueryTests
                     select 
                         Name,
                         Sha256File() as Hash
-                    from #os.files('./Files', false)
+                    from os.files('./Files', false)
                     where Name = 'Transactions.csv'
                     """;
 
@@ -98,7 +98,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Name
-                    from #os.directories('./', false)
+                    from os.directories('./', false)
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -109,7 +109,7 @@ public class RepresentativeQueryTests
 
     #endregion
 
-    #region CSV/Separated Values Queries (#separatedvalues)
+    #region CSV/Separated Values Queries (separatedvalues)
 
     /// <summary>
     ///     Demonstrates basic CSV querying.
@@ -120,7 +120,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Date, Description, Amount
-                    from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
+                    from separatedvalues.comma('./Files/Transactions.csv', true, 0)
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -142,7 +142,7 @@ public class RepresentativeQueryTests
                         SumIncome(ToDecimal(Amount)) as TotalIncome,
                         SumOutcome(ToDecimal(Amount)) as TotalExpenses,
                         SumIncome(ToDecimal(Amount)) + SumOutcome(ToDecimal(Amount)) as NetBalance
-                    from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
+                    from separatedvalues.comma('./Files/Transactions.csv', true, 0)
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -163,7 +163,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Description, ToDecimal(Amount) as Amount
-                    from #separatedvalues.comma('./Files/Transactions.csv', true, 0)
+                    from separatedvalues.comma('./Files/Transactions.csv', true, 0)
                     where ToDecimal(Amount) > 0
                     """;
 
@@ -187,8 +187,8 @@ public class RepresentativeQueryTests
                         emp.Department,
                         proj.ProjectName,
                         proj.Hours
-                    from #separatedvalues.comma('./Files/Employees.csv', true, 0) emp
-                    inner join #separatedvalues.comma('./Files/Projects.csv', true, 0) proj 
+                    from separatedvalues.comma('./Files/Employees.csv', true, 0) emp
+                    inner join separatedvalues.comma('./Files/Projects.csv', true, 0) proj
                         on emp.Id = proj.EmployeeId
                     order by emp.Name
                     """;
@@ -211,7 +211,7 @@ public class RepresentativeQueryTests
                     select 
                         Department,
                         Count(Name) as EmployeeCount
-                    from #separatedvalues.comma('./Files/Employees.csv', true, 0)
+                    from separatedvalues.comma('./Files/Employees.csv', true, 0)
                     group by Department
                     """;
 
@@ -237,7 +237,7 @@ public class RepresentativeQueryTests
                         Name: string,
                         Department: string
                     };
-                    couple #separatedvalues.comma with table Employees as SourceOfEmployees;
+                    couple separatedvalues.comma with table Employees as SourceOfEmployees;
                     select Id, Name, Department 
                     from SourceOfEmployees('./Files/Employees.csv', true, 0)
                     where Id > 2
@@ -252,7 +252,7 @@ public class RepresentativeQueryTests
 
     #endregion
 
-    #region Time Queries (#time)
+    #region Time Queries (time)
 
     /// <summary>
     ///     Demonstrates generating a date range.
@@ -263,7 +263,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Day, Month, Year
-                    from #time.interval('2024-01-01 00:00:00', '2024-01-31 00:00:00', 'days')
+                    from time.interval('2024-01-01 00:00:00', '2024-01-31 00:00:00', 'days')
                     order by Day
                     """;
 
@@ -284,7 +284,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Day, DayOfWeek
-                    from #time.interval('2024-01-01 00:00:00', '2024-01-07 00:00:00', 'days')
+                    from time.interval('2024-01-01 00:00:00', '2024-01-07 00:00:00', 'days')
                     where DayOfWeek = 0 or DayOfWeek = 6
                     """;
 
@@ -298,7 +298,7 @@ public class RepresentativeQueryTests
 
     #endregion
 
-    #region System Queries (#system)
+    #region System Queries (system)
 
     /// <summary>
     ///     Demonstrates number range generation.
@@ -309,7 +309,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Value 
-                    from #system.range(1, 11)
+                    from system.range(1l, 11l)
                     where Value % 2 = 0
                     """;
 
@@ -332,7 +332,7 @@ public class RepresentativeQueryTests
                         2 + 2 as Addition,
                         10 * 5 as Multiplication,
                         ToDecimal(7) / 3 as Division
-                    from #system.dual()
+                    from system.dual()
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -353,11 +353,11 @@ public class RepresentativeQueryTests
     public void System_DualUnion_ShouldCombineRows()
     {
         var query = """
-                    select 'Option A' as Option, 100 as Value from #system.dual()
+                    select 'Option A' as Option, 100 as Value from system.dual()
                     union (Option)
-                    select 'Option B' as Option, 200 as Value from #system.dual()
+                    select 'Option B' as Option, 200 as Value from system.dual()
                     union (Option)
-                    select 'Option C' as Option, 300 as Value from #system.dual()
+                    select 'Option C' as Option, 300 as Value from system.dual()
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -368,7 +368,7 @@ public class RepresentativeQueryTests
 
     #endregion
 
-    #region JSON Queries (#json)
+    #region JSON Queries (json)
 
     /// <summary>
     ///     Demonstrates basic JSON querying.
@@ -379,7 +379,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Name, Age
-                    from #json.file('./Files/People.json')
+                    from json.file('./Files/People.json')
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -398,7 +398,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Name, Age
-                    from #json.file('./Files/People.json')
+                    from json.file('./Files/People.json')
                     where Age > 30
                     """;
 
@@ -418,7 +418,7 @@ public class RepresentativeQueryTests
     {
         var query = """
                     select Name, Skills
-                    from #json.file('./Files/People.json')
+                    from json.file('./Files/People.json')
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -435,7 +435,7 @@ public class RepresentativeQueryTests
 
     #endregion
 
-    #region Archive Queries (#archives)
+    #region Archive Queries (archives)
 
     /// <summary>
     ///     Demonstrates reading archive contents.
@@ -448,7 +448,7 @@ public class RepresentativeQueryTests
                     select 
                         Key as FileName,
                         IsDirectory
-                    from #archives.file('./Files/TestArchive.zip')
+                    from archives.file('./Files/TestArchive.zip')
                     """;
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -470,7 +470,7 @@ public class RepresentativeQueryTests
                     select 
                         Key as FileName,
                         GetTextContent() as Content
-                    from #archives.file('./Files/TestArchive.zip')
+                    from archives.file('./Files/TestArchive.zip')
                     where IsDirectory = false
                     """;
 
@@ -498,7 +498,7 @@ public class RepresentativeQueryTests
                     select 
                         Name as FileName,
                         Extension
-                    from #os.files('./Files', false)
+                    from os.files('./Files', false)
                     where Extension = '.csv'
                     order by Name
                     """;
@@ -521,7 +521,7 @@ public class RepresentativeQueryTests
                         select 
                             Department,
                             Count(Name) as EmpCount
-                        from #separatedvalues.comma('./Files/Employees.csv', true, 0)
+                        from separatedvalues.comma('./Files/Employees.csv', true, 0)
                         group by Department
                     )
                     select Department, EmpCount
@@ -549,14 +549,14 @@ public class RepresentativeQueryTests
                         select 
                             EmployeeId,
                             Sum(ToDecimal(Hours)) as TotalHours
-                        from #separatedvalues.comma('./Files/Projects.csv', true, 0)
+                        from separatedvalues.comma('./Files/Projects.csv', true, 0)
                         group by EmployeeId
                     ), EmployeeProjectSummary as (
                         select 
                             e.Name as EmpName,
                             e.Department as EmpDepartment,
                             p.TotalHours as EmpTotalHours
-                        from #separatedvalues.comma('./Files/Employees.csv', true, 0) e
+                        from separatedvalues.comma('./Files/Employees.csv', true, 0) e
                         inner join ProjectHours p on e.Id = p.EmployeeId
                     )
                     select EmpName, EmpDepartment, EmpTotalHours
@@ -572,7 +572,7 @@ public class RepresentativeQueryTests
 
     #endregion
 
-    #region Git Repository Queries (#git)
+    #region Git Repository Queries (git)
 
     /// <summary>
     ///     Demonstrates querying commits from a git repository.
@@ -588,7 +588,7 @@ public class RepresentativeQueryTests
                 c.Sha,
                 c.MessageShort,
                 c.Author
-            from #git.repository('{unpackedRepository.Path.EscapePath()}') r 
+            from git.repository('{unpackedRepository.Path.EscapePath()}') r
             cross apply r.Commits c";
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -614,7 +614,7 @@ public class RepresentativeQueryTests
                 b.FriendlyName,
                 b.IsRemote,
                 b.Tip.Sha
-            from #git.branches('{unpackedRepository.Path.EscapePath()}') b";
+            from git.branches('{unpackedRepository.Path.EscapePath()}') b";
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -638,7 +638,7 @@ public class RepresentativeQueryTests
                 t.FriendlyName,
                 t.IsAnnotated,
                 t.Commit.Sha
-            from #git.tags('{unpackedRepository.Path.EscapePath()}') t";
+            from git.tags('{unpackedRepository.Path.EscapePath()}') t";
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -660,7 +660,7 @@ public class RepresentativeQueryTests
             select
                 Difference.Path,
                 Difference.ChangeKind
-            from #git.repository('{unpackedRepository.Path.EscapePath()}') repository 
+            from git.repository('{unpackedRepository.Path.EscapePath()}') repository
             cross apply repository.DifferenceBetween(
                 repository.BranchFrom('master'), 
                 repository.BranchFrom('feature/feature_a')
@@ -688,7 +688,7 @@ public class RepresentativeQueryTests
                 h.CommitSha,
                 h.Author,
                 h.FilePath
-            from #git.filehistory('{unpackedRepository.Path.EscapePath()}', 'README.md') h";
+            from git.filehistory('{unpackedRepository.Path.EscapePath()}', 'README.md') h";
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
@@ -730,7 +730,7 @@ public class RepresentativeQueryTests
             select 
                 c.Sha, 
                 p.Sha as ParentSha
-            from #git.commits('{unpackedRepository.Path.EscapePath()}') c 
+            from git.commits('{unpackedRepository.Path.EscapePath()}') c
             cross apply c.Parents as p";
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -742,7 +742,7 @@ public class RepresentativeQueryTests
 
     #endregion
 
-    #region C# Roslyn Code Analysis Queries (#csharp)
+    #region C# Roslyn Code Analysis Queries (csharp)
 
     /// <summary>
     ///     Demonstrates listing all types in a solution project.
@@ -753,7 +753,7 @@ public class RepresentativeQueryTests
     {
         var query = $@"
             select t.Name, t.IsClass, t.IsEnum, t.IsInterface
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects p 
             cross apply p.Types t
             where t.Name in ('Class1', 'Interface1', 'Enum1')";
@@ -782,7 +782,7 @@ public class RepresentativeQueryTests
                 c.MethodsCount,
                 c.PropertiesCount,
                 c.LinesOfCode
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -810,7 +810,7 @@ public class RepresentativeQueryTests
                 m.HasBody,
                 m.IsEmpty,
                 m.StatementsCount
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -844,7 +844,7 @@ public class RepresentativeQueryTests
                 p.HasGetter,
                 p.HasSetter,
                 p.HasInitSetter
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects pr 
             cross apply pr.Documents d 
             cross apply d.Classes c
@@ -881,7 +881,7 @@ public class RepresentativeQueryTests
                 m.Name,
                 m.CyclomaticComplexity,
                 m.LinesOfCode
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
             cross apply c.Methods m";
 
@@ -909,7 +909,7 @@ public class RepresentativeQueryTests
                 i.Name,
                 i.FullName,
                 i.Namespace
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects pr 
             cross apply pr.Documents d 
             cross apply d.Interfaces i
@@ -935,7 +935,7 @@ public class RepresentativeQueryTests
                 e.Name,
                 e.FullName,
                 e.Members
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects pr 
             cross apply pr.Documents d 
             cross apply d.Enums e
@@ -980,7 +980,7 @@ public class RepresentativeQueryTests
                 p.Type,
                 p.IsOptional,
                 p.IsParams
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects pr 
             cross apply pr.Documents d 
             cross apply d.Classes c
@@ -1007,7 +1007,7 @@ public class RepresentativeQueryTests
             select
                 c.Name,
                 a.Name as AttributeName
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects pr 
             cross apply pr.Documents d 
             cross apply d.Classes c
@@ -1035,7 +1035,7 @@ public class RepresentativeQueryTests
                 c.FieldsCount,
                 c.InheritanceDepth,
                 c.InterfacesCount
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -1060,7 +1060,7 @@ public class RepresentativeQueryTests
         var query = $@"
             select
                 p.Name as ProjectName
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects p";
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
@@ -1081,7 +1081,7 @@ public class RepresentativeQueryTests
             select
                 p.Name as ProjectName,
                 lib.Name as LibraryName
-            from #csharp.solution('{Solution1SolutionPath.EscapePath()}') s 
+            from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects p 
             cross apply p.LibraryReferences lib
             where p.Name = 'Solution1.ClassLibrary1'";

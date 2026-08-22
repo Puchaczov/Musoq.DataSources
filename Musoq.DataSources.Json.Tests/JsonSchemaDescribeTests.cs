@@ -26,7 +26,7 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #json";
+        var query = "desc json";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -48,7 +48,7 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescFile_ShouldReturnMethodSignature()
     {
-        var query = "desc #json.file";
+        var query = "desc json.file";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -67,7 +67,7 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescFileWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #json.file('./JsonTestFile_First.json')";
+        var query = "desc json.file('./JsonTestFile_First.json')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -85,7 +85,7 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #json.unknownmethod";
+        var query = "desc json.unknownmethod";
 
         try
         {
@@ -109,7 +109,7 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #json";
+        var query = "desc json";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -122,11 +122,11 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescFileNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #json.file";
+        var queryNoArgs = "desc json.file";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 
-        var queryWithArgs = "desc #json.file('./JsonTestFile_First.json')";
+        var queryWithArgs = "desc json.file('./JsonTestFile_First.json')";
         var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
         var tableWithArgs = vmWithArgs.Run();
 

@@ -25,7 +25,7 @@ public class JsonStreamingExecutionTests
     {
         WithJson("[{\"Id\":1},{\"Id\":2},{\"Id\":3},{\"Id\":4}]", path =>
         {
-            var table = Compile($"select Id from #json.file('{QueryPath(path)}') where Id >= 3").Run();
+            var table = Compile($"select Id from json.file('{QueryPath(path)}') where Id >= 3").Run();
 
             CollectionAssert.AreEqual(new object[] { 3L, 4L }, table.Select(row => row[0]).ToArray());
         });
@@ -36,7 +36,7 @@ public class JsonStreamingExecutionTests
     {
         WithJson("[{\"Name\":\"A\\u0064a\"},{\"Name\":\"Grace\"}]", path =>
         {
-            var table = Compile($"select Name from #json.file('{QueryPath(path)}') where Name = 'Ada'").Run();
+            var table = Compile($"select Name from json.file('{QueryPath(path)}') where Name = 'Ada'").Run();
 
             Assert.AreEqual(1, table.Count);
             Assert.AreEqual("Ada", table[0][0]);
@@ -48,7 +48,7 @@ public class JsonStreamingExecutionTests
     {
         WithJson("[{\"\\u004eame\":\"Ada } \\\"Lovelace\\\"\"}]", path =>
         {
-            var table = Compile($"select Name from #json.file('{QueryPath(path)}')").Run();
+            var table = Compile($"select Name from json.file('{QueryPath(path)}')").Run();
 
             Assert.AreEqual("Ada } \"Lovelace\"", table[0][0]);
         });
@@ -60,7 +60,7 @@ public class JsonStreamingExecutionTests
         var payload = new string('x', 2 * 1024 * 1024) + " } ] \\\" still text";
         WithJson($"[{{\"Payload\":\"{payload.Replace("\\", "\\\\").Replace("\"", "\\\"")}\",\"Id\":7}}]", path =>
         {
-            var table = Compile($"select Id from #json.file('{QueryPath(path)}')").Run();
+            var table = Compile($"select Id from json.file('{QueryPath(path)}')").Run();
 
             Assert.AreEqual(1, table.Count);
             Assert.AreEqual(7L, table[0][0]);
@@ -73,7 +73,7 @@ public class JsonStreamingExecutionTests
         WithGeneratedJson(1_000, path =>
         {
             var table = Compile(
-                    $"select Id, Text, Score from #json.file('{QueryPath(path)}') where Id >= 500")
+                    $"select Id, Text, Score from json.file('{QueryPath(path)}') where Id >= 500")
                 .Run();
             using var document = JsonDocument.Parse(File.ReadAllBytes(path));
             var expected = document.RootElement.EnumerateArray()
@@ -216,7 +216,7 @@ public class JsonStreamingExecutionTests
     {
         WithJson("{\"Id\":1,\"Payload\":{\"Name\":\"Ada\",\"Values\":[1,2,3]}}", path =>
         {
-            var table = Compile($"select Payload from #json.file('{QueryPath(path)}')").Run();
+            var table = Compile($"select Payload from json.file('{QueryPath(path)}')").Run();
             var payload = (Dictionary<string, object>)table[0][0];
 
             Assert.AreEqual("Ada", payload["Name"]);
@@ -229,7 +229,7 @@ public class JsonStreamingExecutionTests
     {
         WithJson("[{\"Value\":1},{\"Value\":\"one\"},{\"Value\":true}]", path =>
         {
-            var table = Compile($"select Value from #json.file('{QueryPath(path)}')").Run();
+            var table = Compile($"select Value from json.file('{QueryPath(path)}')").Run();
 
             CollectionAssert.AreEqual(new object[] { 1L, "one", true }, table.Select(row => row[0]).ToArray());
         });
@@ -241,7 +241,7 @@ public class JsonStreamingExecutionTests
         WithJson("{\"Integer\":1,\"Fraction\":1.25,\"Exponent\":1e2}", path =>
         {
             var table = Compile(
-                    $"select Integer, Fraction, Exponent from #json.file('{QueryPath(path)}')")
+                    $"select Integer, Fraction, Exponent from json.file('{QueryPath(path)}')")
                 .Run();
 
             Assert.IsInstanceOfType<long>(table[0][0]);
