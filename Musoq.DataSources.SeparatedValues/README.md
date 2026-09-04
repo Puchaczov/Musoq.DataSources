@@ -1,9 +1,9 @@
 # Musoq.DataSources.SeparatedValues
 
 The SeparatedValues plugin streams UTF-8 delimited files through a bounded,
-byte-native pipeline. This version requires the complete Musoq
-`17.0.8-alpha.1` package train (`Parser`, `Plugins`, `Schema`, `Evaluator`, and
-`Converter`).
+byte-native pipeline. This version requires the compatible Musoq 17.0.9
+runtime-v2 package set: `Parser`, `Plugins`, and `Schema` at `17.0.9-alpha.1`,
+with `Evaluator` and `Converter` at `17.0.9-alpha.2`.
 
 Use the strict convenience sources for existing CSV/TSV files:
 
@@ -29,6 +29,47 @@ culture, record-ending, and buffer limits through the documented
 `separatedvalues.*` runtime settings. Strict convenience sources retain the
 historical grammar and defaults.
 
+## Explicit enum columns
+
+SeparatedValues supports first-class enums only when a query declares the
+descriptor and couples the source to that `TABLE` contract. Dynamic sampling
+never infers an enum from row text:
+
+```sql
+enum JobStatus : int {
+    Queued = 10,
+    Running = 20,
+    Finished = 30
+};
+
+table Jobs { Status: JobStatus };
+couple separatedvalues.comma with table Jobs as Rows;
+select Status, EnumName(Status) from Rows('jobs.csv', true, 0);
+```
+
+The eight integral backings (`byte`, `sbyte`, `short`, `ushort`, `int`,
+`uint`, `long`, and `ulong`) are accepted. A field first uses the existing
+invariant integral grammar, so any representable unknown number is preserved
+as the primitive carrier and `EnumName` returns `NULL`. Otherwise the exact,
+case-sensitive UTF-8 token is matched against every declared member and alias.
+Named composites and unnamed numeric flag masks are valid; comma-composed
+symbolic flags, wrong casing, overflow, signedness violations, and unknown
+names are rejected with bounded source/row/column/descriptor diagnostics.
+
+Enum columns are nullable when the source contains an unquoted empty field or
+the configured null token. `IS NULL` and `IS NOT NULL` follow SQL null
+semantics; comparisons, membership, and flags terms never match a null value.
+`HasAnyFlags` with a zero mask is false, while `HasAllFlags` with a zero mask
+is true for a non-null value. Equality/inequality, `IN`/`NOT IN`, null checks,
+and direct flags helpers may be pushed into the byte-native scan when their
+descriptor fingerprint matches. Other expressions remain Core residuals.
+
+The source boundary reads and returns the primitive carrier (`int?` in the
+example), while `EnumType` metadata retains the portable descriptor. No
+`System.Enum` value is created and no enum is inferred row by row. Non-empty
+read modifiers, implicit conversions, ordering, arithmetic, general bitwise
+operations, and binary/text enum fields remain unsupported.
+
 ## Native query-scoped rows
 
 SeparatedValues requires query-scoped row transfer. Construct the schema with
@@ -39,7 +80,7 @@ var schema = new SeparatedValuesSchema();
 ```
 
 For recognized sources with valid exact metadata, `DescribeSource` always
-advertises the `QueryScopedRows` transfer capability. The compiled query reads
+advertises `QueryScopedRows | LogicalScalarReads`. The compiled query reads
 accepted UTF-8 fields directly into its generated struct or class carrier. It
 does not create a production row `object?[]` and does not box primitive fields.
 Filtering and accepted `SKIP` run before materialization; accepted `TAKE` stops
@@ -205,3 +246,17 @@ dotnet run -c Release --project Musoq.DataSources.SeparatedValues.Playground -- 
 not guaranteed. Use the Windows unbuffered raw-ceiling shape when qualifying
 the framing ratio on the target NVMe. Keep a new scheduling default only after
 median isolated runs satisfy the documented throughput and latency thresholds.
+
+The enum-specific qualification gate is a short, repeatable `MediumRun` over
+8,192 records. It runs three isolated reports and compares the production
+decoder with primitive parsing, hash-plus-UTF-8 token comparison, and direct
+primitive masks; it reports per-report and median ratios plus fixed-operation
+allocation noise (limited to 1,024 bytes):
+
+```powershell
+dotnet run -c Release --project Musoq.DataSources.SeparatedValues.Benchmark -- gate-enums
+```
+
+The gate is intentionally separate from final-table allocation: each measured
+loop is warmed, returns only a checksum, and must allocate zero bytes on the
+qualified path.

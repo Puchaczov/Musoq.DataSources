@@ -1,0 +1,365 @@
+{
+  "schemaVersion": 2,
+  "packageId": "Musoq.DataSources.Ollama",
+  "slug": "ollama",
+  "version": "5.0.3-alpha.7",
+  "projectPath": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
+  "entryProject": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
+  "ownPackageId": "Musoq.DataSources.Ollama",
+  "licenseTool": {
+    "package": "nuget-license",
+    "version": "4.0.16"
+  },
+  "licenseGatherer": {
+    "path": "tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe",
+    "sha256": "36c49998b295dda2ce8117c380945499522d13cadc6088a802215deb4f65c157"
+  },
+  "dependencyInputs": [
+    {
+      "path": ".config/dotnet-tools.json",
+      "sha256": "f31564ec1d73f56499ca00eb3dab500d1e20610176fac3ae3f497f7f93527834"
+    },
+    {
+      "path": ".gitattributes",
+      "sha256": "45a7cbb7d9942ba7ffce0b20bc8dbe2d1196533bc6e4bd245871d77fb1eedfdc"
+    },
+    {
+      "path": "Directory.Build.props",
+      "sha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+    },
+    {
+      "path": "global.json",
+      "sha256": "bcead32f2fb187a53e01ffc96128e09798dbdc8a981b17adb4276b0e8da840d7"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "licenses/Musoq.Parser.txt",
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "licenses/Musoq.Plugins.txt",
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "licenses/Musoq.Schema.txt",
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "licenses/XmpCore.txt",
+      "sha256": "a088bca8f52001b44fa72ffb523e3c2d4f3df4b1b8f3f014692bdfd0d71b3584"
+    },
+    {
+      "path": "LinksManual.json",
+      "sha256": "9b88b408e00b8e4ad7f69c59a9390af41c72a6d169d1fc0d8ce22a3acc68875b"
+    },
+    {
+      "path": "Musoq.DataSources.LLMHelpers/Musoq.DataSources.LLMHelpers.csproj",
+      "sha256": "e4e9f184683a8c858f14605d5c81236c4d43c70956683db8257a721f230eed06"
+    },
+    {
+      "path": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
+      "sha256": "c9fc6b7d2c3444f305b41461022f174bb820314d0b8dba4b4e68d307b64a7f5e"
+    },
+    {
+      "path": "scripts/release/packages.json",
+      "sha256": "20c6d0e6a292a1e7c8847c659fad020a3c90faf6fededd7a6832ef5646c5c09e"
+    }
+  ],
+  "packageGraph": [
+    {
+      "id": "DiffPlex",
+      "version": "1.9.0",
+      "direct": false
+    },
+    {
+      "id": "Fastenshtein",
+      "version": "1.0.12",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Bcl.AsyncInterfaces",
+      "version": "9.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Build.Tasks.Git",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.AI.Abstractions",
+      "version": "9.1.0-preview.1.25064.3",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Configuration",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Configuration.Abstractions",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Configuration.Binder",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.DependencyInjection",
+      "version": "8.0.0",
+      "direct": true
+    },
+    {
+      "id": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "version": "10.0.8",
+      "direct": true
+    },
+    {
+      "id": "Microsoft.Extensions.Diagnostics",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Diagnostics.Abstractions",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Http",
+      "version": "8.0.0",
+      "direct": true
+    },
+    {
+      "id": "Microsoft.Extensions.Logging",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Logging.Abstractions",
+      "version": "10.0.8",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Options",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Options.ConfigurationExtensions",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Primitives",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.SourceLink.Common",
+      "version": "8.0.0",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.SourceLink.GitHub",
+      "version": "8.0.0",
+      "direct": true
+    },
+    {
+      "id": "Musoq.Parser",
+      "version": "17.0.9-alpha.1",
+      "direct": false
+    },
+    {
+      "id": "Musoq.Plugins",
+      "version": "17.0.9-alpha.1",
+      "direct": true
+    },
+    {
+      "id": "Musoq.Schema",
+      "version": "17.0.9-alpha.1",
+      "direct": true
+    },
+    {
+      "id": "Newtonsoft.Json",
+      "version": "13.0.3",
+      "direct": true
+    },
+    {
+      "id": "OllamaSharp",
+      "version": "5.0.4",
+      "direct": true
+    },
+    {
+      "id": "Polly",
+      "version": "8.5.1",
+      "direct": true
+    },
+    {
+      "id": "Polly.Core",
+      "version": "8.5.1",
+      "direct": false
+    },
+    {
+      "id": "SharpToken",
+      "version": "2.0.3",
+      "direct": true
+    }
+  ],
+  "files": [
+    {
+      "path": "license.txt",
+      "size": 1071,
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "third-party-notices/DiffPlex/license.txt",
+      "size": 9144,
+      "sha256": "becde03a3c8b9b2e3d58c7b65ca7ffd9e18e98162396cc374052983c1faaa47c"
+    },
+    {
+      "path": "third-party-notices/Fastenshtein/license.txt",
+      "size": 1077,
+      "sha256": "77a89e5f163c40944cc4ff134198fe0ea67df1a40b8876a7e34b3af88135c3a5"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Bcl.AsyncInterfaces/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Build.Tasks.Git/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.AI.Abstractions/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Configuration.Abstractions/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Configuration.Binder/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Configuration/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.DependencyInjection.Abstractions/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.DependencyInjection/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Diagnostics.Abstractions/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Diagnostics/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Http/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Logging.Abstractions/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Logging/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Options.ConfigurationExtensions/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Options/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Primitives/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.SourceLink.Common/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.SourceLink.GitHub/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Musoq.Parser/license.txt",
+      "size": 1071,
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "third-party-notices/Musoq.Plugins/license.txt",
+      "size": 1071,
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "third-party-notices/Musoq.Schema/license.txt",
+      "size": 1071,
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "third-party-notices/Newtonsoft.Json/license.txt",
+      "size": 1084,
+      "sha256": "d7f83bbea3264a8e23d7739e44d9db1a4994b357274df6f00876eb2e623827ad"
+    },
+    {
+      "path": "third-party-notices/OllamaSharp/license.txt",
+      "size": 1073,
+      "sha256": "8191d3f20998629f90df0f888c1d669d54e70d8d272aa78461d85b00b66c70f6"
+    },
+    {
+      "path": "third-party-notices/Polly.Core/license.txt",
+      "size": 1501,
+      "sha256": "1a99e4b057fa759e4c45c45d4e2f6c3051b460723067143c70fe3ba5621d2b63"
+    },
+    {
+      "path": "third-party-notices/Polly/license.txt",
+      "size": 1501,
+      "sha256": "1a99e4b057fa759e4c45c45d4e2f6c3051b460723067143c70fe3ba5621d2b63"
+    },
+    {
+      "path": "third-party-notices/report.json",
+      "size": 3236,
+      "sha256": "c6abb88315d38c527e66356bb121c1f00b13e5b9dfd16c17938ee9e1dbeab0e8"
+    },
+    {
+      "path": "third-party-notices/SharpToken/license.txt",
+      "size": 1073,
+      "sha256": "856042308158be124dddfd587c3cc7a144fab26d517e54f2d103ec0d32b3ae1c"
+    }
+  ]
+}

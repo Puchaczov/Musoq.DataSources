@@ -134,6 +134,10 @@ jobs:
       - name: Restore
         run: dotnet restore Musoq.DataSources.sln --nologo
 
+      - name: Validate committed license snapshots
+        shell: pwsh
+        run: ./scripts/release/Assert-LicenseSnapshots.ps1 -PluginName All -ValidatePackageGraph
+
       - name: Build
         run: dotnet build Musoq.DataSources.sln --configuration Release --no-restore --nologo
 
@@ -149,6 +153,18 @@ jobs:
             $artifactDirectory = Join-Path 'artifacts/release' $tag
             ./scripts/release/Pack-Release.ps1 -Tag $tag -OutputPath $artifactDirectory
             ./scripts/release/Test-ReleaseSmoke.ps1 -Tag $tag -ArtifactDirectory $artifactDirectory
+          }
+
+      - name: Validate embedded license snapshots
+        shell: pwsh
+        run: |
+          $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
+          foreach ($release in $batch) {
+            $artifactDirectory = Join-Path 'artifacts/release' ([string]$release.tag)
+            ./scripts/release/Assert-ReleaseLicenseArtifacts.ps1 `
+              -PluginName ([string]$release.packageId) `
+              -AssetsDirectory (Join-Path $artifactDirectory 'plugins') `
+              -ExpectedArchiveCount 4
           }
 
       # actions/upload-artifact@v4.6.2

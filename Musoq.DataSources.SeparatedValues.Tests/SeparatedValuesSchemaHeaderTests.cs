@@ -31,7 +31,9 @@ public class SeparatedValuesSchemaHeaderTests
                 true,
                 0);
 
-            Assert.AreEqual(SourceTransferCapabilities.QueryScopedRows, descriptor.TransferCapabilities);
+            Assert.AreEqual(
+                SourceTransferCapabilities.QueryScopedRows | SourceTransferCapabilities.LogicalScalarReads,
+                descriptor.TransferCapabilities);
             Assert.AreEqual(typeof(object[]), descriptor.RowType);
         });
     }

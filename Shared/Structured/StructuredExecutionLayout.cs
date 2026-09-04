@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Musoq.Schema;
 
 namespace Musoq.DataSources.Structured;
 
@@ -11,9 +12,17 @@ internal sealed record StructuredColumnBinding(
     string Name,
     int SourceOrdinal,
     int OutputOrdinal,
-    StructuredTypeState TypeState)
+    StructuredTypeState TypeState,
+    Type? CarrierType = null,
+    Type? SourceReadType = null,
+    EnumTypeDescriptor? EnumType = null,
+    ColumnStability Stability = ColumnStability.Stable)
 {
-    public Type ClrType => TypeState.ToClrType();
+    public Type ClrType => CarrierType ?? TypeState.ToClrType();
+
+    public Type EffectiveSourceReadType => SourceReadType ?? ClrType;
+
+    public bool IsNullable => !ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null;
 }
 
 internal sealed class StructuredExecutionLayout
@@ -62,7 +71,11 @@ internal sealed class StructuredExecutionLayout
                 column.Name,
                 column.SourceOrdinal,
                 outputOrdinal,
-                column.TypeState));
+                column.TypeState,
+                column.CarrierType,
+                column.SourceReadType,
+                column.EnumType,
+                column.Stability));
         }
 
         return new StructuredExecutionLayout(snapshot, bindings.MoveToImmutable(), names, includeCompleteSchema);
@@ -105,6 +118,16 @@ internal sealed class StructuredExecutionLayout
                 throw new StructuredSchemaDriftException(
                     currentSnapshot.Identity.CanonicalPath,
                     $"column '{expected.Name}' changed from {expected.TypeState} to {actual.TypeState}");
+            }
+
+            if (expected.ClrType != actual.ClrType ||
+                expected.EffectiveSourceReadType != actual.EffectiveSourceReadType ||
+                !Equals(expected.EnumType, actual.EnumType) ||
+                expected.Stability != actual.Stability)
+            {
+                throw new StructuredSchemaDriftException(
+                    currentSnapshot.Identity.CanonicalPath,
+                    $"column '{expected.Name}' changed its logical enum/source-read contract; recompile the query");
             }
         }
     }

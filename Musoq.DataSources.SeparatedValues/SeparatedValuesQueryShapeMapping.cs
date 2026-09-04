@@ -51,6 +51,29 @@ internal sealed class SeparatedValuesQueryMetadata
                 return false;
             }
 
+            if (column.EnumType is null && column.SourceReadType != column.ColumnType)
+            {
+                reason = $"ordinary column '{column.ColumnName}' must use identical carrier and source-read types";
+                return false;
+            }
+
+            if (column.EnumType is not null)
+            {
+                var nullableCarrier = Nullable.GetUnderlyingType(column.ColumnType);
+                var carrier = nullableCarrier ?? column.ColumnType;
+                if (carrier != EnumScalarTypeFacts.GetCarrierType(column.EnumType.UnderlyingKind))
+                {
+                    reason = $"enum column '{column.ColumnName}' carrier does not match descriptor backing";
+                    return false;
+                }
+
+                if (column.IntendedTypeName is not null)
+                {
+                    reason = $"enum column '{column.ColumnName}' cannot use an intended generated type name";
+                    return false;
+                }
+            }
+
             if (column.ReadModifiers.Count != 0)
             {
                 reason = $"column '{column.ColumnName}' has unsupported read modifiers";
@@ -95,6 +118,10 @@ internal sealed class SeparatedValuesQueryMetadata
                 denseIndex,
                 snapshotColumn.SourceOrdinal,
                 column.ColumnType,
+                column.EnumType is null ? column.SourceReadType : column.ColumnType,
+                column.EnumType,
+                column.Stability,
+                contract.ColumnContracts[snapshotColumn.SourceOrdinal].EnumPlan,
                 column.IntendedTypeName,
                 column.ReadModifiers);
         }
@@ -158,6 +185,10 @@ internal sealed class SeparatedValuesQueryMetadata
                 denseIndex,
                 binding.SourceOrdinal,
                 column.ColumnType,
+                column.EnumType is null ? column.SourceReadType : column.ColumnType,
+                column.EnumType,
+                column.Stability,
+                contract.ColumnContracts[binding.SourceOrdinal].EnumPlan,
                 column.IntendedTypeName,
                 column.ReadModifiers);
         }
@@ -219,6 +250,33 @@ internal sealed class SeparatedValuesQueryMetadata
                 return false;
             }
 
+            if (candidate.EnumType is null)
+            {
+                if (candidate.SourceReadType != candidate.FieldType)
+                {
+                    metadata = null;
+                    reason = $"ordinary column '{candidate.Name}' must use identical carrier and source-read types";
+                    return false;
+                }
+            }
+            else
+            {
+                if (candidate.SourceReadType != candidate.FieldType)
+                {
+                    metadata = null;
+                    reason = $"enum column '{candidate.Name}' source-read type must be normalized to its carrier";
+                    return false;
+                }
+
+                if (candidate.EnumPlan is null ||
+                    !string.Equals(candidate.EnumPlan.Fingerprint, candidate.EnumType.Fingerprint, StringComparison.Ordinal))
+                {
+                    metadata = null;
+                    reason = $"enum column '{candidate.Name}' is missing its immutable descriptor plan; recompile the query";
+                    return false;
+                }
+            }
+
             if (candidate.ReadModifiers.Count != 0)
             {
                 metadata = null;
@@ -233,7 +291,11 @@ internal sealed class SeparatedValuesQueryMetadata
                 candidate.FieldType,
                 IsNullable(candidate.FieldType),
                 conversion,
-                candidate.ReadModifiers.ToImmutableDictionary(StringComparer.Ordinal)));
+                candidate.ReadModifiers.ToImmutableDictionary(StringComparer.Ordinal),
+                candidate.SourceReadType,
+                candidate.EnumType,
+                candidate.Stability,
+                candidate.EnumPlan));
         }
 
         metadata = new SeparatedValuesQueryMetadata(columns.MoveToImmutable());
@@ -287,6 +349,10 @@ internal sealed class SeparatedValuesQueryMetadata
         int DenseSourceColumnIndex,
         int PhysicalSourceOrdinal,
         Type FieldType,
+        Type SourceReadType,
+        EnumTypeDescriptor? EnumType,
+        ColumnStability Stability,
+        SeparatedValuesEnumPlan? EnumPlan,
         string? IntendedTypeName,
         IReadOnlyDictionary<string, string> ReadModifiers);
 }
@@ -393,7 +459,11 @@ internal sealed class SeparatedValuesQueryShapeMapping
                 column.Name,
                 column.FieldType,
                 column.IsNullable,
-                column.Conversion));
+                column.Conversion,
+                column.SourceReadType,
+                column.EnumType,
+                column.Stability,
+                column.EnumPlan));
         }
 
         mapping = new SeparatedValuesQueryShapeMapping(shape.Fingerprint, fields.MoveToImmutable());
@@ -431,6 +501,22 @@ internal sealed class SeparatedValuesQueryShapeMapping
         {
             reason = $"shape field '{field.Name}' type '{field.FieldType}' does not match planned type " +
                      $"'{descriptor.FieldType}'";
+            return false;
+        }
+
+        var descriptorSourceReadType = descriptor.EnumType is null
+            ? descriptor.EffectiveSourceReadType
+            : descriptor.FieldType;
+        if (field.SourceReadType != descriptorSourceReadType)
+        {
+            reason = $"shape field '{field.Name}' source-read type '{field.SourceReadType}' does not match " +
+                     $"descriptor source-read type '{descriptorSourceReadType}'";
+            return false;
+        }
+
+        if (!Equals(field.EnumType, descriptor.EnumType))
+        {
+            reason = $"shape field '{field.Name}' enum descriptor fingerprint does not match descriptor metadata";
             return false;
         }
 
@@ -475,7 +561,11 @@ internal readonly record struct SeparatedValuesQueryColumn(
     Type FieldType,
     bool IsNullable,
     SeparatedValuesConversion Conversion,
-    IReadOnlyDictionary<string, string> ReadModifiers);
+    IReadOnlyDictionary<string, string> ReadModifiers,
+    Type SourceReadType,
+    EnumTypeDescriptor? EnumType,
+    ColumnStability Stability,
+    SeparatedValuesEnumPlan? EnumPlan);
 
 internal readonly record struct SeparatedValuesQueryFieldMapping(
     int Slot,
@@ -484,4 +574,8 @@ internal readonly record struct SeparatedValuesQueryFieldMapping(
     string Name,
     Type FieldType,
     bool IsNullable,
-    SeparatedValuesConversion Conversion);
+    SeparatedValuesConversion Conversion,
+    Type SourceReadType,
+    EnumTypeDescriptor? EnumType,
+    ColumnStability Stability,
+    SeparatedValuesEnumPlan? EnumPlan);

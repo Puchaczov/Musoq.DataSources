@@ -1,0 +1,147 @@
+[
+  {
+    "PackageId": "DiffPlex",
+    "PackageVersion": "1.9.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "PackageId": "Fastenshtein",
+    "PackageVersion": "1.0.12",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Bcl.AsyncInterfaces",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Build.Tasks.Git",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.AI.Abstractions",
+    "PackageVersion": "9.1.0-preview.1.25064.3",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Configuration",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Configuration.Abstractions",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Configuration.Binder",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.DependencyInjection",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.DependencyInjection.Abstractions",
+    "PackageVersion": "10.0.8",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Diagnostics",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Diagnostics.Abstractions",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Http",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Logging",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Logging.Abstractions",
+    "PackageVersion": "10.0.8",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Options",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Options.ConfigurationExtensions",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Primitives",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.SourceLink.Common",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.SourceLink.GitHub",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Parser",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Plugins",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Schema",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Newtonsoft.Json",
+    "PackageVersion": "13.0.3",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "OllamaSharp",
+    "PackageVersion": "5.0.4",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Polly",
+    "PackageVersion": "8.5.1",
+    "License": "BSD-3-Clause"
+  },
+  {
+    "PackageId": "Polly.Core",
+    "PackageVersion": "8.5.1",
+    "License": "BSD-3-Clause"
+  },
+  {
+    "PackageId": "SharpToken",
+    "PackageVersion": "2.0.3",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.DataSources.Ollama",
+    "PackageVersion": "5.0.3-alpha.7",
+    "License": "MIT"
+  }
+]

@@ -206,13 +206,19 @@ internal sealed class SeparatedValuesRecordProgram
         {
             var validatesSampledType = validator.TryGetValidationConversion(sourceOrdinal, out var validationConversion);
             var parsesPredicate = predicate.TryGetConversion(sourceOrdinal, out var predicateConversion);
-            var parseConversion = validatesSampledType
+            var enumPlan = contract.ColumnContracts[sourceOrdinal].EnumPlan;
+            var parsesEnum = enumPlan is not null &&
+                             (projection.HasProjectionAt(sourceOrdinal) || predicate.HasTermsAt(sourceOrdinal));
+            var parseConversion = parsesEnum
+                ? enumPlan!.PrimitiveConversion
+                : validatesSampledType
                 ? validationConversion
                 : parsesPredicate
                     ? predicateConversion
                     : (SeparatedValuesConversion?)null;
             actions[sourceOrdinal] = new SeparatedValuesFieldAction(
                 parseConversion,
+                parsesEnum ? enumPlan : null,
                 validatesSampledType,
                 predicate.HasTermsAt(sourceOrdinal),
                 projection.HasProjectionAt(sourceOrdinal));
@@ -244,6 +250,7 @@ internal sealed class SeparatedValuesRecordProgram
 
 internal readonly record struct SeparatedValuesFieldAction(
     SeparatedValuesConversion? ParseConversion,
+    SeparatedValuesEnumPlan? EnumPlan,
     bool ValidatesSampledType,
     bool HasPredicate,
     bool HasProjection);
@@ -361,11 +368,16 @@ internal sealed class SeparatedValuesRecordKernel
             _schemaValidator.ThrowWidthDrift(rowNumber);
         ref readonly var action = ref _actions[fieldIndex];
         var parsed = default(SeparatedValuesParsedValue);
-        if (action.ParseConversion.HasValue)
+        if (action.ParseConversion.HasValue && (predicateMatched || action.EnumPlan is null))
         {
             if (SeparatedValuesValueConverter.IsNull(field))
             {
                 parsed = SeparatedValuesParsedValue.Null(action.ParseConversion.Value);
+            }
+            else if (action.EnumPlan is not null)
+            {
+                if (!action.EnumPlan.TryDecode(field, out parsed))
+                    _schemaValidator.ThrowInvalidEnumValue(fieldIndex, field, rowNumber, action.EnumPlan);
             }
             else if (!SeparatedValuesParsedValue.TryParse(
                          field,
@@ -399,37 +411,36 @@ internal sealed class SeparatedValuesRecordKernel
 
 internal sealed class SeparatedValuesSchemaValidator
 {
-    private static readonly SeparatedValuesSchemaValidator Empty = new(null, [], string.Empty);
     private readonly StructuredColumnSnapshot[] _columns;
     private readonly string _path;
+    private readonly bool _validateSampledValues;
 
     private SeparatedValuesSchemaValidator(
         SeparatedValuesSourceContract? contract,
         StructuredColumnSnapshot[] columns,
-        string path)
+        string path,
+        bool validateSampledValues)
     {
         Contract = contract;
         _columns = columns;
         _path = path;
+        _validateSampledValues = validateSampledValues;
     }
 
     private SeparatedValuesSourceContract? Contract { get; }
 
     public static SeparatedValuesSchemaValidator Create(SeparatedValuesSourceContract contract)
     {
-        return contract.Mode == SeparatedValuesSchemaResolutionMode.Sampled
-            ? new SeparatedValuesSchemaValidator(
-                contract,
-                contract.Snapshot.Columns.ToArray(),
-                contract.Snapshot.Identity.CanonicalPath)
-            : contract.Snapshot.Columns.Length == 0
-                ? Empty
-                : new SeparatedValuesSchemaValidator(contract, [], contract.Snapshot.Identity.CanonicalPath);
+        return new SeparatedValuesSchemaValidator(
+            contract,
+            contract.Snapshot.Columns.ToArray(),
+            contract.Snapshot.Identity.CanonicalPath,
+            contract.Mode == SeparatedValuesSchemaResolutionMode.Sampled);
     }
 
     public bool TryGetValidationConversion(int fieldIndex, out SeparatedValuesConversion conversion)
     {
-        if (_columns.Length == 0)
+        if (!_validateSampledValues)
         {
             conversion = default;
             return false;
@@ -470,6 +481,24 @@ internal sealed class SeparatedValuesSchemaValidator
         throw new FormatException(
             $"Separated-values source '{_path}' row {rowNumber:N0} column '{column.Name}' " +
             $"expected {column.TypeState.Kind} but observed '{observed}'.");
+    }
+
+    public void ThrowInvalidEnumValue(
+        int fieldIndex,
+        SeparatedValuesUtf8Field field,
+        long rowNumber,
+        SeparatedValuesEnumPlan plan)
+    {
+        var columnName = (uint)fieldIndex < (uint)_columns.Length
+            ? _columns[fieldIndex].Name
+            : plan.Descriptor.DisplayName;
+        var observed = field.Decode();
+        if (observed.Length > 96)
+            observed = observed[..96] + "...";
+        throw new FormatException(
+            $"Separated-values source '{_path}' row {rowNumber:N0} column '{columnName}' " +
+            $"cannot be converted as enum '{plan.Descriptor.DisplayName}' ({plan.BackingKind}); " +
+            $"observed '{observed}'.");
     }
 }
 
@@ -703,8 +732,104 @@ internal sealed class SeparatedValuesPredicateEvaluator
                 AddTerms(contract, logical.Right, terms);
                 return;
             case SourcePredicateComparison comparison when
-                SeparatedValuesSourcePlanner.TryGetComparisonParts(
+                SeparatedValuesSourcePlanner.TryGetEnumComparisonParts(
                     comparison,
+                    out var enumComparisonName,
+                    out var enumLiteral,
+                    out var enumComparisonOperator):
+            {
+                if (!SeparatedValuesSourcePlanner.TryGetEnumColumn(
+                        contract,
+                        enumComparisonName,
+                        out var enumColumn,
+                        out _,
+                        out var enumPlan))
+                    throw new StructuredUnknownColumnException(
+                        enumComparisonName,
+                        contract.Snapshot.Identity.CanonicalPath);
+
+                terms.Add(PredicateTerm.CreateEnumComparison(
+                    enumColumn,
+                    enumLiteral.Value,
+                    enumComparisonOperator,
+                    enumPlan));
+                return;
+            }
+            case SourcePredicateIn membership when
+                SeparatedValuesSourcePlanner.TryGetEnumColumn(
+                    contract,
+                    membership.Expression,
+                    out var enumMembershipColumn,
+                    out _,
+                    out var enumMembershipPlan):
+            {
+                var values = new List<EnumScalarValue>(membership.Values.Count);
+                foreach (var value in membership.Values)
+                {
+                    if (value is not SourcePredicateEnumLiteral literal)
+                        throw new InvalidOperationException(
+                            "Separated-values execution received a non-enum membership literal.");
+
+                    var duplicate = false;
+                    foreach (var existing in values)
+                    {
+                        if (existing == literal.Value)
+                        {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+
+                    if (!duplicate)
+                        values.Add(literal.Value);
+                }
+
+                var normalized = values.ToArray();
+                for (var index = 1; index < normalized.Length; index++)
+                {
+                    var value = normalized[index];
+                    var position = index - 1;
+                    while (position >= 0 && normalized[position].RawValue > value.RawValue)
+                    {
+                        normalized[position + 1] = normalized[position];
+                        position--;
+                    }
+
+                    normalized[position + 1] = value;
+                }
+
+                terms.Add(PredicateTerm.CreateEnumMembership(
+                    enumMembershipColumn,
+                    normalized,
+                    membership.IsNegated,
+                    enumMembershipPlan));
+                return;
+            }
+            case SourcePredicateNullCheck nullCheck when
+                SeparatedValuesSourcePlanner.TryGetEnumColumn(
+                    contract,
+                    nullCheck.Expression,
+                    out var enumNullColumn,
+                    out _,
+                    out var enumNullPlan):
+                terms.Add(PredicateTerm.CreateEnumNullCheck(enumNullColumn, nullCheck.IsNegated, enumNullPlan));
+                return;
+            case SourcePredicateFlags flags when
+                SeparatedValuesSourcePlanner.TryGetEnumColumn(
+                    contract,
+                    flags.Expression,
+                    out var enumFlagsColumn,
+                    out _,
+                    out var enumFlagsPlan):
+                terms.Add(PredicateTerm.CreateEnumFlags(
+                    enumFlagsColumn,
+                    flags.Mask.Value,
+                    flags.MatchMode,
+                    enumFlagsPlan));
+                return;
+            case SourcePredicateComparison ordinaryComparison when
+                SeparatedValuesSourcePlanner.TryGetComparisonParts(
+                    ordinaryComparison,
                     out var name,
                     out var literal,
                     out var op):
@@ -726,9 +851,23 @@ internal sealed class SeparatedValuesPredicateEvaluator
 
     private sealed class PredicateTerm
     {
+        private enum PredicateTermKind : byte
+        {
+            Comparison,
+            EnumComparison,
+            EnumMembership,
+            EnumNullCheck,
+            EnumFlags
+        }
+
         private readonly bool _boolean;
         private readonly decimal _decimal;
         private readonly double _double;
+        private readonly EnumScalarValue[]? _enumValues;
+        private readonly EnumScalarValue _enumValue;
+        private readonly SeparatedValuesEnumPlan? _enumPlan;
+        private readonly bool _isNegated;
+        private readonly SourcePredicateFlagsMatchMode _flagsMatchMode;
         private readonly long _long;
         private readonly ulong _ulong;
         private readonly string _name;
@@ -736,6 +875,7 @@ internal sealed class SeparatedValuesPredicateEvaluator
         private readonly byte[]? _stringUtf8;
         private readonly StructuredValueKind _type;
         private readonly SeparatedValuesConversion _conversion;
+        private readonly PredicateTermKind _kind;
 
         private PredicateTerm(
             int sourceOrdinal,
@@ -748,7 +888,13 @@ internal sealed class SeparatedValuesPredicateEvaluator
             double doubleValue,
             bool booleanValue,
             byte[]? stringUtf8,
-            SeparatedValuesConversion conversion)
+            SeparatedValuesConversion conversion,
+            PredicateTermKind kind = PredicateTermKind.Comparison,
+            SeparatedValuesEnumPlan? enumPlan = null,
+            EnumScalarValue enumValue = default,
+            EnumScalarValue[]? enumValues = null,
+            bool isNegated = false,
+            SourcePredicateFlagsMatchMode flagsMatchMode = SourcePredicateFlagsMatchMode.Any)
         {
             SourceOrdinal = sourceOrdinal;
             _name = name;
@@ -761,6 +907,12 @@ internal sealed class SeparatedValuesPredicateEvaluator
             _boolean = booleanValue;
             _stringUtf8 = stringUtf8;
             _conversion = conversion;
+            _kind = kind;
+            _enumPlan = enumPlan;
+            _enumValue = enumValue;
+            _enumValues = enumValues;
+            _isNegated = isNegated;
+            _flagsMatchMode = flagsMatchMode;
         }
 
         public int SourceOrdinal { get; }
@@ -878,6 +1030,99 @@ internal sealed class SeparatedValuesPredicateEvaluator
             };
         }
 
+        public static PredicateTerm CreateEnumComparison(
+            StructuredColumnSnapshot column,
+            EnumScalarValue value,
+            SourcePredicateComparisonOperator op,
+            SeparatedValuesEnumPlan plan)
+        {
+            return new PredicateTerm(
+                column.SourceOrdinal,
+                column.Name,
+                column.TypeState.Kind,
+                op,
+                0,
+                0,
+                0,
+                0,
+                false,
+                null,
+                plan.PrimitiveConversion,
+                PredicateTermKind.EnumComparison,
+                plan,
+                value);
+        }
+
+        public static PredicateTerm CreateEnumMembership(
+            StructuredColumnSnapshot column,
+            EnumScalarValue[] values,
+            bool isNegated,
+            SeparatedValuesEnumPlan plan)
+        {
+            return new PredicateTerm(
+                column.SourceOrdinal,
+                column.Name,
+                column.TypeState.Kind,
+                SourcePredicateComparisonOperator.Equal,
+                0,
+                0,
+                0,
+                0,
+                false,
+                null,
+                plan.PrimitiveConversion,
+                PredicateTermKind.EnumMembership,
+                plan,
+                enumValues: values,
+                isNegated: isNegated);
+        }
+
+        public static PredicateTerm CreateEnumNullCheck(
+            StructuredColumnSnapshot column,
+            bool isNegated,
+            SeparatedValuesEnumPlan plan)
+        {
+            return new PredicateTerm(
+                column.SourceOrdinal,
+                column.Name,
+                column.TypeState.Kind,
+                SourcePredicateComparisonOperator.Equal,
+                0,
+                0,
+                0,
+                0,
+                false,
+                null,
+                plan.PrimitiveConversion,
+                PredicateTermKind.EnumNullCheck,
+                plan,
+                isNegated: isNegated);
+        }
+
+        public static PredicateTerm CreateEnumFlags(
+            StructuredColumnSnapshot column,
+            EnumScalarValue mask,
+            SourcePredicateFlagsMatchMode matchMode,
+            SeparatedValuesEnumPlan plan)
+        {
+            return new PredicateTerm(
+                column.SourceOrdinal,
+                column.Name,
+                column.TypeState.Kind,
+                SourcePredicateComparisonOperator.Equal,
+                0,
+                0,
+                0,
+                0,
+                false,
+                null,
+                plan.PrimitiveConversion,
+                PredicateTermKind.EnumFlags,
+                plan,
+                enumValue: mask,
+                flagsMatchMode: matchMode);
+        }
+
         public bool Evaluate(
             SeparatedValuesUtf8Field field,
             SeparatedValuesParsedValue parsed,
@@ -885,6 +1130,12 @@ internal sealed class SeparatedValuesPredicateEvaluator
             string path,
             IFormatProvider culture)
         {
+            if (_kind is PredicateTermKind.EnumComparison or
+                PredicateTermKind.EnumMembership or
+                PredicateTermKind.EnumNullCheck or
+                PredicateTermKind.EnumFlags)
+                return EvaluateEnum(field, parsed, rowNumber, path);
+
             if (SeparatedValuesValueConverter.IsNull(field))
                 return false;
 
@@ -928,6 +1179,87 @@ internal sealed class SeparatedValuesPredicateEvaluator
                 _ => _operator == SourcePredicateComparisonOperator.Equal
                     ? field.ValueEquals(_stringUtf8!)
                     : !field.ValueEquals(_stringUtf8!),
+            };
+        }
+
+        private bool EvaluateEnum(
+            SeparatedValuesUtf8Field field,
+            SeparatedValuesParsedValue parsed,
+            long rowNumber,
+            string path)
+        {
+            var isNull = SeparatedValuesValueConverter.IsNull(field) || parsed.IsNull;
+            if (_kind == PredicateTermKind.EnumNullCheck)
+                return _isNegated ? !isNull : isNull;
+
+            if (isNull)
+                return false;
+
+            if (!parsed.CanCompare(_conversion))
+                throw InvalidPredicateValue(field, rowNumber, path);
+
+            var rawValue = GetEnumRawValue(parsed, _conversion);
+            return _kind switch
+            {
+                PredicateTermKind.EnumComparison =>
+                    _operator == SourcePredicateComparisonOperator.Equal
+                        ? rawValue == _enumValue.RawValue
+                        : rawValue != _enumValue.RawValue,
+                PredicateTermKind.EnumMembership =>
+                    (_isNegated ? !ContainsEnumValue(rawValue) : ContainsEnumValue(rawValue)),
+                PredicateTermKind.EnumFlags => _flagsMatchMode == SourcePredicateFlagsMatchMode.Any
+                    ? (rawValue & _enumValue.RawValue) != 0
+                    : (rawValue & _enumValue.RawValue) == _enumValue.RawValue,
+                _ => false
+            };
+        }
+
+        private bool ContainsEnumValue(ulong rawValue)
+        {
+            var values = _enumValues!;
+            if (values.Length <= 8)
+            {
+                for (var index = 0; index < values.Length; index++)
+                {
+                    if (values[index].RawValue == rawValue)
+                        return true;
+                }
+
+                return false;
+            }
+
+            var low = 0;
+            var high = values.Length - 1;
+            while (low <= high)
+            {
+                var middle = low + ((high - low) >> 1);
+                var candidate = values[middle].RawValue;
+                if (candidate == rawValue)
+                    return true;
+                if (candidate < rawValue)
+                    low = middle + 1;
+                else
+                    high = middle - 1;
+            }
+
+            return false;
+        }
+
+        private static ulong GetEnumRawValue(
+            SeparatedValuesParsedValue parsed,
+            SeparatedValuesConversion conversion)
+        {
+            return conversion switch
+            {
+                SeparatedValuesConversion.Byte => parsed.Byte,
+                SeparatedValuesConversion.SByte => unchecked((byte)parsed.SByte),
+                SeparatedValuesConversion.Int16 => unchecked((ushort)parsed.Int16),
+                SeparatedValuesConversion.UInt16 => parsed.UInt16,
+                SeparatedValuesConversion.Int32 => unchecked((uint)parsed.Int32),
+                SeparatedValuesConversion.UInt32 => parsed.UInt32,
+                SeparatedValuesConversion.Int64 => unchecked((ulong)parsed.Int64),
+                SeparatedValuesConversion.UInt64 => parsed.UInt64,
+                _ => throw new InvalidOperationException("Enum predicate conversion must be integral.")
             };
         }
 
@@ -1020,6 +1352,14 @@ internal sealed class SeparatedValuesPredicateEvaluator
             var observed = field.Decode();
             if (observed.Length > 96)
                 observed = observed[..96] + "...";
+            if (_enumPlan is not null)
+            {
+                return new FormatException(
+                    $"Separated-values source '{path}' row {rowNumber:N0} column '{_name}' " +
+                    $"cannot be converted as enum '{_enumPlan.Descriptor.DisplayName}' " +
+                    $"({_enumPlan.BackingKind}); observed '{observed}'.");
+            }
+
             return new FormatException(
                 $"Separated-values source '{path}' row {rowNumber:N0} column '{_name}' " +
                 $"cannot be converted as {_type}; observed '{observed}'.");
@@ -1145,6 +1485,33 @@ internal readonly struct SeparatedValuesParsedValue
     public static SeparatedValuesParsedValue Null(SeparatedValuesConversion conversion)
     {
         return new SeparatedValuesParsedValue(conversion, true);
+    }
+
+    public static SeparatedValuesParsedValue FromEnum(
+        SeparatedValuesConversion conversion,
+        EnumScalarValue value)
+    {
+        return conversion switch
+        {
+            SeparatedValuesConversion.Byte => new SeparatedValuesParsedValue(
+                conversion, false, byteValue: value.AsByte()),
+            SeparatedValuesConversion.SByte => new SeparatedValuesParsedValue(
+                conversion, false, sbyteValue: value.AsSByte()),
+            SeparatedValuesConversion.Int16 => new SeparatedValuesParsedValue(
+                conversion, false, int16: value.AsInt16()),
+            SeparatedValuesConversion.UInt16 => new SeparatedValuesParsedValue(
+                conversion, false, uint16: value.AsUInt16()),
+            SeparatedValuesConversion.Int32 => new SeparatedValuesParsedValue(
+                conversion, false, int32: value.AsInt32()),
+            SeparatedValuesConversion.UInt32 => new SeparatedValuesParsedValue(
+                conversion, false, uint32: value.AsUInt32()),
+            SeparatedValuesConversion.Int64 => new SeparatedValuesParsedValue(
+                conversion, false, int64: value.AsInt64()),
+            SeparatedValuesConversion.UInt64 => new SeparatedValuesParsedValue(
+                conversion, false, uint64: value.AsUInt64()),
+            _ => throw new ArgumentOutOfRangeException(nameof(conversion), conversion,
+                "Enum backing conversion must be integral.")
+        };
     }
 
     public static bool TryParse(

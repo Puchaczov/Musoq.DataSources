@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Musoq.DataSources.Structured;
+using Musoq.Schema;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues;
@@ -107,6 +108,36 @@ internal static class SeparatedValuesSourcePlanner
         return false;
     }
 
+    internal static bool TryGetEnumComparisonParts(
+        SourcePredicateComparison comparison,
+        out string columnName,
+        out SourcePredicateEnumLiteral literal,
+        out SourcePredicateComparisonOperator op)
+    {
+        if (comparison.Left is SourcePredicateColumn leftColumn &&
+            comparison.Right is SourcePredicateEnumLiteral rightLiteral)
+        {
+            columnName = NormalizeColumnName(leftColumn.Column.Name);
+            literal = rightLiteral;
+            op = comparison.Operator;
+            return true;
+        }
+
+        if (comparison.Right is SourcePredicateColumn rightColumn &&
+            comparison.Left is SourcePredicateEnumLiteral leftLiteral)
+        {
+            columnName = NormalizeColumnName(rightColumn.Column.Name);
+            literal = leftLiteral;
+            op = Invert(comparison.Operator);
+            return true;
+        }
+
+        columnName = string.Empty;
+        literal = null!;
+        op = comparison.Operator;
+        return false;
+    }
+
     internal static string NormalizeColumnName(string name)
     {
         var dotIndex = name.LastIndexOf('.');
@@ -145,13 +176,45 @@ internal static class SeparatedValuesSourcePlanner
         SourcePredicateExpression expression)
     {
         var snapshot = contract.Snapshot;
-        if (expression is not SourcePredicateComparison comparison ||
-            !TryGetComparisonParts(comparison, out var name, out var literal, out var op) ||
-            literal.Value is null ||
-            !IsSupportedOperator(op) ||
-            !snapshot.TryGetColumn(name, out var column))
-            return false;
+        if (expression is SourcePredicateComparison comparison)
+        {
+            if (TryGetEnumComparisonParts(comparison, out var enumName, out var enumLiteral, out var enumOp))
+                return IsSupportedEnumComparison(contract, enumName, enumLiteral, enumOp);
 
+            if (!TryGetComparisonParts(comparison, out var name, out var literal, out var op) ||
+                literal.Value is null ||
+                !IsSupportedOperator(op) ||
+                !snapshot.TryGetColumn(name, out var column))
+                return false;
+
+            // A declared enum must only be pushed down through its descriptor-driven
+            // literal representation. Treat ordinary literals on enum columns as
+            // residual Core predicates rather than falling through to integral parsing.
+            if (column.EnumType is not null)
+                return false;
+
+            return IsSupportedOrdinaryComparison(contract, column, literal, op);
+        }
+
+        if (expression is SourcePredicateIn membership)
+            return IsSupportedEnumMembership(contract, membership);
+
+        if (expression is SourcePredicateNullCheck nullCheck)
+            return IsSupportedEnumNullCheck(contract, nullCheck);
+
+        if (expression is SourcePredicateFlags flags)
+            return IsSupportedEnumFlags(contract, flags);
+
+        return false;
+    }
+
+    private static bool IsSupportedOrdinaryComparison(
+        SeparatedValuesSourceContract contract,
+        StructuredColumnSnapshot column,
+        SourcePredicateLiteral literal,
+        SourcePredicateComparisonOperator op)
+    {
+        var literalValue = literal.Value!;
         if (contract.Mode == SeparatedValuesSchemaResolutionMode.Declared &&
             contract.ColumnContracts.Length > column.SourceOrdinal)
         {
@@ -166,22 +229,122 @@ internal static class SeparatedValuesSourcePlanner
                 SeparatedValuesConversion.DateTime or
                     SeparatedValuesConversion.DateTimeOffset or
                     SeparatedValuesConversion.DateOnly or
-                    SeparatedValuesConversion.TimeOnly or
-                    SeparatedValuesConversion.TimeSpan or
-                    SeparatedValuesConversion.Guid => IsEqualityOperator(op) && literal.Value is string,
-                _ => CanConvertLiteral(literal.Value, conversion)
+                SeparatedValuesConversion.TimeOnly or
+                SeparatedValuesConversion.TimeSpan or
+                SeparatedValuesConversion.Guid => IsEqualityOperator(op) && literal.Value is string,
+                _ => CanConvertLiteral(literalValue, conversion)
             };
         }
 
         return column.TypeState.Kind switch
         {
-            StructuredValueKind.Long => CanConvert<long>(literal.Value),
-            StructuredValueKind.Decimal => CanConvert<decimal>(literal.Value),
-            StructuredValueKind.Double => CanConvert<double>(literal.Value),
+            StructuredValueKind.Long => CanConvert<long>(literalValue),
+            StructuredValueKind.Decimal => CanConvert<decimal>(literalValue),
+            StructuredValueKind.Double => CanConvert<double>(literalValue),
             StructuredValueKind.Boolean => IsEqualityOperator(op) && literal.Value is bool,
             StructuredValueKind.String => IsEqualityOperator(op) && literal.Value is string,
             _ => false
         };
+    }
+
+    private static bool IsSupportedEnumComparison(
+        SeparatedValuesSourceContract contract,
+        string name,
+        SourcePredicateEnumLiteral literal,
+        SourcePredicateComparisonOperator op)
+    {
+        if (!IsEqualityOperator(op) ||
+            !TryGetEnumColumn(contract, name, out _, out var descriptor, out _))
+            return false;
+
+        return IsMatchingEnumLiteral(literal, descriptor);
+    }
+
+    private static bool IsSupportedEnumMembership(
+        SeparatedValuesSourceContract contract,
+        SourcePredicateIn membership)
+    {
+        if (!TryGetEnumColumn(contract, membership.Expression, out _, out var descriptor, out _))
+            return false;
+
+        if (membership.Values.Count == 0)
+            return true;
+
+        foreach (var value in membership.Values)
+        {
+            if (value is not SourcePredicateEnumLiteral literal ||
+                !IsMatchingEnumLiteral(literal, descriptor))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsSupportedEnumNullCheck(
+        SeparatedValuesSourceContract contract,
+        SourcePredicateNullCheck nullCheck)
+    {
+        return TryGetEnumColumn(contract, nullCheck.Expression, out _, out _, out _);
+    }
+
+    private static bool IsSupportedEnumFlags(
+        SeparatedValuesSourceContract contract,
+        SourcePredicateFlags flags)
+    {
+        if (!TryGetEnumColumn(contract, flags.Expression, out _, out var descriptor, out _))
+            return false;
+
+        return descriptor.IsFlags && IsMatchingEnumLiteral(flags.Mask, descriptor);
+    }
+
+    internal static bool TryGetEnumColumn(
+        SeparatedValuesSourceContract contract,
+        SourcePredicateExpression expression,
+        out StructuredColumnSnapshot column,
+        out EnumTypeDescriptor descriptor,
+        out SeparatedValuesEnumPlan plan)
+    {
+        if (expression is SourcePredicateColumn sourceColumn)
+            return TryGetEnumColumn(contract, NormalizeColumnName(sourceColumn.Column.Name), out column, out descriptor, out plan);
+
+        column = null!;
+        descriptor = null!;
+        plan = null!;
+        return false;
+    }
+
+    internal static bool TryGetEnumColumn(
+        SeparatedValuesSourceContract contract,
+        string name,
+        out StructuredColumnSnapshot column,
+        out EnumTypeDescriptor descriptor,
+        out SeparatedValuesEnumPlan plan)
+    {
+        if (contract.Snapshot.TryGetColumn(name, out column!) &&
+            column.EnumType is not null &&
+            (uint)column.SourceOrdinal < (uint)contract.ColumnContracts.Length)
+        {
+            var contractColumn = contract.ColumnContracts[column.SourceOrdinal];
+            if (contractColumn.EnumType is not null && contractColumn.EnumPlan is not null)
+            {
+                descriptor = contractColumn.EnumType;
+                plan = contractColumn.EnumPlan;
+                return true;
+            }
+        }
+
+        column = null!;
+        descriptor = null!;
+        plan = null!;
+        return false;
+    }
+
+    private static bool IsMatchingEnumLiteral(
+        SourcePredicateEnumLiteral literal,
+        EnumTypeDescriptor descriptor)
+    {
+        return string.Equals(literal.EnumFingerprint, descriptor.Fingerprint, StringComparison.Ordinal) &&
+               literal.Value.Kind == descriptor.UnderlyingKind;
     }
 
     private static bool CanConvertLiteral(object value, SeparatedValuesConversion conversion)

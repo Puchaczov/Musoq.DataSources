@@ -445,7 +445,7 @@ public class SeparatedValuesQueryScopedSourceMaterializationBenchmarks
             path,
             true,
             0);
-        if (descriptor.TransferCapabilities != SourceTransferCapabilities.QueryScopedRows)
+        if ((descriptor.TransferCapabilities & SourceTransferCapabilities.QueryScopedRows) == 0)
             throw new InvalidOperationException($"Query-row benchmark source '{sourceContextId}' is not eligible.");
 
         var plan = schema.TryPlanSource(

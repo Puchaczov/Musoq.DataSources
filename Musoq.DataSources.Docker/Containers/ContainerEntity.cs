@@ -1,4 +1,5 @@
 using Docker.DotNet.Models;
+using Musoq.Plugins.Attributes;
 using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Docker.Containers;
@@ -9,6 +10,7 @@ public class ContainerEntity(ContainerListResponse response)
     public string? ID => response.ID;
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyList<string> Names => response.Names?.ToArray() ?? [];
 
     [EntityProperty]
@@ -30,9 +32,11 @@ public class ContainerEntity(ContainerListResponse response)
     public string? Status => response.Status;
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyList<string> Ports => response.Ports?.Select(FormatPort).ToArray() ?? [];
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Labels => response.Labels?.ToDictionary(
         pair => pair.Key,
         pair => pair.Value) ?? new Dictionary<string, string>();
@@ -52,6 +56,7 @@ public class ContainerEntity(ContainerListResponse response)
                 $"{pair.Key}:{pair.Value.IPAddress}:{pair.Value.MacAddress}"));
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyList<string> Mounts => response.Mounts?.Select(mount =>
             $"{mount.Type}:{mount.Source}:{mount.Destination}:{mount.Driver}:{mount.Mode}:{mount.Name}:{mount.RW}")
         .ToArray() ?? [];

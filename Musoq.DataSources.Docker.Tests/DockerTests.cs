@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Evaluator.Tables;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Docker.Tests;
@@ -57,7 +58,7 @@ public class DockerTests
             });
 
         var query =
-            "select ID, Names, Image, ImageID, Command, Created, State, Status, Ports, Labels, SizeRw, SizeRootFs, NetworkSettings, Mounts, FlattenPorts from docker.containers()";
+            "select ID, Image, ImageID, Command, Created, State, Status, SizeRw, SizeRootFs, NetworkSettings, FlattenPorts from docker.containers()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -67,43 +68,39 @@ public class DockerTests
 
         Assert.AreEqual("1", table[0][0]);
 
-        var names = (IReadOnlyList<string>)table[0][1];
-
-        Assert.AreEqual(1, names.Count);
-        Assert.AreEqual("1", names[0]);
-
+        Assert.AreEqual("1", table[0][1]);
         Assert.AreEqual("1", table[0][2]);
         Assert.AreEqual("1", table[0][3]);
-        Assert.AreEqual("1", table[0][4]);
-        Assert.AreEqual(DateTime.MinValue, table[0][5]);
+        Assert.AreEqual(DateTime.MinValue, table[0][4]);
+        Assert.AreEqual("1", table[0][5]);
         Assert.AreEqual("1", table[0][6]);
-        Assert.AreEqual("1", table[0][7]);
+        Assert.AreEqual(1L, table[0][7]);
+        Assert.AreEqual(1L, table[0][8]);
 
-        var ports = (IReadOnlyList<string>)table[0][8];
-
-        Assert.AreEqual(1, ports.Count);
-        Assert.AreEqual("1:1", ports[0]);
-
-        var labels = (IReadOnlyDictionary<string, string>)table[0][9];
-
-        Assert.AreEqual(1, labels.Count);
-        Assert.AreEqual("1", labels["1"]);
-
-        Assert.AreEqual(1L, table[0][10]);
-        Assert.AreEqual(1L, table[0][11]);
-
-        var networkSettings = (string)table[0][12];
+        var networkSettings = (string)table[0][9];
 
         Assert.IsTrue(networkSettings.Contains("1:1:1"));
 
-        var mounts = (IReadOnlyList<string>)table[0][13];
+        Assert.AreEqual("1:1", table[0][10]);
 
+        var names = RunQuery("select n.Value from docker.containers() c cross apply c.Names n", api.Object);
+        Assert.AreEqual(1, names.Count);
+        Assert.AreEqual("1", names[0][0]);
+
+        var ports = RunQuery("select p.Value from docker.containers() c cross apply c.Ports p", api.Object);
+        Assert.AreEqual(1, ports.Count);
+        Assert.AreEqual("1:1", ports[0][0]);
+
+        var labels = RunQuery("select l.Key, l.Value from docker.containers() c cross apply c.Labels l", api.Object);
+        Assert.AreEqual(1, labels.Count);
+        Assert.AreEqual("1", labels[0][0]);
+        Assert.AreEqual("1", labels[0][1]);
+
+        var mounts = RunQuery("select m.Value from docker.containers() c cross apply c.Mounts m", api.Object);
         Assert.AreEqual(1, mounts.Count);
-        Assert.AreEqual("1:1:1:1:1:1:True", mounts[0]);
+        Assert.AreEqual("1:1:1:1:1:1:True", mounts[0][0]);
 
-        Assert.AreEqual("1:1", table[0][14]);
-
-        api.Verify(f => f.ListContainersAsync(), Times.Once);
+        api.Verify(f => f.ListContainersAsync(), Times.Exactly(5));
     }
 
     [TestMethod]
@@ -128,7 +125,7 @@ public class DockerTests
             });
 
         var query =
-            "select Created, ID, ParentID, RepoDigests, RepoTags, SharedSize, Size, VirtualSize from docker.images()";
+            "select Created, ID, ParentID, SharedSize, Size, VirtualSize from docker.images()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -139,21 +136,19 @@ public class DockerTests
         Assert.AreEqual(DateTime.MinValue, table[0][0]);
         Assert.AreEqual("1", table[0][1]);
 
-        var repoDigests = (IReadOnlyList<string>)table[0][3];
-
-        Assert.AreEqual(1, repoDigests.Count);
-        Assert.AreEqual("1", repoDigests[0]);
-
-        var repoTags = (IReadOnlyList<string>)table[0][4];
-
-        Assert.AreEqual(1, repoTags.Count);
-        Assert.AreEqual("1", repoTags[0]);
-
+        Assert.AreEqual(1L, table[0][3]);
+        Assert.AreEqual(1L, table[0][4]);
         Assert.AreEqual(1L, table[0][5]);
-        Assert.AreEqual(1L, table[0][6]);
-        Assert.AreEqual(1L, table[0][7]);
 
-        api.Verify(f => f.ListImagesAsync(), Times.Once);
+        var repoDigests = RunQuery("select d.Value from docker.images() i cross apply i.RepoDigests d", api.Object);
+        Assert.AreEqual(1, repoDigests.Count);
+        Assert.AreEqual("1", repoDigests[0][0]);
+
+        var repoTags = RunQuery("select t.Value from docker.images() i cross apply i.RepoTags t", api.Object);
+        Assert.AreEqual(1, repoTags.Count);
+        Assert.AreEqual("1", repoTags[0][0]);
+
+        api.Verify(f => f.ListImagesAsync(), Times.Exactly(3));
     }
 
     [TestMethod]
@@ -176,7 +171,7 @@ public class DockerTests
                 }
             });
 
-        var query = "select CreatedAt, Driver, Labels, Mountpoint, Name, Options, Scope from docker.volumes()";
+        var query = "select CreatedAt, Driver, Mountpoint, Name, Scope from docker.volumes()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -187,22 +182,21 @@ public class DockerTests
         Assert.AreEqual("now", table[0][0]);
         Assert.AreEqual("1", table[0][1]);
 
-        var labels = (IReadOnlyDictionary<string, string>)table[0][2];
-
-        Assert.AreEqual(1, labels.Count);
-        Assert.AreEqual("1", labels["1"]);
-
+        Assert.AreEqual("1", table[0][2]);
         Assert.AreEqual("1", table[0][3]);
         Assert.AreEqual("1", table[0][4]);
 
-        var options = (IReadOnlyDictionary<string, string>)table[0][5];
+        var labels = RunQuery("select l.Key, l.Value from docker.volumes() v cross apply v.Labels l", api.Object);
+        Assert.AreEqual(1, labels.Count);
+        Assert.AreEqual("1", labels[0][0]);
+        Assert.AreEqual("1", labels[0][1]);
 
+        var options = RunQuery("select o.Key, o.Value from docker.volumes() v cross apply v.Options o", api.Object);
         Assert.AreEqual(1, options.Count);
-        Assert.AreEqual("1", options["1"]);
+        Assert.AreEqual("1", options[0][0]);
+        Assert.AreEqual("1", options[0][1]);
 
-        Assert.AreEqual("1", table[0][6]);
-
-        api.Verify(f => f.ListVolumesAsync(), Times.Once);
+        api.Verify(f => f.ListVolumesAsync(), Times.Exactly(3));
     }
 
     [TestMethod]
@@ -228,7 +222,7 @@ public class DockerTests
             });
 
         var query =
-            "select Created, Driver, EnableIPv6, ID, Internal, Labels, Name, Options, Scope from docker.networks()";
+            "select Created, Driver, EnableIPv6, ID, Internal, Name, Scope from docker.networks()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -242,21 +236,20 @@ public class DockerTests
         Assert.AreEqual("1", table[0][3]);
         Assert.AreEqual(true, table[0][4]);
 
-        var labels = (IReadOnlyDictionary<string, string>)table[0][5];
-
-        Assert.AreEqual(1, labels.Count);
-        Assert.AreEqual("1", labels["1"]);
-
+        Assert.AreEqual("1", table[0][5]);
         Assert.AreEqual("1", table[0][6]);
 
-        var options = (IReadOnlyDictionary<string, string>)table[0][7];
+        var labels = RunQuery("select l.Key, l.Value from docker.networks() n cross apply n.Labels l", api.Object);
+        Assert.AreEqual(1, labels.Count);
+        Assert.AreEqual("1", labels[0][0]);
+        Assert.AreEqual("1", labels[0][1]);
 
+        var options = RunQuery("select o.Key, o.Value from docker.networks() n cross apply n.Options o", api.Object);
         Assert.AreEqual(1, options.Count);
-        Assert.AreEqual("1", options["1"]);
+        Assert.AreEqual("1", options[0][0]);
+        Assert.AreEqual("1", options[0][1]);
 
-        Assert.AreEqual("1", table[0][8]);
-
-        api.Verify(f => f.ListNetworksAsync(), Times.Once);
+        api.Verify(f => f.ListNetworksAsync(), Times.Exactly(3));
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IDockerApi api)
@@ -280,5 +273,10 @@ public class DockerTests
                     }
                 }
             });
+    }
+
+    private static Table RunQuery(string script, IDockerApi api)
+    {
+        return CreateAndRunVirtualMachineWithResponse(script, api).Run();
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using LibGit2Sharp;
+using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Git.Entities;
 
@@ -94,6 +95,7 @@ public class DifferenceEntity
 
     /// <summary>Gets older blob content as bytes, loading it lazily from a short-lived repository scope.</summary>
     /// <remarks>The value is <see langword="null"/> when the older blob is unavailable.</remarks>
+    [BindablePropertyAsTable]
     public byte[]? OldContentBytes => _oldContentBytes.GetOrCreate(() => ReadBytes(_oldSha));
 
     /// <summary>Gets newer blob content as text, loading it lazily from a short-lived repository scope.</summary>
@@ -102,6 +104,7 @@ public class DifferenceEntity
 
     /// <summary>Gets newer blob content as bytes, loading it lazily from a short-lived repository scope.</summary>
     /// <remarks>Deleted entries have no newer content and return <see langword="null"/>.</remarks>
+    [BindablePropertyAsTable]
     public byte[]? NewContentBytes => _newContentBytes.GetOrCreate(() => _isDeleted ? null : ReadBytes(_newSha));
 
     private string? ReadText(string? sha)

@@ -216,8 +216,15 @@ public class JsonStreamingExecutionTests
     {
         WithJson("{\"Id\":1,\"Payload\":{\"Name\":\"Ada\",\"Values\":[1,2,3]}}", path =>
         {
-            var table = Compile($"select Payload from json.file('{QueryPath(path)}')").Run();
-            var payload = (Dictionary<string, object>)table[0][0];
+            var plan = new JsonSchema()
+                .TryPlanSource("file", Request([new SourceColumnRef("Payload")]), path)
+                .ExecutionPlan;
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [new SchemaColumn("Payload", 0, typeof(object))],
+                executionPlan: plan);
+            var rows = new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
+            var payload = (Dictionary<string, object>)rows[0][0];
 
             Assert.AreEqual("Ada", payload["Name"]);
             CollectionAssert.AreEqual(new object[] { 1L, 2L, 3L }, (List<object>)payload["Values"]);
@@ -229,9 +236,16 @@ public class JsonStreamingExecutionTests
     {
         WithJson("[{\"Value\":1},{\"Value\":\"one\"},{\"Value\":true}]", path =>
         {
-            var table = Compile($"select Value from json.file('{QueryPath(path)}')").Run();
+            var plan = new JsonSchema()
+                .TryPlanSource("file", Request([new SourceColumnRef("Value")]), path)
+                .ExecutionPlan;
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                CancellationToken.None,
+                [new SchemaColumn("Value", 0, typeof(object))],
+                executionPlan: plan);
+            var rows = new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
 
-            CollectionAssert.AreEqual(new object[] { 1L, "one", true }, table.Select(row => row[0]).ToArray());
+            CollectionAssert.AreEqual(new object[] { 1L, "one", true }, rows.Select(row => row[0]).ToArray());
         });
     }
 

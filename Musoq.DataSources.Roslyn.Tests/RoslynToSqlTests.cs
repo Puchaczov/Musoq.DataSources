@@ -190,11 +190,6 @@ public class RoslynToSqlTests
                         c.IsAbstract, 
                         c.IsSealed, 
                         c.IsStatic, 
-                        c.BaseTypes, 
-                        c.Interfaces, 
-                        c.TypeParameters, 
-                        c.MemberNames, 
-                        c.Attributes,
                         c.Name,
                         c.FullName,
                         c.Namespace,
@@ -224,26 +219,72 @@ public class RoslynToSqlTests
         Assert.AreEqual(false, result[0][1]);
         Assert.AreEqual(false, result[0][2]);
 
-        var baseTypes = (result[0][3] as IEnumerable<string> ?? []).ToList();
+        Assert.AreEqual("Class1", result[0][3].ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Class1", result[0][4].ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", result[0][5].ToString());
+        Assert.AreEqual(5, result[0][6]);
+        Assert.AreEqual(1, result[0][7]);
+        Assert.AreEqual(0, result[0][8]);
+        Assert.AreEqual(1, result[0][9]);
+        Assert.AreEqual(0, result[0][10]);
+        Assert.AreEqual(0, result[0][11]);
+        Assert.AreEqual(0, result[0][12]);
+        Assert.AreEqual(1, result[0][13]);
+        Assert.AreEqual(2.0, result[0][14]);
 
-        Assert.IsNotNull(baseTypes);
+        var baseTypesResult = CompileQuery("""
+                    select baseType.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.BaseTypes baseType
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        var baseTypes = baseTypesResult.Select(row => row[0]?.ToString()).ToList();
+
         Assert.AreEqual(1, baseTypes.Count);
         Assert.AreEqual("Object", baseTypes.First());
 
-        var interfaces = (result[0][4] as IEnumerable<string> ?? []).ToList();
+        var interfacesResult = CompileQuery("""
+                    select interfaceName.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Interfaces interfaceName
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(interfaces);
+        var interfaces = interfacesResult.Select(row => row[0]?.ToString()).ToList();
+
         Assert.AreEqual(1, interfaces.Count);
         Assert.AreEqual("Interface1", interfaces.First());
 
-        var typeParameters = (result[0][5] as IEnumerable<string> ?? []).ToList();
+        var typeParametersResult = CompileQuery("""
+                    select typeParameter.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.TypeParameters typeParameter
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(typeParameters);
-        Assert.AreEqual(0, typeParameters.Count);
+        Assert.AreEqual(0, typeParametersResult.Count);
 
-        var memberNames = (result[0][6] as IEnumerable<string> ?? []).ToList();
+        var memberNamesResult = CompileQuery("""
+                    select memberName.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.MemberNames memberName
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(memberNames);
+        var memberNames = memberNamesResult.Select(row => row[0]?.ToString()).ToList();
         Assert.AreEqual(8, memberNames.Count);
         Assert.IsTrue(memberNames.Contains("Method1Async"));
         Assert.IsTrue(memberNames.Contains("Method2"));
@@ -253,23 +294,17 @@ public class RoslynToSqlTests
         Assert.IsTrue(memberNames.Contains("Property1"));
         Assert.IsTrue(memberNames.Contains("get_Property1"));
 
-        var attributes = (result[0][7] as IEnumerable<string> ?? []).ToList();
+        var attributesResult = CompileQuery("""
+                    select attribute.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Attributes attribute
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(attributes);
-        Assert.AreEqual(0, attributes.Count);
-
-        Assert.AreEqual("Class1", result[0][8].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Class1", result[0][9].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][10].ToString());
-        Assert.AreEqual(5, result[0][11]);
-        Assert.AreEqual(1, result[0][12]);
-        Assert.AreEqual(0, result[0][13]);
-        Assert.AreEqual(1, result[0][14]);
-        Assert.AreEqual(0, result[0][15]);
-        Assert.AreEqual(0, result[0][16]);
-        Assert.AreEqual(0, result[0][17]);
-        Assert.AreEqual(1, result[0][18]);
-        Assert.AreEqual(2.0, result[0][19]);
+        Assert.AreEqual(0, attributesResult.Count);
     }
 
     [TestMethod]
@@ -277,11 +312,12 @@ public class RoslynToSqlTests
     {
         var query = """
                     select
-                        c.Attributes 
+                        a.Name
                     from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
+                    cross apply c.Attributes a
                     where c.Name = 'Tests'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
 
@@ -291,12 +327,7 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        var attributes = (result[0][0] as IEnumerable<AttributeEntity> ?? []).ToList();
-
-        Assert.IsNotNull(attributes);
-        Assert.AreEqual(1, attributes.Count);
-
-        Assert.AreEqual("ExcludeFromCodeCoverage", attributes.First().Name);
+        Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
     }
 
     [TestMethod]
@@ -306,10 +337,7 @@ public class RoslynToSqlTests
                     select
                         m.Name,
                         m.ReturnType,
-                        m.Parameters,
-                        m.Modifiers,
-                        m.Text,
-                        m.Attributes
+                        m.Text
                     from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
@@ -327,46 +355,73 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method1Async" &&
                 r[1].ToString() == "Task" &&
-                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null &&
-                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+                r[2] != null),
             "Missing or invalid Method1Async record");
 
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method2" &&
                 r[1].ToString() == "Void" &&
-                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null &&
-                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+                r[2] != null),
             "Missing or invalid Method2 record");
 
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method3" &&
                 r[1].ToString() == "Class1" &&
-                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null &&
-                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+                r[2] != null),
             "Missing or invalid first Method3 record");
 
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method3" &&
                 r[1].ToString() == "Class1" &&
-                (r[2] as IEnumerable<ParameterEntity> ?? []).Count() == 1 &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null &&
-                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+                r[2] != null),
             "Missing or invalid second Method3 record");
 
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method4" &&
                 r[1].ToString() == "Enum1" &&
-                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null),
+                r[2] != null),
             "Missing or invalid Method4 record");
+
+        var parametersResult = CompileQuery("""
+                    select p.Name, p.Type
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p0
+                    cross apply p0.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.Parameters p
+                    where c.Name = 'Class1' and m.Name = 'Method3'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(1, parametersResult.Count);
+        Assert.AreEqual("a", parametersResult[0][0].ToString());
+        Assert.AreEqual("Int32", parametersResult[0][1].ToString());
+
+        var modifiersResult = CompileQuery("""
+                    select modifier.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.Modifiers modifier
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(5, modifiersResult.Count);
+
+        var attributesResult = CompileQuery("""
+                    select attribute.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.Attributes attribute
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(0, attributesResult.Count);
     }
 
     [TestMethod]
@@ -534,8 +589,7 @@ public class RoslynToSqlTests
                         p.IsOverride,
                         p.IsAbstract,
                         p.IsSealed,
-                        p.IsStatic,
-                        p.Modifiers
+                        p.IsStatic
                     from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
@@ -562,7 +616,19 @@ public class RoslynToSqlTests
         Assert.AreEqual(false, result[0][9]);
         Assert.AreEqual(false, result[0][10]);
         Assert.AreEqual(false, result[0][11]);
-        Assert.AreEqual(1, (result[0][12] as IEnumerable<string> ?? []).Count());
+
+        var modifiersResult = CompileQuery("""
+                    select modifier.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Properties p
+                    cross apply p.Modifiers modifier
+                    where c.Name = 'Class1' and p.Name = 'Property1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(1, modifiersResult.Count);
     }
 
     [TestMethod]
@@ -616,9 +682,7 @@ public class RoslynToSqlTests
                     select
                         e.Name,
                         e.FullName,
-                        e.Namespace,
-                        e.Modifiers,
-                        e.Members
+                        e.Namespace
                     from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
@@ -635,11 +699,30 @@ public class RoslynToSqlTests
         Assert.AreEqual("Enum1", result[0][0].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1.Enum1", result[0][1].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1", result[0][2].ToString());
-        Assert.AreEqual(1, (result[0][3] as IEnumerable<string> ?? []).Count());
 
-        var members = (result[0][4] as IEnumerable<string> ?? []).ToList();
+        var modifiersResult = CompileQuery("""
+                    select modifier.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Enums e
+                    cross apply e.Modifiers modifier
+                    where e.Name = 'Enum1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(members);
+        Assert.AreEqual(1, modifiersResult.Count);
+
+        var membersResult = CompileQuery("""
+                    select member.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Enums e
+                    cross apply e.Members member
+                    where e.Name = 'Enum1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        var members = membersResult.Select(row => row[0]?.ToString()).ToList();
 
         Assert.AreEqual(2, members.Count);
         Assert.IsTrue(members.Contains("Value1"));
@@ -653,11 +736,7 @@ public class RoslynToSqlTests
                     select
                         i.Name,
                         i.FullName,
-                        i.Namespace,
-                        i.Modifiers,
-                        i.BaseInterfaces,
-                        i.Methods,
-                        i.Properties
+                        i.Namespace
                     from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
@@ -674,29 +753,58 @@ public class RoslynToSqlTests
         Assert.AreEqual("Interface1", result[0][0].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1.Interface1", result[0][1].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1", result[0][2].ToString());
-        Assert.AreEqual(1, (result[0][3] as IEnumerable<string> ?? []).Count());
 
-        var baseInterfaces = (result[0][4] as IEnumerable<string> ?? []).ToList();
+        var modifiersResult = CompileQuery("""
+                    select modifier.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Interfaces i
+                    cross apply i.Modifiers modifier
+                    where i.Name = 'Interface1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(baseInterfaces);
+        Assert.AreEqual(1, modifiersResult.Count);
 
-        Assert.AreEqual(0, baseInterfaces.Count);
+        var baseInterfacesResult = CompileQuery("""
+                    select baseInterface.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Interfaces i
+                    cross apply i.BaseInterfaces baseInterface
+                    where i.Name = 'Interface1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        var methods = (result[0][5] as IEnumerable<MethodEntity> ?? []).ToList();
+        Assert.AreEqual(0, baseInterfacesResult.Count);
 
-        Assert.IsNotNull(methods);
+        var methodsResult = CompileQuery("""
+                    select method.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Interfaces i
+                    cross apply i.Methods method
+                    where i.Name = 'Interface1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.AreEqual(4, methods.Count);
-        Assert.IsTrue(methods.Any(m => m.Name == "Method1Async"));
-        Assert.IsTrue(methods.Any(m => m.Name == "Method2"));
-        Assert.IsTrue(methods.Any(m => m.Name == "Method3"));
-        Assert.IsTrue(methods.Any(m => m.Name == "Method4"));
+        var methodNames = methodsResult.Select(row => row[0]?.ToString()).ToList();
+        Assert.AreEqual(4, methodNames.Count);
+        CollectionAssert.AreEquivalent(
+            new[] { "Method1Async", "Method2", "Method3", "Method4" },
+            methodNames);
 
-        var properties = (result[0][6] as IEnumerable<PropertyEntity> ?? []).ToList();
+        var propertiesResult = CompileQuery("""
+                    select property.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Interfaces i
+                    cross apply i.Properties property
+                    where i.Name = 'Interface1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(properties);
-
-        Assert.AreEqual(0, properties.Count);
+        Assert.AreEqual(0, propertiesResult.Count);
     }
 
     [TestMethod]
@@ -704,8 +812,7 @@ public class RoslynToSqlTests
     {
         var query = """
                     select
-                        a.Name,
-                        a.ConstructorArguments
+                        a.Name
                     from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
@@ -721,7 +828,19 @@ public class RoslynToSqlTests
         Assert.AreEqual(1, result.Count);
 
         Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
-        Assert.AreEqual(0, (result[0][1] as IEnumerable<string> ?? []).Count());
+
+        var constructorArgumentsResult = CompileQuery("""
+                    select argument.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Attributes a
+                    cross apply a.ConstructorArguments argument
+                    where c.Name = 'Tests'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(0, constructorArgumentsResult.Count);
     }
 
     [TestMethod]

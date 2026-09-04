@@ -74,6 +74,15 @@ public class PluginPackageSmokeTests
 
             ZipFile.ExtractToDirectory(pluginZipPath, pluginDirectory);
 
+            var noticesDirectory = Path.Combine(pluginDirectory, "third-party-notices");
+            Assert.IsTrue(
+                Directory.Exists(noticesDirectory),
+                $"Plugin.zip is missing the third-party-notices directory: {packagePath}");
+            Assert.IsTrue(
+                Directory.GetFiles(noticesDirectory, "*", SearchOption.AllDirectories)
+                    .Any(path => new FileInfo(path).Length > 0),
+                $"Plugin.zip contains no non-empty third-party-notices files: {packagePath}");
+
             Assert.IsTrue(
                 File.Exists(Path.Combine(pluginDirectory, entryPointDll)),
                 $"Plugin.zip is missing entry point DLL '{entryPointDll}': {packagePath}");
@@ -165,7 +174,7 @@ public class PluginPackageSmokeTests
     {
         var package = hostPackages.GetProperty(packageName);
         Assert.AreEqual(
-            "17.0.8-alpha.1",
+            "17.0.9-alpha.1",
             package.GetProperty("minimumVersionInclusive").GetString(),
             $"Unexpected {packageName} minimum: {packagePath}");
         Assert.AreEqual(

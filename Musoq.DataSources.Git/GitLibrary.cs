@@ -248,6 +248,12 @@ public class GitLibrary : LibraryBase
     [AggregateFunction(typeof(MinCommitAggregateKernel), EmptyResultBehavior = AggregateEmptyResultBehavior.Null)]
     public CommitEntity? MinCommit(CommitEntity? value, [AggregateParent] int parent) => AggregateFunction.NotInvoked<CommitEntity?>();
 
+    /// <summary>Returns the SHA of a commit, or <see langword="null"/> for an empty aggregate.</summary>
+    /// <param name="commit">The commit whose SHA is requested.</param>
+    /// <returns>The commit SHA.</returns>
+    [BindableMethod]
+    public string? CommitSha(CommitEntity? commit) => commit?.Sha;
+
     private static IEnumerable<DifferenceEntity> DifferenceBetweenCommitAndBranchCore(
         RepositoryEntity repository,
         CommitEntity commit,

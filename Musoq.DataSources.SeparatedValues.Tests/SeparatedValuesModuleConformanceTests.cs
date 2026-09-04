@@ -87,7 +87,9 @@ public class SeparatedValuesModuleConformanceTests
             true,
             0);
 
-        Assert.AreEqual(SourceTransferCapabilities.QueryScopedRows, descriptor.TransferCapabilities);
+        Assert.AreEqual(
+            SourceTransferCapabilities.QueryScopedRows | SourceTransferCapabilities.LogicalScalarReads,
+            descriptor.TransferCapabilities);
     }
 
     private static SeparatedValuesSourceContract CreateContract()

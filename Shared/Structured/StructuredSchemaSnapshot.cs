@@ -5,6 +5,7 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Musoq.Schema;
 
 namespace Musoq.DataSources.Structured;
 
@@ -12,9 +13,17 @@ internal sealed record StructuredColumnSnapshot(
     string Name,
     int SourceOrdinal,
     StructuredTypeState TypeState,
-    long PresentValueCount)
+    long PresentValueCount,
+    Type? CarrierType = null,
+    Type? SourceReadType = null,
+    EnumTypeDescriptor? EnumType = null,
+    ColumnStability Stability = ColumnStability.Stable)
 {
-    public Type ClrType => TypeState.ToClrType();
+    public Type ClrType => CarrierType ?? TypeState.ToClrType();
+
+    public Type EffectiveSourceReadType => SourceReadType ?? ClrType;
+
+    public bool IsNullable => !ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null;
 }
 
 internal readonly record struct StructuredPartition(

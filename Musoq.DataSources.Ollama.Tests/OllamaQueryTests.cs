@@ -117,14 +117,12 @@ public class OllamaQueryTests
     [TestMethod]
     public void WhenCallingEntities_ShouldExtractEntities()
     {
-        const string script = "select Entities('abc') from ollama.llm()";
+        const string script = "select e.Value from ollama.llm() source cross apply Entities('abc') e";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, "{ entities: ['a', 'b', 'c'] }");
         var table = vm.Run();
 
-        Assert.AreEqual(1, table.Count);
-        Assert.IsTrue(table[0][0] is string[] entities && entities.Contains("a") && entities.Contains("b") &&
-                      entities.Contains("c"));
+        CollectionAssert.AreEquivalent(new[] { "a", "b", "c" }, table.Select(row => row[0]).ToArray());
     }
 
     [TestMethod]

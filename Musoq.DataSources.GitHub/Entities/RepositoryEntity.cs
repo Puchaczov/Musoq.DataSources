@@ -1,4 +1,5 @@
 using Octokit;
+using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.GitHub.Entities;
 
@@ -131,6 +132,7 @@ public class RepositoryEntity
     /// <summary>
     ///     Gets the topics/tags associated with the repository.
     /// </summary>
+    [BindablePropertyAsTable]
     public IReadOnlyList<string> Topics => _repository.Topics;
 
     /// <summary>

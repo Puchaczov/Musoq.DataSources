@@ -100,6 +100,26 @@ function Get-MusoqPluginPackageCompatibility {
     }
 }
 
+function Assert-MusoqPluginLicenseNotices {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$PluginDirectory,
+        [string]$Context = "Plugin package"
+    )
+
+    $noticesDirectory = Join-Path $PluginDirectory "third-party-notices"
+    if (-not (Test-Path -LiteralPath $noticesDirectory -PathType Container)) {
+        throw "$Context is missing the third-party-notices directory: $noticesDirectory"
+    }
+
+    $licenseFiles = @(Get-ChildItem -LiteralPath $noticesDirectory -Recurse -File | Where-Object { $_.Length -gt 0 })
+    if ($licenseFiles.Count -eq 0) {
+        throw "$Context has an empty third-party-notices directory: $noticesDirectory"
+    }
+
+    return $licenseFiles
+}
+
 function ConvertTo-MusoqCanonicalCompatibility {
     param(
         [Parameter(Mandatory=$true)]

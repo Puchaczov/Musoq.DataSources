@@ -91,6 +91,12 @@ foreach ($artifactEntry in (Get-ArtifactNames -ProjectName $release.PackageId).G
     $pluginArtifactPaths[$artifactEntry.Key] = $artifactPath
 }
 
+& (Join-Path $PSScriptRoot "Assert-ReleaseLicenseArtifacts.ps1") `
+    -PluginName $release.PackageId `
+    -RepositoryRoot $repositoryRoot `
+    -AssetsDirectory $pluginOutputPath `
+    -ExpectedArchiveCount 4 | Out-Null
+
 $pluginReleaseMetadata = New-MusoqPluginReleaseMetadata `
     -PluginName $release.PackageId `
     -Version $release.Version `

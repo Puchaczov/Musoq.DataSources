@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using LibGit2Sharp;
+using Musoq.Plugins.Attributes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
@@ -167,6 +168,7 @@ public class CommitEntity
     /// <summary>
     ///     Gets the parent commits of this commit.
     /// </summary>
+    [BindablePropertyAsTable]
     public IEnumerable<CommitEntity> Parents
     {
         get

@@ -1,0 +1,202 @@
+[
+  {
+    "PackageId": "ConsoleAppFramework",
+    "PackageVersion": "5.2.4",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "DiffPlex",
+    "PackageVersion": "1.9.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "PackageId": "Fastenshtein",
+    "PackageVersion": "1.0.12",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "HtmlAgilityPack",
+    "PackageVersion": "1.11.72",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Humanizer.Core",
+    "PackageVersion": "2.14.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Build.Framework",
+    "PackageVersion": "17.11.48",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Build.Locator",
+    "PackageVersion": "1.10.2",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.CodeAnalysis.Analyzers",
+    "PackageVersion": "5.3.0-2.25625.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.CodeAnalysis.Common",
+    "PackageVersion": "5.3.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.CodeAnalysis.CSharp",
+    "PackageVersion": "5.3.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.CodeAnalysis.CSharp.Workspaces",
+    "PackageVersion": "5.3.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.CodeAnalysis.Workspaces.Common",
+    "PackageVersion": "5.3.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.CodeAnalysis.Workspaces.MSBuild",
+    "PackageVersion": "5.3.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Configuration",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Configuration.Abstractions",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Configuration.Binder",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Configuration.FileExtensions",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Configuration.Json",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.DependencyInjection",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.DependencyInjection.Abstractions",
+    "PackageVersion": "10.0.8",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.FileProviders.Abstractions",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.FileProviders.Physical",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.FileSystemGlobbing",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Logging",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Logging.Abstractions",
+    "PackageVersion": "10.0.8",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Options",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Primitives",
+    "PackageVersion": "9.0.10",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.VisualStudio.SolutionPersistence",
+    "PackageVersion": "1.0.52",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Parser",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Plugins",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Schema",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Newtonsoft.Json",
+    "PackageVersion": "13.0.3",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Composition",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Composition.AttributedModel",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Composition.Convention",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Composition.Hosting",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Composition.Runtime",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Composition.TypedParts",
+    "PackageVersion": "9.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Threading.RateLimiting",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.DataSources.Roslyn",
+    "PackageVersion": "3.0.4-alpha.8",
+    "License": "MIT"
+  }
+]

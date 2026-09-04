@@ -95,6 +95,7 @@ public class SignalEntity
     /// <summary>
     ///     Gets the can signal receiver.
     /// </summary>
+    [BindablePropertyAsTable]
     public string[] Receiver => _signal.Receiver;
 
     /// <summary>

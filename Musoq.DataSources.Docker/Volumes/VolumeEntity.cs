@@ -1,4 +1,5 @@
 using Docker.DotNet.Models;
+using Musoq.Plugins.Attributes;
 using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Docker.Volumes;
@@ -12,6 +13,7 @@ public class VolumeEntity(VolumeResponse response)
     public string? Driver => response.Driver;
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Labels => response.Labels?.ToDictionary(
         pair => pair.Key,
         pair => pair.Value) ?? new Dictionary<string, string>();
@@ -23,6 +25,7 @@ public class VolumeEntity(VolumeResponse response)
     public string? Name => response.Name;
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Options => response.Options?.ToDictionary(
         pair => pair.Key,
         pair => pair.Value) ?? new Dictionary<string, string>();
@@ -31,6 +34,7 @@ public class VolumeEntity(VolumeResponse response)
     public string? Scope => response.Scope;
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Status => response.Status?.ToDictionary(
         pair => pair.Key,
         pair => pair.Value?.ToString() ?? string.Empty) ?? new Dictionary<string, string>();

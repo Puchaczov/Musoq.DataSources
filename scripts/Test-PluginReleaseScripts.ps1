@@ -5,6 +5,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot/common/Plugin-Config.ps1"
 . "$PSScriptRoot/common/Plugin-Compatibility.ps1"
 . "$PSScriptRoot/common/Plugin-ArtifactIntegrity.ps1"
+. "$PSScriptRoot/common/Plugin-LicensePackaging.ps1"
 . "$PSScriptRoot/common/CommandLineModule-Packaging.ps1"
 
 function Assert-True {
@@ -243,8 +244,8 @@ function Test-PluginCompatibilityManifestGeneration {
 
     $systemProject = Join-Path $PSScriptRoot "../Musoq.DataSources.System/Musoq.DataSources.System.csproj"
     $evaluated = Get-MusoqPluginCompatibility -ProjectPath $systemProject
-    Assert-Equal "17.0.8-alpha.1" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
-    Assert-Equal "17.0.8-alpha.1" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
+    Assert-Equal "17.0.9-alpha.1" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
+    Assert-Equal "17.0.9-alpha.1" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
 }
 
 function Test-PluginArtifactIntegrityMetadata {
@@ -267,6 +268,10 @@ function Test-PluginArtifactIntegrityMetadata {
                 $compatibilityJson,
                 [System.Text.UTF8Encoding]::new($false))
             Set-Content -LiteralPath (Join-Path $pluginDirectory "payload-$platform.txt") -Value $platform -NoNewline
+            $noticesDirectory = Join-Path $pluginDirectory "third-party-notices"
+            New-Item -ItemType Directory -Path $noticesDirectory -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $noticesDirectory "license.txt") -Value "MIT" -NoNewline
+            Assert-MusoqPluginLicenseNotices -PluginDirectory $pluginDirectory -Context "$platform synthetic package" | Out-Null
             Compress-Archive -Path (Join-Path $pluginDirectory "*") -DestinationPath (Join-Path $packageDirectory "Plugin.zip") -Force
             Set-Content -LiteralPath (Join-Path $packageDirectory "Platform.txt") -Value $platform -NoNewline
 
@@ -397,19 +402,19 @@ function Test-RuntimeV2ReleaseTrain {
     foreach ($package in $packages) {
         $version = [string]$package.version
         if ($package.packageId -eq 'Musoq.DataSources.Roslyn') {
-            Assert-Equal "3.0.4-alpha.7" $version "Roslyn should use the next prerelease command-module version."
+            Assert-Equal "3.0.4-alpha.8" $version "Roslyn should use the next prerelease command-module version."
         }
         elseif ($package.packageId -eq 'Musoq.DataSources.Json') {
-            Assert-Equal "10.0.3-alpha.2" $version "$($package.packageId) should use its next major alpha version."
+            Assert-Equal "10.0.3-alpha.3" $version "$($package.packageId) should use its next major alpha version."
         }
         elseif ($package.packageId -eq 'Musoq.DataSources.SeparatedValues') {
-            Assert-Equal "11.0.0-alpha.2" $version "$($package.packageId) should use its next major alpha version."
+            Assert-Equal "11.0.0-alpha.3" $version "$($package.packageId) should use its next major alpha version."
         }
         elseif ($package.packageId -eq 'Musoq.DataSources.Git') {
-            Assert-Equal "3.0.0-alpha.2" $version "Git should use its next major alpha version."
+            Assert-Equal "3.0.0-alpha.3" $version "Git should use its next major alpha version."
         }
         else {
-            Assert-True ($version -match '-alpha\.6$') "$($package.packageId) should be pinned to alpha.6 in packages.json."
+            Assert-True ($version -match '-alpha\.7$') "$($package.packageId) should be pinned to alpha.7 in packages.json."
         }
         $projectPath = Join-Path $PSScriptRoot "../$($package.projectPath)"
         [xml]$project = Get-Content -LiteralPath $projectPath
@@ -419,7 +424,60 @@ function Test-RuntimeV2ReleaseTrain {
 
     $roslyn = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Roslyn' })
     Assert-Equal 1 $roslyn.Count "Runtime-v2 release train should contain exactly one Roslyn package."
-    Assert-Equal "3.0.4-alpha.7" ([string]$roslyn[0].version) "Roslyn should use the next prerelease command-module version."
+    Assert-Equal "3.0.4-alpha.8" ([string]$roslyn[0].version) "Roslyn should use the next prerelease command-module version."
+}
+
+function Test-PluginLicenseSnapshotPackagingContracts {
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "musoq-license-packaging-test-$([guid]::NewGuid().ToString('N'))"
+    try {
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+        $missingNoticesRoot = Join-Path $tempDir "missing"
+        Assert-Throws {
+            Assert-MusoqPluginLicenseNotices `
+                -PluginDirectory $missingNoticesRoot `
+                -Context "missing notices fixture" | Out-Null
+        } "Missing third-party notices should fail validation."
+
+        $emptyNoticesRoot = Join-Path $tempDir "empty"
+        New-Item -ItemType Directory -Path (Join-Path $emptyNoticesRoot "third-party-notices") -Force | Out-Null
+        Assert-Throws {
+            Assert-MusoqPluginLicenseNotices `
+                -PluginDirectory $emptyNoticesRoot `
+                -Context "empty notices fixture" | Out-Null
+        } "Empty third-party notices should fail validation."
+
+        $validNoticesRoot = Join-Path $tempDir "valid"
+        $validNoticesDirectory = Join-Path $validNoticesRoot "third-party-notices"
+        New-Item -ItemType Directory -Path $validNoticesDirectory -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $validNoticesDirectory "license.txt") -Value "MIT" -NoNewline
+        $licenseMap = @{}
+        Add-MusoqPluginLicenseMapEntry `
+            -LicenseMap $licenseMap `
+            -ProjectPath "fixture.csproj" `
+            -LicenseDirectory $validNoticesDirectory
+        Assert-Equal $validNoticesDirectory $licenseMap["fixture.csproj"] "Validated license notices should populate the project license map."
+
+        Assert-Throws {
+            Add-MusoqPluginLicenseMapEntry `
+                -LicenseMap @{} `
+                -ProjectPath "invalid.csproj" `
+                -LicenseDirectory (Join-Path $emptyNoticesRoot "third-party-notices")
+        } "License map population should reject unvalidated notices."
+
+        $packScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot "Pack-Plugin.ps1") -Raw
+        Assert-True ($packScript -match "Get-DatasourcePackageDefinition") "Packaging should resolve projects from packages.json definitions."
+        Assert-True ($packScript -match "Assert-LicenseSnapshots\.ps1") "Packaging should validate the matching committed license snapshot."
+        Assert-True ($packScript -notmatch "nuget-license|LicenseGatherer|LinksCache|licenses-cache|Invoke-MusoqPluginLicenseGatherer") "Normal packaging must not invoke live license tooling or caches."
+
+        $licensePackagingScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot "common/Plugin-LicensePackaging.ps1") -Raw
+        Assert-True ($licensePackagingScript -notmatch "nuget-license|LicenseGatherer|LinksCache|licenses-cache") "Normal packaging helpers must not retain live license tooling."
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempDir) {
+            Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Test-RoslynReleaseWorkflowGates {
@@ -431,6 +489,125 @@ function Test-RoslynReleaseWorkflowGates {
     Assert-True ($workflow -match '\./scripts/Test-PluginReleaseScripts\.ps1') "Datasource releases should execute release-script tests."
     Assert-True ($workflow -match 'Pack four-RID release artifacts') "Datasource releases should identify four-RID packaging as a required gate."
     Assert-True ($workflow -match 'Smoke test four-RID release artifacts') "Datasource releases should identify four-RID smoke verification as a required gate."
+}
+
+function Test-PluginToolingWorkflowGates {
+    $manifestPath = Join-Path $PSScriptRoot "../.config/dotnet-tools.json"
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    Assert-Equal "4.0.16" ([string]$manifest.tools.'nuget-license'.version) "Plugin tooling should pin nuget-license 4.0.16."
+    Assert-True (@($manifest.tools.'nuget-license'.commands) -contains "nuget-license") "Plugin tooling should expose the nuget-license command."
+
+    $restoreScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot "Restore-PluginTooling.ps1") -Raw
+    Assert-True ($restoreScript -match '--tool-path') "Plugin tooling should be installed into a runner-local tool path."
+    Assert-True ($restoreScript -match 'GITHUB_PATH') "Plugin tooling should persist its path for later workflow steps."
+    Assert-True ($restoreScript -match 'Get-Command\s+nuget-license') "Plugin tooling setup should verify the installed command."
+    Assert-True ($restoreScript -match '--version') "Plugin tooling setup should verify the installed command version."
+
+    $refreshScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot "release/Update-LicenseSnapshots.ps1") -Raw
+    Assert-True ($refreshScript -match 'Restore-PluginTooling\.ps1') "Snapshot refresh should provision the pinned license tool explicitly."
+    Assert-True ($refreshScript -match '4\.0\.16|nuget-license') "Snapshot refresh should use the pinned nuget-license tool."
+
+    $workflowPaths = @(
+        "../.github/workflows/release-datasource.yml",
+        "../.github/workflows/release-datasources-batch.yml",
+        "../.github/workflows/validate-plugin-packages.yml"
+    )
+    foreach ($relativePath in $workflowPaths) {
+        $workflowPath = Join-Path $PSScriptRoot $relativePath
+        $workflow = Get-Content -LiteralPath $workflowPath -Raw
+        Assert-True ($workflow -notmatch 'Restore-PluginTooling\.ps1') "Ordinary packaging workflow '$relativePath' must not provision live license tooling."
+        Assert-True ($workflow -match 'Assert-LicenseSnapshots\.ps1') "Packaging workflow '$relativePath' should validate committed license snapshots."
+        Assert-True ($workflow -match 'Assert-ReleaseLicenseArtifacts\.ps1') "Packaging workflow '$relativePath' should validate embedded license snapshot artifacts."
+    }
+}
+
+function Test-RepositoryLicenseSnapshots {
+    $packagesPath = Join-Path $PSScriptRoot "release/packages.json"
+    $packages = @((Get-Content -LiteralPath $packagesPath -Raw | ConvertFrom-Json).packages)
+    $snapshotRoot = Join-Path $PSScriptRoot "../licenses/release"
+    Assert-True (Test-Path -LiteralPath $snapshotRoot -PathType Container) "Committed datasource license snapshot root should exist."
+
+    & (Join-Path $PSScriptRoot "release/Assert-LicenseSnapshots.ps1") `
+        -PluginName All `
+        -RepositoryRoot (Join-Path $PSScriptRoot "..") `
+        -SnapshotRoot $snapshotRoot `
+        -ValidatePackageGraph | Out-Null
+
+    $expectedIds = @($packages | ForEach-Object { [string]$_.packageId })
+    $actualIds = @(Get-ChildItem -LiteralPath $snapshotRoot -Directory | ForEach-Object { $_.Name })
+    Assert-Equal $expectedIds.Count $actualIds.Count "Committed license snapshot count should match packages.json."
+    if (Compare-Object -ReferenceObject @($expectedIds | Sort-Object) -DifferenceObject @($actualIds | Sort-Object)) {
+        throw "Committed license snapshot directories should match packages.json exactly."
+    }
+}
+
+function Test-ReleaseLicenseArchiveContracts {
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "musoq-license-archive-test-$([guid]::NewGuid().ToString('N'))"
+    $packageId = "Musoq.DataSources.Json"
+    $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    $snapshotDirectory = Join-Path $repositoryRoot "licenses/release/$packageId"
+    try {
+        $assetsDirectory = Join-Path $tempDir "assets"
+        $pluginRoot = Join-Path $tempDir "plugin"
+        $outerRoot = Join-Path $tempDir "outer"
+        $pluginZipPath = Join-Path $tempDir "Plugin.zip"
+        New-Item -ItemType Directory -Force -Path $assetsDirectory, $pluginRoot, $outerRoot | Out-Null
+
+        Copy-Item `
+            -LiteralPath (Join-Path $snapshotDirectory "third-party-notices") `
+            -Destination $pluginRoot `
+            -Recurse `
+            -Force
+        Set-Content -LiteralPath (Join-Path $pluginRoot "SyntheticPlugin.dll") -Value "plugin" -NoNewline
+        Compress-Archive `
+            -Path @(Get-ChildItem -LiteralPath $pluginRoot -Force | Select-Object -ExpandProperty FullName) `
+            -DestinationPath $pluginZipPath `
+            -Force
+
+        $artifactNames = @(
+            "$packageId-windows-x64.zip",
+            "$packageId-linux-x64.zip",
+            "$packageId-macos-arm64.zip",
+            "$packageId-alpine-x64.zip"
+        )
+        foreach ($artifactName in $artifactNames) {
+            Copy-Item -LiteralPath $pluginZipPath -Destination (Join-Path $outerRoot "Plugin.zip") -Force
+            Compress-Archive `
+                -Path @(Get-ChildItem -LiteralPath $outerRoot -Force | Select-Object -ExpandProperty FullName) `
+                -DestinationPath (Join-Path $assetsDirectory $artifactName) `
+                -Force
+        }
+
+        & (Join-Path $PSScriptRoot "release/Assert-ReleaseLicenseArtifacts.ps1") `
+            -PluginName $packageId `
+            -RepositoryRoot $repositoryRoot `
+            -AssetsDirectory $assetsDirectory `
+            -ExpectedArchiveCount 4 | Out-Null
+
+        Set-Content -LiteralPath (Join-Path $pluginRoot "third-party-notices/unexpected.txt") -Value "unexpected" -NoNewline
+        Compress-Archive `
+            -Path @(Get-ChildItem -LiteralPath $pluginRoot -Force | Select-Object -ExpandProperty FullName) `
+            -DestinationPath $pluginZipPath `
+            -Force
+        Copy-Item -LiteralPath $pluginZipPath -Destination (Join-Path $outerRoot "Plugin.zip") -Force
+        Compress-Archive `
+            -Path @(Get-ChildItem -LiteralPath $outerRoot -Force | Select-Object -ExpandProperty FullName) `
+            -DestinationPath (Join-Path $assetsDirectory $artifactNames[0]) `
+            -Force
+
+        Assert-Throws {
+            & (Join-Path $PSScriptRoot "release/Assert-ReleaseLicenseArtifacts.ps1") `
+                -PluginName $packageId `
+                -RepositoryRoot $repositoryRoot `
+                -AssetsDirectory $assetsDirectory `
+                -ExpectedArchiveCount 4 | Out-Null
+        } "Archive validation should reject a license inventory that differs from the committed snapshot."
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempDir) {
+            Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Test-CommandLineModuleManifestContract {
@@ -489,9 +666,14 @@ Test-DatasourceReleaseValidation
 Test-BatchDatasourceReleaseResolution
 Test-PluginCompatibilityManifestGeneration
 Test-PluginArtifactIntegrityMetadata
+Test-PluginLicenseSnapshotPackagingContracts
 Test-Registry12RuntimeMetadataContract
 Test-RuntimeV2ReleaseTrain
 Test-RoslynReleaseWorkflowGates
+Test-PluginToolingWorkflowGates
 Test-CommandLineModuleManifestContract
+& (Join-Path $PSScriptRoot "release/Test-LicenseSnapshotContracts.ps1")
+Test-RepositoryLicenseSnapshots
+Test-ReleaseLicenseArchiveContracts
 
 Write-Host "Plugin release script tests passed." -ForegroundColor Green

@@ -23,7 +23,7 @@ public sealed class SeparatedValuesQueryRowInspectionTests
     private static readonly ILoggerResolver LoggerResolver = new NullLoggerResolver();
     private static readonly CompilationOptions CompilationOptions = new(
         ParallelizationMode.Full,
-        usePrimitiveTypeValidation: false);
+        usePrimitiveTypeValidation: true);
 
     [TestMethod]
     public void CompileForInspection_WhenEnabledAndExact_EmitsTypedQueryRowReads()

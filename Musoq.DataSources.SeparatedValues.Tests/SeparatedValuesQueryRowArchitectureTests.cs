@@ -66,6 +66,91 @@ public sealed class SeparatedValuesQueryRowArchitectureTests
     }
 
     [TestMethod]
+    public void EnumDecodePlan_HasNoReflectionParsingBoxingOrPerRowConstruction()
+    {
+        var root = FindRepositoryRoot();
+        var enumPlanPath = Path.Combine(
+            root,
+            "Musoq.DataSources.SeparatedValues",
+            "SeparatedValuesEnumPlan.cs");
+        var source = File.ReadAllText(enumPlanPath);
+        foreach (var forbidden in new[]
+                 {
+                     "Enum.Parse",
+                     "Enum.ToObject",
+                     "Convert.ChangeType",
+                     "System.Reflection",
+                     "lock (",
+                     "CreateDelegate",
+                     "DynamicInvoke",
+                     "new EnumTypeDescriptor"
+                 })
+        {
+            Assert.IsFalse(source.Contains(forbidden, StringComparison.Ordinal),
+                $"Enum decoding plan contains forbidden hot-path marker '{forbidden}'.");
+        }
+
+        var decode = typeof(SeparatedValuesEnumPlan).GetMethod(
+            nameof(SeparatedValuesEnumPlan.TryDecode),
+            BindingFlags.Instance | BindingFlags.Public)!;
+        AssertHotPath(decode);
+    }
+
+    [TestMethod]
+    public void EnumExecutionHotPaths_ContainNoDynamicConversionOrStringParsing()
+    {
+        var root = FindRepositoryRoot();
+        var hotPathFiles = new[]
+        {
+            "SeparatedValuesEnumPlan.cs",
+            "SeparatedValuesRowProcessor.cs",
+            "SeparatedValuesQueryRowProjector.cs",
+            "SeparatedValuesQueryShapeMapping.cs",
+            "SeparatedValuesQueryRowSource.cs"
+        };
+        var forbidden = new[]
+        {
+            "Enum.Parse",
+            "Enum.ToObject",
+            "Convert.ChangeType",
+            "System.Reflection",
+            "System.Linq.Expressions",
+            "CreateDelegate",
+            "DynamicInvoke",
+            "lock (",
+            "new EnumTypeDescriptor"
+        };
+
+        foreach (var fileName in hotPathFiles)
+        {
+            var path = Path.Combine(root, "Musoq.DataSources.SeparatedValues", fileName);
+            var source = File.ReadAllText(path);
+            foreach (var marker in forbidden)
+                Assert.IsFalse(source.Contains(marker, StringComparison.Ordinal), $"{fileName}: {marker}");
+        }
+
+        var processor = File.ReadAllText(Path.Combine(
+            root,
+            "Musoq.DataSources.SeparatedValues",
+            "SeparatedValuesRowProcessor.cs"));
+        var enumEvaluation = ExtractRegion(
+            processor,
+            "        private bool EvaluateEnum(",
+            "        private static ulong GetEnumRawValue(");
+        Assert.IsFalse(enumEvaluation.Contains("field.Decode()", StringComparison.Ordinal));
+        Assert.IsFalse(enumEvaluation.Contains("Encoding.UTF8.GetBytes", StringComparison.Ordinal));
+        Assert.IsFalse(enumEvaluation.Contains("Convert.", StringComparison.Ordinal));
+
+        var predicateBinding = ExtractRegion(
+            processor,
+            "    private static void AddTerms(",
+            "    private sealed class PredicateTerm");
+        Assert.IsFalse(predicateBinding.Contains("new EnumTypeDescriptor", StringComparison.Ordinal));
+        Assert.IsFalse(predicateBinding.Contains("Enum.Parse", StringComparison.Ordinal));
+        Assert.IsFalse(predicateBinding.Contains("Enum.ToObject", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void ProductionAssembly_ContainsNoLegacyRowExecutionArchitecture()
     {
         string[] forbiddenSymbols =
@@ -322,6 +407,15 @@ public sealed class SeparatedValuesQueryRowArchitectureTests
         }
 
         return instructions;
+    }
+
+    private static string ExtractRegion(string source, string startMarker, string endMarker)
+    {
+        var start = source.IndexOf(startMarker, StringComparison.Ordinal);
+        Assert.IsTrue(start >= 0, $"Could not locate source marker '{startMarker}'.");
+        var end = source.IndexOf(endMarker, start + startMarker.Length, StringComparison.Ordinal);
+        Assert.IsTrue(end > start, $"Could not locate source marker '{endMarker}'.");
+        return source[start..end];
     }
 
     private static MemberInfo? ResolveToken(MethodInfo method, int token)

@@ -25,7 +25,7 @@ public static class InstanceCreatorHelpers
 
         var compilationOptions = new CompilationOptions(
             ParallelizationMode.Full,
-            usePrimitiveTypeValidation: false,
+            usePrimitiveTypeValidation: true,
             sourceRuntimeSettingsResolver: new EnvironmentVariablesRuntimeSettingsResolver(environmentVariables));
 
         return InstanceCreator.CompileForExecution(

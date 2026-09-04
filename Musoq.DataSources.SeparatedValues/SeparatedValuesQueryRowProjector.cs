@@ -14,19 +14,22 @@ internal sealed class SeparatedValuesQueryProjectionPlan
 {
     private readonly SeparatedValuesQueryFieldMapping[] _diagnostics;
     private readonly SeparatedValuesQuerySlotBinding[] _slotBindings;
+    private readonly SeparatedValuesEnumPlan?[] _enumPlans;
 
     private SeparatedValuesQueryProjectionPlan(
         string sourcePath,
         string fingerprint,
         int[] sourceOrdinals,
         SeparatedValuesQueryFieldMapping[] diagnostics,
-        SeparatedValuesQuerySlotBinding[] slotBindings)
+        SeparatedValuesQuerySlotBinding[] slotBindings,
+        SeparatedValuesEnumPlan?[] enumPlans)
     {
         SourcePath = sourcePath;
         Fingerprint = fingerprint;
         SourceOrdinals = sourceOrdinals;
         _diagnostics = diagnostics;
         _slotBindings = slotBindings;
+        _enumPlans = enumPlans;
     }
 
     public string SourcePath { get; }
@@ -51,6 +54,7 @@ internal sealed class SeparatedValuesQueryProjectionPlan
         SortByPhysicalSourceOrdinal(captureBindings);
         var slotBindings = new SeparatedValuesQuerySlotBinding[mapping.Fields.Length];
         var diagnostics = new SeparatedValuesQueryFieldMapping[mapping.Fields.Length];
+        var enumPlans = new SeparatedValuesEnumPlan?[mapping.Fields.Length];
         var sourceOrdinals = new int[mapping.Fields.Length];
         var assignedSlots = new bool[mapping.Fields.Length];
         for (var captureIndex = 0; captureIndex < captureBindings.Length; captureIndex++)
@@ -73,11 +77,13 @@ internal sealed class SeparatedValuesQueryProjectionPlan
             assignedSlots[field.Slot] = true;
             sourceOrdinals[captureIndex] = field.PhysicalSourceOrdinal;
             diagnostics[field.Slot] = field;
+            enumPlans[field.Slot] = field.EnumPlan;
             slotBindings[field.Slot] = new SeparatedValuesQuerySlotBinding(
                 captureIndex,
                 field.PhysicalSourceOrdinal,
                 field.Conversion,
-                field.IsNullable);
+                field.IsNullable,
+                field.EnumPlan is not null ? field.Slot : -1);
         }
 
         for (var slot = 0; slot < assignedSlots.Length; slot++)
@@ -95,7 +101,8 @@ internal sealed class SeparatedValuesQueryProjectionPlan
             mapping.Fingerprint,
             sourceOrdinals,
             diagnostics,
-            slotBindings);
+            slotBindings,
+            enumPlans);
     }
 
     public bool HasProjectionAt(int sourceOrdinal)
@@ -111,6 +118,11 @@ internal sealed class SeparatedValuesQueryProjectionPlan
     public ref readonly SeparatedValuesQueryFieldMapping GetDiagnostic(int slot)
     {
         return ref _diagnostics[slot];
+    }
+
+    public SeparatedValuesEnumPlan? GetEnumPlan(int slot)
+    {
+        return _enumPlans[slot];
     }
 
     private static void SortByPhysicalSourceOrdinal(SeparatedValuesQueryFieldMapping[] bindings)
@@ -135,7 +147,8 @@ internal readonly record struct SeparatedValuesQuerySlotBinding(
     int CaptureIndex,
     int PhysicalSourceOrdinal,
     SeparatedValuesConversion Conversion,
-    bool IsNullable);
+    bool IsNullable,
+    int EnumPlanIndex);
 
 internal readonly struct SeparatedValuesQueryRowProjector<TRow, TMaterializer>
     : ISeparatedValuesRowProjector<TRow>

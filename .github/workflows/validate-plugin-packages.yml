@@ -26,8 +26,29 @@ jobs:
 
       - name: Pack Plugins
         shell: pwsh
+        env:
+          INPUT_PLUGIN_NAME: ${{ inputs.plugin_name }}
         run: |
-          ./scripts/Pack-Plugin.ps1 -PluginName "${{ inputs.plugin_name }}"
+          $pluginName = $env:INPUT_PLUGIN_NAME
+          if ([string]::IsNullOrWhiteSpace($pluginName)) {
+            $pluginName = 'All'
+          }
+          ./scripts/Pack-Plugin.ps1 -PluginName $pluginName
+
+      - name: Validate committed and embedded license snapshots
+        shell: pwsh
+        env:
+          INPUT_PLUGIN_NAME: ${{ inputs.plugin_name }}
+        run: |
+          $pluginName = $env:INPUT_PLUGIN_NAME
+          if ([string]::IsNullOrWhiteSpace($pluginName)) {
+            $pluginName = 'All'
+          }
+          ./scripts/release/Assert-LicenseSnapshots.ps1 -PluginName $pluginName -ValidatePackageGraph
+          ./scripts/release/Assert-ReleaseLicenseArtifacts.ps1 `
+            -PluginName $pluginName `
+            -AssetsDirectory (Resolve-Path artifacts).Path `
+            -ExpectedArchiveCount 4
 
       - name: Smoke test plugin packages
         shell: pwsh

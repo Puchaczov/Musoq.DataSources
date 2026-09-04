@@ -1,4 +1,5 @@
 using Docker.DotNet.Models;
+using Musoq.Plugins.Attributes;
 using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Docker.Networks;
@@ -42,25 +43,30 @@ public class NetworkEntity(NetworkResponse response)
     public bool ConfigOnly => response.ConfigOnly;
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Containers => response.Containers?.ToDictionary(
         pair => pair.Key,
         pair => $"{pair.Value.Name}:{pair.Value.EndpointID}:{pair.Value.IPv4Address}:{pair.Value.IPv6Address}") ??
         new Dictionary<string, string>();
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Options => response.Options?.ToDictionary(
         pair => pair.Key,
         pair => pair.Value) ?? new Dictionary<string, string>();
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Labels => response.Labels?.ToDictionary(
         pair => pair.Key,
         pair => pair.Value) ?? new Dictionary<string, string>();
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyList<string> Peers => response.Peers?.Select(peer => $"{peer.Name}:{peer.IP}").ToArray() ?? [];
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Services => response.Services?.ToDictionary(
         pair => pair.Key,
         pair => pair.Value.VIP) ?? new Dictionary<string, string>();

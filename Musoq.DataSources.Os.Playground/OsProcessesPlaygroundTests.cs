@@ -9,23 +9,21 @@ public sealed class OsProcessesPlaygroundTests : PlaygroundTestsBase
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
-    public void BareSchemaName_ShouldExposeProcessNameAndProcessorAffinity()
+    public void BareSchemaName_ShouldExposeProcessName()
     {
         RunProbe(
             TestContext,
-            "select ProcessName, ProcessorAffinity from os.processes()",
-            "ProcessName",
-            "ProcessorAffinity");
+            "select ProcessName from os.processes()",
+            "ProcessName");
     }
 
     [TestMethod]
-    public void HashSchemaName_ShouldExposeProcessNameAndProcessorAffinity()
+    public void HashSchemaName_ShouldExposeProcessName()
     {
         RunProbe(
             TestContext,
-            "select ProcessName, ProcessorAffinity from os.processes()",
-            "ProcessName",
-            "ProcessorAffinity");
+            "select ProcessName from os.processes()",
+            "ProcessName");
     }
 
     [TestMethod]

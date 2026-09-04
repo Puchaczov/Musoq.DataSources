@@ -8,7 +8,7 @@ internal class DirectoriesBasedTable : ISchemaTable
 {
     public ISchemaColumn[] Columns { get; } = SchemaDirectoriesHelper.DirectoriesColumns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(DirectoryInfo));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(DirectoryEntity));
 
     public ISchemaColumn? GetColumnByName(string name)
     {

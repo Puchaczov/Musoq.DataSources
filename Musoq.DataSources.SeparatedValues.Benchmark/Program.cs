@@ -12,6 +12,9 @@ internal static class Program
         if (args is ["gate-query-rows", .. var queryRowGateArgs])
             return QueryRowQualificationGateCommand.Run(queryRowGateArgs, Console.Out, Console.Error);
 
+        if (args is ["gate-enums"])
+            return SeparatedValuesEnumQualificationGateCommand.Run(Console.Out, Console.Error);
+
         if (args is ["jit-query-row"])
             return QueryRowJitProbe.Run(Console.Out);
 

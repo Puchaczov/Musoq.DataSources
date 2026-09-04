@@ -114,6 +114,199 @@ public sealed class SeparatedValuesQueryRowSemanticTests
         });
     }
 
+    [TestMethod]
+    public void CompiledQuery_ExplicitEnumTable_ReadsPrimitiveCarrierAndNames()
+    {
+        WithCsv("Status\nRunning\n10\n99\n", path =>
+        {
+            var query =
+                "enum StatusKind : int { Queued = 10, Running = 20 };" +
+                "table CsvShape { Status: StatusKind };" +
+                "couple separatedvalues.comma with table CsvShape as Rows;" +
+                $"select Status, EnumName(Status) from Rows('{QueryPath(path)}', true, 0)";
+
+            using var compiled = InstanceCreatorHelpers.CompileForExecution(
+                query,
+                $"SeparatedValuesEnumSemantic_{Guid.NewGuid():N}",
+                new CsvSchemaProvider(),
+                EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            using var table = compiled.Run();
+
+            var statusColumn = table.Columns.ElementAt(0);
+            Assert.AreEqual(typeof(int?), statusColumn.ColumnType);
+            Assert.AreEqual(typeof(int?), statusColumn.SourceReadType);
+            Assert.IsNotNull(statusColumn.EnumType);
+            Assert.IsFalse(table.SelectMany(static row => row.Values).Any(static value => value is Enum));
+            CollectionAssert.AreEqual(
+                new[] { "20|Running", "10|Queued", "99|<null>" },
+                table.Select(row => string.Join(
+                    "|",
+                    Enumerable.Range(0, row.Count).Select(index => row[index]?.ToString() ?? "<null>")))
+                    .ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void CompiledQuery_ExplicitEnumPredicates_PushDownAndPreserveSqlNullSemantics()
+    {
+        WithCsv(
+            "Status,Access\n" +
+            "20,3\n" +
+            "10,1\n" +
+            "99,3\n" +
+            ",3\n",
+            path =>
+            {
+                var query =
+                    "enum StatusKind : int { Queued = 10, Running = 20, Finished = 30 };" +
+                    "flags enum AccessKind : uint { None = 0ui, Read = 1ui, Write = 2ui, ReadWrite = 3ui };" +
+                    "table CsvShape { Status: StatusKind, Access: AccessKind };" +
+                    "couple separatedvalues.comma with table CsvShape as Rows;" +
+                    $"select Status, EnumName(Status) from Rows('{QueryPath(path)}', true, 0) " +
+                    "where Status <> 'Finished' " +
+                    "and Status not in ('Queued', 'Running') " +
+                    "and Access is not null " +
+                    "and HasAllFlags(Access, 'Read', 'Write')";
+
+                CollectionAssert.AreEqual(new[] { "99|<null>" }, Run(query));
+            });
+    }
+
+    [TestMethod]
+    public void CompiledQuery_InvalidEnumValueReportsBoundedDescriptorContext()
+    {
+        WithCsv("Status\n" + new string('x', 160) + "\n", path =>
+        {
+            var query =
+                "enum StatusKind : int { Queued = 10, Running = 20 };" +
+                "table CsvShape { Status: StatusKind };" +
+                "couple separatedvalues.comma with table CsvShape as Rows;" +
+                $"select Status from Rows('{QueryPath(path)}', true, 0)";
+
+            using var compiled = InstanceCreatorHelpers.CompileForExecution(
+                query,
+                $"SeparatedValuesEnumDiagnostic_{Guid.NewGuid():N}",
+                new CsvSchemaProvider(),
+                EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            using var table = compiled.Run();
+            var exception = Assert.Throws<Exception>(() => _ = table[0]);
+
+            StringAssert.Contains(exception.ToString(), "enum 'StatusKind'");
+            StringAssert.Contains(exception.ToString(), "Int32");
+            StringAssert.Contains(exception.ToString(), "column 'Status'");
+            StringAssert.Contains(exception.ToString(), "observed '");
+            var diagnostic = exception.ToString();
+            var observedStart = diagnostic.IndexOf("observed '", StringComparison.Ordinal);
+            Assert.IsTrue(observedStart >= 0);
+            var observedEnd = diagnostic.IndexOf("'", observedStart + "observed '".Length,
+                StringComparison.Ordinal);
+            Assert.IsTrue(observedEnd > observedStart && observedEnd - observedStart <= 110,
+                "Enum diagnostics must bound the observed value.");
+        });
+    }
+
+    [TestMethod]
+    public void CompiledQuery_MalformedUtf8ReportsSourceAndRowContext()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"musoq-query-enum-invalid-{Guid.NewGuid():N}.csv");
+        var header = Encoding.UTF8.GetBytes("Status\n");
+        var bytes = new byte[header.Length + 3];
+        Buffer.BlockCopy(header, 0, bytes, 0, header.Length);
+        bytes[^3] = 0xc3;
+        bytes[^2] = 0x28;
+        bytes[^1] = (byte)'\n';
+        File.WriteAllBytes(path, bytes);
+
+        try
+        {
+            var query =
+                "enum StatusKind : int { Queued = 10, Running = 20 };" +
+                "table CsvShape { Status: StatusKind };" +
+                "couple separatedvalues.comma with table CsvShape as Rows;" +
+                $"select Status from Rows('{QueryPath(path)}', true, 0)";
+            using var compiled = InstanceCreatorHelpers.CompileForExecution(
+                query,
+                $"SeparatedValuesEnumUtf8Diagnostic_{Guid.NewGuid():N}",
+                new CsvSchemaProvider(),
+                EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            using var table = compiled.Run();
+            var exception = Assert.Throws<Exception>(() => _ = table[0]);
+            StringAssert.Contains(exception.ToString(), "row 1");
+            StringAssert.Contains(exception.ToString(), "<malformed UTF-8 field>");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
+    public void CompiledQuery_ExplicitEnumTable_HeaderlessCustomDelimiterUsesCarrierMetadata()
+    {
+        WithCsv("20|10|99\n", path =>
+        {
+            var query =
+                "enum StatusKind : ushort { Queued = 10us, Running = 20us };" +
+                "table CsvShape { Column1: StatusKind, Column2: StatusKind, Column3: StatusKind };" +
+                "couple separatedvalues.delimited with table CsvShape as Rows;" +
+                $"select Column1, EnumName(Column1), Column3 from Rows('{QueryPath(path)}', '|', false, 0)";
+
+            using var compiled = InstanceCreatorHelpers.CompileForExecution(
+                query,
+                $"SeparatedValuesEnumDelimited_{Guid.NewGuid():N}",
+                new CsvSchemaProvider(),
+                EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+            using var table = compiled.Run();
+
+            Assert.AreEqual(typeof(ushort?), table.Columns.ElementAt(0).ColumnType);
+            Assert.IsNotNull(table.Columns.ElementAt(0).EnumType);
+            CollectionAssert.AreEqual(
+                new[] { "20|Running|99" },
+                table.Select(row => string.Join(
+                    "|",
+                    Enumerable.Range(0, row.Count).Select(index => row[index]?.ToString() ?? "<null>")))
+                    .ToArray());
+            Assert.IsFalse(table.SelectMany(static row => row.Values).Any(static value => value is Enum));
+        });
+    }
+
+    [TestMethod]
+    public void CompiledQuery_EnumCarrierSurvivesRelationalShapes()
+    {
+        WithCsv("Name,Status\nAda,10\nGrace,10\nLinus,20\n", path =>
+        {
+            var prefix =
+                "enum StatusKind : int { Queued = 10, Running = 20 };" +
+                "table CsvShape { Name: string, Status: StatusKind };" +
+                "couple separatedvalues.comma with table CsvShape as Rows;";
+            var queries = new[]
+            {
+                prefix + $"select d.Status, Count(d.Name) as Count from Rows('{QueryPath(path)}', true, 0) d " +
+                "group by d.Status order by Count",
+                prefix + $"with statuses as (select d.Status as Status, d.Name as Name from Rows('{QueryPath(path)}', true, 0) d) " +
+                "select s.Status, s.Name from statuses s order by s.Name",
+                prefix + $"select l.Name, r.Name from Rows('{QueryPath(path)}', true, 0) l " +
+                "inner join " + $"Rows('{QueryPath(path)}', true, 0) r on l.Status = r.Status " +
+                "where l.Name = 'Ada' and r.Name = 'Grace'",
+                prefix + $"select d.Name, d.Status, RowNumber() over (partition by d.Status order by d.Name) as RowNo " +
+                $"from Rows('{QueryPath(path)}', true, 0) d order by d.Name"
+            };
+
+            foreach (var query in queries)
+            {
+                using var compiled = InstanceCreatorHelpers.CompileForExecution(
+                    query,
+                    $"SeparatedValuesEnumRelational_{Guid.NewGuid():N}",
+                    new CsvSchemaProvider(),
+                    EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+                using var table = compiled.Run();
+                Assert.IsFalse(table.SelectMany(static row => row.Values).Any(static value => value is Enum));
+                Assert.IsTrue(table.Columns.Any(column => column.EnumType is not null) ||
+                              query.Contains("l.Name, r.Name", StringComparison.Ordinal));
+            }
+        });
+    }
+
     private static string[] Run(string query)
     {
         using var compiled = InstanceCreatorHelpers.CompileForExecution(

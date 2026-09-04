@@ -24,6 +24,7 @@ jobs:
     outputs:
       release_tag: ${{ steps.release.outputs.release_tag }}
       release_version: ${{ steps.release.outputs.release_version }}
+      release_package_id: ${{ steps.release.outputs.release_package_id }}
       release_project_path: ${{ steps.release.outputs.release_project_path }}
       release_test_project_path: ${{ steps.release.outputs.release_test_project_path }}
       release_command_line_test_project_path: ${{ steps.release.outputs.release_command_line_test_project_path }}
@@ -73,6 +74,7 @@ jobs:
 
           "release_tag=$($summary.tag)" >> $env:GITHUB_OUTPUT
           "release_version=$($summary.version)" >> $env:GITHUB_OUTPUT
+          "release_package_id=$($summary.packageId)" >> $env:GITHUB_OUTPUT
           "release_project_path=$($summary.projectPath)" >> $env:GITHUB_OUTPUT
 
           $testProjectPath = "$($summary.packageId).Tests/$($summary.packageId).Tests.csproj"
@@ -118,6 +120,12 @@ jobs:
         run: |
           dotnet build $env:RELEASE_PROJECT_PATH --configuration Release --no-restore --nologo
 
+      - name: Validate committed license snapshot
+        shell: pwsh
+        env:
+          RELEASE_PACKAGE_ID: ${{ steps.release.outputs.release_package_id }}
+        run: ./scripts/release/Assert-LicenseSnapshots.ps1 -PluginName $env:RELEASE_PACKAGE_ID -ValidatePackageGraph
+
       - name: Test
         shell: pwsh
         env:
@@ -155,6 +163,16 @@ jobs:
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
         run: |
           ./scripts/release/Test-ReleaseSmoke.ps1 -Tag $env:RELEASE_TAG -ArtifactDirectory artifacts/release
+
+      - name: Validate embedded license snapshot
+        shell: pwsh
+        env:
+          RELEASE_PACKAGE_ID: ${{ steps.release.outputs.release_package_id }}
+        run: |
+          ./scripts/release/Assert-ReleaseLicenseArtifacts.ps1 `
+            -PluginName $env:RELEASE_PACKAGE_ID `
+            -AssetsDirectory artifacts/release/plugins `
+            -ExpectedArchiveCount 4
 
       # actions/upload-artifact@v4.6.2
       - name: Upload release artifacts

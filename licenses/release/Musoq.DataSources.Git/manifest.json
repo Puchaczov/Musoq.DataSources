@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 2,
+  "packageId": "Musoq.DataSources.Git",
+  "slug": "git",
+  "version": "3.0.0-alpha.3",
+  "projectPath": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
+  "entryProject": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
+  "ownPackageId": "Musoq.DataSources.Git",
+  "licenseTool": {
+    "package": "nuget-license",
+    "version": "4.0.16"
+  },
+  "licenseGatherer": {
+    "path": "tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe",
+    "sha256": "36c49998b295dda2ce8117c380945499522d13cadc6088a802215deb4f65c157"
+  },
+  "dependencyInputs": [
+    {
+      "path": ".config/dotnet-tools.json",
+      "sha256": "f31564ec1d73f56499ca00eb3dab500d1e20610176fac3ae3f497f7f93527834"
+    },
+    {
+      "path": ".gitattributes",
+      "sha256": "45a7cbb7d9942ba7ffce0b20bc8dbe2d1196533bc6e4bd245871d77fb1eedfdc"
+    },
+    {
+      "path": "Directory.Build.props",
+      "sha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+    },
+    {
+      "path": "global.json",
+      "sha256": "bcead32f2fb187a53e01ffc96128e09798dbdc8a981b17adb4276b0e8da840d7"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "licenses/Musoq.Parser.txt",
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "licenses/Musoq.Plugins.txt",
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "licenses/Musoq.Schema.txt",
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "licenses/XmpCore.txt",
+      "sha256": "a088bca8f52001b44fa72ffb523e3c2d4f3df4b1b8f3f014692bdfd0d71b3584"
+    },
+    {
+      "path": "LinksManual.json",
+      "sha256": "9b88b408e00b8e4ad7f69c59a9390af41c72a6d169d1fc0d8ce22a3acc68875b"
+    },
+    {
+      "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
+      "sha256": "46683c8d49092ad520eaeed98c0f85203e2e0e0bd477547ef11cb16d61a12d7d"
+    },
+    {
+      "path": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
+      "sha256": "6a05a6ff7f4d9524f231d7d6069b7fef8ea1aaf78eea9eaf55d50651065da0c1"
+    },
+    {
+      "path": "scripts/release/packages.json",
+      "sha256": "20c6d0e6a292a1e7c8847c659fad020a3c90faf6fededd7a6832ef5646c5c09e"
+    }
+  ],
+  "packageGraph": [
+    {
+      "id": "DiffPlex",
+      "version": "1.9.0",
+      "direct": false
+    },
+    {
+      "id": "Fastenshtein",
+      "version": "1.0.12",
+      "direct": false
+    },
+    {
+      "id": "LibGit2Sharp",
+      "version": "0.31.0",
+      "direct": true
+    },
+    {
+      "id": "LibGit2Sharp.NativeBinaries",
+      "version": "2.0.323",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "version": "10.0.8",
+      "direct": false
+    },
+    {
+      "id": "Microsoft.Extensions.Logging.Abstractions",
+      "version": "10.0.8",
+      "direct": false
+    },
+    {
+      "id": "Musoq.Parser",
+      "version": "17.0.9-alpha.1",
+      "direct": false
+    },
+    {
+      "id": "Musoq.Plugins",
+      "version": "17.0.9-alpha.1",
+      "direct": true
+    },
+    {
+      "id": "Musoq.Schema",
+      "version": "17.0.9-alpha.1",
+      "direct": true
+    }
+  ],
+  "files": [
+    {
+      "path": "license.txt",
+      "size": 1071,
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "third-party-notices/DiffPlex/license.txt",
+      "size": 9144,
+      "sha256": "becde03a3c8b9b2e3d58c7b65ca7ffd9e18e98162396cc374052983c1faaa47c"
+    },
+    {
+      "path": "third-party-notices/Fastenshtein/license.txt",
+      "size": 1077,
+      "sha256": "77a89e5f163c40944cc4ff134198fe0ea67df1a40b8876a7e34b3af88135c3a5"
+    },
+    {
+      "path": "third-party-notices/LibGit2Sharp.NativeBinaries/license.txt",
+      "size": 1081,
+      "sha256": "d745334f7db93761cf9c1ffd4c03d0a843618ff87f594077bd6029a73dd0ccb2"
+    },
+    {
+      "path": "third-party-notices/LibGit2Sharp/license.txt",
+      "size": 1081,
+      "sha256": "d745334f7db93761cf9c1ffd4c03d0a843618ff87f594077bd6029a73dd0ccb2"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.DependencyInjection.Abstractions/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Microsoft.Extensions.Logging.Abstractions/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "third-party-notices/Musoq.Parser/license.txt",
+      "size": 1071,
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "third-party-notices/Musoq.Plugins/license.txt",
+      "size": 1071,
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "third-party-notices/Musoq.Schema/license.txt",
+      "size": 1071,
+      "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
+    },
+    {
+      "path": "third-party-notices/report.json",
+      "size": 1106,
+      "sha256": "7e190ebfc9ae052f376d6c78f623a16e84d8a9cd397f8a98e944e5e433300bad"
+    }
+  ]
+}

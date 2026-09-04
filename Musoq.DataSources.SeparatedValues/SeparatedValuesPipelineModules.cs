@@ -26,7 +26,16 @@ internal sealed record SeparatedValuesColumnContract(
     string Name,
     int SourceOrdinal,
     Type ClrType,
-    StructuredTypeState TypeState);
+    StructuredTypeState TypeState,
+    Type? SourceReadType = null,
+    EnumTypeDescriptor? EnumType = null,
+    ColumnStability Stability = ColumnStability.Stable,
+    SeparatedValuesEnumPlan? EnumPlan = null)
+{
+    public Type EffectiveSourceReadType => SourceReadType ?? ClrType;
+
+    public bool IsNullable => !ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null;
+}
 
 internal sealed class SeparatedValuesSourceContract
 {
@@ -68,7 +77,13 @@ internal sealed class SeparatedValuesSourceContract
                     column.Name,
                     column.SourceOrdinal,
                     ColumnTypes[index],
-                    column.TypeState)))
+                    column.TypeState,
+                    column.EffectiveSourceReadType,
+                    column.EnumType,
+                    column.Stability,
+                    column.EnumType is null
+                        ? null
+                        : SeparatedValuesEnumPlan.Create(column.SourceOrdinal, ColumnTypes[index], column.EnumType))))
             .ToImmutableArray();
         if (ColumnContracts.Length != snapshot.Columns.Length)
             throw new ArgumentException("Separated-values column contracts must match its columns.", nameof(columnContracts));
@@ -164,7 +179,10 @@ internal sealed class SeparatedValuesSourceContract
                 column.ColumnIndex,
                 column.ColumnType,
                 column.IntendedTypeName,
-                column.ReadModifiers.ToImmutableDictionary(StringComparer.Ordinal));
+                column.ReadModifiers.ToImmutableDictionary(StringComparer.Ordinal),
+                column.EnumType is null ? column.SourceReadType : column.ColumnType,
+                column.EnumType,
+                column.Stability);
         }
 
         return new SeparatedValuesSourceContract(
@@ -200,7 +218,13 @@ internal readonly record struct SeparatedValuesDescriptorColumn(
     int SourceColumnIndex,
     Type FieldType,
     string? IntendedTypeName,
-    IReadOnlyDictionary<string, string> ReadModifiers);
+    IReadOnlyDictionary<string, string> ReadModifiers,
+    Type? SourceReadType = null,
+    EnumTypeDescriptor? EnumType = null,
+    ColumnStability Stability = ColumnStability.Stable)
+{
+    public Type EffectiveSourceReadType => SourceReadType ?? FieldType;
+}
 
 internal readonly record struct SeparatedValuesSchemaResolutionRequest(
     string Path,

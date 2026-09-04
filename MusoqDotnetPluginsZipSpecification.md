@@ -204,7 +204,12 @@ The `Plugin.zip` file must contain the published output of the plugin project.
 - The runtime configuration file (`.runtimeconfig.json`)
 - The generated runtime compatibility manifest (`MusoqPluginCompatibility.json`)
 - All required third-party dependency DLLs (e.g., `LibGit2Sharp.dll`)
-- A `third-party-notices` folder containing license files for all dependencies
+- A `third-party-notices` directory containing at least one non-empty license file for the dependencies
+
+The `third-party-notices` directory is an artifact contract, not optional
+metadata. Packaging must fail if it is missing or empty. Release smoke
+validation and the representative plugin-package smoke suite enforce the same
+contract after extracting `Plugin.zip`.
 
 **Exclusions:**
 The following core Musoq assemblies **MUST NOT** be included in the `Plugin.zip` as they are provided by the host environment:
@@ -277,7 +282,7 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
    - Remove host-owned assemblies (`Musoq.Schema.dll`, `Musoq.Plugins.dll`, `Musoq.Parser.dll`, `Musoq.Converter.dll`, `Musoq.Evaluator.dll`, and `Musoq.Targets.*.dll`) recursively from `./publish`, then fail if any remain before compression.
    - Generate `MusoqPluginCompatibility.json` from evaluated MSBuild data.
    - Verify the main plugin XML documentation file exists in `./publish`.
-   - Gather and place all license files into a `third-party-notices` folder within `./publish`.
+   - Gather and place all license files into a `third-party-notices` folder within `./publish`; fail if the directory is missing or contains no non-empty files.
    - Zip the contents of `./publish` into `Plugin.zip`.
 
 3. **Create Metadata Files:**
@@ -290,82 +295,55 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
 4. **Create the Final Package:**
    - Zip `Plugin.zip`, `EntryPoint.txt`, `LibraryName.txt`, `Version.txt`, `Platform.txt`, and `Architecture.txt` into `Musoq.DataSources.MyPlugin-windows-x64.zip`.
 
-## License Gathering Tool Setup
+## License Snapshots and Explicit Refresh
 
-To comply with the requirement of including `third-party-notices`, you should use the `Musoq.Cloud.LicensesGatherer` tool.
+Datasource release packages consume committed license snapshots. Each registered
+package has a directory under `licenses/release/<PackageId>/` containing the
+manifest, the package's own `license.txt`, the dependency report, and the
+`third-party-notices` files copied into `Plugin.zip`. The root `license.txt` is
+snapshot provenance and is intentionally not added to the existing `Plugin.zip`
+layout.
 
-### Prerequisites
-- .NET SDK 10.0.300 or newer compatible 10.0 feature band
-- The `Musoq.Cloud.LicensesGatherer` tool located in `tools/dotnet/LicenseGatherer`.
+Normal `Pack-Plugin.ps1`, `Pack-Release.ps1`, and release workflows validate and
+copy these files offline. They do not invoke `nuget-license`, the bundled
+`Musoq.Cloud.LicensesGatherer`, license URL resolution, `LinksCache.json`, or a
+license download cache. NuGet restore remains a normal build prerequisite and
+may still require package feeds; license retrieval itself is not part of that
+path.
 
-### Required Configuration Files
+### Refreshing snapshots
 
-You need to prepare the following JSON files:
+Live license resolution is available only through the explicit refresh command:
 
-1. **OwnPackage.json**: Metadata about your plugin package.
-   ```json
-   {
-       "PackageId": "Musoq.DataSources.MyPlugin",
-       "PackageVersion": "1.0.0",
-       "PackageProjectUrl": "https://github.com/myuser/myrepo",
-       "License": "MIT",
-       "LicenseUrl": "https://raw.githubusercontent.com/myuser/myrepo/main/LICENSE"
-   }
-   ```
-
-2. **LinksManual.json**: (Optional) Manual overrides for license URLs if the tool cannot resolve them automatically.
-   ```json
-   {
-       "Some.Package.Id": {
-           "PackageId": "Some.Package.Id",
-           "Url": "https://license-url.com/LICENSE"
-       }
-   }
-   ```
-
-3. **LinksCache.json**: (Optional) A cache file for resolved links. This file is typically **excluded from source control** (added to `.gitignore`) as it is auto-generated and environment-specific.
-
-### Running the Tool
-
-Assuming the tool is built and located at `tools/dotnet/LicenseGatherer`, you can run it using the `dotnet` command.
-
-```bash
-# Define paths
-TOOL_PATH="tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.dll"
-PROJECT_PATH="./src/Musoq.DataSources.MyPlugin/Musoq.DataSources.MyPlugin.csproj"
-OWN_PACKAGE_PATH="./OwnPackage.json"
-OUTPUT_LICENSES_FOLDER="./publish/third-party-notices"
-LINKS_CACHE="./LinksCache.json"
-MANUAL_LINKS="./LinksManual.json"
-LICENSES_CACHE_DIR="./.licenses-cache"
-DOWNLOADED_LICENSES_DIR="./licenses"
-
-# Run the tool
-dotnet "$TOOL_PATH" retrieve \
-    --solution-or-cs-project-file-path "$PROJECT_PATH" \
-    --own-package-file-path "$OWN_PACKAGE_PATH" \
-    --licenses-folder "$OUTPUT_LICENSES_FOLDER" \
-    --links-cache-file-path "$LINKS_CACHE" \
-    --manual-links-file-path "$MANUAL_LINKS" \
-    --licenses-cache-folder "$LICENSES_CACHE_DIR" \
-    --downloaded-licenses-folder "$DOWNLOADED_LICENSES_DIR"
+```powershell
+pwsh ./scripts/release/Update-LicenseSnapshots.ps1 -PluginName All
+pwsh ./scripts/release/Update-LicenseSnapshots.ps1 -PluginName Musoq.DataSources.Json
 ```
 
-### Caching Strategy
+The refresh script provisions the repository-pinned `nuget-license` 4.0.16,
+uses only the bundled gatherer, validates the staged report and hashes, and
+replaces a snapshot only after validation succeeds. The committed
+`LinksManual.json` and any committed static `licenses/*.txt` overrides are
+inputs to the snapshot manifest.
 
-The tool uses a hybrid caching strategy to minimize network requests and ensure reproducibility:
+Refresh working data is transient and must not be committed:
 
-1.  **LinksManual.json**: Committed to the repository. Contains manual overrides for packages where the license URL cannot be automatically resolved or needs to be fixed.
-2.  **LinksCache.json**: **Ignored** (via `.gitignore`). Stores automatically resolved license URLs to speed up subsequent runs.
-3.  **Licenses Cache Folder** (e.g., `.licenses-cache`): **Ignored**. Stores the actual downloaded license text files to avoid re-downloading them.
-4.  **Downloaded Licenses Folder** (e.g., `licenses/`): **Committed**. Contains static license files for packages that cannot be downloaded (e.g., local files or proprietary licenses) referenced by `file://` URLs in `LinksManual.json`.
+- `.builds/license-refresh/` contains per-refresh working directories and the
+  runner-local tooling installation.
+- `.licenses-cache/` and `LinksCache.json` contain downloaded text or resolved
+  URL caches when a refresh uses them.
+- Other generated refresh output belongs under ignored build/artifact paths.
 
-This command will:
-1. Analyze the project dependencies.
-2. Resolve license URLs using `LinksManual.json` and `LinksCache.json`.
-3. Download license texts (using `Licenses Cache` to avoid redundant requests).
-4. Save them into the specified `--licenses-folder`.
-5. Generate a summary report.
+`Assert-LicenseSnapshots.ps1` fails closed when a snapshot is missing,
+abbreviated, malformed, tampered with, generated for a different package or
+version, has a stale dependency graph/input hash, or records a different tool
+or bundled gatherer. `Assert-ReleaseLicenseArtifacts.ps1` additionally checks
+that every four-RID archive contains exactly the committed
+`third-party-notices` inventory with matching sizes and SHA-256 hashes.
+
+Changes to a registered project, package version, transitive dependency graph,
+manual link mapping, static license override, pinned tool, or bundled gatherer
+therefore require an explicit snapshot refresh before packaging can pass.
 
 ## Installation
 

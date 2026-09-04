@@ -121,6 +121,7 @@ public class DocumentEntity
     ///     Gets the class declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
     public IEnumerable<ClassEntity> Classes
     {
         get
@@ -137,6 +138,7 @@ public class DocumentEntity
     ///     Gets the interface declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
     public IEnumerable<InterfaceEntity> Interfaces
     {
         get
@@ -152,6 +154,7 @@ public class DocumentEntity
     ///     Gets the enum declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
     public IEnumerable<EnumEntity> Enums
     {
         get
@@ -167,6 +170,7 @@ public class DocumentEntity
     ///     Gets the struct declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
     public IEnumerable<StructEntity> Structs
     {
         get
@@ -207,6 +211,7 @@ public class DocumentEntity
     ///     Gets the delegate declarations in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
     public IEnumerable<DelegateEntity> Delegates
     {
         get
@@ -249,6 +254,7 @@ public class DocumentEntity
     ///     Gets the using directives in the document.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
+    [BindablePropertyAsTable]
     public IEnumerable<UsingDirectiveEntity> UsingDirectives
     {
         get

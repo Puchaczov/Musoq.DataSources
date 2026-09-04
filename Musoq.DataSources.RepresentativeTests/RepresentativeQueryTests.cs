@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO.Compression;
 using LibGit2Sharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Musoq.Converter.Exceptions;
 using Musoq.DataSources.Git;
 using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.RepresentativeTests.Components;
@@ -421,16 +422,10 @@ public class RepresentativeQueryTests
                     from json.file('./Files/People.json')
                     """;
 
-        var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
-        var table = vm.Run();
+        var exception = Assert.ThrowsExactly<MusoqQueryException>(
+            () => CreateAndRunVirtualMachineWithRoslynEnv(query));
 
-        Assert.AreEqual(3, table.Count);
-
-        var bobRow = table.First(r => (string)r[0] == "Bob");
-        Assert.AreEqual(3, ((List<object>)bobRow[1]).Count, "Bob should have 3 skills");
-
-        var charlieRow = table.First(r => (string)r[0] == "Charlie");
-        Assert.AreEqual(0, ((List<object>)charlieRow[1]).Count, "Charlie should have 0 skills");
+        StringAssert.Contains(exception.Message, "MQ3027");
     }
 
     #endregion
@@ -934,22 +929,23 @@ public class RepresentativeQueryTests
             select
                 e.Name,
                 e.FullName,
-                e.Members
+                member.Value
             from csharp.solution('{Solution1SolutionPath.EscapePath()}') s
             cross apply s.Projects pr 
             cross apply pr.Documents d 
             cross apply d.Enums e
+            cross apply e.Members member
             where e.Name = 'Enum1'";
 
         var vm = CreateAndRunVirtualMachineWithRoslynEnv(query);
         var table = vm.Run();
 
-        Assert.AreEqual(1, table.Count, "Should find Enum1");
+        Assert.AreEqual(2, table.Count, "Should find two Enum1 members");
         Assert.AreEqual("Enum1", table[0][0].ToString());
-
-        var members = (table[0][2] as IEnumerable<string> ?? Array.Empty<string>()).ToList();
-        Assert.IsTrue(members.Contains("Value1"), "Should contain Value1");
-        Assert.IsTrue(members.Contains("Value2"), "Should contain Value2");
+        Assert.AreEqual("Solution1.ClassLibrary1.Enum1", table[0][1].ToString());
+        CollectionAssert.AreEquivalent(
+            new[] { "Value1", "Value2" },
+            table.Select(row => row[2]?.ToString()).ToArray());
     }
 
     /// <summary>

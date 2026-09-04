@@ -119,7 +119,7 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
         SeparatedValuesDialect dialect)
     {
         string[] names;
-        Type[] types;
+        DeclaredColumnBinding[] bindings;
         long dataStartOffset;
         var inspectedRows = 0L;
 
@@ -134,7 +134,7 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
 
             names = ReadHeaderNames(header);
             dataStartOffset = header.EndOffset;
-            types = BindDeclaredColumns(identity.CanonicalPath, names, declaredColumns, request.HasHeader);
+            bindings = BindDeclaredColumns(identity.CanonicalPath, names, declaredColumns, request.HasHeader);
         }
         else
         {
@@ -180,7 +180,7 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
                     .ToArray();
             }
 
-            types = BindDeclaredColumns(identity.CanonicalPath, names, declaredColumns, request.HasHeader);
+            bindings = BindDeclaredColumns(identity.CanonicalPath, names, declaredColumns, request.HasHeader);
         }
 
         var columns = new StructuredColumnSnapshot[names.Length];
@@ -189,8 +189,12 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
             columns[index] = new StructuredColumnSnapshot(
                 names[index],
                 index,
-                ToStructuredType(types[index]),
-                0);
+                ToStructuredType(bindings[index].CarrierType),
+                0,
+                bindings[index].CarrierType,
+                bindings[index].SourceReadType,
+                bindings[index].EnumType,
+                bindings[index].Stability);
         }
 
         var snapshot = new StructuredSchemaSnapshot(identity, columns, 0);
@@ -202,7 +206,7 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
             checked(identityBytes + reader.BytesRead),
             Stopwatch.GetElapsedTime(started),
             dataStartOffset,
-            types,
+            bindings.Select(binding => binding.CarrierType),
             null,
             dialect);
     }
@@ -368,7 +372,7 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
         return names.ToArray();
     }
 
-    private static Type[] BindDeclaredColumns(
+    private static DeclaredColumnBinding[] BindDeclaredColumns(
         string path,
         string[] sourceNames,
         IReadOnlyCollection<ISchemaColumn> declaredColumns,
@@ -386,9 +390,10 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
                     $"{ordered.Length:N0}");
             }
 
-            foreach (var declared in ordered)
-                ValidateSupportedType(declared.ColumnType);
-            var positionalTypes = Enumerable.Repeat(typeof(string), sourceNames.Length).ToArray();
+            var positionalBindings = Enumerable.Repeat(
+                    new DeclaredColumnBinding(typeof(string), typeof(string), null, ColumnStability.Stable),
+                    sourceNames.Length)
+                .ToArray();
             foreach (var declared in ordered)
             {
                 if (!TryGetAutoColumnOrdinal(declared.ColumnName, out var ordinal) ||
@@ -400,12 +405,12 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
                         $"declared column '{declared.ColumnName}' does not exist in the source shape");
                 }
 
-                positionalTypes[ordinal - 1] = declared.ColumnType;
+                positionalBindings[ordinal - 1] = CreateDeclaredBinding(declared);
             }
-            return positionalTypes;
+            return positionalBindings;
         }
 
-        var byName = declaredColumns.ToDictionary(column => column.ColumnName, StringComparer.Ordinal);
+        var byName = declaredColumns.ToDictionary(column => column.ColumnName, CreateDeclaredBinding, StringComparer.Ordinal);
         var sourceNameSet = sourceNames.ToHashSet(StringComparer.Ordinal);
         foreach (var declared in declaredColumns)
         {
@@ -415,18 +420,57 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
                     path,
                     $"declared column '{declared.ColumnName}' does not exist in the source shape");
             }
-            ValidateSupportedType(declared.ColumnType);
+            _ = CreateDeclaredBinding(declared);
         }
 
-        var types = new Type[sourceNames.Length];
+        var bindings = new DeclaredColumnBinding[sourceNames.Length];
         for (var index = 0; index < sourceNames.Length; index++)
         {
-            types[index] = byName.TryGetValue(sourceNames[index], out var declared)
-                ? declared.ColumnType
-                : typeof(string);
+            bindings[index] = byName.TryGetValue(sourceNames[index], out var declared)
+                ? declared
+                : new DeclaredColumnBinding(typeof(string), typeof(string), null, ColumnStability.Stable);
         }
 
-        return types;
+        return bindings;
+    }
+
+    private static DeclaredColumnBinding CreateDeclaredBinding(ISchemaColumn column)
+    {
+        ArgumentNullException.ThrowIfNull(column);
+        ValidateSupportedType(column.ColumnType);
+
+        if (column.EnumType is null)
+        {
+            if (column.SourceReadType != column.ColumnType)
+            {
+                throw new ArgumentException(
+                    $"Ordinary separated-values column '{column.ColumnName}' must use identical carrier and source-read types.",
+                    nameof(column));
+            }
+
+            return new DeclaredColumnBinding(
+                column.ColumnType,
+                column.SourceReadType,
+                null,
+                column.Stability);
+        }
+
+        var nullableCarrier = Nullable.GetUnderlyingType(column.ColumnType);
+        var primitiveCarrier = nullableCarrier ?? column.ColumnType;
+        if (primitiveCarrier != EnumScalarTypeFacts.GetCarrierType(column.EnumType.UnderlyingKind))
+        {
+            throw new ArgumentException(
+                $"Enum separated-values column '{column.ColumnName}' carrier does not match its descriptor backing.",
+                nameof(column));
+        }
+
+        // SeparatedValues is a logical-scalar source: its source boundary reads
+        // the primitive carrier even when TABLE metadata originated from a CLR enum.
+        return new DeclaredColumnBinding(
+            column.ColumnType,
+            column.ColumnType,
+            column.EnumType,
+            column.Stability);
     }
 
     private static bool TryGetAutoColumnOrdinal(string name, out int ordinal)
@@ -484,6 +528,12 @@ internal sealed class BoundedSeparatedValuesSchemaResolver : ISeparatedValuesSch
                         : StructuredValueKind.String;
         return new StructuredTypeState(kind, nullable);
     }
+
+    private readonly record struct DeclaredColumnBinding(
+        Type CarrierType,
+        Type SourceReadType,
+        EnumTypeDescriptor? EnumType,
+        ColumnStability Stability);
 
     private static StructuredSchemaSnapshot MakeConservativelyNullable(StructuredSchemaSnapshot snapshot)
     {

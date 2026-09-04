@@ -56,6 +56,29 @@ Optional but recommended:
 
 Do not copy retired split-release scripts. The unified tag-driven workflow is the production path for datasource plugins. NuGet-only helper packages that do not implement a datasource schema are not handled by this flow yet; publish them with a separate future NuGet-only process.
 
+## Committed License Snapshots
+
+Keep one committed snapshot for every package in `scripts/release/packages.json`
+under `licenses/release/<PackageId>/`. Normal plugin packaging validates the
+snapshot and copies only its `third-party-notices` directory into `Plugin.zip`;
+it does not resolve license URLs or require `nuget-license` on `PATH`.
+
+Refresh snapshots explicitly when a project, dependency graph, package version,
+manual link, static license override, pinned tool, or bundled gatherer changes:
+
+```powershell
+.\scripts\release\Update-LicenseSnapshots.ps1 -PluginName All
+```
+
+The refresh command provisions the exact `nuget-license` 4.0.16 tool and uses
+the bundled gatherer. It stages and validates output before replacing the
+committed snapshot. `Assert-LicenseSnapshots.ps1` rejects missing, stale,
+abbreviated, malformed, or tampered data. Refresh caches and working files live
+under `.builds/license-refresh/`, `.licenses-cache/`, and ignored
+`LinksCache.json`; none belong in source control. Archive validation also
+checks every four-RID package against the snapshot's file sizes and SHA-256
+hashes.
+
 ## Release Package Registry
 
 Update `scripts/release/packages.json` after copying the scripts. It must contain only real datasource plugin projects, not tests, helpers, shared libraries, or common packages:

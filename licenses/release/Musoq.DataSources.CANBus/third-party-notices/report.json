@@ -1,0 +1,117 @@
+[
+  {
+    "PackageId": "CsvHelper",
+    "PackageVersion": "33.0.1",
+    "License": "MS-PL OR Apache-2.0"
+  },
+  {
+    "PackageId": "DbcParserLib",
+    "PackageVersion": "1.7.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "DiffPlex",
+    "PackageVersion": "1.9.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "PackageId": "Fastenshtein",
+    "PackageVersion": "1.0.12",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Iot.Device.Bindings",
+    "PackageVersion": "3.2.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Build.Tasks.Git",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.DependencyInjection.Abstractions",
+    "PackageVersion": "10.0.8",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Logging.Abstractions",
+    "PackageVersion": "10.0.8",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.NETCore.Platforms",
+    "PackageVersion": "5.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.SourceLink.Common",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.SourceLink.GitHub",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Win32.SystemEvents",
+    "PackageVersion": "6.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Parser",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Plugins",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Schema",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Newtonsoft.Json",
+    "PackageVersion": "13.0.3",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.CodeDom",
+    "PackageVersion": "5.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Device.Gpio",
+    "PackageVersion": "3.2.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Drawing.Common",
+    "PackageVersion": "6.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.IO.Ports",
+    "PackageVersion": "5.0.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.Management",
+    "PackageVersion": "5.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "UnitsNet",
+    "PackageVersion": "5.31.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.DataSources.CANBus",
+    "PackageVersion": "4.0.3-alpha.7",
+    "License": "MIT"
+  }
+]

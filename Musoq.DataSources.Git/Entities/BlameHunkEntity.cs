@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using Musoq.DataSources.Git;
+using Musoq.Plugins.Attributes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
@@ -34,7 +35,7 @@ public class BlameHunkEntity
         new SchemaColumn(nameof(CommitterEmail), 8, typeof(string)),
         new SchemaColumn(nameof(CommitterDate), 9, typeof(DateTimeOffset)),
         new SchemaColumn(nameof(Summary), 10, typeof(string)),
-        new SchemaColumn(nameof(OriginalStartLineNumber), 11, typeof(int)),
+        new SchemaColumn(nameof(OriginalStartLineNumber), 11, typeof(int?)),
         new SchemaColumn(nameof(OriginalFilePath), 12, typeof(string)),
         new SchemaColumn(nameof(Lines), 13, typeof(IEnumerable<BlameLineEntity>)),
         new SchemaColumn(nameof(Self), 14, typeof(BlameHunkEntity))
@@ -157,6 +158,7 @@ public class BlameHunkEntity
     public string? OriginalFilePath => _originalFilePath;
 
     /// <summary>Gets the blamed lines, loading and caching file content only on first access; binary files return no lines.</summary>
+    [BindablePropertyAsTable]
     public IEnumerable<BlameLineEntity> Lines => _lines.GetOrCreate(ReadLines) ?? Array.Empty<BlameLineEntity>();
 
     /// <summary>Gets this row instance.</summary>

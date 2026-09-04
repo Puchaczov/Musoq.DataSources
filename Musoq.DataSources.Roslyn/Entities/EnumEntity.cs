@@ -64,11 +64,13 @@ public class EnumEntity : TypeEntity
     /// <summary>
     ///     Gets the properties of the type.
     /// </summary>
+    [BindablePropertyAsTable]
     public override IEnumerable<MethodEntity> Methods => [];
 
     /// <summary>
     ///     Gets the properties of the type.
     /// </summary>
+    [BindablePropertyAsTable]
     public override IEnumerable<PropertyEntity> Properties => [];
 
     /// <summary>

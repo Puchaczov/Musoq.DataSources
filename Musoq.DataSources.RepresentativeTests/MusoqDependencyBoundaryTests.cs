@@ -16,16 +16,26 @@ public sealed class MusoqDependencyBoundaryTests
             ["Musoq.Schema"] = "$(MusoqSchemaVersion)"
         };
 
+    private static readonly IReadOnlyDictionary<string, string> ExpectedVersions =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["MusoqConverterVersion"] = "17.0.9-alpha.2",
+            ["MusoqEvaluatorVersion"] = "17.0.9-alpha.2",
+            ["MusoqParserVersion"] = "17.0.9-alpha.1",
+            ["MusoqPluginsVersion"] = "17.0.9-alpha.1",
+            ["MusoqSchemaVersion"] = "17.0.9-alpha.1"
+        };
+
     [TestMethod]
     public void MusoqPackageVersions_ShouldBeCentralized()
     {
         var root = FindSolutionRoot();
         var properties = XDocument.Load(Path.Combine(root, "Directory.Build.props"));
 
-        foreach (var propertyName in VersionProperties.Values.Select(GetPropertyName).Distinct(StringComparer.Ordinal))
+        foreach (var (propertyName, expectedVersion) in ExpectedVersions)
         {
             var value = properties.Descendants(propertyName).SingleOrDefault()?.Value;
-            Assert.AreEqual("17.0.8-alpha.1", value, $"Unexpected value for {propertyName}.");
+            Assert.AreEqual(expectedVersion, value, $"Unexpected value for {propertyName}.");
         }
 
         foreach (var projectPath in EnumerateProjectPaths(root))

@@ -49,7 +49,9 @@ public sealed class SeparatedValuesQueryRowSourceTests
                 true,
                 0);
 
-            Assert.AreEqual(SourceTransferCapabilities.QueryScopedRows, descriptor.TransferCapabilities);
+            Assert.AreEqual(
+                SourceTransferCapabilities.QueryScopedRows | SourceTransferCapabilities.LogicalScalarReads,
+                descriptor.TransferCapabilities);
             Assert.AreEqual(typeof(object[]), descriptor.RowType);
         });
     }
@@ -243,7 +245,9 @@ public sealed class SeparatedValuesQueryRowSourceTests
                 path,
                 true,
                 0);
-            Assert.AreEqual(SourceTransferCapabilities.QueryScopedRows, descriptor.TransferCapabilities);
+            Assert.AreEqual(
+                SourceTransferCapabilities.QueryScopedRows | SourceTransferCapabilities.LogicalScalarReads,
+                descriptor.TransferCapabilities);
             var predicate = new SourcePredicateComparison(
                 SourcePredicateComparisonOperator.GreaterThan,
                 new SourcePredicateColumn(new SourceColumnRef("Score")),
@@ -813,7 +817,9 @@ public sealed class SeparatedValuesQueryRowSourceTests
             path,
             hasHeader,
             skipLines);
-        Assert.AreEqual(SourceTransferCapabilities.QueryScopedRows, descriptor.TransferCapabilities);
+        Assert.AreEqual(
+            SourceTransferCapabilities.QueryScopedRows | SourceTransferCapabilities.LogicalScalarReads,
+            descriptor.TransferCapabilities);
         var plan = schema.TryPlanSource(
             "comma",
             new SourcePlanRequest

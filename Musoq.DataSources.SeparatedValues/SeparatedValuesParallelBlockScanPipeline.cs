@@ -732,7 +732,9 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
                 item.PrefixEndOffset,
                 request.SeparatorByte,
                 dialect,
-                processor);
+                processor,
+                contract.Snapshot.Identity.CanonicalPath,
+                item.StartRow + item.SelectedRowOffset + 1);
 
         if (item.Block is not null && item.NewlineCount > 1)
         {
@@ -762,7 +764,9 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
                     processor,
                     item.CompactTailIsAscii,
                     tailSkip,
-                    tailTake);
+                    tailTake,
+                    contract.Snapshot.Identity.CanonicalPath,
+                    item.StartRow + item.SelectedRowOffset + 1);
             }
             else
             {
@@ -782,7 +786,9 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
                                 item.Block.Offset + boundaries[index] + 1L,
                                 request.SeparatorByte,
                                 dialect,
-                                processor);
+                                processor,
+                                contract.Snapshot.Identity.CanonicalPath,
+                                item.StartRow + item.SelectedRowOffset + processor.RowsRead + 1);
                         }
 
                         physicalRow++;
@@ -818,10 +824,24 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
         long endOffset,
         byte separator,
         SeparatedValuesDialect dialect,
-        SeparatedValuesProjectedRowProcessor<TRow, TProjector> processor)
+        SeparatedValuesProjectedRowProcessor<TRow, TProjector> processor,
+        string sourcePath,
+        long rowNumber)
         where TProjector : struct, ISeparatedValuesRowProjector<TRow>
     {
-        SeparatedValuesUtf8Reader.ValidateUtf8(bytes);
+        try
+        {
+            SeparatedValuesUtf8Reader.ValidateUtf8(bytes);
+        }
+        catch (InvalidDataException exception) when
+            (exception.Message.Contains("not valid UTF-8", StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                $"Separated-values source '{sourcePath}' row {rowNumber:N0} " +
+                "column '<malformed UTF-8 field>' is not valid UTF-8.",
+                exception);
+        }
+
         var record = new SeparatedValuesUtf8Record(bytes, separator, startOffset, endOffset, dialect);
         _ = processor.Process(record);
     }
@@ -836,7 +856,9 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
         SeparatedValuesProjectedRowProcessor<TRow, TProjector> processor,
         bool recordsAreAscii,
         long skipRecords,
-        long takeRecords)
+        long takeRecords,
+        string sourcePath,
+        long firstRowNumber)
         where TProjector : struct, ISeparatedValuesRowProjector<TRow>
     {
         ArgumentOutOfRangeException.ThrowIfNegative(skipRecords);
@@ -881,7 +903,20 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
         }
 
         if (!recordsAreAscii)
-            SeparatedValuesUtf8Reader.ValidateUtf8(bytes[selectedStart..selectedEnd]);
+        {
+            try
+            {
+                SeparatedValuesUtf8Reader.ValidateUtf8(bytes[selectedStart..selectedEnd]);
+            }
+            catch (InvalidDataException exception) when
+                (exception.Message.Contains("not valid UTF-8", StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"Separated-values source '{sourcePath}' row {firstRowNumber:N0} " +
+                    "column '<malformed UTF-8 field>' is not valid UTF-8.",
+                    exception);
+            }
+        }
 
         recordStart = selectedStart;
         while (recordStart < selectedEnd)

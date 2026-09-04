@@ -85,7 +85,7 @@ public class SeparatedValuesQueryScopedCompiledExecutionBenchmarks
                 BenchmarkLoggerResolver.Instance,
                 new CompilationOptions(
                     ParallelizationMode.Full,
-                    usePrimitiveTypeValidation: false));
+                    usePrimitiveTypeValidation: true));
             return inspection.GeneratedCSharpCode;
         }
         finally

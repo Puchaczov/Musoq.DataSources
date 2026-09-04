@@ -199,13 +199,24 @@ internal static class SeparatedValuesNativeTestSource
         }
 
         return new QueryRowShape(columns
-            .Select((column, slot) => new QueryRowField(
-                slot,
-                column.ColumnIndex,
-                column.ColumnName,
-                fieldTypes[slot],
-                IsNullable(fieldTypes[slot]),
-                column.ReadModifiers))
+            .Select((column, slot) => column.EnumType is null
+                ? new QueryRowField(
+                    slot,
+                    column.ColumnIndex,
+                    column.ColumnName,
+                    fieldTypes[slot],
+                    IsNullable(fieldTypes[slot]),
+                    column.ReadModifiers)
+                : new QueryRowField(
+                    slot,
+                    column.ColumnIndex,
+                    column.ColumnName,
+                    fieldTypes[slot],
+                    column.SourceReadType,
+                    column.EnumType,
+                    IsNullable(fieldTypes[slot]),
+                    column.ReadModifiers,
+                    column.Stability))
             .ToArray());
     }
 

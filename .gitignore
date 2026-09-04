@@ -17,6 +17,9 @@
 [Rr]eleases/
 !scripts/release/
 !scripts/release/**
+!licenses/
+!licenses/release/
+!licenses/release/**
 x64/
 x86/
 bld/

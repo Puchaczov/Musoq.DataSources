@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using Musoq.Converter.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -57,28 +58,9 @@ public class JsonTests
         var query =
             @"select Name, Books from json.file('./JsonTestFile_First.json')";
 
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
+        var exception = Assert.ThrowsExactly<MusoqQueryException>(() => CreateAndRunVirtualMachine(query));
 
-        Assert.AreEqual(2, table.Columns.Count());
-        Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
-        Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
-        Assert.AreEqual("Books", table.Columns.ElementAt(1).ColumnName);
-        Assert.AreEqual(typeof(object), table.Columns.ElementAt(1).ColumnType);
-
-        Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
-
-        Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Aleksander" && ((System.Collections.Generic.List<object>)r.Values[1]).Count == 2),
-            "Missing record for Aleksander with value 2");
-
-        Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Mikolaj" && ((System.Collections.Generic.List<object>)r.Values[1]).Count == 0),
-            "Missing record for Mikolaj with value 0");
-
-        Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Marek" && ((System.Collections.Generic.List<object>)r.Values[1]).Count == 0),
-            "Missing record for Marek with value 0");
+        StringAssert.Contains(exception.Message, "MQ3027");
     }
 
     [TestMethod]
@@ -87,22 +69,9 @@ public class JsonTests
         var query =
             @"select Array from json.file('./JsonTestFile_MakeFlatArray.json')";
 
-        var vm = CreateAndRunVirtualMachine(query);
-        var table = vm.Run();
+        var exception = Assert.ThrowsExactly<MusoqQueryException>(() => CreateAndRunVirtualMachine(query));
 
-        Assert.AreEqual(1, table.Columns.Count());
-        Assert.AreEqual("Array", table.Columns.ElementAt(0).ColumnName);
-        Assert.AreEqual(typeof(object), table.Columns.ElementAt(0).ColumnType);
-
-        Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
-
-        Assert.IsTrue(table.Any(row =>
-            ((System.Collections.Generic.List<object>)row.Values[0]).Count == 3
-        ), "First entry should contain three values");
-
-        Assert.IsTrue(table.Any(row =>
-            ((System.Collections.Generic.List<object>)row.Values[0]).Count == 0
-        ), "Second entry should be an empty array");
+        StringAssert.Contains(exception.Message, "MQ3027");
     }
 
     [TestMethod]

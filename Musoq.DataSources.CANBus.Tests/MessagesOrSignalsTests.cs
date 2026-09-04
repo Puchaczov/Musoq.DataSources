@@ -370,7 +370,6 @@ select
     Minimum,
     Maximum,
     Unit,
-    Receiver,
     Comment,
     Multiplexing,
     MessageName
@@ -395,10 +394,21 @@ where Name = 'Oil_Temperature'";
         Assert.AreEqual(-50d, table[0].Values[9]);
         Assert.AreEqual(100d, table[0].Values[10]);
         Assert.AreEqual("CelciusDegree", table[0].Values[11]);
-        Assert.AreEqual("Vector__XXX", ((string[])table[0].Values[12])[0]);
-        Assert.AreEqual(null, table[0].Values[13]);
-        Assert.AreEqual(string.Empty, table[0].Values[14]);
-        Assert.AreEqual("Engine", table[0].Values[15]);
+        Assert.AreEqual(null, table[0].Values[12]);
+        Assert.AreEqual(string.Empty, table[0].Values[13]);
+        Assert.AreEqual("Engine", table[0].Values[14]);
+
+        const string receiverQuery = @"
+select
+    r.Value
+from can.signals('./Data/1/1.dbc') s
+cross apply s.Receiver r
+where s.Name = 'Oil_Temperature'";
+
+        var receiverTable = CreateAndRunVirtualMachine(receiverQuery).Run();
+
+        Assert.AreEqual(1, receiverTable.Count);
+        Assert.AreEqual("Vector__XXX", receiverTable[0].Values[0]);
     }
 
     [TestMethod]

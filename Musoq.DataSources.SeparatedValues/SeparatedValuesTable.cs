@@ -37,16 +37,32 @@ internal sealed class SeparatedValuesTable : ISchemaTable
         foreach (var binding in layout.Bindings)
         {
             var type = binding.ClrType;
+            var sourceReadType = binding.EffectiveSourceReadType;
+            var enumType = binding.EnumType;
+            var stability = binding.Stability;
             if (explicitColumns.TryGetValue(binding.Name, out var explicitColumn) &&
                 explicitColumn.ColumnType != typeof(object))
+            {
                 type = explicitColumn.ColumnType;
+                sourceReadType = explicitColumn.EnumType is null
+                    ? explicitColumn.SourceReadType
+                    : explicitColumn.ColumnType;
+                enumType = explicitColumn.EnumType;
+                stability = explicitColumn.Stability;
+            }
+
+            if (enumType is not null)
+                sourceReadType = type;
 
             _columns[binding.OutputOrdinal] = new SchemaColumn(
                 binding.Name,
                 binding.OutputOrdinal,
                 type,
+                sourceReadType,
+                enumType,
                 explicitColumn?.IntendedTypeName,
-                explicitColumn?.ReadModifiers);
+                explicitColumn?.ReadModifiers,
+                stability);
         }
     }
 

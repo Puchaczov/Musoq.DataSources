@@ -1,0 +1,57 @@
+[
+  {
+    "PackageId": "DiffPlex",
+    "PackageVersion": "1.9.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "PackageId": "Fastenshtein",
+    "PackageVersion": "1.0.12",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Build.Tasks.Git",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.DependencyInjection.Abstractions",
+    "PackageVersion": "10.0.8",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.Extensions.Logging.Abstractions",
+    "PackageVersion": "10.0.8",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.SourceLink.Common",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Microsoft.SourceLink.GitHub",
+    "PackageVersion": "8.0.0",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Parser",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Plugins",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.Schema",
+    "PackageVersion": "17.0.9-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "Musoq.DataSources.FlatFile",
+    "PackageVersion": "8.0.3-alpha.7",
+    "License": "MIT"
+  }
+]

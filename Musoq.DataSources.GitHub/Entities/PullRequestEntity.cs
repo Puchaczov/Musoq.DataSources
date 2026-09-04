@@ -1,4 +1,5 @@
 using Octokit;
+using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.GitHub.Entities;
 
@@ -76,6 +77,7 @@ public class PullRequestEntity
     /// <summary>
     ///     Gets the label names.
     /// </summary>
+    [BindablePropertyAsTable]
     public IReadOnlyList<string> LabelNames => _pullRequest.Labels?.Select(l => l.Name).ToList() ?? [];
 
     /// <summary>

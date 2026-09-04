@@ -118,6 +118,7 @@ function Test-PluginPackage {
         }
 
         Expand-Archive -LiteralPath $pluginZipFile -DestinationPath $pluginDirectory -Force
+        Assert-MusoqPluginLicenseNotices -PluginDirectory $pluginDirectory -Context $PackagePath | Out-Null
 
         if (-not (Test-Path -LiteralPath (Join-Path $pluginDirectory $entryPoint))) {
             throw "Plugin.zip is missing entry point DLL '$entryPoint': $PackagePath"
@@ -168,8 +169,8 @@ function Test-PluginPackage {
         $compatibility = Read-MusoqPluginCompatibilityManifest -Path $compatibilityPath
         $schemaRange = $compatibility.hostPackages.'Musoq.Schema'
         $pluginsRange = $compatibility.hostPackages.'Musoq.Plugins'
-        if ($schemaRange.minimumVersionInclusive -ne "17.0.8-alpha.1" -or
-            $pluginsRange.minimumVersionInclusive -ne "17.0.8-alpha.1" -or
+        if ($schemaRange.minimumVersionInclusive -ne "17.0.9-alpha.1" -or
+            $pluginsRange.minimumVersionInclusive -ne "17.0.9-alpha.1" -or
             $schemaRange.maximumVersionExclusive -ne "18.0.0" -or
             $pluginsRange.maximumVersionExclusive -ne "18.0.0") {
             throw "Plugin compatibility manifest does not match the supported runtime-v2 ABI: $PackagePath"
@@ -231,5 +232,11 @@ foreach ($artifactEntry in (Get-ArtifactNames -ProjectName $release.PackageId).G
         throw "Plugin package compatibility differs from release metadata: $pluginPackagePath"
     }
 }
+
+& (Join-Path $PSScriptRoot "Assert-ReleaseLicenseArtifacts.ps1") `
+    -PluginName $release.PackageId `
+    -RepositoryRoot $repositoryRoot `
+    -AssetsDirectory (Join-Path $resolvedArtifactDirectory "plugins") `
+    -ExpectedArchiveCount 4 | Out-Null
 
 Write-Host "Release smoke test passed for $Tag." -ForegroundColor Green

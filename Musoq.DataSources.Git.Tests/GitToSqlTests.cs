@@ -580,15 +580,15 @@ public class GitToSqlTests
         var query = @"
             with Commits as (
                 select
-                    c.MinCommit(c.Self) as Min,
-                    c.MaxCommit(c.Self) as Max
+                    c.CommitSha(c.MinCommit(c.Self)) as MinSha,
+                    c.CommitSha(c.MaxCommit(c.Self)) as MaxSha
                 from git.repository('{RepositoryPath}') r
                 cross apply r.Commits c
                 group by 'fake'
             )
             select
-                Min.Sha as MinSha,
-                Max.Sha as MaxSha
+                MinSha,
+                MaxSha
             from Commits;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
         var vm = CreateAndRunVirtualMachine(query);

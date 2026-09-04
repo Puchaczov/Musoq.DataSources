@@ -28,8 +28,15 @@
         <ProjectReference Include="..\Musoq.DataSources.Time\Musoq.DataSources.Time.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.System\Musoq.DataSources.System.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.Archives\Musoq.DataSources.Archives.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.CANBus\Musoq.DataSources.CANBus.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.Docker\Musoq.DataSources.Docker.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.FlatFile\Musoq.DataSources.FlatFile.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.Json\Musoq.DataSources.Json.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.Git\Musoq.DataSources.Git.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.GitHub\Musoq.DataSources.GitHub.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.Jira\Musoq.DataSources.Jira.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.OpenAI\Musoq.DataSources.OpenAI.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.Ollama\Musoq.DataSources.Ollama.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.Roslyn\Musoq.DataSources.Roslyn.csproj"/>
     </ItemGroup>
 

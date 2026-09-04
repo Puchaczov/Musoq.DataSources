@@ -1,4 +1,5 @@
 using Docker.DotNet.Models;
+using Musoq.Plugins.Attributes;
 using Musoq.Schema.Attributes;
 
 namespace Musoq.DataSources.Docker.Images;
@@ -15,6 +16,7 @@ public class ImageEntity(ImagesListResponse response)
     public string? ID => response.ID;
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyDictionary<string, string> Labels => response.Labels?.ToDictionary(
         pair => pair.Key,
         pair => pair.Value) ?? new Dictionary<string, string>();
@@ -23,9 +25,11 @@ public class ImageEntity(ImagesListResponse response)
     public string? ParentID => response.ParentID;
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyList<string> RepoDigests => response.RepoDigests?.ToArray() ?? [];
 
     [EntityProperty]
+    [BindablePropertyAsTable]
     public IReadOnlyList<string> RepoTags => response.RepoTags?.ToArray() ?? [];
 
     [EntityProperty]

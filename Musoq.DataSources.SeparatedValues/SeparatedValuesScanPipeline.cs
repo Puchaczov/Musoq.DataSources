@@ -375,8 +375,23 @@ internal sealed class SeparatedValuesScanPipeline : ISeparatedValuesQueryScanPip
                 rowNumberOffset,
                 skipOverride);
             var completedInput = true;
-            while (reader.TryRead(out var record))
+            while (true)
             {
+                SeparatedValuesUtf8Record record;
+                try
+                {
+                    if (!reader.TryRead(out record))
+                        break;
+                }
+                catch (InvalidDataException exception) when
+                    (exception.Message.Contains("not valid UTF-8", StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException(
+                        $"Separated-values source '{snapshot.Identity.CanonicalPath}' row " +
+                        $"{processor.RowsRead + 1:N0} column '<malformed UTF-8 field>' is not valid UTF-8.",
+                        exception);
+                }
+
                 summaryBuilder?.ObserveRecord(record.StartOffset, record.EndOffset);
                 var shouldContinue = dialect.IsStrict && record.Bytes.IndexOf((byte)'"') < 0
                     ? processor.ProcessUnquoted(record, request.SeparatorByte)

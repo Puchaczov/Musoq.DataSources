@@ -479,10 +479,12 @@ select RelativeName, 'added' as state from ThoseInRight";
     public void Query_ShouldNotThrowException()
     {
         var query =
-            "select DestinationFileRelative, State from os.dirscompare('./Files', './Files')";
+            "select DestinationFileRelative from os.dirscompare('./Files', './Files')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
+
+        Assert.IsNotNull(table);
     }
 
     [TestMethod]

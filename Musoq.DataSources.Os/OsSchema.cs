@@ -451,9 +451,9 @@ public class OsSchema : SchemaBase
                     name,
                     new FilesSource((string)parameters[0], (bool)parameters[1], executionContext));
             case DirectoriesTable:
-                return EnsureSourceType<T, DirectoryInfo>(
+                return EnsureSourceType<T, DirectoryEntity>(
                     name,
-                    new DirectoriesSource((string)parameters[0], (bool)parameters[1], executionContext));
+                    new DirectoryEntitiesSource((string)parameters[0], (bool)parameters[1], executionContext));
             case ZipTable:
                 return EnsureSourceType<T, ZipEntryEntity>(
                     name,

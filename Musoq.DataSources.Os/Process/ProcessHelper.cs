@@ -93,7 +93,10 @@ internal static class ProcessHelper
             new SchemaColumn(nameof(System.Diagnostics.Process.EnableRaisingEvents), 1, typeof(bool)),
             new SchemaColumn(nameof(System.Diagnostics.Process.ExitCode), 2, typeof(int)),
             new SchemaColumn(nameof(System.Diagnostics.Process.ExitTime), 3, typeof(DateTime)),
-            new SchemaColumn(nameof(System.Diagnostics.Process.Handle), 4, typeof(IntPtr)),
+            // IntPtr is a CLR primitive, but it is an opaque process handle rather than a
+            // supported scalar query value. Keep the schema entry while exposing it as an
+            // intentionally non-star-expandable value.
+            new SchemaColumn(nameof(System.Diagnostics.Process.Handle), 4, typeof(object)),
             new SchemaColumn(nameof(System.Diagnostics.Process.HandleCount), 5, typeof(int)),
             new SchemaColumn(nameof(System.Diagnostics.Process.HasExited), 6, typeof(bool)),
             new SchemaColumn(nameof(System.Diagnostics.Process.Id), 7, typeof(int)),
@@ -101,7 +104,9 @@ internal static class ProcessHelper
             new SchemaColumn(nameof(System.Diagnostics.Process.MainWindowTitle), 9, typeof(string)),
             new SchemaColumn(nameof(System.Diagnostics.Process.PagedMemorySize64), 10, typeof(long)),
             new SchemaColumn(nameof(System.Diagnostics.Process.ProcessName), 11, typeof(string)),
-            new SchemaColumn(nameof(System.Diagnostics.Process.ProcessorAffinity), 12, typeof(IntPtr?)),
+            // See Handle above. This remains addressable as schema metadata but is omitted
+            // from SELECT * under primitive result validation.
+            new SchemaColumn(nameof(System.Diagnostics.Process.ProcessorAffinity), 12, typeof(object)),
             new SchemaColumn(nameof(System.Diagnostics.Process.Responding), 13, typeof(bool)),
             new SchemaColumn(nameof(System.Diagnostics.Process.StartTime), 14, typeof(DateTime)),
             new SchemaColumn(nameof(System.Diagnostics.Process.TotalProcessorTime), 15, typeof(TimeSpan)),
