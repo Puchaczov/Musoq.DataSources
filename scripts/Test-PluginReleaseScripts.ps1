@@ -484,8 +484,9 @@ function Test-RoslynReleaseWorkflowGates {
     $workflowPath = Join-Path $PSScriptRoot "../.github/workflows/release-datasource.yml"
     $workflow = Get-Content -LiteralPath $workflowPath -Raw
 
-    Assert-True ($workflow -match 'release_command_line_test_project_path') "Datasource releases should discover companion command-line module tests."
-    Assert-True ($workflow -match 'dotnet test \$env:RELEASE_COMMAND_LINE_TEST_PROJECT_PATH') "Datasource releases should execute companion command-line module tests."
+    Assert-True ($workflow -match 'dotnet build \$env:RELEASE_PROJECT_PATH') "Datasource releases should build the selected datasource before packaging."
+    Assert-True ($workflow -notmatch 'dotnet test') "Datasource releases should rely on the branch Build workflow for solution tests."
+    Assert-True ($workflow -notmatch 'release_(command_line_)?test_project_path') "Datasource releases should not carry redundant test-project plumbing."
     Assert-True ($workflow -match '\./scripts/Test-PluginReleaseScripts\.ps1') "Datasource releases should execute release-script tests."
     Assert-True ($workflow -match 'Pack four-RID release artifacts') "Datasource releases should identify four-RID packaging as a required gate."
     Assert-True ($workflow -match 'Smoke test four-RID release artifacts') "Datasource releases should identify four-RID smoke verification as a required gate."

@@ -4,6 +4,11 @@
 * text=auto
 
 ###############################################################################
+# Keep checked-in release license snapshots byte-stable on Windows.
+###############################################################################
+licenses/release/** text eol=lf
+
+###############################################################################
 # Set default behavior for command prompt diff.
 #
 # This is need for earlier builds of msysgit that does not have it on by
