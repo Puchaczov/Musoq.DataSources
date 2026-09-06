@@ -1,0 +1,270 @@
+{
+  "scopeId": "W13-S01",
+  "status": "passed",
+  "summary": "Specified and validated a versioned JSON byte-pattern schema with exact byte/mask compilation, nibble wildcards, explicit masks, strict diagnostics and no implicit numeric or endianness conversion.",
+  "requirementIds": [
+    "R02",
+    "R07",
+    "R08",
+    "R13"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S16",
+    "S23"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W13-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "dc0220dc6a357dee94c5e2cf3f6c71b6d19c6281",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 66,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W13-S01 implementation; ignored campaign state had W13-S01 in_progress and no other active scope.",
+    "preExistingScopeCommit": "dc0220dc6a357dee94c5e2cf3f6c71b6d19c6281",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W12-S05; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchBytePatternTests.cs",
+      "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "Musoq.DataSources.Search/SearchBytePattern.cs",
+      "Musoq.DataSources.Search/SearchBytePatternParser.cs",
+      "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "docs/search/search-byte-pattern-contract-v1.md",
+      "docs/search/search-source-contract-v1.json",
+      "docs/search/search-source-contract-v1.md"
+    ],
+    "scopeBoundary": "Only the owning repository's Search byte-pattern compiler, diagnostics, focused tests and proposed contract documentation changed, plus this scope's evidence. The Search SQL constructor remains unadvertised and no sibling repository or publication state was changed.",
+    "schema": "Version 1 requires a JSON object with integer version 1 and a bytes string. Bytes are compact or whitespace-separated pairs of hex nibbles; '?' wildcards compile to nibble masks. An optional same-length mask string supplies bit-level comparison masks and cannot coexist with wildcard nibbles.",
+    "semanticBoundary": "Compiled byte order is exactly the order written. Numeric JSON/SQL values, 0x prefixes and endianness options are rejected or diagnosed; no conversion or guessed byte array interpretation occurs.",
+    "safetyBoundary": "Input size is bounded before JSON parsing, duplicate and unknown properties are rejected, invalid syntax/arguments use SEARCH-SYNTAX-003, and compiled byte/mask arrays are copied into equal-length read-only memory."
+  },
+  "tests": {
+    "discovered": 1605,
+    "passed": 1571,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "bytePatternFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchBytePatternTests",
+      "discovered": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "Exact bytes compile with an implicit full mask.",
+        "Nibble wildcards compile to exact byte and mask sequences, including all-wildcard bytes.",
+        "Explicit nibble masks compile with preserved byte order.",
+        "Odd hex, invalid bytes, numeric-like prefixes, empty patterns, conflicts, versions and duplicate properties produce actionable typed diagnostics."
+      ]
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 321,
+      "passed": 318,
+      "failed": 0,
+      "skipped": 3
+    },
+    "contractHarnesses": {
+      "scenarios": 27,
+      "assertions": 314,
+      "passed": true,
+      "harnesses": [
+        "Test-SearchSourceContract.ps1: 7 scenarios, 52 assertions",
+        "Test-SearchRequestContract.ps1: 4 scenarios, 45 assertions",
+        "Test-SearchMatchSemantics.ps1: 6 scenarios, 49 assertions",
+        "Test-SearchScopeSemantics.ps1: 6 scenarios, 44 assertions",
+        "Test-SearchCompletionSemantics.ps1: 4 scenarios, 124 assertions"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "byte-pattern-focused-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchBytePatternTests",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 321,
+      "passed": 318,
+      "failed": 0,
+      "skipped": 3
+    },
+    {
+      "kind": "search-test-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "source-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchSourceContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 7,
+      "assertions": 52
+    },
+    {
+      "kind": "request-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchRequestContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 45
+    },
+    {
+      "kind": "match-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchMatchSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 49
+    },
+    {
+      "kind": "scope-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchScopeSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 44
+    },
+    {
+      "kind": "completion-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchCompletionSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 124
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1605,
+      "passed": 1571,
+      "failed": 0,
+      "skipped": 34
+    },
+    {
+      "kind": "campaign-validation",
+      "argv": "python docs/campaigns/search/validate_campaign.py docs/campaigns/search/campaign.json --repo-root . --track core",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "status": "valid before completion transition; activeScope=W13-S01"
+    },
+    {
+      "kind": "diff-and-contract-validation",
+      "argv": "git diff --check; JSON parse validation for docs/search/search-source-contract-v1.json",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release owning-repository suite completed across 21 projects with 1,605 total tests, 1,571 passed, 0 failed and 34 classified skips; the focused Search and byte-pattern suites also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved strict transport validation, exact mask semantics, diagnostics, resource bounds and the proposed-surface boundary; source hashes and the review artifact are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused compiler tests assert exact byte and mask arrays for exact bytes, nibble wildcards, explicit nibble masks and wildcard-only patterns, plus required rejection cases."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The machine-readable and human-readable proposed source contracts agree on the versioned patternJson transport, while the Search schema remains unadvertised until later implementation scopes."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Pattern input is bounded before parsing, duplicate/unknown options are rejected, no global mutable state is used and compiled byte/mask storage is copied with equal lengths."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchBytePatternTests.cs",
+      "sha256": "e6411fe7f75ff7a2ca78f5a9652cf602a92734f1837f105d8618e0819b2520c8"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "sha256": "e36c106301f511b5cb375eabfbff9b2eda94479bbc140a11741aee19bb165ee7"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchBytePattern.cs",
+      "sha256": "85a415c028279636dc4625911808512f1c21ebb3a872de4e1ce6b0657b98f0e8"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchBytePatternParser.cs",
+      "sha256": "455bea0282125caa627fc53924a8f9d06c2359a28453d7f901a21ec5e0cfa571"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "sha256": "23cd7772cee0952798926611ba5df6e652960b045902c14a30a31c4be9b159d5"
+    },
+    {
+      "path": "docs/search/search-byte-pattern-contract-v1.md",
+      "sha256": "b2f6bc814a887db6eee5593d7687b548552c518301469d967e6c2ed8fd3ed0fb"
+    },
+    {
+      "path": "docs/search/search-source-contract-v1.json",
+      "sha256": "7ae8368838bdbb75f5819bad04638fe24c438adcbc4805db708645ac493e88cc"
+    },
+    {
+      "path": "docs/search/search-source-contract-v1.md",
+      "sha256": "15c73ee4b798ed72d800a905241499f350c3f0398c135d9b0aaca3ff865ec83c"
+    }
+  ],
+  "sourceDigest": "4a9445c2844f760612c6eabc23a732f49a208c8e94eceae70ea63bf89af765b9",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W13-S01/review.md",
+      "sha256": "3a4158e70a8739b708c55e943a24af6663c9564ebd2deb9ce77e0561517dd1a1"
+    }
+  ],
+  "knownLimitations": [
+    "This scope compiles patterns but does not implement Search.bytes scanning or SQL constructor registration; those remain later W13 scopes.",
+    "All-zero masks are valid wildcard patterns and can create high-cardinality output; the later scanner must enforce existing match/output budgets.",
+    "The proposed source contract remains explicitly proposed until constructor metadata, XML and compiled-query tests agree.",
+    "The repository suite retained 34 classified skips: 31 expected and 3 platform-conditional symlink skips, plus existing package-audit/compiler warnings.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

@@ -11,7 +11,6 @@ using Musoq.Converter.Exceptions;
 using Musoq.DataSources.Tests.Common;
 using Musoq.DataSources.Structured;
 using Musoq.Evaluator;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 

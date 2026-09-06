@@ -1,0 +1,11 @@
+  Musoq.DataSources.Tests.Common -> D:\repos\Musoq.DataSources\Musoq.DataSources.Tests.Common\bin\Release\net10.0\Musoq.DataSources.Tests.Common.dll
+  Musoq.DataSources.Search -> D:\repos\Musoq.DataSources\Musoq.DataSources.Search\bin\Release\net10.0\Musoq.DataSources.Search.dll
+  Musoq.DataSources.Search.Benchmarks -> D:\repos\Musoq.DataSources\Musoq.DataSources.Search.Benchmarks\bin\Release\net10.0\Musoq.DataSources.Search.Benchmarks.dll
+  Musoq.DataSources.Search.Tests -> D:\repos\Musoq.DataSources\Musoq.DataSources.Search.Tests\bin\Release\net10.0\Musoq.DataSources.Search.Tests.dll
+Test run for D:\repos\Musoq.DataSources\Musoq.DataSources.Search.Tests\bin\Release\net10.0\Musoq.DataSources.Search.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+  Skipped DefaultPolicy_ShouldExcludeReparseEntriesAndBrokenLinks [7 ms]
+  Skipped FollowPolicy_ShouldGuardCyclesAndDuplicateDirectoryIdentities [1 ms]
+  Skipped FollowPolicy_ShouldRejectOutsideRootTargets [1 ms]
+
+Passed!  - Failed:     0, Passed:    73, Skipped:     3, Total:    76, Duration: 3 s - Musoq.DataSources.Search.Tests.dll (net10.0)

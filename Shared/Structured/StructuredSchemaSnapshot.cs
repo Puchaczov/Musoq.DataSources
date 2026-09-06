@@ -4,7 +4,6 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Structured;

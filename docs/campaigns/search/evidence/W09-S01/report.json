@@ -1,0 +1,365 @@
+{
+  "scopeId": "W09-S01",
+  "status": "passed",
+  "summary": "Implemented projection-aware bounded before/after physical-line context for occurrence rows, preserving match cardinality and coordinates while enforcing a conservative UTF-8 context budget.",
+  "requirementIds": [
+    "R01",
+    "R06",
+    "R07",
+    "R08",
+    "R10"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S16",
+    "S22"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W09-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "bd499469d0e013dd8d65d3e65b1c340ee5c8e83b",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 46,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W09-S01 as in_progress.",
+    "preExistingScopeCommit": "bd499469d0e013dd8d65d3e65b1c340ee5c8e83b",
+    "aheadNote": "The ahead count includes the reachable completed Search scope commits through W08-S05 and other pre-existing branch commits; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchContextTests.cs",
+      "Musoq.DataSources.Search.Tests/SearchManyTableInputTests.cs",
+      "Musoq.DataSources.Search.Tests/SearchProjectionTests.cs",
+      "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "Musoq.DataSources.Search/SearchContextLine.cs",
+      "Musoq.DataSources.Search/SearchContextOptions.cs",
+      "Musoq.DataSources.Search/SearchContextText.cs",
+      "Musoq.DataSources.Search/SearchContracts.cs",
+      "Musoq.DataSources.Search/SearchCountsSource.cs",
+      "Musoq.DataSources.Search/SearchFilesSource.cs",
+      "Musoq.DataSources.Search/SearchLinesSource.cs",
+      "Musoq.DataSources.Search/SearchMatch.cs",
+      "Musoq.DataSources.Search/SearchMatchesHelper.cs",
+      "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "Musoq.DataSources.Search/SearchProjectionPolicy.cs",
+      "Musoq.DataSources.Search/SearchRegexScanner.cs",
+      "Musoq.DataSources.Search/SearchSchema.cs",
+      "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "Musoq.DataSources.Search/SearchTextSinks.cs",
+      "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "docs/search/search-context-contract-v1.md",
+      "docs/search/search-projection-policy-v1.md",
+      "docs/search/search-sink-contract-v1.md",
+      "docs/search/search-source-contract-v1.json",
+      "docs/search/search-source-contract-v1.md"
+    ],
+    "scopeBoundary": "Only Search implementation, Search tests, and Search contract documentation were changed. The existing two-argument SQL constructors and ratified many-pattern request remain unchanged; context enablement is an internal execution seam until a later public request contract scope.",
+    "semantics": {
+      "rowUnit": "one SearchMatch row per non-overlapping occurrence",
+      "contextOrder": "ascending physical-line order with negative before-line and positive after-line relative values",
+      "matchingLine": "not repeated in Context",
+      "limits": {
+        "maximumContextLines": 128,
+        "maximumContextBytes": 1048576,
+        "defaultContextBytes": 65536,
+        "budget": "UTF-8 byte budget divided conservatively across requested context lines per emitted window"
+      }
+    },
+    "coverage": [
+      "Overlapping windows and repeated occurrences on one physical line",
+      "Beginning/end-of-file clipping and exact one-based line numbers",
+      "CRLF retained across reader-block boundaries",
+      "Long context-line UTF-8 byte budgeting",
+      "Absent Context projection and preserved occurrence fast path",
+      "Physical regex record completion"
+    ]
+  },
+  "tests": {
+    "discovered": 1489,
+    "passed": 1455,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedContextSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "requiredCoverage": [
+        "Overlapping windows",
+        "BOF and EOF",
+        "CRLF across reader blocks",
+        "Long context lines and explicit byte budget",
+        "Absent context projection"
+      ]
+    },
+    "focusedSearchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 205,
+      "passed": 202,
+      "failed": 0,
+      "skipped": 3
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "context-focused-tests",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchContextTests",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W09-S01/context-focused.log",
+      "stdoutSha256": "06f89e7b5f00cf18fddbd7f5d03de9d17a37ffb637c44a540280e6e2f87688ea",
+      "stderrPath": "docs/campaigns/search/evidence/W09-S01/context-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 205,
+      "passed": 202,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W09-S01/search-focused.log",
+      "stdoutSha256": "658db9551712aba9e0648a88ccd48e471d5b258802a1024364647f3c7895af77",
+      "stderrPath": "docs/campaigns/search/evidence/W09-S01/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-production-build",
+      "argv": "dotnet build .\\Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W09-S01/search-build.log",
+      "stdoutSha256": "14b73ba7379a2cc89b9e452d5cf34a890090cd6ec80fd439d38e3fc283cf840c",
+      "stderrPath": "docs/campaigns/search/evidence/W09-S01/search-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture and retained process handle.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1489,
+      "passed": 1455,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W09-S01/full-suite-exact.log",
+      "stdoutSha256": "d1ab4572a579962625be8c2d9677a7085e6c1408145d56443163dfc9b239b7d4",
+      "stderrPath": "docs/campaigns/search/evidence/W09-S01/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "contract-and-diff-validation",
+      "argv": "Get-Content -Raw -LiteralPath docs/search/search-source-contract-v1.json | ConvertFrom-Json | Out-Null; dotnet build .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore -warnaserror; git diff --check",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "Python 3.13.1",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release suite exited 0 across 21 projects with 1,489 total tests, 1,455 passed, 0 failed and 34 classified skips; the Search focused and context-focused suites also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved bounded context buffering, row-unit preservation, projection gating, immutable output, budget enforcement and documented public-contract boundaries."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Context-enabled and compact direct scans produced identical occurrence counts, MatchIndex values and physical line coordinates across overlapping, BOF/EOF, CRLF and long-line fixtures."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The typed Context schema column and SearchContextLine fields compile through Cross Apply; existing constructor metadata and the ratified many request remain unchanged."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Context text is copied into immutable rows, line text is bounded before retention, pending windows flush at their declared after distance or EOF, and no package was published or installed."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchContextTests.cs",
+      "sha256": "527212152a22c18ce6cab419ae621a519abeb5a0d675912453d2f7cad930a9dc"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchManyTableInputTests.cs",
+      "sha256": "27d4760d7cbce01a61f5320bc765927bad01bf9ae95c6156169251fc8361c234"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchProjectionTests.cs",
+      "sha256": "22250b2f433127cd7ec06afcae8fb9c8b68f05598a9a49038195c5ca37150bd8"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "sha256": "aa1587e9ba4d4def3c0ab7a36463481116b671bd7eb56b03dbe9da889635fb6e"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchContextLine.cs",
+      "sha256": "5437c194d2d76bc5901c98e1043f8f771e29d622ae0ffaf2dcee999bb7948944"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchContextOptions.cs",
+      "sha256": "2a848a9f72fecc8a89cbbdc3e3f25d500fcfd33611e7b4900d65dd59591fbfcd"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchContextText.cs",
+      "sha256": "3b60394dd42b8ec82a6bea5b471c001f933e562802389badd920d52ac60b4ee2"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchContracts.cs",
+      "sha256": "afee899d16864f22f986aa2ff15425630d609c07dcceb85ce01af7659880250a"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchCountsSource.cs",
+      "sha256": "ddea9066ba8a7a67500214b061cabcd0fad5f071d58e9db38e1bf96c248233c7"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchFilesSource.cs",
+      "sha256": "6413f8de20adcc114d8ac3c251fdb75ab498cc485102794275de17fda8f13f96"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchLinesSource.cs",
+      "sha256": "617ce59f45782a89b55a508b3ea2a75f4f4cd5e5f9dd1dd88777a8d284bb876d"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatch.cs",
+      "sha256": "69c64f062c895f6d9a08c77446e74c5425b398a2dfcf0e80279cc10f11fb93fc"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatchesHelper.cs",
+      "sha256": "e6b48ef3b74b5a694755eb9018f1f361933c536cb3682eebd187a1db57e25212"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "sha256": "2f4fa0ef0c73cc73479be7e791902d09158f878cb6e3c4211e8160cfade03542"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchProjectionPolicy.cs",
+      "sha256": "617c647189bc48ec47a8763af9d83ef5d2d809c95c5303c86b7781df8e2d020d"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchRegexScanner.cs",
+      "sha256": "f5c5a9d26212af391ee45d36187e98f8f9646bff2ad685dbadd0273d87177545"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchSchema.cs",
+      "sha256": "e4547aa431e9cef1adcc96ee1456efd8895d6e2c8f96030822ef94dc0647ea47"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "sha256": "0d0c36a5df27ff7f2a2cfa2d81b7e0d4d4660cdc2b940a02d3ce6155c743ca38"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSinks.cs",
+      "sha256": "90adea4f98e36f09e4da1e3a87fc4e19e6867b6ccbb643010ee9cb5f291bbf2c"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "sha256": "48da21a6e86d4e016b96e8038ff4094bfed578adc00843e8683a789c3178c2f1"
+    },
+    {
+      "path": "docs/search/search-context-contract-v1.md",
+      "sha256": "0847114330af15948abb3767776289b19d438bf643978a6eab0df3865229a80f"
+    },
+    {
+      "path": "docs/search/search-projection-policy-v1.md",
+      "sha256": "f2c2875693a2575ae795efbd4cdeb64a917123b0bdd30b21cf4e95055e632e46"
+    },
+    {
+      "path": "docs/search/search-sink-contract-v1.md",
+      "sha256": "973caa5984946a54d393b72760f3e18e93770cb5b22d3e2349e0083422b5c5fd"
+    },
+    {
+      "path": "docs/search/search-source-contract-v1.json",
+      "sha256": "efc76173b92a7370d157cdfc89795e81d4f7a540fefdb31d8972b493c072b3ba"
+    },
+    {
+      "path": "docs/search/search-source-contract-v1.md",
+      "sha256": "08b77ad043153ec2f3d2f1f2a0ef3d7b1c5c2a9ac20b256eefa08ab05bacafb1"
+    }
+  ],
+  "sourceDigest": "2ad8f0e881f53cdb1a19786300eaa14fe276b0b50ba25678d0e5ffd3d97bb0f9",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/context-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/context-focused.log",
+      "sha256": "06f89e7b5f00cf18fddbd7f5d03de9d17a37ffb637c44a540280e6e2f87688ea"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/full-suite-exact.log",
+      "sha256": "d1ab4572a579962625be8c2d9677a7085e6c1408145d56443163dfc9b239b7d4"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/review.md",
+      "sha256": "3e290d65b945397ba5598da6a2b6d3077eb5d38d56421678f26793845f3492e4"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/search-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/search-build.log",
+      "sha256": "14b73ba7379a2cc89b9e452d5cf34a890090cd6ec80fd439d38e3fc283cf840c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S01/search-focused.log",
+      "sha256": "658db9551712aba9e0648a88ccd48e471d5b258802a1024364647f3c7895af77"
+    }
+  ],
+  "knownLimitations": [
+    "The current public two-argument SQL request keeps context disabled; public request/runtime-setting exposure is deferred to a later scope.",
+    "The many-pattern scalar request exposes the Context schema column but does not enable context and therefore emits an empty collection.",
+    "Context text is budgeted conservatively per emitted window; shared line storage and stale-source expansion remain W09-S02 work.",
+    "No package was published, pushed, released or installed."
+  ]
+}

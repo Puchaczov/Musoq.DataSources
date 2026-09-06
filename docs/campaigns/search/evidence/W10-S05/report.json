@@ -1,0 +1,223 @@
+{
+  "scopeId": "W10-S05",
+  "status": "passed",
+  "summary": "Added seeded planner differential, public projection and cross-source integration coverage. Accepted Search execution plans now have a regression suite comparing source execution with a reject-all baseline while preserving residual predicates, ordering and slices.",
+  "requirementIds": [
+    "R01",
+    "R02",
+    "R09",
+    "R11"
+  ],
+  "sourceReferences": [
+    "S03",
+    "S04",
+    "S14",
+    "S15"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W10-S05/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "c80d08d0588afe3314808e64d7e16dec096e6979",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 55,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W10-S05 as in_progress.",
+    "preExistingScopeCommit": "c80d08d0588afe3314808e64d7e16dec096e6979",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W10-S04; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchPlannerDifferentialTests.cs"
+    ],
+    "scopeBoundary": "Only the owning repository's Search test assembly changed, plus this scope's campaign evidence. No production source, sibling repository, public API, package version or publication state changed.",
+    "differentialMatrix": "Eleven seeded combinations cover accepted predicate plus slice plans for all five supported row shapes, mixed accepted/residual predicates for matches and lines, and residual descending order plus slices. Each planned result is compared with a SourceExecutionPlan.Empty reject-all baseline after applying the appropriate residual operations.",
+    "projectionCoverage": "Every public field on SearchMatch, SearchLine, SearchFile, SearchCount and SearchPath is requested individually, checked in SourcePlanResult.AcceptedColumns and ExecutionPlan.AcceptedColumns, and read from an emitted row.",
+    "integrationCoverage": "A compiled paths-to-matches join verifies accepted EntryKind and LineNumber predicates, stable relative-path identity, coordinate-field projection and residual descending order plus TAKE.",
+    "scopeSafety": "The tests make no claim about generic aggregate pushdown or CTE scan fusion. All planner helpers and row signatures remain test-local."
+  },
+  "tests": {
+    "discovered": 1541,
+    "passed": 1507,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "plannerDifferentialFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchPlannerDifferentialTests",
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "seededCombinations": 11,
+      "scenarios": [
+        "Reject-all differential matrix for accepted and residual predicate/order/slice combinations",
+        "Every public projection field mirrored in SourcePlanResult and ExecutionPlan",
+        "Compiled paths-to-matches cross-source join with accepted fields and residual window"
+      ]
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 257,
+      "passed": 254,
+      "failed": 0,
+      "skipped": 3
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "planner-differential-focused",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchPlannerDifferentialTests",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W10-S05/planner-differential-focused.log",
+      "stdoutSha256": "25ebad333587d33e5229b2531aace316f707ec445aad7bc3c1138a805e174bee",
+      "stderrPath": "docs/campaigns/search/evidence/W10-S05/planner-differential-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-project-build",
+      "argv": "dotnet build .\\Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W10-S05/search-build.log",
+      "stdoutSha256": "14b73ba7379a2cc89b9e452d5cf34a890090cd6ec80fd439d38e3fc283cf840c",
+      "stderrPath": "docs/campaigns/search/evidence/W10-S05/search-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 257,
+      "passed": 254,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W10-S05/search-focused.log",
+      "stdoutSha256": "1c7dae430b17107c0ce9bf97431f4c84423d8d4338b830c1b19701f538faa209",
+      "stderrPath": "docs/campaigns/search/evidence/W10-S05/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture and a retained process handle; wrapper returned EXIT_CODE=0.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1541,
+      "passed": 1507,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W10-S05/full-suite-exact.log",
+      "stdoutSha256": "ab66146895971467faab7f10c1acdf105c9826cf7cab51465f3db74c98651ee2",
+      "stderrPath": "docs/campaigns/search/evidence/W10-S05/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; source manifest and artifact hash validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "Python 3.13.1",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "AMD64",
+    "osArchitecture": "AMD64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release suite passed across 21 projects with 1,541 total tests, 1,507 passed, 0 failed and 34 classified skips; the Search suite and planner-focused tests also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved the test-only boundary, reject-all differential model, full public projection coverage and cross-source regression; exact commands, tool versions, source/artifact hashes and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused tests cover seeded accepted and residual predicates, ordering and slicing across all supported Search row shapes, every public projection field, and a compiled paths-to-matches join."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The warnings-as-errors Search build passed, and the execution-plan differential confirms accepted source work plus residual Core work produce the same row signatures as the reject-all baseline."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchPlannerDifferentialTests.cs",
+      "sha256": "ef4b09aaa91e02546f501ec0012ba722d85dafc1f399e016e746ca6e6c48762e"
+    }
+  ],
+  "sourceDigest": "62ee4e00a8d6d8ce92864588bb72b5a81ec3250cc3c85b98962ac891b129c98c",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/full-suite-exact.log",
+      "sha256": "ab66146895971467faab7f10c1acdf105c9826cf7cab51465f3db74c98651ee2"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/planner-differential-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/planner-differential-focused.log",
+      "sha256": "25ebad333587d33e5229b2531aace316f707ec445aad7bc3c1138a805e174bee"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/review.md",
+      "sha256": "37c0f91e0a66cd7605f1cccadb4b5f3fa4470254e3041a3fb36108de8432873a"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/search-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/search-build.log",
+      "sha256": "14b73ba7379a2cc89b9e452d5cf34a890090cd6ec80fd439d38e3fc283cf840c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S05/search-focused.log",
+      "sha256": "1c7dae430b17107c0ce9bf97431f4c84423d8d4338b830c1b19701f538faa209"
+    }
+  ],
+  "knownLimitations": [
+    "The differential harness covers the current five supported source shapes; the many source remains outside accepted planner operations and is not treated as an accepted-field case.",
+    "The reject-all baseline compares materialized typed rows and applies residual operations in test code; it is a semantic regression oracle, not a benchmark or a claim about host plan construction.",
+    "The compiled integration case covers one inner join and does not claim generic aggregate pushdown, CTE scan fusion or global ORDER BY pushdown.",
+    "No package was published, pushed, released or installed."
+  ]
+}

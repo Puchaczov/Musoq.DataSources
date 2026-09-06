@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
-using Musoq.Evaluator;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Archives.Tests;

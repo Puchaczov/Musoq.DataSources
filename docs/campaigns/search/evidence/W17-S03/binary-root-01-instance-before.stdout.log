@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "mode": "InstallationScoped",
+  "resolutionStatus": "Resolved",
+  "installationDirectory": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation",
+  "instanceIdentity": "installation-v2:771656a8f71d6dd18e3b247ad97a5bd9c81af94fa4decc2aaff3c7acb7b61396",
+  "manifest": {
+    "present": true,
+    "valid": true,
+    "path": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\musoq.bootstrap.json",
+    "schemaVersion": 1,
+    "fingerprint": "sha256:df1c2010bb7d833d2a72c73032cdaafabb452d463ecf4755bfa7a8f00e5ea53c"
+  },
+  "paths": {
+    "stateRoot": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation",
+    "home": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\state\\home",
+    "temp": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\state\\temp",
+    "cache": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\state\\cache",
+    "logs": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\state\\logs",
+    "config": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\state\\config",
+    "userSettingsFile": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\state\\config\\appsettings.json",
+    "dataSources": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\state\\datasources",
+    "runtimeDirectory": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\.musoq-runtime\\32a1990a4393e2846778b734c10375ce3fbfc3391ee0323052bf5eb3b2e330b7",
+    "lockFile": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\.musoq-runtime\\32a1990a4393e2846778b734c10375ce3fbfc3391ee0323052bf5eb3b2e330b7\\server.lock",
+    "runtimeDescriptor": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\.musoq-runtime\\32a1990a4393e2846778b734c10375ce3fbfc3391ee0323052bf5eb3b2e330b7\\runtime.json",
+    "endpointRegistry": "D:\\repos\\Musoq.DataSources\\artifacts\\clean-host\\W17-S03\\9c0d6b86c0e347c8b838d9faeab2a5e1\\installation\\.musoq-runtime\\32a1990a4393e2846778b734c10375ce3fbfc3391ee0323052bf5eb3b2e330b7\\musoq.conf"
+  },
+  "transport": {
+    "policy": "Ephemeral",
+    "policySource": "musoq.bootstrap.json:transport.httpPort",
+    "bindAddress": "localhost",
+    "configuredHttpPort": null,
+    "configuredFixedPort": null,
+    "derivedFirstCandidate": null,
+    "effectiveHttpPort": null,
+    "probeOrdinal": null
+  },
+  "runtime": {
+    "descriptorStatus": "Missing",
+    "state": null,
+    "instanceIdentity": null,
+    "processId": null,
+    "processStartTimeUtc": null,
+    "version": null,
+    "effectiveAddress": null,
+    "effectiveHttpPort": null,
+    "probeOrdinal": null,
+    "startedAtUtc": null,
+    "updatedAtUtc": null,
+    "stoppedAtUtc": null
+  },
+  "allMusoqOwnedPathsContainedByInstallation": true,
+  "runtimePathReadyForServerWrites": true,
+  "diagnostics": []
+}

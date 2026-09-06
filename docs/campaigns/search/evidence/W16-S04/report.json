@@ -1,0 +1,279 @@
+{
+  "scopeId": "W16-S04",
+  "status": "passed",
+  "summary": "Qualified Search resource stability on deterministic repeated, growing, retained-evidence, cache-pressure, cancellation, resource-limit and concurrent-user workloads; observed post-GC process handles within declared host slack and retained all external resource residuals explicitly.",
+  "requirementIds": [
+    "R02",
+    "R08",
+    "R11",
+    "R12",
+    "R15"
+  ],
+  "sourceReferences": [
+    "S04",
+    "S10",
+    "S20",
+    "S21",
+    "S22"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W16-S04/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "975a913b2ec764d49b5d369f150f5e2fc78a7fe3",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 84,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W16-S04 implementation; ignored campaign state had W16-S04 in_progress and no other active scope.",
+    "preExistingScopeCommit": "975a913b2ec764d49b5d369f150f5e2fc78a7fe3",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W16-S03; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Benchmarks/Program.cs",
+      "Musoq.DataSources.Search.Benchmarks/SearchResourceStabilityMeasurement.cs",
+      "Musoq.DataSources.Search.Tests/SearchResourceStabilityResultsTests.cs",
+      "Musoq.DataSources.Search/SearchFileParallelCoordinator.cs",
+      "docs/search/search-resource-stability-results-v1.json",
+      "docs/search/search-resource-stability-results-v1.md"
+    ],
+    "scopeBoundary": "Only the owning repository's Search implementation, benchmark, contract-test and documentation surfaces plus W16-S04 evidence changed. No sibling repository was edited and no package was published.",
+    "measurementContract": "The runner creates a deterministic fixture, warms the concurrent worker shape before baseline sampling, exercises repeated and growing exact-result scans, retained context, regex-cache pressure, mid-read cancellation, a match-count limit and isolated concurrent contexts, then forces collection and records host process observations.",
+    "resourceBoundary": "Managed/native memory values are observational. The deterministic cleanup assertion is supported post-GC handle growth within eight handles of the warmed baseline; no universal memory ceiling is claimed."
+  },
+  "tests": {
+    "discovered": 1662,
+    "passed": 1628,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "resourceStabilityFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchResourceStabilityResultsTests",
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 374,
+      "passed": 371,
+      "failed": 0,
+      "skipped": 3
+    },
+    "benchmarkBuild": {
+      "project": "Musoq.DataSources.Search.Benchmarks",
+      "warnings": 0,
+      "errors": 0
+    },
+    "benchmarkRun": {
+      "command": "measure-resource-stability",
+      "exitCode": 0,
+      "repeatedIterations": 20,
+      "growthCases": 4,
+      "retainedEvidenceIterations": 6,
+      "cancellationIterations": 8,
+      "concurrentUsers": 8,
+      "concurrentRounds": 4,
+      "handleGrowthWithinSlack": true
+    },
+    "fullSuite": {
+      "projectCount": 21,
+      "discovered": 1662,
+      "passed": 1628,
+      "failed": 0,
+      "skipped": 34
+    },
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    },
+    "fullSuiteWarningNote": "The owning suite retained the repository's existing generated-code/compiler warnings outside the Search build; no W16-S04 test failed and the benchmark build itself reported 0 warnings and 0 errors."
+  },
+  "benchmark": {
+    "platform": "windows-x64",
+    "runtime": ".NET 10.0.11",
+    "processorCount": 24,
+    "sourceHeadBeforeScope": "975a913b2ec764d49b5d369f150f5e2fc78a7fe3",
+    "harnessPath": "Musoq.DataSources.Search.Benchmarks/SearchResourceStabilityMeasurement.cs",
+    "harnessSha256": "9997e4ecf25e248dcdc485908e7799b9501fb7a98f86a55f0c1a52b9db8cefc8",
+    "rawPath": "docs/campaigns/search/evidence/W16-S04/measure-resource-stability.json",
+    "rawSha256": "9f43535b87fa450ca18106b3dcd0d3461dfdfe66b65635d3b3f1559ce2131b85",
+    "fixtureDigest": "0ce8dd82214c23a3fb767b025c9e05b122db249939543d53577a9561ed8f50b1",
+    "repeatedNormalizedResultHash": "508d0b293cf08700b83abdd89ecd9899db53feb52c954e1df766cd2889b535e0",
+    "expectedGrowthRows": [1, 8, 64, 256],
+    "postCollectionHandleCount": 390,
+    "baselineHandleCount": 385,
+    "handleGrowthSlack": 8,
+    "handleGrowthWithinSlack": true
+  },
+  "commands": [
+    {
+      "kind": "benchmark-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Benchmarks/Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-restore --nologo",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W16-S04/benchmark-build.log",
+      "stderrPath": "docs/campaigns/search/evidence/W16-S04/benchmark-build.err.log"
+    },
+    {
+      "kind": "benchmark-measure-resource-stability",
+      "argv": "dotnet run --project Musoq.DataSources.Search.Benchmarks/Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-build --no-launch-profile -- measure-resource-stability",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W16-S04/measure-resource-stability.json",
+      "stderrPath": "docs/campaigns/search/evidence/W16-S04/measure-resource-stability.err.log"
+    },
+    {
+      "kind": "resource-stability-focused-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests/Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --no-build --nologo --filter FullyQualifiedName~SearchResourceStabilityResultsTests --logger console;verbosity=minimal",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests/Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --no-build --nologo --logger console;verbosity=minimal",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 374,
+      "passed": 371,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W16-S04/search-suite.log",
+      "stderrPath": "docs/campaigns/search/evidence/W16-S04/search-suite.err.log"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release --no-restore --verbosity quiet --logger console;verbosity=minimal",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1662,
+      "passed": 1628,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W16-S04/full-suite.log",
+      "stderrPath": "docs/campaigns/search/evidence/W16-S04/full-suite.err.log"
+    },
+    {
+      "kind": "campaign-validation-before-completion",
+      "argv": "python docs/campaigns/search/validate_campaign.py docs/campaigns/search/campaign.json --repo-root . --track core",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "status": "valid with activeScope=W16-S04 before completion transition"
+    },
+    {
+      "kind": "raw-json-hash-and-diff-validation",
+      "argv": "JSON parse, raw-artifact SHA-256 validation, source-manifest validation and git diff --cached --check",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "python": "3.13.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The final owning-repository suite completed across 21 projects with 1,662 tests, 1,628 passed, 0 failed and 34 classified skips; the Search suite, focused contract tests and benchmark build also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved the repeated/growing exact-result checks, cancellation and budget cleanup, cache bound, concurrent isolation and explicitly host-specific resource interpretation."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Three contract tests validated the frozen harness pin, raw output hash and deterministic workload/terminal/cleanup invariants; the benchmark emitted empty stderr and exit code 0."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Benchmarks/Program.cs",
+      "sha256": "49c029190257b747aa2d4c1e4ebee3f03d3acf25dd1c216fc3e3e68142852d01"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Benchmarks/SearchResourceStabilityMeasurement.cs",
+      "sha256": "9997e4ecf25e248dcdc485908e7799b9501fb7a98f86a55f0c1a52b9db8cefc8"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchResourceStabilityResultsTests.cs",
+      "sha256": "3bd4e2cfda4d0d4bbe17c4d59ddbcb68647ac78d242580ebc1e0aac1c231b299"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchFileParallelCoordinator.cs",
+      "sha256": "be191b4c2aa1f396f45309d5bf4949f28ae0c89e3fef531cf030cf365b88e8c5"
+    },
+    {
+      "path": "docs/search/search-resource-stability-results-v1.json",
+      "sha256": "5370f5aea705c0bad1e11c5329802b8c3fbfbe0169c03a42a5049fc398b82777"
+    },
+    {
+      "path": "docs/search/search-resource-stability-results-v1.md",
+      "sha256": "d95b11f945f4d6c7d36bcb87d5278269d97ef1153071c82b2c1f6ff88a315401"
+    }
+  ],
+  "sourceDigest": "032a5c52b12271e69e5a21413d49e73947d2d9f0e45ffbe7143592de8d5bf0c0",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/review.md",
+      "sha256": "a5848465ba4d2fede60043dd1584e80bd16265ec645e91bfd8e42b92d7a62042"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/benchmark-build.log",
+      "sha256": "089f5cdcf8db6a55469f90323ea39dc45dd0ed6ffb1f5d424d2cffb67af6ba39"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/benchmark-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/measure-resource-stability.json",
+      "sha256": "798bad86b2ac67a49b806a96ff56fa276cecc3b641425fb5a160c6655b67fa1c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/measure-resource-stability.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/search-suite.log",
+      "sha256": "ad4daafb11f2ffd1800466cae13ed255a6cbfd33780cadf826ce50f743af60ba"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/search-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/full-suite.log",
+      "sha256": "753a0852c4eb808afca6687345682cdf9c4c73a11b4506b837c6f106afe743bb"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W16-S04/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "Process memory values are host- and runtime-dependent observations; no universal memory ceiling is claimed.",
+    "The concurrent worker shape is warmed before the baseline because process handle counts include runtime/thread-pool handles; this is not evidence that the host's absolute handle count is stable across environments.",
+    "This scope qualifies in-process datasource behavior only; long-lived service, cross-process and production-load qualification remain external boundaries.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

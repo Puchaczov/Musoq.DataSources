@@ -173,7 +173,7 @@ dotnet run --project Musoq.DataSources.SeparatedValues.Benchmark\Musoq.DataSourc
   --disassembly BenchmarkDotNet.Artifacts\native-only-final-20260820\query-row-jit-disasm.txt
 ```
 
-Raw reports and JIT dumps remain ignored. The frozen baseline implementation is tracked in `Musoq.DataSources.SeparatedValues.Benchmark/FrozenByteNativeLegacySchema.cs`.
+Raw reports and JIT dumps remain ignored. The frozen baseline implementation is tracked in `Musoq.DataSources.SeparatedValues.Benchmark/Comparisons/FrozenByteNativeLegacySchema.cs`.
 
 ### Final median results
 

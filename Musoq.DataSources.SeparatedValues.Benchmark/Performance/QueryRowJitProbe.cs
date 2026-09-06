@@ -1,3 +1,5 @@
+using Musoq.DataSources.SeparatedValues.Benchmark.Measurements;
+
 namespace Musoq.DataSources.SeparatedValues.Benchmark.Performance;
 
 internal static class QueryRowJitProbe

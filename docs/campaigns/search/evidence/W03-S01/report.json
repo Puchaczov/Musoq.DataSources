@@ -1,0 +1,260 @@
+{
+  "scopeId": "W03-S01",
+  "status": "passed",
+  "summary": "Added a test-owned deterministic Search corpus manifest and generator with fixed-seed truth, scale, ignored-subtree, mixed-encoding and binary fixtures. Regeneration produces identical per-file bytes and hashes, and the manifest's exact UTF-16 and byte spans are verified by an independent ordinal corpus routine.",
+  "requirementIds": [
+    "R02",
+    "R04",
+    "R11",
+    "R15"
+  ],
+  "sourceReferences": [
+    "S20",
+    "S21",
+    "S22",
+    "S23",
+    "S24",
+    "S25"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W03-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "b72c52316fda031e57abcd5732600565b7b98903",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 16,
+    "behind": 0,
+    "worktree": "clean for tracked files at scope start; W03-S01 generator, manifest and evidence were added afterward",
+    "preExistingScopeCommit": "b72c52316fda031e57abcd5732600565b7b98903"
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SyntheticSearchCorpusTests.cs",
+      "Musoq.DataSources.Search.Tests/TestData/SyntheticSearchCorpus/manifest.json"
+    ],
+    "scopeBoundary": "Only test-owned deterministic corpus generation/validation, its TestData manifest and W03-S01 evidence were changed. The existing Search production source and test-project content-copy rule were reused without production API or behavior changes. No sibling repository, engine adapter, release, publish, or installed executable was modified."
+  },
+  "corpus": {
+    "seed": 195936478,
+    "generator": "xorshift32-v1",
+    "generatedFiles": 45,
+    "totalBytes": 26145,
+    "literalOccurrences": 37,
+    "byteOccurrences": 4,
+    "coverage": [
+      "sparse and dense truth files",
+      "9,000-character giant line",
+      "composed/decomposed Unicode",
+      "32 deterministic scale text files",
+      "ignored subtree with .gitignore",
+      "UTF-8 BOM, UTF-16 little-endian BOM and UTF-16 big-endian BOM",
+      "small raw binary and 16 KiB binary payload with boundary-spanning offsets"
+    ]
+  },
+  "tests": {
+    "discovered": 1317,
+    "passed": 1286,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 33,
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "AssemblyDiscovery_ShouldDeclareSearchSchema",
+        "GeneratedXmlDocumentation_ShouldBeWellFormedAndCoverPublicSearchApi",
+        "RawConstructors_ShouldExposeMinimalMatchesSignature",
+        "DescribeSource_ShouldAlignRowTypeAndColumns",
+        "DescribeSource_ShouldRemainStaticWithoutResolvingTheRoot",
+        "InvalidRequest_ShouldBeRejectedBeforeRootResolution",
+        "SearchDiagnostics_ShouldUseStablePluginCodesAndBoundedGuidance",
+        "BadRegex_ShouldProduceTypedSyntaxDiagnostic",
+        "UnsupportedEncoding_ShouldProduceTypedSourceDiagnostic",
+        "OversizedScope_ShouldProduceTypedResourceDiagnostic",
+        "MalformedSourceArguments_ShouldProduceTypedArgumentDiagnostic",
+        "MissingRoot_ShouldProduceTypedSourceAccessDiagnostic",
+        "CompiledMissingRoot_ShouldRetainSearchDiagnosticInsideEngineBoundary",
+        "CompiledNullRoot_ShouldRetainSearchArgumentDiagnostic",
+        "ScopePolicy_ShouldCopyAndFreezePatternCollections",
+        "LiteralMatcher_ShouldEmitNonOverlappingSpans",
+        "SearchOutcome_ShouldMatchThePublishedTerminalContract",
+        "CompiledLiteralQuery_ShouldReturnKnownTypedRows",
+        "CompiledSearch_ShouldReturnRowsAndEmitLifecycleTrace",
+        "CompiledSearch_ShouldRepeatWithoutCrossRunRowsOrState",
+        "CompiledSearch_WithSettingsProfiles_UsesDistinctSourceContexts",
+        "DirectSearch_WithSlowConsumer_EmitsEveryRowAndCoarseProgress",
+        "DirectSearch_WithSeparateContextsAndLoggers_PreservesRowsWithoutStdoutTelemetry",
+        "DirectSource_ShouldFlushAtChunkBoundaryWithoutChangingMultiplicity",
+        "DirectSource_ShouldMatchLiteralAcrossReaderBufferBoundaries",
+        "CancellationBeforeStart_ShouldNotOpenReaderOrEmitRows",
+        "CancellationDuringRead_ShouldDisposeReaderAndNotReturnRows",
+        "CancellationDuringScan_ShouldObserveTheTokenBeforeCompleting",
+        "CancellationBetweenChunks_ShouldNotExposeACompletedScan",
+        "EarlyDisposal_ShouldCancelTheProducerAndDisposeItsReader",
+        "ReaderFailure_ShouldPropagateAndDisposeTheReader",
+        "EverySearchConstructor_HasOneExactStarContract",
+        "RegenerateCorpus_ShouldMatchManifestAndRemainByteDeterministic"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.Search.Tests", "passed": 33, "failed": 0, "skipped": 0, "total": 33 },
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 }
+    ],
+    "skipClassification": {
+      "expectedExistingSkips": 31,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 33,
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S01/search-focused.log",
+      "stdoutSha256": "ec849dcdd1ed223cef5548916a1161b1cc2b5b9e21fff8b7ca6d3323020f1a50",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S01/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "corpus-focused-test",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SyntheticSearchCorpusTests",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 21,
+      "discovered": 1317,
+      "passed": 1286,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S01/full-suite.log",
+      "stdoutSha256": "60194ad908444d63fdf25b5e3093ff18aa7581a0c12ecf1d37f94de7b7d10d4d",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S01/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-test-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The owning-repository Release suite exited 0 with 1,317 discovered, 1,286 passed, 0 failed and 31 existing expected skips; the focused Search suite exited 0 with 33 passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, exact source and artifact hashes, tool versions and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "The fixed corpus records exact literal UTF-16 and binary spans, and two independent generations have identical per-file byte lengths and SHA-256 signatures; backend differential equivalence remains a later W03 scope."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SyntheticSearchCorpusTests.cs",
+      "sha256": "6d96cc7ca724f9b7cc2673c0b71885742c1a39e17114c5a592851356a632f635"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/TestData/SyntheticSearchCorpus/manifest.json",
+      "sha256": "97ef85aaa7de02e1d18fd6d3f0c1226bdb9ccea0c32489b722f7d5ab36b29950"
+    }
+  ],
+  "sourceDigest": "a2aab8f356346443341bd1df9fcb8b86ab8e1c1e391969ccd5c2b63dd3eb6f8f",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W03-S01/review.md",
+      "sha256": "d8901e5b01237dd0e7f1b26996f76e65d4bcd9e260774b9fc2dfd00d8851ee88"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S01/search-focused.log",
+      "sha256": "ec849dcdd1ed223cef5548916a1161b1cc2b5b9e21fff8b7ca6d3323020f1a50"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S01/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S01/full-suite.log",
+      "sha256": "60194ad908444d63fdf25b5e3093ff18aa7581a0c12ecf1d37f94de7b7d10d4d"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S01/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The corpus intentionally describes future ignore, encoding and raw-byte search cases without claiming that the current minimal Search source implements those modes; later scopes own scanner behavior.",
+    "The ordinal CorpusOracle is a small fixture validator, not the independent production scanner/oracle planned for W03-S02; no backend choice or equivalence claim is made here.",
+    "The scale corpus is bounded at 32 small text files and a 16 KiB binary payload; it is correctness fixture data, not a performance baseline.",
+    "The Release build retains existing dependency vulnerability and missing-readme advisories; no package was published.",
+    "The repository-wide suite retains 31 existing expected skips."
+  ],
+  "campaignPolicyUpdate": {
+    "path": "docs/campaigns/search/GOAL.md",
+    "status": "updated locally",
+    "summary": "Focused Search tests are the normal development loop; the full owning-repository Release suite is reserved for scope completion and explicitly high-impact checkpoints."
+  }
+}

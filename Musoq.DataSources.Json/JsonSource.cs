@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using Musoq.DataSources.Common;
 using Musoq.DataSources.Structured;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 

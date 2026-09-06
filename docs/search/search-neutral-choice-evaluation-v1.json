@@ -1,0 +1,231 @@
+{
+  "formatVersion": 1,
+  "status": "protocol_ready_not_executed",
+  "scopeId": "W15-S04",
+  "title": "Neutral Search versus direct-tool choice evaluation v1",
+  "purpose": "Define a balanced, confidence-aware evaluation of Search, ripgrep and ordinary local tools without requiring or rewarding Musoq selection.",
+  "sourceTaskSet": {
+    "path": "docs/search/search-first-success-task-set-v1.json",
+    "sha256": "7f2920c01d4cee1825e987e4a2ac066621d1c5b45d7468a41971a933538b0487",
+    "taskCount": 40,
+    "expectedAnswersCopied": false
+  },
+  "evaluationContract": {
+    "freshContextPerTrial": true,
+    "minimumTrialsPerTask": 3,
+    "requiredTrialCount": 45,
+    "confidenceLevel": 0.95,
+    "sameModelAndBudget": true,
+    "equivalentPermissions": true,
+    "modelVersion": "record_observed_value",
+    "budget": {
+      "maxToolCalls": 24,
+      "maxOutputTokens": 4000,
+      "maxWallTimeMs": 120000
+    },
+    "arms": [
+      {
+        "id": "search",
+        "description": "Query a bounded local file tree and return typed evidence when structured fields or scan status are useful."
+      },
+      {
+        "id": "rg",
+        "description": "Search a bounded local file tree and return direct text evidence when lexical results are sufficient."
+      },
+      {
+        "id": "ordinary",
+        "description": "Use an available local utility or script to inspect a bounded file tree and return evidence."
+      }
+    ],
+    "randomization": {
+      "baseSeed": 20260908,
+      "algorithm": "Fisher-Yates over the three arm ids using baseSeed plus a stable task/trial hash",
+      "recordOrderPerTrial": true,
+      "assignment": "Every selected task is offered all three arms in a recorded randomized order."
+    },
+    "neutralityRules": [
+      "Do not mention a preferred product or require Musoq/Search use in the task prompt.",
+      "Present all arm descriptions with equivalent scope, permission and budget language.",
+      "Do not expose development expected answers, validator source, hidden fixture bytes or hidden seeds.",
+      "Score answer correctness and tool-choice appropriateness separately.",
+      "A safe refusal or explicit limitation is correct for an unsupported semantic question when evidence cannot establish the claim."
+    ]
+  },
+  "selectedTasks": [
+    {
+      "taskId": "A01",
+      "sourceCategory": "simple",
+      "evaluationCategory": "simple-grep",
+      "acceptedTools": ["rg", "ordinary"],
+      "rgWinEligible": true,
+      "completenessRequired": false,
+      "choiceRationale": "Direct literal occurrence evidence has no relational requirement; a direct search is appropriate and Search is not required."
+    },
+    {
+      "taskId": "A05",
+      "sourceCategory": "simple",
+      "evaluationCategory": "simple-grep",
+      "acceptedTools": ["search", "rg", "ordinary"],
+      "rgWinEligible": true,
+      "completenessRequired": true,
+      "choiceRationale": "Path discovery should avoid content reads; Search paths, rg --files or an equivalent ordinary metadata tool is appropriate."
+    },
+    {
+      "taskId": "A38",
+      "sourceCategory": "neutral-choice",
+      "evaluationCategory": "simple-grep",
+      "acceptedTools": ["rg", "ordinary"],
+      "rgWinEligible": true,
+      "completenessRequired": false,
+      "choiceRationale": "The blueprint explicitly describes a tiny direct terminal search with no relational requirement; rg may win."
+    },
+    {
+      "taskId": "A21",
+      "sourceCategory": "composition",
+      "evaluationCategory": "compositional",
+      "acceptedTools": ["search", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": false,
+      "choiceRationale": "Labeled multi-pattern evidence needs stable pattern identity; Search or an equivalent ordinary workflow may provide it."
+    },
+    {
+      "taskId": "A22",
+      "sourceCategory": "composition",
+      "evaluationCategory": "compositional",
+      "acceptedTools": ["search", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "An all-terms relation needs composition and complete negative evidence; direct grep alone is not sufficient."
+    },
+    {
+      "taskId": "A40",
+      "sourceCategory": "neutral-choice",
+      "evaluationCategory": "compositional",
+      "acceptedTools": ["search", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "Extraction, classification, join and count require a capable relational workflow, but the protocol does not force Search over an equivalent ordinary workflow."
+    },
+    {
+      "taskId": "A13",
+      "sourceCategory": "repair",
+      "evaluationCategory": "semantic-boundary",
+      "acceptedTools": ["ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "An unsupported regex construct must be repaired or honestly bounded; text search alone cannot establish dialect support."
+    },
+    {
+      "taskId": "A24",
+      "sourceCategory": "composition",
+      "evaluationCategory": "semantic-boundary",
+      "acceptedTools": ["search", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "Diagnostic inventory requires evidence classification; Search or an equivalent ordinary workflow is acceptable when the lexical limits are disclosed."
+    },
+    {
+      "taskId": "A39",
+      "sourceCategory": "neutral-choice",
+      "evaluationCategory": "semantic-boundary",
+      "acceptedTools": ["ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "Overload resolution is not proved by a lexical hit; language tooling or an explicit limitation is the appropriate choice."
+    },
+    {
+      "taskId": "A14",
+      "sourceCategory": "failure",
+      "evaluationCategory": "resource-boundary",
+      "acceptedTools": ["search", "rg", "ordinary"],
+      "rgWinEligible": true,
+      "completenessRequired": true,
+      "choiceRationale": "A missing root is a resource boundary; any arm can establish not-found when it preserves the observed terminal failure rather than claiming scope absence."
+    },
+    {
+      "taskId": "A15",
+      "sourceCategory": "failure",
+      "evaluationCategory": "resource-boundary",
+      "acceptedTools": ["search", "rg", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "An unreadable relevant file requires typed partial/failure evidence; any arm is acceptable when it preserves the error and does not claim complete absence."
+    },
+    {
+      "taskId": "A19",
+      "sourceCategory": "failure",
+      "evaluationCategory": "resource-boundary",
+      "acceptedTools": ["search", "rg", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "Invalid encoding requires an explicit decoding failure or byte-mode decision rather than an unqualified text absence claim, regardless of arm."
+    },
+    {
+      "taskId": "A03",
+      "sourceCategory": "simple",
+      "evaluationCategory": "cost-trap",
+      "acceptedTools": ["search", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "Exact per-file totals retain zero-hit files and completion state; a positive-only grep is not sufficient."
+    },
+    {
+      "taskId": "A17",
+      "sourceCategory": "failure",
+      "evaluationCategory": "cost-trap",
+      "acceptedTools": ["search", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "A read budget requires a visible incomplete terminal outcome and bounded accounting, not a truncated successful answer."
+    },
+    {
+      "taskId": "A35",
+      "sourceCategory": "precision",
+      "evaluationCategory": "cost-trap",
+      "acceptedTools": ["search", "ordinary"],
+      "rgWinEligible": false,
+      "completenessRequired": true,
+      "choiceRationale": "Global ordering with a limit requires work across eligible files; direct early-hit search is not an equivalent shortcut."
+    }
+  ],
+  "trialRecord": {
+    "requiredFields": [
+      "taskId",
+      "trial",
+      "modelVersion",
+      "toolOrder",
+      "selectedTool",
+      "firstValidAttempt",
+      "repairAttempts",
+      "toolCalls",
+      "inputTokens",
+      "outputTokens",
+      "wallTimeMs",
+      "sourceBytesRead",
+      "answerCorrect",
+      "evidenceValid",
+      "completenessAware",
+      "inappropriateToolSelection",
+      "unsafeActionAttempts",
+      "userInterventions",
+      "terminalOutcome"
+    ],
+    "choiceCorrectFormula": "answerCorrect AND evidenceValid AND (NOT completenessRequired OR completenessAware) AND selectedTool IN acceptedTools AND unsafeActionAttempts = 0",
+    "failureRetention": "Retain failed, partial, cancelled, budget-limited and user-intervened trials; never silently drop them from denominators."
+  },
+  "scoring": {
+    "primaryRate": "choice-correct trials divided by all recorded trials",
+    "secondaryRates": ["answerCorrect", "evidenceValid", "completenessAware", "firstExecutionCorrect"],
+    "failureCounts": ["inappropriateToolSelection", "unsafeActionAttempts", "userInterventions"],
+    "aggregation": "Report each trial and task first, then evaluation-category totals and medians; do not pool development and hidden holdout results.",
+    "wilson95": "For successes x and trials n, use z=1.959963984540054: center=(x/n+z^2/(2n))/(1+z^2/n), half=z*sqrt((x/n)(1-x/n)/n+z^2/(4n^2))/(1+z^2/n). Return null when n=0."
+  },
+  "results": [],
+  "resultSummary": {
+    "status": "not_executed",
+    "completedTrials": 0,
+    "requiredTrials": 45,
+    "agentResultsAvailable": false,
+    "reason": "No fresh-context agent runner is available in this checkout; this scope records the neutral protocol and scorer without fabricating preference results."
+  }
+}

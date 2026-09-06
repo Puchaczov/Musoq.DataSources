@@ -1,0 +1,448 @@
+{
+  "command": "measure-decoding",
+  "seed": 1587855364,
+  "trialPolicy": {
+    "measuredTrials": 7,
+    "warmupsExcluded": 1,
+    "order": "single managed candidate; no external baseline"
+  },
+  "cachePolicy": "filesystem cache is not flushed or asserted on this unprivileged Windows host; state is unknown",
+  "timingBoundary": "Total Stopwatch surrounds the complete managed in-process runner, including traversal, file open/read, decoding, matching and result normalization/hash.",
+  "interpretation": "Diagnostic decoding observations only; no cross-backend or superiority claim is made.",
+  "environment": {
+    "framework": ".NET 10.0.11",
+    "os": "Microsoft Windows 10.0.26200",
+    "osArchitecture": "X64",
+    "processArchitecture": "X64",
+    "processorCount": 24,
+    "dotnet": "10.0.11"
+  },
+  "cohorts": [
+    {
+      "id": "D01",
+      "encoding": "ASCII",
+      "contentProfile": "ASCII-only text without a BOM",
+      "fixtureDigest": "b6584af5584eea9c19a98b146471b4001157c71846d78dd116a9525eaef1267c",
+      "eligibleBytes": 92288,
+      "expectedOccurrences": 480,
+      "warmup": {
+        "complete": true,
+        "resultHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+        "resultCount": 480
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "durationMilliseconds": 20.846,
+          "allocatedBytes": 952432,
+          "workingSetBytes": 42610688,
+          "filesVisited": 32,
+          "bytesRead": 92288,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.10100000000000002,
+            "ReadDecodeMilliseconds": 0.6253999999999924,
+            "MatchingMilliseconds": 18.44599999999933,
+            "MaterializationMilliseconds": 0.2722,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 2,
+          "durationMilliseconds": 2.3822,
+          "allocatedBytes": 951808,
+          "workingSetBytes": 43585536,
+          "filesVisited": 32,
+          "bytesRead": 92288,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.11230000000000001,
+            "ReadDecodeMilliseconds": 0.4709999999999935,
+            "MatchingMilliseconds": 0.5171999999999678,
+            "MaterializationMilliseconds": 0.2126,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 3,
+          "durationMilliseconds": 2.2512,
+          "allocatedBytes": 951808,
+          "workingSetBytes": 44548096,
+          "filesVisited": 32,
+          "bytesRead": 92288,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.10080000000000004,
+            "ReadDecodeMilliseconds": 0.453899999999994,
+            "MatchingMilliseconds": 0.5251999999999678,
+            "MaterializationMilliseconds": 0.195,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 4,
+          "durationMilliseconds": 2.2942,
+          "allocatedBytes": 951808,
+          "workingSetBytes": 45502464,
+          "filesVisited": 32,
+          "bytesRead": 92288,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.09650000000000003,
+            "ReadDecodeMilliseconds": 0.4918999999999929,
+            "MatchingMilliseconds": 0.5340999999999669,
+            "MaterializationMilliseconds": 0.2056,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 5,
+          "durationMilliseconds": 2.1316,
+          "allocatedBytes": 951808,
+          "workingSetBytes": 46465024,
+          "filesVisited": 32,
+          "bytesRead": 92288,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.08680000000000003,
+            "ReadDecodeMilliseconds": 0.4540999999999932,
+            "MatchingMilliseconds": 0.5149999999999685,
+            "MaterializationMilliseconds": 0.1817,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 6,
+          "durationMilliseconds": 2.1454,
+          "allocatedBytes": 951808,
+          "workingSetBytes": 47427584,
+          "filesVisited": 32,
+          "bytesRead": 92288,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.07820000000000003,
+            "ReadDecodeMilliseconds": 0.46629999999999344,
+            "MatchingMilliseconds": 0.5108999999999685,
+            "MaterializationMilliseconds": 0.1829,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 7,
+          "durationMilliseconds": 2.221,
+          "allocatedBytes": 951808,
+          "workingSetBytes": 48398336,
+          "filesVisited": 32,
+          "bytesRead": 92288,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.08560000000000002,
+            "ReadDecodeMilliseconds": 0.47449999999999315,
+            "MatchingMilliseconds": 0.5146999999999693,
+            "MaterializationMilliseconds": 0.197,
+            "BridgeMilliseconds": 0
+          }
+        }
+      ],
+      "medianMilliseconds": 2.2512
+    },
+    {
+      "id": "D02",
+      "encoding": "UTF-8",
+      "contentProfile": "UTF-8 text without a BOM with non-ASCII scalars",
+      "fixtureDigest": "9e917605195918b8f7464a77914ebd5b72822f09d4ec74aaa2f2596196492733",
+      "eligibleBytes": 133248,
+      "expectedOccurrences": 480,
+      "warmup": {
+        "complete": true,
+        "resultHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+        "resultCount": 480
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "durationMilliseconds": 2.1069,
+          "allocatedBytes": 984576,
+          "workingSetBytes": 51650560,
+          "filesVisited": 32,
+          "bytesRead": 133248,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.07800000000000003,
+            "ReadDecodeMilliseconds": 0.4766999999999933,
+            "MatchingMilliseconds": 0.5127999999999698,
+            "MaterializationMilliseconds": 0.1849,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 2,
+          "durationMilliseconds": 2.2479,
+          "allocatedBytes": 984576,
+          "workingSetBytes": 52654080,
+          "filesVisited": 32,
+          "bytesRead": 133248,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.14309999999999984,
+            "ReadDecodeMilliseconds": 0.5014999999999927,
+            "MatchingMilliseconds": 0.5265999999999682,
+            "MaterializationMilliseconds": 0.1776,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 3,
+          "durationMilliseconds": 2.1739,
+          "allocatedBytes": 984576,
+          "workingSetBytes": 53641216,
+          "filesVisited": 32,
+          "bytesRead": 133248,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.07900000000000001,
+            "ReadDecodeMilliseconds": 0.508199999999993,
+            "MatchingMilliseconds": 0.5082999999999692,
+            "MaterializationMilliseconds": 0.1729,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 4,
+          "durationMilliseconds": 2.2935,
+          "allocatedBytes": 984576,
+          "workingSetBytes": 54632448,
+          "filesVisited": 32,
+          "bytesRead": 133248,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.08910000000000005,
+            "ReadDecodeMilliseconds": 0.5741999999999926,
+            "MatchingMilliseconds": 0.5191999999999688,
+            "MaterializationMilliseconds": 0.1952,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 5,
+          "durationMilliseconds": 2.2221,
+          "allocatedBytes": 984576,
+          "workingSetBytes": 55631872,
+          "filesVisited": 32,
+          "bytesRead": 133248,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.08620000000000003,
+            "ReadDecodeMilliseconds": 0.5642999999999931,
+            "MatchingMilliseconds": 0.5141999999999688,
+            "MaterializationMilliseconds": 0.1782,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 6,
+          "durationMilliseconds": 2.2938,
+          "allocatedBytes": 984576,
+          "workingSetBytes": 56635392,
+          "filesVisited": 32,
+          "bytesRead": 133248,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.08230000000000004,
+            "ReadDecodeMilliseconds": 0.5171999999999934,
+            "MatchingMilliseconds": 0.5041999999999682,
+            "MaterializationMilliseconds": 0.1874,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 7,
+          "durationMilliseconds": 2.2454,
+          "allocatedBytes": 984576,
+          "workingSetBytes": 57626624,
+          "filesVisited": 32,
+          "bytesRead": 133248,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.08880000000000002,
+            "ReadDecodeMilliseconds": 0.5602999999999926,
+            "MatchingMilliseconds": 0.5115999999999696,
+            "MaterializationMilliseconds": 0.1827,
+            "BridgeMilliseconds": 0
+          }
+        }
+      ],
+      "medianMilliseconds": 2.2454
+    },
+    {
+      "id": "D03",
+      "encoding": "UTF-16",
+      "contentProfile": "UTF-16 little-endian text with a BOM",
+      "fixtureDigest": "d9a1489d9b5e55dd1f18062dd5e9ffb189ec3650eb9956697adaa5d9e69c41cb",
+      "eligibleBytes": 225600,
+      "expectedOccurrences": 480,
+      "warmup": {
+        "complete": true,
+        "resultHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+        "resultCount": 480
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "durationMilliseconds": 1.7916,
+          "allocatedBytes": 986624,
+          "workingSetBytes": 59412480,
+          "filesVisited": 32,
+          "bytesRead": 225600,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.05830000000000003,
+            "ReadDecodeMilliseconds": 0.42169999999999386,
+            "MatchingMilliseconds": 0.4984999999999693,
+            "MaterializationMilliseconds": 0.1348,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 2,
+          "durationMilliseconds": 1.8554,
+          "allocatedBytes": 986624,
+          "workingSetBytes": 59408384,
+          "filesVisited": 32,
+          "bytesRead": 225600,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.06500000000000002,
+            "ReadDecodeMilliseconds": 0.45249999999999313,
+            "MatchingMilliseconds": 0.49279999999996854,
+            "MaterializationMilliseconds": 0.1359,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 3,
+          "durationMilliseconds": 2.0505,
+          "allocatedBytes": 986624,
+          "workingSetBytes": 59408384,
+          "filesVisited": 32,
+          "bytesRead": 225600,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.08000000000000003,
+            "ReadDecodeMilliseconds": 0.5198999999999928,
+            "MatchingMilliseconds": 0.5013999999999684,
+            "MaterializationMilliseconds": 0.1424,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 4,
+          "durationMilliseconds": 2.0048,
+          "allocatedBytes": 986624,
+          "workingSetBytes": 59408384,
+          "filesVisited": 32,
+          "bytesRead": 225600,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.07200000000000002,
+            "ReadDecodeMilliseconds": 0.5127999999999938,
+            "MatchingMilliseconds": 0.5046999999999694,
+            "MaterializationMilliseconds": 0.148,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 5,
+          "durationMilliseconds": 1.974,
+          "allocatedBytes": 986624,
+          "workingSetBytes": 59408384,
+          "filesVisited": 32,
+          "bytesRead": 225600,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.07390000000000001,
+            "ReadDecodeMilliseconds": 0.5142999999999933,
+            "MatchingMilliseconds": 0.49619999999996905,
+            "MaterializationMilliseconds": 0.145,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 6,
+          "durationMilliseconds": 2.091,
+          "allocatedBytes": 986624,
+          "workingSetBytes": 59408384,
+          "filesVisited": 32,
+          "bytesRead": 225600,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.08280000000000003,
+            "ReadDecodeMilliseconds": 0.5359999999999926,
+            "MatchingMilliseconds": 0.511399999999969,
+            "MaterializationMilliseconds": 0.1585,
+            "BridgeMilliseconds": 0
+          }
+        },
+        {
+          "trial": 7,
+          "durationMilliseconds": 2.1269,
+          "allocatedBytes": 986624,
+          "workingSetBytes": 59408384,
+          "filesVisited": 32,
+          "bytesRead": 225600,
+          "outputBytes": 14375,
+          "outputHash": "2c7a1792ebd5dda76d198f15be4e61ae8635df0527b8f2e180a174206f66e4a9",
+          "complete": true,
+          "stageTimings": {
+            "TraversalMilliseconds": 0.07940000000000003,
+            "ReadDecodeMilliseconds": 0.5279999999999925,
+            "MatchingMilliseconds": 0.5049999999999688,
+            "MaterializationMilliseconds": 0.1549,
+            "BridgeMilliseconds": 0
+          }
+        }
+      ],
+      "medianMilliseconds": 2.0048
+    }
+  ]
+}

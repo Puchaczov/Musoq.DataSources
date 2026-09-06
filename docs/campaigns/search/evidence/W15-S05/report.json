@@ -1,0 +1,254 @@
+{
+  "scopeId": "W15-S05",
+  "status": "passed",
+  "summary": "Added twelve non-empirical friction regressions and froze the A01-A40 holdout boundary with a seed commitment, no answer leakage and explicit external-runner gating.",
+  "requirementIds": [
+    "R01",
+    "R07",
+    "R10",
+    "R12"
+  ],
+  "sourceReferences": [
+    "S09",
+    "S14",
+    "S15",
+    "S18"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W15-S05/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "3fda8166dda4484fb57e1276f53bed1428944497",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 80,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W15-S05 implementation; ignored campaign state had W15-S05 in_progress and no other active scope.",
+    "preExistingScopeCommit": "3fda8166dda4484fb57e1276f53bed1428944497",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W15-S04; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchAgentFrictionRegressionTests.cs",
+      "docs/search/search-agent-friction-regressions-v1.json",
+      "docs/search/search-agent-friction-regressions-v1.md",
+      "docs/search/search-holdout-freeze-v1.json"
+    ],
+    "scopeBoundary": "Only the owning repository's Search friction regression catalog, holdout-freeze descriptor, documentation and contract tests changed, plus this scope's evidence. No production Search source, sibling repository or publication state was changed.",
+    "regressionContract": "Twelve known first-attempt boundaries are retained as focused assertions with observed=false and an empty observation set; future empirical observations require independent traces and coordinates.",
+    "holdoutContract": "The separate A01-A40 holdout boundary pins the benchmark and neutral protocol bytes, commits a seed hash, requires fresh variants and contexts, and stores no answers, validator source, hidden bytes or results.",
+    "agentEvaluation": {
+      "status": "blocked_external_runner",
+      "releaseBlocker": true,
+      "requiredTrials": 120,
+      "completedTrials": 0,
+      "reason": "No fresh-context agent runner is available in this checkout; target first-success, repair and token gates remain explicitly unassessed."
+    }
+  },
+  "tests": {
+    "discovered": 1650,
+    "passed": 1616,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "frictionHoldoutFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchAgentFrictionRegressionTests",
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 362,
+      "passed": 359,
+      "failed": 0,
+      "skipped": 3
+    },
+    "searchBuild": {
+      "project": "Musoq.DataSources.Search",
+      "warnings": 0,
+      "errors": 0
+    },
+    "contractHarnesses": {
+      "scenarios": 27,
+      "assertions": 314,
+      "passed": true,
+      "harnesses": [
+        "Test-SearchSourceContract.ps1: 7 scenarios, 52 assertions",
+        "Test-SearchRequestContract.ps1: 4 scenarios, 45 assertions",
+        "Test-SearchMatchSemantics.ps1: 6 scenarios, 49 assertions",
+        "Test-SearchScopeSemantics.ps1: 6 scenarios, 44 assertions",
+        "Test-SearchCompletionSemantics.ps1: 4 scenarios, 124 assertions"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    },
+    "fullSuiteWarningNote": "The owning suite retained existing package vulnerability, XML documentation, nullability, analyzer and generated-code warnings outside the Search build."
+  },
+  "commands": [
+    {
+      "kind": "friction-holdout-focused-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchAgentFrictionRegressionTests --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 362,
+      "passed": 359,
+      "failed": 0,
+      "skipped": 3
+    },
+    {
+      "kind": "search-build",
+      "argv": "dotnet build Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "source-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchSourceContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 7,
+      "assertions": 52
+    },
+    {
+      "kind": "request-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchRequestContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 45
+    },
+    {
+      "kind": "match-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchMatchSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 49
+    },
+    {
+      "kind": "scope-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchScopeSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 44
+    },
+    {
+      "kind": "completion-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchCompletionSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 124
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release --no-restore --verbosity quiet --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1650,
+      "passed": 1616,
+      "failed": 0,
+      "skipped": 34,
+      "executionWrapper": "The product test command completed successfully; baseline package, XML, nullability, analyzer and generated-code warnings were observed outside the Search build."
+    },
+    {
+      "kind": "campaign-validation-before-completion",
+      "argv": "python docs/campaigns/search/validate_campaign.py docs/campaigns/search/campaign.json --repo-root . --track core",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "status": "valid with activeScope=W15-S05 before completion transition"
+    },
+    {
+      "kind": "diff-and-contract-validation",
+      "argv": "git diff --cached --check; JSON parse validation for friction catalog, holdout freeze and this report",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "python": "3.13.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The final Release owning-repository suite completed across 21 projects with 1,650 total tests, 1,616 passed, 0 failed and 34 classified skips; the focused Search suite and Search build also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved the twelve explicit friction regressions, answer-free A01-A40 holdout boundary, seed commitment and external-runner release-blocker record."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Three focused tests validate regression references, empty observations, exact holdout coverage, answer absence and pinned source hashes; the full Search suite and five semantic harnesses also passed."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The holdout descriptor pins the benchmark and neutral protocol bytes, while the regression catalog preserves source/result/completeness/security boundaries without claiming runtime or agent behavior."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchAgentFrictionRegressionTests.cs",
+      "sha256": "84af6d9c6b4eddca8b5d3661941642efd2d13fe4bff171463fc7f0b13ea9e751"
+    },
+    {
+      "path": "docs/search/search-agent-friction-regressions-v1.json",
+      "sha256": "0e31050315d98d54b5c11dc2e0b74bdd3da455ed215c8fc6a93bf0db01e7a6f1"
+    },
+    {
+      "path": "docs/search/search-agent-friction-regressions-v1.md",
+      "sha256": "d75c8512ae779036eeb191091dfae37320048d858087ae8aac73c8786b539c2d"
+    },
+    {
+      "path": "docs/search/search-holdout-freeze-v1.json",
+      "sha256": "f18cb8c39b25142b184ef3651c2f068dca250d1a3ef00ad6d5137a8d516a097c"
+    }
+  ],
+  "sourceDigest": "e891cd40fc4aea912e8fe5133826c6f23eb8551e9670f7bcc59f083b686436b0",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W15-S05/review.md",
+      "sha256": "57c8404f70ef3aec89ea5d3d7914c2266aba655c3503a2c1c5eb70f483fa3862"
+    }
+  ],
+  "knownLimitations": [
+    "No fresh-context agent runner is available in this checkout. Fresh task-subset trials, observed-friction measurements, target first-success and repair rates, token comparisons and empirical confidence intervals remain unexecuted and are an explicit release blocker.",
+    "The holdout seed material is external-runner-only and the committed seed hash is a boundary commitment, not a reproducibility claim until the authorized runner reveals it after trial isolation.",
+    "The selected regressions are derived from planned first-attempt probes, not observed agent failures; observations remain empty by design.",
+    "Platform-dependent unreadable and invalid-encoding behavior requires evidence from the platform on which future trials run.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

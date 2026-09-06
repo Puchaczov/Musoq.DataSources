@@ -1,0 +1,406 @@
+{
+  "contract": "Musoq Search source contract",
+  "version": 1,
+  "status": "proposed",
+  "scope": "W01-S01",
+  "implementationStatus": "The file-backed text audit operation is implemented by W12-S02 and the streaming raw-byte occurrence source with bounded same-read windows is implemented by W13-S03; the remaining proposed source shapes are not implied to be installed by this document.",
+  "principles": [
+    "A source method names its relational unit; SQL projection never changes that unit.",
+    "Occurrence, matching-line, matching-file, count, path, byte-occurrence and coordinated-pattern rows are different units.",
+    "A zero-match answer is not a completed scan record; audit carries terminal execution facts.",
+    "The audit method starts a new scan for every invocation and never reads global last-run state.",
+    "Pattern labels are part of the row identity for many; equal pattern text under different IDs is not deduplicated.",
+    "All byte coordinates are offsets and lengths in original input bytes; UTF-16 coordinates use explicitly different names."
+  ],
+  "callShapes": [
+    {
+      "name": "matches",
+      "shape": "search.matches(root, pattern)",
+      "arguments": ["root", "pattern"],
+      "unit": "one occurrence of one pattern",
+      "cardinality": "one row per (Path, PatternId, MatchIndex); PatternId is null for the single-pattern form",
+      "contentRead": true,
+      "projectionInvariant": true
+    },
+    {
+      "name": "lines",
+      "shape": "search.lines(root, pattern)",
+      "arguments": ["root", "pattern"],
+      "unit": "one physical line containing one or more occurrences of one pattern",
+      "cardinality": "one row per (Path, PatternId, LineNumber); multiple occurrences on a line remain one row",
+      "contentRead": true,
+      "projectionInvariant": true
+    },
+    {
+      "name": "files",
+      "shape": "search.files(root, pattern)",
+      "arguments": ["root", "pattern"],
+      "unit": "one file satisfying the positive match",
+      "cardinality": "one row per matching (Path, PatternId); a file is emitted once after its first qualifying occurrence",
+      "contentRead": true,
+      "projectionInvariant": true
+    },
+    {
+      "name": "counts",
+      "shape": "search.counts(root, pattern)",
+      "arguments": ["root", "pattern"],
+      "unit": "one completely processed eligible file",
+      "cardinality": "one row per eligible Path, including files with zero occurrences",
+      "contentRead": true,
+      "projectionInvariant": true
+    },
+    {
+      "name": "paths",
+      "shape": "search.paths(root)",
+      "arguments": ["root"],
+      "unit": "one eligible regular-file path",
+      "cardinality": "one row per eligible Path; this method does not inspect file content",
+      "contentRead": false,
+      "projectionInvariant": true
+    },
+    {
+      "name": "many",
+      "shape": "search.many(root, requestJson)",
+      "arguments": ["root", "requestJson"],
+      "unit": "one occurrence of one labeled pattern",
+      "cardinality": "one row per (Path, PatternId, MatchIndex); equal pattern text under distinct IDs produces distinct rows",
+      "contentRead": true,
+      "projectionInvariant": true
+    },
+    {
+      "name": "bytes",
+      "shape": "search.bytes(root, patternJson)",
+      "arguments": ["root", "patternJson"],
+      "unit": "one occurrence of a byte pattern",
+      "cardinality": "one row per (Path, PatternId, MatchIndex); overlapping policy is fixed by the match-semantics contract",
+      "contentRead": true,
+      "projectionInvariant": true
+    }
+  ],
+  "audit": {
+    "shape": "search.audit(root, pattern)",
+    "status": "implemented fresh companion operation for file-backed text Search",
+    "unit": "one summary for the newly executed scan invocation",
+    "freshExecution": true,
+    "globalLastRunState": false,
+    "selectStar": [
+      { "name": "Root", "type": "string", "nullable": false, "default": "the requested root representation" },
+      { "name": "ScanId", "type": "string", "nullable": false, "default": "new opaque identifier for every invocation" },
+      { "name": "ScopeFingerprint", "type": "string", "nullable": false, "default": "stable fingerprint of the requested scope" },
+      { "name": "Outcome", "type": "SearchOutcome", "nullable": false, "default": "terminal outcome for this invocation" },
+      { "name": "TerminalReason", "type": "string", "nullable": false, "default": "stable terminal reason" },
+      { "name": "Complete", "type": "bool", "nullable": false, "default": "true only when the declared scan completed" },
+      { "name": "ScopeExhausted", "type": "bool", "nullable": false, "default": "whether the eligible scope was exhausted" },
+      { "name": "QuerySatisfied", "type": "bool", "nullable": false, "default": "whether an explicit positive query demand was satisfied" },
+      { "name": "CountsExact", "type": "bool", "nullable": false, "default": "whether counters are exact for the resolved scope" },
+      { "name": "ScopeResolved", "type": "bool", "nullable": false, "default": "whether the requested root was resolved" },
+      { "name": "VisitedFiles", "type": "long", "nullable": false, "default": "number of visited file candidates" },
+      { "name": "EligibleFiles", "type": "long", "nullable": false, "default": "0 when the resolved scope contains no eligible files" },
+      { "name": "FilesOpened", "type": "long", "nullable": false, "default": "number of content files opened" },
+      { "name": "FilesRead", "type": "long", "nullable": false, "default": "0 before any file is opened" },
+      { "name": "FilesCompleted", "type": "long", "nullable": false, "default": "number of files completed by the scan" },
+      { "name": "FilesFailed", "type": "long", "nullable": false, "default": "number of files that failed during processing" },
+      { "name": "BinaryFilesSkipped", "type": "long", "nullable": false, "default": "number of files skipped by binary policy" },
+      { "name": "BytesScanned", "type": "long", "nullable": false, "default": "0 before input bytes are read" },
+      { "name": "FilesMatched", "type": "long", "nullable": false, "default": "0 when no file has a qualifying occurrence" },
+      { "name": "MatchingLines", "type": "long", "nullable": false, "default": "0 when no physical line matches" },
+      { "name": "Occurrences", "type": "long", "nullable": false, "default": "0 when no occurrence matches" },
+      { "name": "ObservedRows", "type": "long", "nullable": false, "default": "rows observed by the underlying count scan" },
+      { "name": "FailureCode", "type": "string", "nullable": true, "default": "null unless a typed failure or partial outcome has a code" },
+      { "name": "FailurePath", "type": "string", "nullable": true, "default": "null unless a bounded failure path is available" }
+    ],
+    "outcomes": ["QuerySatisfied", "ScopeExhausted", "Failed", "Partial"]
+  },
+  "defaults": {
+    "textMode": "literal",
+    "case": "sensitive",
+    "rowDetails": "compact",
+    "contextLines": 0,
+    "singlePatternId": null,
+    "matchText": null,
+    "lineTextForMatches": null,
+    "captures": "empty",
+    "context": "empty",
+    "countRows": "include zero-hit files after complete processing",
+    "pathRows": "eligible regular files only; no content reads",
+    "manyRequest": "labeled pattern array; request validation is ratified by W01-S05",
+    "scopePolicy": "resolved and fingerprinted by W01-S03; no overload may silently select a different scope"
+  },
+  "types": {
+    "SearchCapture": [
+      { "name": "GroupName", "type": "string", "nullable": true },
+      { "name": "GroupIndex", "type": "int", "nullable": false },
+      { "name": "CaptureIndex", "type": "int", "nullable": false },
+      { "name": "Success", "type": "bool", "nullable": false },
+      { "name": "Text", "type": "string", "nullable": true },
+      { "name": "ByteOffset", "type": "long", "nullable": true },
+      { "name": "ByteLength", "type": "long", "nullable": true },
+      { "name": "Utf16Column", "type": "long", "nullable": true },
+      { "name": "Utf16Length", "type": "long", "nullable": true }
+    ],
+    "SearchContextLine": [
+      { "name": "RelativeLine", "type": "int", "nullable": false },
+      { "name": "LineNumber", "type": "long", "nullable": false },
+      { "name": "LineText", "type": "string", "nullable": true }
+    ],
+    "SearchOutcome": {
+      "type": "enum",
+      "values": ["QuerySatisfied", "ScopeExhausted", "Failed", "Partial"]
+    }
+  },
+  "sourceSchemas": {
+    "matches": {
+      "defaults": {
+        "patternId": null,
+        "matchText": null,
+        "lineText": null,
+        "captures": [],
+        "context": []
+      },
+      "selectStar": [
+        { "name": "Path", "type": "string", "nullable": false, "default": "stable path identity for the eligible file" },
+        { "name": "Origin", "type": "string", "nullable": true, "default": "null for an ordinary local file; required when a virtual/container origin is used" },
+        { "name": "PatternId", "type": "string", "nullable": true, "default": "null for search.matches; populated by search.many" },
+        { "name": "MatchIndex", "type": "long", "nullable": false, "default": "zero-based ordinal per (Path, PatternId) in scan order" },
+        { "name": "ByteOffset", "type": "long", "nullable": true, "default": "original-input byte start when a lossless mapping exists" },
+        { "name": "ByteLength", "type": "long", "nullable": true, "default": "original-input byte length when a lossless mapping exists" },
+        { "name": "LineNumber", "type": "long", "nullable": true, "default": "one-based physical line when line mapping is available" },
+        { "name": "Utf16Column", "type": "long", "nullable": true, "default": "zero-based UTF-16 code-unit column, never a byte offset" },
+        { "name": "Utf16Length", "type": "long", "nullable": true, "default": "UTF-16 code-unit length when text mapping is available" },
+        { "name": "MatchText", "type": "string", "nullable": true, "default": "null under compact details; retained only when requested and decodable" },
+        { "name": "LineText", "type": "string", "nullable": true, "default": "null under compact details; retained only when requested and decodable" }
+      ],
+      "explicitCollections": [
+        { "name": "Captures", "type": "IReadOnlyList<SearchCapture>", "nullable": false, "default": "empty for literals and when captures are not requested" },
+        { "name": "Context", "type": "IReadOnlyList<SearchContextLine>", "nullable": false, "default": "empty when contextLines is zero or Context is not projected" }
+      ],
+      "captureSemantics": {
+        "groupZero": "omitted",
+        "unnamedGroupName": null,
+        "repeatedGroup": "final successful capture only under portable-nonbacktracking-v1; CaptureIndex is zero",
+        "duplicateName": "accepted names share the engine group number and use the repeated-group rule",
+        "unmatchedGroup": "one Success=false placeholder with null text and spans",
+        "successfulEmptyGroup": "Success=true with empty text and zero-length spans"
+      },
+      "counters": {
+        "rowCount": "Occurrences",
+        "lineCount": "distinct matching (Path, PatternId, LineNumber) values",
+        "fileCount": "distinct matching (Path, PatternId) values",
+        "zeroHitFiles": "not emitted by matches"
+      }
+    },
+    "lines": {
+      "defaults": {
+        "patternId": null,
+        "lineText": "decoded physical line including its source line terminator when available"
+      },
+      "selectStar": [
+        { "name": "Path", "type": "string", "nullable": false, "default": "stable path identity for the eligible file" },
+        { "name": "Origin", "type": "string", "nullable": true, "default": "null for an ordinary local file" },
+        { "name": "PatternId", "type": "string", "nullable": true, "default": "null for the single-pattern form" },
+        { "name": "LineNumber", "type": "long", "nullable": false, "default": "one-based physical line number" },
+        { "name": "ByteOffset", "type": "long", "nullable": true, "default": "original-input byte start of the physical line when mapped" },
+        { "name": "LineText", "type": "string", "nullable": true, "default": "available by default for a decoded text line; null only when not retained or not decodable" },
+        { "name": "OccurrenceCount", "type": "long", "nullable": false, "default": "number of occurrences for this pattern on this line" }
+      ],
+      "counters": {
+        "rowCount": "MatchingLines",
+        "occurrenceCount": "sum of OccurrenceCount across rows",
+        "zeroHitFiles": "not emitted by lines"
+      }
+    },
+    "files": {
+      "defaults": {
+        "patternId": null
+      },
+      "selectStar": [
+        { "name": "Path", "type": "string", "nullable": false, "default": "stable path identity for a matching file" },
+        { "name": "Origin", "type": "string", "nullable": true, "default": "null for an ordinary local file" },
+        { "name": "PatternId", "type": "string", "nullable": true, "default": "null for the single-pattern form" }
+      ],
+      "counters": {
+        "rowCount": "FilesMatched",
+        "positiveCondition": "at least one qualifying occurrence",
+        "zeroHitFiles": "not emitted by files"
+      }
+    },
+    "counts": {
+      "defaults": {
+        "patternId": null,
+        "complete": true
+      },
+      "selectStar": [
+        { "name": "Path", "type": "string", "nullable": false, "default": "stable path identity for every eligible file" },
+        { "name": "Origin", "type": "string", "nullable": true, "default": "null for an ordinary local file" },
+        { "name": "PatternId", "type": "string", "nullable": true, "default": "null for the single-pattern form" },
+        { "name": "OccurrenceCount", "type": "long", "nullable": false, "default": "64-bit count of all occurrences in the file" },
+        { "name": "MatchingLineCount", "type": "long", "nullable": false, "default": "64-bit count of physical lines containing one or more occurrences" },
+        { "name": "BytesScanned", "type": "long", "nullable": false, "default": "64-bit count of original input bytes scanned for this file" },
+        { "name": "Complete", "type": "bool", "nullable": false, "default": "true for every emitted count row; incomplete files are not represented as exact counts" }
+      ],
+      "counters": {
+        "rowCount": "EligibleFiles after complete processing",
+        "zeroHitFiles": "one row with OccurrenceCount = 0 and MatchingLineCount = 0",
+        "partialInput": "never emitted as an exact count row"
+      }
+    },
+    "paths": {
+      "defaults": {
+        "contentRead": false
+      },
+      "selectStar": [
+        { "name": "Path", "type": "string", "nullable": false, "default": "stable path identity for an eligible regular file" },
+        { "name": "Origin", "type": "string", "nullable": true, "default": "null for an ordinary local file" },
+        { "name": "EntryKind", "type": "string", "nullable": false, "default": "file" }
+      ],
+      "counters": {
+        "rowCount": "EligibleFiles",
+        "contentOpens": "0",
+        "zeroHitFiles": "included because content is not inspected"
+      }
+    },
+    "many": {
+      "defaults": {
+        "patternId": "required and non-empty in every request item",
+        "matchText": null,
+        "lineText": null,
+        "captures": [],
+        "context": []
+      },
+      "selectStar": [
+        { "name": "Path", "type": "string", "nullable": false, "default": "same path identity as matches" },
+        { "name": "Origin", "type": "string", "nullable": true, "default": "null for an ordinary local file" },
+        { "name": "PatternId", "type": "string", "nullable": false, "default": "the request item's stable label" },
+        { "name": "MatchIndex", "type": "long", "nullable": false, "default": "zero-based ordinal per (Path, PatternId)" },
+        { "name": "ByteOffset", "type": "long", "nullable": true, "default": "original-input byte start when mapped" },
+        { "name": "ByteLength", "type": "long", "nullable": true, "default": "original-input byte length when mapped" },
+        { "name": "LineNumber", "type": "long", "nullable": true, "default": "one-based physical line when mapped" },
+        { "name": "Utf16Column", "type": "long", "nullable": true, "default": "zero-based UTF-16 code-unit column when mapped" },
+        { "name": "Utf16Length", "type": "long", "nullable": true, "default": "UTF-16 code-unit length when mapped" },
+        { "name": "MatchText", "type": "string", "nullable": true, "default": "null under compact details" },
+        { "name": "LineText", "type": "string", "nullable": true, "default": "null under compact details" }
+      ],
+      "explicitCollections": [
+        { "name": "Captures", "type": "IReadOnlyList<SearchCapture>", "nullable": false, "default": "empty unless requested" },
+        { "name": "Context", "type": "IReadOnlyList<SearchContextLine>", "nullable": false, "default": "empty unless requested" }
+      ],
+      "counters": {
+        "rowCount": "sum of occurrences across all pattern IDs",
+        "patternCount": "number of request items, including equal pattern text with different IDs",
+        "deduplication": "none across distinct PatternId values"
+      }
+    },
+    "bytes": {
+      "defaults": {
+        "patternId": null,
+        "matchedBytes": null,
+        "window": null,
+        "textFields": null,
+        "captures": [],
+        "context": []
+      },
+      "selectStar": [
+        { "name": "Path", "type": "string", "nullable": false, "default": "stable path identity for the eligible file" },
+        { "name": "Origin", "type": "string", "nullable": true, "default": "null for an ordinary local file" },
+        { "name": "PatternId", "type": "string", "nullable": true, "default": "null for the single-pattern form" },
+        { "name": "MatchIndex", "type": "long", "nullable": false, "default": "zero-based ordinal per (Path, PatternId)" },
+        { "name": "ByteOffset", "type": "long", "nullable": false, "default": "original-input byte start" },
+        { "name": "ByteLength", "type": "long", "nullable": false, "default": "original-input byte length" },
+        { "name": "MatchedBytes", "type": "byte[]", "nullable": true, "default": "null under compact details; materialized only when requested" },
+        { "name": "WindowStartByteOffset", "type": "long", "nullable": true, "default": "actual bounded window start after beginning-of-file clipping; null when no window was requested" },
+        { "name": "WindowByteLength", "type": "long", "nullable": true, "default": "actual bounded window length after end-of-file clipping; null when no window was requested" },
+        { "name": "WindowComplete", "type": "bool", "nullable": true, "default": "false when before/after bytes were clipped at a file boundary; null when no window was requested" },
+        { "name": "WindowBytes", "type": "byte[]", "nullable": true, "default": "null under compact details; immutable bounded bytes materialized only when requested" },
+        { "name": "LineNumber", "type": "long", "nullable": true, "default": "null unless a later contract explicitly adds byte-to-text mapping" },
+        { "name": "Utf16Column", "type": "long", "nullable": true, "default": "null for raw byte matches" },
+        { "name": "Utf16Length", "type": "long", "nullable": true, "default": "null for raw byte matches" },
+        { "name": "MatchText", "type": "string", "nullable": true, "default": "null for raw byte matches" },
+        { "name": "LineText", "type": "string", "nullable": true, "default": "null for raw byte matches" },
+        { "name": "Captures", "type": "IReadOnlyList<SearchCapture>", "nullable": false, "default": "empty" },
+        { "name": "Context", "type": "IReadOnlyList<SearchContextLine>", "nullable": false, "default": "empty" }
+      ],
+      "counters": {
+        "rowCount": "byte-pattern occurrences",
+        "byteOffsets": "always original input bytes",
+        "textCoordinates": "not inferred from bytes",
+        "window": "optional pattern.window { beforeBytes, afterBytes }; total requested bytes including the match are bounded to 1048576, boundary clipping is explicit in WindowComplete"
+      }
+    }
+  },
+  "goldenExamples": [
+    {
+      "id": "two-hits-one-line",
+      "fixture": [
+        { "path": "src/a.txt", "text": "TODO TODO\n" },
+        { "path": "src/empty.txt", "text": "" },
+        { "path": "src/none.txt", "text": "DONE\n" }
+      ],
+      "request": { "root": "./fixture", "pattern": "TODO", "mode": "literal" },
+      "expected": {
+        "matchesRows": 2,
+        "linesRows": 1,
+        "filesRows": 1,
+        "countsRows": 3,
+        "pathsRows": 3,
+        "matchingOccurrences": 2,
+        "matchingLines": 1,
+        "matchingFiles": 1,
+        "projectedPathFromMatches": ["src/a.txt", "src/a.txt"],
+        "countRows": [
+          { "path": "src/a.txt", "occurrenceCount": 2, "matchingLineCount": 1 },
+          { "path": "src/empty.txt", "occurrenceCount": 0, "matchingLineCount": 0 },
+          { "path": "src/none.txt", "occurrenceCount": 0, "matchingLineCount": 0 }
+        ]
+      }
+    },
+    {
+      "id": "two-identical-patterns",
+      "fixture": [
+        { "path": "src/a.txt", "text": "TODO TODO\n" },
+        { "path": "src/empty.txt", "text": "" },
+        { "path": "src/none.txt", "text": "DONE\n" }
+      ],
+      "request": {
+        "root": "./fixture",
+        "patterns": [
+          { "id": "todo-primary", "pattern": "TODO", "mode": "literal" },
+          { "id": "todo-secondary", "pattern": "TODO", "mode": "literal" }
+        ]
+      },
+      "expected": {
+        "manyRows": 4,
+        "rowsByPatternId": {
+          "todo-primary": 2,
+          "todo-secondary": 2
+        },
+        "deduplicatedRows": 4,
+        "distinctPatternIds": 2
+      }
+    },
+    {
+      "id": "zero-hit-files",
+      "fixture": [
+        { "path": "src/a.txt", "text": "TODO TODO\n" },
+        { "path": "src/empty.txt", "text": "" },
+        { "path": "src/none.txt", "text": "DONE\n" }
+      ],
+      "request": { "root": "./fixture", "pattern": "TODO", "mode": "literal" },
+      "expected": {
+        "zeroHitCountPaths": ["src/empty.txt", "src/none.txt"],
+        "zeroHitMatchPaths": [],
+        "zeroHitLinePaths": [],
+        "zeroHitFilePaths": []
+      }
+    },
+    {
+      "id": "fresh-audit",
+      "request": { "root": "./fixture", "pattern": "TODO", "mode": "literal" },
+      "expected": {
+        "twoInvocations": true,
+        "distinctScanIds": true,
+        "sameInputCountersMayAgree": true,
+        "previousInvocationIsNotRead": true
+      }
+    }
+  ]
+}

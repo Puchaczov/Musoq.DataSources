@@ -1,9 +1,7 @@
 using System.Diagnostics;
-using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.Tests.Common;
-using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git.Benchmarks;

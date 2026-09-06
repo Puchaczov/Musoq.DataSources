@@ -1,0 +1,227 @@
+{
+  "scopeId": "W00-S02",
+  "status": "passed",
+  "summary": "Resolved the configured datasource and host environment with packaged-engine defaulting, explicit package-train checks, read-only source-engine compatibility validation and clear blocked prerequisites.",
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass",
+    "path": "docs/campaigns/search/evidence/W00-S02/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "d8b5cf41ecaa5f21505753c22a09d22fe2960e28",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 2,
+    "behind": 0,
+    "worktree": "clean for tracked files; ignored campaign state and local environment configuration were not part of status",
+    "preExistingScopeCommit": "d8b5cf4 chore(search): lock datasource campaign environment"
+  },
+  "implementation": {
+    "changedFiles": [
+      "scripts/search/Resolve-SearchEnvironment.ps1",
+      "scripts/search/Test-SearchEnvironmentResolution.ps1",
+      "docs/campaigns/search/evidence/W00-S02/environment-lock.json",
+      "docs/campaigns/search/evidence/W00-S02/authority-map.json",
+      "docs/campaigns/search/evidence/W00-S02/review.md",
+      "docs/campaigns/search/evidence/W00-S02/report.json"
+    ],
+    "scopeBoundary": "Only datasource-owned resolver/tests and campaign evidence were changed. The configured local environment file is ignored and no external repository or installed tool was edited."
+  },
+  "resolution": {
+    "repository": "Puchaczov/Musoq.DataSources at d8b5cf41ecaa5f21505753c22a09d22fe2960e28",
+    "packageTrain": {
+      "status": "matched",
+      "MusoqConverterVersion": "17.0.9-alpha.2",
+      "MusoqEvaluatorVersion": "17.0.9-alpha.2",
+      "MusoqParserVersion": "17.0.9-alpha.1",
+      "MusoqPluginsVersion": "17.0.9-alpha.1",
+      "MusoqSchemaVersion": "17.0.9-alpha.1"
+    },
+    "engine": {
+      "mode": "packaged",
+      "status": "selected",
+      "sourceModePolicy": "Source mode requires explicit engine path, repository identity and exact 40-character commit lock."
+    },
+    "host": {
+      "os": "Microsoft Windows 11 Home 10.0.26200",
+      "architecture": "X64",
+      "rid": "win-x64",
+      "dotnet": "10.0.303",
+      "git": "2.48.1.windows.1",
+      "powershell": "7.6.5",
+      "ripgrep": "15.2.0"
+    },
+    "blockedPrerequisites": [
+      "cliExecutable",
+      "externalRepositoryRoots.cli"
+    ],
+    "blockedPolicy": "Missing optional inputs remain explicitly blocked; no executable, checkout, schema or behavior was inferred from PATH or uploaded metadata."
+  },
+  "tests": {
+    "discovered": 1284,
+    "passed": 1253,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "resolutionHarness": {
+      "discovered": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "assertions": 16,
+      "scenarios": [
+        "missing repository path fails with a named diagnostic",
+        "wrong Git repository identity fails",
+        "wrong package train fails",
+        "spaces and Unicode checkout path resolves",
+        "explicit source-engine compatibility resolves read-only"
+      ]
+    },
+    "fullSuiteProjectCount": 20,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 }
+    ],
+    "skipClassification": {
+      "explicitlyIgnoredExistingTests": 29,
+      "conditionalFixtureOrArtifactSkips": 2,
+      "unexpected": 0,
+      "note": "The 29 explicit skips are existing service/playground or known-ignored tests. One conditional skip is an insufficient Git fixture and one is the package-artifact smoke test without local artifacts."
+    }
+  },
+  "commands": [
+    {
+      "kind": "resolution-test",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "scripts/search/Test-SearchEnvironmentResolution.ps1"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 5,
+      "assertions": 16,
+      "logPath": "docs/campaigns/search/evidence/W00-S02/resolution-test.log",
+      "logSha256": "e6546f4ac4900c9abaf2f5cafff8989e3bec039a658ee36ada5dd366cfa81e69"
+    },
+    {
+      "kind": "environment-resolution",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "scripts/search/Resolve-SearchEnvironment.ps1",
+        "-ConfigPath",
+        "docs/campaigns/search/environment.local.json"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "result": "Datasource and package train resolved; packaged engine selected; ripgrep 15.2.0 resolved; CLI executable and CLI checkout explicitly blocked."
+    },
+    {
+      "kind": "full-suite",
+      "argv": [
+        "dotnet",
+        "test",
+        "--configuration",
+        "Release"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 20,
+      "discovered": 1284,
+      "passed": 1253,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W00-S02/full-suite.log",
+      "stdoutSha256": "18ebd4683ab09bda1a9fbc893d07d57a73f53dfef484cc7855bdeec58e1deb6c",
+      "stderrPath": "docs/campaigns/search/evidence/W00-S02/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release full suite exited 0; 1,253 passed, 0 failed, 31 classified existing skips, and the new resolution harness exited 0."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The independent review, authority map, source manifest, artifact hashes and final trailer-bearing completion commit are retained with this report."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "docs/campaigns/search/evidence/W00-S02/authority-map.json",
+      "sha256": "51fa6d472bd008e0104f33d2221563d2093fa0c2a203f4938048f21429b802bf"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S02/environment-lock.json",
+      "sha256": "46a051c76d28812f7a5e917c28df7c2fc4ed99445885586e5febb8c28f9160e6"
+    },
+    {
+      "path": "scripts/search/Resolve-SearchEnvironment.ps1",
+      "sha256": "fac4060c118a6ac4241e43cb8b900ea21297411d7a0330b673751e34971909b7"
+    },
+    {
+      "path": "scripts/search/Test-SearchEnvironmentResolution.ps1",
+      "sha256": "af55b6385218a009cbae06b4a92029417da0407e4e502c462f975ac6dcaee940"
+    }
+  ],
+  "sourceDigest": "f8aa49b6e55af9c7716e70e5f7456a86d6e64439d9c56981113352280c13fb45",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W00-S02/environment-lock.json",
+      "sha256": "46a051c76d28812f7a5e917c28df7c2fc4ed99445885586e5febb8c28f9160e6"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S02/authority-map.json",
+      "sha256": "51fa6d472bd008e0104f33d2221563d2093fa0c2a203f4938048f21429b802bf"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S02/review.md",
+      "sha256": "e51e5e8e70468c12f7a882b465ae0c079cde1ba6e6cb03ec05ad09509edf8da5"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S02/resolution-test.log",
+      "sha256": "e6546f4ac4900c9abaf2f5cafff8989e3bec039a658ee36ada5dd366cfa81e69"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S02/full-suite.log",
+      "sha256": "18ebd4683ab09bda1a9fbc893d07d57a73f53dfef484cc7855bdeec58e1deb6c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S02/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The target CLI executable and CLI checkout are absent on this host; they remain blocked and no CLI behavior is claimed.",
+    "The uploaded specification and CLI index are represented by retained hashes only; their filenames do not establish local presence.",
+    "The full suite emits the existing NU1902 and NU1903 package-audit warnings; this scope changed no package versions.",
+    "PSScriptAnalyzer is not installed; PowerShell parsing and the isolated runtime harness passed."
+  ]
+}

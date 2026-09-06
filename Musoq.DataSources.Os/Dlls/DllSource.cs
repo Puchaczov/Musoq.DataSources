@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Dlls;

@@ -6,10 +6,8 @@ using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.DataSources.Docker;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Evaluator.Tables;
 using Musoq.Schema;
 using Musoq.Schema.Optimization;
 

@@ -73,6 +73,12 @@
       "projectPath": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj"
     },
     {
+      "slug": "search",
+      "packageId": "Musoq.DataSources.Search",
+      "version": "1.0.0-alpha.1",
+      "projectPath": "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj"
+    },
+    {
       "slug": "separatedvalues",
       "packageId": "Musoq.DataSources.SeparatedValues",
       "version": "11.0.0-alpha.3",

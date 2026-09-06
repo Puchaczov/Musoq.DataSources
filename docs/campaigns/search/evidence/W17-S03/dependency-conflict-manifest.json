@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "runtimeFamily": "musoq-runtime-v2",
+  "targetFramework": "net10.0",
+  "hostPackages": {
+    "Musoq.Schema": {
+      "minimumVersionInclusive": "99.0.0",
+      "maximumVersionExclusive": "100.0.0"
+    },
+    "Musoq.Plugins": {
+      "minimumVersionInclusive": "17.0.9-alpha.1",
+      "maximumVersionExclusive": "18.0.0"
+    }
+  }
+}

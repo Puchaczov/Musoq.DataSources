@@ -1,0 +1,464 @@
+{
+  "formatVersion": 1,
+  "status": "passed",
+  "resultsPath": "D:\\repos\\Musoq.DataSources\\docs\\campaigns\\search\\evidence\\W00-S03\\trx",
+  "fileCount": 20,
+  "expectedProjects": [
+    "musoq.datasources.archives.tests",
+    "musoq.datasources.asyncrowssource.tests",
+    "musoq.datasources.canbus.tests",
+    "musoq.datasources.docker.tests",
+    "musoq.datasources.flatfile.tests",
+    "musoq.datasources.git.tests",
+    "musoq.datasources.github.tests",
+    "musoq.datasources.jira.tests",
+    "musoq.datasources.json.tests",
+    "musoq.datasources.ollama.tests",
+    "musoq.datasources.openai.tests",
+    "musoq.datasources.os.playground",
+    "musoq.datasources.os.tests",
+    "musoq.datasources.osandgittests",
+    "musoq.datasources.representativetests",
+    "musoq.datasources.roslyn.commandlinearguments.tests",
+    "musoq.datasources.roslyn.tests",
+    "musoq.datasources.separatedvalues.tests",
+    "musoq.datasources.system.tests",
+    "musoq.datasources.time.tests"
+  ],
+  "observedProjects": [
+    "musoq.datasources.archives.tests",
+    "musoq.datasources.asyncrowssource.tests",
+    "musoq.datasources.canbus.tests",
+    "musoq.datasources.docker.tests",
+    "musoq.datasources.flatfile.tests",
+    "musoq.datasources.git.tests",
+    "musoq.datasources.github.tests",
+    "musoq.datasources.jira.tests",
+    "musoq.datasources.json.tests",
+    "musoq.datasources.ollama.tests",
+    "musoq.datasources.openai.tests",
+    "musoq.datasources.os.playground",
+    "musoq.datasources.os.tests",
+    "musoq.datasources.osandgittests",
+    "musoq.datasources.representativetests",
+    "musoq.datasources.roslyn.commandlinearguments.tests",
+    "musoq.datasources.roslyn.tests",
+    "musoq.datasources.separatedvalues.tests",
+    "musoq.datasources.system.tests",
+    "musoq.datasources.time.tests"
+  ],
+  "missingProjects": [],
+  "totals": {
+    "discovered": 1284,
+    "passed": 1253,
+    "failed": 0,
+    "skipped": 31
+  },
+  "zeroTestRuns": [],
+  "unexpectedSkips": [],
+  "unknownOutcomes": [],
+  "counterMismatches": [],
+  "allowedSkipCount": 31,
+  "runs": [
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_45_57_net10.0.trx",
+      "id": "76b44978-ac14-44be-9389-1655d9137d9a",
+      "projects": [
+        "musoq.datasources.roslyn.commandlinearguments.tests"
+      ],
+      "counters": {
+        "total": 22,
+        "executed": 22,
+        "passed": 22,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 22,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_45_57_net10.0[1].trx",
+      "id": "8ff7832f-8611-4126-9d88-2b9a8d1b522d",
+      "projects": [
+        "musoq.datasources.docker.tests"
+      ],
+      "counters": {
+        "total": 31,
+        "executed": 22,
+        "passed": 22,
+        "failed": 0,
+        "skipped": 9
+      },
+      "observed": {
+        "passed": 22,
+        "failed": 0,
+        "skipped": 9,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_45_58_net10.0.trx",
+      "id": "b500543e-9d1d-4931-b58d-310845b9d70a",
+      "projects": [
+        "musoq.datasources.asyncrowssource.tests"
+      ],
+      "counters": {
+        "total": 4,
+        "executed": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_45_59_net10.0.trx",
+      "id": "ac530573-c403-4346-b524-6cd4f4159e0e",
+      "projects": [
+        "musoq.datasources.time.tests"
+      ],
+      "counters": {
+        "total": 12,
+        "executed": 12,
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_45_59_net10.0[1].trx",
+      "id": "ebad76cf-18c9-4b0d-8640-98cba85ef72d",
+      "projects": [
+        "musoq.datasources.json.tests"
+      ],
+      "counters": {
+        "total": 103,
+        "executed": 103,
+        "passed": 103,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 103,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_45_59_net10.0[2].trx",
+      "id": "36116031-57db-4c29-9d2d-c7f137857970",
+      "projects": [
+        "musoq.datasources.ollama.tests"
+      ],
+      "counters": {
+        "total": 33,
+        "executed": 31,
+        "passed": 31,
+        "failed": 0,
+        "skipped": 2
+      },
+      "observed": {
+        "passed": 31,
+        "failed": 0,
+        "skipped": 2,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_45_59_net10.0[3].trx",
+      "id": "c1cc7e90-b1e6-4b79-8a64-48d765db627c",
+      "projects": [
+        "musoq.datasources.openai.tests"
+      ],
+      "counters": {
+        "total": 34,
+        "executed": 33,
+        "passed": 33,
+        "failed": 0,
+        "skipped": 1
+      },
+      "observed": {
+        "passed": 33,
+        "failed": 0,
+        "skipped": 1,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_00_net10.0.trx",
+      "id": "0426588f-ac61-4095-97e5-5151cccaeb31",
+      "projects": [
+        "musoq.datasources.flatfile.tests"
+      ],
+      "counters": {
+        "total": 13,
+        "executed": 13,
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_00_net10.0[1].trx",
+      "id": "a0ce51b5-ec7e-456a-ad8c-a9c55e254f9e",
+      "projects": [
+        "musoq.datasources.separatedvalues.tests"
+      ],
+      "counters": {
+        "total": 249,
+        "executed": 249,
+        "passed": 249,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 249,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_01_net10.0.trx",
+      "id": "9c5734a6-cf17-470d-9c9f-f3de248f8387",
+      "projects": [
+        "musoq.datasources.archives.tests"
+      ],
+      "counters": {
+        "total": 19,
+        "executed": 19,
+        "passed": 19,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 19,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_04_net10.0.trx",
+      "id": "a550159e-b3fe-4e85-9267-50c9f0de65bf",
+      "projects": [
+        "musoq.datasources.system.tests"
+      ],
+      "counters": {
+        "total": 18,
+        "executed": 17,
+        "passed": 17,
+        "failed": 0,
+        "skipped": 1
+      },
+      "observed": {
+        "passed": 17,
+        "failed": 0,
+        "skipped": 1,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_04_net10.0[1].trx",
+      "id": "bdae91ad-b48f-4318-a9eb-3e7127575ddf",
+      "projects": [
+        "musoq.datasources.roslyn.tests"
+      ],
+      "counters": {
+        "total": 347,
+        "executed": 342,
+        "passed": 342,
+        "failed": 0,
+        "skipped": 5
+      },
+      "observed": {
+        "passed": 342,
+        "failed": 0,
+        "skipped": 5,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_06_net10.0.trx",
+      "id": "929a0359-fbf9-4a31-bf7a-34b1e37cc8c9",
+      "projects": [
+        "musoq.datasources.os.playground"
+      ],
+      "counters": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_06_net10.0[1].trx",
+      "id": "46b29d9e-e4b9-4925-8233-70c1fceb3303",
+      "projects": [
+        "musoq.datasources.jira.tests"
+      ],
+      "counters": {
+        "total": 47,
+        "executed": 47,
+        "passed": 47,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 47,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_06_net10.0[2].trx",
+      "id": "930513b2-7912-41a3-9a97-63f7d439bf07",
+      "projects": [
+        "musoq.datasources.github.tests"
+      ],
+      "counters": {
+        "total": 51,
+        "executed": 51,
+        "passed": 51,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 51,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_06_net10.0[3].trx",
+      "id": "d7a06391-7a41-4677-b0f6-86884cb678af",
+      "projects": [
+        "musoq.datasources.os.tests"
+      ],
+      "counters": {
+        "total": 109,
+        "executed": 109,
+        "passed": 109,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 109,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_09_net10.0.trx",
+      "id": "6a4e209f-99ec-4134-9cf3-24690007fe5c",
+      "projects": [
+        "musoq.datasources.osandgittests"
+      ],
+      "counters": {
+        "total": 2,
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_09_net10.0[1].trx",
+      "id": "e0debafc-a062-4845-92ae-628fab4bf525",
+      "projects": [
+        "musoq.datasources.canbus.tests"
+      ],
+      "counters": {
+        "total": 47,
+        "executed": 47,
+        "passed": 47,
+        "failed": 0,
+        "skipped": 0
+      },
+      "observed": {
+        "passed": 47,
+        "failed": 0,
+        "skipped": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_10_net10.0.trx",
+      "id": "d973f816-cfec-4fcb-807d-090fb94c4158",
+      "projects": [
+        "musoq.datasources.git.tests"
+      ],
+      "counters": {
+        "total": 89,
+        "executed": 77,
+        "passed": 77,
+        "failed": 0,
+        "skipped": 12
+      },
+      "observed": {
+        "passed": 77,
+        "failed": 0,
+        "skipped": 12,
+        "unknown": 0
+      }
+    },
+    {
+      "path": "Jakub_DESKTOP-I52018A_2026-09-06_18_46_10_net10.0[1].trx",
+      "id": "8fe6f597-8734-417e-9ad2-470a5f8dd8bf",
+      "projects": [
+        "musoq.datasources.representativetests"
+      ],
+      "counters": {
+        "total": 51,
+        "executed": 50,
+        "passed": 50,
+        "failed": 0,
+        "skipped": 1
+      },
+      "observed": {
+        "passed": 50,
+        "failed": 0,
+        "skipped": 1,
+        "unknown": 0
+      }
+    }
+  ]
+}

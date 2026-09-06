@@ -1,0 +1,232 @@
+{
+  "scopeId": "W01-S04",
+  "status": "passed",
+  "summary": "Defined the proposed Search completion and budget contract, separating QuerySatisfied, ScopeExhausted, Failed and Partial; freezing strict failure, terminal-summary delivery, full-input versus observed-prefix validation, zero-match outcomes and budget exhaustion semantics with an executable outcome corpus.",
+  "sourceReferences": ["S14", "S15", "S20", "S22", "S23"],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass",
+    "path": "docs/campaigns/search/evidence/W01-S04/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "608352350f6bb094ec3b5ed7910c824bc81d0905",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 9,
+    "behind": 0,
+    "worktree": "clean for tracked files; the new completion contract files and ignored campaign state were not present in the starting state",
+    "preExistingScopeCommit": "6083523 docs(search): define scope semantics"
+  },
+  "implementation": {
+    "changedFiles": [
+      "docs/search/search-completion-contract-v1.json",
+      "docs/search/search-completion-contract-v1.md",
+      "scripts/search/Test-SearchCompletionSemantics.ps1",
+      "docs/campaigns/search/evidence/W01-S04/completion-semantics-test.log",
+      "docs/campaigns/search/evidence/W01-S04/completion-semantics-test.err.log",
+      "docs/campaigns/search/evidence/W01-S04/full-suite.log",
+      "docs/campaigns/search/evidence/W01-S04/full-suite.err.log",
+      "docs/campaigns/search/evidence/W01-S04/review.md",
+      "docs/campaigns/search/evidence/W01-S04/report.json"
+    ],
+    "scopeBoundary": "Only the proposed Search completion/budget contract, its independent terminal-outcome test and scope evidence were changed; no product datasource, existing test project, package, engine checkout or external repository was edited."
+  },
+  "contract": {
+    "version": 1,
+    "status": "proposed",
+    "outcomes": ["QuerySatisfied", "ScopeExhausted", "Failed", "Partial"],
+    "strictDefaults": {
+      "failurePolicy": "strict",
+      "partialPolicy": "reject",
+      "requestValidation": "full-input",
+      "binaryPolicy": "skip-and-report",
+      "timeoutPolicy": "fail",
+      "cancellationPolicy": "fail",
+      "outputCapPolicy": "fail",
+      "takePolicy": "query-satisfaction"
+    },
+    "terminalSummary": {
+      "delivery": "exactly one after observed rows, or first and only result when no rows exist",
+      "authoritativeField": "outcome",
+      "occurrenceRowsCarryCompletion": false
+    },
+    "validationModes": ["full-input", "observed-prefix"],
+    "zeroMatchOutcomes": ["no-eligible-files", "no-match", "binary-skipped-by-policy"],
+    "budgetRules": [
+      "TAKE is a query limit and can yield QuerySatisfied without ScopeExhausted.",
+      "Output/read/file/time budgets fail strictly by default.",
+      "Explicit partial policy may yield Partial, never an exhaustive success."
+    ]
+  },
+  "tests": {
+    "discovered": 1284,
+    "passed": 1253,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "semanticsHarness": {
+      "discovered": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "assertions": 124,
+      "scenarios": [
+        "outcome taxonomy and terminal summary",
+        "strict validation and budget policy",
+        "zero-match and counter exactness",
+        "required terminal outcome corpus"
+      ]
+    },
+    "fullSuiteProjectCount": 20,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 }
+    ],
+    "skipClassification": {
+      "explicitlyIgnoredExistingTests": 29,
+      "conditionalFixtureOrArtifactSkips": 2,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "completion-semantics-harness",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "scripts/search/Test-SearchCompletionSemantics.ps1"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 124,
+      "logPath": "docs/campaigns/search/evidence/W01-S04/completion-semantics-test.log",
+      "logSha256": "728b60845e03350e184084b08a063f9091711ceae4c114060817d0d7294ed999",
+      "stderrPath": "docs/campaigns/search/evidence/W01-S04/completion-semantics-test.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": [
+        "dotnet",
+        "test",
+        "--configuration",
+        "Release"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 20,
+      "discovered": 1284,
+      "passed": 1253,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W01-S04/full-suite.log",
+      "stdoutSha256": "666d88b2f90917a17edea55b2353f0a1e8552f5ac1401d8f0c152a98daf4620a",
+      "stderrPath": "docs/campaigns/search/evidence/W01-S04/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-validation",
+      "argv": [
+        "PowerShell parser validation",
+        "JSON parse validation"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release full suite exited 0 with 1,253 passed and 0 failed; the four-scenario completion harness also exited 0."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, source/artifact hashes and final trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The versioned machine-readable and human-readable completion documents agree, and every budget-limited or partial result is explicitly labeled rather than advertised as exhaustive success."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "docs/search/search-completion-contract-v1.json",
+      "sha256": "e06d312ba76167ab6ef332a34feb01594cccd34229c8f23cd054675085d45330"
+    },
+    {
+      "path": "docs/search/search-completion-contract-v1.md",
+      "sha256": "1558310f437a83aefb11f6643b08cc07f7b1f45110e32b98bfccefd02641e7cf"
+    },
+    {
+      "path": "scripts/search/Test-SearchCompletionSemantics.ps1",
+      "sha256": "a1470fd45f2da9f89d9e57c5ff688114fae25bfda9b36a50a5b27a70e0a5b46e"
+    }
+  ],
+  "sourceDigest": "ab1189a5b5d8561a1f0fe5707e72bf2c79cd199176fedf1853eeefcf4f9ff36e",
+  "artifacts": [
+    {
+      "path": "docs/search/search-completion-contract-v1.json",
+      "sha256": "e06d312ba76167ab6ef332a34feb01594cccd34229c8f23cd054675085d45330"
+    },
+    {
+      "path": "docs/search/search-completion-contract-v1.md",
+      "sha256": "1558310f437a83aefb11f6643b08cc07f7b1f45110e32b98bfccefd02641e7cf"
+    },
+    {
+      "path": "scripts/search/Test-SearchCompletionSemantics.ps1",
+      "sha256": "a1470fd45f2da9f89d9e57c5ff688114fae25bfda9b36a50a5b27a70e0a5b46e"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S04/review.md",
+      "sha256": "e0aafa33e4c7a02d416dfa22c9bacc799287c72b9df9596fe5260a45c985c1ab"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S04/completion-semantics-test.log",
+      "sha256": "728b60845e03350e184084b08a063f9091711ceae4c114060817d0d7294ed999"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S04/completion-semantics-test.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S04/full-suite.log",
+      "sha256": "666d88b2f90917a17edea55b2353f0a1e8552f5ac1401d8f0c152a98daf4620a"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S04/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "This scope defines a proposed completion and budget contract; no Search terminal-summary transport or runtime outcome model is claimed to be installed.",
+    "Actual filesystem, cancellation, buffering, binary classification and output-cap enforcement require later runtime tests.",
+    "The exact request schema and host/CLI delivery surface remain later scopes; this contract does not invent an engine integration.",
+    "The full suite retains 31 existing expected skips and existing NU1902/NU1903 package-audit warnings; this scope changed no product or package code.",
+    "PSScriptAnalyzer is not installed; PowerShell parser validation and the focused completion harness passed."
+  ]
+}

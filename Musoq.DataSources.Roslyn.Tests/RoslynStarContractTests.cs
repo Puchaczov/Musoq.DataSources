@@ -1,18 +1,12 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.DataSources.Roslyn;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Plugins.Attributes;
-using Musoq.Schema;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Roslyn.Tests;

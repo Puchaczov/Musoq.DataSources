@@ -1,0 +1,241 @@
+{
+  "scopeId": "W12-S01",
+  "status": "passed",
+  "summary": "Implemented fresh terminal accounting for file-backed text Search sources, including separate scope/file/match counters, explicit QuerySatisfied versus ScopeExhausted outcomes, strict failure and cancellation classification, and early accepted-TAKE cleanup.",
+  "requirementIds": [
+    "R03",
+    "R07",
+    "R08",
+    "R10"
+  ],
+  "sourceReferences": [
+    "S07",
+    "S14",
+    "S15",
+    "S18"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W12-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "833a62984ad5a43c41ac6ff9d328938fc0c982ba",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 61,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W12-S01 implementation; ignored campaign state had W12-S01 active and was not included in the scope commit.",
+    "preExistingScopeCommit": "833a62984ad5a43c41ac6ff9d328938fc0c982ba",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W11-S05; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchTerminalOutcomeTests.cs",
+      "Musoq.DataSources.Search/SearchExecution.cs",
+      "Musoq.DataSources.Search/SearchFileParallelCoordinator.cs",
+      "Musoq.DataSources.Search/SearchRegexScanner.cs",
+      "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "Musoq.DataSources.Search/SearchSliceWindow.cs",
+      "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "Musoq.DataSources.Search/SearchTextSinks.cs",
+      "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "docs/search/search-completion-contract-v1.json",
+      "docs/search/search-completion-contract-v1.md"
+    ],
+    "scopeBoundary": "Only the owning repository's Search production, test and contract-documentation files changed, plus this scope's campaign evidence. No sibling repository, package version, publication state or host/SQL transport was changed.",
+    "terminalModel": "SearchExecutionAccounting records visited, eligible, opened, read, completed and failed files separately from binary skips, bytes, matched files, matching lines, occurrences and observed rows. SearchTerminalSummary derives completion flags from QuerySatisfied, ScopeExhausted, Failed or Partial rather than adding per-row completion state.",
+    "takeAndLifecycle": "An accepted TAKE is reported as QuerySatisfied after the accepted window reaches its target; the coordinator cancels workers, drains cleanup and disposes queued/active suffix work. Failure cleanup flushes rows already drained before rethrowing the first typed failure.",
+    "transportBoundary": "LastExecution is an internal source-side summary seam for file-backed text sources. Fresh audit/count execution and SQL/host delivery remain explicitly deferred to W12-S02 and later scopes."
+  },
+  "tests": {
+    "discovered": 1565,
+    "passed": 1531,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "w12FocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchTerminalOutcomeTests",
+      "discovered": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "No-match scope produces ScopeExhausted with exact zero match counters.",
+        "All-excluded tree produces a resolved empty scope without opening content.",
+        "Accepted TAKE produces QuerySatisfied without an exhaustive-count claim.",
+        "Read failure after a completed prefix retains failure and observed-row accounting.",
+        "Cancellation before traversal produces a typed failed/cancelled outcome."
+      ]
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 281,
+      "passed": 278,
+      "failed": 0,
+      "skipped": 3
+    },
+    "completionContractHarness": {
+      "scenarios": 4,
+      "assertions": 124,
+      "passed": true
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "search-test-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "completion-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchCompletionSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 124
+    },
+    {
+      "kind": "w12-focused-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --no-build --filter FullyQualifiedName~SearchTerminalOutcomeTests --logger \"console;verbosity=normal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --no-build --logger \"console;verbosity=normal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 281,
+      "passed": 278,
+      "failed": 0,
+      "skipped": 3
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1565,
+      "passed": 1531,
+      "failed": 0,
+      "skipped": 34
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; source manifest and artifact hash validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "Python 3.13.1",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "AMD64",
+    "osArchitecture": "AMD64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release owning-repository suite completed across 21 projects with 1,565 total tests, 1,531 passed, 0 failed and 34 classified skips; the five new terminal-outcome tests and the full Search suite also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved the terminal state model, counter ownership, lifecycle cleanup, documentation boundary and retained provenance; the exact scope and repository trailers are required for completion."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "The required zero-output, all-excluded, accepted-TAKE and read-failure cases pass with explicit outcome, counter and exactness assertions; the existing Search semantic suite remains green."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The completion contract harness passes all four scenarios and 124 assertions; documentation records source-side accounting without inventing SQL or host summary delivery."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Accepted-TAKE cleanup cancels and disposes suffix work, failure cleanup flushes the observed prefix, and the required cancellation case plus existing coordinator lifecycle tests pass."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "docs/search/search-completion-contract-v1.json",
+      "sha256": "eecfed214fcb30b27073e6e017729a3356610d27b68d0dfbd31210f7ad31632b"
+    },
+    {
+      "path": "docs/search/search-completion-contract-v1.md",
+      "sha256": "6d4ceb271048e8c3709d39a454d7d63775d5bae51f145bfe9fa2d1dbaec108cc"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchTerminalOutcomeTests.cs",
+      "sha256": "d5459fa713d9e8c3969393dae87a0478b44bb45ac0f5bec315986365f6c97616"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchExecution.cs",
+      "sha256": "9a56ccd037f86f3fb7ca9212c4bb0bd322f5baad9e71d6e48e969124a59d5c6d"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchFileParallelCoordinator.cs",
+      "sha256": "4a7bff69c025bdce9b3dffcd778c4ba593cd4f7e44696dcc4c1f235d10b7ab4a"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchRegexScanner.cs",
+      "sha256": "665b2a96e84a4616315c3e66a1630df0eb93f7562a70909b80389e3ffdbb4fbf"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "sha256": "bd297e34c53e8f17c3eccb23b28e5f06ca946eb4e8901aca87c98a50b219e9f8"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchSliceWindow.cs",
+      "sha256": "d222a7b085ee78766e74e7014acd4fb366447e9c125bf0b3bb5d8b8bf11eb162"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "sha256": "c16e5f0e2370b2e5665eb8e271f75c891d21db444e938380088408a216842e0f"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSinks.cs",
+      "sha256": "ce553fbc123742770263229a1dcaff6f3e5d730bfec91bb46e573c512731e0bc"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "sha256": "9985004a0a7d00568b6c97c88216289d5b9df5ffc5d3e9112aa4fa4616a3c555"
+    }
+  ],
+  "sourceDigest": "e08271e49d954a441466347f89116202a4e1bf1b192edd043518929fe34853a3",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W12-S01/review.md",
+      "sha256": "8600e676c665f818eafb4fe0e5cfeb0f0ca00d9fa12d06da4f44b01789300048"
+    }
+  ],
+  "knownLimitations": [
+    "The source-side LastExecution seam is internal; fresh audit/count execution and SQL/host terminal-summary delivery remain later scopes.",
+    "Completed text-file bytes use the completed file length; failed and policy-skipped files do not claim completed scan bytes.",
+    "The repository suite retained 34 existing classified skips: 31 expected and 3 platform-conditional symlink skips, plus existing package-audit/compiler warnings.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

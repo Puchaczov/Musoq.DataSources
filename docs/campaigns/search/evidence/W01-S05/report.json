@@ -1,0 +1,234 @@
+{
+  "scopeId": "W01-S05",
+  "status": "passed",
+  "summary": "Published the proposed bounded Search request contract with labeled multi-pattern JSON, strict duplicate/unknown-key and enum validation, scalar transport compatibility rules and named/positional acceptance examples preserving pattern identity and row cardinality.",
+  "sourceReferences": ["S14", "S15", "S20", "S22", "S23"],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass",
+    "path": "docs/campaigns/search/evidence/W01-S05/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "be3c09610bec237971fe344f02d617cf49a33bc8",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 10,
+    "behind": 0,
+    "worktree": "clean for tracked files; the new request contract files and ignored campaign state were not present in the starting state",
+    "preExistingScopeCommit": "be3c096 docs(search): define completion semantics"
+  },
+  "implementation": {
+    "changedFiles": [
+      "docs/search/search-request-contract-v1.json",
+      "docs/search/search-request-contract-v1.md",
+      "scripts/search/Test-SearchRequestContract.ps1",
+      "docs/campaigns/search/evidence/W01-S05/request-contract-test.log",
+      "docs/campaigns/search/evidence/W01-S05/request-contract-test.err.log",
+      "docs/campaigns/search/evidence/W01-S05/full-suite.log",
+      "docs/campaigns/search/evidence/W01-S05/full-suite.err.log",
+      "docs/campaigns/search/evidence/W01-S05/review.md",
+      "docs/campaigns/search/evidence/W01-S05/report.json"
+    ],
+    "scopeBoundary": "Only the proposed Search request/schema contract, its independent duplicate-key and validation test, acceptance examples and scope evidence were changed; no product datasource, existing test project, package, engine checkout or external repository was edited."
+  },
+  "contract": {
+    "version": 1,
+    "status": "proposed",
+    "transport": "scalar JSON request string",
+    "patternShape": "array of labeled patterns, not a SQL map",
+    "bounds": {
+      "patterns": "1..1024",
+      "patternIdLength": "1..128",
+      "patternTextLength": "1..65536",
+      "take": "1..1000000"
+    },
+    "validationOrder": [
+      "duplicate JSON property detection",
+      "JSON syntax",
+      "closed-schema unknown-property rejection",
+      "version and enum validation",
+      "pattern ID uniqueness",
+      "bounds and cross-field rules",
+      "filesystem access"
+    ],
+    "rejectionCases": [
+      "unknown property",
+      "duplicate JSON property including escaped name",
+      "duplicate pattern ID",
+      "invalid pattern mode",
+      "invalid encoding"
+    ],
+    "acceptanceStyles": ["positional", "named", "scalar-json"]
+  },
+  "tests": {
+    "discovered": 1284,
+    "passed": 1253,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "semanticsHarness": {
+      "discovered": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "assertions": 45,
+      "scenarios": [
+        "schema and transport",
+        "validation order and rejection rules",
+        "rejection corpus",
+        "acceptance examples and cardinality"
+      ]
+    },
+    "fullSuiteProjectCount": 20,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 }
+    ],
+    "skipClassification": {
+      "explicitlyIgnoredExistingTests": 29,
+      "conditionalFixtureOrArtifactSkips": 2,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "request-contract-harness",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "scripts/search/Test-SearchRequestContract.ps1"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 45,
+      "logPath": "docs/campaigns/search/evidence/W01-S05/request-contract-test.log",
+      "logSha256": "328fc8f1a5aa107a6a9b71394238037fba3ac95c083e449bde8c34dbb269b206",
+      "stderrPath": "docs/campaigns/search/evidence/W01-S05/request-contract-test.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": [
+        "dotnet",
+        "test",
+        "--configuration",
+        "Release"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 20,
+      "discovered": 1284,
+      "passed": 1253,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W01-S05/full-suite.log",
+      "stdoutSha256": "373ea5d26ee63284a47ef8a4d12856821e857cf7e013eb34f220857e7d647572",
+      "stderrPath": "docs/campaigns/search/evidence/W01-S05/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-validation",
+      "argv": [
+        "PowerShell parser validation",
+        "JSON parse validation"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release full suite exited 0 with 1,253 passed and 0 failed; the four-scenario request harness also exited 0."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, source/artifact hashes and final trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The versioned machine-readable and human-readable request documents agree, and named/positional examples are explicitly proposed rather than unverified runtime claims."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "docs/search/search-request-contract-v1.json",
+      "sha256": "eb542de6de050e4aa16e2ba909f6ae6e1c7ed553a2f99b22be06eb170295c70d"
+    },
+    {
+      "path": "docs/search/search-request-contract-v1.md",
+      "sha256": "15e750203167945d81cb2b8fe3b6ee218c41d0b46bbb4d012661f8a9a0009004"
+    },
+    {
+      "path": "scripts/search/Test-SearchRequestContract.ps1",
+      "sha256": "6b735b323824de54a7458923e840216bfb410a020ac79900515a3f39cd8125d9"
+    }
+  ],
+  "sourceDigest": "df4b8703e1956ad17f1666cbaaa301afe5d190c0a228ce163349178864188939",
+  "artifacts": [
+    {
+      "path": "docs/search/search-request-contract-v1.json",
+      "sha256": "eb542de6de050e4aa16e2ba909f6ae6e1c7ed553a2f99b22be06eb170295c70d"
+    },
+    {
+      "path": "docs/search/search-request-contract-v1.md",
+      "sha256": "15e750203167945d81cb2b8fe3b6ee218c41d0b46bbb4d012661f8a9a0009004"
+    },
+    {
+      "path": "scripts/search/Test-SearchRequestContract.ps1",
+      "sha256": "6b735b323824de54a7458923e840216bfb410a020ac79900515a3f39cd8125d9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S05/review.md",
+      "sha256": "076058602ae17d59e61c7c08182f08765616c9e11029550e65f37b793c719e84"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S05/request-contract-test.log",
+      "sha256": "328fc8f1a5aa107a6a9b71394238037fba3ac95c083e449bde8c34dbb269b206"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S05/request-contract-test.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S05/full-suite.log",
+      "sha256": "373ea5d26ee63284a47ef8a4d12856821e857cf7e013eb34f220857e7d647572"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S05/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "This scope defines a proposed request contract; actual source metadata, constructor binding, static XML, compiled SQL and filesystem access remain W02 work.",
+    "The PowerShell validator is a reference guard, not the runtime JSON binder; runtime validation must preserve duplicate-key detection and reject invalid requests before opening roots.",
+    "The exact SQL parameter names and overload metadata are intentionally not asserted as installed capabilities by this scope.",
+    "The full suite retains 31 existing expected skips and existing NU1902/NU1903 package-audit warnings; this scope changed no product or package code.",
+    "PSScriptAnalyzer is not installed; PowerShell parser validation and the focused request harness passed."
+  ]
+}

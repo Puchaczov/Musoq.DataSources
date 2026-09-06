@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.Schema.Optimization;
 using Octokit;

@@ -1,0 +1,332 @@
+{
+  "scopeId": "W00-S03",
+  "status": "passed",
+  "summary": "Established a fresh full-suite baseline and an auditable TRX inventory that rejects zero-test success, missing projects, counter drift and unapproved skips.",
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass",
+    "path": "docs/campaigns/search/evidence/W00-S03/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "d0bb7e3aae2d3162f16b75ea6c9d1ca8d33ee1c3",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 3,
+    "behind": 0,
+    "worktree": "clean for tracked files; ignored campaign state was not part of status",
+    "preExistingScopeCommit": "d0bb7e3 chore(search): resolve datasource environment paths"
+  },
+  "implementation": {
+    "changedFiles": [
+      "scripts/search/Inspect-SearchTestResults.ps1",
+      "scripts/search/Test-SearchTestResults.ps1",
+      "docs/campaigns/search/evidence/W00-S03/expected-projects.json",
+      "docs/campaigns/search/evidence/W00-S03/allowed-skips.json",
+      "docs/campaigns/search/evidence/W00-S03/trx-inventory.json",
+      "docs/campaigns/search/evidence/W00-S03/review.md",
+      "docs/campaigns/search/evidence/W00-S03/report.json"
+    ],
+    "scopeBoundary": "Only datasource-owned result-audit scripts and campaign evidence were changed; no test was disabled or altered."
+  },
+  "tests": {
+    "discovered": 1284,
+    "passed": 1253,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "trxHarness": {
+      "discovered": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "assertions": 11,
+      "scenarios": [
+        "consistent TRX passes",
+        "zero-test success is rejected",
+        "missing expected project is rejected",
+        "unapproved skip is rejected"
+      ]
+    },
+    "trxInventory": {
+      "status": "passed",
+      "fileCount": 20,
+      "discovered": 1284,
+      "passed": 1253,
+      "failed": 0,
+      "skipped": 31,
+      "missingProjects": 0,
+      "zeroTestRuns": 0,
+      "unexpectedSkips": 0,
+      "unknownOutcomes": 0,
+      "counterMismatches": 0,
+      "allowedSkipCount": 31
+    },
+    "fullSuiteProjectCount": 20,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 }
+    ],
+    "skipClassification": {
+      "explicitlyIgnoredExistingTests": 29,
+      "conditionalFixtureOrArtifactSkips": 2,
+      "unexpected": 0,
+      "note": "The 29 explicit skips are existing service/playground or known-ignored tests. One conditional skip is an insufficient Git fixture and one is the package-artifact smoke test without local artifacts."
+    }
+  },
+  "commands": [
+    {
+      "kind": "trx-harness",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "scripts/search/Test-SearchTestResults.ps1"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 11,
+      "logPath": "docs/campaigns/search/evidence/W00-S03/trx-test.log",
+      "logSha256": "27737f65fa0ae148fe2f44e2458a541e03b58a79284f0d12d55dbc14cce1a2be"
+    },
+    {
+      "kind": "trx-inventory",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "scripts/search/Inspect-SearchTestResults.ps1",
+        "-ResultsPath",
+        "docs/campaigns/search/evidence/W00-S03/trx",
+        "-ExpectedProjectsPath",
+        "docs/campaigns/search/evidence/W00-S03/expected-projects.json",
+        "-AllowedSkipsPath",
+        "docs/campaigns/search/evidence/W00-S03/allowed-skips.json"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "fileCount": 20,
+      "inventoryPath": "docs/campaigns/search/evidence/W00-S03/trx-inventory.json",
+      "inventorySha256": "8cd46c60e30f0104be24d4e816f3b71aee96c505bee99e663f6e3110c4446a69"
+    },
+    {
+      "kind": "full-suite",
+      "argv": [
+        "dotnet",
+        "test",
+        "--configuration",
+        "Release"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 20,
+      "discovered": 1284,
+      "passed": 1253,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W00-S03/full-suite.log",
+      "stdoutSha256": "a03a2bf3cfcdd6fb0cc2cbbbd59f071e31b4f40eea2c7092fe2a4e3f67eb0e1f",
+      "stderrPath": "docs/campaigns/search/evidence/W00-S03/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite-trx",
+      "argv": [
+        "dotnet",
+        "test",
+        "--configuration",
+        "Release",
+        "--results-directory",
+        "docs/campaigns/search/evidence/W00-S03/trx",
+        "--logger",
+        "trx"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "resultFileCount": 20,
+      "stdoutPath": "docs/campaigns/search/evidence/W00-S03/full-suite-trx.log",
+      "stdoutSha256": "b80cfa8861c60f0a0226cd867e3ddded628af4a3865a7dd53f138fdea8ccbc28",
+      "stderrPath": "docs/campaigns/search/evidence/W00-S03/full-suite-trx.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release full suite exited 0; the fresh logger-enabled run also exited 0; the TRX auditor found 1,253 passed, 0 failed, no zero-test runs, no missing projects, no counter mismatches and no unexpected skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The independent review, raw TRX files, manifests, inventory hash and final trailer-bearing completion commit are retained with this report."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/allowed-skips.json",
+      "sha256": "0e6e0ca69f06ec2c7cabceb476ea8c65d0609350a30f61bb11d3439dc2bfde1b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/expected-projects.json",
+      "sha256": "d2668e73c69ecc541acc0b098d97fd67bef22ed2fffa96299c5295a31b9215c4"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx-inventory.json",
+      "sha256": "8cd46c60e30f0104be24d4e816f3b71aee96c505bee99e663f6e3110c4446a69"
+    },
+    {
+      "path": "scripts/search/Inspect-SearchTestResults.ps1",
+      "sha256": "04316dc0ab313869ffc820ab48ad7e163ce179d232f54a52f7f1f684e37b54e2"
+    },
+    {
+      "path": "scripts/search/Test-SearchTestResults.ps1",
+      "sha256": "6b5f2f666a07162ef9da6051251027c502624dbbd31775980cd3e9708dde30b8"
+    }
+  ],
+  "sourceDigest": "6c1750cd56a8bac3c6db8c861e8ea2277f6c7a30f325b5bb6d3b81f9b22a6804",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/review.md",
+      "sha256": "b53cc55d89cc712477c6cbd35283202cdf8f8c427c508d3dc1f82d60fbacb662"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/expected-projects.json",
+      "sha256": "d2668e73c69ecc541acc0b098d97fd67bef22ed2fffa96299c5295a31b9215c4"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/allowed-skips.json",
+      "sha256": "0e6e0ca69f06ec2c7cabceb476ea8c65d0609350a30f61bb11d3439dc2bfde1b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx-inventory.json",
+      "sha256": "8cd46c60e30f0104be24d4e816f3b71aee96c505bee99e663f6e3110c4446a69"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx-test.log",
+      "sha256": "27737f65fa0ae148fe2f44e2458a541e03b58a79284f0d12d55dbc14cce1a2be"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/full-suite.log",
+      "sha256": "a03a2bf3cfcdd6fb0cc2cbbbd59f071e31b4f40eea2c7092fe2a4e3f67eb0e1f"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/full-suite-trx.log",
+      "sha256": "b80cfa8861c60f0a0226cd867e3ddded628af4a3865a7dd53f138fdea8ccbc28"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/full-suite-trx.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_45_57_net10.0.trx",
+      "sha256": "f768d7533598ab9e749af4fc89b6070900e1bb3248e0fe1105e9bf0c5ce582a0"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_45_57_net10.0[1].trx",
+      "sha256": "1e8aa5770b029f9b330da7297351621994227dfc94df421d8be2cf367cad8ba4"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_45_58_net10.0.trx",
+      "sha256": "268440208d0342611bb35aff282484ce029b2b94ca9485a3c38fe89efda48536"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_45_59_net10.0.trx",
+      "sha256": "f253b6304140592be94c824b2e3a6c29e08cc38d72ff568916defa54bbc1fe85"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_45_59_net10.0[1].trx",
+      "sha256": "5302d19b34514ac82773c35a0e3213c1442b3d52b289853df3113a7532b84126"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_45_59_net10.0[2].trx",
+      "sha256": "c781965abd0d652c0ca460c38383eb40d80efb450dc02b7f6f28f390c86fd325"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_45_59_net10.0[3].trx",
+      "sha256": "e3aca9361f6d72c2bf6ca95f9432fa6ea4a2e33fb04451a807498f4512cd9f61"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_00_net10.0.trx",
+      "sha256": "0585037e4b8e1c08f099ad9a4beb7d9bff6b7bf602fe79b8245bfb38218bf785"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_00_net10.0[1].trx",
+      "sha256": "0ce9d1bf9d36ab9d3d3e26bf4fb93772924e9047d9016848ae62eb8c99441ee4"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_01_net10.0.trx",
+      "sha256": "f2604d6003af2a92d39c0117c80616df9c342742b8af90f469728d3a4490e694"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_04_net10.0.trx",
+      "sha256": "7ec984c36166df6af5148292dda2f90888c37e97dd4476919c1ebe4829410b3b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_04_net10.0[1].trx",
+      "sha256": "2135937de898fff79b127a40f75f4f1638abbb1206962974aa2edb7d4c812d28"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_06_net10.0.trx",
+      "sha256": "6859e0d67cf4a1d86397095f56d1860e4191e27d64409bbb6b1713ad80d1e31d"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_06_net10.0[1].trx",
+      "sha256": "8805c99e4bb2eed6d14442fc1b862056c0103f3e36cdd70ecc7f3548a0381176"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_06_net10.0[2].trx",
+      "sha256": "985881eb3e421e3e9ec83ce47bfbc548d31fa10de3a64fd45f8cf0bc4c642ca9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_06_net10.0[3].trx",
+      "sha256": "d38ab91f9fe56c48590dff7b41a5b455edc54cbbbf74f52f2cb2a09d770cf1a6"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_09_net10.0.trx",
+      "sha256": "260ff35841c190d0771bd1472259b7437e7e968f6797dc922c39f771893bd2e2"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_09_net10.0[1].trx",
+      "sha256": "626c1c41bdcabb5ae6c0a88adcec417922379f0d37a6091b77b45aef5100d1bb"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_10_net10.0.trx",
+      "sha256": "dd44874cdb1b38c13a3a1a50397b20d49033e6478761eeab079f66910a368bc7"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S03/trx/Jakub_DESKTOP-I52018A_2026-09-06_18_46_10_net10.0[1].trx",
+      "sha256": "f601e837ae0a79b58fad49205ab850e5bbeaf134e98edce62ca2b5f02b02d2b4"
+    }
+  ],
+  "knownLimitations": [
+    "The 31 baseline skips are existing explicit or conditional cases retained with classifications; no skip was added by this scope.",
+    "The full suite emits the existing NU1902 and NU1903 package-audit warnings; this scope changed no package versions.",
+    "PSScriptAnalyzer is not installed; PowerShell parsing and the isolated result harness passed."
+  ]
+}

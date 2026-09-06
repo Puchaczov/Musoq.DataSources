@@ -1,0 +1,265 @@
+{
+  "scopeId": "W07-S03",
+  "status": "passed",
+  "summary": "Added typed regular-expression capture rows with stable group identity, participation state, text and exact byte/UTF-16 spans. Captures are explicitly projectable and expandable without changing occurrence cardinality, while the selected portable non-backtracking profile's repeated-group behavior remains explicit and bounded.",
+  "requirementIds": [
+    "R01",
+    "R02",
+    "R04",
+    "R07",
+    "R08"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S22",
+    "S23",
+    "S24"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W07-S03/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "e4e3fa056f9924745a0afc4a1dc54330d6691a9b",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 38,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W07-S03 as in_progress.",
+    "preExistingScopeCommit": "e4e3fa056f9924745a0afc4a1dc54330d6691a9b",
+    "aheadNote": "The ahead count includes the reachable completed Search scope commits through W07-S02 and other pre-existing branch commits; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchProjectionTests.cs",
+      "Musoq.DataSources.Search.Tests/SearchRegexCaptureTests.cs",
+      "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "Musoq.DataSources.Search/SearchCapture.cs",
+      "Musoq.DataSources.Search/SearchContracts.cs",
+      "Musoq.DataSources.Search/SearchMatch.cs",
+      "Musoq.DataSources.Search/SearchMatchesHelper.cs",
+      "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "Musoq.DataSources.Search/SearchProjectionPolicy.cs",
+      "Musoq.DataSources.Search/SearchRegexScanner.cs",
+      "Musoq.DataSources.Search/SearchSchema.cs",
+      "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "Musoq.DataSources.Search/SearchTextSinks.cs",
+      "docs/search/search-projection-policy-v1.md",
+      "docs/search/search-regex-backend-v1.md",
+      "docs/search/search-source-contract-v1.json",
+      "docs/search/search-source-contract-v1.md"
+    ],
+    "scopeBoundary": "Only the owning Search source, tests, Search documentation and W07-S03 evidence were changed. The ignored local campaign state was not staged. No sibling repository, SQL/XML surface, release, publication or installation was modified.",
+    "captureModel": "Captures expose GroupName, GroupIndex, CaptureIndex, Success, Text, ByteOffset, ByteLength, Utf16Column and Utf16Length. Group zero is omitted; unnamed groups use null names; unmatched groups use false/null placeholders; successful empty captures use true/empty zero-length values.",
+    "repeatedGroupPolicy": "The selected portable-nonbacktracking-v1 profile exposes the final successful capture for a repeated group with CaptureIndex zero. Accepted duplicate names share the engine group number. No silent backtracking fallback is used.",
+    "projectionIntegration": "The typed Captures collection is a schema property and is explicitly expandable with CROSS APPLY. Capture objects are materialized only when Captures is requested, while literal and compact rows retain a shared empty collection and unchanged occurrence cardinality.",
+    "coordinatePolicy": "Capture byte ranges reuse the existing lossless decoder coordinate mapping; UTF-16 positions are relative to the containing physical record and remain nullable when a byte mapping cannot be proven."
+  },
+  "tests": {
+    "discovered": 1442,
+    "passed": 1408,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 158,
+      "passed": 155,
+      "failed": 0,
+      "skipped": 3,
+      "newScenarios": [
+        "Optional unmatched groups remain distinct from successful empty captures",
+        "Multiple named groups expose source-order typed captures and spans",
+        "Repeated groups expose the portable profile's final capture",
+        "Duplicate names use the shared engine group number",
+        "Capture projection materializes captures only when requested",
+        "UTF-8 capture bytes and UTF-16 coordinates remain exact",
+        "The typed Captures collection compiles through CROSS APPLY"
+      ],
+      "requiredCoverage": [
+        "Optional unmatched groups versus successful empty captures",
+        "Duplicate capture names where supported and repeated-group behavior",
+        "Multiple typed captures with group identity and coordinates",
+        "Projection elision without occurrence-cardinality changes"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 158,
+      "passed": 155,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W07-S03/search-focused.log",
+      "stdoutSha256": "737a8c127a11c367fd788d0d3a51c63c20ff43a9478909ac5f57f708f7d40ee3",
+      "stderrPath": "docs/campaigns/search/evidence/W07-S03/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above; captured logs were normalized to UTF-8 LF for deterministic hashing.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1442,
+      "passed": 1408,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W07-S03/full-suite-exact.log",
+      "stdoutSha256": "59e371b11fa26e4d18c561de729c495335c6a9764b9c8e2c0307cfcefd45f488",
+      "stderrPath": "docs/campaigns/search/evidence/W07-S03/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; focused and full test result inventory; JSON contract parse; source and artifact hash validation",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "git version 2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 21 projects, 1,442 discovered, 1,408 passed, 0 failed and 34 expected skips; the focused Search suite exited 0 with 158 discovered, 155 passed, 0 failed and 3 expected platform-conditional skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved typed capture identity, missing-versus-empty semantics, projection-aware materialization, safe-profile repeated-group behavior and coordinate mapping; exact commands, tool versions, source/artifact hashes and the unique trailer-bearing completion commit are recorded and verified during post-commit finalization."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused tests cover optional unmatched groups, successful empty groups, multiple groups, repeated groups, duplicate names, projection elision, CROSS APPLY schema expansion and UTF-8/UTF-16 capture coordinates."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "Captures are a stable typed collection property; no pattern-dependent top-level columns, public SQL/XML constructor or sibling-repository contract was invented."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Capture metadata is computed once per file only for requested capture projections, each match returns bounded typed rows, immutable collections prevent scanner-state exposure, and existing cancellation/resource/error paths remain intact."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchProjectionTests.cs",
+      "sha256": "0e5aa11082a28df4b2308e5a6029355e322e364ea13366f4cfc386dcb2d633bc"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchRegexCaptureTests.cs",
+      "sha256": "2928e30b7159f23497c95a7f15eb55472b580fbd1ec8b8f36ced1ccaf32eb7ba"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "sha256": "4f2676abda7741465ae1b02aa1f765cbd20283645c4a41e0a57f3acedde47566"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchCapture.cs",
+      "sha256": "15fbddf6eaa7501de01e791ebfa1f4884614586c5a98349323db4153d19f80f3"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchContracts.cs",
+      "sha256": "5275a7b93f2576bbe867c49754f30af7eafd4480ec096465109025b95f00b3bf"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatch.cs",
+      "sha256": "3cd58cc782dd12f533b2545613a302148889d74f64e4baf3e82a0c6d711cd2b4"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatchesHelper.cs",
+      "sha256": "8f980449d77300ca8b02f231f362ea006334da1af96116e318d6309917ba99cc"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "sha256": "c6f28c50addd7b45a37c5b1ec52a08bd078f0bf4e1d0822dac58a3952727f988"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchProjectionPolicy.cs",
+      "sha256": "7de62674de1ef42fb2cad503bf5691ac62a96f2b711e02a08c3acda6966ad871"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchRegexScanner.cs",
+      "sha256": "d3a385e077d7c9e4ef4730371abd7294de5773d5eb9ddfd267485b37c9a32f82"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchSchema.cs",
+      "sha256": "cf5e447929bd0d1317bf0b965a526c0254ecd3788c195323a9bb01ba72748fca"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "sha256": "128323d90784fb3e365234853b13f345394eb36023e9928b971c1d76ae0d4a98"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSinks.cs",
+      "sha256": "1f68dd2de022065a076058f170588c3ac022d067b30812cd8c5018cbc6e878d8"
+    },
+    {
+      "path": "docs/search/search-projection-policy-v1.md",
+      "sha256": "970396e643b57c21b8d51e1073a6edeec3e177282c29d2f80c32422e0f41edd4"
+    },
+    {
+      "path": "docs/search/search-regex-backend-v1.md",
+      "sha256": "49339253ee2d91e30a357ce78d2536342fe711cfd43c95a77fb60baa0467b59c"
+    },
+    {
+      "path": "docs/search/search-source-contract-v1.json",
+      "sha256": "f7c8b6ff9409d94b785762674e5575488473fc439952e3f4e806a21a92dedc10"
+    },
+    {
+      "path": "docs/search/search-source-contract-v1.md",
+      "sha256": "1d0e23f55c0e02d5997b9a6cf494f4626e4647cc83895ec541e90d36c8fb59f1"
+    }
+  ],
+  "sourceDigest": "d36b7651dcb8b91e3f2133a307d577fde3a3761012bab4f43ed81c049d9f4f61",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W07-S03/review.md",
+      "sha256": "dacbe634e67ec05791f0c8908f1d63ea78fe3c429facf9c443431ec1b4ab617b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W07-S03/search-focused.log",
+      "sha256": "737a8c127a11c367fd788d0d3a51c63c20ff43a9478909ac5f57f708f7d40ee3"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W07-S03/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W07-S03/full-suite-exact.log",
+      "sha256": "59e371b11fa26e4d18c561de729c495335c6a9764b9c8e2c0307cfcefd45f488"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W07-S03/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The selected portable non-backtracking profile intentionally exposes only the final successful capture for repeated groups; backtracking capture history remains a separately gated future profile.",
+    "The regex request mode is an internal foundation and this scope does not add a public SQL/XML regex constructor or many-pattern transport.",
+    "Literal matches and compact projections expose an empty Captures collection; capture data is materialized only when requested or when direct callers provide no projection metadata.",
+    "The repository-wide suite retains 31 existing expected skips and 3 platform-conditional symlink skips; no package was published, pushed, released or installed."
+  ]
+}

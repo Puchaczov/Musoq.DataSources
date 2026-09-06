@@ -1,0 +1,525 @@
+{
+  "formatVersion": 1,
+  "scopeId": "W17-S03",
+  "title": "Run clean-host smoke tests",
+  "track": "core",
+  "status": "passed",
+  "completedAtUtc": "2026-09-08T02:43:35.9029825Z",
+  "review": {
+    "verdict": "approved",
+    "path": "docs/campaigns/search/evidence/W17-S03/review.md",
+    "method": "Separate grill-code review pass; no independent subagent was available."
+  },
+  "implementation": {
+    "kind": "evidence-only",
+    "changedFiles": [],
+    "summary": "Qualified the locally produced Search package using the actual installed CLI contract, disposable installation-scoped hosts, package-derived compatibility negatives, and retained source/test evidence."
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "3bc37f0272ebf608b61bc11d2e7aebf0605ebb57",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 88,
+    "behind": 0,
+    "trackedWorktreeClean": true,
+    "preExistingScopeCommit": "3bc37f0272ebf608b61bc11d2e7aebf0605ebb57"
+  },
+  "testPolicy": {
+    "normalLoop": "Focused Search tests and scope-specific contract harnesses.",
+    "fullOwningSuite": "Run once at scope completion because this scope is a release/clean-host checkpoint.",
+    "userRequestedUpdate": "Full owning-repository validation is reserved for scope completion and other explicitly high-impact checkpoints."
+  },
+  "tests": {
+    "discovered": 1665,
+    "passed": 1631,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedSearchSuite": {
+      "discovered": 377,
+      "passed": 374,
+      "failed": 0,
+      "skipped": 3,
+      "log": "docs/campaigns/search/evidence/W17-S03/focused-search-suite.log"
+    },
+    "contractHarnesses": {
+      "scenarios": 27,
+      "assertions": 314,
+      "passedScenarios": 27,
+      "failedScenarios": 0,
+      "logs": [
+        "docs/campaigns/search/evidence/W17-S03/test-searchsourcecontract.log",
+        "docs/campaigns/search/evidence/W17-S03/test-searchrequestcontract.log",
+        "docs/campaigns/search/evidence/W17-S03/test-searchmatchsemantics.log",
+        "docs/campaigns/search/evidence/W17-S03/test-searchscopesemantics.log",
+        "docs/campaigns/search/evidence/W17-S03/test-searchcompletionsemantics.log"
+      ]
+    },
+    "packageSmoke": {
+      "status": "passed",
+      "tag": "8.0.3-alpha.7-Musoq.DataSources.Search",
+      "log": "docs/campaigns/search/evidence/W17-S03/release-smoke.log"
+    },
+    "fullOwningSuite": {
+      "projectSummaries": 21,
+      "discovered": 1665,
+      "passed": 1631,
+      "failed": 0,
+      "skipped": 34,
+      "log": "docs/campaigns/search/evidence/W17-S03/full-suite.log"
+    }
+  },
+  "commands": [
+    {
+      "id": "cli-version",
+      "kind": "discovery",
+      "command": "C:\\Program Files\\Musoq\\Musoq.exe --version",
+      "exitCode": 0,
+      "result": "musoq 0.40.0-alpha.14",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/primary-17-version.stdout.log"
+    },
+    {
+      "id": "cli-import-help",
+      "kind": "discovery",
+      "command": "C:\\Program Files\\Musoq\\Musoq.exe data-sources import --help",
+      "exitCode": 0,
+      "result": "data-sources import <PATH> [--format <FORMAT>] [--name <NAME>] [--non-interactive]",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/primary-20-import-help.stdout.log"
+    },
+    {
+      "id": "cli-command-contract",
+      "kind": "discovery",
+      "command": "C:\\Program Files\\Musoq\\Musoq.exe describe command data-sources import --format json",
+      "exitCode": 0,
+      "result": "requiresHost=true; local directory or ZIP import; non-interactive JSON contract",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/primary-21-describe-command-import.stdout.log"
+    },
+    {
+      "id": "cli-manual-contract",
+      "kind": "discovery",
+      "command": "C:\\Program Files\\Musoq\\Musoq.exe describe manual install-update-and-import-datasources --format json",
+      "exitCode": 0,
+      "result": "trusted local artifact and compatible runtime required; inspect after import",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/primary-22-describe-manual-import.stdout.log"
+    },
+    {
+      "id": "bytes-first-clean-host",
+      "kind": "clean-host-smoke",
+      "command": "disposable InstallationScoped host: musoq data-sources import <Search-windows-x64.zip> --format json --name Musoq.DataSources.Search --non-interactive; musoq run \"select * from search.bytes('<isolated binary.dll>','{\\\"version\\\":1,\\\"bytes\\\":\\\"4d 5a\\\",\\\"window\\\":{\\\"beforeBytes\\\":1,\\\"afterBytes\\\":2}}')\" --format json",
+      "exitCode": 1,
+      "result": "import succeeded; first bytes query reproduced MQ9001 FileNotFoundException; no normal profile touched",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/bytes-first-03-bytes-first.stderr.log"
+    },
+    {
+      "id": "focused-search",
+      "kind": "focused-suite",
+      "command": "dotnet test Musoq.DataSources.Search.Tests/Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --no-build",
+      "exitCode": 0,
+      "result": "374 passed, 3 skipped, 0 failed, 377 total",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/focused-search-suite.log"
+    },
+    {
+      "id": "source-contract",
+      "kind": "contract-harness",
+      "command": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchSourceContract.ps1",
+      "exitCode": 0,
+      "result": "7 scenarios, 52 assertions",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/test-searchsourcecontract.log"
+    },
+    {
+      "id": "request-contract",
+      "kind": "contract-harness",
+      "command": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchRequestContract.ps1",
+      "exitCode": 0,
+      "result": "4 scenarios, 45 assertions",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/test-searchrequestcontract.log"
+    },
+    {
+      "id": "match-semantics",
+      "kind": "contract-harness",
+      "command": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchMatchSemantics.ps1",
+      "exitCode": 0,
+      "result": "6 scenarios, 49 assertions",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/test-searchmatchsemantics.log"
+    },
+    {
+      "id": "scope-semantics",
+      "kind": "contract-harness",
+      "command": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchScopeSemantics.ps1",
+      "exitCode": 0,
+      "result": "6 scenarios, 44 assertions",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/test-searchscopesemantics.log"
+    },
+    {
+      "id": "completion-semantics",
+      "kind": "contract-harness",
+      "command": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchCompletionSemantics.ps1",
+      "exitCode": 0,
+      "result": "4 scenarios, 124 assertions",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/test-searchcompletionsemantics.log"
+    },
+    {
+      "id": "full-suite",
+      "kind": "full-suite",
+      "command": "dotnet test --configuration Release --no-restore --no-build --nologo --verbosity quiet --logger console;verbosity=minimal",
+      "exitCode": 0,
+      "result": "21 project summaries; 1631 passed, 34 skipped, 0 failed, 1665 total",
+      "evidence": "docs/campaigns/search/evidence/W17-S03/full-suite.log"
+    }
+  ],
+  "cleanHost": {
+    "hostExecutable": "C:\\Program Files\\Musoq\\Musoq.exe",
+    "hostVersion": "0.40.0-alpha.14",
+    "installationMode": "InstallationScoped",
+    "transport": "ephemeral",
+    "normalProfileModified": false,
+    "packageBeforeImport": [],
+    "packageAfterImport": {
+      "name": "Musoq.DataSources.Search",
+      "version": "8.0.3-alpha.7",
+      "installationState": "Verified",
+      "activationState": "ReadyForFirstUse",
+      "schemaMethods": [
+        "audit(root,literal)",
+        "bytes(root,patternJson)",
+        "counts(root,literal)",
+        "files(root,literal)",
+        "lines(root,literal)",
+        "many(root,request)",
+        "matches(root,literal)",
+        "paths(root)"
+      ],
+      "schemaEvidence": "docs/campaigns/search/evidence/W17-S03/binary-root-05-describe-schema.stdout.log"
+    },
+    "disposableRuns": [
+      {
+        "id": "primary",
+        "root": "artifacts/clean-host/W17-S03/dfb798a7e3814960850174f9d89301b2",
+        "purpose": "CLI discovery, import, show, instance containment, and initial root smoke"
+      },
+      {
+        "id": "binary-root",
+        "root": "artifacts/clean-host/W17-S03/9c0d6b86c0e347c8b838d9faeab2a5e1",
+        "purpose": "binary-root and query-order smoke"
+      },
+      {
+        "id": "text-first",
+        "root": "artifacts/clean-host/W17-S03/d7c4a2e2a8b04b1a9b6a9f3a0e7c4d12",
+        "purpose": "text-first query and missing-root audit smoke"
+      },
+      {
+        "id": "bytes-first",
+        "root": "artifacts/clean-host/W17-S03/f0c6d89ab3e44c239a7d5f0e1b8c6a42",
+        "purpose": "fresh first-use ordering check with bytes query first"
+      }
+    ],
+    "observations": [
+      {
+        "case": "binary-root-matches",
+        "result": "MQ7011 from strict invalid UTF-8 decoding of the PE fixture",
+        "evidence": "docs/campaigns/search/evidence/W17-S03/binary-root-06-matches-binary-root.stderr.log"
+      },
+      {
+        "case": "binary-root-audit",
+        "result": "structured unreadable-file outcome with Complete=false and TerminalReason=unreadable-file",
+        "evidence": "docs/campaigns/search/evidence/W17-S03/binary-root-12-audit-binary-root.stdout.log"
+      },
+      {
+        "case": "missing-root-audit",
+        "result": "structured root-missing outcome with FailureCode=SEARCH-SOURCE-001",
+        "evidence": "docs/campaigns/search/evidence/W17-S03/bytes-first-06-audit-missing-root.stdout.log"
+      },
+      {
+        "case": "generated-query-after-import",
+        "result": "MQ9001 FileNotFoundException for Search assembly on the installed host; package and isolated shadow copy are present",
+        "evidence": "docs/campaigns/search/evidence/W17-S03/bytes-first-host.log"
+      }
+    ]
+  },
+  "negativeCompatibility": {
+    "noPreinstalledSearch": {
+      "status": "passed",
+      "observedBeforeImport": [],
+      "evidence": "docs/campaigns/search/evidence/W17-S03/binary-root-02-list-before.stdout.log"
+    },
+    "missingNativeLibrary": {
+      "status": "not_applicable",
+      "reason": "Search is managed-only; all four RID archives contain zero native entries. No native dependency can be validly omitted.",
+      "nativeEntriesPerRid": 0
+    },
+    "wrongAbi": {
+      "status": "passed",
+      "exitCode": 1,
+      "failure": "RuntimeFamilyMismatch",
+      "required": "musoq-runtime-v2",
+      "actual": "plugin=musoq-runtime-v1, host=musoq-runtime-v2",
+      "evidence": [
+        "docs/campaigns/search/evidence/W17-S03/wrong-abi-02-import.stderr.log",
+        "docs/campaigns/search/evidence/W17-S03/wrong-abi-manifest.json"
+      ]
+    },
+    "dependencyConflict": {
+      "status": "passed",
+      "exitCode": 1,
+      "failure": "HostPackageVersionTooLow",
+      "component": "Musoq.Schema",
+      "requiredRange": "[99.0.0, 100.0.0)",
+      "hostObserved": "17.0.9-alpha.1",
+      "evidence": [
+        "docs/campaigns/search/evidence/W17-S03/dependency-conflict-07-import-valid2.stderr.log",
+        "docs/campaigns/search/evidence/W17-S03/dependency-conflict-manifest.json"
+      ]
+    }
+  },
+  "packageEvidence": {
+    "packageId": "Musoq.DataSources.Search",
+    "version": "8.0.3-alpha.7",
+    "releaseTag": "8.0.3-alpha.7-Musoq.DataSources.Search",
+    "targetFramework": "net10.0",
+    "licenseManifestSha256": "743c02bf4579e5275b20371c190ef4039ac92121a6bdbc5596f27975754d7f5d",
+    "windowsInstalledDll": {
+      "size": 336896,
+      "sha256": "558454219b785e05cac5f3de525344ca0a8c10da64bf161e7267a6b6469c49b2",
+      "fileVersion": "8.0.3.0"
+    },
+    "archiveInventory": {
+      "outerEntries": 6,
+      "innerPluginEntriesPerRid": 17,
+      "nativeEntriesPerRid": 0,
+      "archives": [
+        {
+          "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-alpine-x64.zip",
+          "size": 197920,
+          "sha256": "f93c57b27957b04f462c8bca24229ffc9cb680cff2bcc55262a28df471da2004"
+        },
+        {
+          "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-linux-x64.zip",
+          "size": 197922,
+          "sha256": "6dd4bddcdcafd94938c1102c03bdd93451244e1b20be3cbec94eb0239b110a4b"
+        },
+        {
+          "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-macos-arm64.zip",
+          "size": 197942,
+          "sha256": "179a53de1d565ccc5b06f2c2ca65abdd8d1fd3098393bf0ac2288cf387a47c91"
+        },
+        {
+          "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-windows-x64.zip",
+          "size": 197874,
+          "sha256": "04491caeae94ba13f12f6866f43257a71b19d54fae83f60fcd5183364307f01f"
+        }
+      ]
+    }
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "Focused Search suite and full owning suite completed with 0 failures."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "Separate grill-code review approved; provenance and residuals are recorded."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused Search suite plus 27 independent contract/semantic scenarios passed."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "Actual installed CLI import/discovery contract and package metadata were captured; host assembly-loading residual is explicitly retained."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj",
+      "sha256": "1faf5619750b225736896044282a63d52981869c31ca50358875c5687cc64186"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchSchema.cs",
+      "sha256": "b1b231dde661bb6af6d74a1b5c0398df8dee55f7ef8020c0123cdf6597f45122"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchManySource.cs",
+      "sha256": "1aab3710248dd667f1e215ed6288e47ee11bf1be8ed111ed0e6f167316877b71"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchBinaryPolicy.cs",
+      "sha256": "6c0358130564a867bb12114d8e2965713bb1dc16da5f810dbdd6a30983eca331"
+    },
+    {
+      "path": "docs/search/search-capability-card-v1.md",
+      "sha256": "83b61109de08eb0bbc6e1633b10412a55ef35a36d1cd88a0acbd4c7c11d90e7b"
+    },
+    {
+      "path": "docs/search/search-request-contract-v1.md",
+      "sha256": "24d3f772c3da012ff0e239119e2caca62d0d4dbe49f5ac16d4c2b21caf44860e"
+    },
+    {
+      "path": "scripts/release/packages.json",
+      "sha256": "b03865593a865d5707a75d8acdc3f12273ae144a9aecd4864bcd35cdf2b663c8"
+    }
+  ],
+  "sourceDigest": "af041a951ba9e1ca7b0c61d295bd85c2dd4e271a15e7b237ffa40c73c0bc3b38",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/review.md",
+      "sha256": "ee5125269e5b21ca87cad0ab97a3d101326359a4ba20e661b8aecffb20d25ac8"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/primary-17-version.stdout.log",
+      "sha256": "b9bff5659e00958b801c612c5625c90c0b53708ff5b4a52204b523326f9e0b1c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/primary-20-import-help.stdout.log",
+      "sha256": "b41b3a8ff79f867344fd5f6202568beb45b75c62a2e54b912e603cee596080c8"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/primary-21-describe-command-import.stdout.log",
+      "sha256": "da693f805484c2dca3afd4231d4e9a08dcbcee93e3ec95722ed999fa3129eb76"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/primary-22-describe-manual-import.stdout.log",
+      "sha256": "afbcdff7287ff10d6563353032e6a04b3edf1d5476ff310e52339d8c1a261173"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/binary-root-01-instance-before.stdout.log",
+      "sha256": "f32816476361b1b66a97375e31ea9d4f291e5b386a33478e8b61f75f192723f8"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/binary-root-03-import.stdout.log",
+      "sha256": "7c783d25a22e0365b52a83ecf799bb38c15975ac8b3f17590484f42ab2f17608"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/binary-root-04-list-after.stdout.log",
+      "sha256": "fc6eadec6a6e431f603ad7b4f5ab4ef92e3cad44333389754206c14f22c80a47"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/binary-root-05-describe-schema.stdout.log",
+      "sha256": "19933c7e465eaf7633e739f6af7a46f0b84b99f3720c01fc7ad7ceb7ed58f180"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/binary-root-06-matches-binary-root.stderr.log",
+      "sha256": "7ed0efa34de7d525174816abce7c1871bad8402b29fd2a5d95ca15078578531b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/binary-root-12-audit-binary-root.stdout.log",
+      "sha256": "b7604308469c5240d67c25515420f712d71dd17459353e7724767b125bce686f"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/bytes-first-01-list-before.stdout.log",
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/bytes-first-02-import.stdout.log",
+      "sha256": "7c783d25a22e0365b52a83ecf799bb38c15975ac8b3f17590484f42ab2f17608"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/bytes-first-03-bytes-first.stderr.log",
+      "sha256": "26752741c46adc09ba4777d98f57bc3b1182b929b4b40585d1e17777bb7eda70"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/bytes-first-04-list-after.stdout.log",
+      "sha256": "e76441526faae128dba468f9dcc44c432eea311b9a945f678e09951477a77cbc"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/bytes-first-06-audit-missing-root.stdout.log",
+      "sha256": "4eb282350d0d5ba94181039f3605760330501b10da2070221e220f2d84d1959a"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/bytes-first-host.log",
+      "sha256": "5d2530cc973c3f800a1c68b9d64b31471d05aa009f2fa9843c548788b3fc511a"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/text-first-03-matches-text-first.stderr.log",
+      "sha256": "19dd3ae6ade3226aec88ac322a431c1c1c365da2047cae1e1a8624b49f5f82d1"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/text-first-04-many-literal.stderr.log",
+      "sha256": "d99c1f647e71e9228e6c3066c1ce4356fe355cbbdbb414c1d14d4a46686f1896"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/text-first-05-counts-text.stderr.log",
+      "sha256": "53ad9340811bc393b22a3e44ea2ef9fb79bdfea67de0ef890e74ee8dfb23056b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/text-first-06-bytes-binary.stderr.log",
+      "sha256": "f60f21371d3ac6ae71ed28170eacb2649b5e9b9b4e190d27977946fd96010c90"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/text-first-08-audit-missing-root.stdout.log",
+      "sha256": "a34c077c3e83d2b69f58ada6ffbebe41bbacc35c88497b857d66a777dfc34b58"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/primary-host.log",
+      "sha256": "0a0ab858cf9b0de8cc274b714c9e32eff3840b5c83749e5fe24b9aff3d29cab5"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/text-first-host.log",
+      "sha256": "29952b1800951d8220dd6244b7a97ad9ffcf814ae446bb47b612d85c420d22fb"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/wrong-abi-02-import.stderr.log",
+      "sha256": "c15e315627cd60bae544e2c25d71ce777a9344107646a5c08ab83f1813b7a044"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/wrong-abi-manifest.json",
+      "sha256": "93cf090fcddc02173bc1709e508dfbb3ecdeba5ea9311f88a214e531be9475b6"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/dependency-conflict-07-import-valid2.stderr.log",
+      "sha256": "05b5cf4960174aa1509c449863f8a59a929c88eb33f0ce8c0b18259da6c23952"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/dependency-conflict-manifest.json",
+      "sha256": "1e7d023eef6cbe467fc0b062dc84117493f76045fa0f3fa325adb51c929e3247"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/focused-search-suite.log",
+      "sha256": "2ae178f8498734a0213a6a88dcd5e899e9679ec9cdcdefa1020e84eb82a21da6"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/test-searchsourcecontract.log",
+      "sha256": "33366346cf248c6a9bafe3404312216e531429ee84cf75d778f529944126f69f"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/test-searchrequestcontract.log",
+      "sha256": "f67bfd6ccf873932d9d1d79139966bde590aa91d822a9b71197125809a626c4b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/test-searchmatchsemantics.log",
+      "sha256": "622af4c2f37d1dc857433ae0edd0095120a1bb3963ca8d40a4a50b075eab00f6"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/test-searchscopesemantics.log",
+      "sha256": "b8fe435714472e91d394a797a41441619fa7dec97d41974cf88eccb0bc69a3a9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/test-searchcompletionsemantics.log",
+      "sha256": "cc8ed949821b20d78dca553fd04d28284ffd5106216e313a0d4a0b7cf8a154b4"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/release-smoke.log",
+      "sha256": "3448f716c32f4585a710c837037fa5ddcfc3fc0cc3f371b37d8a5a630350bfc3"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S03/full-suite.log",
+      "sha256": "d24a03264bc0d9f0658bcf4b1885674c68be55a4e1d77e57f99ccfd4d8561cf3"
+    }
+  ],
+  "knownLimitations": [
+    "The installed host 0.40.0-alpha.14 does not resolve the imported Search assembly for generated query execution; bytes-first and text-first query attempts therefore retain MQ9001 FileNotFoundException evidence.",
+    "Search is managed-only and has no native dependency, so missing-native failure injection is not applicable.",
+    "The normal user profile, sibling checkouts, package publication, and remote Git state were not changed."
+  ],
+  "environment": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "2.48.1.windows.1",
+    "python": "3.13.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  }
+}

@@ -1,0 +1,270 @@
+{
+  "scopeId": "W08-S02",
+  "status": "passed",
+  "summary": "Implemented an internal Aho-Corasick literal-set matcher and one-traversal/one-read scope coordinator that preserve independent per-pattern non-overlap, cross-pattern overlaps and duplicate pattern identity.",
+  "requirementIds": [
+    "R01",
+    "R02",
+    "R04",
+    "R05",
+    "R08",
+    "R10"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S15",
+    "S20",
+    "S23"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W08-S02/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "3198fe94059cad41bad46604e2dfd8ce5ac2f165",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 42,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W08-S02 as in_progress.",
+    "preExistingScopeCommit": "3198fe94059cad41bad46604e2dfd8ce5ac2f165",
+    "aheadNote": "The ahead count includes the reachable completed Search scope commits through W08-S01 and other pre-existing branch commits; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/LiteralMatcher.cs",
+      "Musoq.DataSources.Search/SearchContracts.cs",
+      "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "Musoq.DataSources.Search/SearchManyLiteralMatcher.cs",
+      "Musoq.DataSources.Search/SearchManyLiteralScan.cs",
+      "Musoq.DataSources.Search.Tests/SearchManyLiteralMatcherTests.cs",
+      "docs/search/search-match-semantics-v1.md"
+    ],
+    "scopeBoundary": "Only the internal text-matcher seam, literal-set engine/coordinator, focused Search tests and the semantics boundary note were changed. Existing single-pattern behavior remains on the same scanner; public search.many metadata, SQL constructor binding and regex execution were not added.",
+    "engine": {
+      "algorithm": "Aho-Corasick trie with failure links and labeled terminal outputs",
+      "patternLimit": 1024,
+      "selection": "leftmost-first non-overlapping independently per pattern ID",
+      "crossPatternOverlaps": "preserved",
+      "equalPatternText": "distinct IDs remain distinct terminal outputs",
+      "casePolicy": "sensitive or invariant one-code-unit insensitive matching, matching the existing LiteralMatcher policy",
+      "recordPolicy": "LF resets automaton state; literals containing LF produce no cross-record match",
+      "regexPolicy": "reject before scope enumeration; no literal fallback"
+    },
+    "scanCoordinator": {
+      "traversal": "one SearchScopeTraversal enumeration per request",
+      "eligibleReads": "one SearchTextScanner scan and injected reader-factory call per eligible file",
+      "resultBuffering": "callback delivery; no repository-wide match materialization",
+      "coordinates": "reuses the existing UTF-16 line/column and original-byte coordinate path"
+    }
+  },
+  "tests": {
+    "discovered": 1465,
+    "passed": 1431,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 181,
+      "passed": 178,
+      "failed": 0,
+      "skipped": 3,
+      "newScenarios": [
+        "Preserve prefix matches and equal pattern text under distinct labels",
+        "Keep cross-pattern overlaps while selecting each pattern non-overlapping",
+        "Carry labeled spans and line coordinates across reader chunks",
+        "Compile and search the bounded 1,024-pattern set",
+        "Apply whole-word boundaries independently per label",
+        "Traverse once and open each eligible file once with measured counters",
+        "Reject regex-labeled input before any scope or reader access"
+      ],
+      "requiredCoverage": [
+        "Prefix patterns",
+        "Same text with different IDs",
+        "Cross-pattern overlaps",
+        "Chunk boundaries",
+        "Large pattern sets"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --logger console;verbosity=minimal",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 181,
+      "passed": 178,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W08-S02/search-focused.log",
+      "stdoutSha256": "e61a9e8c51cf9cc72f3d7a66d64ff9fd7693d26ebc7e35bf1c6482006ba74d65",
+      "stderrPath": "docs/campaigns/search/evidence/W08-S02/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-project-build",
+      "argv": "dotnet build .\\Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W08-S02/search-build.log",
+      "stdoutSha256": "14b73ba7379a2cc89b9e452d5cf34a890090cd6ec80fd439d38e3fc283cf840c",
+      "stderrPath": "docs/campaigns/search/evidence/W08-S02/search-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; captured logs were normalized to UTF-8 LF for deterministic hashing.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1465,
+      "passed": 1431,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W08-S02/full-suite-exact.log",
+      "stdoutSha256": "c535c3df5929719bc4dc2427e81c23b0a291bbe0d24a5c5831f0819e427d1971",
+      "stderrPath": "docs/campaigns/search/evidence/W08-S02/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "match-semantics-validator",
+      "argv": "pwsh -NoProfile -File .\\scripts\\search\\Test-SearchMatchSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 49,
+      "stdoutPath": "docs/campaigns/search/evidence/W08-S02/match-semantics.log",
+      "stdoutSha256": "c2640b85a4319f7cc06a0ac8ab24e878830c1f49cc4be2186821f8521c7ff25e",
+      "stderrPath": "docs/campaigns/search/evidence/W08-S02/match-semantics.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; source manifest and artifact hash validation",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "AMD64",
+    "osArchitecture": "AMD64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The focused Search Release suite exited 0 with 181 discovered, 178 passed, 0 failed and 3 platform-conditional skips; the exact owning-repository Release suite exited 0 across 21 projects with 1,465 discovered, 1,431 passed, 0 failed and 34 classified skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved the matcher algorithm, independent selection state, scanner seam, resource boundary and public-surface boundary; exact commands, tool versions, source/artifact hashes and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused matcher tests cover the required labeled prefix, overlap, duplicate-text, chunk-boundary and large-set cases, including independent same-pattern non-overlap and whole-word behavior."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "No public SQL constructor or schema/XML metadata was changed. The semantics documentation explicitly records the internal literal-only foundation and does not advertise search.many execution."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "The matcher uses bounded trie/ring state, checks cancellation during matching, delegates reader lifetime to the existing scanner and delivers matches through a callback without repository-wide buffering; invalid regex modes are rejected before I/O."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search/LiteralMatcher.cs",
+      "sha256": "84b9f6b28fe420b262b5f95500904d9f2f4d6c4fe2ff88e14301e21a4a4ee124"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchContracts.cs",
+      "sha256": "81bac44d4c6d9eb2784e80122f30e023d6a44a3c4a8f47a379eb3eb921388b2b"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchManyLiteralMatcher.cs",
+      "sha256": "ecfc6e3b7599147b3f64b63716c8c7fbb886b43350fdde7626af057d0e4ca384"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchManyLiteralScan.cs",
+      "sha256": "bf7d1b694ba7ff611b574d06ae77042acc168911c1302a2cd3a55ff43406233c"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "sha256": "47df0ca9c46b63585e55d68d90798edf74f9a791b9e20f2aff71aceb582f37fc"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchManyLiteralMatcherTests.cs",
+      "sha256": "ea69e7b5db7447702bc2f49549b447f71652009b556a7aa9b9272069da46fca9"
+    },
+    {
+      "path": "docs/search/search-match-semantics-v1.md",
+      "sha256": "b5c1df72c4111e33b3c5ee5ca91682b9d2f1127f04125d67821c3b35256ee0a5"
+    }
+  ],
+  "sourceDigest": "d5223c0d25b1b85602f3ea5a7cef7de91900b46b08973e71bad2a85baedd658a",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/full-suite-exact.log",
+      "sha256": "c535c3df5929719bc4dc2427e81c23b0a291bbe0d24a5c5831f0819e427d1971"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/match-semantics.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/match-semantics.log",
+      "sha256": "c2640b85a4319f7cc06a0ac8ab24e878830c1f49cc4be2186821f8521c7ff25e"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/review.md",
+      "sha256": "4cf46c7b96c8512cfd7e89a38c5db033d0fdf54783ebfb9c15319845fa62adab"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/search-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/search-build.log",
+      "sha256": "14b73ba7379a2cc89b9e452d5cf34a890090cd6ec80fd439d38e3fc283cf840c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S02/search-focused.log",
+      "sha256": "e61a9e8c51cf9cc72f3d7a66d64ff9fd7693d26ebc7e35bf1c6482006ba74d65"
+    }
+  ],
+  "knownLimitations": [
+    "This scope implements the internal literal-set engine and scan coordinator only. Public search.many source metadata, constructor binding, compiled-query execution and regex-labeled execution remain later W08 scopes; no unverified SQL constructor is advertised.",
+    "Literal patterns containing LF are admitted by the request parser but intentionally produce no cross-record match, matching the existing physical-line literal boundary; explicit multiline interpretation remains later work.",
+    "The repository-wide suite retains 31 existing expected skips and 3 platform-conditional symlink skips; no package was published, pushed, released or installed."
+  ]
+}

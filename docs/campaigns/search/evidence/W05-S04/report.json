@@ -1,0 +1,252 @@
+{
+  "scopeId": "W05-S04",
+  "status": "passed",
+  "summary": "Implemented the explicit counts source. It emits one exact per-file row after successful EOF, includes zero-hit eligible files, reports checked 64-bit occurrence and matching-line counters plus file bytes, and never publishes a partial count after an open or read failure.",
+  "requirementIds": [
+    "R01",
+    "R02",
+    "R04",
+    "R08",
+    "R11"
+  ],
+  "sourceReferences": [
+    "S15",
+    "S21",
+    "S25"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W05-S04/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "ddde065a726c50a26b06e656ed20d4cd83322f41",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 29,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W05-S04 as in_progress.",
+    "preExistingScopeCommit": "ddde065a726c50a26b06e656ed20d4cd83322f41",
+    "aheadNote": "The ahead count includes the retained pre-existing campaign-state commit and the 28 preceding reachable completed Search scope commits."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchCountTests.cs",
+      "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "Musoq.DataSources.Search/SearchCount.cs",
+      "Musoq.DataSources.Search/SearchCountsHelper.cs",
+      "Musoq.DataSources.Search/SearchCountsSource.cs",
+      "Musoq.DataSources.Search/SearchCountsTable.cs",
+      "Musoq.DataSources.Search/SearchSchema.cs",
+      "Musoq.DataSources.Search/SearchSourcePlanner.cs",
+      "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "Musoq.DataSources.Search/SearchTextSinks.cs",
+      "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "docs/search/search-sink-contract-v1.md"
+    ],
+    "scopeBoundary": "Only the owning Search implementation, its schema metadata, tests and Search documentation were changed. No sibling repository, query-engine adapter, release, publish or install surface was modified.",
+    "countSemantics": "The counts source retains one scalar accumulator per eligible file, counts every LiteralMatcher span, counts matching physical lines from ordered spans, and emits one SearchCount row for every file that reaches successful EOF, including zero-hit files.",
+    "completionSemantics": "SearchTextSourceBase invokes CompleteFile only after ScanFile returns and cancellation is checked. SearchCountSink emits Complete=true only from that hook; open, read and cancellation failures do not flush a partial count.",
+    "byteSemantics": "For the current stable regular-file reader, BytesScanned is the original regular file byte length observed after successful decoded EOF. This is a file-level byte total; line and occurrence byte coordinates remain separate future work.",
+    "planningSemantics": "The planner recognizes counts as a source but accepts no columns, predicates, ordering, skip/take or aggregate/count pushdown; SQL remains residual and the source row unit stays explicit.",
+    "ownership": "The count path reuses the bounded pooled 8,192-character buffer and sink chunk ownership established by W05-S03. Count accumulation retains no input text or occurrence-row collection."
+  },
+  "tests": {
+    "discovered": 1377,
+    "passed": 1343,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 93,
+      "passed": 90,
+      "failed": 0,
+      "skipped": 3,
+      "newScenarios": [
+        "CountsSource_ShouldEmitCompleteRowsForEveryEligibleFileIncludingZeroHits",
+        "CountsSource_ShouldExposeGroupedCountsThroughCompiledProjection",
+        "CountAccumulator_ShouldUseChecked64BitBoundaries",
+        "CountsSource_ShouldNotPublishAnExactRowAfterPartialRead"
+      ],
+      "requiredCoverage": [
+        "one complete row per eligible file, including empty and zero-hit files",
+        "occurrence count remains distinct from physical matching-line count",
+        "compiled projection exposes the declared count schema and values",
+        "occurrence, matching-line and byte counters reject checked 64-bit overflow",
+        "partial input raises the typed read failure and cannot publish an exact count row"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 93,
+      "passed": 90,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W05-S04/search-focused.log",
+      "stdoutSha256": "e53254b2e43c397bd8db5cc10c09663022f6c883f3240c6e51a369e470d9ae30",
+      "stderrPath": "docs/campaigns/search/evidence/W05-S04/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1377,
+      "passed": 1343,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W05-S04/full-suite-exact.log",
+      "stdoutSha256": "5526e5c41a54e64daa82e7ff5ecae4386d0d185516b8bb36e1af065c72243a55",
+      "stderrPath": "docs/campaigns/search/evidence/W05-S04/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "benchmark-project-build",
+      "argv": "dotnet build .\\Musoq.DataSources.Search.Benchmarks\\Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W05-S04/benchmark-build.log",
+      "stdoutSha256": "94691ea45379b20e84135220345e97c8868019e882b43f2940c8742450da0f01",
+      "stderrPath": "docs/campaigns/search/evidence/W05-S04/benchmark-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; focused Search tests; exact full suite; benchmark build",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "git version 2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 21 projects, 1,377 discovered, 1,343 passed, 0 failed and 34 skips; the focused Search suite exited 0 with 90 passed and 3 platform-conditional skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved the exact count completion boundary, checked counters, bounded resource behavior and residual planner semantics; source/artifact hashes and the unique trailer-bearing completion commit are verified during post-commit finalization."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Direct and compiled Search tests agree that counts has one row per completely processed eligible file, includes zero-hit files, distinguishes occurrence and matching-line totals, and exposes no partial count after a typed read failure."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Count accumulation is scalar and checked, uses the existing pooled reader buffer and owned output chunks, and retains the shared source cancellation and reader-disposal path."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchCountTests.cs",
+      "sha256": "d5ce5641ed62151a7c46cbd4b214a7324deca550fb0251e86ba0145e46d2b9a7"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "sha256": "e3f415478bf51188e356d15e375405196d9a869cb37809cbb5149a638fbe41b6"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchCount.cs",
+      "sha256": "3d35e9a057484ea92b2b9756bdfe8147d69e850666bb398ceeb2fc28e434f478"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchCountsHelper.cs",
+      "sha256": "c92857186717b4cd632173ab28d7114924085db20fe032f88231b9088a15ebb7"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchCountsSource.cs",
+      "sha256": "be4cb17d08d8b331a2fd5a837fb806480e90b7cbad88e487b8fafb8c133c6c10"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchCountsTable.cs",
+      "sha256": "7109c45f27e2860a9eadce1723a99c6d1b18442ed80b448c5f42e340d16a1212"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchSchema.cs",
+      "sha256": "5278ab8411b42bea7850a9fb4c80e000d822d0413020a4d38a100dbcbd8b7f0a"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchSourcePlanner.cs",
+      "sha256": "a01c933f7ceb7d69f29a8bed19ff88770a6674933c615870717ea16111b071a7"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "sha256": "07c1969baba438042e821124ee49d42df0cc45c6ea15f39ea8494f5a8bfd381d"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSinks.cs",
+      "sha256": "22fdab33e25d6754b0abfa21cb9c5ec7a34f52c90c0fdb11ce32c6dbd4ef2ea3"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "sha256": "a160724288a5dbd53f248983b04dad25ebd0711867474ffe62ae333df28a8a85"
+    },
+    {
+      "path": "docs/search/search-sink-contract-v1.md",
+      "sha256": "ea8a082dbb097e28008c095f74656ee3c0ce7ab3f870dac692e19d2e4f3c2821"
+    }
+  ],
+  "sourceDigest": "4bf155c0f6c22c98812e79c03e715f80ca87eea9e8223d953285ff935c19cfb6",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W05-S04/review.md",
+      "sha256": "93088c765737b717d4551e35414b3fba9746714c61275b298050e0456255de60"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W05-S04/search-focused.log",
+      "sha256": "e53254b2e43c397bd8db5cc10c09663022f6c883f3240c6e51a369e470d9ae30"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W05-S04/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W05-S04/full-suite-exact.log",
+      "sha256": "5526e5c41a54e64daa82e7ff5ecae4386d0d185516b8bb36e1af065c72243a55"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W05-S04/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W05-S04/benchmark-build.log",
+      "sha256": "94691ea45379b20e84135220345e97c8868019e882b43f2940c8742450da0f01"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W05-S04/benchmark-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The source remains literal, case-sensitive and decoded-text only; regex, byte search, multi-pattern sharing, virtual origins and audit rows remain later scopes.",
+    "Count byte accounting is file-level and does not add original-byte offsets to occurrence or line rows; the decoded reader's byte mapping remains a later boundary.",
+    "The repository-wide suite retains 31 expected skips and 3 platform-conditional symlink skips; no package was published."
+  ]
+}

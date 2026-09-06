@@ -86,6 +86,125 @@ from os.environmentvariables()
 
 ---
 
+## 🔎 Search Recipes (`search`)
+
+Search recipes are bounded, literal candidate workflows. They retain the
+Search path and coordinates beside derived values and do not claim language
+semantics from lexical matches. The representative fixtures and compiled
+queries are exercised by `SearchRepresentativeRecipeTests`. For source
+selection, optional methods and scan costs, see
+[`search-capability-card-v1.md`](docs/search/search-capability-card-v1.md).
+
+### Diagnostic traceability
+
+Use one labeled `search.many` request for declaration and emission evidence,
+then compare the labels by path. A fixture containing a declaration without
+an emission is the required failure example.
+
+```sql
+select m.Path, m.PatternId, m.LineNumber, m.Utf16Column, m.MatchText
+from search.many('./source-root',
+    '{"version":1,"patterns":[{"id":"declaration","pattern":"public const string MQ1001","mode":"literal"},{"id":"emission","pattern":"EmitDiagnostic(\"MQ1001\")","mode":"literal"}]}') m
+order by m.Path, m.PatternId, m.MatchIndex
+```
+
+Dependencies: a complete relevant source/test/docs scope and the declared
+pattern labels. Missing evidence remains an incomplete finding rather than a
+proof that the diagnostic is unused.
+
+### Bounded proximity
+
+Materialize one labeled occurrence relation, then self-join it with explicit
+same-file, line-distance, same-line-gap and pair-count bounds. A left match in
+one file and a right match in another is the failure example and must not be
+paired.
+
+```sql
+with occurrences as (
+    select m.Path, m.PatternId, m.LineNumber,
+        m.Utf16Column, m.Utf16Length
+    from search.many('./source-root',
+        '{"version":1,"patterns":[{"id":"left","pattern":"LEFT","mode":"literal"},{"id":"right","pattern":"RIGHT","mode":"literal"}]}') m
+)
+select lefts.Path, lefts.LineNumber as LeftLine,
+    rights.LineNumber as RightLine
+from occurrences lefts
+inner join occurrences rights
+    on lefts.Path = rights.Path
+    and lefts.PatternId = 'left'
+    and rights.PatternId = 'right'
+    and rights.LineNumber >= lefts.LineNumber
+    and rights.LineNumber <= lefts.LineNumber + 2
+order by lefts.Path, lefts.LineNumber, rights.LineNumber
+```
+
+Dependencies: labeled occurrences and an explicit bounded window. This is
+lexical proximity, not control-flow or language-structure analysis.
+
+### Migration and configuration comparison
+
+Use labeled deprecated/replacement candidates and an anti-join only for the
+candidate report; apply a separately tested lexical/proven classifier before
+making a code migration claim. For configuration, combine duplicate-preserving
+`search.many` rows with the eligible `search.paths` manifest. A comment-only
+key, duplicate key, or missing manifest path is a failure example that must
+remain distinguishable from a proven key.
+
+```sql
+with findings as (
+    select m.Path, m.PatternId, m.MatchText
+    from search.many('./source-root',
+        '{"version":1,"patterns":[{"id":"deprecated","pattern":"OldApi()","mode":"literal"},{"id":"replacement","pattern":"NewApi()","mode":"literal"}]}') m
+)
+select deprecated.Path, deprecated.MatchText
+from findings deprecated
+left outer join findings replacement
+    on deprecated.Path = replacement.Path
+    and replacement.PatternId = 'replacement'
+where deprecated.PatternId = 'deprecated'
+    and replacement.Path is null
+group by deprecated.Path, deprecated.MatchText
+```
+
+Dependencies: labeled candidate patterns, a bounded manifest where existence
+matters, and complete audit evidence before asserting a negative result.
+
+### Log Search-to-parse
+
+Keep one `search.lines` row per matching physical line and apply a tolerant
+parser once. `OccurrenceCount` is line multiplicity, not repeated parser
+input. `OUTER APPLY TryParse` preserves a malformed candidate and its raw
+line; a line without the `ERROR` prefilter token is the failure example for
+candidate completeness.
+
+```sql
+text LogRecord {
+    EventId: until ' ',
+    Timestamp: until ' ',
+    Level: until ':',
+    Separator: literal ' ',
+    Message: rest trim
+};
+
+with candidates as (
+    select line.Path, line.LineNumber,
+        line.OccurrenceCount, line.LineText
+    from search.lines('./source-root', 'ERROR') line
+)
+select candidates.Path, candidates.LineNumber,
+    candidates.OccurrenceCount, candidates.LineText,
+    log.EventId, log.Timestamp, log.Level, log.Message
+from candidates
+outer apply TryParse<LogRecord>(candidates.LineText) log
+```
+
+Dependencies: a line-oriented record schema and a candidate literal whose
+coverage is understood. Use strict `Parse` only when malformed records should
+fail the query; retain UTF-16 coordinates from `search.matches` when a report
+also needs exact locations.
+
+---
+
 ## 📊 CSV/Separated Values (`separatedvalues`)
 
 ### Basic CSV Query with Aggregation

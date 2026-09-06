@@ -1,0 +1,215 @@
+{
+  "scopeId": "W02-S04",
+  "status": "passed",
+  "summary": "Added the strict Search diagnostics foundation: stable plugin-owned SEARCH identifiers, phase and bounded location metadata, actionable explanations and fixes, typed request/source/resource/output exceptions, and safe preservation through the existing compiled-query lifecycle boundary.",
+  "requirementIds": [
+    "R01",
+    "R07",
+    "R08",
+    "R10",
+    "R14",
+    "R15"
+  ],
+  "sourceReferences": [
+    "S07",
+    "S08",
+    "S11",
+    "S14",
+    "S15"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W02-S04/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "1bfd105f87e337f7e1042f098a4dfc50bc65f573",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 14,
+    "behind": 0,
+    "worktree": "clean for tracked files at scope start; W02-S04 implementation and evidence were added afterward",
+    "preExistingScopeCommit": "1bfd105 feat(search): prove search cancellation lifecycle"
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "Musoq.DataSources.Search/SearchContracts.cs",
+      "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "Musoq.DataSources.Search/SearchSchema.cs"
+    ],
+    "scopeBoundary": "Only the Search diagnostic contract, request binding, source failure classification, direct/compiled negative-path tests, and W02-S04 evidence were changed. Regex and encoding validators remain foundation-only because the current public Search entry point is the minimal two-argument literal source. No sibling repository, engine adapter, release, publish, or installed executable was modified."
+  },
+  "tests": {
+    "discovered": 1311,
+    "passed": 1280,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 27,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "AssemblyDiscovery_ShouldDeclareSearchSchema",
+        "GeneratedXmlDocumentation_ShouldBeWellFormedAndCoverPublicSearchApi",
+        "RawConstructors_ShouldExposeMinimalMatchesSignature",
+        "DescribeSource_ShouldAlignRowTypeAndColumns",
+        "DescribeSource_ShouldRemainStaticWithoutResolvingTheRoot",
+        "InvalidRequest_ShouldBeRejectedBeforeRootResolution",
+        "SearchDiagnostics_ShouldUseStablePluginCodesAndBoundedGuidance",
+        "BadRegex_ShouldProduceTypedSyntaxDiagnostic",
+        "UnsupportedEncoding_ShouldProduceTypedSourceDiagnostic",
+        "OversizedScope_ShouldProduceTypedResourceDiagnostic",
+        "MalformedSourceArguments_ShouldProduceTypedArgumentDiagnostic",
+        "MissingRoot_ShouldProduceTypedSourceAccessDiagnostic",
+        "CompiledMissingRoot_ShouldRetainSearchDiagnosticInsideEngineBoundary",
+        "CompiledNullRoot_ShouldRetainSearchArgumentDiagnostic",
+        "ScopePolicy_ShouldCopyAndFreezePatternCollections",
+        "LiteralMatcher_ShouldEmitNonOverlappingSpans",
+        "SearchOutcome_ShouldMatchThePublishedTerminalContract",
+        "CompiledLiteralQuery_ShouldReturnKnownTypedRows",
+        "DirectSource_ShouldFlushAtChunkBoundaryWithoutChangingMultiplicity",
+        "DirectSource_ShouldMatchLiteralAcrossReaderBufferBoundaries",
+        "CancellationBeforeStart_ShouldNotOpenReaderOrEmitRows",
+        "CancellationDuringRead_ShouldDisposeReaderAndNotReturnRows",
+        "CancellationDuringScan_ShouldObserveTheTokenBeforeCompleting",
+        "CancellationBetweenChunks_ShouldNotExposeACompletedScan",
+        "EarlyDisposal_ShouldCancelTheProducerAndDisposeItsReader",
+        "ReaderFailure_ShouldPropagateAndDisposeTheReader",
+        "EverySearchConstructor_HasOneExactStarContract"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.Search.Tests", "passed": 27, "failed": 0, "skipped": 0, "total": 27 },
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 }
+    ],
+    "skipClassification": {
+      "expectedExistingSkips": 31,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 27,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W02-S04/search-focused.log",
+      "stdoutSha256": "d8fff33e93e6862234f71e76070d7d52fed023152f46169be7701bb5c19afa27",
+      "stderrPath": "docs/campaigns/search/evidence/W02-S04/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 21,
+      "discovered": 1311,
+      "passed": 1280,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W02-S04/full-suite.log",
+      "stdoutSha256": "272e8fbbb7150eb666b9a6b49dcd35c5c44c70d0c85380f1c0a10e70880b8e17",
+      "stderrPath": "docs/campaigns/search/evidence/W02-S04/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "build-and-diff-validation",
+      "argv": "dotnet build Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore; git diff --check; JSON parse validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The final owning-repository Release suite exited 0 with 1,311 discovered, 1,280 passed, 0 failed and 31 expected skips; the focused Search suite exited 0 with 27 passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, exact source and artifact hashes, tool versions and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Typed Search diagnostics distinguish syntax, argument, source access, resource and output phases; direct tests cover invalid regex, unsupported encoding, oversized scope, malformed arguments, missing roots and reader failure, while compiled tests retain argument and source diagnostics inside the existing lifecycle boundary."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The diagnostic changes are exercised through the direct Runtime V2 RowSourceBase.Chunks path and compiled Search queries; the existing typed-row, multiplicity and chunk-boundary contracts remain green."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Diagnostic text and locations are bounded and line-safe; source failures do not become successful empty scans, cancellation remains unwrapped, readers remain scoped, and output failures have a typed wrapper without introducing a reserved MQ code."
+    }
+  ],
+  "sourceManifest": [
+    { "path": "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs", "sha256": "f8f92d64a2d804cc3b8210bc8838df0a3061e0505173bdec017294217440439c" },
+    { "path": "Musoq.DataSources.Search/SearchContracts.cs", "sha256": "f9ce6384546985dec5e4de19c957fbf9e0b05dbc50094d3f9a29ee1ca8d29706" },
+    { "path": "Musoq.DataSources.Search/SearchDiagnostics.cs", "sha256": "fece534158f12d82501768b8da942aad99445ca2edd2fdde37141d8bbc6fae8d" },
+    { "path": "Musoq.DataSources.Search/SearchMatchesSource.cs", "sha256": "3e026c57ae011b2bc8d6f3dcb94a4d52d9de2b0ece1f4bd4bbb138580024861f" },
+    { "path": "Musoq.DataSources.Search/SearchSchema.cs", "sha256": "e57e77a1dd4b47c595b6239ef5d4958c8a6348945966ae49c2b631f511f80c70" }
+  ],
+  "sourceDigest": "fcd430c672856dbea5aa5a7437f9946ef761594e807e7346faac52061005a6a6",
+  "artifacts": [
+    { "path": "docs/campaigns/search/evidence/W02-S04/review.md", "sha256": "f2e7cbc6e9602346efbf6e537a54e43826ac0d9ac5a5109014d8588a0299d447" },
+    { "path": "docs/campaigns/search/evidence/W02-S04/search-focused.log", "sha256": "d8fff33e93e6862234f71e76070d7d52fed023152f46169be7701bb5c19afa27" },
+    { "path": "docs/campaigns/search/evidence/W02-S04/search-focused.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W02-S04/full-suite.log", "sha256": "272e8fbbb7150eb666b9a6b49dcd35c5c44c70d0c85380f1c0a10e70880b8e17" },
+    { "path": "docs/campaigns/search/evidence/W02-S04/full-suite.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" }
+  ],
+  "knownLimitations": [
+    "The current public Search entry point remains a minimal two-string literal source. Regex and encoding diagnostic validators are foundation-only until their corresponding Search modes are specified and exposed; no public API was invented for this scope.",
+    "The compiled core lifecycle envelope uses its existing fixed MQ7010/MQ7011 boundary and retains the plugin diagnostic as a typed inner exception; arbitrary SEARCH identifiers are not fabricated as MQ enum values.",
+    "Output failure classification is implemented at the actual IChunkWriter boundary, but the sealed RowSourceBase production path has no injectable writer for a focused failure-injection test; the diagnostic catalog and wrapper contract were directly covered and reviewed against the runtime interface.",
+    "Traversal access-error policy, encoding application, budgets, progress isolation and terminal outcome transport remain later scopes.",
+    "The Release build retains existing package vulnerability and missing-readme advisories; no package was published.",
+    "The repository-wide suite retains 31 existing expected skips."
+  ],
+  "campaignPolicyUpdate": {
+    "path": "docs/campaigns/search/GOAL.md",
+    "status": "updated locally",
+    "summary": "Focused Search tests are the normal development loop; the full owning-repository Release suite is reserved for scope completion and explicitly high-impact checkpoints."
+  }
+}

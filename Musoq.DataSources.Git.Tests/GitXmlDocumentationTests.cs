@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Xml.Linq;
-using Musoq.DataSources.Git;
 
 namespace Musoq.DataSources.Git.Tests;
 

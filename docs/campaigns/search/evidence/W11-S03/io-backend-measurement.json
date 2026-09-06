@@ -1,0 +1,263 @@
+{
+  "command": "measure-io-backends",
+  "scopeId": "W11-S03",
+  "seed": 290467841,
+  "trialPolicy": {
+    "measuredTrials": 7,
+    "iterationsPerTrial": 2,
+    "warmupsExcluded": 1,
+    "order": "randomized buffered/memory-mapped invocation order per trial"
+  },
+  "baseline": {
+    "id": "buffered-sequential",
+    "algorithm": "FileStream with FileOptions.SequentialScan and a fixed byte buffer",
+    "status": "production-baseline"
+  },
+  "candidate": {
+    "id": "memory-mapped-view-stream",
+    "algorithm": "Read-only MemoryMappedFile view stream with the same byte buffer",
+    "status": "evaluation-only"
+  },
+  "backendPolicy": {
+    "selectedProductionBackend": "buffered-sequential",
+    "emptyFile": "completed without creating a zero-length mapping",
+    "mutation": "a changed length or last-write timestamp is reported as MutationDetected; no partial result is accepted as stable",
+    "mappingFailure": "reported as Failed without silently falling back to buffered I/O",
+    "cancellation": "reported as Cancelled and never converted to a successful result"
+  },
+  "featurePolicy": {
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "timingBoundary": "Stopwatch and GC.GetAllocatedBytesForCurrentThread surround file open, backend setup, complete raw-byte read and SHA-256 normalization per invocation. Search decoding, matching, traversal and output serialization are excluded.",
+  "workloads": [
+    {
+      "id": "tiny",
+      "description": "A seven-byte file exercises setup and empty-adjacent behavior.",
+      "fileBytes": 7,
+      "expectedSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+      "trials": [
+        {
+          "trial": 1,
+          "firstInvocation": "memory-mapped,buffered",
+          "baselineMilliseconds": 0.09955,
+          "candidateMilliseconds": 0.09625,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 7,
+          "candidateBytesRead": 7,
+          "baselineSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+          "candidateSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab"
+        },
+        {
+          "trial": 2,
+          "firstInvocation": "buffered,memory-mapped",
+          "baselineMilliseconds": 0.09525,
+          "candidateMilliseconds": 0.0774,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 7,
+          "candidateBytesRead": 7,
+          "baselineSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+          "candidateSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab"
+        },
+        {
+          "trial": 3,
+          "firstInvocation": "buffered,memory-mapped",
+          "baselineMilliseconds": 0.0653,
+          "candidateMilliseconds": 0.07375,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 7,
+          "candidateBytesRead": 7,
+          "baselineSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+          "candidateSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab"
+        },
+        {
+          "trial": 4,
+          "firstInvocation": "memory-mapped,buffered",
+          "baselineMilliseconds": 0.0628,
+          "candidateMilliseconds": 0.0756,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 7,
+          "candidateBytesRead": 7,
+          "baselineSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+          "candidateSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab"
+        },
+        {
+          "trial": 5,
+          "firstInvocation": "buffered,memory-mapped",
+          "baselineMilliseconds": 0.07185,
+          "candidateMilliseconds": 0.06685,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 7,
+          "candidateBytesRead": 7,
+          "baselineSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+          "candidateSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab"
+        },
+        {
+          "trial": 6,
+          "firstInvocation": "memory-mapped,buffered",
+          "baselineMilliseconds": 0.06205,
+          "candidateMilliseconds": 0.0648,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 7,
+          "candidateBytesRead": 7,
+          "baselineSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+          "candidateSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab"
+        },
+        {
+          "trial": 7,
+          "firstInvocation": "memory-mapped,buffered",
+          "baselineMilliseconds": 0.0612,
+          "candidateMilliseconds": 0.06715,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 7,
+          "candidateBytesRead": 7,
+          "baselineSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+          "candidateSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab"
+        }
+      ],
+      "baselineMedianMilliseconds": 0.0653,
+      "candidateMedianMilliseconds": 0.07375,
+      "candidateToBaselineMedianRatio": 1.1294027565084226,
+      "baselineAllocatedBytesMedian": 66536,
+      "candidateAllocatedBytesMedian": 66920,
+      "candidateToBaselineAllocatedBytesRatio": 1.0057713117710714
+    },
+    {
+      "id": "large",
+      "description": "A 16 MiB deterministic file exercises sustained sequential reads.",
+      "fileBytes": 16777216,
+      "expectedSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+      "trials": [
+        {
+          "trial": 1,
+          "firstInvocation": "memory-mapped,buffered",
+          "baselineMilliseconds": 5.70885,
+          "candidateMilliseconds": 9.66525,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 16777216,
+          "candidateBytesRead": 16777216,
+          "baselineSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+          "candidateSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4"
+        },
+        {
+          "trial": 2,
+          "firstInvocation": "memory-mapped,buffered",
+          "baselineMilliseconds": 5.5891,
+          "candidateMilliseconds": 9.44835,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 16777216,
+          "candidateBytesRead": 16777216,
+          "baselineSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+          "candidateSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4"
+        },
+        {
+          "trial": 3,
+          "firstInvocation": "buffered,memory-mapped",
+          "baselineMilliseconds": 5.466,
+          "candidateMilliseconds": 9.56115,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 16777216,
+          "candidateBytesRead": 16777216,
+          "baselineSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+          "candidateSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4"
+        },
+        {
+          "trial": 4,
+          "firstInvocation": "buffered,memory-mapped",
+          "baselineMilliseconds": 5.68275,
+          "candidateMilliseconds": 9.952,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 16777216,
+          "candidateBytesRead": 16777216,
+          "baselineSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+          "candidateSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4"
+        },
+        {
+          "trial": 5,
+          "firstInvocation": "memory-mapped,buffered",
+          "baselineMilliseconds": 6.03755,
+          "candidateMilliseconds": 9.84485,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 16777216,
+          "candidateBytesRead": 16777216,
+          "baselineSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+          "candidateSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4"
+        },
+        {
+          "trial": 6,
+          "firstInvocation": "buffered,memory-mapped",
+          "baselineMilliseconds": 5.86065,
+          "candidateMilliseconds": 9.48095,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 16777216,
+          "candidateBytesRead": 16777216,
+          "baselineSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+          "candidateSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4"
+        },
+        {
+          "trial": 7,
+          "firstInvocation": "buffered,memory-mapped",
+          "baselineMilliseconds": 5.7104,
+          "candidateMilliseconds": 10.0404,
+          "baselineAllocatedBytes": 66536,
+          "candidateAllocatedBytes": 66920,
+          "baselineStatus": "Completed",
+          "candidateStatus": "Completed",
+          "baselineBytesRead": 16777216,
+          "candidateBytesRead": 16777216,
+          "baselineSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+          "candidateSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4"
+        }
+      ],
+      "baselineMedianMilliseconds": 5.70885,
+      "candidateMedianMilliseconds": 9.66525,
+      "candidateToBaselineMedianRatio": 1.6930292440684203,
+      "baselineAllocatedBytesMedian": 66536,
+      "candidateAllocatedBytesMedian": 66920,
+      "candidateToBaselineAllocatedBytesRatio": 1.0057713117710714
+    }
+  ],
+  "decision": {
+    "status": "retain-buffered-baseline",
+    "reason": "Memory mapping is not promoted by this isolated measurement. The current Search contract requires safe handling of changing files, truncation, decoding coordinates, cancellation and mapping failure; a view stream alone does not establish that contract."
+  }
+}

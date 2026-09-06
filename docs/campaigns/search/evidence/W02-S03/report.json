@@ -1,0 +1,221 @@
+{
+  "scopeId": "W02-S03",
+  "status": "passed",
+  "summary": "Proved Search cancellation, early enumerator disposal and reader-failure cleanup through the direct Runtime V2 RowSourceBase chunk path. The adapter now links the host writer token with SourceExecutionContext.EndWorkToken, checks cancellation around reads, matching, file boundaries and final output, and owns each TextReader through a scoped factory.",
+  "requirementIds": [
+    "R01",
+    "R07",
+    "R08",
+    "R10",
+    "R14",
+    "R15"
+  ],
+  "sourceReferences": [
+    "S07",
+    "S08",
+    "S11",
+    "S14",
+    "S15"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass",
+    "path": "docs/campaigns/search/evidence/W02-S03/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "4e72dbfe926c030e1d74baa4c46352c3bf9af9d4",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 13,
+    "behind": 0,
+    "worktree": "clean for tracked files at scope start; W02-S03 implementation and evidence were added afterward",
+    "preExistingScopeCommit": "4e72dbf feat(search): add request and outcome contracts"
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs"
+    ],
+    "scopeBoundary": "Only the Search adapter lifecycle, its direct Runtime V2 lifecycle tests, and W02-S03 evidence were changed. No sibling repository, engine adapter, release, publish, or installed executable was modified."
+  },
+  "tests": {
+    "discovered": 1303,
+    "passed": 1272,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 19,
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "AssemblyDiscovery_ShouldDeclareSearchSchema",
+        "GeneratedXmlDocumentation_ShouldBeWellFormedAndCoverPublicSearchApi",
+        "RawConstructors_ShouldExposeMinimalMatchesSignature",
+        "DescribeSource_ShouldAlignRowTypeAndColumns",
+        "DescribeSource_ShouldRemainStaticWithoutResolvingTheRoot",
+        "InvalidRequest_ShouldBeRejectedBeforeRootResolution",
+        "ScopePolicy_ShouldCopyAndFreezePatternCollections",
+        "LiteralMatcher_ShouldEmitNonOverlappingSpans",
+        "SearchOutcome_ShouldMatchThePublishedTerminalContract",
+        "CompiledLiteralQuery_ShouldReturnKnownTypedRows",
+        "DirectSource_ShouldFlushAtChunkBoundaryWithoutChangingMultiplicity",
+        "DirectSource_ShouldMatchLiteralAcrossReaderBufferBoundaries",
+        "CancellationBeforeStart_ShouldNotOpenReaderOrEmitRows",
+        "CancellationDuringRead_ShouldDisposeReaderAndNotReturnRows",
+        "CancellationDuringScan_ShouldObserveTheTokenBeforeCompleting",
+        "CancellationBetweenChunks_ShouldNotExposeACompletedScan",
+        "EarlyDisposal_ShouldCancelTheProducerAndDisposeItsReader",
+        "ReaderFailure_ShouldPropagateAndDisposeTheReader",
+        "EverySearchConstructor_HasOneExactStarContract"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.Search.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 }
+    ],
+    "skipClassification": {
+      "expectedExistingSkips": 31,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 19,
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W02-S03/search-focused.log",
+      "stdoutSha256": "18939d011d770595bbbca15b1b1f23311877944539b6a5b46602f9459be6b5d1",
+      "stderrPath": "docs/campaigns/search/evidence/W02-S03/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 21,
+      "discovered": 1303,
+      "passed": 1272,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W02-S03/full-suite.log",
+      "stdoutSha256": "839c4ef202a98b28fa6fcaabc93b8730988b963decb47dad0b42e4a8d46655ee",
+      "stderrPath": "docs/campaigns/search/evidence/W02-S03/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The final owning-repository Release suite exited 0 with 1,303 discovered, 1,272 passed, 0 failed and 31 expected skips; the focused Search suite exited 0 with 19 passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, exact source and artifact hashes, tool versions and final trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Direct lifecycle tests cover cancellation before start, during a blocked read, during a slow scan/matching pass and between chunks; early disposal and reader failure are also observed, with no successful empty result after cancellation."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The producer is exercised through the direct Runtime V2 RowSourceBase.Chunks contract and the existing compiled-query, typed-row and chunk-boundary tests remain green."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Writer and SourceExecutionContext cancellation are linked; readers are scoped and disposed on completion, cancellation, early disposal and read failure. The cooperative synchronous-read boundary is documented."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs",
+      "sha256": "1d32af91f73d8cd0284b41d991f0271779c236f29db0cde2f729ba6320c57347"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "sha256": "9b19be8c73a76843522a76d99fc0f7959251d4ea3963d7376991ed6a31a95f80"
+    }
+  ],
+  "sourceDigest": "fccdd51b7471ac2ff936950930dc7e8e198e86f6e827562836d3584374fa9aee",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W02-S03/review.md",
+      "sha256": "f7320c1f7919ee3675bdc4d2e918a610712d5cb348ac537903a68b8632e65d4f"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W02-S03/search-focused.log",
+      "sha256": "18939d011d770595bbbca15b1b1f23311877944539b6a5b46602f9459be6b5d1"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W02-S03/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W02-S03/full-suite.log",
+      "sha256": "839c4ef202a98b28fa6fcaabc93b8730988b963decb47dad0b42e4a8d46655ee"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W02-S03/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "Early disposal is cooperative around an in-flight synchronous TextReader.Read: the host cancellation is observed, but disposal completes after that read returns; an interruptible asynchronous file-read design is outside this scope.",
+    "RowSourceBase surfaces OperationCanceledException directly; terminal summaries and typed failure outcomes are not transported through occurrence rows yet. The SearchOutcome contract was established by W02-S02 and later diagnostic/completion scopes own that integration.",
+    "Traversal access-error policy, encoding validation, budgets, progress isolation and stronger host-level lifecycle telemetry remain later scopes.",
+    "The Release build retains the existing-style NuGet missing-readme advisory for the local Search package; no package was published.",
+    "The repository-wide suite retains 31 existing expected skips."
+  ],
+  "campaignPolicyUpdate": {
+    "path": "docs/campaigns/search/GOAL.md",
+    "status": "updated locally",
+    "summary": "Focused Search tests are the normal development loop; the full owning-repository Release suite is reserved for scope completion and explicitly high-impact checkpoints."
+  }
+}

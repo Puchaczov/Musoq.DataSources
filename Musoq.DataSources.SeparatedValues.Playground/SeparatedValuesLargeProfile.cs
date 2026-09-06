@@ -6,12 +6,10 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Logging.Abstractions;
 using Musoq.DataSources.Tests.Common;
+using Musoq.DataSources.SeparatedValues.Components.Execution;
 using Musoq.Evaluator;
 using Musoq.Schema;
-using Musoq.Schema.DataSources;
-using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.SeparatedValues.Playground;
 

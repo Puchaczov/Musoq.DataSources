@@ -1,0 +1,196 @@
+{
+  "scopeId": "W00-S01",
+  "status": "passed",
+  "summary": "Locked the actual datasource checkout and toolchain, mapped the retained authorities and documented non-destructive dirty-worktree handling.",
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass",
+    "path": "docs/campaigns/search/evidence/W00-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "17618796d1a589a3a289066f632285ea38fba03c",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 1,
+    "behind": 0,
+    "worktree": "clean; ignored campaign files were not part of the status result",
+    "preExistingCommitPreserved": "1761879 feat(gitignore): add docs/campaigns/ to ignore list"
+  },
+  "implementation": {
+    "changedFiles": [
+      "scripts/search/Read-SearchEnvironment.ps1",
+      "scripts/search/Test-SearchEnvironment.ps1",
+      "docs/campaigns/search/evidence/W00-S01/environment-lock.json",
+      "docs/campaigns/search/evidence/W00-S01/authority-map.json",
+      "docs/campaigns/search/evidence/W00-S01/review.md",
+      "docs/campaigns/search/evidence/W00-S01/report.json"
+    ],
+    "scopeBoundary": "No engine, CLI, host, unrelated datasource or user-installation files were changed."
+  },
+  "tests": {
+    "discovered": 1284,
+    "passed": 1253,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "bootstrap": {
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "assertions": 17,
+      "scenarios": [
+        "clean worktree capture",
+        "dirty worktree capture and non-mutating RequireClean rejection",
+        "advanced branch and relocated checkout"
+      ]
+    },
+    "fullSuiteProjectCount": 20,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 }
+    ],
+    "skipClassification": {
+      "explicitlyIgnoredExistingTests": 29,
+      "conditionalFixtureOrArtifactSkips": 2,
+      "unexpected": 0,
+      "note": "The 29 explicit skips are existing service/playground or known-ignored tests. One conditional skip is an insufficient Git fixture and one is the package-artifact smoke test without local artifacts."
+    }
+  },
+  "commands": [
+    {
+      "kind": "bootstrap-test",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "scripts/search/Test-SearchEnvironment.ps1"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 3,
+      "assertions": 17,
+      "logPath": "docs/campaigns/search/evidence/W00-S01/bootstrap-test.log",
+      "logSha256": "140449a6102fbf5b0b6d1fd89f6d1b14f57cb6cf0de3ffc16bc769bcc840007b"
+    },
+    {
+      "kind": "full-suite",
+      "argv": [
+        "dotnet",
+        "test",
+        "--configuration",
+        "Release"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Start-Process -Wait -PassThru; product argv is recorded above",
+      "projectCount": 20,
+      "discovered": 1284,
+      "passed": 1253,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W00-S01/full-suite-confirmation.log",
+      "stdoutSha256": "02a45db0e8f384770616833ecc7c791c415521479823b2700c915783c28feda6",
+      "stderrPath": "docs/campaigns/search/evidence/W00-S01/full-suite-confirmation.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite-attempt",
+      "argv": [
+        "dotnet",
+        "test",
+        "--configuration",
+        "Release"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": null,
+      "result": "All per-project summaries were green, but the first wrapper did not retain its own exit code; it was not used as the gate result.",
+      "logPath": "docs/campaigns/search/evidence/W00-S01/full-suite.log",
+      "logSha256": "9a3ddb91c7028a20934cbbfe738fee6370a5cb2c695a7b8cb7e8db801eb1b7fc"
+    }
+  ],
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release full suite exited 0; 1,253 passed, 0 failed, 31 classified existing skips, and the scoped bootstrap test exited 0."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The approved review, source manifest, artifact hashes and final trailer-bearing completion commit are retained with this report."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/authority-map.json",
+      "sha256": "922bf62e76560bf352741b82156af05db9bba061419e597544bcab8a3d05ab84"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/environment-lock.json",
+      "sha256": "3654812bdc19b866e84e2e9ebc6d1178b3e07a9e2c781e11fb6ff3dcb55b9b39"
+    },
+    {
+      "path": "scripts/search/Read-SearchEnvironment.ps1",
+      "sha256": "8ed6b92b4eebc4ac8dbd8efd9389467f68544072b18bccc7ecf03530fca8c7ab"
+    },
+    {
+      "path": "scripts/search/Test-SearchEnvironment.ps1",
+      "sha256": "a2b2ddf93686be86e733afec19161136921b72ac7933196464748578bb11c478"
+    }
+  ],
+  "sourceDigest": "ad1362e4b29a4a927a42df1ac32dd2fc917c16722c17b84e371cc252d37ab10f",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/environment-lock.json",
+      "sha256": "3654812bdc19b866e84e2e9ebc6d1178b3e07a9e2c781e11fb6ff3dcb55b9b39"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/authority-map.json",
+      "sha256": "922bf62e76560bf352741b82156af05db9bba061419e597544bcab8a3d05ab84"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/review.md",
+      "sha256": "fe07d987f23fd1908472304155d2ab116f85201a2f75bb1c07f9eaaed1c9efc5"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/bootstrap-test.log",
+      "sha256": "140449a6102fbf5b0b6d1fd89f6d1b14f57cb6cf0de3ffc16bc769bcc840007b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/full-suite.log",
+      "sha256": "9a3ddb91c7028a20934cbbfe738fee6370a5cb2c695a7b8cb7e8db801eb1b7fc"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/full-suite-confirmation.log",
+      "sha256": "02a45db0e8f384770616833ecc7c791c415521479823b2700c915783c28feda6"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W00-S01/full-suite-confirmation.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The full suite emitted existing NU1902 and NU1903 package vulnerability warnings; this scope changed no package versions.",
+    "The installed CLI and external engine/host roots remain unresolved for W00-S02; no executable or schema claim is made here."
+  ]
+}

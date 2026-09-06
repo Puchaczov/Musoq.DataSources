@@ -1,12 +1,10 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Musoq.DataSources.Structured;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Managers;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Json;

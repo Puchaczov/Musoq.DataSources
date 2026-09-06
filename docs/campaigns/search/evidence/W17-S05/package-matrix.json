@@ -1,0 +1,146 @@
+{
+  "formatVersion": 1,
+  "status": "passed",
+  "packageId": "Musoq.DataSources.Search",
+  "packageVersion": "8.0.3-alpha.7",
+  "releaseTag": "8.0.3-alpha.7-Musoq.DataSources.Search",
+  "artifactRoot": "artifacts/release/W17-S02",
+  "artifactCount": 8,
+  "artifacts": [
+    {
+      "path": "artifacts/release/W17-S02/nupkgs/Musoq.DataSources.Search.8.0.3-alpha.7.nupkg",
+      "sizeBytes": 144835,
+      "sha256": "0565412126bb21dcec74078e1eff9e9d57a5aa298eaa2f854a820d8d256df49b"
+    },
+    {
+      "path": "artifacts/release/W17-S02/nupkgs/Musoq.DataSources.Search.8.0.3-alpha.7.snupkg",
+      "sizeBytes": 51435,
+      "sha256": "d3f8088ed05cf436ccf6243dfaf2a529e20a89b126d342d0d1d2f60df2d8ebc3"
+    },
+    {
+      "path": "artifacts/release/W17-S02/plugin-release-metadata.json",
+      "sizeBytes": 1677,
+      "sha256": "5ae8971c45b73b6e4725ed2773e378ed7ce3fdd6c5ee7bc635733beead948646"
+    },
+    {
+      "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-alpine-x64.zip",
+      "sizeBytes": 197920,
+      "sha256": "f93c57b27957b04f462c8bca24229ffc9cb680cff2bcc55262a28df471da2004"
+    },
+    {
+      "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-linux-x64.zip",
+      "sizeBytes": 197922,
+      "sha256": "6dd4bddcdcafd94938c1102c03bdd93451244e1b20be3cbec94eb0239b110a4b"
+    },
+    {
+      "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-macos-arm64.zip",
+      "sizeBytes": 197942,
+      "sha256": "179a53de1d565ccc5b06f2c2ca65abdd8d1fd3098393bf0ac2288cf387a47c91"
+    },
+    {
+      "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-windows-x64.zip",
+      "sizeBytes": 197874,
+      "sha256": "04491caeae94ba13f12f6866f43257a71b19d54fae83f60fcd5183364307f01f"
+    },
+    {
+      "path": "artifacts/release/W17-S02/release-artifacts.json",
+      "sizeBytes": 2556,
+      "sha256": "83b8bc2d90eb0a9128b7e5b49090fcb2adcbe1a58e9087259cbfa9f32d3632b1"
+    }
+  ],
+  "ridMatrix": [
+    {
+      "rid": "alpine-x64",
+      "archive": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-alpine-x64.zip",
+      "archiveSizeBytes": 197920,
+      "archiveSha256": "f93c57b27957b04f462c8bca24229ffc9cb680cff2bcc55262a28df471da2004",
+      "outerEntryCount": 6,
+      "pluginEntryCount": 1,
+      "innerEntryCount": 17,
+      "licenseFileCount": 11,
+      "nativeEntryCount": 0,
+      "requiredInnerEntriesPresent": 6,
+      "requiredInnerEntries": [
+        "Musoq.DataSources.Search.dll",
+        "Musoq.DataSources.Search.xml",
+        "Musoq.DataSources.Search.deps.json",
+        "Musoq.DataSources.Search.runtimeconfig.json",
+        "MusoqPluginCompatibility.json",
+        "third-party-notices/report.json"
+      ]
+    },
+    {
+      "rid": "linux-x64",
+      "archive": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-linux-x64.zip",
+      "archiveSizeBytes": 197922,
+      "archiveSha256": "6dd4bddcdcafd94938c1102c03bdd93451244e1b20be3cbec94eb0239b110a4b",
+      "outerEntryCount": 6,
+      "pluginEntryCount": 1,
+      "innerEntryCount": 17,
+      "licenseFileCount": 11,
+      "nativeEntryCount": 0,
+      "requiredInnerEntriesPresent": 6,
+      "requiredInnerEntries": [
+        "Musoq.DataSources.Search.dll",
+        "Musoq.DataSources.Search.xml",
+        "Musoq.DataSources.Search.deps.json",
+        "Musoq.DataSources.Search.runtimeconfig.json",
+        "MusoqPluginCompatibility.json",
+        "third-party-notices/report.json"
+      ]
+    },
+    {
+      "rid": "macos-arm64",
+      "archive": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-macos-arm64.zip",
+      "archiveSizeBytes": 197942,
+      "archiveSha256": "179a53de1d565ccc5b06f2c2ca65abdd8d1fd3098393bf0ac2288cf387a47c91",
+      "outerEntryCount": 6,
+      "pluginEntryCount": 1,
+      "innerEntryCount": 17,
+      "licenseFileCount": 11,
+      "nativeEntryCount": 0,
+      "requiredInnerEntriesPresent": 6,
+      "requiredInnerEntries": [
+        "Musoq.DataSources.Search.dll",
+        "Musoq.DataSources.Search.xml",
+        "Musoq.DataSources.Search.deps.json",
+        "Musoq.DataSources.Search.runtimeconfig.json",
+        "MusoqPluginCompatibility.json",
+        "third-party-notices/report.json"
+      ]
+    },
+    {
+      "rid": "windows-x64",
+      "archive": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-windows-x64.zip",
+      "archiveSizeBytes": 197874,
+      "archiveSha256": "04491caeae94ba13f12f6866f43257a71b19d54fae83f60fcd5183364307f01f",
+      "outerEntryCount": 6,
+      "pluginEntryCount": 1,
+      "innerEntryCount": 17,
+      "licenseFileCount": 11,
+      "nativeEntryCount": 0,
+      "requiredInnerEntriesPresent": 6,
+      "requiredInnerEntries": [
+        "Musoq.DataSources.Search.dll",
+        "Musoq.DataSources.Search.xml",
+        "Musoq.DataSources.Search.deps.json",
+        "Musoq.DataSources.Search.runtimeconfig.json",
+        "MusoqPluginCompatibility.json",
+        "third-party-notices/report.json"
+      ]
+    }
+  ],
+  "assertions": {
+    "expectedRidCount": 4,
+    "actualRidCount": 4,
+    "ridSet": [
+      "alpine-x64",
+      "linux-x64",
+      "macos-arm64",
+      "windows-x64"
+    ],
+    "allArchivesHaveOnePluginZip": true,
+    "allArchivesHaveRequiredPayload": true,
+    "allArchivesHaveNoNativeEntries": true
+  }
+}

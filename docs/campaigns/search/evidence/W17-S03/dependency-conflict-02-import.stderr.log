@@ -1,0 +1,1 @@
+Datasource plugin is incompatible with this Musoq runtime. Failure: EmbeddedManifestMissing; component: Plugin.zip; required: a local .NET package containing Plugin.zip and MusoqPluginCompatibility.json; actual: (missing). Install or update this datasource to a compatible runtime-v2 alpha or later stable version.

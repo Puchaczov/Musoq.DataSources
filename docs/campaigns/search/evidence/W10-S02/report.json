@@ -1,0 +1,249 @@
+{
+  "scopeId": "W10-S02",
+  "status": "passed",
+  "summary": "Implemented projection-aware Search materialization so Core-required output, residual predicate and residual ordering fields are retained before immutable row emission.",
+  "requirementIds": [
+    "R01",
+    "R02",
+    "R09",
+    "R11"
+  ],
+  "sourceReferences": [
+    "S03",
+    "S04",
+    "S14",
+    "S15"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W10-S02/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "ea81f1be16910fb2af6c50b130871dd7e43e8030",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 52,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W10-S02 as in_progress.",
+    "preExistingScopeCommit": "ea81f1be16910fb2af6c50b130871dd7e43e8030",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W10-S01; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchProjectionTests.cs",
+      "Musoq.DataSources.Search/SearchPredicatePlanning.cs",
+      "Musoq.DataSources.Search/SearchProjectionPolicy.cs",
+      "Musoq.DataSources.Search/SearchSourcePlanner.cs",
+      "docs/search/search-predicate-planning-v1.md"
+    ],
+    "scopeBoundary": "Only the owning repository's Search planner, projection policy, projection tests and planning documentation changed, plus this scope's campaign evidence. No sibling repository, public constructor signature, package version or publication state changed.",
+    "requiredFields": "The planner filters Core's required columns against each Search row schema and copies the normalized set into both source-plan containers. Residual MatchText and Context fields therefore remain available to the source before output and ordering, while unsupported search.many remains reject-all.",
+    "materialization": "Optional MatchText, LineText, Captures and Context are selected from the planned fields rather than the complete inferred schema. Direct source callers retain the AllColumns fallback, and emitted rows freeze context snapshots instead of deferring required-field population to a mutable-file reread.",
+    "semantics": "Projection elision preserves match and line coordinates, row multiplicity and typed row shapes. Accepted scalar predicate behavior from W10-S01 is unchanged; order remains residual and no filesystem traversal pruning is claimed."
+  },
+  "tests": {
+    "discovered": 1523,
+    "passed": 1489,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "projectionFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchProjectionTests",
+      "discovered": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "Planner carries required projection fields into both source-plan containers",
+        "Planned fields take precedence over the complete inferred schema",
+        "Residual MatchText filtering materializes text before emission",
+        "Context needed only by residual ordering is materialized before emission",
+        "Compiled SELECT star retains its declared output fields",
+        "Compiled path-only projection preserves repeated occurrences",
+        "Match projection elision preserves occurrences and coordinates",
+        "Line projection elision preserves physical boundaries and counts",
+        "Compiled projection preserves multiplicity and coordinates",
+        "Empty direct-source columns retain compatibility"
+      ]
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 239,
+      "passed": 236,
+      "failed": 0,
+      "skipped": 3
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "projection-focused",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchProjectionTests",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W10-S02/projection-focused.log",
+      "stdoutSha256": "9fa33dc6ae4eab78c5717dc57fbb1edb5cb256b3b76711add6690292e699f733",
+      "stderrPath": "docs/campaigns/search/evidence/W10-S02/projection-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 239,
+      "passed": 236,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W10-S02/search-focused.log",
+      "stdoutSha256": "c7929db56857657f49af5d2ddaa2100fa30de904c1d5fbe4ea24a6fa701c59c2",
+      "stderrPath": "docs/campaigns/search/evidence/W10-S02/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-project-build",
+      "argv": "dotnet build .\\Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W10-S02/search-build.log",
+      "stdoutSha256": "ba713784fd2f0ddff674cd510531e34809a4ae63b39f904bb208051416a6d1f9",
+      "stderrPath": "docs/campaigns/search/evidence/W10-S02/search-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture and retained process handle.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1523,
+      "passed": 1489,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W10-S02/full-suite-exact.log",
+      "stdoutSha256": "684d857cff03fcc12f5412c58afed545da25474d3b0bf56929484cc70b512d26",
+      "stderrPath": "docs/campaigns/search/evidence/W10-S02/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; source manifest and artifact hash validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "Python 3.13.1",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "AMD64",
+    "osArchitecture": "AMD64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release suite exited 0 across 21 projects with 1,523 total tests, 1,489 passed, 0 failed and 34 classified skips; the Search suite and projection-focused tests also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved planned-field precedence, residual-only materialization, immutable emitted rows and the scope boundary; exact commands, tool versions, source/artifact hashes and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused tests cover direct and compiled projections, residual text filtering, context needed by ordering, wildcard output, repeated occurrences, coordinate preservation and direct-source compatibility."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "Required columns are normalized and copied identically to the source result and execution plan; residual fields are materialized before emission, and the warnings-as-errors Search build passed."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchProjectionTests.cs",
+      "sha256": "806607dfb4140c0a617de499b03860477276088ff2ba0cd29e7313b33d7a7679"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchPredicatePlanning.cs",
+      "sha256": "927c1cd826fb9411d5b4ccafd1b9394aeff74dc49b67b53ad5a34c8627e52db7"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchProjectionPolicy.cs",
+      "sha256": "44e1f04401049afd88237af830f17333b789e941fa705d949d07a6f9a7808880"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchSourcePlanner.cs",
+      "sha256": "6cb64632fbb1ac6948e7cda6ca582f2ffaa64e2edad9d5419248e97d5f0a6e42"
+    },
+    {
+      "path": "docs/search/search-predicate-planning-v1.md",
+      "sha256": "05abeb71f97f4aa51e6d9194da323fc7180a7a0f06d2394776548d1156e7d703"
+    }
+  ],
+  "sourceDigest": "bea00452b87998f641222b77aa3585b8ecfb2e0244b6c3522f23143e510ed942",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/full-suite-exact.log",
+      "sha256": "684d857cff03fcc12f5412c58afed545da25474d3b0bf56929484cc70b512d26"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/projection-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/projection-focused.log",
+      "sha256": "9fa33dc6ae4eab78c5717dc57fbb1edb5cb256b3b76711add6690292e699f733"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/review.md",
+      "sha256": "d612aa483c6cc36fdc8c832b6493d5b7da4b1ef7347cd3c462a260f709fd2165"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/search-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/search-build.log",
+      "sha256": "ba713784fd2f0ddff674cd510531e34809a4ae63b39f904bb208051416a6d1f9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W10-S02/search-focused.log",
+      "sha256": "c7929db56857657f49af5d2ddaa2100fa30de904c1d5fbe4ea24a6fa701c59c2"
+    }
+  ],
+  "knownLimitations": [
+    "The planned required-field set controls Search optional materialization but does not prune filesystem traversal or content opening.",
+    "Residual order expressions are still evaluated by Core after source emission; context is materialized before emission when required by the plan.",
+    "The normal search.many planner boundary remains reject-all; its current row contract is unchanged.",
+    "The explicit internal ExpandContext seam may reread evidence only after source-version checks; it is not used to populate required SQL output fields.",
+    "No package was published, pushed, released or installed."
+  ]
+}

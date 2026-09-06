@@ -1,5 +1,4 @@
 ﻿using Docker.DotNet;
-using Docker.DotNet.Models;
 using Musoq.DataSources.Docker.Containers;
 using Musoq.DataSources.Docker.Images;
 using Musoq.DataSources.Docker.Networks;

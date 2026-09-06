@@ -10,7 +10,6 @@ using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
-using Musoq.Schema.Diagnostics;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git;

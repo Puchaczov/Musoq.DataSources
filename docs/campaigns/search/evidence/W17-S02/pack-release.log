@@ -1,0 +1,16 @@
+Packing NuGet package for Musoq.DataSources.Search 8.0.3-alpha.7
+Packing plugin zips for Musoq.DataSources.Search
+Validating committed license snapshot: Musoq.DataSources.Search
+  Restoring NuGet packages...
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+[SNAPSHOT] package=Musoq.DataSources.Search packages=10 files=12 manifest_sha256=743c02bf4579e5275b20371c190ef4039ac92121a6bdbc5596f27975754d7f5d source=checked-in
+Starting Build...
+Building: Musoq.DataSources.Search
+    -> Created: Musoq.DataSources.Search-windows-x64.zip
+    -> Created: Musoq.DataSources.Search-linux-x64.zip
+    -> Created: Musoq.DataSources.Search-macos-arm64.zip
+    -> Created: Musoq.DataSources.Search-alpine-x64.zip
+[SNAPSHOT] package=Musoq.DataSources.Search packages=10 files=12 manifest_sha256=743c02bf4579e5275b20371c190ef4039ac92121a6bdbc5596f27975754d7f5d source=checked-in
+[ARCHIVE-SNAPSHOT] package=Musoq.DataSources.Search archives=4 manifest_sha256=743c02bf4579e5275b20371c190ef4039ac92121a6bdbc5596f27975754d7f5d
+Release artifact manifest: D:\repos\Musoq.DataSources\artifacts\release\W17-S02\release-artifacts.json

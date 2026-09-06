@@ -1,0 +1,185 @@
+{
+  "scopeId": "W02-S02",
+  "status": "passed",
+  "summary": "Introduced immutable SearchRequest and ScopePolicy contracts, the published four-state SearchOutcome enum, and a filesystem-independent literal matcher that emits MatchSpan values before the datasource adapter formats rows.",
+  "requirementIds": ["R01", "R07", "R08", "R10", "R14", "R15"],
+  "sourceReferences": ["S07", "S08", "S11", "S14", "S15"],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass",
+    "path": "docs/campaigns/search/evidence/W02-S02/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "1b0e1d61fb3a4a199eb86487bb5d43f7b994f9e3",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 12,
+    "behind": 0,
+    "worktree": "clean for tracked files at scope start; W02-S02 implementation and evidence were added afterward",
+    "preExistingScopeCommit": "1b0e1d6 feat(search): scaffold literal search source"
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/SearchContracts.cs",
+      "Musoq.DataSources.Search/LiteralMatcher.cs",
+      "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs"
+    ],
+    "scopeBoundary": "Only the Search request/scope/outcome contracts, the pure literal matcher, its existing adapter seam, focused tests, and W02-S02 evidence were changed. No sibling repository, engine adapter, release, publish, or installed executable was modified."
+  },
+  "tests": {
+    "discovered": 1297,
+    "passed": 1266,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "assembly schema discovery",
+        "public XML documentation coverage",
+        "raw constructor metadata",
+        "static source descriptor and RowType alignment",
+        "static metadata without root resolution",
+        "rejected request before root resolution",
+        "ScopePolicy copies and freezes pattern collections",
+        "literal matcher emits non-overlapping spans",
+        "published SearchOutcome terminal states",
+        "compiled literal query with exact typed rows",
+        "chunk-boundary multiplicity and cursor advancement",
+        "cross-buffer literal matching",
+        "compiled SELECT-star contract"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 },
+      { "project": "Musoq.DataSources.Search.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 }
+    ],
+    "skipClassification": {
+      "expectedExistingSkips": 31,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": ["dotnet", "test", "Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj", "--configuration", "Release"],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W02-S02/search-focused.log",
+      "stdoutSha256": "10509de8603de34e93546ad20b50ca39fe58f9b019749f65c828951c5b74c23c",
+      "stderrPath": "docs/campaigns/search/evidence/W02-S02/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": ["dotnet", "test", "--configuration", "Release"],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 21,
+      "discovered": 1297,
+      "passed": 1266,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W02-S02/full-suite.log",
+      "stdoutSha256": "45e3e6d79817fcf9ebde8f57c8c354cb354caf805cd46c68ae2445c19c6a874e",
+      "stderrPath": "docs/campaigns/search/evidence/W02-S02/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": ["git diff --check", "JSON parse validation", "campaign validator"],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The final owning-repository Release suite exited 0 with 1,297 discovered, 1,266 passed, 0 failed, and 31 expected skips; the focused Search suite also exited 0 with 13 passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, exact source/artifact hashes, tool versions, and final trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "The focused tests cover invalid-request ordering with an invalid root, immutable policy collection behavior, the four published terminal states, pure non-overlapping spans, and the existing compiled-query row contract."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "Static source description remains independent of root parameters, and the typed request, scope, span, outcome, and adapter boundaries are covered by passing Search tests."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "The matcher owns bounded per-literal state without filesystem or writer dependencies; the adapter retains scoped readers, chunked output, and cancellation checks from W02-S01."
+    }
+  ],
+  "sourceManifest": [
+    { "path": "Musoq.DataSources.Search/LiteralMatcher.cs", "sha256": "fd2d62adf3a3783073d2234227ffaf2e7f7ec4962a6b4996e9629d181a94dac1" },
+    { "path": "Musoq.DataSources.Search/SearchContracts.cs", "sha256": "284ed60e3e791d7061f166bc3276f8d5f89c0a42547b670aec3f1a10befe9469" },
+    { "path": "Musoq.DataSources.Search/SearchMatchesSource.cs", "sha256": "3c8df168e5d26916591eed27cce38a192981164b49e1aba739bc4aa15f2b14a6" },
+    { "path": "Musoq.DataSources.Search.Tests/SearchSchemaTests.cs", "sha256": "044a2ea2789469b7df62ec426ca801182c77c90615705b4d246150a8d8941271" }
+  ],
+  "sourceDigest": "077f518b16a24a3b2d803fa47642454f709334fed88038a541ac213d889e2ef8",
+  "artifacts": [
+    { "path": "docs/campaigns/search/evidence/W02-S02/review.md", "sha256": "8c8aace9e0cb42fbe29af0b3c06a1ac47ab87290028896b6bccdf9bae43db93c" },
+    { "path": "docs/campaigns/search/evidence/W02-S02/search-focused.log", "sha256": "10509de8603de34e93546ad20b50ca39fe58f9b019749f65c828951c5b74c23c" },
+    { "path": "docs/campaigns/search/evidence/W02-S02/search-focused.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W02-S02/full-suite.log", "sha256": "45e3e6d79817fcf9ebde8f57c8c354cb354caf805cd46c68ae2445c19c6a874e" },
+    { "path": "docs/campaigns/search/evidence/W02-S02/full-suite.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" }
+  ],
+  "knownLimitations": [
+    "The request model is the internal single-literal foundation for the current matches entry point; versioned JSON binding, many-pattern requests, regex and byte modes remain later scopes.",
+    "ScopePolicy and SearchOutcome establish immutable domain contracts, but the minimal source still uses its existing recursive traversal and does not expose policy options or terminal-summary transport yet.",
+    "Strong cancellation/disposal assertions, typed diagnostics, progress isolation and budget enforcement remain later W02 scopes.",
+    "The Release build retains the existing-style NuGet missing-readme advisory for the local Search package; no package was published.",
+    "The repository-wide suite retains 31 existing expected skips."
+  ],
+  "campaignPolicyUpdate": {
+    "path": "docs/campaigns/search/GOAL.md",
+    "status": "updated locally",
+    "summary": "Focused Search tests are the normal development loop; the full owning-repository Release suite is reserved for scope completion and explicitly high-impact checkpoints."
+  }
+}

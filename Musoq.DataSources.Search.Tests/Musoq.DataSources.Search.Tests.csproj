@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>Musoq.DataSources.Search.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Remove="TestData\**" />
+        <Content Include="TestData\**" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
+        <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
+        <PackageReference Include="Musoq.Converter" Version="$(MusoqConverterVersion)" />
+        <PackageReference Include="Musoq.Evaluator" Version="$(MusoqEvaluatorVersion)" />
+        <PackageReference Include="Musoq.Plugins" Version="$(MusoqPluginsVersion)" />
+        <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj" />
+        <ProjectReference Include="..\Musoq.DataSources.Search\Musoq.DataSources.Search.csproj" />
+        <ProjectReference Include="..\Musoq.DataSources.Search.Benchmarks\Musoq.DataSources.Search.Benchmarks.csproj" />
+    </ItemGroup>
+
+</Project>

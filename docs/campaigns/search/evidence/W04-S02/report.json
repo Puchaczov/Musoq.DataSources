@@ -1,0 +1,266 @@
+{
+  "scopeId": "W04-S02",
+  "status": "passed",
+  "summary": "Implemented bounded include/exclude glob evaluation and repository/global ignore precedence on top of the W04-S01 traversal frontier. The Search source now applies compiled path policy before yielding files, lazily loads ancestor ignore sources, preserves rule provenance, prunes only permitted directories, honors negation and explicit file-root override, and retains typed access failures.",
+  "requirementIds": [
+    "R02",
+    "R03",
+    "R07",
+    "R08"
+  ],
+  "sourceReferences": [
+    "S03",
+    "S05",
+    "S20"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W04-S02/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "180e32d7ab2642fce946cc6412e29b4555207447",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 22,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; the local ignored campaign state was already recording W04-S02 as in_progress. W04-S02 implementation, tests and evidence were added afterward.",
+    "preExistingScopeCommit": "180e32d7ab2642fce946cc6412e29b4555207447",
+    "aheadNote": "The ahead count includes the retained pre-existing docs/campaigns ignore commit; 21 preceding reachable commits carry completed Search scope trailers."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/SearchContracts.cs",
+      "Musoq.DataSources.Search/SearchFileTraversal.cs",
+      "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "Musoq.DataSources.Search.Tests/SearchScopeTests.cs"
+    ],
+    "scopeBoundary": "Only the owning Search implementation and its tests were changed, together with W04-S02 evidence. No public SQL/source signature, sibling repository, query-engine adapter, release or publish surface was modified.",
+    "policy": {
+      "includeExclude": "Include and exclude globs are compiled once per scope enumeration. Basename globs match the candidate name at any depth, while slash-qualified and anchored globs match normalized relative paths.",
+      "directoryPruning": "Only an explicit directory-only exclude or an ignored directory prunes a subtree; a file-extension include cannot prune an unmatched directory.",
+      "repositorySources": [
+        { "name": ".gitignore", "precedence": 1 },
+        { "name": ".ignore", "precedence": 2 },
+        { "name": ".rgignore", "precedence": 3 }
+      ],
+      "globalSource": "Configured global rules are an internal frozen seam, precedence 0, disabled unless GlobalIgnorePolicy.Configured is selected.",
+      "ruleEvaluation": "Rules are loaded lazily from ancestors to descendants. Higher source precedence, then deeper directory scope, then later rule order selects the matching decision. Ignored parents are pruned before descendant ignore files can reopen them.",
+      "provenance": "Each compiled ignore rule retains source path, precedence, directory depth, line number, order and negation state for later explanation/fingerprint work.",
+      "syntax": [
+        "* and ? wildcards",
+        "** path segments",
+        "anchored leading slash",
+        "directory-only trailing slash",
+        "escaped comment/negation and wildcard literals",
+        "unescaped trailing-space trimming"
+      ],
+      "rootFile": "An explicit file root is yielded directly and bypasses directory-scoped ignore and pruning rules."
+    },
+    "traversalIntegration": "SearchScopeTraversal supplies a policy callback to the W04-S01 explicit stack, so denied directories are skipped before their enumerators are opened and all existing frontier cancellation/disposal behavior remains active."
+  },
+  "tests": {
+    "discovered": 1347,
+    "passed": 1316,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 63,
+      "passed": 63,
+      "failed": 0,
+      "skipped": 0,
+      "newScenarios": [
+        "RepositoryIgnores_ShouldApplyNestedNegationAndPruneIgnoredParents",
+        "IgnoreRules_ShouldHonorAnchorsDirectoryOnlyEscapesAndRuleOrder",
+        "IncludeAndExcludeGlobs_ShouldNotPruneAnUnmatchedDirectory",
+        "IgnoreSources_ShouldHonorPrecedenceGlobalOptInAndDisablement",
+        "ExplicitFileRoot_ShouldOverrideRepositoryIgnoreRules",
+        "GlobalIgnoreRules_ShouldBeCopiedAndFrozen"
+      ],
+      "requiredCoverage": [
+        "nested negation",
+        "anchored paths",
+        "directory-only rules",
+        "escaped literals",
+        "global ignore opt-in",
+        "repository ignore disablement",
+        "explicit file-root override",
+        "include/exclude filtering without unsafe directory pruning",
+        "source precedence and later-rule ordering"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "unexpected": 0
+    },
+    "scopeSemanticsHarness": {
+      "scenarios": 6,
+      "assertions": 44,
+      "status": "passed",
+      "note": "The harness independently validates the proposed contract fixtures; the focused Search tests validate the installed implementation against real temporary files."
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 63,
+      "passed": 63,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S02/search-focused.log",
+      "stdoutSha256": "1c3ef8c2728ab8dc2b09bdc7b4b5dc708f7fab1e71bbf840464b419e3b5b9f07",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S02/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1347,
+      "passed": 1316,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S02/full-suite-exact.log",
+      "stdoutSha256": "2336d76dc6c1f9908d7c31cf0c297a392726bfab42694c57b82c5cc4726f333f",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S02/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "benchmark-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Benchmarks\\Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S02/benchmark-build.log",
+      "stdoutSha256": "94691ea45379b20e84135220345e97c8868019e882b43f2940c8742450da0f01",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S02/benchmark-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "scope-semantics-harness",
+      "argv": "pwsh -NoProfile -File scripts\\search\\Test-SearchScopeSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarios": 6,
+      "assertions": 44,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S02/scope-semantics.log",
+      "stdoutSha256": "b8fe435714472e91d394a797a41441619fa7dec97d41974cf88eccb0bc69a3a9",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S02/scope-semantics.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; focused Search tests; exact full suite; scope-semantics harness; benchmark build",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 1,347 discovered, 1,316 passed, 0 failed and 31 existing expected skips; the focused Search suite exited 0 with 63 passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The approved separate review, exact source/artifact hashes and unique trailer-bearing completion commit were retained and verified by the campaign validator after commit."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Real temporary-file fixtures cover the required glob, ignore, precedence, negation and pruning cases; the independent six-scenario scope harness also passed, and existing pinned ripgrep comparator tests remained green."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Policy decisions are applied through the cancellation-aware W04-S01 frontier; existing frontier disposal/cancellation and Search reader lifecycle tests remained green, with no candidate list materialization introduced."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search/SearchContracts.cs",
+      "sha256": "bed1fee3d184622a9f3cb7ac00bbcf215fdd5734d5eabaa426284e6c5dc28d0f"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchFileTraversal.cs",
+      "sha256": "0c95bd28bc520490c026dcc7b0937a6f15dcbbe496d64a1317af713aa82b1b01"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "sha256": "9f7e406a900ebe4c2c14247963e6ba753ea3e7554190c61bc598925a3cf94208"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "sha256": "07bfb142274a7efc04b41caa74735269c0a94b878856bf4dbdcc867f6fac7a66"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchScopeTests.cs",
+      "sha256": "986ac3df46507f75551ec832275ef67d0389ed6a9fc2a982ff4f18c1b879f0e6"
+    }
+  ],
+  "sourceDigest": "5f8fc52e3089daa926dfc2873cef8cf03d95af7fa041aa0960942a944c56e8a4",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/review.md",
+      "sha256": "dcb4c4612c013d150c918924f346558e329be4230f06d0b12d9bd41a96d90f75"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/search-focused.log",
+      "sha256": "1c3ef8c2728ab8dc2b09bdc7b4b5dc708f7fab1e71bbf840464b419e3b5b9f07"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/full-suite-exact.log",
+      "sha256": "2336d76dc6c1f9908d7c31cf0c297a392726bfab42694c57b82c5cc4726f333f"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/benchmark-build.log",
+      "sha256": "94691ea45379b20e84135220345e97c8868019e882b43f2940c8742450da0f01"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/benchmark-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/scope-semantics.log",
+      "sha256": "b8fe435714472e91d394a797a41441619fa7dec97d41974cf88eccb0bc69a3a9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S02/scope-semantics.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "Hidden-entry, symbolic-link/reparse-point, special-file and explicit inaccessible-entry policies remain later implementation scopes; this scope does not silently claim those flags are complete.",
+    "The public request binder does not yet expose the internal configured global-rule collection, and this scope does not add machine-global ignore-file lookup. The binding/configuration and scope fingerprint belong to later contract scopes.",
+    "The full candidate decision manifest and loaded ignore-source content hashes are not yet emitted as an audit result; only rule provenance is retained internally in this scope.",
+    "Filesystem enumeration is live rather than snapshot-atomic, and SQL result order still requires an explicit ORDER BY.",
+    "The repository-wide suite retains 31 existing classified skips, existing provider warnings and package advisories; no package was published."
+  ]
+}

@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.Optimization;
 

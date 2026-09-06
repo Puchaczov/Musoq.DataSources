@@ -1,0 +1,318 @@
+{
+  "scopeId": "W11-S03",
+  "status": "passed",
+  "summary": "Evaluated sequential buffered I/O against an exact-length read-only memory-mapped view, added lifecycle and mutation tests, and retained the production buffered backend because the mapped candidate was slower and does not satisfy the existing Search mutation/decoding/coordinate contract.",
+  "requirementIds": [
+    "R02",
+    "R04",
+    "R08",
+    "R09",
+    "R11"
+  ],
+  "sourceReferences": [
+    "S07",
+    "S15",
+    "S21",
+    "S25"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W11-S03/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "983942879fd22f1b208276289e7bb0c926a3357b",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 58,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W11-S03 implementation; ignored campaign state had W11-S03 active and the scope changes were then introduced.",
+    "preExistingScopeCommit": "983942879fd22f1b208276289e7bb0c926a3357b",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W11-S02; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Benchmarks/SearchIoBackendMeasurement.cs",
+      "Musoq.DataSources.Search.Benchmarks/SearchIoBackendProbe.cs",
+      "Musoq.DataSources.Search.Benchmarks/Program.cs",
+      "Musoq.DataSources.Search.Tests/SearchIoBackendTests.cs"
+    ],
+    "scopeBoundary": "Only the owning repository's Search benchmark and test assemblies changed, plus this scope's campaign evidence. Production Search backend selection, public contracts, package version, publication state and sibling repositories were not changed.",
+    "baseline": "The production baseline remains FileStream with FileOptions.SequentialScan. The probe uses the same fixed 64 KiB byte-buffer shape for a raw-I/O comparison.",
+    "candidate": "The evaluation-only candidate creates a read-only MemoryMappedFile from the opened file and a view stream sized to the captured file length. Empty files complete without creating a zero-length mapping.",
+    "safetyPolicy": "The probe classifies cancellation, mapping/open failure and length or last-write timestamp mutation. It never converts those outcomes into a stable successful result or silently falls back to the other backend.",
+    "measurement": "Added measure-io-backends with deterministic seven-byte and 16 MiB files, seven randomized-order trials, two iterations per trial, result byte-count/SHA-256 equality and GC.GetAllocatedBytesForCurrentThread allocation measurements.",
+    "semanticBoundary": "The experiment compares raw-byte transport only. Search decoding, strict encoding, coordinates, matching, traversal, row materialization and output semantics remain owned by the existing buffered production path."
+  },
+  "tests": {
+    "discovered": 1552,
+    "passed": 1518,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "ioBackendFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchIoBackendTests",
+      "discovered": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "Stable tiny and 2 MiB files produce identical buffered and mapped byte counts and hashes.",
+        "Empty files complete without a zero-length mapping.",
+        "A changing mapped file is never reported as a stable successful read; an OS mutation refusal is also accepted as safe.",
+        "Missing-file mapping failure is reported without a buffered fallback.",
+        "Cancellation stops both buffered and mapped reads before the full 2 MiB payload is consumed."
+      ]
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 268,
+      "passed": 265,
+      "failed": 0,
+      "skipped": 3
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "performance": {
+    "ioBackendMeasurement": {
+      "path": "docs/campaigns/search/evidence/W11-S03/io-backend-measurement.json",
+      "processArchitecture": "X64",
+      "measuredTrials": 7,
+      "iterationsPerTrial": 2,
+      "timingBoundary": "File open, backend setup, complete raw-byte read and SHA-256 normalization; Search decoding, matching, traversal and output serialization excluded.",
+      "workloads": [
+        {
+          "id": "tiny",
+          "fileBytes": 7,
+          "expectedSha256": "f0a98ce6b7cfb8f897587c901cb5c4ab3753a202b5a05184c7fab2ffc1bb2aab",
+          "baselineMedianMilliseconds": 0.0653,
+          "candidateMedianMilliseconds": 0.07375,
+          "candidateToBaselineMedianRatio": 1.1294027565084226,
+          "baselineAllocatedBytesMedian": 66536,
+          "candidateAllocatedBytesMedian": 66920,
+          "candidateToBaselineAllocatedBytesRatio": 1.0057713117710714
+        },
+        {
+          "id": "large",
+          "fileBytes": 16777216,
+          "expectedSha256": "e848a58bd9c463464284575ca8c97fb300c7bc7a2d5deb1f61d2573bde5f16e4",
+          "baselineMedianMilliseconds": 5.70885,
+          "candidateMedianMilliseconds": 9.66525,
+          "candidateToBaselineMedianRatio": 1.6930292440684203,
+          "baselineAllocatedBytesMedian": 66536,
+          "candidateAllocatedBytesMedian": 66920,
+          "candidateToBaselineAllocatedBytesRatio": 1.0057713117710714
+        }
+      ],
+      "decision": "retain-buffered-baseline"
+    }
+  },
+  "commands": [
+    {
+      "kind": "benchmark-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Benchmarks\\Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell Start-Process invocation with separate stdout/stderr capture.",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W11-S03/benchmark-build.log",
+      "stdoutSha256": "5dbe4bbf7005e00f0895e67f2052fe4b7c9e7c57956dd445cb85a465c430ef03",
+      "stderrPath": "docs/campaigns/search/evidence/W11-S03/benchmark-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "io-backend-measurement",
+      "argv": "dotnet run --project Musoq.DataSources.Search.Benchmarks\\Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-build -- measure-io-backends",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell Start-Process invocation with separate stdout/stderr capture.",
+      "exitCode": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W11-S03/io-backend-measurement.json",
+      "stdoutSha256": "518c7a3868cf0c5a6e885b40361d2c0f4f852d99be818901fc6d3d9aaf6965dc",
+      "stderrPath": "docs/campaigns/search/evidence/W11-S03/io-backend-measurement.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "io-backend-focused",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchIoBackendTests --logger \"console;verbosity=normal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell Start-Process invocation with separate stdout/stderr capture.",
+      "exitCode": 0,
+      "discovered": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W11-S03/io-backend-focused.log",
+      "stdoutSha256": "e3d00b830ef8476f80b1beeae2cf9c145c275bf096140ba8da17f9518c2a3aad",
+      "stderrPath": "docs/campaigns/search/evidence/W11-S03/io-backend-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell Start-Process invocation with separate stdout/stderr capture.",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W11-S03/search-build.log",
+      "stdoutSha256": "ba713784fd2f0ddff674cd510531e34809a4ae63b39f904bb208051416a6d1f9",
+      "stderrPath": "docs/campaigns/search/evidence/W11-S03/search-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --logger \"console;verbosity=normal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell Start-Process invocation with separate stdout/stderr capture.",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 268,
+      "passed": 265,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W11-S03/search-focused.log",
+      "stdoutSha256": "8cad4ebbf6427a749457b545b96bf6f7d5769326d41c330a8fe993a4a0119542",
+      "stderrPath": "docs/campaigns/search/evidence/W11-S03/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell Start-Process invocation with separate stdout/stderr capture and a retained process handle; wrapper returned EXIT_CODE=0.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1552,
+      "passed": 1518,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W11-S03/full-suite-exact.log",
+      "stdoutSha256": "4c4e58182712485aefa7a2a4bc90f3bf29692528b482e6dad1cdce1b16184b9a",
+      "stderrPath": "docs/campaigns/search/evidence/W11-S03/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --cached --check; JSON parse validation; source manifest and artifact hash validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "Python 3.13.1",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "AMD64",
+    "osArchitecture": "AMD64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release suite passed across 21 projects with 1,552 total tests, 1,518 passed, 0 failed and 34 classified skips; the Search and I/O-focused suites also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved the evaluation-only boundary, exact-length mapping, failure/cancellation policy, benchmark result and explicit non-adoption decision; exact commands, versions, hashes and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Stable tiny and large raw-byte reads are identical by byte count and SHA-256 across both backends, and the mutation/failure/cancellation outcomes are explicitly classified rather than normalized into success."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "The probe owns and disposes file, view-stream and mapping resources in order; cancellation is observable for both backends, and mapping failure cannot silently fall through to a different backend."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Benchmarks/Program.cs",
+      "sha256": "ec8860caa0298428679a6456718235cd8f79c8ab05c18c60bafd856387434b70"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Benchmarks/SearchIoBackendMeasurement.cs",
+      "sha256": "d7c62731e28aa38301773f69ab7e6f23ec7cf49cfeecae7791203bf4e5c7fb6b"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Benchmarks/SearchIoBackendProbe.cs",
+      "sha256": "a982bfe25b3c6301ab50480933fe9c77ad9c01cd2ea9910905bc536213e04ff4"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchIoBackendTests.cs",
+      "sha256": "6bf0e416bfbce54350b97a394b7d6ef4108b614381ce29a13ac05da41ce8ec91"
+    }
+  ],
+  "sourceDigest": "e2f92253e036d5a7991a8c411f254b14e7c94c4dfd71dfb0e6e45cf27a21584d",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/benchmark-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/benchmark-build.log",
+      "sha256": "5dbe4bbf7005e00f0895e67f2052fe4b7c9e7c57956dd445cb85a465c430ef03"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/full-suite-exact.log",
+      "sha256": "4c4e58182712485aefa7a2a4bc90f3bf29692528b482e6dad1cdce1b16184b9a"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/io-backend-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/io-backend-focused.log",
+      "sha256": "e3d00b830ef8476f80b1beeae2cf9c145c275bf096140ba8da17f9518c2a3aad"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/io-backend-measurement.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/io-backend-measurement.json",
+      "sha256": "518c7a3868cf0c5a6e885b40361d2c0f4f852d99be818901fc6d3d9aaf6965dc"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/review.md",
+      "sha256": "90dceee7bb2c0386b84a536e21cf199917274b4a9b166acc2f83a457b4738681"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/search-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/search-build.log",
+      "sha256": "ba713784fd2f0ddff674cd510531e34809a4ae63b39f904bb208051416a6d1f9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W11-S03/search-focused.log",
+      "sha256": "8cad4ebbf6427a749457b545b96bf6f7d5769326d41c330a8fe993a4a0119542"
+    }
+  ],
+  "knownLimitations": [
+    "The benchmark is raw-byte I/O rather than full Search execution; decoding, strict encoding, coordinates and traversal are not modeled by the candidate.",
+    "The probe's length/last-write fingerprint is not an immutable snapshot and cannot prove safety against every same-size content race; this limitation is why mmap is not integrated into production.",
+    "The final run executed on an x64 host; ARM64 was not emulated or directly measured.",
+    "The repository suite emitted existing unrelated project warnings and package-readme advisory lines; the Search and benchmark builds passed with zero warnings/errors under -warnaserror.",
+    "No package was published, pushed, released or installed."
+  ]
+}

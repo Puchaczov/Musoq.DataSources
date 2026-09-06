@@ -1,0 +1,129 @@
+{
+  "formatVersion": 1,
+  "scopeId": "W00-S01",
+  "lockKind": "search-environment",
+  "selectedTrack": "core",
+  "repositoryId": "datasources",
+  "capturedAtUtc": "2026-09-06T12:10:00.5355024Z",
+  "repository": {
+    "repositoryId": "Puchaczov/Musoq.DataSources",
+    "repositoryRoot": "D:\\repos\\Musoq.DataSources",
+    "solution": "Musoq.DataSources.sln",
+    "startingBranch": "feature/runtime_v2",
+    "startingHead": "17618796d1a589a3a289066f632285ea38fba03c",
+    "upstream": "origin/feature/runtime_v2",
+    "startingDivergence": {
+      "ahead": 1,
+      "behind": 0
+    },
+    "startingWorktree": {
+      "isDirty": false,
+      "statusEntryCount": 0,
+      "trackedChangeCount": 0,
+      "untrackedCount": 0,
+      "statusCommand": [
+        "git",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "ignoredCampaignFilesExcluded": true
+    },
+    "recordedSourceObservation": {
+      "sourceRef": "S01",
+      "branch": "feature/runtime_v2",
+      "commit": "7c04f7d0a0d7e806f961803f636c2f8ae5da94e5",
+      "observedAt": "2026-09-06",
+      "isAncestorOfStartingHead": true,
+      "localChangesSinceObservation": [
+        ".gitignore"
+      ],
+      "localChangeCommit": "17618796d1a589a3a289066f632285ea38fba03c",
+      "handling": "The pre-existing local commit was preserved; the recorded source observation is not treated as the current checkout head."
+    }
+  },
+  "toolchain": {
+    "os": "Microsoft Windows 11 Home",
+    "osVersion": "10.0.26200",
+    "architecture": "64-bit",
+    "rid": "win-x64",
+    "gitVersion": "2.48.1.windows.1",
+    "dotnetVersion": "10.0.303",
+    "dotnetSdks": [
+      "8.0.424",
+      "9.0.317",
+      "10.0.303"
+    ],
+    "globalJson": {
+      "path": "global.json",
+      "sdkVersion": "10.0.300",
+      "rollForward": "latestFeature",
+      "sha256": "bcead32f2fb187a53e01ffc96128e09798dbdc8a981b17adb4276b0e8da840d7"
+    },
+    "powershellVersion": "7.6.5"
+  },
+  "bootstrap": {
+    "reader": "scripts/search/Read-SearchEnvironment.ps1",
+    "test": "scripts/search/Test-SearchEnvironment.ps1",
+    "stdoutContract": "Successful reads emit JSON only; failures are non-zero and diagnostics are written to stderr.",
+    "targetCheckoutMutation": false
+  },
+  "fullSuite": {
+    "cwd": "D:\\repos\\Musoq.DataSources",
+    "argv": [
+      "dotnet",
+      "test",
+      "--configuration",
+      "Release"
+    ],
+    "discoveredFrom": ".github/copilot-instructions.md",
+    "ciWorkflow": ".github/workflows/dotnetcore.yml"
+  },
+  "packagePins": {
+    "MusoqConverterVersion": "17.0.9-alpha.2",
+    "MusoqEvaluatorVersion": "17.0.9-alpha.2",
+    "MusoqParserVersion": "17.0.9-alpha.1",
+    "MusoqPluginsVersion": "17.0.9-alpha.1",
+    "MusoqSchemaVersion": "17.0.9-alpha.1",
+    "authorityPath": "Directory.Build.props",
+    "authoritySha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+  },
+  "cliSnapshotBoundary": {
+    "sourceRef": "S19",
+    "uploadedManualIndexVersion": "0.40.0-alpha.14",
+    "uploadedManualIndexSha256": "ac7368cd94b66c7ebd797552032b6852db4a60be2aeaee9e8739482834c33241",
+    "projectSnapshotVersion": "0.40.0-alpha.12",
+    "projectSnapshotSourceCommit": "e255ddc98c61f63ddf176d951728b435abc8d76b",
+    "targetExecutableVerified": false,
+    "targetExecutablePath": null,
+    "policy": "No installed executable, schema, credentials, settings or CLI behavior is inferred in W00-S01; W00-S02 resolves explicit local inputs."
+  },
+  "dirtyWorktreeHandling": {
+    "default": "Capture branch, commit and status counts without modifying the requested checkout.",
+    "strictMode": "Read-SearchEnvironment.ps1 -RequireClean returns non-zero for a dirty checkout and performs no cleanup.",
+    "neverRun": [
+      "git reset",
+      "git clean",
+      "git stash",
+      "git checkout"
+    ],
+    "fixtureCleanup": "The test harness removes only its own uniquely named directories below the system temporary directory."
+  },
+  "sourceFiles": [
+    {
+      "sourceRef": "S02",
+      "path": "Directory.Build.props",
+      "sha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+    },
+    {
+      "sourceRef": "S09",
+      "path": ".github/copilot-instructions.md",
+      "sha256": "8df83bdb8ac5966556f623bed32fdf1bd4b31402c0d59bb424085d391e2abf4a"
+    },
+    {
+      "sourceRef": "S10",
+      "path": ".github/workflows/dotnetcore.yml",
+      "sha256": "41a5ebfc16699e2d3050011d4ced89f730a4c65a19e8ff11a7d0c431e2d2b5a8"
+    }
+  ]
+}

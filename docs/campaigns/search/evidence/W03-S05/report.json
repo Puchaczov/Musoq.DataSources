@@ -1,0 +1,275 @@
+{
+  "scopeId": "W03-S05",
+  "status": "passed",
+  "summary": "Froze the Search benchmark harness contract and added a benchmark-owned validator with focused negative tests for scope/output mismatch, missing baseline, zero-byte input and incomplete runs. The contract preserves the W03-S04 feasibility observations and separates scanner, datasource, query, service and client measurement layers without claiming unmeasured parity.",
+  "requirementIds": [
+    "R02",
+    "R04",
+    "R11",
+    "R15"
+  ],
+  "sourceReferences": [
+    "S20",
+    "S21",
+    "S22",
+    "S23",
+    "S24",
+    "S25"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W03-S05/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "1550eb4e49e74e36efa02d7089b0ccdfd770b1c4",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 20,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; W03-S05 benchmark validator, tests, contract documents and evidence were added afterward.",
+    "preExistingScopeCommit": "1550eb4e49e74e36efa02d7089b0ccdfd770b1c4"
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Benchmarks/BenchmarkHarnessContract.cs",
+      "Musoq.DataSources.Search.Tests/BenchmarkHarnessContractTests.cs",
+      "docs/search/search-benchmark-harness-v1.json",
+      "docs/search/search-benchmark-harness-v1.md"
+    ],
+    "scopeBoundary": "Only benchmark-owned validation code, Search tests, versioned benchmark contract documents and W03-S05 evidence were changed. No production Search implementation, public API, sibling repository, query-engine adapter, release or publish surface was modified.",
+    "contract": {
+      "path": "docs/search/search-benchmark-harness-v1.json",
+      "version": 1,
+      "status": "frozen",
+      "measurementLayers": [
+        "matching_kernel_equivalent_in_process_sink",
+        "datasource_chunks",
+        "compiled_query",
+        "warm_service_end_to_end",
+        "cold_client_end_to_end"
+      ],
+      "requiredCohorts": 24,
+      "mandatoryCoreCohorts": "B01-B23",
+      "optionalCohorts": ["B24"],
+      "minimumMeasuredTrials": 7,
+      "cacheLabels": ["controlled_cold", "controlled_warm", "unknown"],
+      "proposedThresholds": {
+        "parityGeomeanRatioMax": 1.25,
+        "perCellMedianRatioMax": 2.0,
+        "warmServiceP95OverheadMsMax": 100,
+        "coldClientP95OverheadMsMax": 500
+      }
+    },
+    "validator": {
+      "type": "Musoq.DataSources.Search.Benchmarks.BenchmarkHarnessContract",
+      "negativeCases": [
+        "mismatched scope",
+        "mismatched output unit",
+        "missing baseline",
+        "zero-byte scan",
+        "incomplete run",
+        "unknown filesystem cache labeled cold",
+        "mismatched normalized output",
+        "incomplete trial"
+      ],
+      "positiveCase": "complete cell with equal result hash/count and seven randomized paired trials"
+    }
+  },
+  "benchmark": {
+    "previousFeasibilityEvidence": "docs/campaigns/search/evidence/W03-S04/report.json",
+    "initialMeasurementsRetained": true,
+    "newMeasurements": false,
+    "interpretation": "W03-S04's four-cell, seven-trial-per-candidate observations remain retained evidence. W03-S05 freezes how future registered measurements must be recorded; it does not promote those observations to full-matrix parity or superiority claims.",
+    "matrixConsistency": {
+      "contractLayers": 5,
+      "matrixLayers": 5,
+      "contractCohorts": 24,
+      "matrixCohorts": 24,
+      "idsEqual": true
+    }
+  },
+  "tests": {
+    "discovered": 1336,
+    "passed": 1305,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 52,
+      "passed": 52,
+      "failed": 0,
+      "skipped": 0,
+      "newScenarios": [
+        "FrozenHarness_ShouldAcceptACompleteEquivalentCell",
+        "FrozenHarness_ShouldRejectMismatchedScopeAndOutputUnit",
+        "FrozenHarness_ShouldRejectMissingBaseline",
+        "FrozenHarness_ShouldRejectZeroByteScansEvenWhenTheResultIsEmpty",
+        "FrozenHarness_ShouldRejectIncompleteRunsAndUnknownColdClaims",
+        "FrozenHarness_ShouldRejectMismatchedResultsAndIncompleteTrials",
+        "FrozenContractDocument_ShouldDeclareTheRequiredLayersCohortsAndThresholds"
+      ],
+      "requiredCoverage": [
+        "mismatched scope/output rejection",
+        "missing baseline rejection",
+        "zero-byte scan rejection",
+        "incomplete run rejection",
+        "incomplete trial and output mismatch rejection",
+        "frozen contract layer/cohort/threshold declarations"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 52,
+      "passed": 52,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S05/search-focused.log",
+      "stdoutSha256": "d11e056a42148f8ae8184e58b48fec36e0584c42275e9e62c18ae707337b36a7",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S05/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1336,
+      "passed": 1305,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S05/full-suite-exact.log",
+      "stdoutSha256": "124343eda4c06d494de7c1c1b8f8e1932c8ee1f68c8b2b7f9ba680461a4ef871",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S05/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "benchmark-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Benchmarks\\Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S05/benchmark-build.log",
+      "stdoutSha256": "50fdbc94c75fca0cb4ddd26f1016c75ce28a66ff1b5f2b4c9cf9fb65af08dc20",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S05/benchmark-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "contract-matrix-parse",
+      "argv": "PowerShell ConvertFrom-Json validation of search-benchmark-harness-v1.json and benchmark-matrix.json",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S05/contract-parse.log",
+      "stdoutSha256": "9ea5fa340bf3afd3eda2ac36229eb80f8eb8eab0f5dd562072577ab3086b2f0d",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S05/contract-parse.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 1,336 discovered, 1,305 passed, 0 failed and 31 existing expected skips; the focused Search suite exited 0 with 52 passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The approved separate review, exact source/artifact hashes, contract/matrix consistency record and unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "The typed harness validator and focused tests reject all required invalid measurement shapes while accepting a complete equivalent cell with seven randomized paired trials."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Benchmarks/BenchmarkHarnessContract.cs",
+      "sha256": "e1f841cb6093bb20604c2737bccc6211176827fb66884e9dd2dfc9733897739e"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/BenchmarkHarnessContractTests.cs",
+      "sha256": "17bd6258e35f3c32f099a36a4157771af5483a2488ec20eef5256289113b8210"
+    },
+    {
+      "path": "docs/search/search-benchmark-harness-v1.json",
+      "sha256": "8686d8d4730b4812f87755ff23a079443ee9ad1ecadfb6b678337937335c5afc"
+    },
+    {
+      "path": "docs/search/search-benchmark-harness-v1.md",
+      "sha256": "f1ec569d4ae65c3ae853f6ac30c400cb2ee57e42f9a6dac2f50d72b137ac492d"
+    }
+  ],
+  "sourceDigest": "3ef8f7cd30caf2dd5f0b29db65427abe518909aeb42e44c4123d4d973ad4396c",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/review.md",
+      "sha256": "fd6a6dfea5d31733d8087fad5419b348afdadd69dbc8f9c0686b8bcedc5a3cbf"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/search-focused.log",
+      "sha256": "d11e056a42148f8ae8184e58b48fec36e0584c42275e9e62c18ae707337b36a7"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/full-suite-exact.log",
+      "sha256": "124343eda4c06d494de7c1c1b8f8e1932c8ee1f68c8b2b7f9ba680461a4ef871"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/benchmark-build.log",
+      "sha256": "50fdbc94c75fca0cb4ddd26f1016c75ce28a66ff1b5f2b4c9cf9fb65af08dc20"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/benchmark-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/contract-parse.log",
+      "sha256": "9ea5fa340bf3afd3eda2ac36229eb80f8eb8eab0f5dd562072577ab3086b2f0d"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S05/contract-parse.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The typed validator covers cell invariants and the required negative cases; later scopes must wire every required recorded field and registered cohort into executable reports.",
+    "W03-S04 remains an in-process exact-UTF-8-literal feasibility measurement. Datasource, compiled-query, warm-service and cold-client layers are frozen boundaries, not synthetic W03-S05 results.",
+    "Parity and latency values are proposed targets only; they require semantic parity and registered cohort coverage before evaluation.",
+    "The repository-wide suite retains 31 existing classified skips and package advisories; no package was published."
+  ]
+}

@@ -10,13 +10,13 @@
 ## Read first
 
 - `SeparatedValuesSchema.cs`
-- `SeparatedValuesBoundedSchemaResolver.cs`
-- `SeparatedValuesFormat.cs`
-- `SeparatedValuesUtf8Reader.cs`
-- `SeparatedValuesScanPipeline.cs`
-- `SeparatedValuesParallelBlockScanPipeline.cs`
-- `SeparatedValuesTable.cs`
-- `SeparatedValuesSourcePlanner.cs`
+- `Components/Planning/SeparatedValuesBoundedSchemaResolver.cs`
+- `Components/Parsing/SeparatedValuesFormat.cs`
+- `Components/Parsing/SeparatedValuesUtf8Reader.cs`
+- `Components/Execution/SeparatedValuesScanPipeline.cs`
+- `Components/Execution/SeparatedValuesParallelBlockScanPipeline.cs`
+- `Tables/SeparatedValuesTable.cs`
+- `Components/Planning/SeparatedValuesSourcePlanner.cs`
 
 ## Schema contract
 
@@ -59,12 +59,12 @@
 
 ## Validate with
 
-- `Musoq.DataSources.SeparatedValues.Tests/CsvTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesDynamicSchemaTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesSchemaInferenceTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesBoundedInferenceTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesParallelBlockPipelineTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesStructuralSummaryTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesRuntimeV2ProjectionTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesParallelExecutionTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesDecimalParserTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Sources/CsvTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Planning/SeparatedValuesDynamicSchemaTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Planning/SeparatedValuesSchemaInferenceTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Planning/SeparatedValuesBoundedInferenceTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Execution/SeparatedValuesParallelBlockPipelineTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Planning/SeparatedValuesStructuralSummaryTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Execution/SeparatedValuesRuntimeV2ProjectionTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Execution/SeparatedValuesParallelExecutionTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Parsing/SeparatedValuesDecimalParserTests.cs`

@@ -1,0 +1,181 @@
+2026-09-08 04:21:12.270 +02:00 [WRN] MCP ToolCollection is not configured. Skipping MCP tool registration actions.
+2026-09-08 04:21:16.341 +02:00 [ERR] Script execution failed for evaluation "0cf9168f-b085-44a3-b614-5a11de6730bf"
+Musoq.Evaluator.Exceptions.QueryExecutionException: MQ9002 [error] [internal]
+Message: The query encountered an internal execution failure. Reference 'internal-7fcf83e4acfc4faf8d373ce64f796dd2' when reporting this issue.
+At: runtime
+Source: internal
+Why: The execution engine reached an invariant failure while evaluating a compiled query.
+Try:
+  1) Record the correlation identifier and the query shape that triggered the failure.
+  2) Report the diagnostic without including secret source arguments.
+Facts:
+  correlationId: internal-7fcf83e4acfc4faf8d373ce64f796dd2
+  exceptionType: System.IO.FileNotFoundException
+Actions:
+  suggestion: Record the correlation identifier and the query shape that triggered the failure.
+  suggestion: Report the diagnostic without including secret source arguments.
+Docs: Diagnostics - Internal Execution Errors
+ ---> System.IO.FileNotFoundException: Could not load file or assembly 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'. Nie można odnaleźć określonego pliku.
+File name: 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'
+   at query_4d1200b3f24b2cc9f51b2033ff1a37813336854f9eeff8f76cdb08414216e660.CompiledQuery.ComputeShapeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_4d1200b3f24b2cc9f51b2033ff1a37813336854f9eeff8f76cdb08414216e660.CompiledQuery.ComputeShapeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_4d1200b3f24b2cc9f51b2033ff1a37813336854f9eeff8f76cdb08414216e660.CompiledQuery.ComputeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_4d1200b3f24b2cc9f51b2033ff1a37813336854f9eeff8f76cdb08414216e660.CompiledQuery.ComputeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+MoveNext()
+   at Musoq.Evaluator.Runtime.QueryTableEnumerable`1.AddTo(Table table)
+   --- End of inner exception stack trace ---
+   at query_4d1200b3f24b2cc9f51b2033ff1a37813336854f9eeff8f76cdb08414216e660.CompiledQuery.Run(QueryRunContext queryContext)
+   at Musoq.Evaluator.CompiledQuery.RunCore(CancellationToken token, QueryProgressOptions progressOptions)
+   at Musoq.Evaluator.CompiledQuery.Run(CancellationToken token)
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.<>c__DisplayClass17_0.<ExecuteInternalAsync>b__1() in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 257
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.Measure[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 287
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteInternalAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, EvaluationId evaluationId, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 254
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, EvaluationId evaluationId, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 70
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.MeasureAsync[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 303
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.ScriptExecutionOrchestrator.ExecuteQueryAndSendResultsAsync(ScriptExecutionContext context, IResultsSender resultsSender, Stopwatch stopwatch, CancellationToken stoppingToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ScriptExecutionOrchestrator.cs:line 143
+2026-09-08 04:21:16.985 +02:00 [ERR] Script execution failed for evaluation "e4a2001a-0963-405b-a7c9-5c2162ab2f7b"
+Musoq.Evaluator.Exceptions.QueryExecutionException: MQ9002 [error] [internal]
+Message: The query encountered an internal execution failure. Reference 'internal-80e5738762bf4111b3f6dee67d390482' when reporting this issue.
+At: runtime
+Source: internal
+Why: The execution engine reached an invariant failure while evaluating a compiled query.
+Try:
+  1) Record the correlation identifier and the query shape that triggered the failure.
+  2) Report the diagnostic without including secret source arguments.
+Facts:
+  correlationId: internal-80e5738762bf4111b3f6dee67d390482
+  exceptionType: System.IO.FileNotFoundException
+Actions:
+  suggestion: Record the correlation identifier and the query shape that triggered the failure.
+  suggestion: Report the diagnostic without including secret source arguments.
+Docs: Diagnostics - Internal Execution Errors
+ ---> System.IO.FileNotFoundException: Could not load file or assembly 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'. Nie można odnaleźć określonego pliku.
+File name: 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'
+   at query_fb6fd232791efe14937569b8c3c291e4a3ca6a9e498786c50b20640dafd1ca0d.CompiledQuery.ComputeShapeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_fb6fd232791efe14937569b8c3c291e4a3ca6a9e498786c50b20640dafd1ca0d.CompiledQuery.ComputeShapeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_fb6fd232791efe14937569b8c3c291e4a3ca6a9e498786c50b20640dafd1ca0d.CompiledQuery.ComputeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_fb6fd232791efe14937569b8c3c291e4a3ca6a9e498786c50b20640dafd1ca0d.CompiledQuery.ComputeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+MoveNext()
+   at Musoq.Evaluator.Runtime.QueryTableEnumerable`1.AddTo(Table table)
+   --- End of inner exception stack trace ---
+   at query_fb6fd232791efe14937569b8c3c291e4a3ca6a9e498786c50b20640dafd1ca0d.CompiledQuery.Run(QueryRunContext queryContext)
+   at Musoq.Evaluator.CompiledQuery.RunCore(CancellationToken token, QueryProgressOptions progressOptions)
+   at Musoq.Evaluator.CompiledQuery.Run(CancellationToken token)
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.<>c__DisplayClass17_0.<ExecuteInternalAsync>b__1() in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 257
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.Measure[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 287
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteInternalAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, EvaluationId evaluationId, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 254
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, EvaluationId evaluationId, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 70
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.MeasureAsync[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 303
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.ScriptExecutionOrchestrator.ExecuteQueryAndSendResultsAsync(ScriptExecutionContext context, IResultsSender resultsSender, Stopwatch stopwatch, CancellationToken stoppingToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ScriptExecutionOrchestrator.cs:line 143
+2026-09-08 04:21:17.618 +02:00 [ERR] Script execution failed for evaluation "57e8de64-c8e2-4558-83a7-42fbeb18f52e"
+Musoq.Evaluator.Exceptions.QueryExecutionException: MQ9002 [error] [internal]
+Message: The query encountered an internal execution failure. Reference 'internal-ada5ac2da3b748a8ac11c3e3f1cf9e9f' when reporting this issue.
+At: runtime
+Source: internal
+Why: The execution engine reached an invariant failure while evaluating a compiled query.
+Try:
+  1) Record the correlation identifier and the query shape that triggered the failure.
+  2) Report the diagnostic without including secret source arguments.
+Facts:
+  correlationId: internal-ada5ac2da3b748a8ac11c3e3f1cf9e9f
+  exceptionType: System.IO.FileNotFoundException
+Actions:
+  suggestion: Record the correlation identifier and the query shape that triggered the failure.
+  suggestion: Report the diagnostic without including secret source arguments.
+Docs: Diagnostics - Internal Execution Errors
+ ---> System.IO.FileNotFoundException: Could not load file or assembly 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'. Nie można odnaleźć określonego pliku.
+File name: 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'
+   at query_a83a6ce5782a1e6db1eb36f52f7859434cda250e01ab77735e9437228a4ce4f6.CompiledQuery.ComputeShapeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_a83a6ce5782a1e6db1eb36f52f7859434cda250e01ab77735e9437228a4ce4f6.CompiledQuery.ComputeShapeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_a83a6ce5782a1e6db1eb36f52f7859434cda250e01ab77735e9437228a4ce4f6.CompiledQuery.ComputeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_a83a6ce5782a1e6db1eb36f52f7859434cda250e01ab77735e9437228a4ce4f6.CompiledQuery.ComputeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+MoveNext()
+   at Musoq.Evaluator.Runtime.QueryTableEnumerable`1.AddTo(Table table)
+   --- End of inner exception stack trace ---
+   at query_a83a6ce5782a1e6db1eb36f52f7859434cda250e01ab77735e9437228a4ce4f6.CompiledQuery.Run(QueryRunContext queryContext)
+   at Musoq.Evaluator.CompiledQuery.RunCore(CancellationToken token, QueryProgressOptions progressOptions)
+   at Musoq.Evaluator.CompiledQuery.Run(CancellationToken token)
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.<>c__DisplayClass17_0.<ExecuteInternalAsync>b__1() in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 257
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.Measure[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 287
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteInternalAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, EvaluationId evaluationId, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 254
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, EvaluationId evaluationId, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 70
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.MeasureAsync[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 303
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.ScriptExecutionOrchestrator.ExecuteQueryAndSendResultsAsync(ScriptExecutionContext context, IResultsSender resultsSender, Stopwatch stopwatch, CancellationToken stoppingToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ScriptExecutionOrchestrator.cs:line 143
+2026-09-08 04:21:18.234 +02:00 [ERR] Script execution failed for evaluation "ba6b5b93-39d7-40ce-99a4-3ad1bf831f71"
+Musoq.Evaluator.Exceptions.QueryExecutionException: MQ9002 [error] [internal]
+Message: The query encountered an internal execution failure. Reference 'internal-b2fa393a13594331b1dbf35227ae711b' when reporting this issue.
+At: runtime
+Source: internal
+Why: The execution engine reached an invariant failure while evaluating a compiled query.
+Try:
+  1) Record the correlation identifier and the query shape that triggered the failure.
+  2) Report the diagnostic without including secret source arguments.
+Facts:
+  correlationId: internal-b2fa393a13594331b1dbf35227ae711b
+  exceptionType: System.IO.FileNotFoundException
+Actions:
+  suggestion: Record the correlation identifier and the query shape that triggered the failure.
+  suggestion: Report the diagnostic without including secret source arguments.
+Docs: Diagnostics - Internal Execution Errors
+ ---> System.IO.FileNotFoundException: Could not load file or assembly 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'. Nie można odnaleźć określonego pliku.
+File name: 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'
+   at query_c50c4bb5053c7821c77bf77a51363395fce5904e1796d6d71626d63c42b4e021.CompiledQuery.ComputeShapeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_c50c4bb5053c7821c77bf77a51363395fce5904e1796d6d71626d63c42b4e021.CompiledQuery.ComputeShapeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_c50c4bb5053c7821c77bf77a51363395fce5904e1796d6d71626d63c42b4e021.CompiledQuery.ComputeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+System.IDisposable.Dispose()
+   at query_c50c4bb5053c7821c77bf77a51363395fce5904e1796d6d71626d63c42b4e021.CompiledQuery.ComputeRows_compiled_0(ISchemaProvider provider, IReadOnlyDictionary`2 sourceRuntimeSettingsBySourceContextId, IReadOnlyDictionary`2 sourceExecutionPlans, ILogger logger, QueryRunContext queryContext)+MoveNext()
+   at Musoq.Evaluator.Runtime.QueryTableEnumerable`1.AddTo(Table table)
+   --- End of inner exception stack trace ---
+   at query_c50c4bb5053c7821c77bf77a51363395fce5904e1796d6d71626d63c42b4e021.CompiledQuery.Run(QueryRunContext queryContext)
+   at Musoq.Evaluator.CompiledQuery.RunCore(CancellationToken token, QueryProgressOptions progressOptions)
+   at Musoq.Evaluator.CompiledQuery.Run(CancellationToken token)
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.<>c__DisplayClass17_0.<ExecuteInternalAsync>b__1() in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 257
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.Measure[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 287
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteInternalAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, EvaluationId evaluationId, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 254
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, EvaluationId evaluationId, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 70
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.MeasureAsync[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 303
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.ScriptExecutionOrchestrator.ExecuteQueryAndSendResultsAsync(ScriptExecutionContext context, IResultsSender resultsSender, Stopwatch stopwatch, CancellationToken stoppingToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ScriptExecutionOrchestrator.cs:line 143
+2026-09-08 04:21:18.886 +02:00 [ERR] Script execution failed for evaluation "96c17aba-a894-4e31-9376-0f6d0e47024e"
+Musoq.Evaluator.Exceptions.QueryExecutionException: MQ9002 [error] [internal]
+Message: The query encountered an internal execution failure. Reference 'internal-23fefc1a55314534b4ea595251fbf3ff' when reporting this issue.
+At: runtime
+Source: internal
+Why: The execution engine reached an invariant failure while evaluating a compiled query.
+Try:
+  1) Record the correlation identifier and the query shape that triggered the failure.
+  2) Report the diagnostic without including secret source arguments.
+Facts:
+  correlationId: internal-23fefc1a55314534b4ea595251fbf3ff
+  exceptionType: System.TypeInitializationException
+Actions:
+  suggestion: Record the correlation identifier and the query shape that triggered the failure.
+  suggestion: Report the diagnostic without including secret source arguments.
+Docs: Diagnostics - Internal Execution Errors
+ ---> System.TypeInitializationException: The type initializer for 'query_83f807e58f3ca67ecae772a07a4f35d371b141bddd9deba88896fa513f631fa1.CompiledQuery' threw an exception.
+ ---> System.IO.FileNotFoundException: Could not load file or assembly 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'. Nie można odnaleźć określonego pliku.
+File name: 'Musoq.DataSources.Search, Version=8.0.3.0, Culture=neutral, PublicKeyToken=null'
+   at query_83f807e58f3ca67ecae772a07a4f35d371b141bddd9deba88896fa513f631fa1.CompiledQuery..cctor()
+   --- End of inner exception stack trace ---
+   at query_83f807e58f3ca67ecae772a07a4f35d371b141bddd9deba88896fa513f631fa1.CompiledQuery.Run(QueryRunContext queryContext)
+   at Musoq.Evaluator.CompiledQuery.RunCore(CancellationToken token, QueryProgressOptions progressOptions)
+   --- End of inner exception stack trace ---
+   at Musoq.Evaluator.CompiledQuery.RunCore(CancellationToken token, QueryProgressOptions progressOptions)
+   at Musoq.Evaluator.CompiledQuery.Run(CancellationToken token)
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.<>c__DisplayClass17_0.<ExecuteInternalAsync>b__1() in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 257
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.Measure[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 287
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteInternalAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, EvaluationId evaluationId, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 254
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.Executors.Musoq.MusoqScriptExecutor.ExecuteAsync(ScriptText scriptText, MusoqEnvironmentVariable[] environmentVariables, IEvaluationDiary evaluationDiary, EvaluationId evaluationId, RootNode rawQueryTree, IReadOnlyDictionary`2 scriptParameters, IReadOnlyDictionary`2 sourceRuntimeSettingsProfiles, CancellationToken cancellationToken, PreparedQueryExecutionPlan preparedQueryPlan, WatchExecutionContext watchContext, RecursiveCteExecutionLimitOverrides recursiveCteLimits, RollingRuntimeBinding rollingRuntimeBinding) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/Executors/Musoq/MusoqScriptExecutor.cs:line 70
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.LocalProcessScriptExecutor.ExecuteMusoqCoreAsync(LocalScriptExecutionRequest request, CancellationToken cancellationToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 140
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.EvaluationDiaryPhaseMeasurement.MeasureAsync[T](IEvaluationDiary diary, QueryExecutionPhase phase, Func`1 operation) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ProcessScriptExecutor.cs:line 303
+   at Musoq.Cloud.AgentLocal.Infrastructure.Components.ScriptExecution.ScriptExecutionOrchestrator.ExecuteQueryAndSendResultsAsync(ScriptExecutionContext context, IResultsSender resultsSender, Stopwatch stopwatch, CancellationToken stoppingToken) in /home/runner/work/Musoq.Cloud/Musoq.Cloud/src/dotnet/Musoq.Cloud.AgentLocal.Infrastructure/Components/ScriptExecution/ScriptExecutionOrchestrator.cs:line 143
+2026-09-08 04:21:20.041 +02:00 [WRN] Gracefully stopping

@@ -211,7 +211,7 @@ matching live core report pairs. Core passed all 30 of its gates first; the
 DataSources/core comparative gate then passed all 39 checks.
 
 The independent comparator is preserved in
-[FrozenByteNativeLegacySchema.cs](../Musoq.DataSources.SeparatedValues.Benchmark/FrozenByteNativeLegacySchema.cs).
+[FrozenByteNativeLegacySchema.cs](../Musoq.DataSources.SeparatedValues.Benchmark/Comparisons/FrozenByteNativeLegacySchema.cs).
 The core design and qualification methodology are documented in
 [Musoq query-scoped dynamic sources](https://github.com/Puchaczov/Musoq/blob/master/docs/query-scoped-dynamic-sources.md).
 

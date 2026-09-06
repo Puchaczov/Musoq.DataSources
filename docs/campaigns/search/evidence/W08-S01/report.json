@@ -1,0 +1,261 @@
+{
+  "scopeId": "W08-S01",
+  "status": "passed",
+  "summary": "Implemented the bounded versioned scalar-JSON many-request parser with immutable typed pattern/options models, duplicate-key and duplicate-ID rejection, closed-schema validation, explicit enum mapping and byte-positioned diagnostics.",
+  "requirementIds": [
+    "R01",
+    "R02",
+    "R04",
+    "R05",
+    "R08",
+    "R10"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S15",
+    "S20",
+    "S23"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W08-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "18ae7d69d420b2d496a28bd574522766c7b2b26b",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 41,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W08-S01 as in_progress.",
+    "preExistingScopeCommit": "18ae7d69d420b2d496a28bd574522766c7b2b26b",
+    "aheadNote": "The ahead count includes the reachable completed Search scope commits through W07-S05 and other pre-existing branch commits; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "Musoq.DataSources.Search/SearchManyRequest.cs",
+      "Musoq.DataSources.Search/SearchManyRequestParser.cs",
+      "Musoq.DataSources.Search.Tests/SearchManyRequestParserTests.cs",
+      "docs/search/search-request-contract-v1.json",
+      "docs/search/search-request-contract-v1.md"
+    ],
+    "scopeBoundary": "Only Search request diagnostics/models/parser, parser tests and the versioned request contract documentation were changed. No Search source metadata or execution was added because this scope owns request admission; shared matching and source integration remain later W08 work.",
+    "transport": {
+      "shape": "one scalar JSON string containing one versioned request object",
+      "version": 1,
+      "maxUtf16Characters": 8388608,
+      "diagnosticOffset": "UTF-8 byte offset within requestJson"
+    },
+    "schema": {
+      "patternCount": "1 through 1024",
+      "patternId": "1 through 128 ASCII characters matching [A-Za-z0-9][A-Za-z0-9._-]*",
+      "patternText": "1 through 65536 UTF-16 characters",
+      "patternModes": [
+        "literal",
+        "regex"
+      ],
+      "duplicatePropertyPolicy": "reject at every object depth, including escaped names",
+      "duplicatePatternIdPolicy": "reject using ordinal identity",
+      "unknownPropertyPolicy": "reject at request, pattern, options and scope depths",
+      "filesystemBoundary": "the parser performs no filesystem access"
+    }
+  },
+  "tests": {
+    "discovered": 1458,
+    "passed": 1424,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 174,
+      "passed": 171,
+      "failed": 0,
+      "skipped": 3,
+      "newScenarios": [
+        "Round-trip all labeled patterns and documented options",
+        "Decode JSON escapes and accept maximum pattern text",
+        "Accept positional and named SQL scalar payload examples",
+        "Reject duplicate keys at every object depth, including escaped names",
+        "Reject unknown properties and incompatible mode/selection values",
+        "Reject duplicate IDs, invalid bounds and report positions",
+        "Reject malformed/non-object/empty requests and report syntax positions",
+        "Reject an oversized scalar before JSON parsing"
+      ],
+      "requiredCoverage": [
+        "Round-trip requests",
+        "Escapes",
+        "Long patterns",
+        "SQL raw-string examples",
+        "Duplicate keys and IDs",
+        "Unknown fields and incompatible modes",
+        "Diagnostic positions",
+        "Bounded scalar transport"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 174,
+      "passed": 171,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W08-S01/search-focused.log",
+      "stdoutSha256": "522e57256d351acc4357af123e15cee562224a2fcccbfa2468c3393e8b11548f",
+      "stderrPath": "docs/campaigns/search/evidence/W08-S01/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "request-contract-validator",
+      "argv": "pwsh -NoProfile -File .\\scripts\\search\\Test-SearchRequestContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "status": "passed",
+      "scenarioCount": 4,
+      "assertions": 45,
+      "stdoutPath": "docs/campaigns/search/evidence/W08-S01/request-contract.log",
+      "stdoutSha256": "328fc8f1a5aa107a6a9b71394238037fba3ac95c083e449bde8c34dbb269b206",
+      "stderrPath": "docs/campaigns/search/evidence/W08-S01/request-contract.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-project-build",
+      "argv": "dotnet build .\\Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; captured logs were normalized to UTF-8 LF for deterministic hashing.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1458,
+      "passed": 1424,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W08-S01/full-suite-exact.log",
+      "stdoutSha256": "9566e721ed03e2c39c162bc3f411960a8fa8d3827bbcb2a5af853c1c43e04957",
+      "stderrPath": "docs/campaigns/search/evidence/W08-S01/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; contract JSON parse; source and artifact hash validation",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "AMD64",
+    "osArchitecture": "AMD64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The focused Search Release suite exited 0 with 174 discovered, 171 passed, 0 failed and 3 expected skips; the exact owning-repository Release suite exited 0 across 21 projects with 1,458 discovered, 1,424 passed, 0 failed and 34 classified skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved the parser boundary, closed validation, immutable models, diagnostics and bounded transport; exact commands, tool versions, source/artifact hashes and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Parser tests and the independent request-contract corpus preserve labeled pattern identity, reject duplicate IDs/keys and cover escapes, long text, bounds, modes and diagnostic positions."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The request contract continues to mark source metadata and execution as proposed; positional and named examples are tested as scalar request payloads, and no unverified SQL constructor or collection binding is advertised."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "The parser enforces a pre-parse scalar cap, pattern/count/scope bounds, strict JSON depth/options and immutable output, and performs no filesystem access."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "sha256": "77e437d66f68e2240c6ebc676fe2c10816567a9ed5962c7214f52c3d2320a87c"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchManyRequest.cs",
+      "sha256": "fbba268fbdbc27aabbb061bf89e134b0a45c9e735bdd4a1cf987a69e6f0e0477"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchManyRequestParser.cs",
+      "sha256": "2093137f97342630558f5efb2001cfd704f8e9e1f40d8df8dc121520a8a47481"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchManyRequestParserTests.cs",
+      "sha256": "af012637c01145adf4e748090c4a96790b32f40bbd1070a94caaeb20f963bc99"
+    },
+    {
+      "path": "docs/search/search-request-contract-v1.json",
+      "sha256": "19853560a086eb594ef5e94417811ba6e6adb6b2fd9ea8a58230e254fcad255f"
+    },
+    {
+      "path": "docs/search/search-request-contract-v1.md",
+      "sha256": "5e124a64c5446893deb2cda520f1183eebe92bfe2657fac9abe823043e900fc2"
+    }
+  ],
+  "sourceDigest": "8d013bb4e62d8884bd7354bbd2670e42d632db590f7cc068848b28b008b581e9",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W08-S01/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S01/full-suite-exact.log",
+      "sha256": "9566e721ed03e2c39c162bc3f411960a8fa8d3827bbcb2a5af853c1c43e04957"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S01/request-contract.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S01/request-contract.log",
+      "sha256": "328fc8f1a5aa107a6a9b71394238037fba3ac95c083e449bde8c34dbb269b206"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S01/review.md",
+      "sha256": "94c88c9f75b692fc5fae97b753e1843423b83ffec20ea4ac97ac3b669b02c643"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S01/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W08-S01/search-focused.log",
+      "sha256": "522e57256d351acc4357af123e15cee562224a2fcccbfa2468c3393e8b11548f"
+    }
+  ],
+  "knownLimitations": [
+    "The request parser is implemented in W08-S01, while search.many source metadata, shared matching and query execution remain later W08 scopes; the documented SQL forms remain explicitly proposed and no unverified constructor is advertised.",
+    "The scalar transport cap is 8,388,608 UTF-16 characters; pattern, count and scope limits are independently enforced. The parser is request admission code, not a scan-hot-path benchmark target.",
+    "The repository-wide suite retains 31 existing expected skips and 3 platform-conditional symlink skips; no package was published, pushed, released or installed."
+  ]
+}

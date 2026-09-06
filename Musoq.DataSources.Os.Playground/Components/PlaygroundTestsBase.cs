@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.DataSources.Os;
 using Musoq.DataSources.Tests.Common;
-using Musoq.Evaluator;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Playground.Components;

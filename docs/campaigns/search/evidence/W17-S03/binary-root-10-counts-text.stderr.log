@@ -1,0 +1,18 @@
+Error: MQ3001 [error] [bind]
+Message: Unknown column 'Count'.
+At: line 1, column 13
+Span: offset 12, length 5
+Snippet:
+    1 | select Path,Count,Complete from search.counts('D:/repos/Musoq.DataSources/artifacts/clean-host/W17-S03/9c0d6b86c0e347c8b838d9faeab2a5e1/fixtures/text','TODO')
+                  ^^^^^
+Why: The column name could not be resolved in any of the available data sources.
+Try:
+  1) Check the column name for typos.
+  2) Qualify the column with a table alias: alias.ColumnName.
+Actions:
+  suggestion: Check the column name for typos.
+  suggestion: Qualify the column with a table alias: alias.ColumnName.
+Docs: Core Spec - Column References
+{"code":"MQ9001","severity":"error","phase":"internal","message":"The compiler encountered an internal failure. Reference 'internal-3ae2a746a0ec4c099cd737298913a7ef' when reporting this issue.","source":"internal","why":"The compiler reached an invariant failure without a user-owned query classification. The diagnostic is intentionally safe and does not expose engine exception details.","hints":["Record the correlation identifier and the smallest query that reproduces the issue.","Report the diagnostic with the query text and engine version."],"arguments":{"correlationId":"internal-3ae2a746a0ec4c099cd737298913a7ef","exceptionType":"Musoq.Converter.Exceptions.MusoqQueryException"},"actions":[{"title":"Record the correlation identifier and the smallest query that reproduces the issue.","kind":"suggestion"},{"title":"Report the diagnostic with the query text and engine version.","kind":"suggestion"}],"correlationId":"internal-3ae2a746a0ec4c099cd737298913a7ef","docs":"Diagnostics - Internal Compiler Errors"}
+Help: musoq describe error QUERY_EXECUTION_ERROR
+Docs: musoq://manual/diagnostics-and-common-failures

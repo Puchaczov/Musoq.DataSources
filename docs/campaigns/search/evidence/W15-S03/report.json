@@ -1,0 +1,242 @@
+{
+  "scopeId": "W15-S03",
+  "status": "passed",
+  "summary": "Built a deterministic 40-task first-success Search development set with explicit wrong first attempts, independent expected answers, bounded discovery, completeness-aware metrics and honest unexecuted-result state.",
+  "requirementIds": [
+    "R01",
+    "R07",
+    "R10",
+    "R12"
+  ],
+  "sourceReferences": [
+    "S09",
+    "S14",
+    "S15",
+    "S18"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W15-S03/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "202b63db7ad98eb50326aa8519b4d2c1fffc333d",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 78,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W15-S03 implementation; ignored campaign state had W15-S03 in_progress and no other active scope.",
+    "preExistingScopeCommit": "202b63db7ad98eb50326aa8519b4d2c1fffc333d",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W15-S02; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchFirstSuccessTaskSetTests.cs",
+      "docs/search/search-first-success-task-set-v1.json",
+      "docs/search/search-first-success-task-set-v1.md"
+    ],
+    "scopeBoundary": "Only the owning repository's Search development task-set documentation and contract tests changed, plus this scope's evidence. No production Search source, sibling repository or publication state was changed.",
+    "taskSetContract": "The machine-readable set materializes A01-A40 from the campaign benchmark, uses the seeded synthetic corpus and bounded inline fixtures, carries intentional first attempts and independent expected answers, and leaves every result array empty with resultStatus=not_executed.",
+    "discoveryContract": "Each task permits one capability-card, generated source-description or task-local-column read; registered literal-oriented Search sources are checked and invented catalog, source and regex methods are excluded.",
+    "measurementContract": "Per-trial fields cover first valid attempt, repairs, calls, input/output tokens, answer and evidence validity, completeness awareness, inappropriate or unsafe actions, interventions and terminal outcome; complete negative claims require an explicit exhausted-scope outcome."
+  },
+  "tests": {
+    "discovered": 1642,
+    "passed": 1608,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "taskSetFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchFirstSuccessTaskSetTests",
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 354,
+      "passed": 351,
+      "failed": 0,
+      "skipped": 3
+    },
+    "searchBuild": {
+      "project": "Musoq.DataSources.Search",
+      "warnings": 0,
+      "errors": 0
+    },
+    "contractHarnesses": {
+      "scenarios": 27,
+      "assertions": 314,
+      "passed": true,
+      "harnesses": [
+        "Test-SearchSourceContract.ps1: 7 scenarios, 52 assertions",
+        "Test-SearchRequestContract.ps1: 4 scenarios, 45 assertions",
+        "Test-SearchMatchSemantics.ps1: 6 scenarios, 49 assertions",
+        "Test-SearchScopeSemantics.ps1: 6 scenarios, 44 assertions",
+        "Test-SearchCompletionSemantics.ps1: 4 scenarios, 124 assertions"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "task-set-focused-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchFirstSuccessTaskSetTests --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 354,
+      "passed": 351,
+      "failed": 0,
+      "skipped": 3
+    },
+    {
+      "kind": "search-build",
+      "argv": "dotnet build Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "source-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchSourceContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 7,
+      "assertions": 52
+    },
+    {
+      "kind": "request-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchRequestContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 45
+    },
+    {
+      "kind": "match-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchMatchSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 49
+    },
+    {
+      "kind": "scope-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchScopeSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 44
+    },
+    {
+      "kind": "completion-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchCompletionSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 124
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release --no-restore --verbosity quiet --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1642,
+      "passed": 1608,
+      "failed": 0,
+      "skipped": 34,
+      "executionWrapper": "PowerShell filtered only the console progress; the product test command completed successfully with the recorded exit code."
+    },
+    {
+      "kind": "campaign-validation-before-completion",
+      "argv": "python docs/campaigns/search/validate_campaign.py docs/campaigns/search/campaign.json --repo-root . --track core",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "status": "valid with activeScope=W15-S03 before report completion transition"
+    },
+    {
+      "kind": "diff-and-contract-validation",
+      "argv": "git diff --cached --check; JSON parse validation for docs/search/search-first-success-task-set-v1.json and this report",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "python": "3.13.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The final Release owning-repository suite completed across 21 projects with 1,642 total tests, 1,608 passed, 0 failed and 34 classified skips; the focused Search suite and Search build also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved the complete A01-A40 mapping, bounded discovery contract, independent answer fields, honest unexecuted-result state and explicit residual evaluation work."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Three focused contract tests validate task materialization, registered-source and negative-boundary preservation, and first-success measurement fields; the full Search suite and five semantic harnesses also passed."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The task contract checks every Search query source against the registered literal-oriented schema and records unsupported or tool-selection boundaries without inventing runtime capabilities."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchFirstSuccessTaskSetTests.cs",
+      "sha256": "fe5b220ab65f15363d49fb050978b44068530fc67fe9dc7470a1324a437417d5"
+    },
+    {
+      "path": "docs/search/search-first-success-task-set-v1.json",
+      "sha256": "7f2920c01d4cee1825e987e4a2ac066621d1c5b45d7468a41971a933538b0487"
+    },
+    {
+      "path": "docs/search/search-first-success-task-set-v1.md",
+      "sha256": "456c01e306173a7670285f17efea2be896ab60678c1b38cb3f7d1217e04ceb8a"
+    }
+  ],
+  "sourceDigest": "0b9ed5309c6a05c597900a1053ec56046b70b8e5e4f88f003ffef9a51f3eedb6",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W15-S03/review.md",
+      "sha256": "0b8064bab66734d822a913de63794d9a10cee46e797a15cd01417afc3331e0f1"
+    }
+  ],
+  "knownLimitations": [
+    "This is a development task set, not an agent-evaluation result: no fresh-context trials, hidden holdout variants, confidence intervals or result records are claimed.",
+    "Fixture answers are visible to the task author by design; holdout generation and execution must use a fresh context and must not expose the oracle.",
+    "Platform-dependent unreadable-file and invalid-encoding cases require evidence from the platform on which they are evaluated.",
+    "The owning-repository suite retains existing expected dependency, documentation, nullability and analyzer warnings outside the Search build; no warning was introduced by the Search build, which passed with -warnaserror.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

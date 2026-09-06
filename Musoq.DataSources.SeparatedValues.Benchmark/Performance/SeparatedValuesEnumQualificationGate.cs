@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using Musoq.DataSources.SeparatedValues.Components.Execution;
+using Musoq.DataSources.SeparatedValues.Components.Parsing;
+using Musoq.DataSources.SeparatedValues.Components.Planning;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.SeparatedValues.Benchmark.Performance;

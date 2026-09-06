@@ -1,0 +1,234 @@
+{
+  "scopeId": "W09-S05",
+  "status": "passed",
+  "summary": "Packaged location-only, short-snippet and bounded context-expansion recipes with UTF-8 budgets, safe JSON escaping and explicit complete no-match reporting guidance.",
+  "requirementIds": [
+    "R01",
+    "R06",
+    "R07",
+    "R08",
+    "R10"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S16",
+    "S22"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W09-S05/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "c92b17170eedfda231dda6e7554ce0fa4608297f",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 50,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W09-S05 as in_progress.",
+    "preExistingScopeCommit": "c92b17170eedfda231dda6e7554ce0fa4608297f",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W09-S04; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchEvidenceRecipeTests.cs",
+      "docs/search/search-evidence-recipes-v1.md"
+    ],
+    "scopeBoundary": "Only Search evidence recipe tests and the owning repository's Search evidence cookbook changed, plus this scope's evidence. The public Search schema, SQL constructor metadata, evaluator, sibling repositories, package versions and publication state were not changed.",
+    "recipes": "Location-only projections retain scalar occurrence coordinates; short-snippet projections retain exact MatchText; bounded context and expansion use the existing internal SearchContextOptions/SearchMatch evidence seam and are explicitly not advertised as a new SQL constructor.",
+    "trustBoundary": "Repository text is serialized as data with System.Text.Json; control characters are escaped and fake instruction text is never evaluated or interpolated into an instruction stream.",
+    "completeness": "An empty matches relation is documented as insufficient for an exhaustive negative answer; complete search.counts rows and eligible paths are required for no-match reporting."
+  },
+  "tests": {
+    "discovered": 1509,
+    "passed": 1475,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "recipeFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchEvidenceRecipeTests",
+      "discovered": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "Location-only SQL compiles and preserves repeated occurrence coordinates",
+        "Short-snippet SQL retains exact matched text",
+        "Bounded context preserves UTF-8 scalar boundaries and expansion",
+        "JSON output escapes controls and preserves fake instructions as data",
+        "Complete zero-count rows distinguish no-match reporting from an empty match set"
+      ]
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 225,
+      "passed": 222,
+      "failed": 0,
+      "skipped": 3
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "recipe-focused",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchEvidenceRecipeTests",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W09-S05/recipes-focused.log",
+      "stdoutSha256": "f056a08c62b8e82135224b76783a1232a6ab35ba239643c22e0a61e162da5be8",
+      "stderrPath": "docs/campaigns/search/evidence/W09-S05/recipes-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 225,
+      "passed": 222,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W09-S05/search-focused.log",
+      "stdoutSha256": "79ab0d2f66015eca49d3c426934b2e64f4a34ff1097041e0d1a4f2e4e56ea0a8",
+      "stderrPath": "docs/campaigns/search/evidence/W09-S05/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-project-build",
+      "argv": "dotnet build .\\Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W09-S05/search-build.log",
+      "stdoutSha256": "ba713784fd2f0ddff674cd510531e34809a4ae63b39f904bb208051416a6d1f9",
+      "stderrPath": "docs/campaigns/search/evidence/W09-S05/search-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture and retained process handle.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1509,
+      "passed": 1475,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W09-S05/full-suite-exact.log",
+      "stdoutSha256": "ee1c6c3361474a4e3f5957b4445ab8bf3ffd12dded99c09d1201fe8659e57b0a",
+      "stderrPath": "docs/campaigns/search/evidence/W09-S05/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; source manifest and artifact hash validation",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "Python 3.13.1",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "AMD64",
+    "osArchitecture": "AMD64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release suite exited 0 across 21 projects with 1,509 total tests, 1,475 passed, 0 failed and 34 classified skips; the Search suite and five recipe tests also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved the recipe boundaries, trust handling, complete no-match guidance and provenance; exact commands, tool versions, source/artifact hashes and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Recipe tests preserve occurrence cardinality and coordinates under compact/context projections, verify Unicode-safe byte truncation, and retain exact zero-count semantics."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The documented SQL examples use the existing two-argument Search constructors; the location, snippet and counts forms compile and run, and the Search warnings-as-errors build passed."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Bounded context output honors the UTF-8 per-window budget, avoids unpaired surrogates, and expansion uses the existing source-identity checked seam; no pooled memory or lifecycle implementation changed in this scope."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchEvidenceRecipeTests.cs",
+      "sha256": "9da2c3ea19398448ee9aacfbf7f18ac647c550917a101c41c18d70bfcb77405a"
+    },
+    {
+      "path": "docs/search/search-evidence-recipes-v1.md",
+      "sha256": "8ddc4ab56b36cf688a3132a28c34f8d73061a830bbc81c3604ee23256f12e7ac"
+    }
+  ],
+  "sourceDigest": "6d5eb24be2ab1b504689d56e46a0a64a82f39e4cce51216214d490338f0f6df7",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/full-suite-exact.log",
+      "sha256": "ee1c6c3361474a4e3f5957b4445ab8bf3ffd12dded99c09d1201fe8659e57b0a"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/recipes-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/recipes-focused.log",
+      "sha256": "f056a08c62b8e82135224b76783a1232a6ab35ba239643c22e0a61e162da5be8"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/review.md",
+      "sha256": "77c7d9c59a2185192908dd3417ec4cd47ec7563505dc9fe410dd36ee4ec9cbbb"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/search-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/search-build.log",
+      "sha256": "ba713784fd2f0ddff674cd510531e34809a4ae63b39f904bb208051416a6d1f9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W09-S05/search-focused.log",
+      "sha256": "79ab0d2f66015eca49d3c426934b2e64f4a34ff1097041e0d1a4f2e4e56ea0a8"
+    }
+  ],
+  "knownLimitations": [
+    "MatchText is not governed by the context byte budget; callers must choose a short or otherwise bounded literal/pattern when using it as a display snippet.",
+    "Bounded context remains an internal execution seam; the current SQL constructors expose no context options and SQL exposes no terminal summary row.",
+    "A repository-wide negative answer requires complete counts and eligible-path accounting; an empty occurrence relation alone is not sufficient.",
+    "Expansion detects source changes with identity checks but does not claim an atomic snapshot of a live filesystem.",
+    "No package was published, pushed, released or installed."
+  ]
+}

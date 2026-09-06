@@ -1,0 +1,379 @@
+{
+  "scopeId": "W17-S02",
+  "status": "passed",
+  "summary": "Produced and qualified the Search XML and license-complete release evidence for version 8.0.3-alpha.7, including the committed dependency snapshot, exact runtime compatibility metadata, NuGet packages and all four local RID plugin artifacts.",
+  "requirementIds": ["R10", "R11", "R14", "R15"],
+  "sourceReferences": ["S11", "S12", "S13", "S17", "S18"],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W17-S02/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "fb767b35c8e471aa136f7dc2950bf7ca598bc6ba",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 87,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W17-S02 implementation; ignored campaign state had W17-S02 in_progress and no other active scope.",
+    "preExistingScopeCommit": "fb767b35c8e471aa136f7dc2950bf7ca598bc6ba",
+    "packageTrain": {
+      "targetFramework": "net10.0",
+      "packageId": "Musoq.DataSources.Search",
+      "version": "8.0.3-alpha.7",
+      "Musoq.Schema": "17.0.9-alpha.1",
+      "Musoq.Plugins": "17.0.9-alpha.1",
+      "licenseTool": "nuget-license 4.0.16"
+    }
+  },
+  "implementation": {
+    "changedFiles": [
+      "licenses/release/Musoq.DataSources.Archives/manifest.json",
+      "licenses/release/Musoq.DataSources.CANBus/manifest.json",
+      "licenses/release/Musoq.DataSources.Docker/manifest.json",
+      "licenses/release/Musoq.DataSources.FlatFile/manifest.json",
+      "licenses/release/Musoq.DataSources.Git/manifest.json",
+      "licenses/release/Musoq.DataSources.GitHub/manifest.json",
+      "licenses/release/Musoq.DataSources.Jira/manifest.json",
+      "licenses/release/Musoq.DataSources.Json/manifest.json",
+      "licenses/release/Musoq.DataSources.Ollama/manifest.json",
+      "licenses/release/Musoq.DataSources.OpenAI/manifest.json",
+      "licenses/release/Musoq.DataSources.Os/manifest.json",
+      "licenses/release/Musoq.DataSources.Roslyn/manifest.json",
+      "licenses/release/Musoq.DataSources.Search/license.txt",
+      "licenses/release/Musoq.DataSources.Search/manifest.json",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/DiffPlex/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Fastenshtein/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.Build.Tasks.Git/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.Extensions.DependencyInjection.Abstractions/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.Extensions.Logging.Abstractions/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.SourceLink.Common/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.SourceLink.GitHub/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Musoq.Parser/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Musoq.Plugins/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/Musoq.Schema/license.txt",
+      "licenses/release/Musoq.DataSources.Search/third-party-notices/report.json",
+      "licenses/release/Musoq.DataSources.SeparatedValues/manifest.json",
+      "licenses/release/Musoq.DataSources.System/manifest.json",
+      "licenses/release/Musoq.DataSources.Time/manifest.json"
+    ],
+    "scopeBoundary": "Only the owning repository's release license snapshots and W17-S02 evidence changed. Search production semantics, sibling repositories, remote registries, publication and normal-profile installation remained outside the scope.",
+    "snapshot": {
+      "packageId": "Musoq.DataSources.Search",
+      "slug": "search",
+      "version": "8.0.3-alpha.7",
+      "projectPath": "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj",
+      "manifestSha256": "743c02bf4579e5275b20371c190ef4039ac92121a6bdbc5596f27975754d7f5d",
+      "resolvedPackages": 10,
+      "retainedFiles": 12,
+      "licenseGathererSha256": "36c49998b295dda2ce8117c380945499522d13cadc6088a802215deb4f65c157",
+      "packageGraph": [
+        { "id": "DiffPlex", "version": "1.9.0", "direct": false },
+        { "id": "Fastenshtein", "version": "1.0.12", "direct": false },
+        { "id": "Microsoft.Build.Tasks.Git", "version": "8.0.0", "direct": false },
+        { "id": "Microsoft.Extensions.DependencyInjection.Abstractions", "version": "10.0.8", "direct": false },
+        { "id": "Microsoft.Extensions.Logging.Abstractions", "version": "10.0.8", "direct": false },
+        { "id": "Microsoft.SourceLink.Common", "version": "8.0.0", "direct": false },
+        { "id": "Microsoft.SourceLink.GitHub", "version": "8.0.0", "direct": true },
+        { "id": "Musoq.Parser", "version": "17.0.9-alpha.1", "direct": false },
+        { "id": "Musoq.Plugins", "version": "17.0.9-alpha.1", "direct": true },
+        { "id": "Musoq.Schema", "version": "17.0.9-alpha.1", "direct": true }
+      ],
+      "allRegisteredSnapshotsRefreshed": 16,
+      "registryInputSha256": "b03865593a865d5707a75d8acdc3f12273ae144a9aecd4864bcd35cdf2b663c8"
+    },
+    "runtimeCompatibility": {
+      "tag": "8.0.3-alpha.7-Musoq.DataSources.Search",
+      "targetFramework": "net10.0",
+      "hostPackages": {
+        "Musoq.Schema": { "minimumVersionInclusive": "17.0.9-alpha.1", "maximumVersionExclusive": "18.0.0" },
+        "Musoq.Plugins": { "minimumVersionInclusive": "17.0.9-alpha.1", "maximumVersionExclusive": "18.0.0" }
+      }
+    },
+    "xml": {
+      "path": "Musoq.DataSources.Search/bin/Release/net10.0/Musoq.DataSources.Search.xml",
+      "sizeBytes": 53600,
+      "sha256": "dde810e136b0eb552c484fe5a66d20664b73fca50910c6718ba2816a48fb6dfe"
+    },
+    "packageArtifacts": [
+      { "type": "nupkg", "path": "artifacts/release/W17-S02/nupkgs/Musoq.DataSources.Search.8.0.3-alpha.7.nupkg", "sizeBytes": 144835, "sha256": "0565412126bb21dcec74078e1eff9e9d57a5aa298eaa2f854a820d8d256df49b" },
+      { "type": "snupkg", "path": "artifacts/release/W17-S02/nupkgs/Musoq.DataSources.Search.8.0.3-alpha.7.snupkg", "sizeBytes": 51435, "sha256": "d3f8088ed05cf436ccf6243dfaf2a529e20a89b126d342d0d1d2f60df2d8ebc3" },
+      { "type": "plugin", "rid": "alpine-x64", "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-alpine-x64.zip", "sizeBytes": 197920, "sha256": "f93c57b27957b04f462c8bca24229ffc9cb680cff2bcc55262a28df471da2004" },
+      { "type": "plugin", "rid": "linux-x64", "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-linux-x64.zip", "sizeBytes": 197922, "sha256": "6dd4bddcdcafd94938c1102c03bdd93451244e1b20be3cbec94eb0239b110a4b" },
+      { "type": "plugin", "rid": "macos-arm64", "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-macos-arm64.zip", "sizeBytes": 197942, "sha256": "179a53de1d565ccc5b06f2c2ca65abdd8d1fd3098393bf0ac2288cf387a47c91" },
+      { "type": "plugin", "rid": "windows-x64", "path": "artifacts/release/W17-S02/plugins/Musoq.DataSources.Search-windows-x64.zip", "sizeBytes": 197874, "sha256": "04491caeae94ba13f12f6866f43257a71b19d54fae83f60fcd5183364307f01f" }
+    ],
+    "resolvedDiagnostic": "The first full release-contract run after refreshing only Search correctly failed because the 15 existing snapshots still carried the previous packages.json input fingerprint. Refreshing all 16 registered snapshots resolved the contract without changing their license contents."
+  },
+  "tests": {
+    "discovered": 1665,
+    "passed": 1631,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "releaseContract": {
+      "script": "scripts/Test-PluginReleaseScripts.ps1",
+      "packageCount": 16,
+      "exitCode": 0
+    },
+    "licenseSnapshotGraph": {
+      "script": "scripts/release/Assert-LicenseSnapshots.ps1",
+      "packageCount": 16,
+      "validatePackageGraph": true,
+      "exitCode": 0
+    },
+    "searchBuild": {
+      "project": "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj",
+      "warnings": 0,
+      "errors": 0,
+      "exitCode": 0
+    },
+    "packageSmoke": {
+      "tag": "8.0.3-alpha.7-Musoq.DataSources.Search",
+      "ridCount": 4,
+      "nupkg": true,
+      "snupkg": true,
+      "exitCode": 0
+    },
+    "nestedZipInventory": {
+      "outerEntriesPerRid": 6,
+      "innerEntriesPerRid": 17,
+      "rids": ["alpine-x64", "linux-x64", "macos-arm64", "windows-x64"],
+      "requiredInnerEntries": [
+        "Musoq.DataSources.Search.dll",
+        "Musoq.DataSources.Search.xml",
+        "Musoq.DataSources.Search.deps.json",
+        "Musoq.DataSources.Search.runtimeconfig.json",
+        "MusoqPluginCompatibility.json",
+        "third-party-notices/report.json"
+      ],
+      "noticesBytesPerRid": 1204,
+      "hostOwnedAssembliesFound": 0,
+      "nativeEntriesPerRid": 0,
+      "exitCode": 0
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 377,
+      "passed": 374,
+      "failed": 0,
+      "skipped": 3
+    },
+    "fullSuite": {
+      "projectCount": 21,
+      "discovered": 1665,
+      "passed": 1631,
+      "failed": 0,
+      "skipped": 34
+    },
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "license-refresh-search",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/release/Update-LicenseSnapshots.ps1 -PluginName Musoq.DataSources.Search",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "resolvedPackages": 10,
+      "retainedFiles": 12,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/license-refresh.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/license-refresh.err.log"
+    },
+    {
+      "kind": "release-contract-initial-diagnostic",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/Test-PluginReleaseScripts.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 1,
+      "expectedFailure": true,
+      "reason": "Existing snapshots had stale scripts/release/packages.json dependency-input hashes after Search entered the registry.",
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/release-contract.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/release-contract.err.log"
+    },
+    {
+      "kind": "license-refresh-all",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/release/Update-LicenseSnapshots.ps1 -PluginName All",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "updatedSnapshots": 16,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/license-refresh-all.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/license-refresh-all.err.log"
+    },
+    {
+      "kind": "license-snapshot-graph-validation",
+      "argv": "Assert-LicenseSnapshots.ps1 -PluginName All -RepositoryRoot (Get-Location).Path -ValidatePackageGraph",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/license-snapshot-final.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/license-snapshot-final.err.log"
+    },
+    {
+      "kind": "release-contract-final",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/Test-PluginReleaseScripts.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "packageCount": 16,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/release-contract-final.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/release-contract-final.err.log"
+    },
+    {
+      "kind": "search-release-build",
+      "argv": "dotnet build Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/search-build.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/search-build.err.log"
+    },
+    {
+      "kind": "release-pack",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/release/Pack-Release.ps1 -Tag 8.0.3-alpha.7-Musoq.DataSources.Search -OutputPath artifacts/release/W17-S02",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/pack-release.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/pack-release.err.log"
+    },
+    {
+      "kind": "release-smoke",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/release/Test-ReleaseSmoke.ps1 -Tag 8.0.3-alpha.7-Musoq.DataSources.Search -ArtifactDirectory artifacts/release/W17-S02",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/release-smoke.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/release-smoke.err.log"
+    },
+    {
+      "kind": "nested-package-inventory",
+      "argv": "PowerShell inline nupkg and nested ZIP inventory assertions",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "assertionLog": "docs/campaigns/search/evidence/W17-S02/package-inventory.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/package-inventory.err.log"
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --no-build --nologo --logger 'console;verbosity=minimal'",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 377,
+      "passed": 374,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/search-suite.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/search-suite.err.log"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release --no-restore --no-build --nologo --verbosity quiet --logger 'console;verbosity=minimal'",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1665,
+      "passed": 1631,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S02/full-suite.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S02/full-suite.err.log"
+    },
+    {
+      "kind": "static-validation",
+      "argv": "git diff --cached --check; JSON parse validation for report and license manifests",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "python": "3.13.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The focused Search suite passed 374/377 and the key owning-repository Release checkpoint passed 1,631/1,665 across 21 projects, with zero failures and no unexpected skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, tested source manifest, committed evidence hashes, local package hashes and final trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "The Search XML build, license snapshot, package smoke and nested inventory checks agree; all four RID payloads contain the required Search assets and no host-owned assemblies."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The exact registry identity, release tag, target framework, host package range, compatibility manifest, dependency graph and package artifacts agree."
+    }
+  ],
+  "sourceManifest": [
+    { "path": "licenses/release/Musoq.DataSources.Archives/manifest.json", "sha256": "3aed3e1dbdb783a91f384641c9e89a9d82f286e77df80816ddf6721a4bbe962d" },
+    { "path": "licenses/release/Musoq.DataSources.CANBus/manifest.json", "sha256": "c8775dd907dd3f53415f727a75744045c285df3618c79b3129c4acc2cc72ff47" },
+    { "path": "licenses/release/Musoq.DataSources.Docker/manifest.json", "sha256": "680a4596649bdba1dd1cc6c04033c0feb9330dee622a41448be2a7340c3fb9a0" },
+    { "path": "licenses/release/Musoq.DataSources.FlatFile/manifest.json", "sha256": "fb9fe2134a746c988a47dcab549209c05f3f592473a6936b1fea6eec23ffbc40" },
+    { "path": "licenses/release/Musoq.DataSources.Git/manifest.json", "sha256": "1739345d803cc0a320bef8aa1b5089f1ebadd640310ea5a8e0fb67562166b263" },
+    { "path": "licenses/release/Musoq.DataSources.GitHub/manifest.json", "sha256": "a779009cc27b4a4898dc71aebec56a4c9f4180186745c318b9923262cffbe8c5" },
+    { "path": "licenses/release/Musoq.DataSources.Jira/manifest.json", "sha256": "c984b613f964daa04ce3cd8e8dfca0e8c3046fcbf5c5a81b76d7730236e3a4cc" },
+    { "path": "licenses/release/Musoq.DataSources.Json/manifest.json", "sha256": "8cb5134a4bf42db8e6acf3b417c6b0780c39c79b28389c52c6d113a6b19f5a45" },
+    { "path": "licenses/release/Musoq.DataSources.Ollama/manifest.json", "sha256": "fadd724b68bef5a3ab873f88ab0c7904f6438b6ffa0d85d965e36e740d6fb21e" },
+    { "path": "licenses/release/Musoq.DataSources.OpenAI/manifest.json", "sha256": "2dfe7683c7de542555cd47c26d4edd1dbaf7aca1f31459e78da452c56545bd02" },
+    { "path": "licenses/release/Musoq.DataSources.Os/manifest.json", "sha256": "fd9dd637a6bf3779ee2d2dd7689912e345fd8de29111da5828eefda6edb6d268" },
+    { "path": "licenses/release/Musoq.DataSources.Roslyn/manifest.json", "sha256": "e7faa9b258eebf3006b2bd5059d47daa14bd39520881fc77d0d354c3a283753d" },
+    { "path": "licenses/release/Musoq.DataSources.Search/license.txt", "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1" },
+    { "path": "licenses/release/Musoq.DataSources.Search/manifest.json", "sha256": "743c02bf4579e5275b20371c190ef4039ac92121a6bdbc5596f27975754d7f5d" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/DiffPlex/license.txt", "sha256": "becde03a3c8b9b2e3d58c7b65ca7ffd9e18e98162396cc374052983c1faaa47c" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Fastenshtein/license.txt", "sha256": "77a89e5f163c40944cc4ff134198fe0ea67df1a40b8876a7e34b3af88135c3a5" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.Build.Tasks.Git/license.txt", "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.Extensions.DependencyInjection.Abstractions/license.txt", "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.Extensions.Logging.Abstractions/license.txt", "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.SourceLink.Common/license.txt", "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Microsoft.SourceLink.GitHub/license.txt", "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Musoq.Parser/license.txt", "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Musoq.Plugins/license.txt", "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/Musoq.Schema/license.txt", "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1" },
+    { "path": "licenses/release/Musoq.DataSources.Search/third-party-notices/report.json", "sha256": "0996840d4f8c94961b043cebc51e8de6e47eef3fe679f1abba432b151ab0bb61" },
+    { "path": "licenses/release/Musoq.DataSources.SeparatedValues/manifest.json", "sha256": "c6d16155467de7b86837c684f37833afe334e0212c90d67292c1abc6d2676dfe" },
+    { "path": "licenses/release/Musoq.DataSources.System/manifest.json", "sha256": "09e79e9fee782ec8f9886514353932a9347a64e6d09849d4dddc53eba125ffaf" },
+    { "path": "licenses/release/Musoq.DataSources.Time/manifest.json", "sha256": "97757ae333f46564622bf543e2221f493acefe9ee11b3dd030763297f0165d73" }
+  ],
+  "sourceDigest": "702b37654be2ff427ed07860a28b15c204597010d332e845eff0a89cdb39b8e0",
+  "artifacts": [
+    { "path": "docs/campaigns/search/evidence/W17-S02/review.md", "sha256": "cc5d68b95bcf8c872cbc5e95645da11fafe37de4d4db8c5240df18a92b5dc97a" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/license-refresh.log", "sha256": "151eec86a41b303a63f21dbeb7e54842513ead0198348396f512666bd2a03e2e" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/license-refresh.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/release-contract.log", "sha256": "a56693dc11109f374e6343be101536d21c63cd645202f1135db808d0187f5ba5" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/release-contract.err.log", "sha256": "a64ca969fe163be0e29d2e4b9da00c70bf5982efea24822129ed01d8ec109695" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/license-refresh-all.log", "sha256": "d4a43fff533443a039f52897e252572e485700f02afd09ab32a7a684783d4e49" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/license-refresh-all.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/license-snapshot-final.log", "sha256": "b576f0feab65124da0173bd4d4588701811f10df27dd326ca7ba887b853b1af0" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/license-snapshot-final.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/release-contract-final.log", "sha256": "a39c81cdf3fb3453adfdb3b8a2baf07d484ed0294a4bd97c4b99fc3f4d4a365c" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/release-contract-final.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/search-build.log", "sha256": "572aebbd93bda977a82e1bc0a89cd4460badb0bca81200acaf79107279a48b32" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/search-build.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/pack-release.log", "sha256": "58d97bd7bff4927a8983423518b3fd275a3058d223932f69bfc0e8e58947fe4d" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/pack-release.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/release-smoke.log", "sha256": "43acd4f21792430d92505ca7f5f17bd85e3f2b7bfad4087277ecd0acedb04ccf" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/release-smoke.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/package-inventory.log", "sha256": "67d496186dbc827153f40f5626c061777b5e10363bcc68303c322f8778768074" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/package-inventory.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/search-suite.log", "sha256": "4be52d58b8ef7760d62d7978e884c4fd95615bdcb1a47d73780ba685fa678d10" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/search-suite.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/full-suite.log", "sha256": "7b704774ade866d9ed0b7f695139482f71ed0d79e8d9145cd010ac6559318244" },
+    { "path": "docs/campaigns/search/evidence/W17-S02/full-suite.err.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" }
+  ],
+  "knownLimitations": [
+    "The four-RID packages and NuGet artifacts are local ignored outputs retained by hash in this evidence; no package was published, pushed or released.",
+    "Search has no native runtime entries in its resolved dependency graph, so the RID payloads carry managed dependency, runtimeconfig, XML and compatibility assets rather than native binaries.",
+    "No package was installed into the user's normal profile, no sibling repository was edited, and no remote registry or release state was changed."
+  ]
+}

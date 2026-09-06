@@ -7,7 +7,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.FlatFile;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Schema;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.Schema.FlatFile.Tests;

@@ -1,5 +1,7 @@
 using System.Globalization;
 
+using Musoq.DataSources.SeparatedValues.Benchmark.Measurements;
+
 namespace Musoq.DataSources.SeparatedValues.Benchmark.Performance;
 
 internal sealed record QueryRowQualificationInputs(
@@ -18,8 +20,10 @@ internal static class QueryRowQualificationGate
 {
     public const int MinimumSamples = 3;
     private const int MaterializedRows = 2048;
-    private const string SourceBenchmark = nameof(SeparatedValuesQueryScopedSourceMaterializationBenchmarks);
-    private const string CompiledBenchmark = nameof(SeparatedValuesQueryScopedCompiledExecutionBenchmarks);
+    private static readonly string SourceBenchmark =
+        typeof(SeparatedValuesQueryScopedSourceMaterializationBenchmarks).FullName!;
+    private static readonly string CompiledBenchmark =
+        typeof(SeparatedValuesQueryScopedCompiledExecutionBenchmarks).FullName!;
     private const string CoreSourceBenchmark = "QueryScopedSourceMaterializationBenchmark";
 
     private static readonly int[] FieldCounts = [2, 8, 32, 64];
@@ -341,10 +345,10 @@ internal static class QueryRowQualificationGate
     }
 
     private static string SourceName(string method, int fieldCount) =>
-        $"Musoq.DataSources.SeparatedValues.Benchmark.{SourceBenchmark}.{method}(FieldCount: {fieldCount})";
+        $"{SourceBenchmark}.{method}(FieldCount: {fieldCount})";
 
     private static string CompiledName(string method, SeparatedValuesQueryRowCompiledScenario scenario) =>
-        $"Musoq.DataSources.SeparatedValues.Benchmark.{CompiledBenchmark}.{method}(Scenario: {scenario})";
+        $"{CompiledBenchmark}.{method}(Scenario: {scenario})";
 
     private static string CoreSourceName(string method, int fieldCount) =>
         $"Musoq.Benchmarks.{CoreSourceBenchmark}.{method}(FieldCount: {fieldCount})";

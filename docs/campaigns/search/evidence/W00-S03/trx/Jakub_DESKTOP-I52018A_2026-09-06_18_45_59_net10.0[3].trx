@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="c1cc7e90-b1e6-4b79-8a64-48d765db627c" name="Jakub@DESKTOP-I52018A 2026-09-06 18:45:59" runUser="DESKTOP-I52018A\Jakub" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-06T18:45:59.6956320+02:00" queuing="2026-09-06T18:45:59.6956321+02:00" start="2026-09-06T18:45:57.5079932+02:00" finish="2026-09-06T18:46:03.4626014+02:00" />
+  <TestSettings name="default" id="396640d1-9aa2-4d2c-9eb1-4185ea5ee784">
+    <Deployment runDeploymentRoot="Jakub_DESKTOP-I52018A_2026-09-06_18_45_59" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="d1c06535-b3a2-4ae4-b5a3-a2c6c58b0b44" testId="534c90b7-3fc4-d4a9-69b8-04574cc28b6b" testName="WhenExtractEntitiesReturnsMalformedJson_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0010622" startTime="2026-09-06T18:46:03.3942596+02:00" endTime="2026-09-06T18:46:03.3959815+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d1c06535-b3a2-4ae4-b5a3-a2c6c58b0b44" />
+    <UnitTestResult executionId="8307835a-b74e-421e-99e5-93565ea91aa9" testId="1b530bcc-ff3a-0369-2cc4-0265c7c5fb6a" testName="DescSchema_ShouldListAllAvailableMethods" computerName="DESKTOP-I52018A" duration="00:00:00.1380900" startTime="2026-09-06T18:46:03.0897737+02:00" endTime="2026-09-06T18:46:03.2280387+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8307835a-b74e-421e-99e5-93565ea91aa9" />
+    <UnitTestResult executionId="780b7ebf-b271-4b9c-ade2-cd530bbb59ec" testId="854c4914-6239-c948-3d0a-b5edc0675dfd" testName="DescUnknownMethod_ShouldThrowException" computerName="DESKTOP-I52018A" duration="00:00:00.0486841" startTime="2026-09-06T18:46:03.2660609+02:00" endTime="2026-09-06T18:46:03.3148755+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="780b7ebf-b271-4b9c-ade2-cd530bbb59ec" />
+    <UnitTestResult executionId="ee0dfab9-c4c1-4d0e-a486-03cd9840340e" testId="1dc01abb-7959-78da-603d-5ff16410a333" testName="WhenCallingLlmPerform_ShouldDoWhateverInstructedFor" computerName="DESKTOP-I52018A" duration="00:00:00.0610354" startTime="2026-09-06T18:46:00.9903996+02:00" endTime="2026-09-06T18:46:01.0515943+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ee0dfab9-c4c1-4d0e-a486-03cd9840340e" />
+    <UnitTestResult executionId="cf4f4818-a985-41b4-bbe4-b9d2cefe4571" testId="364f16b6-4b10-0151-f3dd-d01661c3b195" testName="WhenCallingIsContentAbout_ShouldBeTrue" computerName="DESKTOP-I52018A" duration="00:00:01.9435998" startTime="2026-09-06T18:45:58.3069805+02:00" endTime="2026-09-06T18:46:00.2997864+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cf4f4818-a985-41b4-bbe4-b9d2cefe4571" />
+    <UnitTestResult executionId="b5367d5d-b0a1-4c03-a4f8-992c47066841" testId="91a7fa4f-72c7-f605-4460-52994ebd4d0e" testName="WhenCallingDescribeImage_ShouldReturnImageDescription" computerName="DESKTOP-I52018A" duration="00:00:00.0596922" startTime="2026-09-06T18:46:01.0516492+02:00" endTime="2026-09-06T18:46:01.1114616+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b5367d5d-b0a1-4c03-a4f8-992c47066841" />
+    <UnitTestResult executionId="eab202d1-542a-47a4-9a4d-36d13cef3751" testId="6f846f8b-ab6b-0605-3dda-60531f2eda9b" testName="WhenSentimentIsNegative_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0005048" startTime="2026-09-06T18:46:03.3903905+02:00" endTime="2026-09-06T18:46:03.3909502+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="eab202d1-542a-47a4-9a4d-36d13cef3751" />
+    <UnitTestResult executionId="3eb01324-5885-4af5-89e1-5bdcc2b03219" testId="ee0726b6-5a54-2c4d-1318-1a13760ce193" testName="WhenCallingSentiment_ShouldBeNeutral" computerName="DESKTOP-I52018A" duration="00:00:00.0429108" startTime="2026-09-06T18:46:00.4842545+02:00" endTime="2026-09-06T18:46:00.5374345+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3eb01324-5885-4af5-89e1-5bdcc2b03219" />
+    <UnitTestResult executionId="9cceba28-6bc9-4daa-b6b9-90872f1508fa" testId="1714f40f-41e8-85cb-96f4-261c198ed302" testName="DescSchema_ShouldHaveConsistentColumnTypes" computerName="DESKTOP-I52018A" duration="00:00:00.0292265" startTime="2026-09-06T18:46:03.3149400+02:00" endTime="2026-09-06T18:46:03.3443075+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9cceba28-6bc9-4daa-b6b9-90872f1508fa" />
+    <UnitTestResult executionId="fb245549-a075-4386-a75a-5238a2ae0198" testId="4e2011ce-77e4-527e-3dd8-42abf8c446c9" testName="WhenCallingTranslateContent_ShouldBeTranslated" computerName="DESKTOP-I52018A" duration="00:00:00.0449677" startTime="2026-09-06T18:46:00.6231148+02:00" endTime="2026-09-06T18:46:00.6681907+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fb245549-a075-4386-a75a-5238a2ae0198" />
+    <UnitTestResult executionId="fb8009fd-0b0f-48cf-b868-4d4f7cd37a72" testId="42d4eb6c-c201-667c-2e9a-5ec38fcc1a55" testName="WhenCallingSentiment_ShouldBeNegative" computerName="DESKTOP-I52018A" duration="00:00:00.0418012" startTime="2026-09-06T18:46:00.4423022+02:00" endTime="2026-09-06T18:46:00.4842037+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fb8009fd-0b0f-48cf-b868-4d4f7cd37a72" />
+    <UnitTestResult executionId="cac4ed3e-adff-4fe6-b888-bf45808b8888" testId="f43f0805-4482-210d-9948-b223435eaa6f" testName="WhenCountingTokens_ShouldReturnTokenCount" computerName="DESKTOP-I52018A" duration="00:00:00.9638891" startTime="2026-09-06T18:46:01.2156143+02:00" endTime="2026-09-06T18:46:02.1796843+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cac4ed3e-adff-4fe6-b888-bf45808b8888" />
+    <UnitTestResult executionId="584c6cbe-7eee-4e51-befb-8129f373a97d" testId="67f1c5d2-8bb8-42e5-38c5-37c33baad23b" testName="WhenCallingAskImage_ShouldReturnResponse" computerName="DESKTOP-I52018A" duration="00:00:00.0564452" startTime="2026-09-06T18:46:01.1115134+02:00" endTime="2026-09-06T18:46:01.1680709+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="584c6cbe-7eee-4e51-befb-8129f373a97d" />
+    <UnitTestResult executionId="894a41fa-1ae5-410a-a001-bddf7d43b033" testId="3bd91975-24cc-9c03-6d0e-8140a4351079" testName="WhenCallingEntities_ShouldExtractEntities" computerName="DESKTOP-I52018A" duration="00:00:00.3206317" startTime="2026-09-06T18:46:00.6682426+02:00" endTime="2026-09-06T18:46:00.9890099+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="894a41fa-1ae5-410a-a001-bddf7d43b033" />
+    <UnitTestResult executionId="ac00e7d7-2d89-4dee-8e70-55adc3cf2776" testId="4cea01f2-ebfd-83d8-0462-5775a730d9a8" testName="WhenCallingSentiment_ShouldBePositive" computerName="DESKTOP-I52018A" duration="00:00:00.0922073" startTime="2026-09-06T18:46:00.3499278+02:00" endTime="2026-09-06T18:46:00.4422516+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ac00e7d7-2d89-4dee-8e70-55adc3cf2776" />
+    <UnitTestResult executionId="db7339a2-cb3e-45b8-950b-0afbc38ed161" testId="1616b122-8a92-a331-070b-575f5f69f2e5" testName="WhenSentimentIsGarbage_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0002886" startTime="2026-09-06T18:46:03.3913389+02:00" endTime="2026-09-06T18:46:03.3916707+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="db7339a2-cb3e-45b8-950b-0afbc38ed161" />
+    <UnitTestResult executionId="05ea435d-6817-48e4-9212-ce80dfe46e00" testId="4a0a8314-7c3a-966e-f42b-a4789944182c" testName="WhenExtractEntities_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0003769" startTime="2026-09-06T18:46:03.3933063+02:00" endTime="2026-09-06T18:46:03.3937350+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="05ea435d-6817-48e4-9212-ce80dfe46e00" />
+    <UnitTestResult executionId="626f6a48-8287-4ca0-9d91-ab92a8c01aca" testId="19abf09b-c270-a53b-bf97-5b745a8862bb" testName="WhenCountingTokensForP50k_base_ShouldReturnTokenCount" computerName="DESKTOP-I52018A" duration="00:00:00.3255418" startTime="2026-09-06T18:46:02.7624037+02:00" endTime="2026-09-06T18:46:03.0881471+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="626f6a48-8287-4ca0-9d91-ab92a8c01aca" />
+    <UnitTestResult executionId="993aaad3-6e74-48d3-bc45-6d4af88c790f" testId="5b4d6e28-0e52-349e-3b80-865931d17ff7" testName="DoSomeRealTests" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:58.2983677+02:00" endTime="2026-09-06T18:45:58.3036239+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="993aaad3-6e74-48d3-bc45-6d4af88c790f">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="29ad8c02-4d13-47fc-b4e7-1c4bee9155b3" testId="98b82f47-69f8-b26e-df6f-0e6c8599e72c" testName="WhenIsContentNotAbout_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0002786" startTime="2026-09-06T18:46:03.3925582+02:00" endTime="2026-09-06T18:46:03.3928800+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="29ad8c02-4d13-47fc-b4e7-1c4bee9155b3" />
+    <UnitTestResult executionId="4a6239a1-8a73-498e-ba99-d17521e08853" testId="3c3129fc-7685-82e0-daf4-311967e713b6" testName="WhenCallingSentiment_ShouldBeUnknown" computerName="DESKTOP-I52018A" duration="00:00:00.0425800" startTime="2026-09-06T18:46:00.5375011+02:00" endTime="2026-09-06T18:46:00.5802133+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4a6239a1-8a73-498e-ba99-d17521e08853" />
+    <UnitTestResult executionId="aee9f4f4-1b66-4ab4-b688-79b125fcbc0e" testId="8a308952-3c7f-1f7a-f974-ec2bbb209f96" testName="WhenCallingIsContentAbout_ShouldBeFalse" computerName="DESKTOP-I52018A" duration="00:00:00.0495976" startTime="2026-09-06T18:46:00.2999993+02:00" endTime="2026-09-06T18:46:00.3498157+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aee9f4f4-1b66-4ab4-b688-79b125fcbc0e" />
+    <UnitTestResult executionId="d41c6146-9e6a-41b9-85ce-c5880ee16104" testId="b2bd8f93-d560-ba44-9280-345ee93983a3" testName="WhenCallingSummarizeContent_ShouldBeSummarized" computerName="DESKTOP-I52018A" duration="00:00:00.0426945" startTime="2026-09-06T18:46:00.5802682+02:00" endTime="2026-09-06T18:46:00.6230664+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d41c6146-9e6a-41b9-85ce-c5880ee16104" />
+    <UnitTestResult executionId="08e538d8-3343-42db-b035-882000d60cef" testId="1f64cfea-89e6-163a-f446-b89463cdde92" testName="WhenSummarizeContent_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0003478" startTime="2026-09-06T18:46:03.3916919+02:00" endTime="2026-09-06T18:46:03.3920925+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="08e538d8-3343-42db-b035-882000d60cef" />
+    <UnitTestResult executionId="9fbe3979-8ddf-4cbb-be77-0602f6560bad" testId="caff5a6a-2f9d-6e89-4deb-cd98bb0c5b30" testName="DescribeSourceRuntimeSettings_ShouldDeclareOpenAiApiKey" computerName="DESKTOP-I52018A" duration="00:00:00.0012818" startTime="2026-09-06T18:46:03.0882289+02:00" endTime="2026-09-06T18:46:03.0897221+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9fbe3979-8ddf-4cbb-be77-0602f6560bad" />
+    <UnitTestResult executionId="46e1433e-550b-4ecc-9226-a72ecea7ea1a" testId="58cfdb03-2f42-7987-a934-94b860c2bc4a" testName="WhenSentimentIsNeutral_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0002995" startTime="2026-09-06T18:46:03.3909723+02:00" endTime="2026-09-06T18:46:03.3913179+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="46e1433e-550b-4ecc-9226-a72ecea7ea1a" />
+    <UnitTestResult executionId="ebfb7805-34fb-44d9-a9ad-6d719a6e484d" testId="2c710efb-a873-de68-e6fc-0b1310b883b5" testName="WhenSentimentIsPositive_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0011060" startTime="2026-09-06T18:46:03.3891588+02:00" endTime="2026-09-06T18:46:03.3903619+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ebfb7805-34fb-44d9-a9ad-6d719a6e484d" />
+    <UnitTestResult executionId="4417d280-d28e-4f44-9bc5-87cdf95ba889" testId="5eb474ae-3ffb-1e08-c550-4323ab91b043" testName="WhenCallingIsQuestionApplicableToImage_ShouldReturnResponse" computerName="DESKTOP-I52018A" duration="00:00:00.0473508" startTime="2026-09-06T18:46:01.1681203+02:00" endTime="2026-09-06T18:46:01.2155689+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4417d280-d28e-4f44-9bc5-87cdf95ba889" />
+    <UnitTestResult executionId="70330303-4c5b-41e1-8bc7-32c87eb108c1" testId="4dd2fa3a-8c18-115c-8043-f4fc5cfe4596" testName="DescGpt_ShouldReturnAllOverloads" computerName="DESKTOP-I52018A" duration="00:00:00.0377520" startTime="2026-09-06T18:46:03.2281137+02:00" endTime="2026-09-06T18:46:03.2659994+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70330303-4c5b-41e1-8bc7-32c87eb108c1" />
+    <UnitTestResult executionId="977e05a2-f8c4-4895-ab0f-a922d4db11a8" testId="0b4126a3-e323-026e-2591-5a41183decdf" testName="DescGptNoArgs_VsWithArgs_ShouldReturnDifferentResults" computerName="DESKTOP-I52018A" duration="00:00:00.0382099" startTime="2026-09-06T18:46:03.3443943+02:00" endTime="2026-09-06T18:46:03.3827516+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="977e05a2-f8c4-4895-ab0f-a922d4db11a8" />
+    <UnitTestResult executionId="aa47c67e-5fe1-4f41-900b-8d68f1ef5434" testId="d42ea141-a576-3a35-a037-10cbf06af730" testName="WhenIsContentAbout_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0003479" startTime="2026-09-06T18:46:03.3921277+02:00" endTime="2026-09-06T18:46:03.3925388+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aa47c67e-5fe1-4f41-900b-8d68f1ef5434" />
+    <UnitTestResult executionId="cbd37d1b-0cf9-489c-93fb-492288a8c6a7" testId="43ac6dcd-53e8-7343-3acb-5fc8e2986230" testName="WhenCountingTokensForCl100k_base_ShouldReturnTokenCount" computerName="DESKTOP-I52018A" duration="00:00:00.5821773" startTime="2026-09-06T18:46:02.1798173+02:00" endTime="2026-09-06T18:46:02.7622811+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cbd37d1b-0cf9-489c-93fb-492288a8c6a7" />
+    <UnitTestResult executionId="303f35b3-e02b-4851-b560-2922796e8e81" testId="94c68e85-37c4-a332-c174-9bc29880e229" testName="WhenTranslateContent_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0003459" startTime="2026-09-06T18:46:03.3928985+02:00" endTime="2026-09-06T18:46:03.3932869+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="303f35b3-e02b-4851-b560-2922796e8e81" />
+    <UnitTestResult executionId="fc8c8d65-a0d8-4311-83b2-ad3da977b2dc" testId="5a353bb7-9de4-e2ae-72ce-3692ad80b019" testName="WhenRowsCalled_ShouldRetrieveSingle" computerName="DESKTOP-I52018A" duration="00:00:00.0054989" startTime="2026-09-06T18:46:03.3828058+02:00" endTime="2026-09-06T18:46:03.3884481+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fc8c8d65-a0d8-4311-83b2-ad3da977b2dc" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="WhenCallingSentiment_ShouldBeNegative" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="42d4eb6c-c201-667c-2e9a-5ec38fcc1a55">
+      <Execution id="fb8009fd-0b0f-48cf-b868-4d4f7cd37a72" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingSentiment_ShouldBeNegative" />
+    </UnitTest>
+    <UnitTest name="WhenSentimentIsNeutral_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="58cfdb03-2f42-7987-a934-94b860c2bc4a">
+      <Execution id="46e1433e-550b-4ecc-9226-a72ecea7ea1a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenSentimentIsNeutral_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="DescGpt_ShouldReturnAllOverloads" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="4dd2fa3a-8c18-115c-8043-f4fc5cfe4596">
+      <Execution id="70330303-4c5b-41e1-8bc7-32c87eb108c1" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAISchemaDescribeTests" name="DescGpt_ShouldReturnAllOverloads" />
+    </UnitTest>
+    <UnitTest name="WhenCountingTokensForP50k_base_ShouldReturnTokenCount" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="19abf09b-c270-a53b-bf97-5b745a8862bb">
+      <Execution id="626f6a48-8287-4ca0-9d91-ab92a8c01aca" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCountingTokensForP50k_base_ShouldReturnTokenCount" />
+    </UnitTest>
+    <UnitTest name="WhenCountingTokens_ShouldReturnTokenCount" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="f43f0805-4482-210d-9948-b223435eaa6f">
+      <Execution id="cac4ed3e-adff-4fe6-b888-bf45808b8888" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCountingTokens_ShouldReturnTokenCount" />
+    </UnitTest>
+    <UnitTest name="DescUnknownMethod_ShouldThrowException" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="854c4914-6239-c948-3d0a-b5edc0675dfd">
+      <Execution id="780b7ebf-b271-4b9c-ade2-cd530bbb59ec" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAISchemaDescribeTests" name="DescUnknownMethod_ShouldThrowException" />
+    </UnitTest>
+    <UnitTest name="WhenCallingTranslateContent_ShouldBeTranslated" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="4e2011ce-77e4-527e-3dd8-42abf8c446c9">
+      <Execution id="fb245549-a075-4386-a75a-5238a2ae0198" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingTranslateContent_ShouldBeTranslated" />
+    </UnitTest>
+    <UnitTest name="DescribeSourceRuntimeSettings_ShouldDeclareOpenAiApiKey" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="caff5a6a-2f9d-6e89-4deb-cd98bb0c5b30">
+      <Execution id="9fbe3979-8ddf-4cbb-be77-0602f6560bad" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiRuntimeSettingsTests" name="DescribeSourceRuntimeSettings_ShouldDeclareOpenAiApiKey" />
+    </UnitTest>
+    <UnitTest name="WhenIsContentAbout_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="d42ea141-a576-3a35-a037-10cbf06af730">
+      <Execution id="aa47c67e-5fe1-4f41-900b-8d68f1ef5434" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenIsContentAbout_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenCountingTokensForCl100k_base_ShouldReturnTokenCount" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="43ac6dcd-53e8-7343-3acb-5fc8e2986230">
+      <Execution id="cbd37d1b-0cf9-489c-93fb-492288a8c6a7" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCountingTokensForCl100k_base_ShouldReturnTokenCount" />
+    </UnitTest>
+    <UnitTest name="DoSomeRealTests" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="5b4d6e28-0e52-349e-3b80-865931d17ff7">
+      <Execution id="993aaad3-6e74-48d3-bc45-6d4af88c790f" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiApiPlayground" name="DoSomeRealTests" />
+    </UnitTest>
+    <UnitTest name="WhenSentimentIsPositive_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="2c710efb-a873-de68-e6fc-0b1310b883b5">
+      <Execution id="ebfb7805-34fb-44d9-a9ad-6d719a6e484d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenSentimentIsPositive_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldHaveConsistentColumnTypes" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="1714f40f-41e8-85cb-96f4-261c198ed302">
+      <Execution id="9cceba28-6bc9-4daa-b6b9-90872f1508fa" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAISchemaDescribeTests" name="DescSchema_ShouldHaveConsistentColumnTypes" />
+    </UnitTest>
+    <UnitTest name="WhenCallingIsContentAbout_ShouldBeTrue" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="364f16b6-4b10-0151-f3dd-d01661c3b195">
+      <Execution id="cf4f4818-a985-41b4-bbe4-b9d2cefe4571" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingIsContentAbout_ShouldBeTrue" />
+    </UnitTest>
+    <UnitTest name="DescGptNoArgs_VsWithArgs_ShouldReturnDifferentResults" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="0b4126a3-e323-026e-2591-5a41183decdf">
+      <Execution id="977e05a2-f8c4-4895-ab0f-a922d4db11a8" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAISchemaDescribeTests" name="DescGptNoArgs_VsWithArgs_ShouldReturnDifferentResults" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldListAllAvailableMethods" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="1b530bcc-ff3a-0369-2cc4-0265c7c5fb6a">
+      <Execution id="8307835a-b74e-421e-99e5-93565ea91aa9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAISchemaDescribeTests" name="DescSchema_ShouldListAllAvailableMethods" />
+    </UnitTest>
+    <UnitTest name="WhenCallingIsContentAbout_ShouldBeFalse" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="8a308952-3c7f-1f7a-f974-ec2bbb209f96">
+      <Execution id="aee9f4f4-1b66-4ab4-b688-79b125fcbc0e" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingIsContentAbout_ShouldBeFalse" />
+    </UnitTest>
+    <UnitTest name="WhenCallingSummarizeContent_ShouldBeSummarized" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="b2bd8f93-d560-ba44-9280-345ee93983a3">
+      <Execution id="d41c6146-9e6a-41b9-85ce-c5880ee16104" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingSummarizeContent_ShouldBeSummarized" />
+    </UnitTest>
+    <UnitTest name="WhenCallingSentiment_ShouldBePositive" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="4cea01f2-ebfd-83d8-0462-5775a730d9a8">
+      <Execution id="ac00e7d7-2d89-4dee-8e70-55adc3cf2776" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingSentiment_ShouldBePositive" />
+    </UnitTest>
+    <UnitTest name="WhenIsContentNotAbout_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="98b82f47-69f8-b26e-df6f-0e6c8599e72c">
+      <Execution id="29ad8c02-4d13-47fc-b4e7-1c4bee9155b3" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenIsContentNotAbout_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenCallingSentiment_ShouldBeNeutral" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="ee0726b6-5a54-2c4d-1318-1a13760ce193">
+      <Execution id="3eb01324-5885-4af5-89e1-5bdcc2b03219" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingSentiment_ShouldBeNeutral" />
+    </UnitTest>
+    <UnitTest name="WhenCallingIsQuestionApplicableToImage_ShouldReturnResponse" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="5eb474ae-3ffb-1e08-c550-4323ab91b043">
+      <Execution id="4417d280-d28e-4f44-9bc5-87cdf95ba889" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingIsQuestionApplicableToImage_ShouldReturnResponse" />
+    </UnitTest>
+    <UnitTest name="WhenCallingSentiment_ShouldBeUnknown" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="3c3129fc-7685-82e0-daf4-311967e713b6">
+      <Execution id="4a6239a1-8a73-498e-ba99-d17521e08853" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingSentiment_ShouldBeUnknown" />
+    </UnitTest>
+    <UnitTest name="WhenCallingLlmPerform_ShouldDoWhateverInstructedFor" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="1dc01abb-7959-78da-603d-5ff16410a333">
+      <Execution id="ee0dfab9-c4c1-4d0e-a486-03cd9840340e" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingLlmPerform_ShouldDoWhateverInstructedFor" />
+    </UnitTest>
+    <UnitTest name="WhenCallingDescribeImage_ShouldReturnImageDescription" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="91a7fa4f-72c7-f605-4460-52994ebd4d0e">
+      <Execution id="b5367d5d-b0a1-4c03-a4f8-992c47066841" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingDescribeImage_ShouldReturnImageDescription" />
+    </UnitTest>
+    <UnitTest name="WhenExtractEntities_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="4a0a8314-7c3a-966e-f42b-a4789944182c">
+      <Execution id="05ea435d-6817-48e4-9212-ce80dfe46e00" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenExtractEntities_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenCallingAskImage_ShouldReturnResponse" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="67f1c5d2-8bb8-42e5-38c5-37c33baad23b">
+      <Execution id="584c6cbe-7eee-4e51-befb-8129f373a97d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingAskImage_ShouldReturnResponse" />
+    </UnitTest>
+    <UnitTest name="WhenSummarizeContent_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="1f64cfea-89e6-163a-f446-b89463cdde92">
+      <Execution id="08e538d8-3343-42db-b035-882000d60cef" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenSummarizeContent_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenSentimentIsNegative_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="6f846f8b-ab6b-0605-3dda-60531f2eda9b">
+      <Execution id="eab202d1-542a-47a4-9a4d-36d13cef3751" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenSentimentIsNegative_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenRowsCalled_ShouldRetrieveSingle" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="5a353bb7-9de4-e2ae-72ce-3692ad80b019">
+      <Execution id="fc8c8d65-a0d8-4311-83b2-ad3da977b2dc" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenRowsCalled_ShouldRetrieveSingle" />
+    </UnitTest>
+    <UnitTest name="WhenCallingEntities_ShouldExtractEntities" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="3bd91975-24cc-9c03-6d0e-8140a4351079">
+      <Execution id="894a41fa-1ae5-410a-a001-bddf7d43b033" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiQueryTests" name="WhenCallingEntities_ShouldExtractEntities" />
+    </UnitTest>
+    <UnitTest name="WhenTranslateContent_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="94c68e85-37c4-a332-c174-9bc29880e229">
+      <Execution id="303f35b3-e02b-4851-b560-2922796e8e81" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenTranslateContent_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenExtractEntitiesReturnsMalformedJson_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="534c90b7-3fc4-d4a9-69b8-04574cc28b6b">
+      <Execution id="d1c06535-b3a2-4ae4-b5a3-a2c6c58b0b44" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenExtractEntitiesReturnsMalformedJson_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenSentimentIsGarbage_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.openai.tests\bin\release\net10.0\musoq.datasources.openai.tests.dll" id="1616b122-8a92-a331-070b-575f5f69f2e5">
+      <Execution id="db7339a2-cb3e-45b8-950b-0afbc38ed161" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.OpenAI.Tests\bin\Release\net10.0\Musoq.DataSources.OpenAI.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.OpenAI.Tests.OpenAiSingleRowSourceTests" name="WhenSentimentIsGarbage_ShouldPass" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="534c90b7-3fc4-d4a9-69b8-04574cc28b6b" executionId="d1c06535-b3a2-4ae4-b5a3-a2c6c58b0b44" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1b530bcc-ff3a-0369-2cc4-0265c7c5fb6a" executionId="8307835a-b74e-421e-99e5-93565ea91aa9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="854c4914-6239-c948-3d0a-b5edc0675dfd" executionId="780b7ebf-b271-4b9c-ade2-cd530bbb59ec" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1dc01abb-7959-78da-603d-5ff16410a333" executionId="ee0dfab9-c4c1-4d0e-a486-03cd9840340e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="364f16b6-4b10-0151-f3dd-d01661c3b195" executionId="cf4f4818-a985-41b4-bbe4-b9d2cefe4571" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="91a7fa4f-72c7-f605-4460-52994ebd4d0e" executionId="b5367d5d-b0a1-4c03-a4f8-992c47066841" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6f846f8b-ab6b-0605-3dda-60531f2eda9b" executionId="eab202d1-542a-47a4-9a4d-36d13cef3751" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ee0726b6-5a54-2c4d-1318-1a13760ce193" executionId="3eb01324-5885-4af5-89e1-5bdcc2b03219" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1714f40f-41e8-85cb-96f4-261c198ed302" executionId="9cceba28-6bc9-4daa-b6b9-90872f1508fa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4e2011ce-77e4-527e-3dd8-42abf8c446c9" executionId="fb245549-a075-4386-a75a-5238a2ae0198" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="42d4eb6c-c201-667c-2e9a-5ec38fcc1a55" executionId="fb8009fd-0b0f-48cf-b868-4d4f7cd37a72" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f43f0805-4482-210d-9948-b223435eaa6f" executionId="cac4ed3e-adff-4fe6-b888-bf45808b8888" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="67f1c5d2-8bb8-42e5-38c5-37c33baad23b" executionId="584c6cbe-7eee-4e51-befb-8129f373a97d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3bd91975-24cc-9c03-6d0e-8140a4351079" executionId="894a41fa-1ae5-410a-a001-bddf7d43b033" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4cea01f2-ebfd-83d8-0462-5775a730d9a8" executionId="ac00e7d7-2d89-4dee-8e70-55adc3cf2776" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1616b122-8a92-a331-070b-575f5f69f2e5" executionId="db7339a2-cb3e-45b8-950b-0afbc38ed161" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4a0a8314-7c3a-966e-f42b-a4789944182c" executionId="05ea435d-6817-48e4-9212-ce80dfe46e00" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19abf09b-c270-a53b-bf97-5b745a8862bb" executionId="626f6a48-8287-4ca0-9d91-ab92a8c01aca" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5b4d6e28-0e52-349e-3b80-865931d17ff7" executionId="993aaad3-6e74-48d3-bc45-6d4af88c790f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="98b82f47-69f8-b26e-df6f-0e6c8599e72c" executionId="29ad8c02-4d13-47fc-b4e7-1c4bee9155b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3c3129fc-7685-82e0-daf4-311967e713b6" executionId="4a6239a1-8a73-498e-ba99-d17521e08853" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8a308952-3c7f-1f7a-f974-ec2bbb209f96" executionId="aee9f4f4-1b66-4ab4-b688-79b125fcbc0e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b2bd8f93-d560-ba44-9280-345ee93983a3" executionId="d41c6146-9e6a-41b9-85ce-c5880ee16104" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f64cfea-89e6-163a-f446-b89463cdde92" executionId="08e538d8-3343-42db-b035-882000d60cef" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="caff5a6a-2f9d-6e89-4deb-cd98bb0c5b30" executionId="9fbe3979-8ddf-4cbb-be77-0602f6560bad" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="58cfdb03-2f42-7987-a934-94b860c2bc4a" executionId="46e1433e-550b-4ecc-9226-a72ecea7ea1a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2c710efb-a873-de68-e6fc-0b1310b883b5" executionId="ebfb7805-34fb-44d9-a9ad-6d719a6e484d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5eb474ae-3ffb-1e08-c550-4323ab91b043" executionId="4417d280-d28e-4f44-9bc5-87cdf95ba889" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4dd2fa3a-8c18-115c-8043-f4fc5cfe4596" executionId="70330303-4c5b-41e1-8bc7-32c87eb108c1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0b4126a3-e323-026e-2591-5a41183decdf" executionId="977e05a2-f8c4-4895-ab0f-a922d4db11a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d42ea141-a576-3a35-a037-10cbf06af730" executionId="aa47c67e-5fe1-4f41-900b-8d68f1ef5434" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="43ac6dcd-53e8-7343-3acb-5fc8e2986230" executionId="cbd37d1b-0cf9-489c-93fb-492288a8c6a7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="94c68e85-37c4-a332-c174-9bc29880e229" executionId="303f35b3-e02b-4851-b560-2922796e8e81" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5a353bb7-9de4-e2ae-72ce-3692ad80b019" executionId="fc8c8d65-a0d8-4311-83b2-ad3da977b2dc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="34" executed="33" passed="33" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>Test 'DoSomeRealTests' was skipped in the test run.&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

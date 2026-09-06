@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "test": "Search gate configuration",
+  "status": "passed",
+  "scenarios": [
+    {
+      "name": "shared-example-command-and-secret-scan",
+      "result": "passed",
+      "assertions": 2
+    },
+    {
+      "name": "ignored-local-configuration",
+      "result": "passed",
+      "assertions": 2
+    },
+    {
+      "name": "invalid-command-vector",
+      "result": "passed",
+      "assertions": 2
+    },
+    {
+      "name": "secret-like-configuration",
+      "result": "passed",
+      "assertions": 2
+    },
+    {
+      "name": "unignored-machine-path",
+      "result": "passed",
+      "assertions": 2
+    }
+  ],
+  "scenarioCount": 5,
+  "assertions": 10,
+  "temporaryFixturePolicy": "Temporary invalid configurations were created below the system temporary directory; the one repository fixture was removed in finally and no product configuration was changed."
+}

@@ -1,0 +1,192 @@
+{
+  "scopeId": "W17-S01",
+  "status": "passed",
+  "summary": "Integrated Musoq.DataSources.Search into the explicit release registry at its evaluated 8.0.3-alpha.7 version and added a focused release-contract test proving production-only selection, exact tag/batch resolution and runtime compatibility metadata.",
+  "requirementIds": ["R10", "R11", "R14", "R15"],
+  "sourceReferences": ["S11", "S12", "S13", "S17", "S18"],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W17-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "c4617680b41d20e98fe924475bae259f0d44565d",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 86,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W17-S01 implementation; ignored campaign state had W17-S01 in_progress and no other active scope.",
+    "preExistingScopeCommit": "c4617680b41d20e98fe924475bae259f0d44565d",
+    "packageTrain": {
+      "targetFramework": "net10.0",
+      "Musoq.Schema": "17.0.9-alpha.1",
+      "Musoq.Plugins": "17.0.9-alpha.1"
+    }
+  },
+  "implementation": {
+    "changedFiles": [
+      "scripts/release/packages.json",
+      "scripts/Test-PluginReleaseScripts.ps1",
+      "scripts/release/Test-SearchReleaseRegistry.ps1"
+    ],
+    "scopeBoundary": "Only the owning repository release registry and release-contract tests changed, plus W17-S01 evidence. No Search production semantics, sibling repository, XML/license snapshot, package artifact, publication or installation state was changed.",
+    "registryContract": "The registry now contains 16 production datasource packages. Search is registered as slug search, package Musoq.DataSources.Search, version 8.0.3-alpha.7 and project Musoq.DataSources.Search/Musoq.DataSources.Search.csproj.",
+    "productionSelectionContract": "Get-ReleasePackages and Get-PluginProjects resolve the production Search project while excluding Musoq.DataSources.Search.Tests and Musoq.DataSources.Search.Benchmarks; evaluated host package runtime exclusions and net10.0 compatibility also pass."
+  },
+  "tests": {
+    "discovered": 1665,
+    "passed": 1631,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "releaseRegistryFocusedContract": {
+      "script": "scripts/release/Test-SearchReleaseRegistry.ps1",
+      "checks": 14,
+      "packageCount": 16,
+      "productionProjectCount": 20,
+      "excludedRegistryProjectCount": 0,
+      "excludedSearchHostProjects": 0,
+      "tag": "8.0.3-alpha.7-Musoq.DataSources.Search",
+      "targetFramework": "net10.0",
+      "hostPackageMinimum": "17.0.9-alpha.1",
+      "hostPackageMaximumExclusive": "18.0.0"
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 377,
+      "passed": 374,
+      "failed": 0,
+      "skipped": 3
+    },
+    "fullSuite": {
+      "projectCount": 21,
+      "discovered": 1665,
+      "passed": 1631,
+      "failed": 0,
+      "skipped": 34
+    },
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "release-registry-focused-contract",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/release/Test-SearchReleaseRegistry.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "checks": 14,
+      "packageCount": 16,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S01/release-registry.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S01/release-registry.err.log"
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --no-build --nologo --logger console;verbosity=minimal",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 377,
+      "passed": 374,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S01/search-suite.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S01/search-suite.err.log"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release --no-restore --no-build --nologo --verbosity quiet --logger console;verbosity=minimal",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1665,
+      "passed": 1631,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W17-S01/full-suite.log",
+      "stderrPath": "docs/campaigns/search/evidence/W17-S01/full-suite.err.log"
+    },
+    {
+      "kind": "static-validation",
+      "argv": "git diff --check; scripts/release/packages.json JSON parse validation",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "python": "3.13.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The owning 21-project Release suite completed with 1,665 discovered tests, 1,631 passed, 0 failed and 34 classified skips; the focused Search suite also completed with 374 passed and 3 expected skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review records registry identity, production-only selection, exact commands, source and artifact hashes, and the required trailer-bearing completion commit."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "No Search semantic implementation changed; the complete Search test project passed 374 of 377 tests with only its three existing platform-conditional skips."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The evaluated Search project, explicit registry metadata, exact release tag, batch selection, production project discovery and net10.0/runtime-v2 compatibility checks agree."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "scripts/Test-PluginReleaseScripts.ps1",
+      "sha256": "4ab3539353f50bffbe118f379038a68283b5fa096b3e2c0ff332c4075b2fe127"
+    },
+    {
+      "path": "scripts/release/Test-SearchReleaseRegistry.ps1",
+      "sha256": "61038e27fb280b7bea785cecc14bab2b1e5ff1888dfdc435ca6f28ba0a0bcb9c"
+    },
+    {
+      "path": "scripts/release/packages.json",
+      "sha256": "b03865593a865d5707a75d8acdc3f12273ae144a9aecd4864bcd35cdf2b663c8"
+    }
+  ],
+  "sourceDigest": "c457e520251c09e9842f404c5245f642c984eccb6670f54ac84ba9df73ef2866",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W17-S01/release-registry.log",
+      "sha256": "e4ee3a33b690cde5bf2f5dd2d0371cbfc36f11e7ca75e2b917d5cf505c93a9ad"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S01/release-registry.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S01/search-suite.log",
+      "sha256": "d959c7c96f02a6da9560e4ff205cf2c164deb76f0fb0c719b1faf3107b8eb2c9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S01/search-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S01/full-suite.log",
+      "sha256": "ca57b411fb70958ad7a9a111403c5b9edf18da1769714976a10bc681356093c9"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W17-S01/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "W17-S02 owns XML/license-complete package production; no Search license snapshot or release artifact was fabricated in W17-S01, so the full package snapshot gate remains a next-scope prerequisite.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

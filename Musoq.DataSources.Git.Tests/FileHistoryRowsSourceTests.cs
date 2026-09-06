@@ -1,7 +1,5 @@
 using System.Diagnostics;
-using System.Globalization;
 using LibGit2Sharp;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Schema.Optimization;

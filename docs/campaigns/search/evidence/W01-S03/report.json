@@ -1,0 +1,244 @@
+{
+  "scopeId": "W01-S03",
+  "status": "passed",
+  "summary": "Defined the proposed Search scope contract, including reproducible root resolution, lexical and physical containment, traversal and filter ordering, ignore precedence, hidden/link/hard-link policies, inaccessible-entry outcomes and scope fingerprint inputs, with an executable table-driven corpus.",
+  "sourceReferences": ["S14", "S15", "S20", "S22", "S23"],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass",
+    "path": "docs/campaigns/search/evidence/W01-S03/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "6497aae929bcb50ab2a36480ab726d68882a0d29",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 8,
+    "behind": 0,
+    "worktree": "clean for tracked files; the new scope contract files and ignored campaign state were not present in the starting state",
+    "preExistingScopeCommit": "6497aae docs(search): define match semantics"
+  },
+  "implementation": {
+    "changedFiles": [
+      "docs/search/search-scope-contract-v1.json",
+      "docs/search/search-scope-contract-v1.md",
+      "scripts/search/Test-SearchScopeSemantics.ps1",
+      "docs/campaigns/search/evidence/W01-S03/scope-semantics-test.log",
+      "docs/campaigns/search/evidence/W01-S03/scope-semantics-test.err.log",
+      "docs/campaigns/search/evidence/W01-S03/full-suite.log",
+      "docs/campaigns/search/evidence/W01-S03/full-suite.err.log",
+      "docs/campaigns/search/evidence/W01-S03/review.md",
+      "docs/campaigns/search/evidence/W01-S03/report.json"
+    ],
+    "scopeBoundary": "Only the proposed Search scope/path contract, its independent table-driven semantics test and scope evidence were changed; no product datasource, existing test project, package, engine checkout or external repository was edited."
+  },
+  "contract": {
+    "version": 1,
+    "status": "proposed",
+    "defaults": {
+      "recursive": true,
+      "pathComparison": "filesystem-native",
+      "repositoryIgnores": "respect",
+      "globalIgnores": "disabled",
+      "hiddenEntries": "exclude",
+      "followLinks": "do not follow",
+      "hardLinks": "distinct-paths",
+      "inaccessibleEntries": "fail",
+      "missingRoot": "fail-before-scan"
+    },
+    "security": {
+      "containmentBeforeFilters": true,
+      "physicalContainmentWhenFollowingLinks": true,
+      "outsideRootCannotBeOverridden": true
+    },
+    "fingerprint": {
+      "algorithm": "SHA-256 of canonical UTF-8 JSON",
+      "inputs": [
+        "effective policy",
+        "loaded ignore source hashes",
+        "sorted candidate decision manifest"
+      ]
+    },
+    "fixtureFamilies": [
+      "nested ignore negation",
+      "ignored parent blocks descendant negation",
+      "lexical versus physical containment",
+      "case-sensitive and case-insensitive matching",
+      "extension filtering does not prune descendant directories",
+      "hard-link path identity",
+      "inaccessible descendant"
+    ]
+  },
+  "tests": {
+    "discovered": 1284,
+    "passed": 1253,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "semanticsHarness": {
+      "discovered": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "assertions": 44,
+      "scenarios": [
+        "contract identity and fingerprint",
+        "filter and ignore order",
+        "nested ignores and negation",
+        "lexical and physical containment",
+        "case comparison and hard links",
+        "descendant traversal and access errors"
+      ]
+    },
+    "fullSuiteProjectCount": 20,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 }
+    ],
+    "skipClassification": {
+      "explicitlyIgnoredExistingTests": 29,
+      "conditionalFixtureOrArtifactSkips": 2,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "scope-semantics-harness",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "scripts/search/Test-SearchScopeSemantics.ps1"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 44,
+      "logPath": "docs/campaigns/search/evidence/W01-S03/scope-semantics-test.log",
+      "logSha256": "d1a33fb483b1fab992f124434132b3bea3d857849a00b63256884a7e8337e985",
+      "stderrPath": "docs/campaigns/search/evidence/W01-S03/scope-semantics-test.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": [
+        "dotnet",
+        "test",
+        "--configuration",
+        "Release"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 20,
+      "discovered": 1284,
+      "passed": 1253,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W01-S03/full-suite.log",
+      "stdoutSha256": "88eb0f837189dc8f1cb486144325d20a8efe8516014aa0289eb259e2ebc38c29",
+      "stderrPath": "docs/campaigns/search/evidence/W01-S03/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-validation",
+      "argv": [
+        "PowerShell parser validation",
+        "JSON parse validation"
+      ],
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release full suite exited 0 with 1,253 passed and 0 failed; the six-scenario scope harness also exited 0."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, source/artifact hashes and final trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The versioned machine-readable and human-readable scope documents agree, and the corpus remains explicitly proposed design rather than an unverified runtime claim."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "docs/search/search-scope-contract-v1.json",
+      "sha256": "c0dd5026d933dbc2e21ec1a8ab8022826431122369ccc8c4cc8c5c392eb9e1d8"
+    },
+    {
+      "path": "docs/search/search-scope-contract-v1.md",
+      "sha256": "75e609ec166ad923f16f248eff44f1a1d857918b6d4911854e497af7c98de8d5"
+    },
+    {
+      "path": "scripts/search/Test-SearchScopeSemantics.ps1",
+      "sha256": "d7df1d01b922b4320e1acfafff2be71f0c37893651c187c335d776b2d6ba1e3c"
+    }
+  ],
+  "sourceDigest": "d5b5d7b60ce00ac795ffb7a837ccdcbe44560d0f1a42d5108d2c73dba09e0981",
+  "artifacts": [
+    {
+      "path": "docs/search/search-scope-contract-v1.json",
+      "sha256": "c0dd5026d933dbc2e21ec1a8ab8022826431122369ccc8c4cc8c5c392eb9e1d8"
+    },
+    {
+      "path": "docs/search/search-scope-contract-v1.md",
+      "sha256": "75e609ec166ad923f16f248eff44f1a1d857918b6d4911854e497af7c98de8d5"
+    },
+    {
+      "path": "scripts/search/Test-SearchScopeSemantics.ps1",
+      "sha256": "d7df1d01b922b4320e1acfafff2be71f0c37893651c187c335d776b2d6ba1e3c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S03/review.md",
+      "sha256": "e9e9a604ed075fb547cb90a78f54ad797a613aa09e7236294f9fe009c71dfd2c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S03/scope-semantics-test.log",
+      "sha256": "d1a33fb483b1fab992f124434132b3bea3d857849a00b63256884a7e8337e985"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S03/scope-semantics-test.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S03/full-suite.log",
+      "sha256": "88eb0f837189dc8f1cb486144325d20a8efe8516014aa0289eb259e2ebc38c29"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W01-S03/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "This scope defines a proposed scope/path contract; no Search filesystem traversal or physical-link backend is claimed to be installed.",
+    "Actual filesystem-native case detection, physical link resolution, file-ID behavior and access-error diagnostics require runtime tests in later scopes.",
+    "The exact request schema, completion/failure surface and typed result rows remain later W01/W02 work.",
+    "The full suite retains 31 existing expected skips and existing NU1902/NU1903 package-audit warnings; this scope changed no product or package code.",
+    "PSScriptAnalyzer is not installed; PowerShell parser validation and the focused scope harness passed."
+  ]
+}

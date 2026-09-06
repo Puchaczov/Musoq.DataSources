@@ -1,0 +1,201 @@
+{
+  "scopeId": "W06-S04",
+  "status": "passed",
+  "summary": "Implemented consistent binary classification for managed file-backed Search text sources. The default full-input policy scans decoded characters to EOF with a bounded pooled buffer, treats decoded U+0000 as a skip-and-report marker, avoids UTF-16 encoded-zero false positives, and prevents late-marker files from reaching the matching sink.",
+  "requirementIds": [
+    "R02",
+    "R04",
+    "R07",
+    "R08"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S20",
+    "S22",
+    "S24"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W06-S04/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "1b12544dbae331cbfccf1411dfdbf6e7a0e5fc71",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 34,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W06-S04 as in_progress.",
+    "preExistingScopeCommit": "1b12544dbae331cbfccf1411dfdbf6e7a0e5fc71",
+    "aheadNote": "The ahead count includes the W06-S03 completion commit and the 32 preceding reachable completed Search scope commits."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchBinaryPolicyTests.cs",
+      "Musoq.DataSources.Search/SearchBinaryPolicy.cs",
+      "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "docs/search/search-binary-policy-v1.md"
+    ],
+    "scopeBoundary": "Only the owning Search binary-policy/source/counter implementation, required Search tests and related Search documentation were changed. Existing two-argument SQL constructor metadata remains unchanged; no native backend, sibling repository, release, publication, installation or raw-byte search surface was modified.",
+    "binaryPolicy": {
+      "marker": "Decoded U+0000; raw zero bytes are not independently sufficient under UTF-16.",
+      "validation": "Full-input validation through successful EOF or the first decoded marker, using the selected strict UTF-8/UTF-16 mode and no fixed prefix heuristic.",
+      "decision": "skip-and-report; the internal BinaryFilesSkipped counter records policy-selected files for the later terminal-summary surface.",
+      "lateMarkers": "The default file-backed source preflights the complete decoded file and opens it for matching only after a marker-free result, so no row from a late-marker file reaches the sink.",
+      "resourceBoundary": "A bounded pooled character buffer is reused for classification and matching; two passes avoid retaining unbounded candidate rows until EOF.",
+      "injectedReaders": "A supplied TextReader factory is already-decoded input and remains outside this file-byte classification boundary."
+    }
+  },
+  "tests": {
+    "discovered": 1404,
+    "passed": 1370,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 120,
+      "passed": 117,
+      "failed": 0,
+      "skipped": 3,
+      "newScenarios": [
+        "NulMarkers_ShouldBeDetectedAtReaderBlockBoundaries",
+        "Utf16Text_ShouldNotBeClassifiedByEncodedZeroBytes",
+        "ValidUtf8BinaryPayload_ShouldBeSkippedBeforeLateMatchesReachTheSink",
+        "OpaqueControlPayloadWithNul_ShouldUseTheSameBinaryDecision"
+      ],
+      "requiredCoverage": [
+        "NUL at the last character of a bounded reader block, the first character of the next block and the following character",
+        "UTF-16 little-endian and big-endian BOM text without false positives from encoded zero bytes",
+        "Opaque control bytes and binary data containing a valid UTF-8 payload",
+        "A late NUL after a matching prefix is skipped before any occurrence row reaches the sink"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 120,
+      "passed": 117,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W06-S04/search-focused.log",
+      "stdoutSha256": "af3de2e2bb46c4fedae4aeed774af3b5b3dc5f5d5473cbb2cfc6f3fbd73b671c",
+      "stderrPath": "docs/campaigns/search/evidence/W06-S04/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above; captured logs were normalized to UTF-8 LF for deterministic hashing.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1404,
+      "passed": 1370,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W06-S04/full-suite-exact.log",
+      "stdoutSha256": "2d93474d9eb1c30a33d6b9ae7dfdb4a2b74d0cff52143f2e48d5efc80c0b9730",
+      "stderrPath": "docs/campaigns/search/evidence/W06-S04/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; source and artifact hash validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "git version 2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 21 projects, 1,404 discovered, 1,370 passed, 0 failed and 34 skips; the focused Search suite exited 0 with 117 passed and 3 expected platform-conditional skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved the decoded-marker policy, full-input boundary, reader ownership, late-marker behavior and scope boundary; exact commands, tool versions, source/artifact hashes and the unique trailer-bearing completion commit are recorded and verified during post-commit finalization."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused tests cover all required binary-policy cases: reader-block marker boundaries, both UTF-16 BOM endiannesses, opaque control bytes and valid UTF-8 binary content with a late marker."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Classification and matching reuse one bounded pooled character buffer; readers are disposed on all paths, cancellation is checked around bounded reads, and the classifier emits no rows or borrowed-buffer state."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchBinaryPolicyTests.cs",
+      "sha256": "10b376736941c1a43a8e4093aa190dfe132cc0c46408c6a4150ae88d778bcf42"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchBinaryPolicy.cs",
+      "sha256": "6c0358130564a867bb12114d8e2965713bb1dc16da5f810dbdd6a30983eca331"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "sha256": "c6ad55b80abe3ba781d618a8c8ed6b3c1130809dd829eec45ea5de470a28f3d7"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "sha256": "bad3305eaa27f9ace1fbd82f8318b047a40d74a17d770337c40295363144fe41"
+    },
+    {
+      "path": "docs/search/search-binary-policy-v1.md",
+      "sha256": "aef153328e9c8bf07c56e07785e76617f8427d2900cec87e0ffa3fda14ba2065"
+    }
+  ],
+  "sourceDigest": "e1adbaea0d8461ad7aeeba8cfbffbf509cc49af7d519c78c005646467fefc4c2",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W06-S04/review.md",
+      "sha256": "55aeb6640bbe75b1c8482488551854ec7b4e0d404515e3cb29bdcadbf8cdf033"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W06-S04/search-focused.log",
+      "sha256": "af3de2e2bb46c4fedae4aeed774af3b5b3dc5f5d5473cbb2cfc6f3fbd73b671c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W06-S04/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W06-S04/full-suite-exact.log",
+      "sha256": "2d93474d9eb1c30a33d6b9ae7dfdb4a2b74d0cff52143f2e48d5efc80c0b9730"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W06-S04/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The current public Search SQL constructors remain two-argument and retain their existing defaults; terminal-summary transport and public binary options are later campaign work.",
+    "A supplied TextReader factory is already-decoded input and is intentionally outside file-byte classification; arbitrary raw-byte matching remains the separate search.bytes contract.",
+    "Preflight and matching use separate file opens and, like existing live-file traversal, do not claim an atomic filesystem snapshot across concurrent replacement.",
+    "Invalid non-marker input remains a typed strict source-read failure rather than being reinterpreted as arbitrary binary data.",
+    "The repository-wide suite retains 31 expected skips and 3 platform-conditional symlink skips; no package was published."
+  ]
+}

@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="d973f816-cfec-4fcb-807d-090fb94c4158" name="Jakub@DESKTOP-I52018A 2026-09-06 18:46:10" runUser="DESKTOP-I52018A\Jakub" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-06T18:46:10.5128355+02:00" queuing="2026-09-06T18:46:10.5128357+02:00" start="2026-09-06T18:46:07.2484861+02:00" finish="2026-09-06T18:46:22.3448141+02:00" />
+  <TestSettings name="default" id="1732a9c4-e7cb-4f0d-8549-d25dce5f6522">
+    <Deployment runDeploymentRoot="Jakub_DESKTOP-I52018A_2026-09-06_18_46_10" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="0207a9d7-67c1-47ec-9188-d563ed4bba95" testId="cdcd6c5f-ddcd-c09e-25d6-cd0afce9c4ba" testName="GeneratedXmlDocumentation_IsWellFormedAndCoversPublicApi" computerName="DESKTOP-I52018A" duration="00:00:00.0051165" startTime="2026-09-06T18:46:22.2759521+02:00" endTime="2026-09-06T18:46:22.2818081+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0207a9d7-67c1-47ec-9188-d563ed4bba95" />
+    <UnitTestResult executionId="b72b5c86-4869-42c7-abbc-6bbc95ca2b67" testId="608826f3-de51-a302-bf80-07516a7d3fa2" testName="WhenCommitsFilteredByAuthor_ShouldReturnMatchingCommits" computerName="DESKTOP-I52018A" duration="00:00:00.0740099" startTime="2026-09-06T18:46:21.6257697+02:00" endTime="2026-09-06T18:46:21.6999130+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b72b5c86-4869-42c7-abbc-6bbc95ca2b67" />
+    <UnitTestResult executionId="d82ffd03-3b91-455e-a57a-217a673d763f" testId="8cfda09c-fd0c-5fda-0116-d3a8926dd813" testName="WhenTagsFilteredByFriendlyName_ShouldReturnMatchingTag" computerName="DESKTOP-I52018A" duration="00:00:00.0815058" startTime="2026-09-06T18:46:21.9953890+02:00" endTime="2026-09-06T18:46:22.0769999+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d82ffd03-3b91-455e-a57a-217a673d763f" />
+    <UnitTestResult executionId="e2832c3e-7763-4f88-bf96-90940f475a3e" testId="bad00277-567f-ff64-dc35-97a963203d4c" testName="WhenBranchSpecificCommitsFromBranchToMaster_ExcludeMergeBaseFalse_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0435117" startTime="2026-09-06T18:46:20.1380942+02:00" endTime="2026-09-06T18:46:20.1817090+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e2832c3e-7763-4f88-bf96-90940f475a3e" />
+    <UnitTestResult executionId="72c38794-3f4a-4353-9207-91971e030936" testId="99e544c0-e580-b751-c204-14ab939115e5" testName="WhenCommitsFilteredBySha_ShouldReturnSingleCommit" computerName="DESKTOP-I52018A" duration="00:00:00.0768348" startTime="2026-09-06T18:46:21.7677931+02:00" endTime="2026-09-06T18:46:21.8447132+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="72c38794-3f4a-4353-9207-91971e030936" />
+    <UnitTestResult executionId="265b2b6a-d8fa-46c9-80c2-17f72b4696c4" testId="341bd16c-fb03-de13-8f4a-1572da698edb" testName="WhenBranchSpecificCommitsFromBranchToAnotherBranch_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0408834" startTime="2026-09-06T18:46:20.1817502+02:00" endTime="2026-09-06T18:46:20.2227194+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="265b2b6a-d8fa-46c9-80c2-17f72b4696c4" />
+    <UnitTestResult executionId="b728595c-41ac-440b-9eea-5ec3712dee25" testId="96d73159-9dcd-eb1c-571a-f71826fa8301" testName="WhenTagsFilteredByIsAnnotatedTrue_ShouldReturnAnnotatedTagsOnly" computerName="DESKTOP-I52018A" duration="00:00:00.0778793" startTime="2026-09-06T18:46:21.8447587+02:00" endTime="2026-09-06T18:46:21.9227275+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b728595c-41ac-440b-9eea-5ec3712dee25" />
+    <UnitTestResult executionId="c1a3a96d-a0cb-47b1-9994-701dbfe57e7c" testId="999bfa6d-320f-cb1c-1425-7f673d8e9eb5" testName="FileHistoryPlaygroundDesc_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6745870+02:00" endTime="2026-09-06T18:46:16.6745972+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c1a3a96d-a0cb-47b1-9994-701dbfe57e7c">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="aa39914e-fddb-40d6-a841-e8e83af922da" testId="dfeb2a9c-eabc-3875-565e-67ac26395f65" testName="FileHistoryWildcardPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6746058+02:00" endTime="2026-09-06T18:46:16.6746155+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aa39914e-fddb-40d6-a841-e8e83af922da">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="13e731da-066d-490d-baa6-a8cfda0cf7a9" testId="0b0a44f2-bd21-a0ee-2e96-47bdad20111e" testName="WhenCommitsFilteredByNonExistentAuthor_ShouldReturnNoCommits" computerName="DESKTOP-I52018A" duration="00:00:00.0673531" startTime="2026-09-06T18:46:21.7003156+02:00" endTime="2026-09-06T18:46:21.7677548+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="13e731da-066d-490d-baa6-a8cfda0cf7a9" />
+    <UnitTestResult executionId="32a1fc16-d17d-4aeb-ba06-b56fd28ef236" testId="b48d91da-3970-296f-6936-4c01d583fa49" testName="NestedSnapshots_AreCachedAfterTheirShortLivedRepositoryScopesClose" computerName="DESKTOP-I52018A" duration="00:00:00.4126345" startTime="2026-09-06T18:46:12.8456970+02:00" endTime="2026-09-06T18:46:13.2585466+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="32a1fc16-d17d-4aeb-ba06-b56fd28ef236" />
+    <UnitTestResult executionId="b77609ed-77b5-42a6-9429-ff33a9add264" testId="eba0759f-51ac-a517-e68c-0086c70eed58" testName="TryPlanSource_WhenBranchPredicateIsUsed_AcceptsPredicate" computerName="DESKTOP-I52018A" duration="00:00:00.0002842" startTime="2026-09-06T18:46:16.6776964+02:00" endTime="2026-09-06T18:46:16.6780337+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b77609ed-77b5-42a6-9429-ff33a9add264" />
+    <UnitTestResult executionId="ace4e318-c4d6-4049-b5e3-6f61553c1916" testId="d028485d-6433-571d-b71e-0c942ad5c890" testName="CommitsPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6746322+02:00" endTime="2026-09-06T18:46:16.6746397+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ace4e318-c4d6-4049-b5e3-6f61553c1916">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="ea79b499-275d-4da4-b52a-02ed2d21d50d" testId="1aefa5de-1c6b-d486-d3d3-f650b3fd6b4a" testName="FileHistoryTakePlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6745343+02:00" endTime="2026-09-06T18:46:16.6745634+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ea79b499-275d-4da4-b52a-02ed2d21d50d">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="9cc88314-f9a4-4203-9934-72eb831e94c7" testId="4f638060-7743-deb7-a518-9ecfe821dfa0" testName="CommitsSource_OnlyMaterializesProjectedMetadataAndHonorsAcceptedWindow" computerName="DESKTOP-I52018A" duration="00:00:00.3193669" startTime="2026-09-06T18:46:13.2602384+02:00" endTime="2026-09-06T18:46:13.5798106+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9cc88314-f9a4-4203-9934-72eb831e94c7" />
+    <UnitTestResult executionId="c906393f-ab0a-4e03-aa7f-59e1cb7ef592" testId="a76e8554-b808-2826-e23c-277cd8b0bafb" testName="StatusReaders_HaveParityForUntrackedAndModifiedFiles" computerName="DESKTOP-I52018A" duration="00:00:00.2905780" startTime="2026-09-06T18:46:15.4141456+02:00" endTime="2026-09-06T18:46:15.7048807+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c906393f-ab0a-4e03-aa7f-59e1cb7ef592" />
+    <UnitTestResult executionId="942ce8fd-4d2d-4fb4-beb2-a336830ddc9e" testId="11c3904a-f1db-540b-1c39-9aa73207ab10" testName="WhenFileHistoryWithNegTake_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.2002711" startTime="2026-09-06T18:46:21.4253590+02:00" endTime="2026-09-06T18:46:21.6257214+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="942ce8fd-4d2d-4fb4-beb2-a336830ddc9e" />
+    <UnitTestResult executionId="2a776d78-e00e-4f01-a320-202d4b66925d" testId="a525bf80-bf21-b1f0-7b69-24edd4208ad7" testName="WhenCommitsOnBranchRetrieved_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1240466" startTime="2026-09-06T18:46:19.1618851+02:00" endTime="2026-09-06T18:46:19.2860458+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2a776d78-e00e-4f01-a320-202d4b66925d" />
+    <UnitTestResult executionId="27f046f8-b04b-402c-993a-9304fa837bd3" testId="5cfd5112-d467-19ba-3eb7-1edebbbf042c" testName="WhenFileHistoryQueried_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1265216" startTime="2026-09-06T18:46:20.6005632+02:00" endTime="2026-09-06T18:46:20.7272106+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="27f046f8-b04b-402c-993a-9304fa837bd3" />
+    <UnitTestResult executionId="937f9fbe-cb51-465b-b1ca-1d06c72de95a" testId="25bb1cea-7c00-c450-3047-9f03da363e8e" testName="BranchesPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6746433+02:00" endTime="2026-09-06T18:46:16.6746506+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="937f9fbe-cb51-465b-b1ca-1d06c72de95a">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="754e4005-8b76-4101-a084-bbab6baeca17" testId="9aaca049-5665-d8be-74d3-f545532ec4ed" testName="WhenFileHistoryWithTake_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1121929" startTime="2026-09-06T18:46:21.1995177+02:00" endTime="2026-09-06T18:46:21.3118112+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="754e4005-8b76-4101-a084-bbab6baeca17" />
+    <UnitTestResult executionId="4366720a-4688-40ef-8d2d-e33db8a8a380" testId="eaf84691-2111-3658-918f-3c1ef19ee8b4" testName="DescSchema_ShouldListAllAvailableMethods" computerName="DESKTOP-I52018A" duration="00:00:00.0466409" startTime="2026-09-06T18:46:16.6822712+02:00" endTime="2026-09-06T18:46:16.7290028+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4366720a-4688-40ef-8d2d-e33db8a8a380" />
+    <UnitTestResult executionId="5858cdc8-6f43-405a-93ab-65045e7f57d1" testId="4d82a86a-02a4-b5dd-38dc-774679bba5c9" testName="WhenFileHistoryWithSkipTake_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1133250" startTime="2026-09-06T18:46:21.3118757+02:00" endTime="2026-09-06T18:46:21.4253166+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5858cdc8-6f43-405a-93ab-65045e7f57d1">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Inconclusive failed. Repository does not have enough file changes to test skip/take</Message>
+          <StackTrace>   at Musoq.DataSources.Git.Tests.GitToSqlTests.WhenFileHistoryWithSkipTake_ShouldPass() in D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\GitToSqlTests.cs:line 786&#xD;
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e125c46e-9a71-41b3-bb40-97831f84b30a" testId="0db9002f-ac9f-f650-e7f3-66c51374fd48" testName="FileHistorySource_AppliesOuterWindowAfterConstructorWindow" computerName="DESKTOP-I52018A" duration="00:00:00.4804377" startTime="2026-09-06T18:46:15.7049560+02:00" endTime="2026-09-06T18:46:16.1855581+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e125c46e-9a71-41b3-bb40-97831f84b30a" />
+    <UnitTestResult executionId="4bf76eb3-ca97-4788-be74-f51dd17f32a9" testId="5136d939-e80c-8965-2489-8bd117d98dbd" testName="DescRepositoryWithArgs_ShouldReturnTableSchema" computerName="DESKTOP-I52018A" duration="00:00:00.0603931" startTime="2026-09-06T18:46:16.7631327+02:00" endTime="2026-09-06T18:46:16.8236480+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4bf76eb3-ca97-4788-be74-f51dd17f32a9" />
+    <UnitTestResult executionId="c880b811-bdd5-4d01-9b7e-ed88d3c3f8b7" testId="9303bb6b-f2af-ff43-5dda-3479238cb671" testName="TryPlanSource_WhenCommitDatePredicateIsUsed_AcceptsPredicate" computerName="DESKTOP-I52018A" duration="00:00:00.0004504" startTime="2026-09-06T18:46:16.6780472+02:00" endTime="2026-09-06T18:46:16.6785333+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c880b811-bdd5-4d01-9b7e-ed88d3c3f8b7" />
+    <UnitTestResult executionId="4442cb53-374c-4a37-a985-a9c74ab8d7a9" testId="a14433ae-cfe7-a774-79a1-27b9b53d7120" testName="WhenBranchesQueriedDirectly_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0783641" startTime="2026-09-06T18:46:20.5215929+02:00" endTime="2026-09-06T18:46:20.6000512+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4442cb53-374c-4a37-a985-a9c74ab8d7a9" />
+    <UnitTestResult executionId="1f6fb922-5507-4162-a8df-7ff84abb35ed" testId="4c6c0f13-8d99-5cb2-dd1d-64cb3e79ab1b" testName="WhenDifferenceBetweenTwoBranches_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1280926" startTime="2026-09-06T18:46:19.9574138+02:00" endTime="2026-09-06T18:46:20.0857118+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1f6fb922-5507-4162-a8df-7ff84abb35ed" />
+    <UnitTestResult executionId="a6771dfc-658d-4533-83e8-326684fa7724" testId="86757348-d4d0-19d0-929b-2c68e2399779" testName="TagsPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6749693+02:00" endTime="2026-09-06T18:46:16.6749823+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a6771dfc-658d-4533-83e8-326684fa7724">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="be2013bb-0722-44aa-9761-6d2f60c89a0a" testId="7445f421-6836-f2d8-d674-8ed5ace1e8e2" testName="CommitsSource_AppliesInAndNullPredicatesBeforeCreatingProjectedRows" computerName="DESKTOP-I52018A" duration="00:00:00.3258477" startTime="2026-09-06T18:46:13.5799053+02:00" endTime="2026-09-06T18:46:13.9059781+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="be2013bb-0722-44aa-9761-6d2f60c89a0a" />
+    <UnitTestResult executionId="321665c5-de25-4e5e-bdd5-8caf2533cbdb" testId="da421e4b-94df-ffff-dcf6-eb683f5b7998" testName="WhenMinMaxCommitsFromMaster_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1848277" startTime="2026-09-06T18:46:20.2629992+02:00" endTime="2026-09-06T18:46:20.4479210+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="321665c5-de25-4e5e-bdd5-8caf2533cbdb" />
+    <UnitTestResult executionId="f640ce03-488a-41e1-a281-038e5b78251d" testId="c4434932-0cce-1a11-22b4-298983ee9d3c" testName="Blame_Aggregation_SumLineCount" computerName="DESKTOP-I52018A" duration="00:00:00.2946686" startTime="2026-09-06T18:46:10.3960953+02:00" endTime="2026-09-06T18:46:10.6909668+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f640ce03-488a-41e1-a281-038e5b78251d" />
+    <UnitTestResult executionId="ae55642f-a0f5-40ad-be37-1a860301c81a" testId="d4dc4bd2-d61f-29d5-c456-0fece5163bed" testName="DescRepositoryNoArgs_VsWithArgs_ShouldReturnDifferentResults" computerName="DESKTOP-I52018A" duration="00:00:00.1062914" startTime="2026-09-06T18:46:16.8854908+02:00" endTime="2026-09-06T18:46:16.9919092+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ae55642f-a0f5-40ad-be37-1a860301c81a" />
+    <UnitTestResult executionId="c5e33f00-bc09-4c3a-a97b-dc1462cd0c10" testId="9cf97681-ec6f-bf3b-7a6e-91ff2dc2a8d2" testName="WhenTagsFromRepositoryRetrieved_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.2470312" startTime="2026-09-06T18:46:19.2860961+02:00" endTime="2026-09-06T18:46:19.5332365+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c5e33f00-bc09-4c3a-a97b-dc1462cd0c10" />
+    <UnitTestResult executionId="aa4ebbd7-d3ff-4daf-9c2a-2ad6e2eae3d9" testId="b8c3dfed-bca3-236e-dfe1-e16136bc537c" testName="TryPlanSource_WhenNaturalWindowHasNoResidualWork_AcceptsIt" computerName="DESKTOP-I52018A" duration="00:00:00.0006771" startTime="2026-09-06T18:46:16.6806393+02:00" endTime="2026-09-06T18:46:16.6813586+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aa4ebbd7-d3ff-4daf-9c2a-2ad6e2eae3d9" />
+    <UnitTestResult executionId="6e0fbbdc-3554-44a4-9f56-f04030dd10df" testId="c5261f14-8a64-3616-30a9-7fad13e492b0" testName="Blame_WithRevision_ReturnsHistoricalState" computerName="DESKTOP-I52018A" duration="00:00:00.1918602" startTime="2026-09-06T18:46:09.2576714+02:00" endTime="2026-09-06T18:46:09.4497804+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6e0fbbdc-3554-44a4-9f56-f04030dd10df" />
+    <UnitTestResult executionId="1d7a01b1-5405-4beb-9add-a38ed492c1a1" testId="ef33cd21-cd7f-372c-16bd-52e5c607ced7" testName="BranchReaders_HaveParityForLocalReferenceMetadata" computerName="DESKTOP-I52018A" duration="00:00:00.2638715" startTime="2026-09-06T18:46:14.5656783+02:00" endTime="2026-09-06T18:46:14.8297249+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1d7a01b1-5405-4beb-9add-a38ed492c1a1" />
+    <UnitTestResult executionId="5c1d96bf-5235-4439-abe3-7a83ddecc933" testId="22eca6f3-2eb2-098a-c717-18bd6f000b09" testName="WhenBasicInfoFromRepositoryRetrieved_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1024597" startTime="2026-09-06T18:46:18.9009478+02:00" endTime="2026-09-06T18:46:19.0035204+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5c1d96bf-5235-4439-abe3-7a83ddecc933" />
+    <UnitTestResult executionId="c8a938fc-3df5-49ed-8dac-59ae3fff81ee" testId="337876d6-3061-5b24-2b1e-2fdb73b80c37" testName="RepositoryPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6746207+02:00" endTime="2026-09-06T18:46:16.6746283+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c8a938fc-3df5-49ed-8dac-59ae3fff81ee">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="34dd7d53-c945-4994-a576-74210b60dc4d" testId="475a9059-4307-361a-9d23-1f80718257e5" testName="ParentBranch_ReportsRepositoryFailuresInsteadOfGuessingADefaultBranch" computerName="DESKTOP-I52018A" duration="00:00:00.0013418" startTime="2026-09-06T18:46:13.2586320+02:00" endTime="2026-09-06T18:46:13.2601765+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="34dd7d53-c945-4994-a576-74210b60dc4d" />
+    <UnitTestResult executionId="0d341e9d-c0c3-4307-b2cd-a79568cb7f14" testId="dac6372a-435b-d26a-8f08-7a46e7a502ac" testName="DescSchema_ShouldHaveConsistentColumnTypes" computerName="DESKTOP-I52018A" duration="00:00:00.0300306" startTime="2026-09-06T18:46:16.8553016+02:00" endTime="2026-09-06T18:46:16.8854416+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0d341e9d-c0c3-4307-b2cd-a79568cb7f14" />
+    <UnitTestResult executionId="02eca9b5-27c6-4a9e-a131-1c511d607405" testId="9ff05276-c39d-ce60-cefa-de137357bfa4" testName="TryPlanSource_WhenRequiredColumnsArePresent_AcceptsKnownProjection" computerName="DESKTOP-I52018A" duration="00:00:00.0004273" startTime="2026-09-06T18:46:16.6785477+02:00" endTime="2026-09-06T18:46:16.6790107+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="02eca9b5-27c6-4a9e-a131-1c511d607405" />
+    <UnitTestResult executionId="bb0de921-11e4-4a06-b8e1-ef1e94b6677f" testId="8aeeeb76-c6bd-19d8-2551-4e9b807431ba" testName="DescRepository_ShouldReturnMethodSignature" computerName="DESKTOP-I52018A" duration="00:00:00.0339154" startTime="2026-09-06T18:46:16.7290518+02:00" endTime="2026-09-06T18:46:16.7630704+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bb0de921-11e4-4a06-b8e1-ef1e94b6677f" />
+    <UnitTestResult executionId="e172e28f-187e-4f48-ab61-015bdff7a8ee" testId="cab187d6-acd7-c584-9337-4d1f51be7700" testName="WhenCommitsQueriedDirectly_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0734854" startTime="2026-09-06T18:46:20.4479741+02:00" endTime="2026-09-06T18:46:20.5215523+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e172e28f-187e-4f48-ab61-015bdff7a8ee" />
+    <UnitTestResult executionId="d33424f6-3ec2-4d67-adf6-a598feefe1ea" testId="31480e43-311e-8552-03ca-5f6e8aee02f8" testName="Blame_ValidFile_ReturnsHunks" computerName="DESKTOP-I52018A" duration="00:00:01.7180496" startTime="2026-09-06T18:46:07.5289524+02:00" endTime="2026-09-06T18:46:09.2552816+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d33424f6-3ec2-4d67-adf6-a598feefe1ea" />
+    <UnitTestResult executionId="5547f9d9-e6ff-46a1-bb21-ced80f2d8bdc" testId="b222c63b-63b6-8673-49d6-a2b521540118" testName="Blame_MovedFile_TracksOrigin" computerName="DESKTOP-I52018A" duration="00:00:00.1152956" startTime="2026-09-06T18:46:10.1149195+02:00" endTime="2026-09-06T18:46:10.2303267+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5547f9d9-e6ff-46a1-bb21-ced80f2d8bdc" />
+    <UnitTestResult executionId="8fe8cee4-a342-48dd-9f44-d4681f3c0a4c" testId="80a7bc98-89e0-03df-55aa-5cc53f47d98b" testName="WhenStashQueried_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1382859" startTime="2026-09-06T18:46:19.6487079+02:00" endTime="2026-09-06T18:46:19.7871666+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8fe8cee4-a342-48dd-9f44-d4681f3c0a4c" />
+    <UnitTestResult executionId="c4d6c013-d100-4ef5-bf8d-49403279302e" testId="07559e7a-747c-2f69-7b95-c2329ecf039a" testName="FileHistoryPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6740955+02:00" endTime="2026-09-06T18:46:16.6745088+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c4d6c013-d100-4ef5-bf8d-49403279302e">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="3d3b556d-f43f-446a-824d-46eb211d673d" testId="5ff370fb-3827-0472-74a3-f162ee7d4609" testName="WhenTagsQueriedDirectly_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1152193" startTime="2026-09-06T18:46:19.5332911+02:00" endTime="2026-09-06T18:46:19.6486359+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3d3b556d-f43f-446a-824d-46eb211d673d" />
+    <UnitTestResult executionId="4042da6c-23e6-4a8f-b8df-f072405b220f" testId="3d92b9df-e5cd-6b8f-69fe-5d758af58e1f" testName="WhenBranchesFilteredByIsRemoteFalse_ShouldReturnLocalBranchesOnly" computerName="DESKTOP-I52018A" duration="00:00:00.0954137" startTime="2026-09-06T18:46:22.1803730+02:00" endTime="2026-09-06T18:46:22.2759032+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4042da6c-23e6-4a8f-b8df-f072405b220f" />
+    <UnitTestResult executionId="7a04c193-839d-4f6d-98ea-8401475fa83a" testId="4956d3a3-83f1-6dd8-601c-404b385dc65a" testName="TryPlanSource_WhenCommitAuthorPredicateIsUsed_AcceptsPredicate" computerName="DESKTOP-I52018A" duration="00:00:00.0011112" startTime="2026-09-06T18:46:16.6759030+02:00" endTime="2026-09-06T18:46:16.6770814+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7a04c193-839d-4f6d-98ea-8401475fa83a" />
+    <UnitTestResult executionId="688de21c-9265-4976-9b84-fa555a384678" testId="5655eb9d-5ff3-eadc-d2e9-78b3c8a8ef16" testName="DescUnknownMethod_ShouldThrowException" computerName="DESKTOP-I52018A" duration="00:00:00.0311234" startTime="2026-09-06T18:46:16.8236980+02:00" endTime="2026-09-06T18:46:16.8549304+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="688de21c-9265-4976-9b84-fa555a384678" />
+    <UnitTestResult executionId="a6cd0825-008f-41ea-ac8c-1eab3ed168df" testId="7a92d10d-9380-6c55-010f-7463ea2edae1" testName="WhenBranchSpecificCommitsFromBranchToAnotherBranch_ExcludeMergeBaseFalse_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0401096" startTime="2026-09-06T18:46:20.2227605+02:00" endTime="2026-09-06T18:46:20.2629579+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a6cd0825-008f-41ea-ac8c-1eab3ed168df" />
+    <UnitTestResult executionId="f85dbfcc-07b1-465a-983c-50d7f0bf1786" testId="889a1e5f-e79f-3f4e-5ccb-351c5ed3df24" testName="WhenRemotesQueried_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0986793" startTime="2026-09-06T18:46:20.9804276+02:00" endTime="2026-09-06T18:46:21.0792148+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f85dbfcc-07b1-465a-983c-50d7f0bf1786" />
+    <UnitTestResult executionId="c9635862-0eeb-4224-89f0-849bed212c06" testId="b2a2612e-865b-58d4-5a63-d67062965e64" testName="WhenBranchesFromRepositoryRetrieved_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1581201" startTime="2026-09-06T18:46:19.0035767+02:00" endTime="2026-09-06T18:46:19.1618285+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c9635862-0eeb-4224-89f0-849bed212c06" />
+    <UnitTestResult executionId="97855ac1-369a-4bcb-b6ae-220482f461ac" testId="ae3fce3a-22b6-e956-67b5-a458eb7d8b13" testName="FileHistorySource_ParsesOnlyRequestedCommitHeaderFields" computerName="DESKTOP-I52018A" duration="00:00:00.2417904" startTime="2026-09-06T18:46:16.4320611+02:00" endTime="2026-09-06T18:46:16.6740409+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="97855ac1-369a-4bcb-b6ae-220482f461ac" />
+    <UnitTestResult executionId="54de96d9-48fd-4afd-8e9c-fea077268257" testId="6e8dec79-71f7-7956-55c8-2d751d6fa1da" testName="FileHistory_RejectsNegativeSkipAndDoesNotStartGitForZeroTake" computerName="DESKTOP-I52018A" duration="00:00:00.2191045" startTime="2026-09-06T18:46:12.3571796+02:00" endTime="2026-09-06T18:46:12.5765050+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="54de96d9-48fd-4afd-8e9c-fea077268257" />
+    <UnitTestResult executionId="e666f80c-d863-4b6a-a13f-fd2faf511cd0" testId="64cddfb6-3dab-351c-f3b0-04636313ec46" testName="TryPlanSource_WhenOrContainsUnsupportedPredicate_LeavesWholeOrResidual" computerName="DESKTOP-I52018A" duration="00:00:00.0003950" startTime="2026-09-06T18:46:16.6792834+02:00" endTime="2026-09-06T18:46:16.6797219+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e666f80c-d863-4b6a-a13f-fd2faf511cd0" />
+    <UnitTestResult executionId="17f75ec4-3130-4c64-8e02-274bc0e0fbb9" testId="9bc31509-6c00-73cb-7a45-2c49a30dc262" testName="Blame_NonExistentFile_ThrowsFileNotFound" computerName="DESKTOP-I52018A" duration="00:00:00.1275621" startTime="2026-09-06T18:46:09.4501105+02:00" endTime="2026-09-06T18:46:09.5777880+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="17f75ec4-3130-4c64-8e02-274bc0e0fbb9" />
+    <UnitTestResult executionId="f43e8307-ea62-4a0f-9b42-76b35f966bd7" testId="87675d2c-bab2-1f04-51a2-f1f882e05540" testName="DescribeSourceRuntimeSettings_DeclaresOptionalHistoryBackendSettings" computerName="DESKTOP-I52018A" duration="00:00:00.0007865" startTime="2026-09-06T18:46:16.6750162+02:00" endTime="2026-09-06T18:46:16.6758812+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f43e8307-ea62-4a0f-9b42-76b35f966bd7" />
+    <UnitTestResult executionId="5e91c426-e82b-4000-a8e9-7b91b0b7e5f5" testId="4a807026-de32-9839-efb9-a059450b1957" testName="TryPlanSource_WhenProjectionIsEmpty_UsesCardinalityOnlySnapshotButKeepsPredicateDependency" computerName="DESKTOP-I52018A" duration="00:00:00.0002905" startTime="2026-09-06T18:46:16.6819327+02:00" endTime="2026-09-06T18:46:16.6822579+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5e91c426-e82b-4000-a8e9-7b91b0b7e5f5" />
+    <UnitTestResult executionId="f56edd9e-9b34-4576-a6c6-1c9907269a15" testId="e92d0baf-3f14-ca18-6d00-4551975598ef" testName="WhenTagsFilteredByIsAnnotatedFalse_ShouldReturnNonAnnotatedTagsOnly" computerName="DESKTOP-I52018A" duration="00:00:00.0724740" startTime="2026-09-06T18:46:21.9227694+02:00" endTime="2026-09-06T18:46:21.9953375+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f56edd9e-9b34-4576-a6c6-1c9907269a15" />
+    <UnitTestResult executionId="d0d082c2-7b45-4451-af51-764994c0057c" testId="8a16f1b7-ebef-4bda-6e46-44bcfa20be54" testName="RepositoryCollections_RemainCrossApplyAddressable" computerName="DESKTOP-I52018A" duration="00:00:00.5876955" startTime="2026-09-06T18:46:17.7235315+02:00" endTime="2026-09-06T18:46:18.3113825+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d0d082c2-7b45-4451-af51-764994c0057c" />
+    <UnitTestResult executionId="a7fa9e41-bfca-4de0-96e6-734677449afb" testId="b94261af-fb8c-fc41-e133-3fdae41274d6" testName="StatusPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6749900+02:00" endTime="2026-09-06T18:46:16.6749976+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a7fa9e41-bfca-4de0-96e6-734677449afb">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4ce5db7f-cb8d-4090-8394-a1a82db7b2e1" testId="ac70d730-2755-b16e-f719-3ec4d823082f" testName="WhenFileHistoryQueried_ShouldReturnAllChanges" computerName="DESKTOP-I52018A" duration="00:00:00.1200963" startTime="2026-09-06T18:46:21.0792675+02:00" endTime="2026-09-06T18:46:21.1994724+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4ce5db7f-cb8d-4090-8394-a1a82db7b2e1" />
+    <UnitTestResult executionId="025098c9-b1e4-4642-9ad5-434800cb8c11" testId="d5fa1586-858c-89f3-0fe5-929bb2c366f7" testName="WhenBranchSpecificCommitsFromBranchToMaster_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.0521911" startTime="2026-09-06T18:46:20.0857565+02:00" endTime="2026-09-06T18:46:20.1380428+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="025098c9-b1e4-4642-9ad5-434800cb8c11" />
+    <UnitTestResult executionId="cb824fcf-17a8-45ea-96e3-bf642c30cbca" testId="4bd4c2cf-17b3-74fd-f516-190ae5881226" testName="TryPlanSource_WhenInAndNullChecksUseKnownColumns_AcceptsThem" computerName="DESKTOP-I52018A" duration="00:00:00.0008446" startTime="2026-09-06T18:46:16.6797376+02:00" endTime="2026-09-06T18:46:16.6806209+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cb824fcf-17a8-45ea-96e3-bf642c30cbca" />
+    <UnitTestResult executionId="1744f28b-de26-4b7e-9697-85215382d0bb" testId="d4b91043-4b24-c8d3-926f-05264c1d17b1" testName="RemotesPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6750027+02:00" endTime="2026-09-06T18:46:16.6750123+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1744f28b-de26-4b7e-9697-85215382d0bb">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="003eda63-ff7b-4175-aa04-00896310496d" testId="b9bd31ca-70fa-a4c0-c4c3-f6a13e07ba81" testName="FileHistorySkipTakePlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:16.6745702+02:00" endTime="2026-09-06T18:46:16.6745830+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="003eda63-ff7b-4175-aa04-00896310496d">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="b1d39920-650e-49d8-82a8-72812c065778" testId="c35bf835-aa2c-abac-9ac5-ee17a9769038" testName="Blame_InvalidRevision_ThrowsArgumentException" computerName="DESKTOP-I52018A" duration="00:00:00.1003126" startTime="2026-09-06T18:46:09.5778424+02:00" endTime="2026-09-06T18:46:09.6782612+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b1d39920-650e-49d8-82a8-72812c065778" />
+    <UnitTestResult executionId="8eb6b04e-831f-48fb-82e0-6b440f0f9319" testId="a3f06903-68f1-48d1-657d-2ffc043754d5" testName="CommitReaders_HaveParityForProjectionShapedRows" computerName="DESKTOP-I52018A" duration="00:00:00.3582230" startTime="2026-09-06T18:46:14.2072048+02:00" endTime="2026-09-06T18:46:14.5656031+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8eb6b04e-831f-48fb-82e0-6b440f0f9319" />
+    <UnitTestResult executionId="c9b708e2-3a0b-47ef-a85c-636f00038868" testId="02e93f5a-5301-6d7e-8370-dacc8a209a33" testName="ReferenceAndStatusSources_PhysicallyPruneUnprojectedNestedAndStateFields" computerName="DESKTOP-I52018A" duration="00:00:00.3008609" startTime="2026-09-06T18:46:13.9060668+02:00" endTime="2026-09-06T18:46:14.2071321+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c9b708e2-3a0b-47ef-a85c-636f00038868" />
+    <UnitTestResult executionId="140368c8-9ebe-489e-ba59-340dd04f7cf9" testId="a57627b8-e09a-98ff-c5b2-8b6609e961eb" testName="Blame_LinesProperty_LoadsContent" computerName="DESKTOP-I52018A" duration="00:00:00.3738273" startTime="2026-09-06T18:46:09.7409283+02:00" endTime="2026-09-06T18:46:10.1148672+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="140368c8-9ebe-489e-ba59-340dd04f7cf9" />
+    <UnitTestResult executionId="190ee7f9-1554-4cee-928d-e0f0381e2baa" testId="511df3b5-1180-b181-e216-ce6c3cf958f9" testName="EveryGitConstructor_HasOneExactStarContract" computerName="DESKTOP-I52018A" duration="00:00:00.7312385" startTime="2026-09-06T18:46:16.9919861+02:00" endTime="2026-09-06T18:46:17.7234680+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="190ee7f9-1554-4cee-928d-e0f0381e2baa" />
+    <UnitTestResult executionId="2147adef-4c88-48b1-8721-c8a6c40bf499" testId="f1abfe15-3e2f-65ce-fd0a-8a776fda1b44" testName="Blame_CrossApply_ReturnsIndividualLines" computerName="DESKTOP-I52018A" duration="00:00:00.1655383" startTime="2026-09-06T18:46:10.2303805+02:00" endTime="2026-09-06T18:46:10.3960340+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2147adef-4c88-48b1-8721-c8a6c40bf499" />
+    <UnitTestResult executionId="d701d57a-9a3f-4399-ad1c-f5979499d0cf" testId="11fa2a09-1a77-1193-a920-5b445cd4a2bb" testName="TryPlanSource_WhenCommitPredicateHasUnsupportedSide_KeepsResidualPredicate" computerName="DESKTOP-I52018A" duration="00:00:00.0005071" startTime="2026-09-06T18:46:16.6770991+02:00" endTime="2026-09-06T18:46:16.6776595+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d701d57a-9a3f-4399-ad1c-f5979499d0cf" />
+    <UnitTestResult executionId="fbdbbf8e-b034-42f6-864b-9f28039db8a5" testId="950d5d2d-d8dd-dd2b-66f1-c0dbd5197253" testName="Blame_BinaryFile_ReturnsEmpty" computerName="DESKTOP-I52018A" duration="00:00:00.0624527" startTime="2026-09-06T18:46:09.6783107+02:00" endTime="2026-09-06T18:46:09.7408763+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fbdbbf8e-b034-42f6-864b-9f28039db8a5" />
+    <UnitTestResult executionId="921d849c-fb03-4b2d-8052-ad6afaf7f6ac" testId="d959d6a1-a863-6abc-ca8c-7dc2044dd057" testName="BlameLines_AndDifferenceBytes_ProjectPrimitiveValues" computerName="DESKTOP-I52018A" duration="00:00:00.4943730" startTime="2026-09-06T18:46:18.3114488+02:00" endTime="2026-09-06T18:46:18.8059767+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="921d849c-fb03-4b2d-8052-ad6afaf7f6ac" />
+    <UnitTestResult executionId="e5773b0a-406c-4edc-9556-de744b9e22d6" testId="9d151cbe-5995-37aa-a4ea-2e0a27b09f2f" testName="FileHistorySource_ShapesCommitHeaderToAcceptedProjection" computerName="DESKTOP-I52018A" duration="00:00:00.2461306" startTime="2026-09-06T18:46:16.1856214+02:00" endTime="2026-09-06T18:46:16.4319097+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e5773b0a-406c-4edc-9556-de744b9e22d6" />
+    <UnitTestResult executionId="e3d12885-507f-446b-b64d-2483385f9853" testId="dc4f9b42-8ce3-131e-a601-ccfd0dd0f9d0" testName="WhenFileHistoryQueriedWithSpecificFile_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1320291" startTime="2026-09-06T18:46:20.7272680+02:00" endTime="2026-09-06T18:46:20.8594091+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e3d12885-507f-446b-b64d-2483385f9853" />
+    <UnitTestResult executionId="7c8612ef-f29c-4e57-b138-617bb5f66e17" testId="9dede784-71f4-9734-65da-1f13411d966c" testName="WhenBranchesFilteredByFriendlyName_ShouldReturnMatchingBranch" computerName="DESKTOP-I52018A" duration="00:00:00.1031515" startTime="2026-09-06T18:46:22.0770529+02:00" endTime="2026-09-06T18:46:22.1803130+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7c8612ef-f29c-4e57-b138-617bb5f66e17" />
+    <UnitTestResult executionId="244c6f1d-6a21-4e5f-81bc-019216803d07" testId="a5a3dc68-189d-b3ff-a516-abf753f747b3" testName="WhenCommitParentsQueried_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1208230" startTime="2026-09-06T18:46:20.8594564+02:00" endTime="2026-09-06T18:46:20.9803779+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="244c6f1d-6a21-4e5f-81bc-019216803d07" />
+    <UnitTestResult executionId="d0c43506-3c49-4551-8dfb-d9f06d688d0a" testId="b7769b19-39af-cd86-af17-e3ec871ce1b6" testName="TagReaders_HaveParityForLightweightAndAnnotatedTags" computerName="DESKTOP-I52018A" duration="00:00:00.3554697" startTime="2026-09-06T18:46:14.8298184+02:00" endTime="2026-09-06T18:46:15.1854913+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d0c43506-3c49-4551-8dfb-d9f06d688d0a" />
+    <UnitTestResult executionId="75d45c08-556a-4dbb-ba34-a9f40dbb8a67" testId="48fb9d41-6244-2b24-fc2d-2684a636a8df" testName="FileHistory_StreamsHistoricalChangesAndPreservesWindows" computerName="DESKTOP-I52018A" duration="00:00:01.6658365" startTime="2026-09-06T18:46:10.6910175+02:00" endTime="2026-09-06T18:46:12.3570680+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="75d45c08-556a-4dbb-ba34-a9f40dbb8a67" />
+    <UnitTestResult executionId="ecd12adc-b475-486d-ae93-4b8d0a264ca4" testId="55f26c21-8b2b-303e-640c-88b026f93a47" testName="RemoteReaders_HaveParityForLocalConfiguration" computerName="DESKTOP-I52018A" duration="00:00:00.2283489" startTime="2026-09-06T18:46:15.1855665+02:00" endTime="2026-09-06T18:46:15.4140825+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ecd12adc-b475-486d-ae93-4b8d0a264ca4" />
+    <UnitTestResult executionId="85f730d6-1f51-42a6-9a84-8532b7d3e23c" testId="c3e24650-290b-8d3d-8279-a4a892bf9e94" testName="WhenDifferenceBetweenTwoCommits_ShouldPass" computerName="DESKTOP-I52018A" duration="00:00:00.1700185" startTime="2026-09-06T18:46:19.7872162+02:00" endTime="2026-09-06T18:46:19.9573507+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="85f730d6-1f51-42a6-9a84-8532b7d3e23c" />
+    <UnitTestResult executionId="25382240-3894-438a-81ce-bbc1f96ba151" testId="30e8a34e-2bcc-00e0-0e75-cf552caf8213" testName="WhenNonExistentPathPassed_ShouldThrow" computerName="DESKTOP-I52018A" duration="00:00:00.0946916" startTime="2026-09-06T18:46:18.8060405+02:00" endTime="2026-09-06T18:46:18.9008993+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="25382240-3894-438a-81ce-bbc1f96ba151" />
+    <UnitTestResult executionId="e3fbaf54-6d85-4b4d-a211-d78246cee1e8" testId="17936e4d-1193-2800-58b5-22d564508935" testName="TryPlanSource_WhenResidualPredicateOrOrderExists_KeepsWindowResidual" computerName="DESKTOP-I52018A" duration="00:00:00.0004992" startTime="2026-09-06T18:46:16.6813773+02:00" endTime="2026-09-06T18:46:16.6819166+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e3fbaf54-6d85-4b4d-a211-d78246cee1e8" />
+    <UnitTestResult executionId="33e91b14-8af9-4bcd-b309-cc20ecba3adc" testId="78ac0c9a-b175-e2af-f5c6-7ace17a8feee" testName="DirectSources_EmitDetachedRowsAndReleaseRepositoryHandles" computerName="DESKTOP-I52018A" duration="00:00:00.2687827" startTime="2026-09-06T18:46:12.5765988+02:00" endTime="2026-09-06T18:46:12.8456107+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="33e91b14-8af9-4bcd-b309-cc20ecba3adc" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="RemoteReaders_HaveParityForLocalConfiguration" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="55f26c21-8b2b-303e-640c-88b026f93a47">
+      <Execution id="ecd12adc-b475-486d-ae93-4b8d0a264ca4" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="RemoteReaders_HaveParityForLocalConfiguration" />
+    </UnitTest>
+    <UnitTest name="WhenFileHistoryWithSkipTake_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="4d82a86a-02a4-b5dd-38dc-774679bba5c9">
+      <Execution id="5858cdc8-6f43-405a-93ab-65045e7f57d1" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenFileHistoryWithSkipTake_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenTagsQueriedDirectly_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="5ff370fb-3827-0472-74a3-f162ee7d4609">
+      <Execution id="3d3b556d-f43f-446a-824d-46eb211d673d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenTagsQueriedDirectly_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="Blame_WithRevision_ReturnsHistoricalState" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="c5261f14-8a64-3616-30a9-7fad13e492b0">
+      <Execution id="6e0fbbdc-3554-44a4-9f56-f04030dd10df" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_WithRevision_ReturnsHistoricalState" />
+    </UnitTest>
+    <UnitTest name="ParentBranch_ReportsRepositoryFailuresInsteadOfGuessingADefaultBranch" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="475a9059-4307-361a-9d23-1f80718257e5">
+      <Execution id="34dd7d53-c945-4994-a576-74210b60dc4d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="ParentBranch_ReportsRepositoryFailuresInsteadOfGuessingADefaultBranch" />
+    </UnitTest>
+    <UnitTest name="Blame_LinesProperty_LoadsContent" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="a57627b8-e09a-98ff-c5b2-8b6609e961eb">
+      <Execution id="140368c8-9ebe-489e-ba59-340dd04f7cf9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_LinesProperty_LoadsContent" />
+    </UnitTest>
+    <UnitTest name="FileHistorySource_ParsesOnlyRequestedCommitHeaderFields" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="ae3fce3a-22b6-e956-67b5-a458eb7d8b13">
+      <Execution id="97855ac1-369a-4bcb-b6ae-220482f461ac" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="FileHistorySource_ParsesOnlyRequestedCommitHeaderFields" />
+    </UnitTest>
+    <UnitTest name="WhenCommitsQueriedDirectly_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="cab187d6-acd7-c584-9337-4d1f51be7700">
+      <Execution id="e172e28f-187e-4f48-ab61-015bdff7a8ee" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenCommitsQueriedDirectly_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldListAllAvailableMethods" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="eaf84691-2111-3658-918f-3c1ef19ee8b4">
+      <Execution id="4366720a-4688-40ef-8d2d-e33db8a8a380" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitSchemaDescribeTests" name="DescSchema_ShouldListAllAvailableMethods" />
+    </UnitTest>
+    <UnitTest name="WhenCommitsFilteredBySha_ShouldReturnSingleCommit" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="99e544c0-e580-b751-c204-14ab939115e5">
+      <Execution id="72c38794-3f4a-4353-9207-91971e030936" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitWhereNodeOptimizationTests" name="WhenCommitsFilteredBySha_ShouldReturnSingleCommit" />
+    </UnitTest>
+    <UnitTest name="WhenRemotesQueried_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="889a1e5f-e79f-3f4e-5ccb-351c5ed3df24">
+      <Execution id="f85dbfcc-07b1-465a-983c-50d7f0bf1786" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenRemotesQueried_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenDifferenceBetweenTwoBranches_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="4c6c0f13-8d99-5cb2-dd1d-64cb3e79ab1b">
+      <Execution id="1f6fb922-5507-4162-a8df-7ff84abb35ed" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenDifferenceBetweenTwoBranches_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="EveryGitConstructor_HasOneExactStarContract" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="511df3b5-1180-b181-e216-ce6c3cf958f9">
+      <Execution id="190ee7f9-1554-4cee-928d-e0f0381e2baa" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitStarContractTests" name="EveryGitConstructor_HasOneExactStarContract" />
+    </UnitTest>
+    <UnitTest name="Blame_CrossApply_ReturnsIndividualLines" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="f1abfe15-3e2f-65ce-fd0a-8a776fda1b44">
+      <Execution id="2147adef-4c88-48b1-8721-c8a6c40bf499" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_CrossApply_ReturnsIndividualLines" />
+    </UnitTest>
+    <UnitTest name="FileHistoryWildcardPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="dfeb2a9c-eabc-3875-565e-67ac26395f65">
+      <Execution id="aa39914e-fddb-40d6-a841-e8e83af922da" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="FileHistoryWildcardPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="WhenBranchSpecificCommitsFromBranchToAnotherBranch_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="341bd16c-fb03-de13-8f4a-1572da698edb">
+      <Execution id="265b2b6a-d8fa-46c9-80c2-17f72b4696c4" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenBranchSpecificCommitsFromBranchToAnotherBranch_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenDifferenceBetweenTwoCommits_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="c3e24650-290b-8d3d-8279-a4a892bf9e94">
+      <Execution id="85f730d6-1f51-42a6-9a84-8532b7d3e23c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenDifferenceBetweenTwoCommits_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="ReferenceAndStatusSources_PhysicallyPruneUnprojectedNestedAndStateFields" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="02e93f5a-5301-6d7e-8370-dacc8a209a33">
+      <Execution id="c9b708e2-3a0b-47ef-a85c-636f00038868" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="ReferenceAndStatusSources_PhysicallyPruneUnprojectedNestedAndStateFields" />
+    </UnitTest>
+    <UnitTest name="WhenTagsFilteredByIsAnnotatedTrue_ShouldReturnAnnotatedTagsOnly" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="96d73159-9dcd-eb1c-571a-f71826fa8301">
+      <Execution id="b728595c-41ac-440b-9eea-5ec3712dee25" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitWhereNodeOptimizationTests" name="WhenTagsFilteredByIsAnnotatedTrue_ShouldReturnAnnotatedTagsOnly" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenOrContainsUnsupportedPredicate_LeavesWholeOrResidual" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="64cddfb6-3dab-351c-f3b0-04636313ec46">
+      <Execution id="e666f80c-d863-4b6a-a13f-fd2faf511cd0" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenOrContainsUnsupportedPredicate_LeavesWholeOrResidual" />
+    </UnitTest>
+    <UnitTest name="DescribeSourceRuntimeSettings_DeclaresOptionalHistoryBackendSettings" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="87675d2c-bab2-1f04-51a2-f1f882e05540">
+      <Execution id="f43e8307-ea62-4a0f-9b42-76b35f966bd7" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeSettingsTests" name="DescribeSourceRuntimeSettings_DeclaresOptionalHistoryBackendSettings" />
+    </UnitTest>
+    <UnitTest name="FileHistorySkipTakePlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="b9bd31ca-70fa-a4c0-c4c3-f6a13e07ba81">
+      <Execution id="003eda63-ff7b-4175-aa04-00896310496d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="FileHistorySkipTakePlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="RepositoryCollections_RemainCrossApplyAddressable" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="8a16f1b7-ebef-4bda-6e46-44bcfa20be54">
+      <Execution id="d0d082c2-7b45-4451-af51-764994c0057c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitStarContractTests" name="RepositoryCollections_RemainCrossApplyAddressable" />
+    </UnitTest>
+    <UnitTest name="BranchesPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="25bb1cea-7c00-c450-3047-9f03da363e8e">
+      <Execution id="937f9fbe-cb51-465b-b1ca-1d06c72de95a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="BranchesPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="Blame_InvalidRevision_ThrowsArgumentException" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="c35bf835-aa2c-abac-9ac5-ee17a9769038">
+      <Execution id="b1d39920-650e-49d8-82a8-72812c065778" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_InvalidRevision_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="WhenFileHistoryWithNegTake_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="11c3904a-f1db-540b-1c39-9aa73207ab10">
+      <Execution id="942ce8fd-4d2d-4fb4-beb2-a336830ddc9e" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenFileHistoryWithNegTake_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenBranchesFilteredByIsRemoteFalse_ShouldReturnLocalBranchesOnly" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="3d92b9df-e5cd-6b8f-69fe-5d758af58e1f">
+      <Execution id="4042da6c-23e6-4a8f-b8df-f072405b220f" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitWhereNodeOptimizationTests" name="WhenBranchesFilteredByIsRemoteFalse_ShouldReturnLocalBranchesOnly" />
+    </UnitTest>
+    <UnitTest name="WhenFileHistoryQueried_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="5cfd5112-d467-19ba-3eb7-1edebbbf042c">
+      <Execution id="27f046f8-b04b-402c-993a-9304fa837bd3" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenFileHistoryQueried_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenMinMaxCommitsFromMaster_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="da421e4b-94df-ffff-dcf6-eb683f5b7998">
+      <Execution id="321665c5-de25-4e5e-bdd5-8caf2533cbdb" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenMinMaxCommitsFromMaster_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenTagsFilteredByFriendlyName_ShouldReturnMatchingTag" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="8cfda09c-fd0c-5fda-0116-d3a8926dd813">
+      <Execution id="d82ffd03-3b91-455e-a57a-217a673d763f" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitWhereNodeOptimizationTests" name="WhenTagsFilteredByFriendlyName_ShouldReturnMatchingTag" />
+    </UnitTest>
+    <UnitTest name="StatusPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="b94261af-fb8c-fc41-e133-3fdae41274d6">
+      <Execution id="a7fa9e41-bfca-4de0-96e6-734677449afb" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="StatusPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="WhenBranchesFromRepositoryRetrieved_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="b2a2612e-865b-58d4-5a63-d67062965e64">
+      <Execution id="c9635862-0eeb-4224-89f0-849bed212c06" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenBranchesFromRepositoryRetrieved_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="DescUnknownMethod_ShouldThrowException" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="5655eb9d-5ff3-eadc-d2e9-78b3c8a8ef16">
+      <Execution id="688de21c-9265-4976-9b84-fa555a384678" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitSchemaDescribeTests" name="DescUnknownMethod_ShouldThrowException" />
+    </UnitTest>
+    <UnitTest name="WhenBranchSpecificCommitsFromBranchToAnotherBranch_ExcludeMergeBaseFalse_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="7a92d10d-9380-6c55-010f-7463ea2edae1">
+      <Execution id="a6cd0825-008f-41ea-ac8c-1eab3ed168df" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenBranchSpecificCommitsFromBranchToAnotherBranch_ExcludeMergeBaseFalse_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="TagsPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="86757348-d4d0-19d0-929b-2c68e2399779">
+      <Execution id="a6771dfc-658d-4533-83e8-326684fa7724" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="TagsPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="CommitsSource_OnlyMaterializesProjectedMetadataAndHonorsAcceptedWindow" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="4f638060-7743-deb7-a518-9ecfe821dfa0">
+      <Execution id="9cc88314-f9a4-4203-9934-72eb831e94c7" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="CommitsSource_OnlyMaterializesProjectedMetadataAndHonorsAcceptedWindow" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenRequiredColumnsArePresent_AcceptsKnownProjection" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="9ff05276-c39d-ce60-cefa-de137357bfa4">
+      <Execution id="02eca9b5-27c6-4a9e-a131-1c511d607405" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenRequiredColumnsArePresent_AcceptsKnownProjection" />
+    </UnitTest>
+    <UnitTest name="Blame_BinaryFile_ReturnsEmpty" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="950d5d2d-d8dd-dd2b-66f1-c0dbd5197253">
+      <Execution id="fbdbbf8e-b034-42f6-864b-9f28039db8a5" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_BinaryFile_ReturnsEmpty" />
+    </UnitTest>
+    <UnitTest name="WhenNonExistentPathPassed_ShouldThrow" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="30e8a34e-2bcc-00e0-0e75-cf552caf8213">
+      <Execution id="25382240-3894-438a-81ce-bbc1f96ba151" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenNonExistentPathPassed_ShouldThrow" />
+    </UnitTest>
+    <UnitTest name="FileHistorySource_AppliesOuterWindowAfterConstructorWindow" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="0db9002f-ac9f-f650-e7f3-66c51374fd48">
+      <Execution id="e125c46e-9a71-41b3-bb40-97831f84b30a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="FileHistorySource_AppliesOuterWindowAfterConstructorWindow" />
+    </UnitTest>
+    <UnitTest name="WhenTagsFilteredByIsAnnotatedFalse_ShouldReturnNonAnnotatedTagsOnly" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="e92d0baf-3f14-ca18-6d00-4551975598ef">
+      <Execution id="f56edd9e-9b34-4576-a6c6-1c9907269a15" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitWhereNodeOptimizationTests" name="WhenTagsFilteredByIsAnnotatedFalse_ShouldReturnNonAnnotatedTagsOnly" />
+    </UnitTest>
+    <UnitTest name="StatusReaders_HaveParityForUntrackedAndModifiedFiles" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="a76e8554-b808-2826-e23c-277cd8b0bafb">
+      <Execution id="c906393f-ab0a-4e03-aa7f-59e1cb7ef592" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="StatusReaders_HaveParityForUntrackedAndModifiedFiles" />
+    </UnitTest>
+    <UnitTest name="WhenBranchesQueriedDirectly_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="a14433ae-cfe7-a774-79a1-27b9b53d7120">
+      <Execution id="4442cb53-374c-4a37-a985-a9c74ab8d7a9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenBranchesQueriedDirectly_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenCommitDatePredicateIsUsed_AcceptsPredicate" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="9303bb6b-f2af-ff43-5dda-3479238cb671">
+      <Execution id="c880b811-bdd5-4d01-9b7e-ed88d3c3f8b7" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenCommitDatePredicateIsUsed_AcceptsPredicate" />
+    </UnitTest>
+    <UnitTest name="WhenFileHistoryWithTake_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="9aaca049-5665-d8be-74d3-f545532ec4ed">
+      <Execution id="754e4005-8b76-4101-a084-bbab6baeca17" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenFileHistoryWithTake_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenBranchSpecificCommitsFromBranchToMaster_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="d5fa1586-858c-89f3-0fe5-929bb2c366f7">
+      <Execution id="025098c9-b1e4-4642-9ad5-434800cb8c11" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenBranchSpecificCommitsFromBranchToMaster_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="Blame_MovedFile_TracksOrigin" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="b222c63b-63b6-8673-49d6-a2b521540118">
+      <Execution id="5547f9d9-e6ff-46a1-bb21-ced80f2d8bdc" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_MovedFile_TracksOrigin" />
+    </UnitTest>
+    <UnitTest name="WhenStashQueried_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="80a7bc98-89e0-03df-55aa-5cc53f47d98b">
+      <Execution id="8fe8cee4-a342-48dd-9f44-d4681f3c0a4c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenStashQueried_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="DescRepositoryNoArgs_VsWithArgs_ShouldReturnDifferentResults" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="d4dc4bd2-d61f-29d5-c456-0fece5163bed">
+      <Execution id="ae55642f-a0f5-40ad-be37-1a860301c81a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitSchemaDescribeTests" name="DescRepositoryNoArgs_VsWithArgs_ShouldReturnDifferentResults" />
+    </UnitTest>
+    <UnitTest name="WhenCommitsFilteredByNonExistentAuthor_ShouldReturnNoCommits" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="0b0a44f2-bd21-a0ee-2e96-47bdad20111e">
+      <Execution id="13e731da-066d-490d-baa6-a8cfda0cf7a9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitWhereNodeOptimizationTests" name="WhenCommitsFilteredByNonExistentAuthor_ShouldReturnNoCommits" />
+    </UnitTest>
+    <UnitTest name="FileHistoryPlaygroundDesc_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="999bfa6d-320f-cb1c-1425-7f673d8e9eb5">
+      <Execution id="c1a3a96d-a0cb-47b1-9994-701dbfe57e7c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="FileHistoryPlaygroundDesc_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenProjectionIsEmpty_UsesCardinalityOnlySnapshotButKeepsPredicateDependency" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="4a807026-de32-9839-efb9-a059450b1957">
+      <Execution id="5e91c426-e82b-4000-a8e9-7b91b0b7e5f5" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenProjectionIsEmpty_UsesCardinalityOnlySnapshotButKeepsPredicateDependency" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenNaturalWindowHasNoResidualWork_AcceptsIt" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="b8c3dfed-bca3-236e-dfe1-e16136bc537c">
+      <Execution id="aa4ebbd7-d3ff-4daf-9c2a-2ad6e2eae3d9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenNaturalWindowHasNoResidualWork_AcceptsIt" />
+    </UnitTest>
+    <UnitTest name="FileHistoryPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="07559e7a-747c-2f69-7b95-c2329ecf039a">
+      <Execution id="c4d6c013-d100-4ef5-bf8d-49403279302e" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="FileHistoryPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="NestedSnapshots_AreCachedAfterTheirShortLivedRepositoryScopesClose" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="b48d91da-3970-296f-6936-4c01d583fa49">
+      <Execution id="32a1fc16-d17d-4aeb-ba06-b56fd28ef236" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="NestedSnapshots_AreCachedAfterTheirShortLivedRepositoryScopesClose" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldHaveConsistentColumnTypes" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="dac6372a-435b-d26a-8f08-7a46e7a502ac">
+      <Execution id="0d341e9d-c0c3-4307-b2cd-a79568cb7f14" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitSchemaDescribeTests" name="DescSchema_ShouldHaveConsistentColumnTypes" />
+    </UnitTest>
+    <UnitTest name="TagReaders_HaveParityForLightweightAndAnnotatedTags" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="b7769b19-39af-cd86-af17-e3ec871ce1b6">
+      <Execution id="d0c43506-3c49-4551-8dfb-d9f06d688d0a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="TagReaders_HaveParityForLightweightAndAnnotatedTags" />
+    </UnitTest>
+    <UnitTest name="WhenBranchesFilteredByFriendlyName_ShouldReturnMatchingBranch" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="9dede784-71f4-9734-65da-1f13411d966c">
+      <Execution id="7c8612ef-f29c-4e57-b138-617bb5f66e17" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitWhereNodeOptimizationTests" name="WhenBranchesFilteredByFriendlyName_ShouldReturnMatchingBranch" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenResidualPredicateOrOrderExists_KeepsWindowResidual" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="17936e4d-1193-2800-58b5-22d564508935">
+      <Execution id="e3fbaf54-6d85-4b4d-a211-d78246cee1e8" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenResidualPredicateOrOrderExists_KeepsWindowResidual" />
+    </UnitTest>
+    <UnitTest name="RemotesPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="d4b91043-4b24-c8d3-926f-05264c1d17b1">
+      <Execution id="1744f28b-de26-4b7e-9697-85215382d0bb" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="RemotesPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="CommitsPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="d028485d-6433-571d-b71e-0c942ad5c890">
+      <Execution id="ace4e318-c4d6-4049-b5e3-6f61553c1916" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="CommitsPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="WhenCommitParentsQueried_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="a5a3dc68-189d-b3ff-a516-abf753f747b3">
+      <Execution id="244c6f1d-6a21-4e5f-81bc-019216803d07" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenCommitParentsQueried_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="FileHistorySource_ShapesCommitHeaderToAcceptedProjection" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="9d151cbe-5995-37aa-a4ea-2e0a27b09f2f">
+      <Execution id="e5773b0a-406c-4edc-9556-de744b9e22d6" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="FileHistorySource_ShapesCommitHeaderToAcceptedProjection" />
+    </UnitTest>
+    <UnitTest name="DescRepository_ShouldReturnMethodSignature" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="8aeeeb76-c6bd-19d8-2551-4e9b807431ba">
+      <Execution id="bb0de921-11e4-4a06-b8e1-ef1e94b6677f" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitSchemaDescribeTests" name="DescRepository_ShouldReturnMethodSignature" />
+    </UnitTest>
+    <UnitTest name="FileHistory_RejectsNegativeSkipAndDoesNotStartGitForZeroTake" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="6e8dec79-71f7-7956-55c8-2d751d6fa1da">
+      <Execution id="54de96d9-48fd-4afd-8e9c-fea077268257" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="FileHistory_RejectsNegativeSkipAndDoesNotStartGitForZeroTake" />
+    </UnitTest>
+    <UnitTest name="RepositoryPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="337876d6-3061-5b24-2b1e-2fdb73b80c37">
+      <Execution id="c8a938fc-3df5-49ed-8dac-59ae3fff81ee" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="RepositoryPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenCommitAuthorPredicateIsUsed_AcceptsPredicate" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="4956d3a3-83f1-6dd8-601c-404b385dc65a">
+      <Execution id="7a04c193-839d-4f6d-98ea-8401475fa83a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenCommitAuthorPredicateIsUsed_AcceptsPredicate" />
+    </UnitTest>
+    <UnitTest name="WhenTagsFromRepositoryRetrieved_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="9cf97681-ec6f-bf3b-7a6e-91ff2dc2a8d2">
+      <Execution id="c5e33f00-bc09-4c3a-a97b-dc1462cd0c10" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenTagsFromRepositoryRetrieved_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="BlameLines_AndDifferenceBytes_ProjectPrimitiveValues" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="d959d6a1-a863-6abc-ca8c-7dc2044dd057">
+      <Execution id="921d849c-fb03-4b2d-8052-ad6afaf7f6ac" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitStarContractTests" name="BlameLines_AndDifferenceBytes_ProjectPrimitiveValues" />
+    </UnitTest>
+    <UnitTest name="CommitsSource_AppliesInAndNullPredicatesBeforeCreatingProjectedRows" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="7445f421-6836-f2d8-d674-8ed5ace1e8e2">
+      <Execution id="be2013bb-0722-44aa-9761-6d2f60c89a0a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="CommitsSource_AppliesInAndNullPredicatesBeforeCreatingProjectedRows" />
+    </UnitTest>
+    <UnitTest name="WhenBranchSpecificCommitsFromBranchToMaster_ExcludeMergeBaseFalse_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="bad00277-567f-ff64-dc35-97a963203d4c">
+      <Execution id="e2832c3e-7763-4f88-bf96-90940f475a3e" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenBranchSpecificCommitsFromBranchToMaster_ExcludeMergeBaseFalse_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="Blame_NonExistentFile_ThrowsFileNotFound" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="9bc31509-6c00-73cb-7a45-2c49a30dc262">
+      <Execution id="17f75ec4-3130-4c64-8e02-274bc0e0fbb9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_NonExistentFile_ThrowsFileNotFound" />
+    </UnitTest>
+    <UnitTest name="WhenFileHistoryQueried_ShouldReturnAllChanges" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="ac70d730-2755-b16e-f719-3ec4d823082f">
+      <Execution id="4ce5db7f-cb8d-4090-8394-a1a82db7b2e1" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenFileHistoryQueried_ShouldReturnAllChanges" />
+    </UnitTest>
+    <UnitTest name="FileHistoryTakePlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="1aefa5de-1c6b-d486-d3d3-f650b3fd6b4a">
+      <Execution id="ea79b499-275d-4da4-b52a-02ed2d21d50d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitPlaygroundTests" name="FileHistoryTakePlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenCommitPredicateHasUnsupportedSide_KeepsResidualPredicate" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="11fa2a09-1a77-1193-a920-5b445cd4a2bb">
+      <Execution id="d701d57a-9a3f-4399-ad1c-f5979499d0cf" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenCommitPredicateHasUnsupportedSide_KeepsResidualPredicate" />
+    </UnitTest>
+    <UnitTest name="WhenFileHistoryQueriedWithSpecificFile_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="dc4f9b42-8ce3-131e-a601-ccfd0dd0f9d0">
+      <Execution id="e3d12885-507f-446b-b64d-2483385f9853" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenFileHistoryQueriedWithSpecificFile_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="DirectSources_EmitDetachedRowsAndReleaseRepositoryHandles" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="78ac0c9a-b175-e2af-f5c6-7ace17a8feee">
+      <Execution id="33e91b14-8af9-4bcd-b309-cc20ecba3adc" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="DirectSources_EmitDetachedRowsAndReleaseRepositoryHandles" />
+    </UnitTest>
+    <UnitTest name="Blame_ValidFile_ReturnsHunks" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="31480e43-311e-8552-03ca-5f6e8aee02f8">
+      <Execution id="d33424f6-3ec2-4d67-adf6-a598feefe1ea" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_ValidFile_ReturnsHunks" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenBranchPredicateIsUsed_AcceptsPredicate" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="eba0759f-51ac-a517-e68c-0086c70eed58">
+      <Execution id="b77609ed-77b5-42a6-9429-ff33a9add264" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenBranchPredicateIsUsed_AcceptsPredicate" />
+    </UnitTest>
+    <UnitTest name="WhenCommitsOnBranchRetrieved_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="a525bf80-bf21-b1f0-7b69-24edd4208ad7">
+      <Execution id="2a776d78-e00e-4f01-a320-202d4b66925d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenCommitsOnBranchRetrieved_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="FileHistory_StreamsHistoricalChangesAndPreservesWindows" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="48fb9d41-6244-2b24-fc2d-2684a636a8df">
+      <Execution id="75d45c08-556a-4dbb-ba34-a9f40dbb8a67" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="FileHistory_StreamsHistoricalChangesAndPreservesWindows" />
+    </UnitTest>
+    <UnitTest name="Blame_Aggregation_SumLineCount" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="c4434932-0cce-1a11-22b4-298983ee9d3c">
+      <Execution id="f640ce03-488a-41e1-a281-038e5b78251d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.BlameTests" name="Blame_Aggregation_SumLineCount" />
+    </UnitTest>
+    <UnitTest name="CommitReaders_HaveParityForProjectionShapedRows" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="a3f06903-68f1-48d1-657d-2ffc043754d5">
+      <Execution id="8eb6b04e-831f-48fb-82e0-6b440f0f9319" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="CommitReaders_HaveParityForProjectionShapedRows" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenInAndNullChecksUseKnownColumns_AcceptsThem" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="4bd4c2cf-17b3-74fd-f516-190ae5881226">
+      <Execution id="cb824fcf-17a8-45ea-96e3-bf642c30cbca" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitRuntimeV2PlanningTests" name="TryPlanSource_WhenInAndNullChecksUseKnownColumns_AcceptsThem" />
+    </UnitTest>
+    <UnitTest name="BranchReaders_HaveParityForLocalReferenceMetadata" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="ef33cd21-cd7f-372c-16bd-52e5c607ced7">
+      <Execution id="1d7a01b1-5405-4beb-9add-a38ed492c1a1" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.FileHistoryRowsSourceTests" name="BranchReaders_HaveParityForLocalReferenceMetadata" />
+    </UnitTest>
+    <UnitTest name="WhenBasicInfoFromRepositoryRetrieved_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="22eca6f3-2eb2-098a-c717-18bd6f000b09">
+      <Execution id="5c1d96bf-5235-4439-abe3-7a83ddecc933" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitToSqlTests" name="WhenBasicInfoFromRepositoryRetrieved_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="GeneratedXmlDocumentation_IsWellFormedAndCoversPublicApi" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="cdcd6c5f-ddcd-c09e-25d6-cd0afce9c4ba">
+      <Execution id="0207a9d7-67c1-47ec-9188-d563ed4bba95" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitXmlDocumentationTests" name="GeneratedXmlDocumentation_IsWellFormedAndCoversPublicApi" />
+    </UnitTest>
+    <UnitTest name="WhenCommitsFilteredByAuthor_ShouldReturnMatchingCommits" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="608826f3-de51-a302-bf80-07516a7d3fa2">
+      <Execution id="b72b5c86-4869-42c7-abbc-6bbc95ca2b67" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitWhereNodeOptimizationTests" name="WhenCommitsFilteredByAuthor_ShouldReturnMatchingCommits" />
+    </UnitTest>
+    <UnitTest name="DescRepositoryWithArgs_ShouldReturnTableSchema" storage="d:\repos\musoq.datasources\musoq.datasources.git.tests\bin\release\net10.0\musoq.datasources.git.tests.dll" id="5136d939-e80c-8965-2489-8bd117d98dbd">
+      <Execution id="4bf76eb3-ca97-4788-be74-f51dd17f32a9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Git.Tests\bin\Release\net10.0\Musoq.DataSources.Git.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Git.Tests.GitSchemaDescribeTests" name="DescRepositoryWithArgs_ShouldReturnTableSchema" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="cdcd6c5f-ddcd-c09e-25d6-cd0afce9c4ba" executionId="0207a9d7-67c1-47ec-9188-d563ed4bba95" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="608826f3-de51-a302-bf80-07516a7d3fa2" executionId="b72b5c86-4869-42c7-abbc-6bbc95ca2b67" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8cfda09c-fd0c-5fda-0116-d3a8926dd813" executionId="d82ffd03-3b91-455e-a57a-217a673d763f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bad00277-567f-ff64-dc35-97a963203d4c" executionId="e2832c3e-7763-4f88-bf96-90940f475a3e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="99e544c0-e580-b751-c204-14ab939115e5" executionId="72c38794-3f4a-4353-9207-91971e030936" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="341bd16c-fb03-de13-8f4a-1572da698edb" executionId="265b2b6a-d8fa-46c9-80c2-17f72b4696c4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="96d73159-9dcd-eb1c-571a-f71826fa8301" executionId="b728595c-41ac-440b-9eea-5ec3712dee25" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="999bfa6d-320f-cb1c-1425-7f673d8e9eb5" executionId="c1a3a96d-a0cb-47b1-9994-701dbfe57e7c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dfeb2a9c-eabc-3875-565e-67ac26395f65" executionId="aa39914e-fddb-40d6-a841-e8e83af922da" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0b0a44f2-bd21-a0ee-2e96-47bdad20111e" executionId="13e731da-066d-490d-baa6-a8cfda0cf7a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b48d91da-3970-296f-6936-4c01d583fa49" executionId="32a1fc16-d17d-4aeb-ba06-b56fd28ef236" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="eba0759f-51ac-a517-e68c-0086c70eed58" executionId="b77609ed-77b5-42a6-9429-ff33a9add264" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d028485d-6433-571d-b71e-0c942ad5c890" executionId="ace4e318-c4d6-4049-b5e3-6f61553c1916" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1aefa5de-1c6b-d486-d3d3-f650b3fd6b4a" executionId="ea79b499-275d-4da4-b52a-02ed2d21d50d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4f638060-7743-deb7-a518-9ecfe821dfa0" executionId="9cc88314-f9a4-4203-9934-72eb831e94c7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a76e8554-b808-2826-e23c-277cd8b0bafb" executionId="c906393f-ab0a-4e03-aa7f-59e1cb7ef592" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="11c3904a-f1db-540b-1c39-9aa73207ab10" executionId="942ce8fd-4d2d-4fb4-beb2-a336830ddc9e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a525bf80-bf21-b1f0-7b69-24edd4208ad7" executionId="2a776d78-e00e-4f01-a320-202d4b66925d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5cfd5112-d467-19ba-3eb7-1edebbbf042c" executionId="27f046f8-b04b-402c-993a-9304fa837bd3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="25bb1cea-7c00-c450-3047-9f03da363e8e" executionId="937f9fbe-cb51-465b-b1ca-1d06c72de95a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9aaca049-5665-d8be-74d3-f545532ec4ed" executionId="754e4005-8b76-4101-a084-bbab6baeca17" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="eaf84691-2111-3658-918f-3c1ef19ee8b4" executionId="4366720a-4688-40ef-8d2d-e33db8a8a380" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4d82a86a-02a4-b5dd-38dc-774679bba5c9" executionId="5858cdc8-6f43-405a-93ab-65045e7f57d1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0db9002f-ac9f-f650-e7f3-66c51374fd48" executionId="e125c46e-9a71-41b3-bb40-97831f84b30a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5136d939-e80c-8965-2489-8bd117d98dbd" executionId="4bf76eb3-ca97-4788-be74-f51dd17f32a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9303bb6b-f2af-ff43-5dda-3479238cb671" executionId="c880b811-bdd5-4d01-9b7e-ed88d3c3f8b7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a14433ae-cfe7-a774-79a1-27b9b53d7120" executionId="4442cb53-374c-4a37-a985-a9c74ab8d7a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4c6c0f13-8d99-5cb2-dd1d-64cb3e79ab1b" executionId="1f6fb922-5507-4162-a8df-7ff84abb35ed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="86757348-d4d0-19d0-929b-2c68e2399779" executionId="a6771dfc-658d-4533-83e8-326684fa7724" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7445f421-6836-f2d8-d674-8ed5ace1e8e2" executionId="be2013bb-0722-44aa-9761-6d2f60c89a0a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="da421e4b-94df-ffff-dcf6-eb683f5b7998" executionId="321665c5-de25-4e5e-bdd5-8caf2533cbdb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c4434932-0cce-1a11-22b4-298983ee9d3c" executionId="f640ce03-488a-41e1-a281-038e5b78251d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d4dc4bd2-d61f-29d5-c456-0fece5163bed" executionId="ae55642f-a0f5-40ad-be37-1a860301c81a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9cf97681-ec6f-bf3b-7a6e-91ff2dc2a8d2" executionId="c5e33f00-bc09-4c3a-a97b-dc1462cd0c10" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b8c3dfed-bca3-236e-dfe1-e16136bc537c" executionId="aa4ebbd7-d3ff-4daf-9c2a-2ad6e2eae3d9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c5261f14-8a64-3616-30a9-7fad13e492b0" executionId="6e0fbbdc-3554-44a4-9f56-f04030dd10df" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ef33cd21-cd7f-372c-16bd-52e5c607ced7" executionId="1d7a01b1-5405-4beb-9add-a38ed492c1a1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="22eca6f3-2eb2-098a-c717-18bd6f000b09" executionId="5c1d96bf-5235-4439-abe3-7a83ddecc933" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="337876d6-3061-5b24-2b1e-2fdb73b80c37" executionId="c8a938fc-3df5-49ed-8dac-59ae3fff81ee" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="475a9059-4307-361a-9d23-1f80718257e5" executionId="34dd7d53-c945-4994-a576-74210b60dc4d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dac6372a-435b-d26a-8f08-7a46e7a502ac" executionId="0d341e9d-c0c3-4307-b2cd-a79568cb7f14" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9ff05276-c39d-ce60-cefa-de137357bfa4" executionId="02eca9b5-27c6-4a9e-a131-1c511d607405" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8aeeeb76-c6bd-19d8-2551-4e9b807431ba" executionId="bb0de921-11e4-4a06-b8e1-ef1e94b6677f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cab187d6-acd7-c584-9337-4d1f51be7700" executionId="e172e28f-187e-4f48-ab61-015bdff7a8ee" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="31480e43-311e-8552-03ca-5f6e8aee02f8" executionId="d33424f6-3ec2-4d67-adf6-a598feefe1ea" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b222c63b-63b6-8673-49d6-a2b521540118" executionId="5547f9d9-e6ff-46a1-bb21-ced80f2d8bdc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="80a7bc98-89e0-03df-55aa-5cc53f47d98b" executionId="8fe8cee4-a342-48dd-9f44-d4681f3c0a4c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="07559e7a-747c-2f69-7b95-c2329ecf039a" executionId="c4d6c013-d100-4ef5-bf8d-49403279302e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5ff370fb-3827-0472-74a3-f162ee7d4609" executionId="3d3b556d-f43f-446a-824d-46eb211d673d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3d92b9df-e5cd-6b8f-69fe-5d758af58e1f" executionId="4042da6c-23e6-4a8f-b8df-f072405b220f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4956d3a3-83f1-6dd8-601c-404b385dc65a" executionId="7a04c193-839d-4f6d-98ea-8401475fa83a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5655eb9d-5ff3-eadc-d2e9-78b3c8a8ef16" executionId="688de21c-9265-4976-9b84-fa555a384678" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7a92d10d-9380-6c55-010f-7463ea2edae1" executionId="a6cd0825-008f-41ea-ac8c-1eab3ed168df" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="889a1e5f-e79f-3f4e-5ccb-351c5ed3df24" executionId="f85dbfcc-07b1-465a-983c-50d7f0bf1786" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b2a2612e-865b-58d4-5a63-d67062965e64" executionId="c9635862-0eeb-4224-89f0-849bed212c06" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ae3fce3a-22b6-e956-67b5-a458eb7d8b13" executionId="97855ac1-369a-4bcb-b6ae-220482f461ac" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6e8dec79-71f7-7956-55c8-2d751d6fa1da" executionId="54de96d9-48fd-4afd-8e9c-fea077268257" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="64cddfb6-3dab-351c-f3b0-04636313ec46" executionId="e666f80c-d863-4b6a-a13f-fd2faf511cd0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9bc31509-6c00-73cb-7a45-2c49a30dc262" executionId="17f75ec4-3130-4c64-8e02-274bc0e0fbb9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="87675d2c-bab2-1f04-51a2-f1f882e05540" executionId="f43e8307-ea62-4a0f-9b42-76b35f966bd7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4a807026-de32-9839-efb9-a059450b1957" executionId="5e91c426-e82b-4000-a8e9-7b91b0b7e5f5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e92d0baf-3f14-ca18-6d00-4551975598ef" executionId="f56edd9e-9b34-4576-a6c6-1c9907269a15" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8a16f1b7-ebef-4bda-6e46-44bcfa20be54" executionId="d0d082c2-7b45-4451-af51-764994c0057c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b94261af-fb8c-fc41-e133-3fdae41274d6" executionId="a7fa9e41-bfca-4de0-96e6-734677449afb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ac70d730-2755-b16e-f719-3ec4d823082f" executionId="4ce5db7f-cb8d-4090-8394-a1a82db7b2e1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d5fa1586-858c-89f3-0fe5-929bb2c366f7" executionId="025098c9-b1e4-4642-9ad5-434800cb8c11" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4bd4c2cf-17b3-74fd-f516-190ae5881226" executionId="cb824fcf-17a8-45ea-96e3-bf642c30cbca" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d4b91043-4b24-c8d3-926f-05264c1d17b1" executionId="1744f28b-de26-4b7e-9697-85215382d0bb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b9bd31ca-70fa-a4c0-c4c3-f6a13e07ba81" executionId="003eda63-ff7b-4175-aa04-00896310496d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c35bf835-aa2c-abac-9ac5-ee17a9769038" executionId="b1d39920-650e-49d8-82a8-72812c065778" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a3f06903-68f1-48d1-657d-2ffc043754d5" executionId="8eb6b04e-831f-48fb-82e0-6b440f0f9319" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="02e93f5a-5301-6d7e-8370-dacc8a209a33" executionId="c9b708e2-3a0b-47ef-a85c-636f00038868" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a57627b8-e09a-98ff-c5b2-8b6609e961eb" executionId="140368c8-9ebe-489e-ba59-340dd04f7cf9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="511df3b5-1180-b181-e216-ce6c3cf958f9" executionId="190ee7f9-1554-4cee-928d-e0f0381e2baa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f1abfe15-3e2f-65ce-fd0a-8a776fda1b44" executionId="2147adef-4c88-48b1-8721-c8a6c40bf499" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="11fa2a09-1a77-1193-a920-5b445cd4a2bb" executionId="d701d57a-9a3f-4399-ad1c-f5979499d0cf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="950d5d2d-d8dd-dd2b-66f1-c0dbd5197253" executionId="fbdbbf8e-b034-42f6-864b-9f28039db8a5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d959d6a1-a863-6abc-ca8c-7dc2044dd057" executionId="921d849c-fb03-4b2d-8052-ad6afaf7f6ac" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9d151cbe-5995-37aa-a4ea-2e0a27b09f2f" executionId="e5773b0a-406c-4edc-9556-de744b9e22d6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dc4f9b42-8ce3-131e-a601-ccfd0dd0f9d0" executionId="e3d12885-507f-446b-b64d-2483385f9853" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9dede784-71f4-9734-65da-1f13411d966c" executionId="7c8612ef-f29c-4e57-b138-617bb5f66e17" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a5a3dc68-189d-b3ff-a516-abf753f747b3" executionId="244c6f1d-6a21-4e5f-81bc-019216803d07" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b7769b19-39af-cd86-af17-e3ec871ce1b6" executionId="d0c43506-3c49-4551-8dfb-d9f06d688d0a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="48fb9d41-6244-2b24-fc2d-2684a636a8df" executionId="75d45c08-556a-4dbb-ba34-a9f40dbb8a67" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="55f26c21-8b2b-303e-640c-88b026f93a47" executionId="ecd12adc-b475-486d-ae93-4b8d0a264ca4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c3e24650-290b-8d3d-8279-a4a892bf9e94" executionId="85f730d6-1f51-42a6-9a84-8532b7d3e23c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="30e8a34e-2bcc-00e0-0e75-cf552caf8213" executionId="25382240-3894-438a-81ce-bbc1f96ba151" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17936e4d-1193-2800-58b5-22d564508935" executionId="e3fbaf54-6d85-4b4d-a211-d78246cee1e8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="78ac0c9a-b175-e2af-f5c6-7ace17a8feee" executionId="33e91b14-8af9-4bcd-b309-cc20ecba3adc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="89" executed="77" passed="77" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>Test 'FileHistoryPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'FileHistoryTakePlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'FileHistorySkipTakePlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'FileHistoryPlaygroundDesc_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'FileHistoryWildcardPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'RepositoryPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'CommitsPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'BranchesPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'TagsPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'StatusPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'RemotesPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'WhenFileHistoryWithSkipTake_ShouldPass' was skipped in the test run.&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

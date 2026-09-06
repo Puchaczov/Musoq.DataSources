@@ -1,0 +1,41 @@
+{
+  "formatVersion": 1,
+  "test": "Search match semantics",
+  "status": "passed",
+  "contractPath": "docs/search/search-match-semantics-v1.json",
+  "scenarios": [
+    {
+      "name": "contract-identity-and-defaults",
+      "result": "passed",
+      "assertions": 7
+    },
+    {
+      "name": "truth-table-coverage-and-portable-dialect",
+      "result": "passed",
+      "assertions": 12
+    },
+    {
+      "name": "literal-overlap-and-leftmost-selection",
+      "result": "passed",
+      "assertions": 7
+    },
+    {
+      "name": "duplicate-identities-and-empty-literals",
+      "result": "passed",
+      "assertions": 5
+    },
+    {
+      "name": "anchors-and-zero-width-progress",
+      "result": "passed",
+      "assertions": 11
+    },
+    {
+      "name": "unicode-boundaries-and-encoding",
+      "result": "passed",
+      "assertions": 7
+    }
+  ],
+  "scenarioCount": 6,
+  "assertions": 49,
+  "implementationNote": "This is a proposed semantics test with an independent literal oracle; it does not claim that Search methods are installed."
+}

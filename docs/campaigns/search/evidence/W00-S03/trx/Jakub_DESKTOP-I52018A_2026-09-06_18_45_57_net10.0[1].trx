@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="8ff7832f-8611-4126-9d88-2b9a8d1b522d" name="Jakub@DESKTOP-I52018A 2026-09-06 18:45:57" runUser="DESKTOP-I52018A\Jakub" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-06T18:45:57.9371886+02:00" queuing="2026-09-06T18:45:57.9371892+02:00" start="2026-09-06T18:45:57.2496485+02:00" finish="2026-09-06T18:46:03.7329834+02:00" />
+  <TestSettings name="default" id="3d32bb0a-7eb4-43ee-839d-7f9d897b7561">
+    <Deployment runDeploymentRoot="Jakub_DESKTOP-I52018A_2026-09-06_18_45_57" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="a29d191c-3bd3-409e-8aa9-7187d377e1a5" testId="6e91668b-ff71-6316-ba92-deaa03ffb45d" testName="DescContainersNoArgs_VsWithArgs_ShouldReturnDifferentResults" computerName="DESKTOP-I52018A" duration="00:00:00.0563504" startTime="2026-09-06T18:46:00.1610020+02:00" endTime="2026-09-06T18:46:00.2174574+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a29d191c-3bd3-409e-8aa9-7187d377e1a5" />
+    <UnitTestResult executionId="40752390-3ffe-42a9-a34b-00cacfabd6ed" testId="f4cf46ac-da14-2a2b-d646-bcf16f829930" testName="VolumesPlaygroundDesc_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8808213+02:00" endTime="2026-09-06T18:45:57.8808389+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="40752390-3ffe-42a9-a34b-00cacfabd6ed">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="48684de0-7824-42c3-8874-aa3b010d8f56" testId="18ddd6fa-2ff9-185f-5b54-37811e7fb180" testName="DescUnknownMethod_ShouldThrowException" computerName="DESKTOP-I52018A" duration="00:00:00.0459313" startTime="2026-09-06T18:46:00.0756664+02:00" endTime="2026-09-06T18:46:00.1217077+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="48684de0-7824-42c3-8874-aa3b010d8f56" />
+    <UnitTestResult executionId="55feba31-47e4-43bd-899f-5de78f10e790" testId="bddb9eba-b84e-7b68-615c-7da9a85ef5bd" testName="WhenImagesQueried_ShouldReturnValues" computerName="DESKTOP-I52018A" duration="00:00:00.2514950" startTime="2026-09-06T18:46:02.8718493+02:00" endTime="2026-09-06T18:46:03.1235203+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="55feba31-47e4-43bd-899f-5de78f10e790" />
+    <UnitTestResult executionId="894db4d9-8541-4ae2-b963-c3a4adaf5269" testId="3ad6e5c6-99a0-139d-b2b5-bb7e21626c67" testName="DescContainersWithArgs_ShouldReturnTableSchema" computerName="DESKTOP-I52018A" duration="00:00:00.0676902" startTime="2026-09-06T18:45:59.9227995+02:00" endTime="2026-09-06T18:45:59.9906274+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="894db4d9-8541-4ae2-b963-c3a4adaf5269" />
+    <UnitTestResult executionId="59567842-c5f1-4fa0-9a71-06b01dc9a692" testId="a8732a92-5d5c-ff09-6e34-fcf8767d4158" testName="ContainersPlaygroundDesc_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8701960+02:00" endTime="2026-09-06T18:45:57.8763591+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="59567842-c5f1-4fa0-9a71-06b01dc9a692">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="af655b86-421a-48c6-8cdd-c203839c43e2" testId="4bf50f0e-321c-49e8-96a9-30eefe21b50c" testName="EveryDockerCollection_IsCrossApplyAddressable" computerName="DESKTOP-I52018A" duration="00:00:01.4953533" startTime="2026-09-06T18:46:00.8805446+02:00" endTime="2026-09-06T18:46:02.3760464+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="af655b86-421a-48c6-8cdd-c203839c43e2" />
+    <UnitTestResult executionId="2ff51f8b-ae8e-43ba-b305-bffb353f260a" testId="6114ac0f-b7df-693e-04ff-4454b54f8934" testName="TryPlanSource_WhenUnsupportedContainerPredicateIsRequested_LeavesPredicateResidual" computerName="DESKTOP-I52018A" duration="00:00:00.0007056" startTime="2026-09-06T18:45:57.9666403+02:00" endTime="2026-09-06T18:45:57.9676032+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2ff51f8b-ae8e-43ba-b305-bffb353f260a" />
+    <UnitTestResult executionId="b94da914-897a-4f32-b9d4-a9bb177c147c" testId="36081697-fd52-cbf7-427a-3db475d7cf7d" testName="EveryDockerConstructor_HasOneExactStarContract" computerName="DESKTOP-I52018A" duration="00:00:00.6628185" startTime="2026-09-06T18:46:00.2175085+02:00" endTime="2026-09-06T18:46:00.8804863+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b94da914-897a-4f32-b9d4-a9bb177c147c" />
+    <UnitTestResult executionId="2c43f847-dbab-4440-bbe9-436f6b96df44" testId="0e7422b0-c080-2c7d-d412-5daf1641e02d" testName="WhenContainersQueried_ShouldReturnValues" computerName="DESKTOP-I52018A" duration="00:00:00.4954711" startTime="2026-09-06T18:46:02.3761037+02:00" endTime="2026-09-06T18:46:02.8717682+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2c43f847-dbab-4440-bbe9-436f6b96df44" />
+    <UnitTestResult executionId="e66ba973-2c96-4087-9a92-181700dfc0f4" testId="0dec7a97-defd-d7a3-a355-5170b158b771" testName="WhenVolumesQueried_ShouldReturnValues" computerName="DESKTOP-I52018A" duration="00:00:00.2859280" startTime="2026-09-06T18:46:03.1236243+02:00" endTime="2026-09-06T18:46:03.4097653+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e66ba973-2c96-4087-9a92-181700dfc0f4" />
+    <UnitTestResult executionId="a89ff79e-46f7-4ceb-98f6-aa270eb439f8" testId="538a2fd9-f024-bf80-4425-140d032b1866" testName="DescSchema_ShouldListAllAvailableMethods" computerName="DESKTOP-I52018A" duration="00:00:01.7111673" startTime="2026-09-06T18:45:58.0671606+02:00" endTime="2026-09-06T18:45:59.7785703+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a89ff79e-46f7-4ceb-98f6-aa270eb439f8" />
+    <UnitTestResult executionId="3ba26a5b-0259-4c9b-a646-23601e983590" testId="6d25a002-a07c-c302-f59f-305cf8b6a6d9" testName="TryPlanSource_WhenScalarPredicatesAreRequestedForOtherTables_AcceptsPredicateOnly" computerName="DESKTOP-I52018A" duration="00:00:00.0015383" startTime="2026-09-06T18:45:57.9676421+02:00" endTime="2026-09-06T18:45:57.9692728+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3ba26a5b-0259-4c9b-a646-23601e983590" />
+    <UnitTestResult executionId="0fdf02bd-8a5f-4f3d-bdc0-c06b714703cb" testId="5b777b96-2163-a560-d58b-247e96f17003" testName="NetworksPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8807881+02:00" endTime="2026-09-06T18:45:57.8808135+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0fdf02bd-8a5f-4f3d-bdc0-c06b714703cb">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="687f6aca-a26a-45ec-8fce-e48fa46a78b5" testId="aa6f1cd0-9dc8-cca5-b015-bf5f4f5e03a5" testName="DescImages_ShouldReturnMethodSignatureWithNoParameters" computerName="DESKTOP-I52018A" duration="00:00:00.0293635" startTime="2026-09-06T18:45:59.8165538+02:00" endTime="2026-09-06T18:45:59.8460329+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="687f6aca-a26a-45ec-8fce-e48fa46a78b5" />
+    <UnitTestResult executionId="ece8c5c4-9463-4a4c-a298-d8cf35d497c9" testId="b7dfd7fb-b56d-b969-0194-67e8ae9bf2c2" testName="VolumesPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8808456+02:00" endTime="2026-09-06T18:45:57.8808574+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ece8c5c4-9463-4a4c-a298-d8cf35d497c9">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="7df3690e-c8a8-49c5-aa0b-d16be21c13b0" testId="49b74d99-918f-457f-b97e-20302e8c23ed" testName="DescSchema_ShouldHaveConsistentColumnTypes" computerName="DESKTOP-I52018A" duration="00:00:00.0390734" startTime="2026-09-06T18:46:00.1217604+02:00" endTime="2026-09-06T18:46:00.1609447+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7df3690e-c8a8-49c5-aa0b-d16be21c13b0" />
+    <UnitTestResult executionId="ec3523a3-ad4e-454b-bb84-9ad89afbea5e" testId="14b70881-e211-bf41-be72-8fdf341a72d5" testName="JoinContainersWithImages_ShouldPass" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8808701+02:00" endTime="2026-09-06T18:45:57.8810076+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ec3523a3-ad4e-454b-bb84-9ad89afbea5e">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="ae146fe7-d5ab-4f09-a5d4-e9b836b37c7a" testId="17706c56-bf09-cc08-0db1-5e9bcb20eabe" testName="DescNetworksWithArgs_ShouldReturnTableSchema" computerName="DESKTOP-I52018A" duration="00:00:00.0273582" startTime="2026-09-06T18:46:00.0194499+02:00" endTime="2026-09-06T18:46:00.0469201+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ae146fe7-d5ab-4f09-a5d4-e9b836b37c7a" />
+    <UnitTestResult executionId="286a86f2-85df-456a-87cf-f49802822177" testId="c72f4c44-c1e0-95e3-667f-291cce27544e" testName="ContainersPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8801830+02:00" endTime="2026-09-06T18:45:57.8803416+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="286a86f2-85df-456a-87cf-f49802822177">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="3f58a24b-de92-425c-bad3-fcba225b268d" testId="3b616df5-9859-89ca-6706-8b9a5b37b3a4" testName="DescNetworks_ShouldReturnMethodSignatureWithNoParameters" computerName="DESKTOP-I52018A" duration="00:00:00.0352253" startTime="2026-09-06T18:45:59.8460837+02:00" endTime="2026-09-06T18:45:59.8814273+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3f58a24b-de92-425c-bad3-fcba225b268d" />
+    <UnitTestResult executionId="8b7130c2-340a-45ff-9b6b-66dbab249092" testId="e9c4b928-a70b-3537-37b2-d6224af718d4" testName="TryPlanSource_WhenContainerScalarPredicateIsRequested_AcceptsPredicateOnly" computerName="DESKTOP-I52018A" duration="00:00:00.0231070" startTime="2026-09-06T18:45:57.9037884+02:00" endTime="2026-09-06T18:45:57.9665669+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8b7130c2-340a-45ff-9b6b-66dbab249092" />
+    <UnitTestResult executionId="41bacf17-8074-4769-810c-c831cc64419c" testId="85a39746-dbf0-d057-5002-c917c9560087" testName="ContainersSource_WhenExecutionPlanHasPredicate_EmitsFilteredRows" computerName="DESKTOP-I52018A" duration="00:00:00.0976584" startTime="2026-09-06T18:45:57.9693051+02:00" endTime="2026-09-06T18:45:58.0670968+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="41bacf17-8074-4769-810c-c831cc64419c" />
+    <UnitTestResult executionId="5bfa86e0-226f-420d-bc02-5b4f844131c1" testId="98402c77-c560-4abe-a21c-f8c362831b1f" testName="ImagesPlaygroundDesc_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8806160+02:00" endTime="2026-09-06T18:45:57.8806643+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5bfa86e0-226f-420d-bc02-5b4f844131c1">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="5a000085-710a-44de-8075-9e16a7ab2ecf" testId="b8990b23-20dc-6d3b-a5d5-4f88096e7aa3" testName="DescVolumes_ShouldReturnMethodSignatureWithNoParameters" computerName="DESKTOP-I52018A" duration="00:00:00.0293630" startTime="2026-09-06T18:45:59.8814831+02:00" endTime="2026-09-06T18:45:59.9227246+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5a000085-710a-44de-8075-9e16a7ab2ecf" />
+    <UnitTestResult executionId="4886fbc5-9ea6-479a-82e8-cb143f4eae0f" testId="df4b224a-55ff-6002-5d71-31ad3b442f8b" testName="DescContainers_ShouldReturnMethodSignatureWithNoParameters" computerName="DESKTOP-I52018A" duration="00:00:00.0377593" startTime="2026-09-06T18:45:59.7786280+02:00" endTime="2026-09-06T18:45:59.8165035+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4886fbc5-9ea6-479a-82e8-cb143f4eae0f" />
+    <UnitTestResult executionId="3db3405c-2eb1-4641-955f-7fdb7c8422d5" testId="29a0ddac-318a-8d62-43dc-b27841dc2551" testName="DescVolumesWithArgs_ShouldReturnTableSchema" computerName="DESKTOP-I52018A" duration="00:00:00.0280093" startTime="2026-09-06T18:46:00.0469678+02:00" endTime="2026-09-06T18:46:00.0750665+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3db3405c-2eb1-4641-955f-7fdb7c8422d5" />
+    <UnitTestResult executionId="de57e395-0c58-4492-9b6f-e08233ba7f3b" testId="f5d7b9e7-03d6-4baa-9a63-5045cd1f959e" testName="ImagesPlayground_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8806780+02:00" endTime="2026-09-06T18:45:57.8806915+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="de57e395-0c58-4492-9b6f-e08233ba7f3b">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e2e8ee50-61db-4bdb-afff-ab1f0706e160" testId="dfa9fa0a-91d8-32b5-c0f9-cf8ec2f25560" testName="DescImagesWithArgs_ShouldReturnTableSchema" computerName="DESKTOP-I52018A" duration="00:00:00.0285932" startTime="2026-09-06T18:45:59.9906862+02:00" endTime="2026-09-06T18:46:00.0193823+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e2e8ee50-61db-4bdb-afff-ab1f0706e160" />
+    <UnitTestResult executionId="3168dc36-46b8-483d-8228-5319dac8b8d9" testId="b69170f0-ac85-426d-7194-fe2668c49f44" testName="NetworksPlaygroundDesc_ShouldBeIgnored" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:45:57.8807010+02:00" endTime="2026-09-06T18:45:57.8807650+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3168dc36-46b8-483d-8228-5319dac8b8d9">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="12b38dda-b432-48f5-ba71-7f5dd32ae38c" testId="7857bacb-cc0f-2459-d315-4d3b5cd808eb" testName="WhenNetworksQueries_ShouldReturnValues" computerName="DESKTOP-I52018A" duration="00:00:00.2691976" startTime="2026-09-06T18:46:03.4098536+02:00" endTime="2026-09-06T18:46:03.6798392+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="12b38dda-b432-48f5-ba71-7f5dd32ae38c" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="EveryDockerCollection_IsCrossApplyAddressable" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="4bf50f0e-321c-49e8-96a9-30eefe21b50c">
+      <Execution id="af655b86-421a-48c6-8cdd-c203839c43e2" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerStarContractTests" name="EveryDockerCollection_IsCrossApplyAddressable" />
+    </UnitTest>
+    <UnitTest name="DescVolumes_ShouldReturnMethodSignatureWithNoParameters" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="b8990b23-20dc-6d3b-a5d5-4f88096e7aa3">
+      <Execution id="5a000085-710a-44de-8075-9e16a7ab2ecf" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescVolumes_ShouldReturnMethodSignatureWithNoParameters" />
+    </UnitTest>
+    <UnitTest name="WhenContainersQueried_ShouldReturnValues" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="0e7422b0-c080-2c7d-d412-5daf1641e02d">
+      <Execution id="2c43f847-dbab-4440-bbe9-436f6b96df44" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerTests" name="WhenContainersQueried_ShouldReturnValues" />
+    </UnitTest>
+    <UnitTest name="WhenVolumesQueried_ShouldReturnValues" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="0dec7a97-defd-d7a3-a355-5170b158b771">
+      <Execution id="e66ba973-2c96-4087-9a92-181700dfc0f4" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerTests" name="WhenVolumesQueried_ShouldReturnValues" />
+    </UnitTest>
+    <UnitTest name="DescImagesWithArgs_ShouldReturnTableSchema" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="dfa9fa0a-91d8-32b5-c0f9-cf8ec2f25560">
+      <Execution id="e2e8ee50-61db-4bdb-afff-ab1f0706e160" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescImagesWithArgs_ShouldReturnTableSchema" />
+    </UnitTest>
+    <UnitTest name="VolumesPlaygroundDesc_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="f4cf46ac-da14-2a2b-d646-bcf16f829930">
+      <Execution id="40752390-3ffe-42a9-a34b-00cacfabd6ed" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="VolumesPlaygroundDesc_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="NetworksPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="5b777b96-2163-a560-d58b-247e96f17003">
+      <Execution id="0fdf02bd-8a5f-4f3d-bdc0-c06b714703cb" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="NetworksPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="JoinContainersWithImages_ShouldPass" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="14b70881-e211-bf41-be72-8fdf341a72d5">
+      <Execution id="ec3523a3-ad4e-454b-bb84-9ad89afbea5e" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="JoinContainersWithImages_ShouldPass" />
+    </UnitTest>
+    <UnitTest name="WhenNetworksQueries_ShouldReturnValues" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="7857bacb-cc0f-2459-d315-4d3b5cd808eb">
+      <Execution id="12b38dda-b432-48f5-ba71-7f5dd32ae38c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerTests" name="WhenNetworksQueries_ShouldReturnValues" />
+    </UnitTest>
+    <UnitTest name="ContainersSource_WhenExecutionPlanHasPredicate_EmitsFilteredRows" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="85a39746-dbf0-d057-5002-c917c9560087">
+      <Execution id="41bacf17-8074-4769-810c-c831cc64419c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerRuntimeV2PlanningTests" name="ContainersSource_WhenExecutionPlanHasPredicate_EmitsFilteredRows" />
+    </UnitTest>
+    <UnitTest name="ImagesPlaygroundDesc_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="98402c77-c560-4abe-a21c-f8c362831b1f">
+      <Execution id="5bfa86e0-226f-420d-bc02-5b4f844131c1" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="ImagesPlaygroundDesc_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenScalarPredicatesAreRequestedForOtherTables_AcceptsPredicateOnly" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="6d25a002-a07c-c302-f59f-305cf8b6a6d9">
+      <Execution id="3ba26a5b-0259-4c9b-a646-23601e983590" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerRuntimeV2PlanningTests" name="TryPlanSource_WhenScalarPredicatesAreRequestedForOtherTables_AcceptsPredicateOnly" />
+    </UnitTest>
+    <UnitTest name="ContainersPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="c72f4c44-c1e0-95e3-667f-291cce27544e">
+      <Execution id="286a86f2-85df-456a-87cf-f49802822177" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="ContainersPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="DescUnknownMethod_ShouldThrowException" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="18ddd6fa-2ff9-185f-5b54-37811e7fb180">
+      <Execution id="48684de0-7824-42c3-8874-aa3b010d8f56" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescUnknownMethod_ShouldThrowException" />
+    </UnitTest>
+    <UnitTest name="DescContainersNoArgs_VsWithArgs_ShouldReturnDifferentResults" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="6e91668b-ff71-6316-ba92-deaa03ffb45d">
+      <Execution id="a29d191c-3bd3-409e-8aa9-7187d377e1a5" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescContainersNoArgs_VsWithArgs_ShouldReturnDifferentResults" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldListAllAvailableMethods" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="538a2fd9-f024-bf80-4425-140d032b1866">
+      <Execution id="a89ff79e-46f7-4ceb-98f6-aa270eb439f8" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescSchema_ShouldListAllAvailableMethods" />
+    </UnitTest>
+    <UnitTest name="DescNetworks_ShouldReturnMethodSignatureWithNoParameters" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="3b616df5-9859-89ca-6706-8b9a5b37b3a4">
+      <Execution id="3f58a24b-de92-425c-bad3-fcba225b268d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescNetworks_ShouldReturnMethodSignatureWithNoParameters" />
+    </UnitTest>
+    <UnitTest name="WhenImagesQueried_ShouldReturnValues" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="bddb9eba-b84e-7b68-615c-7da9a85ef5bd">
+      <Execution id="55feba31-47e4-43bd-899f-5de78f10e790" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerTests" name="WhenImagesQueried_ShouldReturnValues" />
+    </UnitTest>
+    <UnitTest name="DescContainersWithArgs_ShouldReturnTableSchema" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="3ad6e5c6-99a0-139d-b2b5-bb7e21626c67">
+      <Execution id="894db4d9-8541-4ae2-b963-c3a4adaf5269" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescContainersWithArgs_ShouldReturnTableSchema" />
+    </UnitTest>
+    <UnitTest name="VolumesPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="b7dfd7fb-b56d-b969-0194-67e8ae9bf2c2">
+      <Execution id="ece8c5c4-9463-4a4c-a298-d8cf35d497c9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="VolumesPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="DescNetworksWithArgs_ShouldReturnTableSchema" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="17706c56-bf09-cc08-0db1-5e9bcb20eabe">
+      <Execution id="ae146fe7-d5ab-4f09-a5d4-e9b836b37c7a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescNetworksWithArgs_ShouldReturnTableSchema" />
+    </UnitTest>
+    <UnitTest name="EveryDockerConstructor_HasOneExactStarContract" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="36081697-fd52-cbf7-427a-3db475d7cf7d">
+      <Execution id="b94da914-897a-4f32-b9d4-a9bb177c147c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerStarContractTests" name="EveryDockerConstructor_HasOneExactStarContract" />
+    </UnitTest>
+    <UnitTest name="NetworksPlaygroundDesc_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="b69170f0-ac85-426d-7194-fe2668c49f44">
+      <Execution id="3168dc36-46b8-483d-8228-5319dac8b8d9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="NetworksPlaygroundDesc_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="ContainersPlaygroundDesc_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="a8732a92-5d5c-ff09-6e34-fcf8767d4158">
+      <Execution id="59567842-c5f1-4fa0-9a71-06b01dc9a692" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="ContainersPlaygroundDesc_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="DescContainers_ShouldReturnMethodSignatureWithNoParameters" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="df4b224a-55ff-6002-5d71-31ad3b442f8b">
+      <Execution id="4886fbc5-9ea6-479a-82e8-cb143f4eae0f" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescContainers_ShouldReturnMethodSignatureWithNoParameters" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldHaveConsistentColumnTypes" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="49b74d99-918f-457f-b97e-20302e8c23ed">
+      <Execution id="7df3690e-c8a8-49c5-aa0b-d16be21c13b0" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescSchema_ShouldHaveConsistentColumnTypes" />
+    </UnitTest>
+    <UnitTest name="DescImages_ShouldReturnMethodSignatureWithNoParameters" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="aa6f1cd0-9dc8-cca5-b015-bf5f4f5e03a5">
+      <Execution id="687f6aca-a26a-45ec-8fce-e48fa46a78b5" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescImages_ShouldReturnMethodSignatureWithNoParameters" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenUnsupportedContainerPredicateIsRequested_LeavesPredicateResidual" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="6114ac0f-b7df-693e-04ff-4454b54f8934">
+      <Execution id="2ff51f8b-ae8e-43ba-b305-bffb353f260a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerRuntimeV2PlanningTests" name="TryPlanSource_WhenUnsupportedContainerPredicateIsRequested_LeavesPredicateResidual" />
+    </UnitTest>
+    <UnitTest name="ImagesPlayground_ShouldBeIgnored" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="f5d7b9e7-03d6-4baa-9a63-5045cd1f959e">
+      <Execution id="de57e395-0c58-4492-9b6f-e08233ba7f3b" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerPlaygroundTests" name="ImagesPlayground_ShouldBeIgnored" />
+    </UnitTest>
+    <UnitTest name="DescVolumesWithArgs_ShouldReturnTableSchema" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="29a0ddac-318a-8d62-43dc-b27841dc2551">
+      <Execution id="3db3405c-2eb1-4641-955f-7fdb7c8422d5" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerSchemaDescribeTests" name="DescVolumesWithArgs_ShouldReturnTableSchema" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenContainerScalarPredicateIsRequested_AcceptsPredicateOnly" storage="d:\repos\musoq.datasources\musoq.datasources.docker.tests\bin\release\net10.0\musoq.datasources.docker.tests.dll" id="e9c4b928-a70b-3537-37b2-d6224af718d4">
+      <Execution id="8b7130c2-340a-45ff-9b6b-66dbab249092" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.Docker.Tests\bin\Release\net10.0\Musoq.DataSources.Docker.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.Docker.Tests.DockerRuntimeV2PlanningTests" name="TryPlanSource_WhenContainerScalarPredicateIsRequested_AcceptsPredicateOnly" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="6e91668b-ff71-6316-ba92-deaa03ffb45d" executionId="a29d191c-3bd3-409e-8aa9-7187d377e1a5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f4cf46ac-da14-2a2b-d646-bcf16f829930" executionId="40752390-3ffe-42a9-a34b-00cacfabd6ed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18ddd6fa-2ff9-185f-5b54-37811e7fb180" executionId="48684de0-7824-42c3-8874-aa3b010d8f56" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bddb9eba-b84e-7b68-615c-7da9a85ef5bd" executionId="55feba31-47e4-43bd-899f-5de78f10e790" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3ad6e5c6-99a0-139d-b2b5-bb7e21626c67" executionId="894db4d9-8541-4ae2-b963-c3a4adaf5269" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a8732a92-5d5c-ff09-6e34-fcf8767d4158" executionId="59567842-c5f1-4fa0-9a71-06b01dc9a692" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4bf50f0e-321c-49e8-96a9-30eefe21b50c" executionId="af655b86-421a-48c6-8cdd-c203839c43e2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6114ac0f-b7df-693e-04ff-4454b54f8934" executionId="2ff51f8b-ae8e-43ba-b305-bffb353f260a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="36081697-fd52-cbf7-427a-3db475d7cf7d" executionId="b94da914-897a-4f32-b9d4-a9bb177c147c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0e7422b0-c080-2c7d-d412-5daf1641e02d" executionId="2c43f847-dbab-4440-bbe9-436f6b96df44" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0dec7a97-defd-d7a3-a355-5170b158b771" executionId="e66ba973-2c96-4087-9a92-181700dfc0f4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="538a2fd9-f024-bf80-4425-140d032b1866" executionId="a89ff79e-46f7-4ceb-98f6-aa270eb439f8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6d25a002-a07c-c302-f59f-305cf8b6a6d9" executionId="3ba26a5b-0259-4c9b-a646-23601e983590" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5b777b96-2163-a560-d58b-247e96f17003" executionId="0fdf02bd-8a5f-4f3d-bdc0-c06b714703cb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="aa6f1cd0-9dc8-cca5-b015-bf5f4f5e03a5" executionId="687f6aca-a26a-45ec-8fce-e48fa46a78b5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b7dfd7fb-b56d-b969-0194-67e8ae9bf2c2" executionId="ece8c5c4-9463-4a4c-a298-d8cf35d497c9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="49b74d99-918f-457f-b97e-20302e8c23ed" executionId="7df3690e-c8a8-49c5-aa0b-d16be21c13b0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="14b70881-e211-bf41-be72-8fdf341a72d5" executionId="ec3523a3-ad4e-454b-bb84-9ad89afbea5e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17706c56-bf09-cc08-0db1-5e9bcb20eabe" executionId="ae146fe7-d5ab-4f09-a5d4-e9b836b37c7a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c72f4c44-c1e0-95e3-667f-291cce27544e" executionId="286a86f2-85df-456a-87cf-f49802822177" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3b616df5-9859-89ca-6706-8b9a5b37b3a4" executionId="3f58a24b-de92-425c-bad3-fcba225b268d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e9c4b928-a70b-3537-37b2-d6224af718d4" executionId="8b7130c2-340a-45ff-9b6b-66dbab249092" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="85a39746-dbf0-d057-5002-c917c9560087" executionId="41bacf17-8074-4769-810c-c831cc64419c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="98402c77-c560-4abe-a21c-f8c362831b1f" executionId="5bfa86e0-226f-420d-bc02-5b4f844131c1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b8990b23-20dc-6d3b-a5d5-4f88096e7aa3" executionId="5a000085-710a-44de-8075-9e16a7ab2ecf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="df4b224a-55ff-6002-5d71-31ad3b442f8b" executionId="4886fbc5-9ea6-479a-82e8-cb143f4eae0f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="29a0ddac-318a-8d62-43dc-b27841dc2551" executionId="3db3405c-2eb1-4641-955f-7fdb7c8422d5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f5d7b9e7-03d6-4baa-9a63-5045cd1f959e" executionId="de57e395-0c58-4492-9b6f-e08233ba7f3b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dfa9fa0a-91d8-32b5-c0f9-cf8ec2f25560" executionId="e2e8ee50-61db-4bdb-afff-ab1f0706e160" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b69170f0-ac85-426d-7194-fe2668c49f44" executionId="3168dc36-46b8-483d-8228-5319dac8b8d9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7857bacb-cc0f-2459-d315-4d3b5cd808eb" executionId="12b38dda-b432-48f5-ba71-7f5dd32ae38c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="31" executed="22" passed="22" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>Test 'ContainersPlaygroundDesc_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'ContainersPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'ImagesPlaygroundDesc_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'ImagesPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'NetworksPlaygroundDesc_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'NetworksPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'VolumesPlaygroundDesc_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'VolumesPlayground_ShouldBeIgnored' was skipped in the test run.&#xD;
+Test 'JoinContainersWithImages_ShouldPass' was skipped in the test run.&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

@@ -1,18 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Evaluator.Tables;
-using Musoq.Schema;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git.Tests;

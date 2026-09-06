@@ -1,0 +1,7 @@
+ripgrep 15.2.0 (rev e89fff89ac)
+
+features:+pcre2
+simd(compile):+SSE2,-SSSE3,-AVX2
+simd(runtime):+SSE2,+SSSE3,+AVX2
+
+PCRE2 10.45 is available (JIT is available)

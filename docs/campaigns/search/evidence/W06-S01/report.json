@@ -1,0 +1,226 @@
+{
+  "scopeId": "W06-S01",
+  "status": "passed",
+  "summary": "Implemented the deterministic text-decoding boundary for the current Search sources. Auto mode honors supported UTF-8/UTF-16 BOMs and otherwise uses strict UTF-8; explicit canonical modes require their declared BOM shape; invalid sequences and unsupported encodings are typed failures. Focused and repository-wide tests passed.",
+  "requirementIds": [
+    "R02",
+    "R04",
+    "R07",
+    "R08"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S20",
+    "S22",
+    "S24"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W06-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "3847fb90398f7b33c4c503c986ef908d4bddeb81",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 31,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W06-S01 as in_progress.",
+    "preExistingScopeCommit": "3847fb90398f7b33c4c503c986ef908d4bddeb81",
+    "aheadNote": "The ahead count includes the W05-S05 completion commit and the 30 preceding reachable completed Search scope commits."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/SearchEncodingPolicy.cs",
+      "Musoq.DataSources.Search/SearchContracts.cs",
+      "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "Musoq.DataSources.Search/SearchTextReader.cs",
+      "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "Musoq.DataSources.Search.Tests/SearchEncodingTests.cs",
+      "docs/search/search-encoding-policy-v1.md"
+    ],
+    "scopeBoundary": "Only the owning Search request/reader/diagnostic implementation, Search tests and Search documentation were changed. The existing two-argument SQL constructor metadata remains unchanged; no sibling repository, future request parser, release, publication, installation or raw-byte source was modified.",
+    "policy": {
+      "canonicalModes": [
+        "auto",
+        "utf8",
+        "utf8-bom",
+        "utf16-le-bom",
+        "utf16-be-bom"
+      ],
+      "auto": "Recognize UTF-8, UTF-16 LE and UTF-16 BE BOMs; otherwise use strict UTF-8 without heuristic detection.",
+      "explicit": "utf8 requires no BOM; utf8-bom requires a UTF-8 BOM; utf16-le-bom and utf16-be-bom require their matching BOM.",
+      "invalidInput": "Strict UTF-8 and UTF-16 decoders report invalid sequences, incomplete multibyte tails and odd UTF-16 tails as SEARCH-SOURCE-003 source-read failures.",
+      "unsupportedInput": "Unsupported declarations, UTF-32 BOMs and explicit BOM mismatches report SEARCH-SOURCE-004 before decoding.",
+      "byteMapping": "Original-byte offsets and lengths remain a later coordinate-scope responsibility; the current rows continue to distinguish UTF-16 columns."
+    },
+    "resourceOwnership": "BOM detection uses a bounded four-byte stack prefix; the file stream is disposed if resolution or reader construction fails, and the scanner owns normal TextReader disposal."
+  },
+  "tests": {
+    "discovered": 1388,
+    "passed": 1354,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 101,
+      "passed": 101,
+      "failed": 0,
+      "skipped": 3,
+      "newScenarios": [
+        "Auto_ShouldHonorSupportedBomsAndDefaultToStrictUtf8",
+        "ExplicitModes_ShouldRequireTheirDeclaredBomShape",
+        "Auto_ShouldNotHeuristicallyDecodeUtf16WithoutABom",
+        "StrictUtf8_ShouldRejectPartialMultibyteSequenceAtEof",
+        "StrictUtf16_ShouldRejectOddByteTail",
+        "UnsupportedModesAndBomFamilies_ShouldBeRejectedPrecisely",
+        "ContractValues_ShouldRoundTripToCanonicalEncodingModes"
+      ],
+      "requiredCoverage": [
+        "BOM and no-BOM behavior for UTF-8 and BOM-driven UTF-16",
+        "explicit mode and BOM agreement, including missing and mismatched BOMs",
+        "partial UTF-8 multibyte and odd UTF-16 tails",
+        "unsupported UTF-32 BOM and unsupported declaration diagnostics",
+        "no-BOM input is not heuristically reinterpreted as UTF-16"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 101,
+      "passed": 101,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W06-S01/search-focused.log",
+      "stdoutSha256": "a0bb459cb25226b0003336f01e1a6f16d14cd5284c936a1e53acf3acf9606187",
+      "stderrPath": "docs/campaigns/search/evidence/W06-S01/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1388,
+      "passed": 1354,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W06-S01/full-suite-exact.log",
+      "stdoutSha256": "678e4c244d5b18942be4aec779b9cf6ef2e3f876ee0da9c1db7c54941e566aed",
+      "stderrPath": "docs/campaigns/search/evidence/W06-S01/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; source and artifact hash validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "git version 2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 21 projects, 1,388 discovered, 1,354 passed, 0 failed and 34 skips; the focused Search suite exited 0 with 101 passed and 3 platform-conditional skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved the deterministic mode matrix, strict decoder boundary, diagnostics, stream lifetime and future-parser boundary; source and artifact hashes plus the unique trailer-bearing completion commit are verified during post-commit finalization."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused encoding tests agree with the declared policy for mixed supported BOMs, no-BOM strict UTF-8, explicit mode agreement, invalid tails, unsupported UTF-32 and non-heuristic behavior."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "The implementation uses a bounded BOM probe, strict immutable decoder instances, deterministic stream positioning and disposal on both successful and failed reader construction."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search/SearchEncodingPolicy.cs",
+      "sha256": "ddc1406bbebdc70d13cb7303f34e9019be6930b3842678806f9d39e14e4a25ba"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchContracts.cs",
+      "sha256": "7b805064b207efd5a2e375f632928b9653b371a59b06e009e5efee2ce524e05b"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "sha256": "bc8dc70a1e7bbab5a72742af478599499cd7e758a423b00e59f00b7062d2582e"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextReader.cs",
+      "sha256": "fbb64963f3902fee37ea992e33c30a2b74d62ba169fcb23888432bd2769c12d5"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextScanner.cs",
+      "sha256": "0b6920753676cf0c9634011f06a17a1356573ea377dfdac6e6d734202fdaaea2"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchTextSourceBase.cs",
+      "sha256": "b81f5fc11269ded6eb97e9480f3b9553eccb93a79aa191ac0f233164f73deaa6"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchEncodingTests.cs",
+      "sha256": "41d37bf47b5e09b37e2e2aad4a1c8c58c920b07ee2c78c49ed6ec67d2e662f20"
+    },
+    {
+      "path": "docs/search/search-encoding-policy-v1.md",
+      "sha256": "c46985b685f6211450da1f041870393a70ff4a5bac7a136cd09fe027bee9bc36"
+    }
+  ],
+  "sourceDigest": "6777d063511113f0be8784f278b678ec4bab87ef0ec4b3cdfe3ee1b7b32eed5e",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W06-S01/review.md",
+      "sha256": "77ab07c21edaf53c1824e7fcf81bce4226b2791f677cdb8b1cb71c930212212c"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W06-S01/search-focused.log",
+      "sha256": "a0bb459cb25226b0003336f01e1a6f16d14cd5284c936a1e53acf3acf9606187"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W06-S01/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W06-S01/full-suite-exact.log",
+      "sha256": "678e4c244d5b18942be4aec779b9cf6ef2e3f876ee0da9c1db7c54941e566aed"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W06-S01/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The current public Search SQL constructors remain two-argument and therefore use auto; transport of options.encoding belongs to the later versioned request parser scope.",
+    "Original-byte offsets and lengths are not implemented by this scope; the later coordinate scope owns lossless mapping.",
+    "A no-BOM UTF-16 file is not heuristically detected and is interpreted as strict UTF-8, as required by the deterministic policy.",
+    "The repository-wide suite retains 31 expected skips and 3 platform-conditional symlink skips; no package was published."
+  ]
+}

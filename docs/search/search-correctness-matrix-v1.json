@@ -1,0 +1,146 @@
+{
+  "formatVersion": 1,
+  "status": "current_platform_executed_with_residuals",
+  "scopeId": "W16-S01",
+  "title": "Search correctness matrix v1",
+  "purpose": "Inventory and execute the owning Search oracle, property, differential, planner and integration coverage while separating unavailable platform and fuzz proofs from passing evidence.",
+  "benchmarkMatrix": {
+    "path": "docs/campaigns/search/benchmark-matrix.json",
+    "sha256": "369db721f3f20951621f6ee0f85798e5368dc4bba1758025f758da7ac0691d22",
+    "requiredCohortCount": 24,
+    "resultsClaimed": false
+  },
+  "execution": {
+    "currentPlatform": "windows-x64",
+    "targetFramework": "net10.0",
+    "configuration": "Release",
+    "searchProject": "Musoq.DataSources.Search.Tests",
+    "owningRepositorySuite": "dotnet test --configuration Release --no-restore",
+    "resultPolicy": "A passing current-platform suite does not promote unavailable platform or unimplemented fuzz profiles to passing claims."
+  },
+  "suites": [
+    {
+      "id": "oracle",
+      "status": "passed",
+      "tests": [
+        "SyntheticSearchCorpusTests.RegenerateCorpus_ShouldMatchManifestAndRemainByteDeterministic",
+        "SearchReferenceScannerTests.Search_ShouldMatchReferenceScannerForHandEnumeratedCases",
+        "SearchFeasibilityTests.ManagedAndRipgrepCandidates_ShouldMatchTheIndependentCorpusOracle",
+        "SearchByteSourceTests.Scanner_ShouldFindEveryByteValueWithIndependentOffsets",
+        "SearchBytePipelineBenchmarkTests.BytePipelineVerification_ShouldMatchIndependentOracle"
+      ],
+      "evidence": "Seeded synthetic corpus, text/byte oracles and the managed-versus-ripgrep candidate comparison are exercised by the Search test project."
+    },
+    {
+      "id": "property",
+      "status": "passed",
+      "tests": [
+        "SearchLiteralBoundaryTests.LiteralMatcher_ShouldMatchReferenceForRandomInputsAndEveryChunkSize",
+        "SearchReferenceScannerTests.Search_ShouldMatchReferenceScannerForDeterministicRandomInputs",
+        "SearchManyLiteralMatcherTests.Matcher_ShouldKeepCrossPatternOverlapsButSelectEachPatternNonOverlapping",
+        "SearchPredicatePlanningTests.AcceptedPredicates_ShouldMatchRejectAllBaselineOnGeneratedFixtures"
+      ],
+      "seeds": ["0x9e3779b9", "0x51a7e11"],
+      "evidence": "Deterministic random content, chunk boundaries, overlap rules and generated predicate fixtures are compared to independent expectations."
+    },
+    {
+      "id": "differential",
+      "status": "passed",
+      "tests": [
+        "SearchFeasibilityTests.ManagedAndRipgrepCandidates_ShouldMatchTheIndependentCorpusOracle",
+        "SearchPlannerDifferentialTests.Planner_DifferentialMatrix_ShouldMatchRejectAllBaseline",
+        "SearchPlannerDifferentialTests.CompiledCrossSourceQuery_ShouldPreserveAcceptedFieldsAndResidualWindow"
+      ],
+      "evidence": "Candidate output and planner acceptance/rejection decisions are compared against independent baselines with residual windows retained."
+    },
+    {
+      "id": "fuzz",
+      "status": "residual_seeded_random_only",
+      "tests": [
+        "SearchLiteralBoundaryTests.LiteralMatcher_ShouldMatchReferenceForRandomInputsAndEveryChunkSize",
+        "SearchReferenceScannerTests.Search_ShouldMatchReferenceScannerForDeterministicRandomInputs"
+      ],
+      "evidence": "The repository contains deterministic randomized/property coverage but no separate fuzzing engine or cross-process fuzz corpus. This is not promoted to a full fuzz claim."
+    },
+    {
+      "id": "planner",
+      "status": "passed",
+      "tests": [
+        "SearchPlanInspectionTests.Planner_ShouldExposeStableCostAndDecisionFields",
+        "SearchPlanInspectionTests.Planner_ShouldExposeTheStrategyForEachSearchRowShape",
+        "SearchPredicatePlanningTests.Planner_ShouldSplitAndKeepUnsupportedContentResidual",
+        "SearchOrderingAndSlicingTests.CompiledResidualFilter_ShouldRunBeforeTake",
+        "SearchProjectionTests.CompiledResidualWhere_ShouldMaterializeTextNeededOnlyByFilter"
+      ],
+      "evidence": "Accepted predicates, residual predicates, projection requirements and global slicing/order semantics are covered by planner and compiled-query tests."
+    },
+    {
+      "id": "integration",
+      "status": "passed",
+      "tests": [
+        "SearchSchemaTests.CompiledLiteralQuery_ShouldReturnKnownTypedRows",
+        "SearchSchemaTests.CompiledSearch_ShouldReturnRowsAndEmitLifecycleTrace",
+        "SearchManyTableInputTests.CompiledManyQuery_ShouldConsumeScalarArgumentsProducedByCte",
+        "SearchInterpretationCompositionTests.SearchLines_Parse_ShouldParseOneRowPerMatchingLineAndRetainOrigin",
+        "SearchByteSourceTests.SourceAndCompiledQuery_ShouldExposeRawCoordinatesWithoutTextInference",
+        "SearchAuditTests.ConcurrentRuns_ShouldPublishIndependentSummaries"
+      ],
+      "evidence": "Direct source and compiled query paths, scalar many input, Parse composition, byte coordinates and independent audit contexts pass on the owning test project."
+    },
+    {
+      "id": "package-source-engine-compatibility",
+      "status": "passed_current_checkout",
+      "tests": [
+        "SearchSchemaTests.AssemblyDiscovery_ShouldDeclareSearchSchema",
+        "SearchSchemaTests.GeneratedXmlDocumentation_ShouldBeWellFormedAndCoverPublicSearchApi",
+        "SearchSchemaTests.CompiledSearch_WithSettingsProfiles_UsesDistinctSourceContexts",
+        "SearchManyTableInputTests.CompiledManyQuery_ShouldConsumeScalarArgumentsProducedByCte"
+      ],
+      "evidence": "The package-referenced Search test project discovers the schema and compiles direct/source-engine query paths with isolated settings contexts."
+    }
+  ],
+  "seededRepros": {
+    "status": "passed_current_platform",
+    "tests": [
+      "SearchTerminalOutcomeTests.NoMatch_ShouldReturnScopeExhaustedSummaryWithExactZeroCounters",
+      "SearchTerminalOutcomeTests.ReadFailureAfterACompletedFile_ShouldRetainFailureAndObservedPrefix",
+      "SearchTerminalOutcomeTests.CancellationBeforeTraversal_ShouldBeFailedAndNeverACompleteEmptyResult",
+      "SearchCountTests.CountsSource_ShouldEmitCompleteRowsForEveryEligibleFileIncludingZeroHits",
+      "SearchOrderingAndSlicingTests.CompiledResidualFilter_ShouldRunBeforeTake",
+      "SearchContextTests.ContextExpansion_ShouldReadBoundedEvidenceAndRejectStaleSource",
+      "SearchLinkPolicyTests.FollowPolicy_ShouldGuardCyclesAndDuplicateDirectoryIdentities",
+      "SearchManySourceTests.CompleteNegativeSummary_ShouldReadEveryEligibleFileBeforeReturning"
+    ],
+    "independentResultValidation": "The full Search suite and the registered semantic harnesses completed with no failures."
+  },
+  "platformProfiles": [
+    {
+      "id": "windows-x64",
+      "status": "passed",
+      "evidence": "Current checkout platform; full Search and owning-repository Release suites passed."
+    },
+    {
+      "id": "linux-x64",
+      "status": "not_run",
+      "claim": "blocked_unavailable"
+    },
+    {
+      "id": "macos-arm64",
+      "status": "not_run",
+      "claim": "blocked_unavailable"
+    },
+    {
+      "id": "linux-musl-x64",
+      "status": "not_run",
+      "claim": "blocked_unavailable"
+    }
+  ],
+  "resultSummary": {
+    "status": "passed_current_platform_with_platform_and_fuzz_residuals",
+    "mandatoryCurrentPlatformSuitesPassed": true,
+    "fullFuzzEngineAvailable": false,
+    "unavailablePlatformProfiles": 3,
+    "results": [],
+    "releaseClaim": "Do not claim cross-platform correctness or full fuzz coverage until the corresponding profiles execute."
+  }
+}

@@ -1,0 +1,7 @@
+status=frozen
+measurementLayers=5
+requiredCohorts=24
+matrixCohorts=24
+minimumMeasuredTrials=7
+parityGeomeanRatioMax=1.25
+perCellMedianRatioMax=2

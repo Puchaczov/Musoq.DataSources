@@ -1,0 +1,229 @@
+{
+  "formatVersion": 1,
+  "seed": 195936478,
+  "generator": "xorshift32-v1",
+  "literal": "TODO",
+  "rootName": "synthetic-search-v1",
+  "platformPrerequisites": {
+    "all": [
+      "The generator writes ordinary files beneath a caller-owned temporary root.",
+      "UTF-8 and UTF-16 bytes are explicit; the host default code page is not used.",
+      "Ignored and binary expectations are manifest facts, not claims about the current scanner."
+    ],
+    "windows": [
+      "NTFS or another filesystem supporting ordinary directory and file creation.",
+      "No administrator privileges, symlinks, hard links or permission changes are required."
+    ],
+    "caseSensitiveFileSystem": [
+      "Path spellings use lowercase ASCII segments so case sensitivity does not alter the corpus."
+    ]
+  },
+  "units": {
+    "generatedFileCount": 45,
+    "textFileCount": 42,
+    "binaryFileCount": 2,
+    "ignoreRuleFileCount": 1,
+    "expectedTotalBytes": 26145,
+    "expectedLiteralOccurrences": 37,
+    "expectedByteOccurrences": 4
+  },
+  "files": [
+    {
+      "path": "truth/sparse.txt",
+      "kind": "text",
+      "encoding": "utf8",
+      "recipe": "truth-sparse",
+      "expectedBytes": 24,
+      "expectedUnits": {
+        "literalOccurrences": 2,
+        "utf16Spans": [
+          { "start": 0, "length": 4 },
+          { "start": 15, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "truth/dense.txt",
+      "kind": "text",
+      "encoding": "utf8",
+      "recipe": "truth-dense",
+      "expectedBytes": 80,
+      "expectedUnits": {
+        "literalOccurrences": 16,
+        "utf16Spans": [
+          { "start": 0, "length": 4 },
+          { "start": 5, "length": 4 },
+          { "start": 10, "length": 4 },
+          { "start": 15, "length": 4 },
+          { "start": 20, "length": 4 },
+          { "start": 25, "length": 4 },
+          { "start": 30, "length": 4 },
+          { "start": 35, "length": 4 },
+          { "start": 40, "length": 4 },
+          { "start": 45, "length": 4 },
+          { "start": 50, "length": 4 },
+          { "start": 55, "length": 4 },
+          { "start": 60, "length": 4 },
+          { "start": 65, "length": 4 },
+          { "start": 70, "length": 4 },
+          { "start": 75, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "truth/giant-line.txt",
+      "kind": "text",
+      "encoding": "utf8",
+      "recipe": "truth-giant-line",
+      "expectedBytes": 9005,
+      "expectedUnits": {
+        "literalOccurrences": 1,
+        "utf16Spans": [
+          { "start": 9000, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "truth/unicode.txt",
+      "kind": "text",
+      "encoding": "utf8",
+      "recipe": "truth-unicode",
+      "expectedBytes": 23,
+      "expectedUnits": {
+        "literalOccurrences": 1,
+        "utf16Spans": [
+          { "start": 14, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "truth/no-match.txt",
+      "kind": "text",
+      "encoding": "utf8",
+      "recipe": "truth-no-match",
+      "expectedBytes": 5,
+      "expectedUnits": {
+        "literalOccurrences": 0,
+        "utf16Spans": []
+      }
+    },
+    {
+      "path": "scope/.gitignore",
+      "kind": "ignore",
+      "encoding": "utf8",
+      "recipe": "ignore-rules",
+      "expectedBytes": 9,
+      "expectedUnits": {
+        "literalOccurrences": 0,
+        "utf16Spans": []
+      }
+    },
+    {
+      "path": "scope/kept.txt",
+      "kind": "text",
+      "encoding": "utf8",
+      "recipe": "scope-kept",
+      "expectedBytes": 10,
+      "expectedUnits": {
+        "literalOccurrences": 1,
+        "utf16Spans": [
+          { "start": 0, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "scope/ignored/secret.txt",
+      "kind": "text",
+      "encoding": "utf8",
+      "recipe": "scope-ignored",
+      "ignored": true,
+      "expectedBytes": 12,
+      "expectedUnits": {
+        "literalOccurrences": 1,
+        "utf16Spans": [
+          { "start": 0, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "encodings/utf8-bom.txt",
+      "kind": "text",
+      "encoding": "utf8-bom",
+      "recipe": "encoding-utf8-bom",
+      "expectedBytes": 17,
+      "expectedUnits": {
+        "literalOccurrences": 1,
+        "utf16Spans": [
+          { "start": 0, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "encodings/utf16-le.txt",
+      "kind": "text",
+      "encoding": "utf16-le-bom",
+      "recipe": "encoding-utf16-le",
+      "expectedBytes": 30,
+      "expectedUnits": {
+        "literalOccurrences": 1,
+        "utf16Spans": [
+          { "start": 0, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "encodings/utf16-be.txt",
+      "kind": "text",
+      "encoding": "utf16-be-bom",
+      "recipe": "encoding-utf16-be",
+      "expectedBytes": 30,
+      "expectedUnits": {
+        "literalOccurrences": 1,
+        "utf16Spans": [
+          { "start": 0, "length": 4 }
+        ]
+      }
+    },
+    {
+      "path": "binary/raw.bin",
+      "kind": "binary",
+      "encoding": "binary",
+      "recipe": "binary-raw",
+      "expectedBytes": 8,
+      "expectedUnits": {
+        "literalOccurrences": 0,
+        "byteOccurrences": 1,
+        "byteSpans": [
+          { "start": 2, "length": 4 }
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "pathTemplate": "scale/batch-{batch:00}/file-{index:000}.txt",
+      "pathPrefix": "scale/batch-",
+      "count": 32,
+      "kind": "text",
+      "encoding": "utf8",
+      "recipe": "scale-text",
+      "expectedTotalBytes": 508,
+      "expectedLiteralOccurrences": 12
+    },
+    {
+      "pathTemplate": "scale/binary/payload.bin",
+      "pathPrefix": "scale/binary/",
+      "count": 1,
+      "kind": "binary",
+      "encoding": "binary",
+      "recipe": "scale-binary",
+      "expectedTotalBytes": 16384,
+      "expectedByteOccurrences": 3,
+      "expectedByteSpans": [
+        { "start": 127, "length": 4 },
+        { "start": 8191, "length": 4 },
+        { "start": 16380, "length": 4 }
+      ]
+    }
+  ]
+}

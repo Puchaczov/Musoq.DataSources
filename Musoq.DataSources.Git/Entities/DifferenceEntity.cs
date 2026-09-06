@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using LibGit2Sharp;
 using Musoq.Plugins.Attributes;

@@ -1,0 +1,99 @@
+{
+  "formatVersion": 1,
+  "status": "resolved-with-blocked-prerequisites",
+  "capturedAtUtc": "2026-09-06T16:19:10.1455051Z",
+  "configPath": "D:\\repos\\Musoq.DataSources\\docs\\campaigns\\search\\environment.local.json",
+  "selectedTrack": "core",
+  "repository": {
+    "path": "D:\\repos\\Musoq.DataSources",
+    "remote": "git@github.com:Puchaczov/Musoq.DataSources.git",
+    "identity": "Puchaczov/Musoq.DataSources",
+    "head": "d8b5cf41ecaa5f21505753c22a09d22fe2960e28"
+  },
+  "packageTrain": {
+    "status": "matched",
+    "expected": {
+      "MusoqConverterVersion": "17.0.9-alpha.2",
+      "MusoqEvaluatorVersion": "17.0.9-alpha.2",
+      "MusoqParserVersion": "17.0.9-alpha.1",
+      "MusoqPluginsVersion": "17.0.9-alpha.1",
+      "MusoqSchemaVersion": "17.0.9-alpha.1"
+    },
+    "actual": {
+      "MusoqConverterVersion": "17.0.9-alpha.2",
+      "MusoqEvaluatorVersion": "17.0.9-alpha.2",
+      "MusoqParserVersion": "17.0.9-alpha.1",
+      "MusoqPluginsVersion": "17.0.9-alpha.1",
+      "MusoqSchemaVersion": "17.0.9-alpha.1"
+    }
+  },
+  "engine": {
+    "mode": "packaged",
+    "status": "selected",
+    "path": null,
+    "compatibility": null
+  },
+  "cli": {
+    "status": "blocked",
+    "path": null,
+    "version": null,
+    "reason": "cliExecutable is unresolved; PATH discovery was not used as a substitute."
+  },
+  "cliRepository": {
+    "status": "blocked",
+    "path": null,
+    "reason": "externalRepositoryRoots.cli is unresolved; no checkout was inferred."
+  },
+  "ripgrep": {
+    "status": "resolved",
+    "path": "C:\\Users\\Jakub\\.vscode\\extensions\\openai.chatgpt-26.5901.22334-win32-x64\\bin\\windows-x86_64\\rg.exe",
+    "versionArguments": [
+      "--version"
+    ],
+    "version": "ripgrep 15.2.0 (rev e89fff89ac)\r\n\r\nfeatures:+pcre2\r\nsimd(compile):+SSE2,-SSSE3,-AVX2\r\nsimd(runtime):+SSE2,+SSSE3,+AVX2\r\n\r\nPCRE2 10.45 is available (JIT is available)",
+    "exitCode": 0
+  },
+  "blockedPrerequisites": [
+    "cliExecutable",
+    "externalRepositoryRoots.cli"
+  ],
+  "host": {
+    "osDescription": "Microsoft Windows 10.0.26200",
+    "osVersion": "10.0.26200.0",
+    "architecture": "X64",
+    "rid": "win-x64",
+    "powershellVersion": "7.6.5"
+  },
+  "toolchain": {
+    "dotnet": {
+      "name": "dotnet",
+      "path": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "arguments": [
+        "--version"
+      ],
+      "output": "10.0.303",
+      "exitCode": 0
+    },
+    "git": {
+      "name": "git",
+      "path": "C:\\Program Files\\Git\\cmd\\git.exe",
+      "arguments": [
+        "--version"
+      ],
+      "output": "git version 2.48.1.windows.1",
+      "exitCode": 0
+    },
+    "globalJson": {
+      "sdk": {
+        "version": "10.0.300",
+        "rollForward": "latestFeature"
+      }
+    }
+  },
+  "validation": {
+    "readOnly": true,
+    "externalRepositoriesInspected": [],
+    "externalRepositoriesMutated": [],
+    "pathResolution": "LiteralPath and direct executable invocation preserve spaces and Unicode."
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "scopeId": "W04-S04",
+  "status": "passed",
+  "summary": "Implemented explicit link/reparse and special-file scope policy. Search now skips reparse points by default, follows supported targets only when requested with physical containment and visited-directory guards, preserves hard-linked path identity, and excludes special entries before content open.",
+  "requirementIds": [
+    "R02",
+    "R03",
+    "R07",
+    "R08"
+  ],
+  "sourceReferences": [
+    "S03",
+    "S05",
+    "S20"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W04-S04/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "187356ec4259ae597e847af6ded500a114af7133",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 24,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; the local ignored campaign state was already recording W04-S04 as in_progress. W04-S04 implementation, tests and evidence were added afterward.",
+    "preExistingScopeCommit": "187356ec4259ae597e847af6ded500a114af7133",
+    "aheadNote": "The ahead count includes the retained pre-existing docs/campaign ignore commit; 23 preceding reachable commits carry completed Search scope trailers."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/SearchFileTraversal.cs",
+      "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "Musoq.DataSources.Search.Tests/SearchLinkPolicyTests.cs"
+    ],
+    "scopeBoundary": "Only the owning Search implementation and its tests were changed, together with W04-S04 evidence. No public SQL/source signature, sibling repository, query-engine adapter, release or publish surface was modified.",
+    "classification": {
+      "reparse": "Filesystem attributes and link-target metadata identify reparse entries before they are yielded. The default action and Search scope policy both refuse reparse entries unless FollowLinks is explicit.",
+      "special": "Entries reported with FileAttributes.Device are marked special and skipped before metadata or content access. No FIFO/socket/device-reading mode is exposed.",
+      "broken": "Broken or unsupported link targets are skipped as non-regular candidates.",
+      "root": "The scope matcher prepares an explicit root before traversal, so a reparse file or directory root cannot bypass the default no-follow policy.",
+      "hardLinks": "Hard-linked files remain separate lexical path candidates; no file-ID deduplication changes Search path evidence."
+    },
+    "followPolicy": {
+      "containment": "Resolved link targets must remain under the resolved physical root before convenience filters or content reads are reached.",
+      "cycles": "Resolution is bounded and tracks link paths; traversal tracks normalized physical directory identities, stopping ancestor cycles and duplicate directory aliases.",
+      "cancellation": "A cancellation check runs between link-resolution steps, while the existing traversal frontier and reader disposal remain in force.",
+      "outsideRoot": "A followed descendant link whose resolved target is outside the physical root raises the established typed SEARCH-SOURCE-002 source-access diagnostic at the link path."
+    },
+    "publicBinding": "The existing FollowLinks policy is consumed internally; no new public request or SQL binding is claimed by this scope."
+  },
+  "tests": {
+    "discovered": 72,
+    "passed": 69,
+    "failed": 0,
+    "skipped": 3,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 72,
+      "passed": 69,
+      "failed": 0,
+      "skipped": 3,
+      "newScenarios": [
+        "DefaultPolicy_ShouldExcludeReparseEntriesAndBrokenLinks",
+        "FollowPolicy_ShouldGuardCyclesAndDuplicateDirectoryIdentities",
+        "FollowPolicy_ShouldRejectOutsideRootTargets",
+        "HardLinks_ShouldRemainDistinctPathCandidates",
+        "PhysicalContainment_ShouldRespectUncShareBoundaries",
+        "SpecialEntries_ShouldBeExcludedWithoutASeparateSupportedMode"
+      ],
+      "requiredCoverage": [
+        "default no-follow reparse and broken-link policy",
+        "follow-mode link loops and duplicate physical directory identity",
+        "follow-mode outside-root rejection",
+        "hard links remain distinct path candidates",
+        "UNC same-share containment and cross-share rejection",
+        "special-entry exclusion without content open",
+        "cancellation-aware bounded link resolution"
+      ],
+      "skipClassification": {
+        "count": 3,
+        "reason": "The Windows test process lacks the privilege required to create symbolic-link fixtures; the three dependent tests call Assert.Inconclusive and are not relabeled as passes.",
+        "platform": "Windows 10.0.26200",
+        "unexpected": 0
+      }
+    },
+    "fullSuiteProjectCount": 21,
+    "fullSuite": {
+      "discovered": 1356,
+      "passed": 1322,
+      "failed": 0,
+      "skipped": 34,
+      "skipClassification": {
+        "existingExpectedSkips": 31,
+        "scopePlatformConditionalSkips": 3,
+        "unexpected": 0
+      }
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 72,
+      "passed": 69,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S04/search-focused.log",
+      "stdoutSha256": "5799c761b965a52d3b84e3f628f9dd76ef092ea59c6153042cd5b682ca13ad9b",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S04/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1356,
+      "passed": 1322,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S04/full-suite-exact.log",
+      "stdoutSha256": "fba600097435226ef2059bb5e4a836398c1487f514f5c70852d50e86eba62f2b",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S04/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "benchmark-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Benchmarks\\Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S04/benchmark-build.log",
+      "stdoutSha256": "efa4c9d8e6685fbec2042d3a7deb24ee15db2615e92edeb1c1775d79a13d47df",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S04/benchmark-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; focused Search tests; exact full suite; benchmark build",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 1,356 discovered, 1,322 passed, 0 failed and 34 skips; the 31 pre-existing skips and 3 platform-conditional symlink-fixture skips are classified, with no unexpected skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The approved separate review, exact source/artifact hashes and unique trailer-bearing completion commit are retained and will be verified by the campaign validator after commit."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Available hard-link, UNC containment and synthetic special/reparse policy checks passed; unavailable symbolic-link fixtures are explicitly platform-blocked rather than normalized into a green observation."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Link resolution is bounded and cancellation-aware, special/reparse entries are rejected before content open, and existing traversal frontier, reader-disposal and typed-diagnostic tests remain green."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchLinkPolicyTests.cs",
+      "sha256": "f0ddc3c1881359a2d6d35e571a020336c833278effb7b16cd7e3fa7d233a7064"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchFileTraversal.cs",
+      "sha256": "55fe3780ffcb855a0485431d93ace03ec7abf63a132137b14b69366eb049d954"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "sha256": "22087ad580989879aee6e8cec9d4da62885148f36ae73e85c3027383600ca4a7"
+    }
+  ],
+  "sourceDigest": "6704456b52891f84835ffb69924e1358991a076cc963255fcadd455e570da8b8",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W04-S04/review.md",
+      "sha256": "16fb778bd912198a7e29583a9573ace491ea4d9b199b446cc469136764da7779"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S04/search-focused.log",
+      "sha256": "5799c761b965a52d3b84e3f628f9dd76ef092ea59c6153042cd5b682ca13ad9b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S04/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S04/full-suite-exact.log",
+      "sha256": "fba600097435226ef2059bb5e4a836398c1487f514f5c70852d50e86eba62f2b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S04/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S04/benchmark-build.log",
+      "sha256": "efa4c9d8e6685fbec2042d3a7deb24ee15db2615e92edeb1c1775d79a13d47df"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S04/benchmark-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The current Windows test process cannot create symbolic links, so the three symlink-dependent fixtures are explicitly inconclusive; live symlink loop, reparse, broken-link and outside-target execution is not claimed as observed on this host.",
+    "FIFO/socket fixtures are not available on Windows. The implementation has no separate special-file mode and excludes entries reported by the runtime as FileAttributes.Device; Unix special-file fixtures remain an applicable platform qualification.",
+    "Physical directory identity is normalized resolved-path identity. Hard-linked files intentionally retain separate path candidates, as required by the scope contract.",
+    "The link policy remains an internal implementation seam until the later request binder exposes explicit scope options; no public API is claimed here.",
+    "The repository-wide suite retains 31 existing classified skips and the 3 platform-conditional symlink fixture skips from this scope; the Search package build continues to report its existing missing-readme advisory; no package was published."
+  ],
+  "nextHandoff": "W04-S05 — Expose paths and scope explanation; no external handoff is required for this scope."
+}

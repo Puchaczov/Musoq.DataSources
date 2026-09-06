@@ -1,0 +1,173 @@
+{
+  "contract": "Musoq Search scope and path semantics",
+  "version": 1,
+  "status": "proposed",
+  "scope": "W01-S03",
+  "implementationStatus": "Design only. These rules must be implemented and verified against the actual filesystem in later scopes.",
+  "defaults": {
+    "recursive": true,
+    "pathComparison": "filesystem-native",
+    "include": [],
+    "exclude": [],
+    "repositoryIgnores": "respect",
+    "globalIgnores": "disabled",
+    "hiddenEntries": "exclude",
+    "followLinks": "do not follow",
+    "hardLinks": "distinct-paths",
+    "inaccessibleEntries": "fail",
+    "missingRoot": "fail-before-scan"
+  },
+  "security": {
+    "containmentCheck": "before convenience filters and before content reads",
+    "lexicalContainment": "normalize separators and dot segments, then require the candidate path to equal the root or have the root plus a separator as prefix",
+    "physicalContainment": "when links are followed, resolve the target and require it to remain under the resolved physical root",
+    "outsideRoot": "reject as a containment violation; outside-root candidates cannot be made safe by an include, ignore or hidden rule",
+    "pathIdentity": "retain each eligible path identity; do not use convenience filtering as a security boundary"
+  },
+  "rootResolution": {
+    "relativeRoot": "resolve against the query working directory captured in the execution request",
+    "absoluteRoot": "normalize without changing the requested filesystem object",
+    "rootFile": "the single file is the complete candidate set when it is eligible",
+    "rootDirectory": "the directory is the traversal boundary",
+    "missingRoot": "typed failure before an empty scan can be reported",
+    "fingerprintInputs": ["requestedRoot", "resolvedRootIdentity", "rootKind", "queryWorkingDirectory", "pathComparison"]
+  },
+  "traversal": {
+    "recursiveDefault": true,
+    "nonRecursive": "inspect only the root directory's direct eligible files",
+    "directoryPruning": "prune only a directory explicitly excluded by a security decision or an explicit directory-only exclusion; file extension includes never prune a directory whose descendants may match",
+    "regularFiles": "only regular files become path/content candidates; special entries are policy decisions, not silently regular files",
+    "determinism": "record normalized relative paths and sort the resolved candidate manifest ordinally for the fingerprint; SQL result order still requires ORDER BY"
+  },
+  "includeExclude": {
+    "evaluationOrder": [
+      "security containment",
+      "include allow-list",
+      "exclude deny-list",
+      "repository/global ignore rules",
+      "hidden/link/special-entry policy"
+    ],
+    "include": "when non-empty, a file must match at least one include glob; an unmatched directory is still traversed when a descendant could match",
+    "exclude": "a matching exclude glob denies the path after include evaluation; excludes win over includes",
+    "directoryRules": "a directory-only exclusion may prune descendants; a file extension pattern alone may not",
+    "negation": "negated ignore rules are evaluated within their ignore source and precedence; they cannot cross the security containment boundary"
+  },
+  "ignorePolicy": {
+    "repositorySources": [
+      { "name": ".gitignore", "precedence": 1 },
+      { "name": ".ignore", "precedence": 2 },
+      { "name": ".rgignore", "precedence": 3 }
+    ],
+    "globalSource": { "name": "configured global ignore", "precedence": 0, "default": "disabled" },
+    "higherPrecedenceWins": true,
+    "withinFile": "later matching rule wins",
+    "parentDirectory": "a pruned ignored directory is not reopened solely because a descendant negation exists; the parent must be re-included before the descendant can be considered",
+    "fingerprint": "record every loaded ignore source, its normalized path, precedence and SHA-256 content hash"
+  },
+  "entryPolicies": {
+    "hidden": {
+      "default": "exclude",
+      "explicitEnable": "include hidden files/directories after security checks"
+    },
+    "links": {
+      "default": "do not follow symbolic links or reparse-point directories",
+      "followEnabled": "resolve physical targets, enforce physical containment and maintain a visited physical-directory set to stop cycles",
+      "outsideTarget": "reject or report according to the explicit link policy; never treat it as in-root by lexical spelling"
+    },
+    "hardLinks": {
+      "default": "each directory entry path is a separate path candidate, even when file identity is shared",
+      "deduplication": "no inode/file-ID deduplication in the path contract"
+    },
+    "inaccessible": {
+      "root": "fail before scan",
+      "descendantDefault": "fail with the path and phase recorded",
+      "explicitSkip": "permitted only as a named policy whose skipped count and completeness are surfaced by the audit contract"
+    }
+  },
+  "scopeFingerprint": {
+    "algorithm": "SHA-256 of canonical UTF-8 JSON",
+    "canonicalization": "object keys sorted ordinally, arrays retain semantic order, compact separators, no implicit machine-specific fields",
+    "fields": [
+      "contractVersion",
+      "requestedRoot",
+      "resolvedRootIdentity",
+      "rootKind",
+      "queryWorkingDirectory",
+      "pathComparison",
+      "recursive",
+      "include",
+      "exclude",
+      "repository/global ignore settings",
+      "loaded ignore source hashes",
+      "hidden/link/hard-link/inaccessible policies",
+      "sorted candidate decision manifest"
+    ],
+    "explanation": "retain the normalized policy, loaded rule hashes, candidate counts and per-path decision reasons needed to reproduce the digest",
+    "sharedDocs": "examples use synthetic relative roots; actual absolute machine paths belong only in ignored local evidence"
+  },
+  "fixtures": [
+    {
+      "id": "nested-ignore-negation",
+      "rules": {
+        "root.gitignore": ["*.tmp"],
+        "src/.ignore": ["*.generated.cs", "!keep.generated.cs"]
+      },
+      "paths": ["src/a.cs", "src/drop.generated.cs", "src/keep.generated.cs", "src/cache.tmp"],
+      "expectedIncluded": ["src/a.cs", "src/keep.generated.cs"],
+      "expectedExcluded": ["src/drop.generated.cs", "src/cache.tmp"],
+      "reason": "nested higher-scope rules and negation are applied without changing containment"
+    },
+    {
+      "id": "ignored-parent-blocks-descendant-negation",
+      "rules": {
+        "root.gitignore": ["build/"],
+        "build/.ignore": ["!keep.cs"]
+      },
+      "paths": ["build/drop.cs", "build/keep.cs"],
+      "expectedIncluded": [],
+      "expectedExcluded": ["build/drop.cs", "build/keep.cs"],
+      "reason": "a pruned parent is not reopened by a descendant negation"
+    },
+    {
+      "id": "lexical-versus-physical-containment",
+      "root": "workspace/repo",
+      "candidates": [
+        { "path": "workspace/repo/src/../file.cs", "physicalTarget": "workspace/repo/file.cs", "followLinks": false, "expected": "included" },
+        { "path": "workspace/repo/link/outside.cs", "physicalTarget": "workspace/outside.cs", "followLinks": true, "expected": "rejected-outside-physical-root" },
+        { "path": "workspace/repo/../outside.cs", "physicalTarget": "workspace/outside.cs", "followLinks": false, "expected": "rejected-outside-lexical-root" }
+      ]
+    },
+    {
+      "id": "case-sensitive-filesystem",
+      "paths": ["A.cs", "a.cs"],
+      "cases": [
+        { "pathComparison": "case-sensitive", "glob": "A.cs", "expected": ["A.cs"] },
+        { "pathComparison": "case-insensitive", "glob": "A.cs", "expected": ["A.cs", "a.cs"] }
+      ]
+    },
+    {
+      "id": "extension-does-not-prune-directory",
+      "include": ["*.cs"],
+      "directory": "docs",
+      "descendant": "docs/example.cs",
+      "expectedTraverseDirectory": true,
+      "expectedIncludeDescendant": true
+    },
+    {
+      "id": "hard-link-path-identity",
+      "entries": [
+        { "path": "a.txt", "fileIdentity": "file-1" },
+        { "path": "alias.txt", "fileIdentity": "file-1" }
+      ],
+      "expectedPaths": ["a.txt", "alias.txt"],
+      "reason": "shared physical file identity does not collapse distinct path rows"
+    },
+    {
+      "id": "inaccessible-descendant",
+      "path": "private/secret.cs",
+      "defaultPolicy": "fail",
+      "expected": "failed-with-path-and-phase"
+    }
+  ],
+  "sourceBasis": ["S14", "S15", "S20", "S22", "S23"]
+}

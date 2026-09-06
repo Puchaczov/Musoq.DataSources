@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Archives;
@@ -16,8 +15,8 @@ using Musoq.DataSources.Ollama;
 using Musoq.DataSources.OpenAI;
 using Musoq.DataSources.Os;
 using Musoq.DataSources.Roslyn;
+using Musoq.DataSources.Search;
 using Musoq.DataSources.SeparatedValues;
-using Musoq.DataSources.Tests.Common;
 using Musoq.DataSources.Time;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -90,6 +89,15 @@ public sealed class ConcreteDatasourceConformanceTests
         Concrete("os", "metadata", ["./Files/example.txt", false], typeof(string), typeof(bool)),
         Concrete("os", "metadata", ["./Files", false, true], typeof(string), typeof(bool), typeof(bool)),
 
+        Concrete("search", "matches", ["./Files", "TODO"], typeof(string), typeof(string)),
+        Concrete("search", "many", ["./Files", "{}"], typeof(string), typeof(string)),
+        Concrete("search", "lines", ["./Files", "TODO"], typeof(string), typeof(string)),
+        Concrete("search", "files", ["./Files", "TODO"], typeof(string), typeof(string)),
+        Concrete("search", "counts", ["./Files", "TODO"], typeof(string), typeof(string)),
+        Concrete("search", "paths", ["./Files"], typeof(string)),
+        Concrete("search", "bytes", ["./Files", "{}"], typeof(string), typeof(string)),
+        Concrete("search", "audit", ["./Files", "TODO"], typeof(string), typeof(string)),
+
         Concrete("roslyn", "solution", ["./TestsSolutions/Solution1/Solution1.sln"], typeof(string)),
 
         Concrete("system", "dual", []),
@@ -130,9 +138,9 @@ public sealed class ConcreteDatasourceConformanceTests
     ];
 
     [TestMethod]
-    public void RegisteredConstructors_HaveExactly56ConcreteAnd15DynamicCases()
+    public void RegisteredConstructors_HaveExactly64ConcreteAnd15DynamicCases()
     {
-        Assert.AreEqual(56, ConcreteCases.Length);
+        Assert.AreEqual(64, ConcreteCases.Length);
         Assert.AreEqual(15, DynamicCases.Length);
         Assert.IsTrue(ConcreteCases.All(item =>
             item.Query.StartsWith("select * from ", StringComparison.OrdinalIgnoreCase)));
@@ -175,7 +183,7 @@ public sealed class ConcreteDatasourceConformanceTests
 
         var actualConcrete = actual.Where(signature => expectedConcrete.Contains(signature, StringComparer.Ordinal)).ToArray();
         var actualDynamic = actual.Where(signature => expectedDynamic.Contains(signature, StringComparer.Ordinal)).ToArray();
-        Assert.AreEqual(56, actualConcrete.Length);
+        Assert.AreEqual(64, actualConcrete.Length);
         Assert.AreEqual(15, actualDynamic.Length);
     }
 
@@ -304,7 +312,8 @@ public sealed class ConcreteDatasourceConformanceTests
             {
                 "archives.file.CompressionType",
                 "os.directories.Attributes",
-                "os.dirscompare.State"
+                "os.dirscompare.State",
+                "search.audit.Outcome"
             },
             enumColumns,
             "The native enum producer inventory must remain explicit and complete.");
@@ -327,6 +336,7 @@ public sealed class ConcreteDatasourceConformanceTests
             ["os"] = new OsSchema(),
             ["roslyn"] = new CSharpSchema(),
             ["separatedvalues"] = new SeparatedValuesSchema(),
+            ["search"] = new SearchSchema(),
             ["system"] = new Musoq.DataSources.System.SystemSchema(),
             ["time"] = new TimeSchema()
         };

@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Musoq.DataSources.Roslyn;
 using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;

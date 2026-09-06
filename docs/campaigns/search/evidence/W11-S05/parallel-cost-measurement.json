@@ -1,0 +1,403 @@
+{
+  "command": "measure-parallel-cost",
+  "scopeId": "W11-S05",
+  "seed": 44112901,
+  "resultUnit": "row",
+  "workload": {
+    "id": "parallel-file-ordering",
+    "fileCount": 48,
+    "rowsPerFile": 128,
+    "totalRows": 6144,
+    "perFileWork": "deterministic bounded spin-wait plus one owned row chunk",
+    "outputIdentity": "file path plus row ordinal"
+  },
+  "trialsPerCell": 7,
+  "warmupsExcluded": 1,
+  "timingBoundary": "Coordinator setup, worker scheduling, bounded per-file channel transport, destination drain, deterministic per-file work and output hash; JSON serialization and fixture construction excluded.",
+  "modes": {
+    "sequential": {
+      "durationMilliseconds": 18.6344,
+      "sortDurationMilliseconds": 1.8402,
+      "allocatedBytesOnCoordinatorThread": 1829656,
+      "emittedRows": 6144,
+      "progressReports": 2,
+      "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "outputOrderChanged": false,
+      "complete": true,
+      "terminalState": "complete"
+    },
+    "parallelFileOrder": {
+      "durationMilliseconds": 2.7024,
+      "sortDurationMilliseconds": 0.4845,
+      "allocatedBytesOnCoordinatorThread": 1806128,
+      "emittedRows": 6144,
+      "progressReports": 2,
+      "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "outputOrderChanged": false,
+      "complete": true,
+      "terminalState": "complete"
+    },
+    "parallelCompletionOrder": {
+      "durationMilliseconds": 1.6355,
+      "sortDurationMilliseconds": 0.537,
+      "allocatedBytesOnCoordinatorThread": 1807136,
+      "emittedRows": 6144,
+      "progressReports": 2,
+      "outputHash": "5bf83a235237c633cfa3b0748e521287457a20db4994b6433e0bff7a07827f6e",
+      "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "outputOrderChanged": true,
+      "complete": true,
+      "terminalState": "complete"
+    }
+  },
+  "warmup": {
+    "sequential": {
+      "durationMilliseconds": 18.6344,
+      "sortDurationMilliseconds": 1.8402,
+      "allocatedBytesOnCoordinatorThread": 1829656,
+      "emittedRows": 6144,
+      "progressReports": 2,
+      "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "outputOrderChanged": false,
+      "complete": true,
+      "terminalState": "complete"
+    },
+    "parallelFileOrder": {
+      "durationMilliseconds": 2.7024,
+      "sortDurationMilliseconds": 0.4845,
+      "allocatedBytesOnCoordinatorThread": 1806128,
+      "emittedRows": 6144,
+      "progressReports": 2,
+      "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "outputOrderChanged": false,
+      "complete": true,
+      "terminalState": "complete"
+    },
+    "parallelCompletionOrder": {
+      "durationMilliseconds": 1.6355,
+      "sortDurationMilliseconds": 0.537,
+      "allocatedBytesOnCoordinatorThread": 1807136,
+      "emittedRows": 6144,
+      "progressReports": 2,
+      "outputHash": "5bf83a235237c633cfa3b0748e521287457a20db4994b6433e0bff7a07827f6e",
+      "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+      "outputOrderChanged": true,
+      "complete": true,
+      "terminalState": "complete"
+    }
+  },
+  "trials": [
+    {
+      "trial": 1,
+      "firstInvocation": "ParallelFileOrder,Sequential,ParallelCompletionOrder",
+      "sequential": {
+        "durationMilliseconds": 6.8487,
+        "sortDurationMilliseconds": 0.4801,
+        "allocatedBytesOnCoordinatorThread": 1817000,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelFileOrder": {
+        "durationMilliseconds": 1.5859,
+        "sortDurationMilliseconds": 0.4602,
+        "allocatedBytesOnCoordinatorThread": 1806128,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelCompletionOrder": {
+        "durationMilliseconds": 1.496,
+        "sortDurationMilliseconds": 0.5304,
+        "allocatedBytesOnCoordinatorThread": 1809728,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "5873c5d78b1f8cdda6e71750dce365b437cccc38f46d682e107a438e6a16e49c",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": true,
+        "complete": true,
+        "terminalState": "complete"
+      }
+    },
+    {
+      "trial": 2,
+      "firstInvocation": "Sequential,ParallelFileOrder,ParallelCompletionOrder",
+      "sequential": {
+        "durationMilliseconds": 7.3985,
+        "sortDurationMilliseconds": 0.4642,
+        "allocatedBytesOnCoordinatorThread": 1817000,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelFileOrder": {
+        "durationMilliseconds": 1.4572,
+        "sortDurationMilliseconds": 0.4722,
+        "allocatedBytesOnCoordinatorThread": 1808312,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelCompletionOrder": {
+        "durationMilliseconds": 1.4467,
+        "sortDurationMilliseconds": 0.5497,
+        "allocatedBytesOnCoordinatorThread": 1813016,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "32c232e83c345a505a779847ac2b33a0f5fc29206bd8b12246ee8664aa401713",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": true,
+        "complete": true,
+        "terminalState": "complete"
+      }
+    },
+    {
+      "trial": 3,
+      "firstInvocation": "Sequential,ParallelFileOrder,ParallelCompletionOrder",
+      "sequential": {
+        "durationMilliseconds": 6.7717,
+        "sortDurationMilliseconds": 0.4292,
+        "allocatedBytesOnCoordinatorThread": 1817000,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelFileOrder": {
+        "durationMilliseconds": 1.4502,
+        "sortDurationMilliseconds": 0.4346,
+        "allocatedBytesOnCoordinatorThread": 1808936,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelCompletionOrder": {
+        "durationMilliseconds": 1.5304,
+        "sortDurationMilliseconds": 0.4911,
+        "allocatedBytesOnCoordinatorThread": 1812720,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "69400ae685d1568304fbe639a740953431719a3f031843ec153d8dd4fec2a65d",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": true,
+        "complete": true,
+        "terminalState": "complete"
+      }
+    },
+    {
+      "trial": 4,
+      "firstInvocation": "Sequential,ParallelCompletionOrder,ParallelFileOrder",
+      "sequential": {
+        "durationMilliseconds": 6.6057,
+        "sortDurationMilliseconds": 0.441,
+        "allocatedBytesOnCoordinatorThread": 1817000,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelFileOrder": {
+        "durationMilliseconds": 1.4255,
+        "sortDurationMilliseconds": 0.4495,
+        "allocatedBytesOnCoordinatorThread": 1808560,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelCompletionOrder": {
+        "durationMilliseconds": 1.4784,
+        "sortDurationMilliseconds": 0.5112,
+        "allocatedBytesOnCoordinatorThread": 1812152,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "e11ec8926af84078a3aeaffd1b3854ea211c3872d2a5dfa31f63eb61f86867ae",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": true,
+        "complete": true,
+        "terminalState": "complete"
+      }
+    },
+    {
+      "trial": 5,
+      "firstInvocation": "Sequential,ParallelFileOrder,ParallelCompletionOrder",
+      "sequential": {
+        "durationMilliseconds": 6.7271,
+        "sortDurationMilliseconds": 0.4374,
+        "allocatedBytesOnCoordinatorThread": 1817000,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelFileOrder": {
+        "durationMilliseconds": 1.5156,
+        "sortDurationMilliseconds": 0.4477,
+        "allocatedBytesOnCoordinatorThread": 1807064,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelCompletionOrder": {
+        "durationMilliseconds": 1.9097,
+        "sortDurationMilliseconds": 0.5219,
+        "allocatedBytesOnCoordinatorThread": 1810928,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "4d01597411b01befe9f60337cecc3fd5ed48aa4e6438deb1ff58e4713872e222",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": true,
+        "complete": true,
+        "terminalState": "complete"
+      }
+    },
+    {
+      "trial": 6,
+      "firstInvocation": "ParallelFileOrder,ParallelCompletionOrder,Sequential",
+      "sequential": {
+        "durationMilliseconds": 6.6721,
+        "sortDurationMilliseconds": 0.4365,
+        "allocatedBytesOnCoordinatorThread": 1817000,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelFileOrder": {
+        "durationMilliseconds": 1.4839,
+        "sortDurationMilliseconds": 0.4383,
+        "allocatedBytesOnCoordinatorThread": 1807376,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelCompletionOrder": {
+        "durationMilliseconds": 1.4616,
+        "sortDurationMilliseconds": 0.4983,
+        "allocatedBytesOnCoordinatorThread": 1811576,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "1945618891a1efbd1b0f45af9732ed1c81841e06aaa1c2dc6c2b28f1daf3b640",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": true,
+        "complete": true,
+        "terminalState": "complete"
+      }
+    },
+    {
+      "trial": 7,
+      "firstInvocation": "Sequential,ParallelCompletionOrder,ParallelFileOrder",
+      "sequential": {
+        "durationMilliseconds": 6.6773,
+        "sortDurationMilliseconds": 0.4368,
+        "allocatedBytesOnCoordinatorThread": 1817000,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelFileOrder": {
+        "durationMilliseconds": 1.489,
+        "sortDurationMilliseconds": 0.4533,
+        "allocatedBytesOnCoordinatorThread": 1808248,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": false,
+        "complete": true,
+        "terminalState": "complete"
+      },
+      "parallelCompletionOrder": {
+        "durationMilliseconds": 1.4614,
+        "sortDurationMilliseconds": 0.4831,
+        "allocatedBytesOnCoordinatorThread": 1812432,
+        "emittedRows": 6144,
+        "progressReports": 2,
+        "outputHash": "3abc3cfdab62d9727c4c272b647f81a1341ff96e1764c8172cef2103026d5673",
+        "sortedHash": "159c4d4be4fdcb9607b8eae380e92b9da64b8781a9fa6bcd3c3477e7884dcad7",
+        "outputOrderChanged": true,
+        "complete": true,
+        "terminalState": "complete"
+      }
+    }
+  ],
+  "summary": {
+    "sequentialMedianMilliseconds": 6.7271,
+    "parallelFileOrderMedianMilliseconds": 1.4839,
+    "parallelCompletionOrderMedianMilliseconds": 1.4784,
+    "parallelFileOrderToSequentialMedianRatio": 0.2205853934087497,
+    "parallelCompletionOrderToSequentialMedianRatio": 0.2197678048490434,
+    "sortedResultMedianMilliseconds": 0.5112,
+    "sequentialMedianProgressReports": 2,
+    "parallelCompletionOrderMedianProgressReports": 2
+  },
+  "noMatchWorkload": {
+    "fileCount": 256,
+    "durationMilliseconds": 1.0784,
+    "emittedRows": 0,
+    "progressReports": 0,
+    "complete": true,
+    "terminalState": "complete"
+  },
+  "equality": {
+    "allRowCountsEqual": true,
+    "allMultisetHashesEqual": true,
+    "orderedModesHaveEqualOutput": true,
+    "completionOrderIsExplicit": true
+  },
+  "decision": {
+    "status": "observation",
+    "conclusion": "Parallel completion-order output is an explicit transport mode whose row multiset matches sequential and file-order modes. SQL ORDER BY remains the semantic ordering boundary; this measurement records its sorting cost separately and does not claim that completion order should replace the current file-order default."
+  }
+}

@@ -1,0 +1,252 @@
+{
+  "contract": "Musoq Search match semantics",
+  "version": 1,
+  "status": "proposed",
+  "scope": "W01-S02",
+  "implementationStatus": "Design only. These semantics must be implemented and compiled against the actual datasource in later scopes.",
+  "defaults": {
+    "textMode": "literal",
+    "case": "sensitive",
+    "wholeWord": false,
+    "encoding": "auto",
+    "recordScope": "physical-line",
+    "selection": "leftmost-first-non-overlapping",
+    "regexDialect": "portable-nonbacktracking-subset",
+    "unsupportedConstructBehavior": "reject-before-read",
+    "fallback": "none"
+  },
+  "literalSemantics": {
+    "comparison": "ordinal code-unit comparison; no culture-sensitive comparison or normalization",
+    "selection": "for one pattern, emit the leftmost match and continue after its end; matches that overlap the selected match are not emitted",
+    "crossPatternSelection": "each labeled pattern is searched independently; a match from one pattern never suppresses an overlapping match from another",
+    "equalPatternText": "distinct PatternId values remain distinct logical patterns",
+    "emptyPattern": "reject as invalid input before opening the root",
+    "metacharacters": "ordinary text in literal mode, including regex metacharacters"
+  },
+  "regexSemantics": {
+    "engineProfile": "portable non-backtracking subset",
+    "selection": "earliest start wins; alternatives beginning at the same position use source order (leftmost-first), not leftmost-longest",
+    "allowedFeatures": [
+      "literal characters and escaped literals",
+      "character classes and ranges",
+      "Unicode character categories",
+      "capturing and non-capturing groups",
+      "alternation",
+      "bounded and unbounded repetition",
+      "start/end record anchors and word boundaries"
+    ],
+    "rejectedFeatures": [
+      "backreferences",
+      "lookahead and lookbehind",
+      "balancing groups and conditionals",
+      "atomic groups or engine-specific extensions",
+      "any construct unsupported by the selected non-backtracking profile"
+    ],
+    "unsupportedBehavior": "reject the request with a typed unsupported-pattern result; never silently retry with a backtracking engine, literal mode or another dialect",
+    "invalidBehavior": "reject malformed syntax before opening the root"
+  },
+  "zeroWidthSemantics": {
+    "emit": true,
+    "byteLength": 0,
+    "progress": "after emitting a zero-width match, advance the search start by one Unicode scalar when not already at the end of the record",
+    "endOfRecord": "an end-position zero-width match is emitted at most once",
+    "emptyRecord": "an empty physical record is a valid record; an empty file has no physical records unless a later line contract says otherwise",
+    "infiniteLoop": "forbidden"
+  },
+  "wholeWordSemantics": {
+    "default": false,
+    "enabledMode": "unicode",
+    "wordScalarCategories": [
+      "letter",
+      "decimal-digit-number",
+      "connector-punctuation",
+      "non-spacing-mark",
+      "spacing-combining-mark"
+    ],
+    "boundary": "a whole-word match starts or ends at a record boundary or where word status changes",
+    "normalization": "none",
+    "culture": "invariant"
+  },
+  "caseSemantics": {
+    "sensitive": "ordinal exact comparison",
+    "insensitive": "ordinal Unicode case-insensitive comparison",
+    "culture": "never use current-culture casing",
+    "normalization": "never normalize implicitly"
+  },
+  "encodingSemantics": {
+    "modes": ["auto", "utf8", "utf8-bom", "utf16-le-bom", "utf16-be-bom"],
+    "auto": "honor a supported BOM; otherwise interpret as UTF-8",
+    "explicit": "the declared mode must agree with a present BOM and input decoding",
+    "invalidBytes": "typed failure; replacement characters are not a successful fallback",
+    "byteCoordinates": "always measured in original input bytes",
+    "bytesSource": "raw byte matching is handled by search.bytes and is not converted into text regex semantics"
+  },
+  "ordering": {
+    "withinPattern": "increasing source start, then increasing end for a same-start tie",
+    "manySameStart": "input pattern order is the deterministic tie-breaker after path and byte start",
+    "sql": "source order is not an SQL ordering guarantee; callers need ORDER BY for a promised result order"
+  },
+  "truthTables": [
+    {
+      "id": "prefix-suffix-overlap",
+      "purpose": "Separate within-pattern non-overlap from cross-pattern independence and regex alternative order.",
+      "cases": [
+        {
+          "name": "single-pattern-overlap",
+          "mode": "literal",
+          "pattern": "aba",
+          "record": "ababa",
+          "expectedUtf16Spans": [[0, 3]],
+          "rule": "the suffix-starting match at 2 overlaps the selected match at 0 and is not emitted"
+        },
+        {
+          "name": "cross-pattern-prefix",
+          "mode": "literal-many",
+          "patterns": [
+            { "id": "short", "pattern": "a" },
+            { "id": "long", "pattern": "ab" }
+          ],
+          "record": "ab",
+          "expectedByPatternId": {
+            "short": [[0, 1]],
+            "long": [[0, 2]]
+          },
+          "rule": "overlap across independent pattern IDs is retained"
+        },
+        {
+          "name": "regex-alternative-order",
+          "mode": "regex",
+          "records": [
+            { "pattern": "a|ab", "record": "ab", "expectedUtf16Spans": [[0, 1]] },
+            { "pattern": "ab|a", "record": "ab", "expectedUtf16Spans": [[0, 2]] }
+          ],
+          "rule": "same-start alternatives use source order, not longest-match selection"
+        }
+      ]
+    },
+    {
+      "id": "duplicate-ids",
+      "purpose": "Keep pattern labels as stable row identity.",
+      "cases": [
+        {
+          "name": "duplicate-id-rejected",
+          "patterns": [
+            { "id": "todo", "pattern": "TODO" },
+            { "id": "todo", "pattern": "FIXME" }
+          ],
+          "expected": "reject-before-read"
+        },
+        {
+          "name": "equal-text-distinct-ids-accepted",
+          "patterns": [
+            { "id": "first", "pattern": "TODO" },
+            { "id": "second", "pattern": "TODO" }
+          ],
+          "expectedPatternIds": ["first", "second"],
+          "expectedRowsForRecordTODO": 2
+        }
+      ]
+    },
+    {
+      "id": "empty-literal",
+      "purpose": "Prevent an unbounded stream of empty literal rows.",
+      "cases": [
+        {
+          "name": "empty-literal-rejected",
+          "mode": "literal",
+          "pattern": "",
+          "expected": "reject-before-read"
+        }
+      ]
+    },
+    {
+      "id": "anchors",
+      "purpose": "Make record anchors independent of backend file-buffer behavior.",
+      "recordScope": "physical-line",
+      "cases": [
+        {
+          "name": "whole-record",
+          "mode": "regex",
+          "pattern": "^TODO$",
+          "record": "TODO",
+          "expectedUtf16Spans": [[0, 4]]
+        },
+        {
+          "name": "not-whole-record",
+          "mode": "regex",
+          "pattern": "^TODO$",
+          "record": "TODO now",
+          "expectedUtf16Spans": []
+        },
+        {
+          "name": "end-anchor",
+          "mode": "regex",
+          "pattern": "TODO$",
+          "record": "say TODO",
+          "expectedUtf16Spans": [[4, 8]]
+        }
+      ]
+    },
+    {
+      "id": "zero-width",
+      "purpose": "Emit useful zero-width matches while guaranteeing progress.",
+      "cases": [
+        {
+          "name": "start-anchor",
+          "mode": "regex",
+          "pattern": "^",
+          "record": "abc",
+          "expectedUtf16Spans": [[0, 0]]
+        },
+        {
+          "name": "end-anchor",
+          "mode": "regex",
+          "pattern": "$",
+          "record": "abc",
+          "expectedUtf16Spans": [[3, 3]]
+        },
+        {
+          "name": "both-anchors",
+          "mode": "regex",
+          "pattern": "^|$",
+          "record": "abc",
+          "expectedUtf16Spans": [[0, 0], [3, 3]]
+        }
+      ]
+    },
+    {
+      "id": "unicode-boundaries",
+      "purpose": "Use explicit Unicode word status without normalization or culture drift.",
+      "cases": [
+        {
+          "name": "composed-word",
+          "mode": "literal",
+          "wholeWord": true,
+          "pattern": "café",
+          "record": "café café",
+          "expectedUtf16Spans": [[0, 4]],
+          "rule": "composed and decomposed text are not normalized into one form"
+        },
+        {
+          "name": "decomposed-word",
+          "mode": "literal",
+          "wholeWord": true,
+          "pattern": "café",
+          "record": "café café",
+          "expectedUtf16Spans": [[5, 10]],
+          "rule": "the combining mark remains part of the Unicode word"
+        },
+        {
+          "name": "combining-mark-does-not-create-boundary",
+          "mode": "literal",
+          "wholeWord": true,
+          "pattern": "cafe",
+          "record": "café",
+          "expectedUtf16Spans": [],
+          "rule": "a combining mark after the match is word-like, so cafe is not a whole word"
+        }
+      ]
+    }
+  ],
+  "sourceBasis": ["S14", "S15", "S20", "S22", "S23"]
+}

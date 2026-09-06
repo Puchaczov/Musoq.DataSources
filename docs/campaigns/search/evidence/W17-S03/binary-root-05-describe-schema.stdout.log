@@ -1,0 +1,297 @@
+{
+  "formatVersion": "1",
+  "catalogVersion": "0ab8f033ee789119a553da06453828b90050845c054505de852aef3ecf1a6c7b",
+  "request": {
+    "operation": "observe",
+    "kind": "schema",
+    "target": "#Search"
+  },
+  "resources": [
+    {
+      "uri": "musoq://runtime/schema/search",
+      "kind": "schema",
+      "title": "Schema #Search",
+      "summary": "Capabilities reported by schemas installed in this Musoq environment.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "af1d7cbff0f93750de62dfcab33c970883ee2b1659b3211f93e4b70599996a8f",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://spec/language#desc-statement"
+      ],
+      "attributes": {
+        "matchedRows": 8,
+        "observedRows": 8,
+        "resultRole": "collection",
+        "returnedRows": 8,
+        "truncated": false
+      }
+    },
+    {
+      "uri": "musoq://runtime/schema/search/rows/0001",
+      "kind": "schemaEntry",
+      "title": "audit",
+      "summary": "Observed schema metadata row.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "7651099a0038d56f8772a2f133369bd1452cc0b72084491a96e79a97efd1f971",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://runtime/schema/search"
+      ],
+      "attributes": {
+        "name": "audit",
+        "parameter0": "root: System.String",
+        "parameter1": "literal: System.String",
+        "resultRole": "row"
+      }
+    },
+    {
+      "uri": "musoq://runtime/schema/search/rows/0002",
+      "kind": "schemaEntry",
+      "title": "bytes",
+      "summary": "Observed schema metadata row.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "3d0b63988f3cfa0cbe3ba063fba8c38102d06811bd463260523b251c205cbb44",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://runtime/schema/search"
+      ],
+      "attributes": {
+        "name": "bytes",
+        "parameter0": "root: System.String",
+        "parameter1": "patternJson: System.String",
+        "resultRole": "row"
+      }
+    },
+    {
+      "uri": "musoq://runtime/schema/search/rows/0003",
+      "kind": "schemaEntry",
+      "title": "counts",
+      "summary": "Observed schema metadata row.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "1daaeda94c57a41ab5fbb5ad08db3ffc76f58d56a868c760081642cc350ee7fd",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://runtime/schema/search"
+      ],
+      "attributes": {
+        "name": "counts",
+        "parameter0": "root: System.String",
+        "parameter1": "literal: System.String",
+        "resultRole": "row"
+      }
+    },
+    {
+      "uri": "musoq://runtime/schema/search/rows/0004",
+      "kind": "schemaEntry",
+      "title": "files",
+      "summary": "Observed schema metadata row.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "f800322d86b076528d7230d6177c67536810e88ea0371fc0b6b853dab245dae0",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://runtime/schema/search"
+      ],
+      "attributes": {
+        "name": "files",
+        "parameter0": "root: System.String",
+        "parameter1": "literal: System.String",
+        "resultRole": "row"
+      }
+    },
+    {
+      "uri": "musoq://runtime/schema/search/rows/0005",
+      "kind": "schemaEntry",
+      "title": "lines",
+      "summary": "Observed schema metadata row.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "743ee1aa99c7b0d5162d2c8857e8dbfe5d37bd4c33d6d6c82425a859c062ce0d",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://runtime/schema/search"
+      ],
+      "attributes": {
+        "name": "lines",
+        "parameter0": "root: System.String",
+        "parameter1": "literal: System.String",
+        "resultRole": "row"
+      }
+    },
+    {
+      "uri": "musoq://runtime/schema/search/rows/0006",
+      "kind": "schemaEntry",
+      "title": "many",
+      "summary": "Observed schema metadata row.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "4cce21661bbaf2292b0af2c31ce8201d3f944f5158711c2cb095a78039288735",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://runtime/schema/search"
+      ],
+      "attributes": {
+        "name": "many",
+        "parameter0": "root: System.String",
+        "parameter1": "request: System.String",
+        "resultRole": "row"
+      }
+    },
+    {
+      "uri": "musoq://runtime/schema/search/rows/0007",
+      "kind": "schemaEntry",
+      "title": "matches",
+      "summary": "Observed schema metadata row.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "666c2cb8afd8945fc496245241dcbb8741aa6087265a484569d951835a3fc160",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://runtime/schema/search"
+      ],
+      "attributes": {
+        "name": "matches",
+        "parameter0": "root: System.String",
+        "parameter1": "literal: System.String",
+        "resultRole": "row"
+      }
+    },
+    {
+      "uri": "musoq://runtime/schema/search/rows/0008",
+      "kind": "schemaEntry",
+      "title": "paths",
+      "summary": "Observed schema metadata row.",
+      "aliases": [],
+      "keywords": [],
+      "tags": [
+        "runtime",
+        "observed"
+      ],
+      "version": "0.40.0-alpha.14",
+      "sha256": "482548e37748e9acb99a199c694d837369eb75dc7c1b3c603607cae86434813b",
+      "authority": "observed",
+      "provenance": {
+        "source": "installed-musoq-runtime",
+        "trust": "untrusted-observed"
+      },
+      "requiresHost": true,
+      "relatedUris": [
+        "musoq://runtime/schema/search"
+      ],
+      "attributes": {
+        "name": "paths",
+        "parameter0": "root: System.String",
+        "parameter1": null,
+        "resultRole": "row"
+      }
+    }
+  ],
+  "diagnostics": [],
+  "nextActions": [
+    {
+      "label": "Read DESC syntax and semantics",
+      "argv": [
+        "musoq",
+        "describe",
+        "spec",
+        "language",
+        "--section",
+        "desc-statement"
+      ],
+      "uri": "musoq://spec/language#desc-statement"
+    },
+    {
+      "label": "Run a query",
+      "argv": [
+        "musoq",
+        "run",
+        "--help"
+      ],
+      "uri": "musoq://command/run"
+    }
+  ]
+}

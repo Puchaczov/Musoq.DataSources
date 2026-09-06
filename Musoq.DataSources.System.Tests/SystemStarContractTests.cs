@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Schema;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.System.Tests;

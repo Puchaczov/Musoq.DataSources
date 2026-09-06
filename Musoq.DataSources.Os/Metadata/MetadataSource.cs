@@ -5,7 +5,6 @@ using System.Linq;
 using MetadataExtractor;
 using MetadataExtractor.Util;
 using Musoq.DataSources.Os.Exceptions;
-using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Metadata;

@@ -1,0 +1,276 @@
+{
+  "scopeId": "W12-S04",
+  "status": "passed",
+  "summary": "Hardened untrusted request, path and diagnostic presentation data and verified the existing test-only external-process boundary with argument vectors, bounded timeout and concurrent stdout/stderr draining.",
+  "requirementIds": [
+    "R03",
+    "R07",
+    "R08",
+    "R10"
+  ],
+  "sourceReferences": [
+    "S07",
+    "S14",
+    "S15",
+    "S18"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W12-S04/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "4f661193404a9b660848605df4d49d699dd1e09e",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 64,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W12-S04 implementation; ignored campaign state had W12-S03 completed and W12-S04 planned, and campaign-state transitions were not included in the scope commit.",
+    "preExistingScopeCommit": "4f661193404a9b660848605df4d49d699dd1e09e",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W12-S03; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/RipgrepComparator.cs",
+      "Musoq.DataSources.Search.Tests/RipgrepComparatorTests.cs",
+      "Musoq.DataSources.Search.Tests/SearchUntrustedDataTests.cs",
+      "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "Musoq.DataSources.Search/SearchManyRequestParser.cs",
+      "Musoq.DataSources.Search/SearchSourceVersion.cs",
+      "docs/search/search-untrusted-data-v1.md"
+    ],
+    "scopeBoundary": "Only the owning repository's Search production diagnostics, Search test-process oracle, adversarial tests and Search documentation changed, plus this scope's evidence. No sibling repository, package version, publication state or host/SQL engine source was changed.",
+    "presentationBoundary": "Machine-facing paths and Search rows retain bounded source values. Diagnostic presentation has a separate escaped and bounded display form for control, format and separator characters. Request parser messages never include raw unbounded JSON, snippets or ignore content.",
+    "processBoundary": "Production Search has no external-process execution. The test-only ripgrep comparator uses ProcessStartInfo.ArgumentList with UseShellExecute=false, an explicit -- path boundary, concurrent stdout/stderr drains and a 30-second process-tree timeout."
+  },
+  "tests": {
+    "discovered": 1582,
+    "passed": 1548,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "w12FocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchUntrustedDataTests|FullyQualifiedName~RipgrepComparatorTests",
+      "discovered": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "scenarios": [
+        "Leading-dash filename identity remains exact in Search rows.",
+        "Malicious request keys and values cannot inject control characters into diagnostic presentation.",
+        "Machine-facing diagnostic paths remain exact while DisplayPath is bounded and escaped.",
+        "The process comparator preserves the pinned ripgrep contract and explicit -- boundary.",
+        "Large simultaneous stdout and stderr streams are drained without deadlock.",
+        "Ripgrep matched, no-match, operational-error, JSON-truncation and binary-output cases remain green."
+      ]
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 298,
+      "passed": 295,
+      "failed": 0,
+      "skipped": 3
+    },
+    "sourceContractHarness": {
+      "scenarios": 7,
+      "assertions": 52,
+      "passed": true
+    },
+    "completionContractHarness": {
+      "scenarios": 4,
+      "assertions": 124,
+      "passed": true
+    },
+    "requestContractHarness": {
+      "scenarios": 4,
+      "assertions": 45,
+      "passed": true
+    },
+    "matchSemanticsHarness": {
+      "scenarios": 6,
+      "assertions": 49,
+      "passed": true
+    },
+    "scopeSemanticsHarness": {
+      "scenarios": 6,
+      "assertions": 44,
+      "passed": true
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    },
+    "iterationDiagnostics": [
+      "The first adversarial attempt confirmed that Windows rejects newline filename components; the filesystem identity test was made platform-aware while synthetic diagnostic-path coverage retained quote/newline/control cases."
+    ]
+  },
+  "commands": [
+    {
+      "kind": "search-test-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "untrusted-data-and-process-focused-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-build --no-restore --filter \"FullyQualifiedName~SearchUntrustedDataTests|FullyQualifiedName~RipgrepComparatorTests\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-build --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 298,
+      "passed": 295,
+      "failed": 0,
+      "skipped": 3
+    },
+    {
+      "kind": "source-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchSourceContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 7,
+      "assertions": 52
+    },
+    {
+      "kind": "completion-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchCompletionSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 124
+    },
+    {
+      "kind": "request-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchRequestContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 45
+    },
+    {
+      "kind": "match-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchMatchSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 49
+    },
+    {
+      "kind": "scope-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchScopeSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 44
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1582,
+      "passed": 1548,
+      "failed": 0,
+      "skipped": 34
+    },
+    {
+      "kind": "security-boundary-and-diff-validation",
+      "argv": "rg Process/UseShellExecute/ArgumentList/RedirectStandard across Search; git diff --check; JSON parse validation; source manifest and artifact hash validation",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact Release owning-repository suite completed across 21 projects with 1,582 total tests, 1,548 passed, 0 failed and 34 classified skips; the focused Search suite and adversarial process/data tests also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved presentation separation, process ownership, bounded diagnostics, timeout cleanup and scope boundaries; exact source hashes and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Adversarial request-key/value, path, leading-dash, control-character, large-dual-stream and operational-process cases pass without shell interpolation or unsafe diagnostic expansion."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "Source, request, completion, match and scope contract harnesses pass 27 scenarios and 314 assertions in total, and machine-facing row/path values remain exact."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Diagnostic display data is bounded and escaped, process output drains concurrently, timeout cleanup kills the process tree, and ignore text never crosses into command execution."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/RipgrepComparator.cs",
+      "sha256": "a4c88b4cb8f310107385573372626ee6c90514bbfee2fd76958384b02f9f7e70"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/RipgrepComparatorTests.cs",
+      "sha256": "9aadf8acffa2afb11537394d1eae3da871d99d20ec8106d1faa7cf3be5ee82d2"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchUntrustedDataTests.cs",
+      "sha256": "64f9757f6f4f95fc60c40d4206a8860e1b01d8700a1d57d25a8620248103b1c4"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "sha256": "b432aa13723503a420c5ec64469c791ed786ea6423bead769cb96f22341dd02a"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchManyRequestParser.cs",
+      "sha256": "86385219700457994cc058a506e37897da1707f553c0d63d2b5b15b014c64f1e"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchSourceVersion.cs",
+      "sha256": "dc2b7e95ce62aaa0478069b144ff5f254a4097093fafa34d77718c9b7f2d3880"
+    },
+    {
+      "path": "docs/search/search-untrusted-data-v1.md",
+      "sha256": "8e58c8cece5d6bba6b1c4462cb4a59eb45619a70d729b87a0bf8d7acfa923552"
+    }
+  ],
+  "sourceDigest": "b5c29a2e21123a609b60cb15a27f8a8fd96e32e77210b0dda71953220c65c05c",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W12-S04/review.md",
+      "sha256": "9009eac112c5bfe5a758d874ea7f25283754e57cee4398a339f7eadd2c1b9a9b"
+    }
+  ],
+  "knownLimitations": [
+    "Windows rejects newline and double-quote filename components; the platform-aware filesystem test uses a leading-dash filename while synthetic diagnostic-path coverage exercises quote/newline/control data.",
+    "Diagnostic Location.Path is bounded machine data; terminal/UI consumers must use DisplayPath for presentation safety.",
+    "Production Search does not execute external tools. The process timeout/argument-vector behavior is verified in the test-only ripgrep comparator boundary.",
+    "The repository suite retained 34 classified skips: 31 expected and 3 platform-conditional symlink skips, plus existing package-audit/compiler warnings.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

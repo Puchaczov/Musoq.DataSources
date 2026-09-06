@@ -1,0 +1,257 @@
+{
+  "scopeId": "W16-S01",
+  "status": "passed",
+  "summary": "Executed the Search correctness matrix on Windows x64, validated the mapped Search coverage and owning repository suite, and recorded unavailable platform and full-fuzz residuals without promoting them to passing claims.",
+  "requirementIds": [
+    "R02",
+    "R08",
+    "R11",
+    "R12",
+    "R15"
+  ],
+  "sourceReferences": [
+    "S04",
+    "S10",
+    "S20",
+    "S21",
+    "S22"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W16-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "4b402205a90da0c567227602d6c28df17867b802",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 81,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W16-S01 implementation; ignored campaign state had W16-S01 in_progress and no other active scope.",
+    "preExistingScopeCommit": "4b402205a90da0c567227602d6c28df17867b802",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W15-S05; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchCorrectnessMatrixTests.cs",
+      "docs/search/search-correctness-matrix-v1.json",
+      "docs/search/search-correctness-matrix-v1.md"
+    ],
+    "scopeBoundary": "Only the owning repository's Search correctness matrix descriptor, documentation, contract tests and this scope's evidence changed. No production Search source, sibling repository or publication state changed.",
+    "correctnessMatrixContract": "The descriptor maps current-platform oracle, property, differential, seeded-random residual, planner, integration and package/source-engine compatibility evidence; it pins the benchmark matrix bytes and records unavailable platform profiles explicitly.",
+    "residualPolicy": "A current Windows x64 pass does not promote unavailable Linux/macOS/musl profiles or the absent full fuzz engine to passing claims; benchmark results are deferred to W16-S02."
+  },
+  "tests": {
+    "discovered": 1653,
+    "passed": 1619,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "matrixFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchCorrectnessMatrixTests",
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "mappedSearchClasses": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 119,
+      "passed": 119,
+      "failed": 0,
+      "skipped": 0,
+      "classCount": 16,
+      "filter": "FullyQualifiedName~SyntheticSearchCorpusTests|FullyQualifiedName~SearchReferenceScannerTests|FullyQualifiedName~SearchFeasibilityTests|FullyQualifiedName~SearchLiteralBoundaryTests|FullyQualifiedName~SearchByteSourceTests|FullyQualifiedName~SearchBytePipelineBenchmarkTests|FullyQualifiedName~SearchManyLiteralMatcherTests|FullyQualifiedName~SearchPredicatePlanningTests|FullyQualifiedName~SearchPlannerDifferentialTests|FullyQualifiedName~SearchPlanInspectionTests|FullyQualifiedName~SearchOrderingAndSlicingTests|FullyQualifiedName~SearchProjectionTests|FullyQualifiedName~SearchSchemaTests|FullyQualifiedName~SearchManyTableInputTests|FullyQualifiedName~SearchInterpretationCompositionTests|FullyQualifiedName~SearchAuditTests"
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 365,
+      "passed": 362,
+      "failed": 0,
+      "skipped": 3
+    },
+    "searchBuild": {
+      "project": "Musoq.DataSources.Search",
+      "warnings": 0,
+      "errors": 0
+    },
+    "contractHarnesses": {
+      "scenarios": 27,
+      "assertions": 314,
+      "passed": true,
+      "harnesses": [
+        "Test-SearchSourceContract.ps1: 7 scenarios, 52 assertions",
+        "Test-SearchRequestContract.ps1: 4 scenarios, 45 assertions",
+        "Test-SearchMatchSemantics.ps1: 6 scenarios, 49 assertions",
+        "Test-SearchScopeSemantics.ps1: 6 scenarios, 44 assertions",
+        "Test-SearchCompletionSemantics.ps1: 4 scenarios, 124 assertions"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    },
+    "fullSuiteWarningNote": "The owning suite retained existing package vulnerability, XML documentation, nullability, analyzer and generated-code warnings outside the Search build."
+  },
+  "commands": [
+    {
+      "kind": "correctness-matrix-focused-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchCorrectnessMatrixTests --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "matrix-mapped-search-classes",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --no-build --filter FullyQualifiedName~SyntheticSearchCorpusTests|FullyQualifiedName~SearchReferenceScannerTests|FullyQualifiedName~SearchFeasibilityTests|FullyQualifiedName~SearchLiteralBoundaryTests|FullyQualifiedName~SearchByteSourceTests|FullyQualifiedName~SearchBytePipelineBenchmarkTests|FullyQualifiedName~SearchManyLiteralMatcherTests|FullyQualifiedName~SearchPredicatePlanningTests|FullyQualifiedName~SearchPlannerDifferentialTests|FullyQualifiedName~SearchPlanInspectionTests|FullyQualifiedName~SearchOrderingAndSlicingTests|FullyQualifiedName~SearchProjectionTests|FullyQualifiedName~SearchSchemaTests|FullyQualifiedName~SearchManyTableInputTests|FullyQualifiedName~SearchInterpretationCompositionTests|FullyQualifiedName~SearchAuditTests --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 119,
+      "passed": 119,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 365,
+      "passed": 362,
+      "failed": 0,
+      "skipped": 3
+    },
+    {
+      "kind": "search-build",
+      "argv": "dotnet build Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "source-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchSourceContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 7,
+      "assertions": 52
+    },
+    {
+      "kind": "request-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchRequestContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 45
+    },
+    {
+      "kind": "match-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchMatchSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 49
+    },
+    {
+      "kind": "scope-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchScopeSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 44
+    },
+    {
+      "kind": "completion-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchCompletionSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 124
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release --no-restore --verbosity quiet --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1653,
+      "passed": 1619,
+      "failed": 0,
+      "skipped": 34,
+      "executionWrapper": "The product test command completed successfully; baseline package, XML, nullability, analyzer and generated-code warnings were observed outside the Search build."
+    },
+    {
+      "kind": "campaign-validation-before-completion",
+      "argv": "python docs/campaigns/search/validate_campaign.py docs/campaigns/search/campaign.json --repo-root . --track core",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "status": "valid with activeScope=W16-S01 before completion transition"
+    },
+    {
+      "kind": "diff-and-contract-validation",
+      "argv": "git diff --cached --check; JSON parse validation for correctness matrix, review and this report",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "python": "3.13.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The final Release owning-repository suite completed across 21 projects with 1,653 total tests, 1,619 passed, 0 failed and 34 classified skips; the focused Search suite and Search build also passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved the correctness matrix, deterministic seed inventory, current-platform result and explicit unavailable-platform and full-fuzz residuals."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "The matrix contract and mapped Search classes passed; seeded repros, package/source-engine compatibility, the full Search suite and five semantic harnesses completed without failures."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchCorrectnessMatrixTests.cs",
+      "sha256": "8c7ecce31098947d48708fbd0c86d7adad8f77521f023aef72980304908fdc80"
+    },
+    {
+      "path": "docs/search/search-correctness-matrix-v1.json",
+      "sha256": "7bbede8350dd8434080a72b8b124ec64cff5291a1615b23cc2031edde5a819cb"
+    },
+    {
+      "path": "docs/search/search-correctness-matrix-v1.md",
+      "sha256": "da094173c8a690bc783aaa04b143930942a99eeac7e05be8f901f1606f1a4b36"
+    }
+  ],
+  "sourceDigest": "8ffd9b2f839ce8f89357b543ef76447ade006168fdf90d5dd2b7c46360628061",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W16-S01/review.md",
+      "sha256": "cad1c68e6a6ffa62937c3d8ccca9e6397fc046f8a0ce28897d73d5a8849eaa2d"
+    }
+  ],
+  "knownLimitations": [
+    "Linux x64, macOS arm64 and Linux musl x64 profiles were unavailable in this checkout; their platform proofs remain unexecuted and are not claimed.",
+    "The repository has deterministic seeded-random/property coverage but no separate full fuzz engine or cross-process fuzz corpus; full fuzz coverage remains unexecuted and is not claimed.",
+    "The benchmark matrix is pinned with no result rows; locked parity benchmark qualification is deferred to W16-S02.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

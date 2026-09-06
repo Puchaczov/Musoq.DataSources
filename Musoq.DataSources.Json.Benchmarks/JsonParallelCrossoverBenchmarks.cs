@@ -1,6 +1,5 @@
 using BenchmarkDotNet.Attributes;
 using Musoq.DataSources.Tests.Common;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 

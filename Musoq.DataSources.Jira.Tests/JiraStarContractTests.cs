@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Musoq.DataSources.Jira.Entities;
 using Musoq.DataSources.Jira.Tests.TestHelpers;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;

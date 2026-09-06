@@ -1,5 +1,4 @@
 using System.IO;
-using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Files;

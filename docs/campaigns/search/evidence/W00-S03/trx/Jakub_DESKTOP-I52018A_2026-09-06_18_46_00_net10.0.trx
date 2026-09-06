@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="0426588f-ac61-4095-97e5-5151cccaeb31" name="Jakub@DESKTOP-I52018A 2026-09-06 18:46:00" runUser="DESKTOP-I52018A\Jakub" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-06T18:46:00.2936556+02:00" queuing="2026-09-06T18:46:00.2936559+02:00" start="2026-09-06T18:45:57.6233140+02:00" finish="2026-09-06T18:46:00.7192216+02:00" />
+  <TestSettings name="default" id="6b785068-a5ec-42ab-ac4c-002434f1c086">
+    <Deployment runDeploymentRoot="Jakub_DESKTOP-I52018A_2026-09-06_18_46_00" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="40d93ec2-d80f-48c6-9fe4-9df59c890eb2" testId="ad246ef5-ff3f-9a72-1b4e-5665c7a48d98" testName="DescFile_ShouldReturnMethodSignature" computerName="DESKTOP-I52018A" duration="00:00:00.0363014" startTime="2026-09-06T18:45:59.9779633+02:00" endTime="2026-09-06T18:46:00.0145190+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="40d93ec2-d80f-48c6-9fe4-9df59c890eb2" />
+    <UnitTestResult executionId="c157f30d-4495-46c4-959a-2af739ea5e1f" testId="c9459732-1e8e-0f0a-bcfc-ff9cdb80525e" testName="DescSchema_ShouldListAllAvailableMethods" computerName="DESKTOP-I52018A" duration="00:00:01.4751025" startTime="2026-09-06T18:45:58.4276081+02:00" endTime="2026-09-06T18:45:59.9753898+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c157f30d-4495-46c4-959a-2af739ea5e1f" />
+    <UnitTestResult executionId="487416f8-81bc-4509-a168-8d6c5cfacb86" testId="029ada07-d509-c5c2-09b9-f965be5310ae" testName="FlatFileSource_CancelledLoadTest" computerName="DESKTOP-I52018A" duration="00:00:00.0011328" startTime="2026-09-06T18:46:00.6632881+02:00" endTime="2026-09-06T18:46:00.6644997+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="487416f8-81bc-4509-a168-8d6c5cfacb86" />
+    <UnitTestResult executionId="3a83da24-3c78-48e1-85c4-ea39d6c40523" testId="0bf8f5ac-a84f-7682-8f7e-6cbae662429e" testName="EveryFlatFileConstructor_HasOneExactStarContract" computerName="DESKTOP-I52018A" duration="00:00:00.3139343" startTime="2026-09-06T18:46:00.2830827+02:00" endTime="2026-09-06T18:46:00.5971629+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3a83da24-3c78-48e1-85c4-ea39d6c40523" />
+    <UnitTestResult executionId="a3ae3949-0635-42f5-a8e4-4bf19873b916" testId="ae146922-57e6-ce6a-ade7-7bd85a148580" testName="HasSelectedAllLinesTest" computerName="DESKTOP-I52018A" duration="00:00:00.0658729" startTime="2026-09-06T18:46:00.5972159+02:00" endTime="2026-09-06T18:46:00.6632318+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a3ae3949-0635-42f5-a8e4-4bf19873b916" />
+    <UnitTestResult executionId="3bcc3ce0-c59b-4e41-9d56-14b7f1938290" testId="13535925-6336-f206-2350-a347cb96af92" testName="FlatFileSource_FullLoadTest" computerName="DESKTOP-I52018A" duration="00:00:00.0010554" startTime="2026-09-06T18:46:00.6645200+02:00" endTime="2026-09-06T18:46:00.6660887+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3bcc3ce0-c59b-4e41-9d56-14b7f1938290" />
+    <UnitTestResult executionId="aef7e3e3-1e8b-4434-be43-97be1e8b4af9" testId="b92854c6-8d1f-c54f-9b37-3b746e5cd518" testName="TryPlanSource_WhenLinePredicateIsRequested_LeavesPredicateAndSliceResidual" computerName="DESKTOP-I52018A" duration="00:00:00.0004972" startTime="2026-09-06T18:46:00.2713928+02:00" endTime="2026-09-06T18:46:00.2719519+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aef7e3e3-1e8b-4434-be43-97be1e8b4af9" />
+    <UnitTestResult executionId="86c66631-9603-4335-a984-0e560b52e773" testId="dd66c9cb-2ca2-c752-e535-c97c700bd97e" testName="DescFileWithArgs_ShouldReturnTableSchema" computerName="DESKTOP-I52018A" duration="00:00:00.0734160" startTime="2026-09-06T18:46:00.0148781+02:00" endTime="2026-09-06T18:46:00.0884183+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="86c66631-9603-4335-a984-0e560b52e773" />
+    <UnitTestResult executionId="59e2f0c8-761d-4870-8168-61ecef260bee" testId="ec58b2a2-e132-a4d5-28e4-38b097a7abcc" testName="FlatFileSource_WhenExecutionPlanHasPredicateAndSlice_EmitsFilteredRows" computerName="DESKTOP-I52018A" duration="00:00:00.0070341" startTime="2026-09-06T18:46:00.2719701+02:00" endTime="2026-09-06T18:46:00.2790788+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="59e2f0c8-761d-4870-8168-61ecef260bee" />
+    <UnitTestResult executionId="e53e5ab3-87bf-42d7-a32a-964d0872b7f0" testId="b1e4b865-5e0f-c825-336c-472b2c482db1" testName="DescUnknownMethod_ShouldThrowException" computerName="DESKTOP-I52018A" duration="00:00:00.0510912" startTime="2026-09-06T18:46:00.0884685+02:00" endTime="2026-09-06T18:46:00.1396795+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e53e5ab3-87bf-42d7-a32a-964d0872b7f0" />
+    <UnitTestResult executionId="ff7f41da-c709-4fd5-b4e1-343e977b71c2" testId="b384e751-b45d-b598-cae0-8ee15c5f0d6c" testName="TryPlanSource_WhenLineNumberPredicateNaturalOrderAndSliceAreRequested_AcceptsThem" computerName="DESKTOP-I52018A" duration="00:00:00.0033586" startTime="2026-09-06T18:46:00.2678720+02:00" endTime="2026-09-06T18:46:00.2713505+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ff7f41da-c709-4fd5-b4e1-343e977b71c2" />
+    <UnitTestResult executionId="14f2a0d0-b3b1-4865-b2bd-15a64a88d6cc" testId="6daecd93-7631-1909-b9d1-f80df422f010" testName="DescFileNoArgs_VsWithArgs_ShouldReturnDifferentResults" computerName="DESKTOP-I52018A" duration="00:00:00.0945733" startTime="2026-09-06T18:46:00.1730174+02:00" endTime="2026-09-06T18:46:00.2678189+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="14f2a0d0-b3b1-4865-b2bd-15a64a88d6cc" />
+    <UnitTestResult executionId="dcb22620-c71d-42ee-9f25-7066ebcb7339" testId="2bdb69ae-2d07-dcf8-f275-4890a77875bf" testName="DescSchema_ShouldHaveConsistentColumnTypes" computerName="DESKTOP-I52018A" duration="00:00:00.0331050" startTime="2026-09-06T18:46:00.1397433+02:00" endTime="2026-09-06T18:46:00.1729702+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dcb22620-c71d-42ee-9f25-7066ebcb7339" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="HasSelectedAllLinesTest" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="ae146922-57e6-ce6a-ade7-7bd85a148580">
+      <Execution id="a3ae3949-0635-42f5-a8e4-4bf19873b916" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.Schema.FlatFile.Tests.FlatFileTests" name="HasSelectedAllLinesTest" />
+    </UnitTest>
+    <UnitTest name="FlatFileSource_FullLoadTest" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="13535925-6336-f206-2350-a347cb96af92">
+      <Execution id="3bcc3ce0-c59b-4e41-9d56-14b7f1938290" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.Schema.FlatFile.Tests.FlatFileTests" name="FlatFileSource_FullLoadTest" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldListAllAvailableMethods" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="c9459732-1e8e-0f0a-bcfc-ff9cdb80525e">
+      <Execution id="c157f30d-4495-46c4-959a-2af739ea5e1f" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.FlatFile.Tests.FlatFileSchemaDescribeTests" name="DescSchema_ShouldListAllAvailableMethods" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenLineNumberPredicateNaturalOrderAndSliceAreRequested_AcceptsThem" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="b384e751-b45d-b598-cae0-8ee15c5f0d6c">
+      <Execution id="ff7f41da-c709-4fd5-b4e1-343e977b71c2" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.Schema.FlatFile.Tests.FlatFileRuntimeV2PushdownTests" name="TryPlanSource_WhenLineNumberPredicateNaturalOrderAndSliceAreRequested_AcceptsThem" />
+    </UnitTest>
+    <UnitTest name="DescFileWithArgs_ShouldReturnTableSchema" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="dd66c9cb-2ca2-c752-e535-c97c700bd97e">
+      <Execution id="86c66631-9603-4335-a984-0e560b52e773" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.FlatFile.Tests.FlatFileSchemaDescribeTests" name="DescFileWithArgs_ShouldReturnTableSchema" />
+    </UnitTest>
+    <UnitTest name="FlatFileSource_WhenExecutionPlanHasPredicateAndSlice_EmitsFilteredRows" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="ec58b2a2-e132-a4d5-28e4-38b097a7abcc">
+      <Execution id="59e2f0c8-761d-4870-8168-61ecef260bee" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.Schema.FlatFile.Tests.FlatFileRuntimeV2PushdownTests" name="FlatFileSource_WhenExecutionPlanHasPredicateAndSlice_EmitsFilteredRows" />
+    </UnitTest>
+    <UnitTest name="DescUnknownMethod_ShouldThrowException" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="b1e4b865-5e0f-c825-336c-472b2c482db1">
+      <Execution id="e53e5ab3-87bf-42d7-a32a-964d0872b7f0" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.FlatFile.Tests.FlatFileSchemaDescribeTests" name="DescUnknownMethod_ShouldThrowException" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenLinePredicateIsRequested_LeavesPredicateAndSliceResidual" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="b92854c6-8d1f-c54f-9b37-3b746e5cd518">
+      <Execution id="aef7e3e3-1e8b-4434-be43-97be1e8b4af9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.Schema.FlatFile.Tests.FlatFileRuntimeV2PushdownTests" name="TryPlanSource_WhenLinePredicateIsRequested_LeavesPredicateAndSliceResidual" />
+    </UnitTest>
+    <UnitTest name="DescFile_ShouldReturnMethodSignature" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="ad246ef5-ff3f-9a72-1b4e-5665c7a48d98">
+      <Execution id="40d93ec2-d80f-48c6-9fe4-9df59c890eb2" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.FlatFile.Tests.FlatFileSchemaDescribeTests" name="DescFile_ShouldReturnMethodSignature" />
+    </UnitTest>
+    <UnitTest name="DescFileNoArgs_VsWithArgs_ShouldReturnDifferentResults" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="6daecd93-7631-1909-b9d1-f80df422f010">
+      <Execution id="14f2a0d0-b3b1-4865-b2bd-15a64a88d6cc" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.FlatFile.Tests.FlatFileSchemaDescribeTests" name="DescFileNoArgs_VsWithArgs_ShouldReturnDifferentResults" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldHaveConsistentColumnTypes" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="2bdb69ae-2d07-dcf8-f275-4890a77875bf">
+      <Execution id="dcb22620-c71d-42ee-9f25-7066ebcb7339" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.FlatFile.Tests.FlatFileSchemaDescribeTests" name="DescSchema_ShouldHaveConsistentColumnTypes" />
+    </UnitTest>
+    <UnitTest name="FlatFileSource_CancelledLoadTest" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="029ada07-d509-c5c2-09b9-f965be5310ae">
+      <Execution id="487416f8-81bc-4509-a168-8d6c5cfacb86" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.Schema.FlatFile.Tests.FlatFileTests" name="FlatFileSource_CancelledLoadTest" />
+    </UnitTest>
+    <UnitTest name="EveryFlatFileConstructor_HasOneExactStarContract" storage="d:\repos\musoq.datasources\musoq.datasources.flatfile.tests\bin\release\net10.0\musoq.datasources.flatfile.tests.dll" id="0bf8f5ac-a84f-7682-8f7e-6cbae662429e">
+      <Execution id="3a83da24-3c78-48e1-85c4-ea39d6c40523" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.FlatFile.Tests\bin\Release\net10.0\Musoq.DataSources.FlatFile.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.Schema.FlatFile.Tests.FlatFileStarContractTests" name="EveryFlatFileConstructor_HasOneExactStarContract" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="ad246ef5-ff3f-9a72-1b4e-5665c7a48d98" executionId="40d93ec2-d80f-48c6-9fe4-9df59c890eb2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c9459732-1e8e-0f0a-bcfc-ff9cdb80525e" executionId="c157f30d-4495-46c4-959a-2af739ea5e1f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="029ada07-d509-c5c2-09b9-f965be5310ae" executionId="487416f8-81bc-4509-a168-8d6c5cfacb86" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0bf8f5ac-a84f-7682-8f7e-6cbae662429e" executionId="3a83da24-3c78-48e1-85c4-ea39d6c40523" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ae146922-57e6-ce6a-ade7-7bd85a148580" executionId="a3ae3949-0635-42f5-a8e4-4bf19873b916" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13535925-6336-f206-2350-a347cb96af92" executionId="3bcc3ce0-c59b-4e41-9d56-14b7f1938290" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b92854c6-8d1f-c54f-9b37-3b746e5cd518" executionId="aef7e3e3-1e8b-4434-be43-97be1e8b4af9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dd66c9cb-2ca2-c752-e535-c97c700bd97e" executionId="86c66631-9603-4335-a984-0e560b52e773" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ec58b2a2-e132-a4d5-28e4-38b097a7abcc" executionId="59e2f0c8-761d-4870-8168-61ecef260bee" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b1e4b865-5e0f-c825-336c-472b2c482db1" executionId="e53e5ab3-87bf-42d7-a32a-964d0872b7f0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b384e751-b45d-b598-cae0-8ee15c5f0d6c" executionId="ff7f41da-c709-4fd5-b4e1-343e977b71c2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6daecd93-7631-1909-b9d1-f80df422f010" executionId="14f2a0d0-b3b1-4865-b2bd-15a64a88d6cc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2bdb69ae-2d07-dcf8-f275-4890a77875bf" executionId="dcb22620-c71d-42ee-9f25-7066ebcb7339" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="13" executed="13" passed="13" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+</TestRun>

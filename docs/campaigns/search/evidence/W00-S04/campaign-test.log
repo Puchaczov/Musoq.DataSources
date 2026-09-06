@@ -1,0 +1,40 @@
+{
+  "formatVersion": 1,
+  "test": "Search campaign selection and status validation",
+  "status": "passed",
+  "scenarios": [
+    {
+      "name": "first-eligible-selection",
+      "result": "passed",
+      "assertions": 3
+    },
+    {
+      "name": "interrupted-active-scope",
+      "result": "passed",
+      "assertions": 2
+    },
+    {
+      "name": "dag-cycle",
+      "result": "passed",
+      "assertions": 2
+    },
+    {
+      "name": "unfinished-dependency",
+      "result": "passed",
+      "assertions": 2
+    },
+    {
+      "name": "duplicate-completion-trailer",
+      "result": "passed",
+      "assertions": 2
+    },
+    {
+      "name": "absent-evidence",
+      "result": "passed",
+      "assertions": 2
+    }
+  ],
+  "scenarioCount": 6,
+  "assertions": 15,
+  "temporaryFixturePolicy": "Campaign copies were created below the system temporary directory and removed in finally; no repository campaign state or Git history was mutated by the simulations."
+}

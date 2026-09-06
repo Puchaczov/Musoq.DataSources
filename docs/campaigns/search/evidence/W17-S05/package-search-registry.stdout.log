@@ -1,0 +1,24 @@
+{
+  "packageCount": 16,
+  "productionProjectCount": 20,
+  "search": {
+    "slug": "search",
+    "packageId": "Musoq.DataSources.Search",
+    "version": "8.0.3-alpha.7",
+    "projectPath": "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj",
+    "releaseTag": "8.0.3-alpha.7-Musoq.DataSources.Search",
+    "targetFramework": "net10.0",
+    "hostPackages": {
+      "Musoq.Schema": {
+        "minimumVersionInclusive": "17.0.9-alpha.1",
+        "maximumVersionExclusive": "18.0.0"
+      },
+      "Musoq.Plugins": {
+        "minimumVersionInclusive": "17.0.9-alpha.1",
+        "maximumVersionExclusive": "18.0.0"
+      }
+    }
+  },
+  "excludedRegistryProjectCount": 0,
+  "excludedProductionProjectNames": null
+}

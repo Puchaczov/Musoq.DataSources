@@ -1,0 +1,45 @@
+Musoq — SQL for files, APIs, databases, tools, and cloud services
+
+Start Here
+Start here:       musoq describe
+Machine contract: musoq describe --format json
+
+Usage: musoq <command>
+
+Query
+  run        Run SQL from text, a file, or a saved script
+  watch      Run queries and compare durable state when inputs change
+  inspect    Inspect a query without executing it
+  infer      Generate queries from input files
+  log        Review recent query execution logs
+  separator  Insert a separator into the input stream
+  execution  Inspect active query executions
+
+Manage
+  data-sources (alias: datasource)  Install and manage data sources
+  registry                          Manage data source registries
+  path                              Manage named query paths
+  script                            Manage saved SQL scripts
+  tool                              Manage reusable tools
+  bucket                            Manage storage buckets
+  mcp                               Manage isolated tool contexts
+  image                             Manipulate image files
+  cache                             Manage local caches
+
+Configure
+  get    Read configuration and system information
+  set    Set configuration values
+  clear  Clear configuration values
+
+System
+  doctor      Diagnose the local environment
+  serve       Start the Musoq CLI service
+  quit        Stop the Musoq CLI service
+  completion  Generate shell completion scripts
+
+Reference
+  describe  Start here to discover and use Musoq
+  manual    Read the offline user manual
+  spec      Read Musoq reference documents
+
+Help:  musoq <command> --help

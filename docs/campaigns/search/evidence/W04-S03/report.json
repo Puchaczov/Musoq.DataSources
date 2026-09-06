@@ -1,0 +1,227 @@
+{
+  "scopeId": "W04-S03",
+  "status": "passed",
+  "summary": "Implemented safe internal metadata prefilters for Search scope candidates. Name and extension checks, inclusive byte-size bounds and inclusive UTC modification-time bounds now run before content scanning, with per-run counters and reader-open probes proving rejected files are not opened and file-like directory names remain traversable.",
+  "requirementIds": [
+    "R02",
+    "R03",
+    "R07",
+    "R08"
+  ],
+  "sourceReferences": [
+    "S03",
+    "S05",
+    "S20"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W04-S03/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "aeafe8640c707231a570ba90f166a4ddd4bac327",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 23,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; the local ignored campaign state was already recording W04-S03 as in_progress. W04-S03 implementation, tests and evidence were added afterward.",
+    "preExistingScopeCommit": "aeafe8640c707231a570ba90f166a4ddd4bac327",
+    "aheadNote": "The ahead count includes the retained pre-existing docs/campaigns ignore commit; 22 preceding reachable commits carry completed Search scope trailers."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/SearchContracts.cs",
+      "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "Musoq.DataSources.Search.Tests/SearchMetadataTests.cs"
+    ],
+    "scopeBoundary": "Only the owning Search implementation and its tests were changed, together with W04-S03 evidence. No public SQL/source signature, sibling repository, query-engine adapter, release or publish surface was modified.",
+    "metadataPolicy": {
+      "name": "Optional compiled name include/exclude globs evaluated against the file basename.",
+      "extension": "Optional exact extension include/exclude lists; values are normalized with a leading dot and compared case-insensitively, preventing .cs from matching .cs.bak.",
+      "size": "Optional inclusive minimum and maximum byte bounds, read only when a size predicate is supplied.",
+      "time": "Optional inclusive UTC modification-time bounds, read only when a time predicate is supplied.",
+      "validation": "Pattern collections are copied and frozen under the existing resource limits; negative sizes and reversed ranges are rejected before traversal.",
+      "publicBinding": "The predicate policy is internal until the later request binder exposes explicit metadata predicates; no future public API is claimed here."
+    },
+    "prefilterOrder": "Scope path include/exclude and ignore decisions run before metadata; metadata decisions run before SearchMatchesSource invokes the reader factory.",
+    "allocationBehavior": "When no metadata predicate is configured, the metadata path returns immediately without filename, extension, FileInfo or timestamp work. FileInfo is allocated only for a size-bound candidate.",
+    "counters": [
+      "FilesConsidered",
+      "MetadataReads",
+      "MetadataRejected",
+      "CandidatesYielded",
+      "ContentOpenAttempts"
+    ],
+    "directorySafety": "Metadata filters are applied only after a regular-file entry is observed; directories always retain the W04-S02 traversal decision and cannot be pruned by a file name or extension predicate.",
+    "failure": "Metadata access failures retain the typed SEARCH-SOURCE-002 diagnostic at the affected candidate path."
+  },
+  "tests": {
+    "discovered": 1350,
+    "passed": 1319,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 66,
+      "passed": 66,
+      "failed": 0,
+      "skipped": 0,
+      "newScenarios": [
+        "MetadataPrefilters_ShouldRejectBeforeOpeningContent",
+        "MetadataSize_ShouldBeReadFreshAfterAFileChanges",
+        "MetadataTimeAndExtension_ShouldHonorBoundariesWithoutPruningDirectories"
+      ],
+      "requiredCoverage": [
+        "uppercase extensions",
+        "extension suffix traps",
+        "size rejection before content open",
+        "fresh metadata after a file-size change",
+        "inclusive modification-time boundaries",
+        "file-like directory names do not prune matching descendants",
+        "counters and reader-open probe agree"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 66,
+      "passed": 66,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S03/search-focused.log",
+      "stdoutSha256": "87bffcd2da4e05ad17a39f8aa3c3cd73f7fabed498a56fded226a628d520a60e",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S03/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1350,
+      "passed": 1319,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S03/full-suite-exact.log",
+      "stdoutSha256": "1372a0d97ebef9421dc312ed518a4cbe597fcdf1a6278bffaf926985ce7edb81",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S03/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "benchmark-project-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Benchmarks\\Musoq.DataSources.Search.Benchmarks.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W04-S03/benchmark-build.log",
+      "stdoutSha256": "50fdbc94c75fca0cb4ddd26f1016c75ce28a66ff1b5f2b4c9cf9fb65af08dc20",
+      "stderrPath": "docs/campaigns/search/evidence/W04-S03/benchmark-build.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; focused Search tests; exact full suite; benchmark build",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 1,350 discovered, 1,319 passed, 0 failed and 31 existing expected skips; the focused Search suite exited 0 with 66 passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The approved separate review, exact source/artifact hashes and unique trailer-bearing completion commit were retained and verified by the campaign validator after commit."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Metadata fixtures exercise case, suffix, size, file-change and timestamp-boundary behavior against real temporary files; the counters and reader-open probe establish that rejected files do not reach content scanning."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "Metadata filtering is a per-file callback on the cancellation-aware W04-S01 frontier; existing cancellation, disposal, typed-diagnostic and row-lifecycle tests remained green, with no subtree pruning from file metadata."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search/SearchContracts.cs",
+      "sha256": "0df6846055b5c4d529515443502b54275da53f6dbc82bba6ed3a3e685cf5e3b0"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchMatchesSource.cs",
+      "sha256": "4f7c71f2a735613bc16d624074e8a32685fa190a4a15ea833f10d9d0820f514c"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchScopeTraversal.cs",
+      "sha256": "c8eb20941fdf94ef79823d678cf8ab0eefd1c7d7936d613011ad465e18f4a65a"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchMetadataTests.cs",
+      "sha256": "b984817329219f51e31209cd970a82df6ab2da6048825040a1d272a6d6fc3e30"
+    }
+  ],
+  "sourceDigest": "61feff06e755c98f49bcfa9f4ff12321fc7f24a0e7d2fd0f2a60010808ad6104",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W04-S03/review.md",
+      "sha256": "1c08ecdbb14a05d934790a25b25a4ed3fd2459ea29b95296c1efddb9c89c223a"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S03/search-focused.log",
+      "sha256": "87bffcd2da4e05ad17a39f8aa3c3cd73f7fabed498a56fded226a628d520a60e"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S03/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S03/full-suite-exact.log",
+      "sha256": "1372a0d97ebef9421dc312ed518a4cbe597fcdf1a6278bffaf926985ce7edb81"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S03/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S03/benchmark-build.log",
+      "sha256": "50fdbc94c75fca0cb4ddd26f1016c75ce28a66ff1b5f2b4c9cf9fb65af08dc20"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W04-S03/benchmark-build.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "The metadata predicate policy is internal until the later request binder exposes explicit name, extension, size and time options; no public metadata API is claimed here.",
+    "Metadata and content reads observe a live filesystem rather than an atomic snapshot. A file can change after its metadata passes and before its reader opens; existing typed read/open failures remain authoritative.",
+    "Counters are per-run diagnostic evidence, not yet a public audit result; the later paths/explanation/audit scopes own that surface.",
+    "Hidden-entry, symbolic-link/reparse-point, special-file and explicit inaccessible-entry policies remain later scopes.",
+    "The repository-wide suite retains 31 existing classified skips, existing provider warnings and package advisories; no package was published."
+  ]
+}

@@ -1,0 +1,287 @@
+{
+  "scopeId": "W03-S03",
+  "status": "passed",
+  "summary": "Added a test-owned pinned ripgrep comparator that invokes one shell-free JSONL process for multi-pattern baselines, preserves exit 0/1/operational outcomes, strictly parses structured messages including base64 values, normalizes paths and byte spans, and labels intentional dialect differences.",
+  "requirementIds": [
+    "R02",
+    "R04",
+    "R11",
+    "R15"
+  ],
+  "sourceReferences": [
+    "S20",
+    "S21",
+    "S22",
+    "S23",
+    "S24",
+    "S25"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W03-S03/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "9a87aef033ca4fe7d323a0ef73ad986e0ea80be8",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 18,
+    "behind": 0,
+    "worktree": "clean for tracked files at scope start; W03-S03 comparator, tests and evidence were added afterward",
+    "preExistingScopeCommit": "9a87aef033ca4fe7d323a0ef73ad986e0ea80be8"
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/RipgrepComparator.cs",
+      "Musoq.DataSources.Search.Tests/RipgrepComparatorTests.cs"
+    ],
+    "scopeBoundary": "Only test-owned ripgrep process/parser/comparator code, tests and W03-S03 evidence were changed. No production Search source, public API, sibling repository, engine adapter, release or publish surface was modified.",
+    "argv": [
+      "--json",
+      "--no-config",
+      "--no-ignore",
+      "--fixed-strings",
+      "-e <pattern> (repeated per pattern)",
+      "<absolute root>"
+    ],
+    "structuredProtocol": "JSON Lines begin/match/context/end/summary messages; text and base64 byte value objects; required integer line and offset fields",
+    "normalization": "Relative slash-separated paths, occurrence order, line number, absolute byte offset, submatch byte start/end and preserved text/bytes value",
+    "exitOutcomes": {
+      "0": "Matched",
+      "1": "NoMatches",
+      "2+": "OperationalError"
+    },
+    "intentionalDifferences": [
+      "byte-offsets: ripgrep reports byte offsets while Search rows expose UTF-16 columns",
+      "line-oriented-output: ripgrep groups submatches under matching-line messages while Search emits occurrence rows",
+      "pattern-id-not-emitted: ripgrep JSON does not carry a caller pattern identifier",
+      "base64-* values: ripgrep represents non-UTF-8 paths, lines or submatches as base64"
+    ]
+  },
+  "ripgrep": {
+    "executablePath": "C:\\Users\\Jakub\\.vscode\\extensions\\openai.chatgpt-26.5901.22334-win32-x64\\bin\\windows-x86_64\\rg.exe",
+    "fileLength": 4218880,
+    "sha256": "14231169855ec5205cf5a1b6f1db358ff4aed4247c86b69ce8aae647c77f6680",
+    "version": "ripgrep 15.2.0 (rev e89fff89ac)",
+    "revision": "e89fff89ac",
+    "buildFeatures": [
+      "features:+pcre2",
+      "simd(compile):+SSE2,-SSSE3,-AVX2",
+      "simd(runtime):+SSE2,+SSSE3,+AVX2",
+      "PCRE2 10.45 is available (JIT is available)"
+    ],
+    "versionArgv": [
+      "--version"
+    ],
+    "helpArgv": [
+      "--help"
+    ],
+    "versionOutputPath": "docs/campaigns/search/evidence/W03-S03/rg-version.log",
+    "versionOutputSha256": "6be9d6a7c90a5db370a21178599013e052473462bb21656673a0c200f5bd014e",
+    "helpOutputPath": "docs/campaigns/search/evidence/W03-S03/rg-help.log",
+    "helpOutputSha256": "537946d556964600879c6290f6d9efa4010e11872d6185f5ebf039f0cfc4e92b"
+  },
+  "tests": {
+    "discovered": 1326,
+    "passed": 1295,
+    "failed": 0,
+    "skipped": 31,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 42,
+      "passed": 42,
+      "failed": 0,
+      "skipped": 0,
+      "newScenarios": [
+        "ConfiguredRipgrep_ShouldExposePinnedVersionBuildFeaturesAndHelp",
+        "Comparator_ShouldCaptureExitZeroAndMultipleSubmatchesInOneProcess",
+        "Comparator_ShouldPreserveNoMatchExitOne",
+        "Comparator_ShouldReturnOperationalErrorExitTwo",
+        "Parser_ShouldRejectTruncatedJson",
+        "Comparator_ShouldDecodeBinaryJsonAsBase64"
+      ],
+      "requiredCoverage": [
+        "exit 0 matched output",
+        "exit 1 no-match output",
+        "exit 2 operational error",
+        "truncated JSON rejection",
+        "binary/base64 output",
+        "multiple submatches from one process"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "fullSuiteInventory": [
+      { "project": "Musoq.DataSources.Search.Tests", "passed": 42, "failed": 0, "skipped": 0, "total": 42 },
+      { "project": "Musoq.DataSources.AsyncRowsSource.Tests", "passed": 4, "failed": 0, "skipped": 0, "total": 4 },
+      { "project": "Musoq.DataSources.System.Tests", "passed": 17, "failed": 0, "skipped": 1, "total": 18 },
+      { "project": "Musoq.DataSources.FlatFile.Tests", "passed": 13, "failed": 0, "skipped": 0, "total": 13 },
+      { "project": "Musoq.DataSources.Docker.Tests", "passed": 22, "failed": 0, "skipped": 9, "total": 31 },
+      { "project": "Musoq.DataSources.Ollama.Tests", "passed": 31, "failed": 0, "skipped": 2, "total": 33 },
+      { "project": "Musoq.DataSources.Jira.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.OpenAI.Tests", "passed": 33, "failed": 0, "skipped": 1, "total": 34 },
+      { "project": "Musoq.DataSources.CANBus.Tests", "passed": 47, "failed": 0, "skipped": 0, "total": 47 },
+      { "project": "Musoq.DataSources.Os.Tests", "passed": 109, "failed": 0, "skipped": 0, "total": 109 },
+      { "project": "Musoq.DataSources.Roslyn.Tests", "passed": 342, "failed": 0, "skipped": 5, "total": 347 },
+      { "project": "Musoq.DataSources.SeparatedValues.Tests", "passed": 249, "failed": 0, "skipped": 0, "total": 249 },
+      { "project": "Musoq.DataSources.RepresentativeTests", "passed": 50, "failed": 0, "skipped": 1, "total": 51 },
+      { "project": "Musoq.DataSources.Json.Tests", "passed": 103, "failed": 0, "skipped": 0, "total": 103 },
+      { "project": "Musoq.DataSources.Time.Tests", "passed": 12, "failed": 0, "skipped": 0, "total": 12 },
+      { "project": "Musoq.DataSources.Archives.Tests", "passed": 19, "failed": 0, "skipped": 0, "total": 19 },
+      { "project": "Musoq.DataSources.GitHub.Tests", "passed": 51, "failed": 0, "skipped": 0, "total": 51 },
+      { "project": "Musoq.DataSources.Roslyn.CommandLineArguments.Tests", "passed": 22, "failed": 0, "skipped": 0, "total": 22 },
+      { "project": "Musoq.DataSources.Git.Tests", "passed": 77, "failed": 0, "skipped": 12, "total": 89 },
+      { "project": "Musoq.DataSources.OsAndGitTests", "passed": 2, "failed": 0, "skipped": 0, "total": 2 },
+      { "project": "Musoq.DataSources.Os.Playground", "passed": 3, "failed": 0, "skipped": 0, "total": 3 }
+    ],
+    "skipClassification": {
+      "expectedExistingSkips": 31,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "ripgrep-version",
+      "argv": "C:\\Users\\Jakub\\.vscode\\extensions\\openai.chatgpt-26.5901.22334-win32-x64\\bin\\windows-x86_64\\rg.exe --version",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S03/rg-version.log",
+      "stdoutSha256": "6be9d6a7c90a5db370a21178599013e052473462bb21656673a0c200f5bd014e",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S03/rg-version.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "ripgrep-help",
+      "argv": "C:\\Users\\Jakub\\.vscode\\extensions\\openai.chatgpt-26.5901.22334-win32-x64\\bin\\windows-x86_64\\rg.exe --help",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S03/rg-help.log",
+      "stdoutSha256": "537946d556964600879c6290f6d9efa4010e11872d6185f5ebf039f0cfc4e92b",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S03/rg-help.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 42,
+      "passed": 42,
+      "failed": 0,
+      "skipped": 0,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S03/search-focused.log",
+      "stdoutSha256": "32a46b7775603576f401273aef21e45222b7ea238b0506b65effad7ffd31b682",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S03/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above.",
+      "projectCount": 21,
+      "discovered": 1326,
+      "passed": 1295,
+      "failed": 0,
+      "skipped": 31,
+      "stdoutPath": "docs/campaigns/search/evidence/W03-S03/full-suite.log",
+      "stdoutSha256": "be4b7fc6a870bb9d3b5369084558eaa293d74df796535d3301d0f7d6180ad08e",
+      "stderrPath": "docs/campaigns/search/evidence/W03-S03/full-suite.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "search-test-build",
+      "argv": "dotnet build Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; JSON parse validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The owning-repository Release suite exited 0 with 1,326 discovered, 1,295 passed, 0 failed and 31 existing expected skips; the focused Search suite exited 0 with 42 passed."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review, exact source/artifact/tool hashes, immutable ripgrep identity and the unique trailer-bearing completion commit are retained."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "The structured parser and normalized comparator tests preserve multi-submatch order, byte spans, base64 values and distinct matched/no-match/operational outcomes without erasing intentional dialect differences."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/RipgrepComparator.cs",
+      "sha256": "4769e0b0fe298b35954e732e093485942762dc039bca0b0690eb158b435a7ec5"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/RipgrepComparatorTests.cs",
+      "sha256": "2a8ec5ea8d8e6c7131b4c9afe96c3462adc02fdaa0e1b002cea2475b435bedb6"
+    }
+  ],
+  "sourceDigest": "c2b4c8576ca4517bb4c56f89ca7b5331227d3000e3b6a0776522bb70de2c32da",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/review.md",
+      "sha256": "d0357dd7ba7b33f14d380699f47894b59b744f02bbe13e01220d35ee72af5f08"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/rg-version.log",
+      "sha256": "6be9d6a7c90a5db370a21178599013e052473462bb21656673a0c200f5bd014e"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/rg-version.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/rg-help.log",
+      "sha256": "537946d556964600879c6290f6d9efa4010e11872d6185f5ebf039f0cfc4e92b"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/rg-help.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/search-focused.log",
+      "sha256": "32a46b7775603576f401273aef21e45222b7ea238b0506b65effad7ffd31b682"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/full-suite.log",
+      "sha256": "be4b7fc6a870bb9d3b5369084558eaa293d74df796535d3301d0f7d6180ad08e"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W03-S03/full-suite.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "This is a test-owned comparator and baseline harness, not a production backend selection or Search execution path; W03-S04 owns measured backend choice.",
+    "The pinned executable is supplied by the campaign local configuration or explicit test environment override; a machine without ripgrep cannot run these campaign integration tests.",
+    "The comparator intentionally uses fixed-string, non-context, line-oriented JSON output. Regex, multiline, encoding, ignore-policy and richer dialect comparisons remain later scopes.",
+    "The repository-wide suite retains 31 existing classified skips and package advisories; no package was published."
+  ]
+}

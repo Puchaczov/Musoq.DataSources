@@ -38,6 +38,7 @@
         <ProjectReference Include="..\Musoq.DataSources.OpenAI\Musoq.DataSources.OpenAI.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.Ollama\Musoq.DataSources.Ollama.csproj"/>
         <ProjectReference Include="..\Musoq.DataSources.Roslyn\Musoq.DataSources.Roslyn.csproj"/>
+        <ProjectReference Include="..\Musoq.DataSources.Search\Musoq.DataSources.Search.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

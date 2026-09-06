@@ -1,0 +1,241 @@
+{
+  "scopeId": "W15-S01",
+  "status": "passed",
+  "summary": "Published a bounded Search capability card that maps the eight registered sources to names, existence, lines, locations, labeled multi-pattern findings, exact totals, raw bytes and terminal completeness, with explicit cost, dialect and optional-capability boundaries.",
+  "requirementIds": [
+    "R01",
+    "R07",
+    "R10",
+    "R12"
+  ],
+  "sourceReferences": [
+    "S09",
+    "S14",
+    "S15",
+    "S18"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W15-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "29da28646ea5bc7538506dad0652f5ff9880fa32",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 76,
+    "behind": 0,
+    "worktree": "Tracked files were clean before W15-S01 implementation; ignored campaign state had W15-S01 in_progress and no other active scope.",
+    "preExistingScopeCommit": "29da28646ea5bc7538506dad0652f5ff9880fa32",
+    "aheadNote": "The ahead count includes reachable completed Search scope commits through W14-S05; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search.Tests/SearchCapabilityCardTests.cs",
+      "docs/search/search-capability-card-v1.md",
+      "RepresentativeQueries.md"
+    ],
+    "scopeBoundary": "Only the owning repository's Search capability documentation, its static XML/runtime snapshot test and the representative-query link changed, plus this scope's evidence. No production Search source, sibling repository or publication state was changed.",
+    "workflowContract": "The card is a decision guide over the eight SearchSchema virtual constructors. It directs names to paths, positive existence to files, physical candidate records to lines, locations to matches, labeled scalar literal patterns to many, exact zero-inclusive totals to counts, raw signatures/windows to bytes and terminal evidence to audit.",
+    "snapshotContract": "The capability-card test reads the generated Search XML, asserts the exact eight static signatures, checks card boundary markers, compares runtime constructor order and requires non-empty runtime descriptors for every source."
+  },
+  "tests": {
+    "discovered": 1631,
+    "passed": 1597,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "capabilityCardFocusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "filter": "FullyQualifiedName~SearchCapabilityCardTests",
+      "discovered": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "searchSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 343,
+      "passed": 340,
+      "failed": 0,
+      "skipped": 3
+    },
+    "representativeSuite": {
+      "project": "Musoq.DataSources.RepresentativeTests",
+      "discovered": 55,
+      "passed": 54,
+      "failed": 0,
+      "skipped": 1
+    },
+    "contractHarnesses": {
+      "scenarios": 27,
+      "assertions": 314,
+      "passed": true,
+      "harnesses": [
+        "Test-SearchSourceContract.ps1: 7 scenarios, 52 assertions",
+        "Test-SearchRequestContract.ps1: 4 scenarios, 45 assertions",
+        "Test-SearchMatchSemantics.ps1: 6 scenarios, 49 assertions",
+        "Test-SearchScopeSemantics.ps1: 6 scenarios, 44 assertions",
+        "Test-SearchCompletionSemantics.ps1: 4 scenarios, 124 assertions"
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "capability-card-focused-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --filter FullyQualifiedName~SearchCapabilityCardTests --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "discovered": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 343,
+      "passed": 340,
+      "failed": 0,
+      "skipped": 3
+    },
+    {
+      "kind": "search-build",
+      "argv": "dotnet build Musoq.DataSources.Search\\Musoq.DataSources.Search.csproj --configuration Release --no-restore -warnaserror",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "kind": "source-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchSourceContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 7,
+      "assertions": 52
+    },
+    {
+      "kind": "request-contract-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchRequestContract.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 45
+    },
+    {
+      "kind": "match-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchMatchSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 49
+    },
+    {
+      "kind": "scope-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchScopeSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 6,
+      "assertions": 44
+    },
+    {
+      "kind": "completion-semantics-harness",
+      "argv": "pwsh -NoProfile -NonInteractive -File scripts/search/Test-SearchCompletionSemantics.ps1",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "scenarioCount": 4,
+      "assertions": 124
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release --no-restore --verbosity quiet --logger \"console;verbosity=minimal\"",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1631,
+      "passed": 1597,
+      "failed": 0,
+      "skipped": 34,
+      "note": "A preceding concurrent full-suite console invocation reported one unreproduced failure; the final filtered rerun completed cleanly and was used as the qualifying gate result."
+    },
+    {
+      "kind": "campaign-validation-before-completion",
+      "argv": "python docs/campaigns/search/validate_campaign.py docs/campaigns/search/campaign.json --repo-root . --track core",
+      "exitCode": 0,
+      "status": "valid with activeScope=W15-S01 before report completion transition"
+    },
+    {
+      "kind": "diff-and-contract-validation",
+      "argv": "git diff --check; JSON parse validation for docs/campaigns/search/evidence/W15-S01/report.json",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "git": "git version 2.48.1.windows.1",
+    "python": "3.13.1",
+    "processArchitecture": "X64",
+    "osArchitecture": "X64"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The final Release owning-repository suite completed across 21 projects with 1,631 total tests, 1,597 passed, 0 failed and 34 classified skips; Search and representative suites also passed. Existing dependency, documentation, nullability and analyzer warnings remained outside the Search build, which passed with -warnaserror."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate review approved the bounded decision matrix, optional-capability caveat, candidate-versus-complete distinction, scalar JSON/literal-only boundary, dialect costs and static/runtime snapshot test; the review artifact is retained with its tested hash."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "The capability-card snapshot passes against generated XML and runtime SearchSchema descriptions; the Search suite and five registered semantic harnesses also passed."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "The card's eight source signatures are checked against generated static XML and runtime constructor order, and every runtime source description exposes columns."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchCapabilityCardTests.cs",
+      "sha256": "7190cd368ff7fccf4ff583c071b06a73585af413cd1c68b816d21d77d2aff74d"
+    },
+    {
+      "path": "docs/search/search-capability-card-v1.md",
+      "sha256": "83b61109de08eb0bbc6e1633b10412a55ef35a36d1cd88a0acbd4c7c11d90e7b"
+    },
+    {
+      "path": "RepresentativeQueries.md",
+      "sha256": "28ed058750f6ead701ba9981b121a1df2a0d5e14fda7a481c4bfd99d9e071976"
+    }
+  ],
+  "sourceDigest": "3d07ee73c1582fb85d7b851096ea8bb63169d7e9b505f5ef411bb10e21a4124f",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W15-S01/review.md",
+      "sha256": "262e148450beb947ade9a49693a685140f7a50a54741262cdb6c15526653b18f"
+    }
+  ],
+  "knownLimitations": [
+    "The card is a bounded decision guide, not a catalog dump or a substitute for the versioned Search source, request, coordinate, resource and completion contracts linked from it.",
+    "Static XML and runtime descriptions verify signatures and columns; they do not prove that a particular deployment has installed the Search plugin or that an external root is readable.",
+    "The owning-repository suite retained existing restore, package-vulnerability, XML-documentation, nullability and analyzer warnings; no warning was introduced by the Search build, which passed with -warnaserror.",
+    "No package was published, pushed, released or installed, and no sibling repository was edited."
+  ]
+}

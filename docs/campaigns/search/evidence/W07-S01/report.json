@@ -1,0 +1,223 @@
+{
+  "scopeId": "W07-S01",
+  "status": "passed",
+  "summary": "Selected and implemented the bounded portable non-backtracking regex backend foundation. Patterns are compiled once per pattern/case/whole-word semantic key, retained compiled state is capped by a locked LRU, unsupported constructs receive typed dialect-aware diagnostics, and line-oriented execution remains the explicitly later W07-S02 scope.",
+  "requirementIds": [
+    "R01",
+    "R02",
+    "R04",
+    "R07",
+    "R08"
+  ],
+  "sourceReferences": [
+    "S14",
+    "S22",
+    "S23",
+    "S24"
+  ],
+  "review": {
+    "verdict": "approved",
+    "reviewer": "separate grill-code review pass (no independent subagent was available)",
+    "path": "docs/campaigns/search/evidence/W07-S01/review.md"
+  },
+  "startingState": {
+    "branch": "feature/runtime_v2",
+    "head": "6ec1f8415e8fef7e57aed107eae596f5dd35a371",
+    "upstream": "origin/feature/runtime_v2",
+    "ahead": 36,
+    "behind": 0,
+    "worktree": "Tracked files were clean at scope start; ignored campaign state recorded W07-S01 as in_progress.",
+    "preExistingScopeCommit": "6ec1f8415e8fef7e57aed107eae596f5dd35a371",
+    "aheadNote": "The ahead count includes the reachable completed Search scope commits through W06-S05 and other pre-existing branch commits; no upstream changes were present."
+  },
+  "implementation": {
+    "changedFiles": [
+      "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "Musoq.DataSources.Search/SearchRegexBackend.cs",
+      "Musoq.DataSources.Search.Tests/SearchRegexBackendTests.cs",
+      "docs/search/search-regex-backend-v1.md"
+    ],
+    "scopeBoundary": "Only the owning Search source, tests and Search documentation were changed. The ignored local campaign state was not staged. No sibling repository, SQL/XML surface, release, publication or installation was modified.",
+    "backend": {
+      "dialect": "portable-nonbacktracking-v1",
+      "regexOptions": [
+        "CultureInvariant",
+        "NonBacktracking",
+        "IgnoreCase when case mode is insensitive"
+      ],
+      "matchTimeoutMilliseconds": 1000,
+      "compilationBudgetMilliseconds": 5000,
+      "compilationBudgetEnforcement": "Post-construction guard; pattern length and nesting are rejected before Regex construction because the .NET Regex constructor has no cancellation API.",
+      "maxPatternLength": 65536,
+      "maxNestingDepth": 256,
+      "maxCachedPatterns": 128,
+      "cacheKey": [
+        "pattern text",
+        "case mode",
+        "whole-word mode"
+      ],
+      "cacheConcurrency": "Locked LRU with immutable Regex values; concurrent requests for one resident semantic key share one compiled instance.",
+      "fallbackPolicy": "No silent backtracking-engine, dialect or literal-mode fallback.",
+      "executionBoundary": "This scope supplies validation and compilation primitives. Line-oriented source matching is W07-S02 and capture-row exposure is W07-S03."
+    }
+  },
+  "tests": {
+    "discovered": 1426,
+    "passed": 1392,
+    "failed": 0,
+    "skipped": 34,
+    "unexpectedSkips": 0,
+    "focusedSuite": {
+      "project": "Musoq.DataSources.Search.Tests",
+      "discovered": 142,
+      "passed": 139,
+      "failed": 0,
+      "skipped": 3,
+      "newScenarios": [
+        "Supported profile uses invariant non-backtracking options, timeout and captures",
+        "Same-start alternatives preserve regex source order",
+        "Malformed syntax names the portable dialect",
+        "Lookahead and lookbehind are rejected with typed dialect-aware diagnostics",
+        "Numeric and named backreferences are rejected with a literal-mode remedy",
+        "Contiguous-match anchors (\\G) are rejected with a typed diagnostic",
+        "Atomic groups, conditionals and balancing groups are rejected",
+        "Oversized patterns and excessive nesting fail before construction",
+        "A 4,096-branch alternation compiles within the selected pattern budget",
+        "Repeated and concurrent semantic keys share compiled instances",
+        "Cache pressure stays at 128 entries and evicts the least-recently-used key"
+      ],
+      "requiredCoverage": [
+        "Invalid patterns, unsupported lookaround and backreferences produce typed diagnostics naming the dialect and remedy.",
+        "Huge alternation and nesting inputs exercise bounded construction safeguards.",
+        "Repeated semantic keys compile once, while changed case semantics remain isolated.",
+        "Concurrent same-key requests share one immutable compiled Regex.",
+        "Cache pressure is bounded and eviction is deterministic."
+      ]
+    },
+    "fullSuiteProjectCount": 21,
+    "skipClassification": {
+      "existingExpectedSkips": 31,
+      "platformConditionalSymlinkSkips": 3,
+      "unexpected": 0
+    }
+  },
+  "commands": [
+    {
+      "kind": "focused-search-suite",
+      "argv": "dotnet test .\\Musoq.DataSources.Search.Tests\\Musoq.DataSources.Search.Tests.csproj --configuration Release --no-restore",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0,
+      "projectCount": 1,
+      "discovered": 142,
+      "passed": 139,
+      "failed": 0,
+      "skipped": 3,
+      "stdoutPath": "docs/campaigns/search/evidence/W07-S01/search-focused.log",
+      "stdoutSha256": "f79a3d67469f9d93d8b89d4eb57eba15896ff693964be33199adad5f31220b43",
+      "stderrPath": "docs/campaigns/search/evidence/W07-S01/search-focused.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "full-suite",
+      "argv": "dotnet test --configuration Release",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "executionWrapper": "Direct PowerShell invocation with separate stdout/stderr capture; product argv is recorded above; captured logs were normalized to UTF-8 LF for deterministic hashing.",
+      "exitCode": 0,
+      "projectCount": 21,
+      "discovered": 1426,
+      "passed": 1392,
+      "failed": 0,
+      "skipped": 34,
+      "stdoutPath": "docs/campaigns/search/evidence/W07-S01/full-suite-exact.log",
+      "stdoutSha256": "3a3375f330abc4d4a2fb0617f76e10fee5cae4efa45ff3d51ccd5f68fa671212",
+      "stderrPath": "docs/campaigns/search/evidence/W07-S01/full-suite-exact.err.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "syntax-and-diff-validation",
+      "argv": "git diff --check; focused and full test result inventory; source and artifact hash validation; campaign validator",
+      "cwd": "D:\\repos\\Musoq.DataSources",
+      "exitCode": 0
+    }
+  ],
+  "toolVersions": {
+    "pwsh": "7.6.5",
+    "dotnet": "10.0.303",
+    "python": "3.13.1",
+    "git": "git version 2.48.1.windows.1"
+  },
+  "gateResults": [
+    {
+      "id": "G01",
+      "status": "passed",
+      "evidence": "The exact owning-repository Release suite exited 0 with 21 projects, 1,426 discovered, 1,392 passed, 0 failed and 34 expected skips; the focused Search suite exited 0 with 142 discovered, 139 passed, 0 failed and 3 expected platform-conditional skips."
+    },
+    {
+      "id": "G09",
+      "status": "passed",
+      "evidence": "The separate ownership review approved the backend selection, typed diagnostics, resource controls, cache behavior and W07-S01 boundary; exact commands, tool versions, source/artifact hashes and the unique trailer-bearing completion commit are recorded and verified during post-commit finalization."
+    },
+    {
+      "id": "G02",
+      "status": "passed",
+      "evidence": "Focused tests verify invariant non-backtracking options, captures, source-order alternatives, explicit unsupported-construct rejection, resource limits, semantic-key isolation, concurrency and bounded LRU eviction."
+    },
+    {
+      "id": "G03",
+      "status": "passed",
+      "evidence": "No public SQL/XML surface or advertised query example changed in this internal backend-foundation scope; future source integration is explicitly assigned to W07-S02 and W07-S03."
+    },
+    {
+      "id": "G04",
+      "status": "passed",
+      "evidence": "The shared cache is lock-protected, capped at 128 entries, keyed by immutable semantic inputs and tested under concurrent same-key requests and eviction pressure; compiled Regex instances own their state and no borrowed source buffers are retained."
+    }
+  ],
+  "sourceManifest": [
+    {
+      "path": "Musoq.DataSources.Search/SearchDiagnostics.cs",
+      "sha256": "14563e6f48aa1b39479ea64a2ab770227686e2dad17c4106ff5c3928b50b8f63"
+    },
+    {
+      "path": "Musoq.DataSources.Search/SearchRegexBackend.cs",
+      "sha256": "634fb6fff43bbdb922b2dfaf029c038c533fd71fe57218894ffe8032c777dc60"
+    },
+    {
+      "path": "Musoq.DataSources.Search.Tests/SearchRegexBackendTests.cs",
+      "sha256": "e7271137faab737bcc540cb2a9bc64bd2f74d6c029de8fcae96721c15bdff9d6"
+    },
+    {
+      "path": "docs/search/search-regex-backend-v1.md",
+      "sha256": "21b1b4609365b5795a30186af72cc209d6d5ba188681f2a425b93fd98e400af5"
+    }
+  ],
+  "sourceDigest": "2457d7132a6331562311923fd309f0010c4192f05f56f346bcacd4c41629d2e1",
+  "artifacts": [
+    {
+      "path": "docs/campaigns/search/evidence/W07-S01/review.md",
+      "sha256": "a0ce5409c2117d9d98bff7b24dcd9c1b364805e80eaa292380e6c03cb18b55cf"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W07-S01/search-focused.log",
+      "sha256": "f79a3d67469f9d93d8b89d4eb57eba15896ff693964be33199adad5f31220b43"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W07-S01/search-focused.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W07-S01/full-suite-exact.log",
+      "sha256": "3a3375f330abc4d4a2fb0617f76e10fee5cae4efa45ff3d51ccd5f68fa671212"
+    },
+    {
+      "path": "docs/campaigns/search/evidence/W07-S01/full-suite-exact.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "knownLimitations": [
+    "This scope establishes the backend and validation foundation; line-oriented matching integration is W07-S02 and capture-row exposure is W07-S03.",
+    "Whole-word mode is part of the immutable cache key but its scanner enforcement is intentionally deferred to the later execution scope.",
+    "The compilation budget is a post-construction guard because the .NET Regex constructor cannot be cancelled; bounded pattern length and nesting are the pre-construction controls.",
+    "The repository-wide suite retains 31 existing expected skips and 3 platform-conditional symlink skips; no package was published, pushed, released or installed."
+  ]
+}

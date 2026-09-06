@@ -397,7 +397,7 @@ function Test-RuntimeV2ReleaseTrain {
     $registryPath = Join-Path $PSScriptRoot "release/packages.json"
     $registry = Get-Content -LiteralPath $registryPath -Raw | ConvertFrom-Json
     $packages = @($registry.packages)
-    Assert-Equal 15 $packages.Count "Runtime-v2 release train should contain all 15 datasource packages."
+    Assert-Equal 16 $packages.Count "Runtime-v2 release train should contain all 16 datasource packages."
 
     foreach ($package in $packages) {
         $version = [string]$package.version
@@ -413,6 +413,9 @@ function Test-RuntimeV2ReleaseTrain {
         elseif ($package.packageId -eq 'Musoq.DataSources.Git') {
             Assert-Equal "3.0.0-alpha.3" $version "Git should use its next major alpha version."
         }
+        elseif ($package.packageId -eq 'Musoq.DataSources.Search') {
+            Assert-Equal "1.0.0-alpha.1" $version "Search should use its initial alpha version."
+        }
         else {
             Assert-True ($version -match '-alpha\.7$') "$($package.packageId) should be pinned to alpha.7 in packages.json."
         }
@@ -425,6 +428,17 @@ function Test-RuntimeV2ReleaseTrain {
     $roslyn = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Roslyn' })
     Assert-Equal 1 $roslyn.Count "Runtime-v2 release train should contain exactly one Roslyn package."
     Assert-Equal "3.0.4-alpha.8" ([string]$roslyn[0].version) "Roslyn should use the next prerelease command-module version."
+
+    $search = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Search' })
+    Assert-Equal 1 $search.Count "Runtime-v2 release train should contain exactly one Search package."
+    Assert-Equal "search" ([string]$search[0].slug) "Search should use the canonical release slug."
+    Assert-Equal "1.0.0-alpha.1" ([string]$search[0].version) "Search should use its initial alpha version."
+    Assert-Equal "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj" ([string]$search[0].projectPath) "Search should point at the production project."
+
+    $excludedProjects = @($packages | Where-Object {
+        [string]$_.projectPath -match '(?i)(?:^|[\\/])[^\\/]*(?:\.Tests|\.Benchmarks)(?:[\\/]|$)'
+    })
+    Assert-Equal 0 $excludedProjects.Count "The unified release registry must not include test or benchmark projects."
 }
 
 function Test-PluginLicenseSnapshotPackagingContracts {
@@ -670,6 +684,7 @@ Test-PluginArtifactIntegrityMetadata
 Test-PluginLicenseSnapshotPackagingContracts
 Test-Registry12RuntimeMetadataContract
 Test-RuntimeV2ReleaseTrain
+& (Join-Path $PSScriptRoot "release/Test-SearchReleaseRegistry.ps1") | Out-Null
 Test-RoslynReleaseWorkflowGates
 Test-PluginToolingWorkflowGates
 Test-CommandLineModuleManifestContract

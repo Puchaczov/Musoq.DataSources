@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using Musoq.DataSources.Tests.Common;
+using Musoq.DataSources.SeparatedValues.Components.Planning;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;

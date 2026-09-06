@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="a550159e-b3fe-4e85-9267-50c9f0de65bf" name="Jakub@DESKTOP-I52018A 2026-09-06 18:46:04" runUser="DESKTOP-I52018A\Jakub" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-06T18:46:04.8848513+02:00" queuing="2026-09-06T18:46:04.8848516+02:00" start="2026-09-06T18:46:02.3593016+02:00" finish="2026-09-06T18:46:05.3627017+02:00" />
+  <TestSettings name="default" id="5dcb426a-cf71-4eb4-8fc8-0a83db2eecab">
+    <Deployment runDeploymentRoot="Jakub_DESKTOP-I52018A_2026-09-06_18_46_04" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="7c3caa5f-985e-4398-b7ec-9e6464084d6d" testId="76bd45e1-00f5-2937-5070-17c6c77d0aad" testName="DescRange_ShouldReturnAllOverloads" computerName="DESKTOP-I52018A" duration="00:00:00.0299544" startTime="2026-09-06T18:46:04.9641412+02:00" endTime="2026-09-06T18:46:04.9941967+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7c3caa5f-985e-4398-b7ec-9e6464084d6d" />
+    <UnitTestResult executionId="bc2ea94a-9234-4b7b-a650-f14b3573d2f8" testId="0cfdb5dc-8161-fb4b-3440-a289491d7c18" testName="DescUnknownMethod_ShouldThrowException" computerName="DESKTOP-I52018A" duration="00:00:00.0466937" startTime="2026-09-06T18:46:04.9942524+02:00" endTime="2026-09-06T18:46:05.0410631+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bc2ea94a-9234-4b7b-a650-f14b3573d2f8" />
+    <UnitTestResult executionId="ec580844-96c0-46c9-8912-b5f31c02c024" testId="69e53c8e-8e75-82b8-de5a-348e90e44011" testName="DescRangeNoArgs_VsWithArgs_ShouldReturnDifferentResults" computerName="DESKTOP-I52018A" duration="00:00:00.0590096" startTime="2026-09-06T18:46:05.1029332+02:00" endTime="2026-09-06T18:46:05.1620539+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ec580844-96c0-46c9-8912-b5f31c02c024" />
+    <UnitTestResult executionId="e7706f70-56bb-4f2d-8cbf-b65d5d842c18" testId="ad651ea5-6554-66cc-a9bb-01746b287dac" testName="DescSchema_ShouldListAllAvailableMethods" computerName="DESKTOP-I52018A" duration="00:00:00.0569496" startTime="2026-09-06T18:46:04.8778096+02:00" endTime="2026-09-06T18:46:04.9348828+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e7706f70-56bb-4f2d-8cbf-b65d5d842c18" />
+    <UnitTestResult executionId="d95d91d1-164c-4910-b9ec-a134fd6dcb0c" testId="33520bed-c96b-2529-6106-7da5d5408a85" testName="RowNumberEvenForRangeMinSignedMaxTest" computerName="DESKTOP-I52018A" startTime="2026-09-06T18:46:04.8680078+02:00" endTime="2026-09-06T18:46:04.8682583+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d95d91d1-164c-4910-b9ec-a134fd6dcb0c">
+      <Output></Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="3df2962e-f130-4c76-b1ba-b9980a1276b2" testId="08547208-2ee0-3209-dd16-d43c5956fd18" testName="EverySystemConstructor_HasOneExactStarContract" computerName="DESKTOP-I52018A" duration="00:00:00.1488548" startTime="2026-09-06T18:46:05.1621030+02:00" endTime="2026-09-06T18:46:05.3116686+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3df2962e-f130-4c76-b1ba-b9980a1276b2" />
+    <UnitTestResult executionId="03e202a0-d14d-4a45-b6c3-403b944496df" testId="e8c77d68-9101-68e1-79d3-0e60884ccecb" testName="TryPlanSource_WhenRangePredicateNaturalOrderAndSliceAreRequested_AcceptsThem" computerName="DESKTOP-I52018A" duration="00:00:00.0016696" startTime="2026-09-06T18:46:04.8682728+02:00" endTime="2026-09-06T18:46:04.8700382+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="03e202a0-d14d-4a45-b6c3-403b944496df" />
+    <UnitTestResult executionId="4d44c3a5-a865-4751-af9f-9635106ccfc0" testId="a86ff74a-3546-c695-8f4a-2d7272029d2c" testName="RangeSource_WhenExecutionPlanHasPredicateAndSlice_EmitsFilteredRows" computerName="DESKTOP-I52018A" duration="00:00:00.0030579" startTime="2026-09-06T18:46:04.8746488+02:00" endTime="2026-09-06T18:46:04.8777704+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4d44c3a5-a865-4751-af9f-9635106ccfc0" />
+    <UnitTestResult executionId="6f6812d2-73e6-4c25-ad69-1949abf98cd9" testId="9a4f89ea-1f95-20cc-5db5-0a8cf1446e68" testName="RangeMinMaxTest" computerName="DESKTOP-I52018A" duration="00:00:00.0418091" startTime="2026-09-06T18:46:04.7808030+02:00" endTime="2026-09-06T18:46:04.8227227+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6f6812d2-73e6-4c25-ad69-1949abf98cd9" />
+    <UnitTestResult executionId="eeecb573-f227-45dd-be20-7ccbb619b217" testId="0fe7661d-8cad-66c2-fd5b-eadffa309ba5" testName="UnionTest" computerName="DESKTOP-I52018A" duration="00:00:00.1712850" startTime="2026-09-06T18:46:04.5475693+02:00" endTime="2026-09-06T18:46:04.7191048+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="eeecb573-f227-45dd-be20-7ccbb619b217" />
+    <UnitTestResult executionId="71afd728-ad55-4c8f-bccf-f261d1d4c978" testId="133a9ae1-9ab1-4dec-93b2-313490e456f6" testName="RangeMinSignedMaxTest" computerName="DESKTOP-I52018A" duration="00:00:00.0450636" startTime="2026-09-06T18:46:04.8227741+02:00" endTime="2026-09-06T18:46:04.8679616+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="71afd728-ad55-4c8f-bccf-f261d1d4c978" />
+    <UnitTestResult executionId="2499a4bc-264d-41ef-b7d1-3493374c42ed" testId="9f1d91f6-a6d0-abf7-d434-c7585085a945" testName="SomeTest" computerName="DESKTOP-I52018A" duration="00:00:00.1678230" startTime="2026-09-06T18:46:04.3795641+02:00" endTime="2026-09-06T18:46:04.5475116+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2499a4bc-264d-41ef-b7d1-3493374c42ed" />
+    <UnitTestResult executionId="d55595e5-f43a-4f9b-b5e1-9ffa75ca37bb" testId="3c0e6eb9-ff03-e99a-f04f-8de44a1074f4" testName="SimpleDualTest" computerName="DESKTOP-I52018A" duration="00:00:01.6578694" startTime="2026-09-06T18:46:02.6408697+02:00" endTime="2026-09-06T18:46:04.3071086+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d55595e5-f43a-4f9b-b5e1-9ffa75ca37bb" />
+    <UnitTestResult executionId="c5553854-cfd5-4e71-92c8-301d12a21d65" testId="c4055b06-93d1-3c99-ddfa-6deb7c6c8c0b" testName="SimpleComputedDualTest" computerName="DESKTOP-I52018A" duration="00:00:00.0693996" startTime="2026-09-06T18:46:04.3095704+02:00" endTime="2026-09-06T18:46:04.3792454+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c5553854-cfd5-4e71-92c8-301d12a21d65" />
+    <UnitTestResult executionId="a7d4e257-4522-4e78-8b95-c5b38fd09a1c" testId="bf8e16cb-9664-4994-c6bf-53302bbf1b0e" testName="RangeMaxTest" computerName="DESKTOP-I52018A" duration="00:00:00.0614434" startTime="2026-09-06T18:46:04.7191601+02:00" endTime="2026-09-06T18:46:04.7807507+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a7d4e257-4522-4e78-8b95-c5b38fd09a1c" />
+    <UnitTestResult executionId="c5d9c7ad-d676-46ba-b83d-4ab7bb3e4b7a" testId="b97e0585-4116-5093-a8a8-8bc7b97cf57c" testName="DescSchema_ShouldHaveConsistentColumnTypes" computerName="DESKTOP-I52018A" duration="00:00:00.0616478" startTime="2026-09-06T18:46:05.0411178+02:00" endTime="2026-09-06T18:46:05.1028785+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c5d9c7ad-d676-46ba-b83d-4ab7bb3e4b7a" />
+    <UnitTestResult executionId="4cc48bf9-6e7a-46a5-b804-cbadd7c44fc2" testId="2532470d-ecce-4de9-9699-9006999b4b4c" testName="TryPlanSource_WhenDualIsRequested_RejectsAll" computerName="DESKTOP-I52018A" duration="00:00:00.0004740" startTime="2026-09-06T18:46:04.8740547+02:00" endTime="2026-09-06T18:46:04.8746175+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4cc48bf9-6e7a-46a5-b804-cbadd7c44fc2" />
+    <UnitTestResult executionId="d5406f43-3e43-4d74-a67f-e9d623ee84f9" testId="ee884e3d-15dd-d209-faa0-bd045346c988" testName="DescDual_ShouldReturnMethodSignatureWithNoParameters" computerName="DESKTOP-I52018A" duration="00:00:00.0290482" startTime="2026-09-06T18:46:04.9349369+02:00" endTime="2026-09-06T18:46:04.9640891+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d5406f43-3e43-4d74-a67f-e9d623ee84f9" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="TryPlanSource_WhenDualIsRequested_RejectsAll" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="2532470d-ecce-4de9-9699-9006999b4b4c">
+      <Execution id="4cc48bf9-6e7a-46a5-b804-cbadd7c44fc2" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemRuntimeV2PushdownTests" name="TryPlanSource_WhenDualIsRequested_RejectsAll" />
+    </UnitTest>
+    <UnitTest name="UnionTest" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="0fe7661d-8cad-66c2-fd5b-eadffa309ba5">
+      <Execution id="eeecb573-f227-45dd-be20-7ccbb619b217" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.DualTests" name="UnionTest" />
+    </UnitTest>
+    <UnitTest name="SimpleDualTest" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="3c0e6eb9-ff03-e99a-f04f-8de44a1074f4">
+      <Execution id="d55595e5-f43a-4f9b-b5e1-9ffa75ca37bb" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.DualTests" name="SimpleDualTest" />
+    </UnitTest>
+    <UnitTest name="DescRangeNoArgs_VsWithArgs_ShouldReturnDifferentResults" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="69e53c8e-8e75-82b8-de5a-348e90e44011">
+      <Execution id="ec580844-96c0-46c9-8912-b5f31c02c024" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemSchemaDescribeTests" name="DescRangeNoArgs_VsWithArgs_ShouldReturnDifferentResults" />
+    </UnitTest>
+    <UnitTest name="RangeSource_WhenExecutionPlanHasPredicateAndSlice_EmitsFilteredRows" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="a86ff74a-3546-c695-8f4a-2d7272029d2c">
+      <Execution id="4d44c3a5-a865-4751-af9f-9635106ccfc0" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemRuntimeV2PushdownTests" name="RangeSource_WhenExecutionPlanHasPredicateAndSlice_EmitsFilteredRows" />
+    </UnitTest>
+    <UnitTest name="RowNumberEvenForRangeMinSignedMaxTest" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="33520bed-c96b-2529-6106-7da5d5408a85">
+      <Execution id="d95d91d1-164c-4910-b9ec-a134fd6dcb0c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.RangeTests" name="RowNumberEvenForRangeMinSignedMaxTest" />
+    </UnitTest>
+    <UnitTest name="TryPlanSource_WhenRangePredicateNaturalOrderAndSliceAreRequested_AcceptsThem" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="e8c77d68-9101-68e1-79d3-0e60884ccecb">
+      <Execution id="03e202a0-d14d-4a45-b6c3-403b944496df" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemRuntimeV2PushdownTests" name="TryPlanSource_WhenRangePredicateNaturalOrderAndSliceAreRequested_AcceptsThem" />
+    </UnitTest>
+    <UnitTest name="RangeMaxTest" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="bf8e16cb-9664-4994-c6bf-53302bbf1b0e">
+      <Execution id="a7d4e257-4522-4e78-8b95-c5b38fd09a1c" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.RangeTests" name="RangeMaxTest" />
+    </UnitTest>
+    <UnitTest name="SimpleComputedDualTest" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="c4055b06-93d1-3c99-ddfa-6deb7c6c8c0b">
+      <Execution id="c5553854-cfd5-4e71-92c8-301d12a21d65" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.DualTests" name="SimpleComputedDualTest" />
+    </UnitTest>
+    <UnitTest name="DescRange_ShouldReturnAllOverloads" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="76bd45e1-00f5-2937-5070-17c6c77d0aad">
+      <Execution id="7c3caa5f-985e-4398-b7ec-9e6464084d6d" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemSchemaDescribeTests" name="DescRange_ShouldReturnAllOverloads" />
+    </UnitTest>
+    <UnitTest name="RangeMinSignedMaxTest" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="133a9ae1-9ab1-4dec-93b2-313490e456f6">
+      <Execution id="71afd728-ad55-4c8f-bccf-f261d1d4c978" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.RangeTests" name="RangeMinSignedMaxTest" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldListAllAvailableMethods" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="ad651ea5-6554-66cc-a9bb-01746b287dac">
+      <Execution id="e7706f70-56bb-4f2d-8cbf-b65d5d842c18" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemSchemaDescribeTests" name="DescSchema_ShouldListAllAvailableMethods" />
+    </UnitTest>
+    <UnitTest name="DescUnknownMethod_ShouldThrowException" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="0cfdb5dc-8161-fb4b-3440-a289491d7c18">
+      <Execution id="bc2ea94a-9234-4b7b-a650-f14b3573d2f8" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemSchemaDescribeTests" name="DescUnknownMethod_ShouldThrowException" />
+    </UnitTest>
+    <UnitTest name="SomeTest" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="9f1d91f6-a6d0-abf7-d434-c7585085a945">
+      <Execution id="2499a4bc-264d-41ef-b7d1-3493374c42ed" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.DualTests" name="SomeTest" />
+    </UnitTest>
+    <UnitTest name="DescSchema_ShouldHaveConsistentColumnTypes" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="b97e0585-4116-5093-a8a8-8bc7b97cf57c">
+      <Execution id="c5d9c7ad-d676-46ba-b83d-4ab7bb3e4b7a" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemSchemaDescribeTests" name="DescSchema_ShouldHaveConsistentColumnTypes" />
+    </UnitTest>
+    <UnitTest name="DescDual_ShouldReturnMethodSignatureWithNoParameters" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="ee884e3d-15dd-d209-faa0-bd045346c988">
+      <Execution id="d5406f43-3e43-4d74-a67f-e9d623ee84f9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemSchemaDescribeTests" name="DescDual_ShouldReturnMethodSignatureWithNoParameters" />
+    </UnitTest>
+    <UnitTest name="RangeMinMaxTest" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="9a4f89ea-1f95-20cc-5db5-0a8cf1446e68">
+      <Execution id="6f6812d2-73e6-4c25-ad69-1949abf98cd9" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.RangeTests" name="RangeMinMaxTest" />
+    </UnitTest>
+    <UnitTest name="EverySystemConstructor_HasOneExactStarContract" storage="d:\repos\musoq.datasources\musoq.datasources.system.tests\bin\release\net10.0\musoq.datasources.system.tests.dll" id="08547208-2ee0-3209-dd16-d43c5956fd18">
+      <Execution id="3df2962e-f130-4c76-b1ba-b9980a1276b2" />
+      <TestMethod codeBase="D:\repos\Musoq.DataSources\Musoq.DataSources.System.Tests\bin\Release\net10.0\Musoq.DataSources.System.Tests.dll" adapterTypeName="executor://mstestadapter/v2" className="Musoq.DataSources.System.Tests.SystemStarContractTests" name="EverySystemConstructor_HasOneExactStarContract" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="76bd45e1-00f5-2937-5070-17c6c77d0aad" executionId="7c3caa5f-985e-4398-b7ec-9e6464084d6d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0cfdb5dc-8161-fb4b-3440-a289491d7c18" executionId="bc2ea94a-9234-4b7b-a650-f14b3573d2f8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="69e53c8e-8e75-82b8-de5a-348e90e44011" executionId="ec580844-96c0-46c9-8912-b5f31c02c024" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ad651ea5-6554-66cc-a9bb-01746b287dac" executionId="e7706f70-56bb-4f2d-8cbf-b65d5d842c18" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="33520bed-c96b-2529-6106-7da5d5408a85" executionId="d95d91d1-164c-4910-b9ec-a134fd6dcb0c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="08547208-2ee0-3209-dd16-d43c5956fd18" executionId="3df2962e-f130-4c76-b1ba-b9980a1276b2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e8c77d68-9101-68e1-79d3-0e60884ccecb" executionId="03e202a0-d14d-4a45-b6c3-403b944496df" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a86ff74a-3546-c695-8f4a-2d7272029d2c" executionId="4d44c3a5-a865-4751-af9f-9635106ccfc0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9a4f89ea-1f95-20cc-5db5-0a8cf1446e68" executionId="6f6812d2-73e6-4c25-ad69-1949abf98cd9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0fe7661d-8cad-66c2-fd5b-eadffa309ba5" executionId="eeecb573-f227-45dd-be20-7ccbb619b217" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="133a9ae1-9ab1-4dec-93b2-313490e456f6" executionId="71afd728-ad55-4c8f-bccf-f261d1d4c978" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9f1d91f6-a6d0-abf7-d434-c7585085a945" executionId="2499a4bc-264d-41ef-b7d1-3493374c42ed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3c0e6eb9-ff03-e99a-f04f-8de44a1074f4" executionId="d55595e5-f43a-4f9b-b5e1-9ffa75ca37bb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c4055b06-93d1-3c99-ddfa-6deb7c6c8c0b" executionId="c5553854-cfd5-4e71-92c8-301d12a21d65" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bf8e16cb-9664-4994-c6bf-53302bbf1b0e" executionId="a7d4e257-4522-4e78-8b95-c5b38fd09a1c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b97e0585-4116-5093-a8a8-8bc7b97cf57c" executionId="c5d9c7ad-d676-46ba-b83d-4ab7bb3e4b7a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2532470d-ecce-4de9-9699-9006999b4b4c" executionId="4cc48bf9-6e7a-46a5-b804-cbadd7c44fc2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ee884e3d-15dd-d209-faa0-bd045346c988" executionId="d5406f43-3e43-4d74-a67f-e9d623ee84f9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="18" executed="17" passed="17" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>Test 'RowNumberEvenForRangeMinSignedMaxTest' was skipped in the test run.&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

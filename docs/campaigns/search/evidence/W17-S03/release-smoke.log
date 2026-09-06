@@ -1,0 +1,3 @@
+[SNAPSHOT] package=Musoq.DataSources.Search packages=10 files=12 manifest_sha256=743c02bf4579e5275b20371c190ef4039ac92121a6bdbc5596f27975754d7f5d source=checked-in
+[ARCHIVE-SNAPSHOT] package=Musoq.DataSources.Search archives=4 manifest_sha256=743c02bf4579e5275b20371c190ef4039ac92121a6bdbc5596f27975754d7f5d
+Release smoke test passed for 8.0.3-alpha.7-Musoq.DataSources.Search.
