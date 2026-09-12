@@ -73,10 +73,10 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
             var currentSource = sources.Pop();
             var dir = new DirectoryInfo(currentSource.Path);
 
-            FileInfo[] files;
+            IEnumerator<FileInfo> files;
             try
             {
-                files = GetFiles(dir);
+                files = GetFiles(dir).GetEnumerator();
             }
             catch (UnauthorizedAccessException)
             {
@@ -86,28 +86,70 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
             {
                 continue;
             }
-
-            foreach (var file in files)
+            catch (PathTooLongException)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                progress.RowRead();
-
-                ProcessFile(file, source, chunk);
-
-                if (chunk.Count < ChunkSize)
-                    continue;
-
-                yield return chunk;
-                chunk = [];
+                continue;
             }
+
+            var fileEnumerationFailed = false;
+            using (files)
+            {
+                while (true)
+                {
+                    bool hasNext;
+                    try
+                    {
+                        hasNext = files.MoveNext();
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        fileEnumerationFailed = true;
+                        break;
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        fileEnumerationFailed = true;
+                        break;
+                    }
+                    catch (PathTooLongException)
+                    {
+                        fileEnumerationFailed = true;
+                        break;
+                    }
+
+                    if (!hasNext)
+                        break;
+
+                    var file = files.Current;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    progress.RowRead();
+
+                    if (!OsSourcePlanner.MatchesFilePredicate(_acceptedPredicate, file))
+                        continue;
+
+                    ProcessFile(file, source, chunk);
+
+                    if (chunk.Count < ChunkSize)
+                        continue;
+
+                    yield return chunk;
+                    chunk = [];
+                }
+            }
+
+            if (fileEnumerationFailed)
+                continue;
 
             if (!currentSource.WithSubDirectories)
                 continue;
 
-            DirectoryInfo[] subDirectories;
             try
             {
-                subDirectories = dir.GetDirectories();
+                foreach (var subDir in dir.EnumerateDirectories())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    sources.Push(new DirectorySourceSearchOptions(subDir.FullName, currentSource.WithSubDirectories));
+                }
             }
             catch (UnauthorizedAccessException)
             {
@@ -117,29 +159,30 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
             {
                 continue;
             }
-
-            foreach (var subDir in subDirectories)
-                sources.Push(new DirectorySourceSearchOptions(subDir.FullName, currentSource.WithSubDirectories));
+            catch (PathTooLongException)
+            {
+                continue;
+            }
         }
 
         if (chunk.Count > 0)
             yield return chunk;
     }
 
-    protected virtual FileInfo[] GetFiles(DirectoryInfo directoryInfo)
+    protected virtual IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
     {
         var searchPattern = _fileFilters.GetSearchPattern();
         if (searchPattern is not null)
-            return directoryInfo.GetFiles(searchPattern);
+            return directoryInfo.EnumerateFiles(searchPattern);
 
-        return directoryInfo.GetFiles();
+        return directoryInfo.EnumerateFiles();
     }
 
     protected virtual void ProcessFile(FileInfo file, DirectorySourceSearchOptions source, List<TEntity> dirFiles)
     {
         var entity = CreateBasedOnFile(file, source.Path);
 
-        if (entity != null && OsSourcePlanner.Matches(_acceptedPredicate, entity))
+        if (entity != null)
             dirFiles.Add(entity);
     }
 

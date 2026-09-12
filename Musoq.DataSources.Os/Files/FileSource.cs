@@ -31,11 +31,11 @@ internal sealed class FileSource(string path, SourceExecutionContext executionCo
             progress.RowsKnown(1);
             progress.RowRead();
 
+            if (!OsSourcePlanner.MatchesFilePredicate(executionContext.Plan.AcceptedPredicate, file))
+                return;
+
             var rootDirectory = file.DirectoryName ?? Path.GetPathRoot(file.FullName) ?? string.Empty;
             var entity = new FileEntity(file, rootDirectory);
-
-            if (!OsSourcePlanner.Matches(executionContext.Plan.AcceptedPredicate, entity))
-                return;
 
             writer.Write(new List<FileEntity> { entity });
             totalRowsProcessed = 1;

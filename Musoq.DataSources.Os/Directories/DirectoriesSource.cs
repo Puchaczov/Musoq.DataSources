@@ -52,17 +52,24 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
 
             var chunk = new List<DirectoryInfo>(ChunkSize);
 
-            await foreach (var dir in EnumerateDirectoriesAsync(_path, _recursive, cancellationToken))
+            await foreach (var dir in EnumerateDirectoriesAsync(
+                               _path,
+                               _recursive,
+                               _recursive ? null : _directoryFilters.Name,
+                               cancellationToken))
             {
                 progress.RowRead();
 
                 if (_directoryFilters.Name is not null &&
-                    !Path.GetFileName(dir).Equals(_directoryFilters.Name, StringComparison.Ordinal))
+                    !string.Equals(
+                        Path.GetFileName(dir),
+                        _directoryFilters.Name,
+                        StringComparison.Ordinal))
                     continue;
 
                 var directoryInfo = new DirectoryInfo(dir);
 
-                if (!OsSourcePlanner.Matches(_acceptedPredicate, directoryInfo))
+                if (!OsSourcePlanner.MatchesDirectoryPredicate(_acceptedPredicate, directoryInfo))
                     continue;
 
                 chunk.Add(directoryInfo);
@@ -90,6 +97,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
     private static async IAsyncEnumerable<string> EnumerateDirectoriesAsync(
         string rootPath,
         bool recursive,
+        string? nameSearchPattern,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var pendingDirs = new Queue<string>();
@@ -99,25 +107,47 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         {
             cancellationToken.ThrowIfCancellationRequested();
             var currentDir = pendingDirs.Dequeue();
-            string[] subDirs;
+            IEnumerator<string> subDirs;
 
             try
             {
-                subDirs = Directory.GetDirectories(currentDir);
+                subDirs = GetDirectories(currentDir, recursive, nameSearchPattern).GetEnumerator();
             }
             catch (Exception ex) when (ExpectedDirectoryException(ex))
             {
                 continue;
             }
 
-            foreach (var dir in subDirs)
+            var enumerationFailed = false;
+            using (subDirs)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                yield return dir;
+                while (true)
+                {
+                    bool hasNext;
+                    try
+                    {
+                        hasNext = subDirs.MoveNext();
+                    }
+                    catch (Exception ex) when (ExpectedDirectoryException(ex))
+                    {
+                        enumerationFailed = true;
+                        break;
+                    }
 
-                if (recursive)
-                    pendingDirs.Enqueue(dir);
+                    if (!hasNext)
+                        break;
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var dir = subDirs.Current;
+                    yield return dir;
+
+                    if (recursive)
+                        pendingDirs.Enqueue(dir);
+                }
             }
+
+            if (enumerationFailed)
+                continue;
 
             if (pendingDirs.Count <= 0 || pendingDirs.Count % 100 != 0)
                 continue;
@@ -125,6 +155,17 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
         }
+    }
+
+    private static IEnumerable<string> GetDirectories(
+        string path,
+        bool recursive,
+        string? nameSearchPattern)
+    {
+        if (!recursive && nameSearchPattern is not null)
+            return Directory.EnumerateDirectories(path, nameSearchPattern);
+
+        return Directory.EnumerateDirectories(path);
     }
 
     private static bool ExpectedDirectoryException(Exception ex)

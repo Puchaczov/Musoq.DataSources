@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Musoq.Schema.Optimization;
@@ -32,8 +33,8 @@ internal class DllSource(string path, bool useSubDirectories, SourceExecutionCon
         };
     }
 
-    protected override FileInfo[] GetFiles(DirectoryInfo directoryInfo)
+    protected override IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
     {
-        return directoryInfo.GetFiles("*.dll");
+        return directoryInfo.EnumerateFiles("*.dll");
     }
 }

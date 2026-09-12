@@ -36,7 +36,7 @@ internal class MetadataSource : EnumerateFilesSourceBase<MetadataEntity>
         _throwOnMetadataReadError = throwOnMetadataReadError;
     }
 
-    protected override FileInfo[] GetFiles(DirectoryInfo directoryInfo)
+    protected override IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
     {
         if (_fileName is not null)
             return [new FileInfo(Path.Combine(directoryInfo.FullName, _fileName))];

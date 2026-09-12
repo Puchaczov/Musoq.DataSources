@@ -30,6 +30,14 @@ internal sealed class OsDirectoryFilterParameters
 
 internal static class OsSourcePlanner
 {
+    private enum PredicateColumn
+    {
+        Unsupported,
+        FileName,
+        FileExtension,
+        DirectoryName
+    }
+
     public const string FileFiltersPropertyName = "OsFileFilters";
     public const string DirectoryFiltersPropertyName = "OsDirectoryFilters";
 
@@ -43,10 +51,7 @@ internal static class OsSourcePlanner
         var properties = new Dictionary<string, object?>();
         switch (tableName)
         {
-            case "file":
             case "files":
-            case "dlls":
-            case "metadata":
                 properties[FileFiltersPropertyName] = ExtractFileFilters(acceptedPredicate);
                 break;
             case "directories":
@@ -75,15 +80,27 @@ internal static class OsSourcePlanner
             : new OsDirectoryFilterParameters();
     }
 
+    public static bool MatchesFilePredicate(
+        SourcePredicateExpression? predicate,
+        FileInfo fileInfo)
+    {
+        return MatchesPredicate(predicate, columnPath => GetFileColumnValue(columnPath, fileInfo));
+    }
+
+    public static bool MatchesDirectoryPredicate(
+        SourcePredicateExpression? predicate,
+        DirectoryInfo directoryInfo)
+    {
+        return MatchesPredicate(predicate, columnPath => GetDirectoryColumnValue(columnPath, directoryInfo));
+    }
+
     public static bool Matches(SourcePredicateExpression? predicate, object entity)
     {
-        return predicate switch
+        return entity switch
         {
-            null => true,
-            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
-                Matches(logical.Left, entity) && Matches(logical.Right, entity),
-            SourcePredicateComparison comparison => EvaluateComparison(comparison, entity),
-            _ => true
+            FileEntity file => MatchesFilePredicate(predicate, file.FileInfo),
+            DirectoryInfo directoryInfo => MatchesDirectoryPredicate(predicate, directoryInfo),
+            _ => false
         };
     }
 
@@ -156,22 +173,21 @@ internal static class OsSourcePlanner
     private static bool IsSupported(string tableName, SourcePredicateExpression expression)
     {
         if (expression is not SourcePredicateComparison comparison ||
-            !TryGetComparisonParts(comparison, out var columnName, out var literal, out var op) ||
+            !TryGetComparisonParts(comparison, out var columnPath, out var literal, out var op) ||
             op != SourcePredicateComparisonOperator.Equal ||
             literal.Value is not string value)
             return false;
 
-        if (tableName is "file" or "files" or "dlls" or "metadata")
-        {
-            return (columnName.Equals(nameof(FileEntity.Extension), StringComparison.OrdinalIgnoreCase) ||
-                    columnName.Equals(nameof(FileEntity.Name), StringComparison.OrdinalIgnoreCase) ||
-                    columnName.Equals(nameof(FileEntity.FileName), StringComparison.OrdinalIgnoreCase)) &&
-                   !ContainsWildcard(value);
-        }
+        if (ContainsWildcard(value))
+            return false;
 
-        return tableName == "directories" &&
-               columnName.Equals(nameof(DirectoryInfo.Name), StringComparison.OrdinalIgnoreCase) &&
-               !ContainsWildcard(value);
+        return tableName switch
+        {
+            "file" or "files" => ClassifyFileEntityColumn(columnPath) != PredicateColumn.Unsupported,
+            "dlls" => ClassifyDllFileInfoColumn(columnPath) != PredicateColumn.Unsupported,
+            "directories" => ClassifyDirectoryColumn(columnPath) == PredicateColumn.DirectoryName,
+            _ => false
+        };
     }
 
     private static bool ContainsWildcard(string value)
@@ -197,15 +213,19 @@ internal static class OsSourcePlanner
                 ExtractFileFilters(logical.Right, filters);
                 return;
             case SourcePredicateComparison comparison:
-                if (!TryGetComparisonParts(comparison, out var columnName, out var literal, out _) ||
+                if (!TryGetComparisonParts(comparison, out var columnPath, out var literal, out _) ||
                     literal.Value is not string value)
                     return;
 
-                if (columnName.Equals(nameof(FileEntity.Extension), StringComparison.OrdinalIgnoreCase))
-                    filters.Extension = value;
-                else if (columnName.Equals(nameof(FileEntity.Name), StringComparison.OrdinalIgnoreCase) ||
-                         columnName.Equals(nameof(FileEntity.FileName), StringComparison.OrdinalIgnoreCase))
-                    filters.Name = value;
+                switch (ClassifyFileEntityColumn(columnPath))
+                {
+                    case PredicateColumn.FileExtension:
+                        filters.Extension = value;
+                        break;
+                    case PredicateColumn.FileName:
+                        filters.Name = value;
+                        break;
+                }
                 return;
         }
     }
@@ -230,60 +250,124 @@ internal static class OsSourcePlanner
                 ExtractDirectoryFilters(logical.Right, filters);
                 return;
             case SourcePredicateComparison comparison:
-                if (TryGetComparisonParts(comparison, out var columnName, out var literal, out _) &&
-                    columnName.Equals(nameof(DirectoryInfo.Name), StringComparison.OrdinalIgnoreCase) &&
+                if (TryGetComparisonParts(comparison, out var columnPath, out var literal, out _) &&
+                    ClassifyDirectoryColumn(columnPath) == PredicateColumn.DirectoryName &&
                     literal.Value is string value)
                     filters.Name = value;
                 return;
         }
     }
 
-    private static bool EvaluateComparison(SourcePredicateComparison comparison, object entity)
+    private static bool MatchesPredicate(
+        SourcePredicateExpression? predicate,
+        Func<string, string?> getColumnValue)
     {
-        if (!TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
-            return true;
-
-        var left = GetColumnValue(entity, columnName);
-        var right = literal.Value;
-
-        return op switch
+        return predicate switch
         {
-            SourcePredicateComparisonOperator.Equal => Equals(left, right),
-            SourcePredicateComparisonOperator.NotEqual => !Equals(left, right),
-            _ => true
+            null => true,
+            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
+                MatchesPredicate(logical.Left, getColumnValue) &&
+                MatchesPredicate(logical.Right, getColumnValue),
+            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.Or } logical =>
+                MatchesPredicate(logical.Left, getColumnValue) ||
+                MatchesPredicate(logical.Right, getColumnValue),
+            SourcePredicateComparison comparison => EvaluateComparison(comparison, getColumnValue),
+            _ => false
         };
     }
 
-    private static object? GetColumnValue(object entity, string columnName)
+    private static bool EvaluateComparison(
+        SourcePredicateComparison comparison,
+        Func<string, string?> getColumnValue)
     {
-        return entity switch
+        if (!TryGetComparisonParts(comparison, out var columnPath, out var literal, out var op) ||
+            op != SourcePredicateComparisonOperator.Equal ||
+            literal.Value is not string expected)
+            return false;
+
+        var actual = getColumnValue(columnPath);
+        return actual is not null &&
+               string.Equals(actual, expected, StringComparison.Ordinal);
+    }
+
+    private static string? GetFileColumnValue(string columnPath, FileInfo fileInfo)
+    {
+        return ClassifyFileEntityColumn(columnPath) switch
         {
-            FileEntity file => columnName switch
-            {
-                nameof(FileEntity.Extension) => file.Extension,
-                nameof(FileEntity.Name) => file.Name,
-                nameof(FileEntity.FileName) => file.FileName,
-                _ => null
-            },
-            DirectoryInfo directoryInfo => columnName switch
-            {
-                nameof(DirectoryInfo.Name) => directoryInfo.Name,
-                _ => null
-            },
+            PredicateColumn.FileExtension => fileInfo.Extension,
+            PredicateColumn.FileName => fileInfo.Name,
             _ => null
         };
     }
 
+    private static string? GetDirectoryColumnValue(string columnPath, DirectoryInfo directoryInfo)
+    {
+        return ClassifyDirectoryColumn(columnPath) switch
+        {
+            PredicateColumn.DirectoryName => directoryInfo.Name,
+            _ => null
+        };
+    }
+
+    private static PredicateColumn ClassifyFileEntityColumn(string columnPath)
+    {
+        return GetLastPathSegment(columnPath) switch
+        {
+            var name when name.Equals(nameof(FileEntity.Extension), StringComparison.OrdinalIgnoreCase) =>
+                PredicateColumn.FileExtension,
+            var name when name.Equals(nameof(FileEntity.Name), StringComparison.OrdinalIgnoreCase) ||
+                          name.Equals(nameof(FileEntity.FileName), StringComparison.OrdinalIgnoreCase) =>
+                PredicateColumn.FileName,
+            _ => PredicateColumn.Unsupported
+        };
+    }
+
+    private static PredicateColumn ClassifyDllFileInfoColumn(string columnPath)
+    {
+        if (TryGetQualifiedMember(columnPath, nameof(FileEntity.FileInfo), nameof(FileInfo.Extension)))
+            return PredicateColumn.FileExtension;
+
+        if (TryGetQualifiedMember(columnPath, nameof(FileEntity.FileInfo), nameof(FileInfo.Name)))
+            return PredicateColumn.FileName;
+
+        return PredicateColumn.Unsupported;
+    }
+
+    private static PredicateColumn ClassifyDirectoryColumn(string columnPath)
+    {
+        return GetLastPathSegment(columnPath).Equals(
+                   nameof(DirectoryInfo.Name),
+                   StringComparison.OrdinalIgnoreCase)
+            ? PredicateColumn.DirectoryName
+            : PredicateColumn.Unsupported;
+    }
+
+    private static bool TryGetQualifiedMember(
+        string columnPath,
+        string parentMember,
+        string member)
+    {
+        var lastDot = columnPath.LastIndexOf('.');
+        if (lastDot < 0 ||
+            !columnPath[(lastDot + 1)..].Equals(member, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var parentPath = columnPath[..lastDot];
+        var parentDot = parentPath.LastIndexOf('.');
+        var actualParent = parentDot < 0 ? parentPath : parentPath[(parentDot + 1)..];
+        return actualParent.Equals(parentMember, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool TryGetComparisonParts(
         SourcePredicateComparison comparison,
-        out string columnName,
+        out string columnPath,
         out SourcePredicateLiteral literal,
         out SourcePredicateComparisonOperator op)
     {
         if (comparison.Left is SourcePredicateColumn leftColumn &&
             comparison.Right is SourcePredicateLiteral rightLiteral)
         {
-            columnName = NormalizeColumnName(leftColumn.Column.Name);
+            columnPath = leftColumn.Column.Name;
             literal = rightLiteral;
             op = comparison.Operator;
             return true;
@@ -292,19 +376,19 @@ internal static class OsSourcePlanner
         if (comparison.Right is SourcePredicateColumn rightColumn &&
             comparison.Left is SourcePredicateLiteral leftLiteral)
         {
-            columnName = NormalizeColumnName(rightColumn.Column.Name);
+            columnPath = rightColumn.Column.Name;
             literal = leftLiteral;
             op = comparison.Operator;
             return true;
         }
 
-        columnName = string.Empty;
+        columnPath = string.Empty;
         literal = null!;
         op = comparison.Operator;
         return false;
     }
 
-    private static string NormalizeColumnName(string name)
+    private static string GetLastPathSegment(string name)
     {
         var dotIndex = name.LastIndexOf('.');
         return dotIndex >= 0 ? name[(dotIndex + 1)..] : name;
