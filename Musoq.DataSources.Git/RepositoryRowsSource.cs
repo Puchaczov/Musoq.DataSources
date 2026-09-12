@@ -13,6 +13,7 @@ internal sealed class RepositoryRowsSource : GitDiagnosticRowsSourceBase<Reposit
     private readonly Func<string, Repository> _createRepository;
     private readonly string _repositoryPath;
     private readonly GitProjection _projection;
+    private readonly GitReferenceBackendOptions _options;
 
     public RepositoryRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
         : base(executionContext, "git.repository")
@@ -20,6 +21,7 @@ internal sealed class RepositoryRowsSource : GitDiagnosticRowsSourceBase<Reposit
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;
         _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
+        _options = GitReferenceBackendOptions.From(executionContext.SourceRuntimeSettings);
     }
 
     protected override long CollectRows(DiagnosticChunkWriter<RepositoryEntity> writer, CancellationToken cancellationToken)
@@ -28,7 +30,7 @@ internal sealed class RepositoryRowsSource : GitDiagnosticRowsSourceBase<Reposit
         using var repository = _createRepository(_repositoryPath);
         var rows = new List<RepositoryEntity>
         {
-            GitEntitySnapshots.Repository(repository, _projection)
+            GitEntitySnapshots.Repository(repository, _projection, _options)
         };
 
         return WriteChunk(writer, rows, rowsReadBeforeWrite: 0);

@@ -372,18 +372,16 @@ public class FileHistoryRowsSourceTests
     [TestMethod]
     public void RemoteReaders_HaveParityForLocalConfiguration()
     {
-        using var fixture = GitFixture.Create();
-        fixture.RunGit("remote", "add", "origin", "https://example.invalid/fetch.git");
-        fixture.RunGit("remote", "set-url", "--push", "origin", "ssh://example.invalid/push.git");
+        using var fixture = OfflineGitFixture.Create();
         var cli = new List<GitRemoteRecord>();
         var libGit2 = new List<GitRemoteRecord>();
 
-        GitOperationReaders.CliRemotes.Read(fixture.Path, GitProjection.NotAccepted, path => new Repository(path), CancellationToken.None, record =>
+        GitOperationReaders.CliRemotes.Read(fixture.ClientPath, GitProjection.NotAccepted, path => new Repository(path), CancellationToken.None, record =>
         {
             cli.Add(record);
             return true;
         });
-        GitOperationReaders.Remotes.Read(fixture.Path, GitProjection.NotAccepted, path => new Repository(path), CancellationToken.None, record =>
+        GitOperationReaders.Remotes.Read(fixture.ClientPath, GitProjection.NotAccepted, path => new Repository(path), CancellationToken.None, record =>
         {
             libGit2.Add(record);
             return true;

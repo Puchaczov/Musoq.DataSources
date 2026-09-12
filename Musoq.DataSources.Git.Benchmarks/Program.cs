@@ -17,6 +17,12 @@ internal static class Program
         if (args is ["scale"])
             return Verify(GitBenchmarkProfile.Reference, includeWithoutCommitGraph: true);
 
+        if (TryParseReferenceVerification(args, out var referenceProfile))
+            return VerifyReferences(referenceProfile);
+
+        if (TryParseReferenceProfile(args, out var profileToMeasure))
+            return GitReferenceBenchmarkProfiler.Run(profileToMeasure);
+
         if (TryParseProfileCommand(args, "profile-source", out var sourceProfile, out var sourceBackend))
         {
             var benchmark = CreateBenchmark(sourceProfile, sourceBackend);
@@ -64,6 +70,50 @@ internal static class Program
         }
 
         return 0;
+    }
+
+    private static int VerifyReferences(GitReferenceCorpusProfile profile)
+    {
+        foreach (var packed in new[] { false, true })
+        {
+            var corpus = GitReferenceBenchmarkCorpusFactory.Ensure(profile, packed);
+            Console.WriteLine(GitReferenceBenchmarkCorpusFactory.Describe(corpus));
+            GitReferenceBenchmarkCorpusFactory.Verify(corpus);
+        }
+
+        return 0;
+    }
+
+    private static bool TryParseReferenceVerification(string[] args, out GitReferenceCorpusProfile profile)
+    {
+        profile = GitReferenceCorpusProfile.Smoke;
+        if (args.Length != 2 || !string.Equals(args[0], "references-verify", StringComparison.Ordinal))
+            return false;
+
+        profile = args[1].ToLowerInvariant() switch
+        {
+            "smoke" => GitReferenceCorpusProfile.Smoke,
+            "verify" => GitReferenceCorpusProfile.Verify,
+            "scale" => GitReferenceCorpusProfile.Scale,
+            _ => throw new ArgumentException($"Unknown reference corpus profile '{args[1]}'. Use smoke, verify, or scale.")
+        };
+        return true;
+    }
+
+    private static bool TryParseReferenceProfile(string[] args, out GitReferenceCorpusProfile profile)
+    {
+        profile = GitReferenceCorpusProfile.Verify;
+        if (args.Length != 2 || !string.Equals(args[0], "references-profile", StringComparison.Ordinal))
+            return false;
+
+        profile = args[1].ToLowerInvariant() switch
+        {
+            "smoke" => GitReferenceCorpusProfile.Smoke,
+            "verify" => GitReferenceCorpusProfile.Verify,
+            "scale" => GitReferenceCorpusProfile.Scale,
+            _ => throw new ArgumentException($"Unknown reference profile '{args[1]}'. Use smoke, verify, or scale.")
+        };
+        return true;
     }
 
     private static void VerifyProductionChecksum(GitBenchmarkCorpus corpus)

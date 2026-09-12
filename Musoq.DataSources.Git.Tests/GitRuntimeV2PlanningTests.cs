@@ -169,6 +169,112 @@ public class GitRuntimeV2PlanningTests
         Assert.IsFalse(projection.Includes(nameof(CommitEntity.Message)));
     }
 
+    [TestMethod]
+    public void TryPlanSource_WhenTagCursorIsUsed_AcceptsPredicateAndNaturalWindow()
+    {
+        var request = CreateRequest(new SourcePredicateComparison(
+            SourcePredicateComparisonOperator.GreaterThan,
+            new SourcePredicateColumn(new SourceColumnRef(nameof(TagEntity.CanonicalName))),
+            new SourcePredicateLiteral("refs/tags/v1"))) with
+        {
+            Skip = 2,
+            Take = 3
+        };
+
+        var result = new GitSchema().TryPlanSource("tags", request, "repo");
+
+        Assert.IsNotNull(result.AcceptedPredicate);
+        Assert.IsNull(result.ResidualPredicate);
+        Assert.AreEqual(2L, result.AcceptedSkip);
+        Assert.AreEqual(3L, result.AcceptedTake);
+        var filters = (GitFilterParameters)result.ExecutionPlan.Properties[GitSourcePlanner.FiltersPropertyName]!;
+        Assert.AreEqual("refs/tags/v1", filters.CanonicalNameAfter);
+        Assert.IsFalse(filters.CanonicalNameAfterInclusive);
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenLocalTagsAreOrderedByCanonicalName_AcceptsNaturalOrder()
+    {
+        var request = CreateRequest(null!) with
+        {
+            OrderBy = [new OrderByExpression(new SourceColumnRef(nameof(TagEntity.CanonicalName)), OrderDirection.Ascending)]
+        };
+
+        var result = new GitSchema().TryPlanSource("tags", request, "repo");
+
+        Assert.HasCount(1, result.AcceptedOrderBy);
+        Assert.AreEqual(0, result.ResidualOrderBy.Count);
+        Assert.HasCount(1, result.ExecutionPlan.AcceptedOrderBy);
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenRemoteTagsAreOrdered_LeavesOrderResidual()
+    {
+        var request = CreateRequest(null!) with
+        {
+            OrderBy = [new OrderByExpression(new SourceColumnRef(nameof(RemoteTagEntity.CanonicalName)), OrderDirection.Ascending)]
+        };
+
+        var result = new GitSchema().TryPlanSource("remotetags", request, "repo", "origin");
+
+        Assert.AreEqual(0, result.AcceptedOrderBy.Count);
+        Assert.HasCount(1, result.ResidualOrderBy);
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenStashShaPredicateIsUsed_AcceptsPredicate()
+    {
+        var request = CreateRequest(Equal(nameof(StashEntity.Sha), "stash-sha"));
+
+        var result = new GitSchema().TryPlanSource("stashes", request, "repo");
+
+        Assert.IsNotNull(result.AcceptedPredicate);
+        Assert.IsNull(result.ResidualPredicate);
+        AssertZeroColumnProjectionAccepted(result);
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenRemoteTagAnnotatedPredicateIsUsed_AcceptsPredicate()
+    {
+        var result = new GitSchema().TryPlanSource(
+            "remotetags",
+            CreateRequest(Equal(nameof(RemoteTagEntity.IsAnnotated), true)),
+            "repo",
+            "origin");
+
+        Assert.IsNotNull(result.AcceptedPredicate);
+        Assert.IsNull(result.ResidualPredicate);
+        AssertZeroColumnProjectionAccepted(result);
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenResidualRemotePeelPredicateExists_PreservesItsPhysicalDependency()
+    {
+        var request = CreateRequest(Equal(nameof(RemoteTagEntity.PeeledSha), "peeled-sha"));
+
+        var result = new GitSchema().TryPlanSource("remotetags", request, "repo", "origin");
+        var projection = (GitProjection)result.ExecutionPlan.Properties[GitSourcePlanner.ProjectionPropertyName]!;
+
+        Assert.IsNull(result.AcceptedPredicate);
+        Assert.IsNotNull(result.ResidualPredicate);
+        Assert.IsTrue(projection.Includes(nameof(RemoteTagEntity.PeeledSha)));
+    }
+
+    [TestMethod]
+    public void TryPlanSource_WhenReferenceInPredicateIsUsed_ExtractsFiniteExactValues()
+    {
+        var predicate = new SourcePredicateIn(
+            new SourcePredicateColumn(new SourceColumnRef(nameof(TagEntity.FriendlyName))),
+            [new SourcePredicateLiteral("v1"), new SourcePredicateLiteral("v2")]);
+
+        var result = new GitSchema().TryPlanSource("tags", CreateRequest(predicate), "repo");
+        var filters = (GitFilterParameters)result.ExecutionPlan.Properties[GitSourcePlanner.FiltersPropertyName]!;
+
+        Assert.AreEqual(predicate, result.AcceptedPredicate);
+        Assert.IsNull(result.ResidualPredicate);
+        CollectionAssert.AreEquivalent(new[] { "v1", "v2" }, filters.FriendlyNames.ToArray());
+    }
+
     private static SourcePlanRequest CreateRequest(
         SourcePredicateExpression predicate,
         IReadOnlyList<SourceColumnRef>? requiredColumns = null)

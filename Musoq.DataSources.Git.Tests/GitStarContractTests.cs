@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
+using Musoq.DataSources.Git.Entities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
@@ -27,7 +28,10 @@ public sealed class GitStarContractTests
     {
         using var repository = Unpack("Repository5.zip");
         using var blameRepository = Unpack("BlameTestRepo.zip");
-        var cases = CreateCases(repository.Path, blameRepository.Path);
+        using var remoteFixture = OfflineGitFixture.Create();
+        remoteFixture.CreateLightweightTag("star-lightweight");
+        remoteFixture.CreateAnnotatedTag("star-annotated", "star contract");
+        var cases = CreateCases(repository.Path, blameRepository.Path, remoteFixture.ClientPath);
         var schema = new GitSchema();
         var context = CreateMetadataContext();
 
@@ -66,6 +70,24 @@ public sealed class GitStarContractTests
     }
 
     [TestMethod]
+    public void RepositoryReferenceCollections_ArePullBasedAndRepeatable()
+    {
+        using var fixture = OfflineGitFixture.Create();
+        OfflineGitFixture.RunGit(fixture.SeedPath, "tag", "first");
+        OfflineGitFixture.RunGit(fixture.SeedPath, "tag", "second");
+
+        using var repository = new LibGit2Sharp.Repository(fixture.SeedPath);
+        var entity = new RepositoryEntity(repository);
+
+        var firstPass = entity.Tags.Take(1).ToArray();
+        var secondPass = entity.Tags.ToArray();
+
+        Assert.HasCount(1, firstPass);
+        Assert.HasCount(2, secondPass);
+        Assert.AreNotSame(entity.Tags, entity.Tags);
+    }
+
+    [TestMethod]
     public void BlameLines_AndDifferenceBytes_ProjectPrimitiveValues()
     {
         using var blameRepository = Unpack("BlameTestRepo.zip");
@@ -91,10 +113,14 @@ public sealed class GitStarContractTests
             Assert.IsInstanceOfType(row[0], typeof(byte));
     }
 
-    private static StarContractCase[] CreateCases(string repositoryPath, string blameRepositoryPath)
+    private static StarContractCase[] CreateCases(
+        string repositoryPath,
+        string blameRepositoryPath,
+        string remoteTagsRepositoryPath)
     {
         var path = repositoryPath.Escape();
         var blamePath = blameRepositoryPath.Escape();
+        var remoteTagsPath = remoteTagsRepositoryPath.Escape();
 
         return
         [
@@ -110,9 +136,26 @@ public sealed class GitStarContractTests
                 [typeof(string)],
                 [repositoryPath],
                 $"select * from git.tags('{path}')",
-                [Column("FriendlyName", typeof(string)), Column("CanonicalName", typeof(string)),
+                [Column("FriendlyName", typeof(string)), Column("CanonicalName", typeof(string)), Column("TargetSha", typeof(string)),
                     Column("Message", typeof(string)), Column("IsAnnotated", typeof(bool))],
                 ["Annotation", "Commit"]),
+            new(
+                "stashes",
+                [typeof(string)],
+                [repositoryPath],
+                $"select * from git.stashes('{path}')",
+                [Column("Selector", typeof(string)), Column("Sha", typeof(string)), Column("Message", typeof(string))],
+                ["Index", "WorkTree", "UntrackedFiles"]),
+            new(
+                "remotetags",
+                [typeof(string), typeof(string)],
+                [remoteTagsRepositoryPath, "origin"],
+                $"select * from git.remotetags('{remoteTagsPath}', 'origin')",
+                [Column("RemoteName", typeof(string)), Column("RemoteUrl", typeof(string)),
+                    Column("FriendlyName", typeof(string)), Column("CanonicalName", typeof(string)),
+                    Column("ObjectSha", typeof(string)), Column("PeeledSha", typeof(string)),
+                    Column("IsAnnotated", typeof(bool))],
+                []),
             new(
                 "commits",
                 [typeof(string)],

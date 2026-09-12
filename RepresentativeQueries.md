@@ -399,6 +399,31 @@ select
 from git.tags('./repo') t
 ```
 
+### List Stashes
+Read stash identity without eagerly hydrating the individual commits.
+
+```sql
+select
+    s.Selector,
+    s.Sha,
+    s.Message
+from git.stashes('./repo') s
+```
+
+### Read Tags Advertised by a Local Remote
+Stream tags from a configured local or `file://` remote. The source does not fetch
+objects or update local refs.
+
+```sql
+select
+    t.FriendlyName,
+    t.ObjectSha,
+    t.PeeledSha,
+    t.IsAnnotated
+from git.remotetags('./client-repo', 'origin') t
+where t.CanonicalName > 'refs/tags/v1'
+```
+
 ### Track File History
 See all changes to a specific file over time.
 

@@ -10,9 +10,10 @@ public class GitRuntimeSettingsTests
     {
         var requirements = new GitSchema().DescribeSourceRuntimeSettings("filehistory", null!);
 
-        Assert.AreEqual(2, requirements.Count);
+        Assert.AreEqual(3, requirements.Count);
         AssertRequirement(requirements[0], "GIT_HISTORY_BACKEND");
         AssertRequirement(requirements[1], "GIT_EXECUTABLE");
+        AssertRequirement(requirements[2], "GIT_REFERENCE_BACKEND");
     }
 
     private static void AssertRequirement(SourceRuntimeSettingRequirement requirement, string name)

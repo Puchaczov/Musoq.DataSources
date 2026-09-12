@@ -1,7 +1,7 @@
 # Git plugin guide
 
 ## Purpose
-- Exposes local repositories as Musoq sources for `repository`, `commits`, `branches`, `tags`, `filehistory`, `status`, `remotes`, and `blame`.
+- Exposes local repositories as Musoq sources for `repository`, `commits`, `branches`, `tags`, `stashes`, `remotetags`, `filehistory`, `status`, `remotes`, and `blame`.
 
 ## Read first
 - `GitSchema.cs`
@@ -17,10 +17,10 @@
 - Keep each Git concept in its own entity/table/source pair instead of adding generic catch-all rows.
 - Many sources inherit from `AsyncRowsSourceBase`; preserve chunking and cancellation for large-history traversal.
 - `GitSchema` method names and overloads define the public query surface and `desc git` behavior.
-- Simple `WHERE` pushdown happens through runtime-v2 source planning; keep optimization behavior aligned with tests.
+- Simple `WHERE` pushdown happens through runtime-v2 source planning; keep optimization behavior aligned with tests. Reference readers must remain streaming and must not materialize all tags or stashes.
 
 ## Source families
-- Direct top-level sources are registered in `GitSchema.GetRowSource()`: `repository`, `tags`, `commits`, `branches`, `filehistory`, `status`, `remotes`, and `blame`.
+- Direct top-level sources are registered in `GitSchema.GetRowSource()`: `repository`, `tags`, `stashes`, `remotetags`, `commits`, `branches`, `filehistory`, `status`, `remotes`, and `blame`.
 - `repository` is the root object graph source. Most richer scenarios flow through nested bindable properties on `RepositoryEntity`, such as `Branches`, `Tags`, `Commits`, `Configuration`, and `Stashes`.
 - Nested/table-valued entity members matter just as much as direct sources:
 	- `RepositoryEntity.Branches`, `Tags`, `Commits`, `Configuration`, `Stashes`
@@ -40,9 +40,10 @@
 
 ## Simple predicate optimization
 - Predicate extraction lives in the runtime-v2 source-planning path.
-- Pushdown is applied manually inside `CommitsRowsSource`, `BranchesRowsSource`, `TagsRowsSource`, `StatusRowsSource`, and `RemotesRowsSource`.
+- Pushdown is applied manually inside `CommitsRowsSource`, `BranchesRowsSource`, `TagsRowsSource`, `StashesRowsSource`, `RemoteTagsRowsSource`, `StatusRowsSource`, and `RemotesRowsSource`.
 - Supported pushdown is intentionally simple:
-	- equality on plain fields such as `Author`, `Sha`, `FriendlyName`, `CanonicalName`, `IsRemote`, `IsTracking`, `IsAnnotated`, `Name` / `RemoteName`, `Url`, and `State`
+	- equality on plain fields such as `Author`, `Sha`, `FriendlyName`, `CanonicalName`, `TargetSha`, `ObjectSha`, `IsRemote`, `IsTracking`, `IsAnnotated`, `Name` / `RemoteName`, `Url`, and `State`
+	- canonical-name cursor predicates and source-order windows for local tags, stashes, and remote-tag streaming
 	- commit date comparisons on `CommittedWhen`
 	- `AND` composition only
 - `OR` nodes are ignored for pushdown, and non-literal expressions are not extracted. Engine-level filtering must still produce correct final results when pushdown does nothing.
@@ -57,6 +58,8 @@
 - `BlameRowsSource` returns empty results for binary blobs and for blame operations that LibGit2Sharp cannot resolve; invalid revisions and missing files still throw.
 - `StatusRowsSource` currently emits one-row chunks, unlike the 100-row batching used by most other Git row sources. Do not normalize that casually unless you validate behavior and cancellation.
 - Runtime-v2 source planning works on source field names, so aliasing or computed predicates should not be baked into pushdown assumptions.
+- `git.remotetags` reads a configured remote with `git ls-remote`; tests and fixtures must use only local paths or `file://` URLs. It must never fetch, mutate local refs, or require the client repository to contain the advertised objects.
+- `GIT_REFERENCE_BACKEND=auto|git-cli|libgit2` controls local tag/stash readers. Remote tags intentionally require the CLI backend because LibGit2Sharp does not provide live remote advertisement support.
 
 ## Fixture conventions
 - Canonical fixtures live in `Musoq.DataSources.Git.Tests/Repositories/*.zip`.

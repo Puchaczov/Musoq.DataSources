@@ -44,6 +44,8 @@ public sealed class ConcreteDatasourceConformanceTests
 
         Concrete("git", "repository", ["./Repositories/Repository5"], typeof(string)),
         Concrete("git", "tags", ["./Repositories/Repository5"], typeof(string)),
+        Concrete("git", "stashes", ["./Repositories/Repository5"], typeof(string)),
+        Concrete("git", "remotetags", ["./Repositories/Repository5", "origin"], typeof(string), typeof(string)),
         Concrete("git", "commits", ["./Repositories/Repository5"], typeof(string)),
         Concrete("git", "branches", ["./Repositories/Repository5"], typeof(string)),
         Concrete("git", "filehistory", ["./Repositories/Repository5", "*.cs"], typeof(string), typeof(string)),
@@ -138,9 +140,9 @@ public sealed class ConcreteDatasourceConformanceTests
     ];
 
     [TestMethod]
-    public void RegisteredConstructors_HaveExactly64ConcreteAnd15DynamicCases()
+    public void RegisteredConstructors_HaveExactly66ConcreteAnd15DynamicCases()
     {
-        Assert.AreEqual(64, ConcreteCases.Length);
+        Assert.AreEqual(66, ConcreteCases.Length);
         Assert.AreEqual(15, DynamicCases.Length);
         Assert.IsTrue(ConcreteCases.All(item =>
             item.Query.StartsWith("select * from ", StringComparison.OrdinalIgnoreCase)));
@@ -183,7 +185,7 @@ public sealed class ConcreteDatasourceConformanceTests
 
         var actualConcrete = actual.Where(signature => expectedConcrete.Contains(signature, StringComparer.Ordinal)).ToArray();
         var actualDynamic = actual.Where(signature => expectedDynamic.Contains(signature, StringComparer.Ordinal)).ToArray();
-        Assert.AreEqual(64, actualConcrete.Length);
+        Assert.AreEqual(66, actualConcrete.Length);
         Assert.AreEqual(15, actualDynamic.Length);
     }
 

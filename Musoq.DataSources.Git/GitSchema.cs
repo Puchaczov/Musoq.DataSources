@@ -25,6 +25,8 @@ public class GitSchema : SchemaBase
     private const string SchemaName = "Git";
     private const string RepositoryTable = "repository";
     private const string TagsTable = "tags";
+    private const string StashesTable = "stashes";
+    private const string RemoteTagsTable = "remotetags";
     private const string CommitsTable = "commits";
     private const string BranchesTable = "branches";
     private const string FileHistoryTable = "filehistory";
@@ -68,10 +70,50 @@ public class GitSchema : SchemaBase
     ///                 <columns>
     ///                     <column name="FriendlyName" type="string?">Tag friendly name</column>
     ///                     <column name="CanonicalName" type="string?">Tag canonical name</column>
+    ///                     <column name="TargetSha" type="string?">Tag target object SHA</column>
     ///                     <column name="Message" type="string?">Tag message</column>
     ///                     <column name="IsAnnotated" type="bool">Is annotated tag</column>
     ///                     <column name="Annotation" type="AnnotationEntity">Tag annotation</column>
     ///                     <column name="Commit" type="CommitEntity?">Tag commit</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables></environmentVariables>
+    ///                     git.stashes(string path)
+    ///                 </from>
+    ///                 <description>Allows to query detached stash snapshots from a Git repository.</description>
+    ///                 <columns>
+    ///                     <column name="Selector" type="string">Stash reflog selector</column>
+    ///                     <column name="Sha" type="string">Stash work-tree commit SHA</column>
+    ///                     <column name="Message" type="string">Stash message</column>
+    ///                     <column name="Index" type="CommitEntity">Index-state commit</column>
+    ///                     <column name="WorkTree" type="CommitEntity">Work-tree commit</column>
+    ///                     <column name="UntrackedFiles" type="CommitEntity">Untracked-files commit</column>
+    ///                 </columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>
+    ///                     <environmentVariables></environmentVariables>
+    ///                     git.remotetags(string path, string remoteName)
+    ///                 </from>
+    ///                 <description>Allows to stream tag metadata advertised by a configured Git remote without fetching it.</description>
+    ///                 <columns>
+    ///                     <column name="RemoteName" type="string">Configured remote name</column>
+    ///                     <column name="RemoteUrl" type="string">Configured remote URL</column>
+    ///                     <column name="FriendlyName" type="string">Short tag name</column>
+    ///                     <column name="CanonicalName" type="string">Fully qualified tag ref name</column>
+    ///                     <column name="ObjectSha" type="string">Object ID advertised for the tag ref</column>
+    ///                     <column name="PeeledSha" type="string?">Peeled target object ID, when advertised</column>
+    ///                     <column name="IsAnnotated" type="bool">Whether a peeled tag-object record was advertised</column>
     ///                 </columns>
     ///             </example>
     ///         </examples>
@@ -312,6 +354,7 @@ public class GitSchema : SchemaBase
     ///         <columns type="TagEntity">
     ///             <column name="FriendlyName" type="string?">Tag friendly name</column>
     ///             <column name="CanonicalName" type="string?">Tag canonical name</column>
+    ///             <column name="TargetSha" type="string?">Tag target object SHA</column>
     ///             <column name="Message" type="string?">Tag message</column>
     ///             <column name="IsAnnotated" type="bool">Is annotated tag</column>
     ///             <column name="Annotation" type="AnnotationEntity">Tag annotation</column>
@@ -321,10 +364,24 @@ public class GitSchema : SchemaBase
     ///     <additional-table>
     ///         <description>Represents a Git stash</description>
     ///         <columns type="StashEntity">
+    ///             <column name="Selector" type="string">Stash reflog selector</column>
+    ///             <column name="Sha" type="string">Stash work-tree commit SHA</column>
     ///             <column name="Message" type="string">Stash message</column>
     ///             <column name="Index" type="CommitEntity">Index state</column>
     ///             <column name="WorkTree" type="CommitEntity">Work tree state</column>
     ///             <column name="UntrackedFiles" type="CommitEntity">Untracked files state</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Represents tag metadata advertised by a configured Git remote</description>
+    ///         <columns type="RemoteTagEntity">
+    ///             <column name="RemoteName" type="string">Configured remote name</column>
+    ///             <column name="RemoteUrl" type="string">Configured remote URL</column>
+    ///             <column name="FriendlyName" type="string">Short tag name</column>
+    ///             <column name="CanonicalName" type="string">Fully qualified tag ref name</column>
+    ///             <column name="ObjectSha" type="string">Object ID advertised for the tag ref</column>
+    ///             <column name="PeeledSha" type="string?">Peeled target object ID, when advertised</column>
+    ///             <column name="IsAnnotated" type="bool">Whether a peeled tag-object record was advertised</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -462,7 +519,7 @@ public class GitSchema : SchemaBase
     /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    /// <remarks>Supported tables are repository, tags, commits, branches, filehistory, status, remotes, and blame.</remarks>
+    /// <remarks>Supported tables are repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, and blame.</remarks>
     public override ISchemaTable GetTableByName(
         string name,
         SourceMetadataContext metadataContext,
@@ -474,6 +531,10 @@ public class GitSchema : SchemaBase
                 return new RepositoryTable();
             case TagsTable:
                 return new TagsTable();
+            case StashesTable:
+                return new StashesTable();
+            case RemoteTagsTable:
+                return new RemoteTagsTable();
             case CommitsTable:
                 return new CommitsTable();
             case BranchesTable:
@@ -504,6 +565,8 @@ public class GitSchema : SchemaBase
         {
             RepositoryTable => [CreateRepositoryMethodInfo()],
             TagsTable => [CreateTagsMethodInfo()],
+            StashesTable => [CreateStashesMethodInfo()],
+            RemoteTagsTable => [CreateRemoteTagsMethodInfo()],
             CommitsTable => [CreateCommitsMethodInfo()],
             BranchesTable => [CreateBranchesMethodInfo()],
             FileHistoryTable => CreateFileHistoryMethodInfos(),
@@ -512,19 +575,21 @@ public class GitSchema : SchemaBase
             BlameTable => CreateBlameMethodInfos(),
             _ => throw new NotSupportedException(
                 $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {RepositoryTable}, {TagsTable}, {CommitsTable}, {BranchesTable}, {FileHistoryTable}, {StatusTable}, {RemotesTable}, {BlameTable}")
+                $"Available data sources: {RepositoryTable}, {TagsTable}, {StashesTable}, {RemoteTagsTable}, {CommitsTable}, {BranchesTable}, {FileHistoryTable}, {StatusTable}, {RemotesTable}, {BlameTable}")
         };
     }
 
     /// <summary>Gets constructor metadata for every Git table.</summary>
     /// <param name="metadataContext">The metadata context supplied by Musoq.</param>
-    /// <returns>Constructor overloads for repository, tags, commits, branches, filehistory, status, remotes, and blame.</returns>
+    /// <returns>Constructor overloads for repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, and blame.</returns>
     public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return
         [
             CreateRepositoryMethodInfo(),
             CreateTagsMethodInfo(),
+            CreateStashesMethodInfo(),
+            CreateRemoteTagsMethodInfo(),
             CreateCommitsMethodInfo(),
             CreateBranchesMethodInfo(),
             ..CreateFileHistoryMethodInfos(),
@@ -571,6 +636,33 @@ public class GitSchema : SchemaBase
         );
 
         return new SchemaMethodInfo(CommitsTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateStashesMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("path", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(StashesTable, constructorInfo);
+    }
+
+    private static SchemaMethodInfo CreateRemoteTagsMethodInfo()
+    {
+        var constructorInfo = new ConstructorInfo(
+            null!,
+            false,
+            [
+                ("path", typeof(string)),
+                ("remoteName", typeof(string))
+            ]
+        );
+
+        return new SchemaMethodInfo(RemoteTagsTable, constructorInfo);
     }
 
     private static SchemaMethodInfo CreateBranchesMethodInfo()
@@ -711,6 +803,15 @@ public class GitSchema : SchemaBase
                 return EnsureSourceType<T, TagEntity>(
                     name,
                     new TagsRowsSource((string)parameters[0], _createRepository, executionContext));
+            case StashesTable:
+                return EnsureSourceType<T, StashEntity>(
+                    name,
+                    new StashesRowsSource((string)parameters[0], _createRepository, executionContext));
+            case RemoteTagsTable:
+                return EnsureSourceType<T, RemoteTagEntity>(
+                    name,
+                    new RemoteTagsRowsSource((string)parameters[0], (string)parameters[1], _createRepository,
+                        executionContext));
             case CommitsTable:
                 return EnsureSourceType<T, CommitEntity>(
                     name,
@@ -775,10 +876,11 @@ public class GitSchema : SchemaBase
     /// <param name="name">The Git table name.</param>
     /// <param name="context">The runtime-settings description context supplied by Musoq.</param>
     /// <param name="parameters">Constructor parameters for the table.</param>
-    /// <returns>The optional <c>GIT_HISTORY_BACKEND</c> and <c>GIT_EXECUTABLE</c> settings.</returns>
+    /// <returns>The optional Git backend and executable settings.</returns>
     /// <remarks>
-    ///     <c>GIT_HISTORY_BACKEND</c> accepts <c>auto</c>, <c>git-cli</c>, or <c>libgit2</c>; invalid values produce an
-    ///     actionable configuration error. <c>GIT_EXECUTABLE</c> selects the Git executable for the CLI backend and
+    ///     <c>GIT_HISTORY_BACKEND</c> controls history operations and <c>GIT_REFERENCE_BACKEND</c> controls tags,
+    ///     stashes, and remote tags. Both accept <c>auto</c>, <c>git-cli</c>, or <c>libgit2</c>; invalid values produce
+    ///     an actionable configuration error. <c>GIT_EXECUTABLE</c> selects the Git executable for CLI operations and
     ///     defaults to <c>git</c> resolved from <c>PATH</c>.
     /// </remarks>
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
@@ -799,7 +901,13 @@ public class GitSchema : SchemaBase
                 false,
                 false,
                 SourceRuntimeSettingPhase.Execution,
-                "Git executable path for the git-cli backend. Defaults to git resolved from PATH.")
+                "Git executable path for the git-cli backend. Defaults to git resolved from PATH."),
+            new SourceRuntimeSettingRequirement(
+                GitReferenceBackendOptions.BackendSettingName,
+                false,
+                false,
+                SourceRuntimeSettingPhase.Execution,
+                "Reference backend: auto (CLI first), git-cli, or libgit2 for local references.")
         ];
     }
 
@@ -815,13 +923,15 @@ public class GitSchema : SchemaBase
     }
 
     /// <summary>Gets all virtual constructors exposed by the Git schema.</summary>
-    /// <returns>Constructor metadata for repository, tags, commits, branches, filehistory, status, remotes, and blame.</returns>
+    /// <returns>Constructor metadata for repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, and blame.</returns>
     public override SchemaMethodInfo[] GetConstructors()
     {
         return
         [
             CreateRepositoryMethodInfo(),
             CreateTagsMethodInfo(),
+            CreateStashesMethodInfo(),
+            CreateRemoteTagsMethodInfo(),
             CreateCommitsMethodInfo(),
             CreateBranchesMethodInfo(),
             ..CreateFileHistoryMethodInfos(),

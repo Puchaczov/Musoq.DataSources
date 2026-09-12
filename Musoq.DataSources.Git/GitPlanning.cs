@@ -23,6 +23,17 @@ internal sealed class GitFilterParameters
     public bool UntilInclusive { get; private set; }
     public string? FriendlyName { get; set; }
     public string? CanonicalName { get; set; }
+    public string? TargetSha { get; set; }
+    public string? ObjectSha { get; set; }
+    public string? Selector { get; set; }
+    public HashSet<string> FriendlyNames { get; } = new(StringComparer.Ordinal);
+    public HashSet<string> CanonicalNames { get; } = new(StringComparer.Ordinal);
+    public HashSet<string> TargetShas { get; } = new(StringComparer.Ordinal);
+    public HashSet<string> ObjectShas { get; } = new(StringComparer.Ordinal);
+    public HashSet<string> Selectors { get; } = new(StringComparer.Ordinal);
+    public HashSet<string> Shas { get; } = new(StringComparer.Ordinal);
+    public string? CanonicalNameAfter { get; private set; }
+    public bool CanonicalNameAfterInclusive { get; private set; }
     public bool? IsRemote { get; set; }
     public bool? IsCurrentRepositoryHead { get; set; }
     public bool? IsTracking { get; set; }
@@ -48,6 +59,16 @@ internal sealed class GitFilterParameters
             UntilInclusive = inclusive;
         }
     }
+
+    public void SetCanonicalNameAfter(string value, bool inclusive)
+    {
+        if (CanonicalNameAfter is null || string.Compare(value, CanonicalNameAfter, StringComparison.Ordinal) > 0 ||
+            string.Equals(value, CanonicalNameAfter, StringComparison.Ordinal) && !inclusive)
+        {
+            CanonicalNameAfter = value;
+            CanonicalNameAfterInclusive = inclusive;
+        }
+    }
 }
 
 /// <summary>
@@ -56,15 +77,22 @@ internal sealed class GitFilterParameters
 /// </summary>
 internal sealed class GitProjection
 {
-    public GitProjection(bool isAccepted, IEnumerable<string> columns, IEnumerable<string>? predicateDependencies = null)
+    public GitProjection(
+        bool isAccepted,
+        IEnumerable<string> columns,
+        IEnumerable<string>? predicateDependencies = null,
+        bool requiresNestedReferenceCapabilities = false)
     {
         IsAccepted = isAccepted;
         Columns = columns.Concat(predicateDependencies ?? []).ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+        RequiresNestedReferenceCapabilities = requiresNestedReferenceCapabilities;
     }
 
     public bool IsAccepted { get; }
 
     public IReadOnlySet<string> Columns { get; }
+
+    public bool RequiresNestedReferenceCapabilities { get; }
 
     /// <summary>
     /// An unplanned direct source must preserve its historical full-row behavior. Only an accepted projection may
@@ -79,6 +107,7 @@ internal static class GitSourcePlanner
 {
     public const string FiltersPropertyName = "GitFilters";
     public const string ProjectionPropertyName = "GitProjection";
+    private const int MaxReferenceInPushdownValues = 128;
 
     private static readonly IReadOnlyDictionary<string, HashSet<string>> FilterColumnsByTable =
         new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
@@ -104,7 +133,20 @@ internal static class GitSourcePlanner
             [
                 nameof(TagEntity.FriendlyName),
                 nameof(TagEntity.CanonicalName),
+                nameof(TagEntity.TargetSha),
                 nameof(TagEntity.IsAnnotated)
+            ],
+            ["stashes"] =
+            [
+                nameof(StashEntity.Selector),
+                nameof(StashEntity.Sha)
+            ],
+            ["remotetags"] =
+            [
+                nameof(RemoteTagEntity.FriendlyName),
+                nameof(RemoteTagEntity.CanonicalName),
+                nameof(RemoteTagEntity.ObjectSha),
+                nameof(RemoteTagEntity.IsAnnotated)
             ],
             ["remotes"] =
             [
@@ -124,6 +166,8 @@ internal static class GitSourcePlanner
             ["commits"] = Names(CommitEntity.NameToIndexMap.Keys),
             ["branches"] = Names(BranchEntity.NameToIndexMap.Keys),
             ["tags"] = Names(TagEntity.NameToIndexMap.Keys),
+            ["stashes"] = Names(StashEntity.NameToIndexMap.Keys),
+            ["remotetags"] = Names(RemoteTagEntity.NameToIndexMap.Keys),
             ["remotes"] = Names(RemoteEntity.NameToIndexMap.Keys),
             ["status"] = Names(StatusEntity.NameToIndexMap.Keys),
             ["filehistory"] = Names(FileHistoryEntity.NameToIndexMap.Keys),
@@ -145,8 +189,17 @@ internal static class GitSourcePlanner
         var projection = new GitProjection(
             acceptedColumns.Count == request.RequiredColumns.Count,
             acceptedColumns.Select(column => NormalizeColumnName(column.Name)),
-            GetPredicateColumns(acceptedPredicate));
-        var residualOrderBy = request.OrderBy ?? [];
+            // Residual predicates are evaluated by the runtime, but their dependencies still have to be
+            // physically present in the source row. Otherwise the evaluator can observe a default value rather
+            // than the actual source value (notably for remote-tag peel metadata).
+            GetPredicateColumns(request.Predicate));
+        var requestedOrderBy = request.OrderBy ?? [];
+        var acceptedOrderBy = CanPushDownOrder(tableName, requestedOrderBy)
+            ? requestedOrderBy
+            : [];
+        var residualOrderBy = acceptedOrderBy.Count == requestedOrderBy.Count
+            ? []
+            : requestedOrderBy;
         var acceptsSlice = SupportsNaturalWindow(tableName) &&
                            residualPredicate is null &&
                            residualOrderBy.Count == 0 &&
@@ -164,7 +217,7 @@ internal static class GitSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = acceptedColumns,
                 AcceptedPredicate = acceptedPredicate,
-                AcceptedOrderBy = [],
+                AcceptedOrderBy = acceptedOrderBy,
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
                 Properties = properties
@@ -172,7 +225,7 @@ internal static class GitSourcePlanner
             AcceptedColumns = acceptedColumns,
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
-            AcceptedOrderBy = [],
+            AcceptedOrderBy = acceptedOrderBy,
             ResidualOrderBy = residualOrderBy,
             AcceptedSkip = acceptsSlice ? request.Skip : null,
             ResidualSkip = acceptsSlice ? null : request.Skip,
@@ -196,6 +249,9 @@ internal static class GitSourcePlanner
             ? projection
             : GitProjection.NotAccepted;
     }
+
+    public static IReadOnlyList<string>? OrderedExactValues(IReadOnlySet<string> values) =>
+        values.Count == 0 ? null : values.OrderBy(static value => value, StringComparer.Ordinal).ToArray();
 
     public static bool Matches(SourcePredicateExpression? predicate, object entity)
     {
@@ -319,7 +375,9 @@ internal static class GitSourcePlanner
     public static bool Matches(GitFilterParameters filters, Tag tag)
     {
         return Matches(filters.FriendlyName, tag.FriendlyName) &&
+               Matches(filters.FriendlyNames, tag.FriendlyName) &&
                Matches(filters.CanonicalName, tag.CanonicalName) &&
+               Matches(filters.CanonicalNames, tag.CanonicalName) &&
                Matches(filters.IsAnnotated, tag.IsAnnotated) &&
                MatchesNative(filters.RawPredicate, column => column switch
                {
@@ -333,13 +391,92 @@ internal static class GitSourcePlanner
     public static bool Matches(GitFilterParameters filters, GitTagRecord tag)
     {
         return Matches(filters.FriendlyName, tag.FriendlyName) &&
+               Matches(filters.FriendlyNames, tag.FriendlyName) &&
                Matches(filters.CanonicalName, tag.CanonicalName) &&
+               Matches(filters.CanonicalNames, tag.CanonicalName) &&
+               Matches(filters.TargetSha, tag.TargetSha) &&
+               Matches(filters.TargetShas, tag.TargetSha) &&
                Matches(filters.IsAnnotated, tag.IsAnnotated) &&
                MatchesNative(filters.RawPredicate, column => column switch
                {
                    nameof(TagEntity.FriendlyName) => tag.FriendlyName,
                    nameof(TagEntity.CanonicalName) => tag.CanonicalName,
+                   nameof(TagEntity.TargetSha) => tag.TargetSha,
                    nameof(TagEntity.IsAnnotated) => tag.IsAnnotated,
+                   _ => null
+               });
+    }
+
+    public static bool Matches(GitFilterParameters filters, GitStashRecord stash)
+    {
+        return Matches(filters.Selector, stash.Selector) &&
+               Matches(filters.Selectors, stash.Selector) &&
+               Matches(filters.Sha, stash.Sha) &&
+               Matches(filters.Shas, stash.Sha) &&
+               MatchesNative(filters.RawPredicate, column => column switch
+               {
+                   nameof(StashEntity.Selector) => stash.Selector,
+                   nameof(StashEntity.Sha) => stash.Sha,
+                   nameof(StashEntity.Message) => stash.Message,
+                   _ => null
+               });
+    }
+
+    public static bool Matches(GitFilterParameters filters, StashEntity stash)
+    {
+        return Matches(filters.Selector, stash.Selector) &&
+               Matches(filters.Selectors, stash.Selector) &&
+               Matches(filters.Sha, stash.Sha) &&
+               Matches(filters.Shas, stash.Sha) &&
+               MatchesNative(filters.RawPredicate, column => column switch
+               {
+                   nameof(StashEntity.Selector) => stash.Selector,
+                   nameof(StashEntity.Sha) => stash.Sha,
+                   nameof(StashEntity.Message) => stash.Message,
+                   _ => null
+               });
+    }
+
+    public static bool Matches(GitFilterParameters filters, GitRemoteTagRecord tag)
+    {
+        return Matches(filters.FriendlyName, tag.FriendlyName) &&
+               Matches(filters.FriendlyNames, tag.FriendlyName) &&
+               Matches(filters.CanonicalName, tag.CanonicalName) &&
+               Matches(filters.CanonicalNames, tag.CanonicalName) &&
+               Matches(filters.ObjectSha, tag.ObjectSha) &&
+               Matches(filters.ObjectShas, tag.ObjectSha) &&
+               Matches(filters.IsAnnotated, tag.IsAnnotated) &&
+               MatchesNative(filters.RawPredicate, column => column switch
+               {
+                   nameof(RemoteTagEntity.RemoteName) => tag.RemoteName,
+                   nameof(RemoteTagEntity.RemoteUrl) => tag.RemoteUrl,
+                   nameof(RemoteTagEntity.FriendlyName) => tag.FriendlyName,
+                   nameof(RemoteTagEntity.CanonicalName) => tag.CanonicalName,
+                   nameof(RemoteTagEntity.ObjectSha) => tag.ObjectSha,
+                   nameof(RemoteTagEntity.PeeledSha) => tag.PeeledSha,
+                   nameof(RemoteTagEntity.IsAnnotated) => tag.IsAnnotated,
+                   _ => null
+               });
+    }
+
+    public static bool Matches(GitFilterParameters filters, RemoteTagEntity tag)
+    {
+        return Matches(filters.FriendlyName, tag.FriendlyName) &&
+               Matches(filters.FriendlyNames, tag.FriendlyName) &&
+               Matches(filters.CanonicalName, tag.CanonicalName) &&
+               Matches(filters.CanonicalNames, tag.CanonicalName) &&
+               Matches(filters.ObjectSha, tag.ObjectSha) &&
+               Matches(filters.ObjectShas, tag.ObjectSha) &&
+               Matches(filters.IsAnnotated, tag.IsAnnotated) &&
+               MatchesNative(filters.RawPredicate, column => column switch
+               {
+                   nameof(RemoteTagEntity.RemoteName) => tag.RemoteName,
+                   nameof(RemoteTagEntity.RemoteUrl) => tag.RemoteUrl,
+                   nameof(RemoteTagEntity.FriendlyName) => tag.FriendlyName,
+                   nameof(RemoteTagEntity.CanonicalName) => tag.CanonicalName,
+                   nameof(RemoteTagEntity.ObjectSha) => tag.ObjectSha,
+                   nameof(RemoteTagEntity.PeeledSha) => tag.PeeledSha,
+                   nameof(RemoteTagEntity.IsAnnotated) => tag.IsAnnotated,
                    _ => null
                });
     }
@@ -424,7 +561,19 @@ internal static class GitSourcePlanner
 
     private static bool SupportsNaturalWindow(string tableName) =>
         tableName.Equals("commits", StringComparison.OrdinalIgnoreCase) ||
-        tableName.Equals("filehistory", StringComparison.OrdinalIgnoreCase);
+        tableName.Equals("filehistory", StringComparison.OrdinalIgnoreCase) ||
+        tableName.Equals("tags", StringComparison.OrdinalIgnoreCase) ||
+        tableName.Equals("stashes", StringComparison.OrdinalIgnoreCase) ||
+        tableName.Equals("remotetags", StringComparison.OrdinalIgnoreCase);
+
+    private static bool CanPushDownOrder(string tableName, IReadOnlyList<OrderByExpression> orderBy)
+    {
+        return tableName.Equals("tags", StringComparison.OrdinalIgnoreCase) &&
+               orderBy.Count == 1 &&
+               orderBy[0].Direction == OrderDirection.Ascending &&
+               NormalizeColumnName(orderBy[0].Column.Name)
+                   .Equals(nameof(TagEntity.CanonicalName), StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool IsNonNegativeWindow(long? skip, long? take) =>
         (!skip.HasValue || skip.Value >= 0) && (!take.HasValue || take.Value >= 0);
@@ -501,6 +650,14 @@ internal static class GitSourcePlanner
                 or SourcePredicateComparisonOperator.Equal && TryGetDateTimeOffset(literal.Value, out _);
         }
 
+        if ((tableName.Equals("tags", StringComparison.OrdinalIgnoreCase) ||
+             tableName.Equals("remotetags", StringComparison.OrdinalIgnoreCase)) &&
+            columnName.Equals(nameof(TagEntity.CanonicalName), StringComparison.OrdinalIgnoreCase))
+        {
+            return IsFilterColumn(tableName, columnName) &&
+                   IsLiteralTypeSupported(tableName, columnName, literal.Value);
+        }
+
         return op is SourcePredicateComparisonOperator.Equal or SourcePredicateComparisonOperator.NotEqual &&
                IsFilterColumn(tableName, columnName) &&
                IsLiteralTypeSupported(tableName, columnName, literal.Value);
@@ -508,6 +665,12 @@ internal static class GitSourcePlanner
 
     private static bool IsSupportedIn(string tableName, SourcePredicateIn predicate)
     {
+        if ((tableName.Equals("tags", StringComparison.OrdinalIgnoreCase) ||
+             tableName.Equals("stashes", StringComparison.OrdinalIgnoreCase) ||
+             tableName.Equals("remotetags", StringComparison.OrdinalIgnoreCase)) &&
+            (predicate.IsNegated || predicate.Values.Count > MaxReferenceInPushdownValues))
+            return false;
+
         return TryGetColumn(predicate.Expression, out var column) &&
                IsFilterColumn(tableName, column) &&
                predicate.Values.All(value => value is SourcePredicateLiteral literal &&
@@ -522,7 +685,9 @@ internal static class GitSourcePlanner
 
         if (tableName.Equals("branches", StringComparison.OrdinalIgnoreCase) && columnName is
                 nameof(BranchEntity.IsRemote) or nameof(BranchEntity.IsCurrentRepositoryHead) or nameof(BranchEntity.IsTracking) ||
-            tableName.Equals("tags", StringComparison.OrdinalIgnoreCase) && columnName == nameof(TagEntity.IsAnnotated))
+            (tableName.Equals("tags", StringComparison.OrdinalIgnoreCase) ||
+             tableName.Equals("remotetags", StringComparison.OrdinalIgnoreCase)) &&
+            columnName == nameof(TagEntity.IsAnnotated))
             return value is bool;
 
         return value is string;
@@ -551,6 +716,47 @@ internal static class GitSourcePlanner
             case SourcePredicateComparison comparison:
                 ApplyComparison(tableName, comparison, filters);
                 return;
+            case SourcePredicateIn inPredicate:
+                ApplyIn(tableName, inPredicate, filters);
+                return;
+        }
+    }
+
+    private static void ApplyIn(string tableName, SourcePredicateIn predicate, GitFilterParameters filters)
+    {
+        if (predicate.IsNegated || !TryGetColumn(predicate.Expression, out var columnName))
+            return;
+
+        var values = predicate.Values
+            .OfType<SourcePredicateLiteral>()
+            .Select(static literal => literal.Value)
+            .OfType<string>()
+            .ToArray();
+        if (values.Length == 0)
+            return;
+
+        switch (tableName, columnName)
+        {
+            case ("tags", nameof(TagEntity.FriendlyName)):
+            case ("remotetags", nameof(RemoteTagEntity.FriendlyName)):
+                filters.FriendlyNames.UnionWith(values);
+                break;
+            case ("tags", nameof(TagEntity.CanonicalName)):
+            case ("remotetags", nameof(RemoteTagEntity.CanonicalName)):
+                filters.CanonicalNames.UnionWith(values);
+                break;
+            case ("tags", nameof(TagEntity.TargetSha)):
+                filters.TargetShas.UnionWith(values);
+                break;
+            case ("remotetags", nameof(RemoteTagEntity.ObjectSha)):
+                filters.ObjectShas.UnionWith(values);
+                break;
+            case ("stashes", nameof(StashEntity.Selector)):
+                filters.Selectors.UnionWith(values);
+                break;
+            case ("stashes", nameof(StashEntity.Sha)):
+                filters.Shas.UnionWith(values);
+                break;
         }
     }
 
@@ -597,7 +803,28 @@ internal static class GitSourcePlanner
             case ("tags", nameof(TagEntity.CanonicalName), SourcePredicateComparisonOperator.Equal, string value):
                 filters.CanonicalName = value;
                 break;
+            case ("tags", nameof(TagEntity.TargetSha), SourcePredicateComparisonOperator.Equal, string value):
+                filters.TargetSha = value;
+                break;
             case ("tags", nameof(TagEntity.IsAnnotated), SourcePredicateComparisonOperator.Equal, bool value):
+                filters.IsAnnotated = value;
+                break;
+            case ("stashes", nameof(StashEntity.Selector), SourcePredicateComparisonOperator.Equal, string value):
+                filters.Selector = value;
+                break;
+            case ("stashes", nameof(StashEntity.Sha), SourcePredicateComparisonOperator.Equal, string value):
+                filters.Sha = value;
+                break;
+            case ("remotetags", nameof(RemoteTagEntity.FriendlyName), SourcePredicateComparisonOperator.Equal, string value):
+                filters.FriendlyName = value;
+                break;
+            case ("remotetags", nameof(RemoteTagEntity.CanonicalName), SourcePredicateComparisonOperator.Equal, string value):
+                filters.CanonicalName = value;
+                break;
+            case ("remotetags", nameof(RemoteTagEntity.ObjectSha), SourcePredicateComparisonOperator.Equal, string value):
+                filters.ObjectSha = value;
+                break;
+            case ("remotetags", nameof(RemoteTagEntity.IsAnnotated), SourcePredicateComparisonOperator.Equal, bool value):
                 filters.IsAnnotated = value;
                 break;
             case ("remotes", nameof(RemoteEntity.Name), SourcePredicateComparisonOperator.Equal, string value):
@@ -609,6 +836,22 @@ internal static class GitSourcePlanner
             case ("status", nameof(StatusEntity.State), SourcePredicateComparisonOperator.Equal, string value):
                 filters.State = value;
                 break;
+        }
+
+        if ((tableName.Equals("tags", StringComparison.OrdinalIgnoreCase) ||
+             tableName.Equals("remotetags", StringComparison.OrdinalIgnoreCase)) &&
+            columnName.Equals(nameof(TagEntity.CanonicalName), StringComparison.OrdinalIgnoreCase) &&
+            literal.Value is string canonicalName)
+        {
+            switch (op)
+            {
+                case SourcePredicateComparisonOperator.GreaterThan:
+                    filters.SetCanonicalNameAfter(canonicalName, false);
+                    break;
+                case SourcePredicateComparisonOperator.GreaterOrEqual:
+                    filters.SetCanonicalNameAfter(canonicalName, true);
+                    break;
+            }
         }
 
         if (!tableName.Equals("commits", StringComparison.OrdinalIgnoreCase) ||
@@ -754,7 +997,26 @@ internal static class GitSourcePlanner
             {
                 nameof(TagEntity.FriendlyName) => tag.FriendlyName,
                 nameof(TagEntity.CanonicalName) => tag.CanonicalName,
+                nameof(TagEntity.TargetSha) => tag.TargetSha,
                 nameof(TagEntity.IsAnnotated) => tag.IsAnnotated,
+                _ => null
+            },
+            StashEntity stash => columnName switch
+            {
+                nameof(StashEntity.Selector) => stash.Selector,
+                nameof(StashEntity.Sha) => stash.Sha,
+                nameof(StashEntity.Message) => stash.Message,
+                _ => null
+            },
+            RemoteTagEntity remoteTag => columnName switch
+            {
+                nameof(RemoteTagEntity.RemoteName) => remoteTag.RemoteName,
+                nameof(RemoteTagEntity.RemoteUrl) => remoteTag.RemoteUrl,
+                nameof(RemoteTagEntity.FriendlyName) => remoteTag.FriendlyName,
+                nameof(RemoteTagEntity.CanonicalName) => remoteTag.CanonicalName,
+                nameof(RemoteTagEntity.ObjectSha) => remoteTag.ObjectSha,
+                nameof(RemoteTagEntity.PeeledSha) => remoteTag.PeeledSha,
+                nameof(RemoteTagEntity.IsAnnotated) => remoteTag.IsAnnotated,
                 _ => null
             },
             RemoteEntity remote => columnName switch
@@ -893,6 +1155,9 @@ internal static class GitSourcePlanner
 
     private static bool Matches(string? expected, string? actual) =>
         expected is null || string.Equals(actual, expected, StringComparison.Ordinal);
+
+    private static bool Matches(IReadOnlySet<string> expected, string? actual) =>
+        expected.Count == 0 || actual is not null && expected.Contains(actual);
 
     private static bool Matches(bool? expected, bool actual) =>
         expected is null || actual == expected.Value;

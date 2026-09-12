@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using LibGit2Sharp;
+using Musoq.DataSources.Git;
 using Musoq.Plugins.Attributes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -35,12 +37,11 @@ public class RepositoryEntity
     private readonly string _path;
     private readonly string _workingDirectory;
     private readonly RepositoryInformationEntity _information;
+    private readonly GitReferenceBackendOptions _referenceOptions;
     private readonly GitNestedSnapshot<IReadOnlyList<BranchEntity>> _branches = new();
-    private readonly GitNestedSnapshot<IReadOnlyList<TagEntity>> _tags = new();
     private readonly GitNestedSnapshot<IReadOnlyList<CommitEntity>> _commits = new();
     private readonly GitNestedSnapshot<BranchEntity> _head = new();
     private readonly GitNestedSnapshot<IReadOnlyList<ConfigurationEntityKeyValue>> _configuration = new();
-    private readonly GitNestedSnapshot<IReadOnlyList<StashEntity>> _stashes = new();
 
     static RepositoryEntity()
     {
@@ -62,17 +63,29 @@ public class RepositoryEntity
 
     /// <summary>Copies the repository identity and information; it does not retain the native handle.</summary>
     public RepositoryEntity(Repository repository)
+        : this(
+            repository.Info.Path,
+            repository.Info.WorkingDirectory,
+            new RepositoryInformationEntity(repository.Info, repository),
+            GitReferenceBackendOptions.Default)
     {
-        _path = repository.Info.Path;
-        _workingDirectory = repository.Info.WorkingDirectory;
-        _information = new RepositoryInformationEntity(repository.Info, repository);
     }
 
     internal RepositoryEntity(string path, string workingDirectory, RepositoryInformationEntity information)
+        : this(path, workingDirectory, information, GitReferenceBackendOptions.Default)
+    {
+    }
+
+    internal RepositoryEntity(
+        string path,
+        string workingDirectory,
+        RepositoryInformationEntity information,
+        GitReferenceBackendOptions referenceOptions)
     {
         _path = path;
         _workingDirectory = workingDirectory;
         _information = information;
+        _referenceOptions = referenceOptions;
     }
 
     /// <summary>Gets the repository's canonical path.</summary>
@@ -87,11 +100,9 @@ public class RepositoryEntity
         (IReadOnlyList<BranchEntity>)repository.Branches.Select(branch => new BranchEntity(branch, repository)).ToArray()))
         ?? Array.Empty<BranchEntity>();
 
-    /// <summary>Gets tags as detached snapshots, loading them lazily in a short-lived repository scope.</summary>
+    /// <summary>Gets tags as detached snapshots from a bounded streaming reference enumeration.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<TagEntity> Tags => _tags.GetOrCreate(() => Read(repository =>
-        (IReadOnlyList<TagEntity>)repository.Tags.Select(tag => new TagEntity(tag, repository)).ToArray()))
-        ?? Array.Empty<TagEntity>();
+    public IEnumerable<TagEntity> Tags => ReadTags();
 
     /// <summary>Gets commits as detached snapshots, loading them lazily in a short-lived repository scope.</summary>
     [BindablePropertyAsTable]
@@ -117,11 +128,9 @@ public class RepositoryEntity
     /// <summary>Gets immutable repository information captured when this row was created.</summary>
     public RepositoryInformationEntity Information => _information;
 
-    /// <summary>Gets stash entries as detached snapshots, loading them lazily.</summary>
+    /// <summary>Gets stash entries as detached snapshots from a bounded streaming reference enumeration.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<StashEntity> Stashes => _stashes.GetOrCreate(() => Read(repository =>
-        (IReadOnlyList<StashEntity>)repository.Stashes.Select(stash => new StashEntity(stash, repository)).ToArray()))
-        ?? Array.Empty<StashEntity>();
+    public IEnumerable<StashEntity> Stashes => ReadStashes();
 
     /// <summary>Gets this repository row.</summary>
     public RepositoryEntity Self => this;
@@ -132,5 +141,48 @@ public class RepositoryEntity
     {
         using var repository = new Repository(_path);
         return action(repository);
+    }
+
+    private IEnumerable<TagEntity> ReadTags()
+    {
+        var reader = _referenceOptions.Backend == GitHistoryBackend.LibGit2
+            ? GitOperationReaders.Tags
+            : GitOperationReaders.CliTags;
+        var projection = new GitProjection(true, [nameof(TagEntity.FriendlyName), nameof(TagEntity.CanonicalName)]);
+        foreach (var tag in reader.ReadStreaming(
+                     _path,
+                     _referenceOptions,
+                     projection,
+                     GitTagReadQuery.Empty,
+                     static path => new Repository(path),
+                     CancellationToken.None))
+        {
+            yield return GitEntitySnapshots.Tag(
+                tag,
+                projection,
+                () => TagEntity.LoadRichSnapshot(_path, tag.CanonicalName, tag.FriendlyName));
+        }
+    }
+
+    private IEnumerable<StashEntity> ReadStashes()
+    {
+        var reader = _referenceOptions.Backend == GitHistoryBackend.LibGit2
+            ? GitOperationReaders.Stashes
+            : GitOperationReaders.CliStashes;
+        var projection = new GitProjection(true, [
+            nameof(StashEntity.Selector),
+            nameof(StashEntity.Sha),
+            nameof(StashEntity.Message),
+            nameof(StashEntity.Index),
+            nameof(StashEntity.WorkTree),
+            nameof(StashEntity.UntrackedFiles)]);
+        foreach (var stash in reader.ReadStreaming(
+                     _path,
+                     _referenceOptions,
+                     projection,
+                     GitStashReadQuery.Empty,
+                     static path => new Repository(path),
+                     CancellationToken.None))
+            yield return GitEntitySnapshots.Stash(stash, projection);
     }
 }

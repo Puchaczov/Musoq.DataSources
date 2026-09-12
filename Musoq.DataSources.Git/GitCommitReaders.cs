@@ -37,20 +37,23 @@ internal readonly record struct GitCommitRecord(
     string? CommitterEmail,
     DateTimeOffset CommittedWhen);
 
-/// <summary>Backend selection is deliberately per operation and changes only after parity plus benchmark qualification.</summary>
+/// <summary>Backend selection is deliberately per operation so reference readers can remain streaming and independently testable.</summary>
 internal static class GitOperationReaders
 {
     public static IGitCommitReader LibGit2Commits { get; } = new LibGit2CommitReader();
     public static IGitCommitReader CliCommits { get; } = new GitCliCommitReader();
     public static IGitCommitReader Commits { get; } = LibGit2Commits;
 
-    // References stay on LibGit2 until the CLI candidate meets the same parity and relative performance rule.
+    // Local tags and stashes prefer the streaming CLI readers; LibGit2 remains an explicit compatibility fallback.
     public static IGitBranchReader Branches { get; } = new LibGit2BranchReader();
     public static IGitBranchReader CliBranches { get; } = new GitCliBranchReader();
     public static IGitTagReader Tags { get; } = new LibGit2TagReader();
     public static IGitTagReader CliTags { get; } = new GitCliTagReader();
+    public static IGitStashReader Stashes { get; } = new LibGit2StashReader();
+    public static IGitStashReader CliStashes { get; } = new GitCliStashReader();
     public static IGitRemoteReader Remotes { get; } = new LibGit2RemoteReader();
     public static IGitRemoteReader CliRemotes { get; } = new GitCliRemoteReader();
+    public static IGitRemoteTagReader RemoteTags { get; } = new GitCliRemoteTagReader();
     public static IGitStatusReader Status { get; } = new LibGit2StatusReader();
     public static IGitStatusReader CliStatus { get; } = new GitCliStatusReader();
 }

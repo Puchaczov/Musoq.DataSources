@@ -101,22 +101,45 @@ internal static class GitEntitySnapshots
             repository.Info.Path,
             Includes(projection, all, nameof(TagEntity.FriendlyName)) ? tag.FriendlyName : null,
             Includes(projection, all, nameof(TagEntity.CanonicalName)) ? tag.CanonicalName : null,
+            (tag.Target as Commit)?.Sha,
             Includes(projection, all, nameof(TagEntity.Message)) ? tag.Annotation?.Message : null,
             Includes(projection, all, nameof(TagEntity.IsAnnotated)) && tag.IsAnnotated,
             annotation,
-            needsCommit ? (tag.Target as Commit)?.Sha : null);
+            needsCommit ? (tag.Target as Commit)?.Sha : null,
+            tag.CanonicalName);
     }
 
-    public static TagEntity Tag(GitTagRecord tag, GitProjection projection)
+    public static TagEntity Tag(
+        GitTagRecord tag,
+        GitProjection projection,
+        Func<TagEntity.TagRichSnapshot>? richLoader = null)
     {
         return new TagEntity(
             tag.RepositoryPath,
             projection.Includes(nameof(TagEntity.FriendlyName)) ? tag.FriendlyName : null,
             projection.Includes(nameof(TagEntity.CanonicalName)) ? tag.CanonicalName : null,
+            projection.Includes(nameof(TagEntity.TargetSha))
+                ? tag.TargetSha
+                : null,
             projection.Includes(nameof(TagEntity.Message)) ? tag.Message : null,
             projection.Includes(nameof(TagEntity.IsAnnotated)) && tag.IsAnnotated,
             tag.Annotation,
-            tag.CommitSha);
+            projection.Includes(nameof(TagEntity.Commit)) ? tag.CommitSha : null,
+            tag.CanonicalName,
+            richLoader,
+            projection.Includes(nameof(TagEntity.IsAnnotated)));
+    }
+
+    public static StashEntity Stash(GitStashRecord stash, GitProjection projection)
+    {
+        return new StashEntity(
+            stash.RepositoryPath,
+            projection.Includes(nameof(StashEntity.Selector)) ? stash.Selector : string.Empty,
+            projection.Includes(nameof(StashEntity.Sha)) ? stash.Sha : string.Empty,
+            projection.Includes(nameof(StashEntity.Message)) ? stash.Message : string.Empty,
+            projection.Includes(nameof(StashEntity.Index)) ? stash.IndexSha : null,
+            projection.Includes(nameof(StashEntity.WorkTree)) ? stash.WorkTreeSha : null,
+            projection.Includes(nameof(StashEntity.UntrackedFiles)) ? stash.UntrackedFilesSha : null);
     }
 
     public static RemoteEntity Remote(Remote remote, GitProjection projection)
@@ -133,6 +156,18 @@ internal static class GitEntitySnapshots
             projection.Includes(nameof(RemoteEntity.Name)) ? remote.Name : string.Empty,
             projection.Includes(nameof(RemoteEntity.Url)) ? remote.Url : string.Empty,
             projection.Includes(nameof(RemoteEntity.PushUrl)) ? remote.PushUrl : null);
+    }
+
+    public static RemoteTagEntity RemoteTag(GitRemoteTagRecord tag, GitProjection projection)
+    {
+        return new RemoteTagEntity(
+            projection.Includes(nameof(RemoteTagEntity.RemoteName)) ? tag.RemoteName : string.Empty,
+            projection.Includes(nameof(RemoteTagEntity.RemoteUrl)) ? tag.RemoteUrl : string.Empty,
+            projection.Includes(nameof(RemoteTagEntity.FriendlyName)) ? tag.FriendlyName : string.Empty,
+            projection.Includes(nameof(RemoteTagEntity.CanonicalName)) ? tag.CanonicalName : string.Empty,
+            projection.Includes(nameof(RemoteTagEntity.ObjectSha)) ? tag.ObjectSha : string.Empty,
+            projection.Includes(nameof(RemoteTagEntity.PeeledSha)) ? tag.PeeledSha : null,
+            projection.Includes(nameof(RemoteTagEntity.IsAnnotated)) && tag.IsAnnotated);
     }
 
     public static StatusEntity Status(StatusEntry entry, GitProjection projection)
@@ -179,7 +214,10 @@ internal static class GitEntitySnapshots
             entry.State.HasFlag(FileStatus.TypeChangeInWorkdir) ? "Modified" : "Unmodified");
     }
 
-    public static RepositoryEntity Repository(Repository repository, GitProjection projection)
+    public static RepositoryEntity Repository(
+        Repository repository,
+        GitProjection projection,
+        GitReferenceBackendOptions? referenceOptions = null)
     {
         // Repository rows are also injected into library methods; always preserve their compact identity and info
         // snapshot while keeping the potentially large nested enumerables lazy.
@@ -188,7 +226,8 @@ internal static class GitEntitySnapshots
         return new RepositoryEntity(
             needsPath ? repository.Info.Path : string.Empty,
             repository.Info.WorkingDirectory,
-            information);
+            information,
+            referenceOptions ?? GitReferenceBackendOptions.Default);
     }
 
     public static FileHistoryEntity FileHistory(

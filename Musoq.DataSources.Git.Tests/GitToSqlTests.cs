@@ -395,6 +395,27 @@ public class GitToSqlTests
     }
 
     [TestMethod]
+    public async Task WhenStashesQueriedDirectly_ShouldExposeIdentityAndMessage()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository4ZipPath);
+
+        var query = @"
+            select
+                s.Selector,
+                s.Sha,
+                s.Message
+            from git.stashes('{RepositoryPath}') s";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("stash@{0}", (string)result[0][0]);
+        Assert.IsFalse(string.IsNullOrWhiteSpace((string)result[0][1]));
+        Assert.AreEqual("WIP on master: bf85425 add documentation index", (string)result[0][2]);
+    }
+
+    [TestMethod]
     public async Task WhenDifferenceBetweenTwoCommits_ShouldPass()
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository4ZipPath);
