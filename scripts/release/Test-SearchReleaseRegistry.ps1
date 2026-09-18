@@ -27,7 +27,7 @@ Assert-Condition ($searchPackages.Count -eq 1) "The release registry must resolv
 $search = $searchPackages[0]
 
 Assert-Condition ($search.Slug -eq "search") "Search must use the canonical release slug."
-Assert-Condition ($search.Version -eq "1.0.0-alpha.1") "Search must use its initial 1.0.0-alpha.1 version."
+Assert-Condition ($search.Version -eq "1.0.1-alpha.1") "Search must use its next patch 1.0.1-alpha.1 version."
 Assert-Condition ($search.ProjectPath -eq "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj") "Search must resolve to the production project path."
 Assert-Condition (Test-ReleasePluginProject -ProjectPath $search.FullProjectPath) "The registered Search project must contain a production datasource schema."
 

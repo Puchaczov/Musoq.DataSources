@@ -176,11 +176,11 @@ $scenarioCount = 0
 $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) ('musoq-search-environment-' + [Guid]::NewGuid().ToString('N'))
 $scenarios = [System.Collections.Generic.List[object]]::new()
 $packagePins = [ordered]@{
-    MusoqConverterVersion = '17.0.9-alpha.2'
-    MusoqEvaluatorVersion = '17.0.9-alpha.2'
-    MusoqParserVersion = '17.0.9-alpha.1'
-    MusoqPluginsVersion = '17.0.9-alpha.1'
-    MusoqSchemaVersion = '17.0.9-alpha.1'
+    MusoqConverterVersion = '17.0.11-alpha.1'
+    MusoqEvaluatorVersion = '17.0.11-alpha.1'
+    MusoqParserVersion = '17.0.11-alpha.1'
+    MusoqPluginsVersion = '17.0.11-alpha.1'
+    MusoqSchemaVersion = '17.0.11-alpha.1'
 }
 
 try {

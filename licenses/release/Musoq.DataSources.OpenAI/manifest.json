@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.OpenAI",
   "slug": "openai",
-  "version": "6.0.3-alpha.7",
+  "version": "6.0.4-alpha.1",
   "projectPath": "Musoq.DataSources.OpenAI/Musoq.DataSources.OpenAI.csproj",
   "entryProject": "Musoq.DataSources.OpenAI/Musoq.DataSources.OpenAI.csproj",
   "ownPackageId": "Musoq.DataSources.OpenAI",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+      "sha256": "bec58cd23dbe1c53ae53e34f89fbaaaa2be41c2c9b5fa17c869c89dbb9a43c63"
     },
     {
       "path": "global.json",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.OpenAI/Musoq.DataSources.OpenAI.csproj",
-      "sha256": "30ab4160b1f7266bf6ce77c2ef3ef088141abdeebf170db8e073721bcf559131"
+      "sha256": "d7d6a2c16446b79d354b5b7e386b24094acf61ba074916daa02749814730ff26"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "b92214134221c943d6dff8da9dcc042802b2adb4e5d2e3b4db2655b908b2582c"
+      "sha256": "7684af4edd91027c518f8cf04a3c94b15e6e6af75c784bb1b9e21537af26c6b4"
     }
   ],
   "packageGraph": [
@@ -106,17 +106,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
@@ -203,8 +203,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1584,
-      "sha256": "bf9f6a8fc434cc2d13d5570209458ef07fc21820d88c0ad7381889c0cbcee559"
+      "size": 1587,
+      "sha256": "bb8fae9411624b87571750f0bc932edc0dd80e916d9c0d5717edd7d189c54ae8"
     },
     {
       "path": "third-party-notices/SharpToken/license.txt",

@@ -7,10 +7,9 @@ using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Musoq.Converter.Exceptions;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Evaluator.Exceptions;
-using Musoq.Schema.Exceptions;
 using Musoq.Schema.Optimization;
 
 using Musoq.DataSources.Search.Entities;
@@ -207,40 +206,26 @@ public sealed class SearchManyTableInputTests
     }
 
     [TestMethod]
-    public void TableValuedArguments_ShouldRemainUnsupportedAndPreserveScalarFallback()
+    public void TableValuedArguments_ShouldBeRejectedByLatestCoreApi()
     {
         var root = CreateFixture(("alpha.txt", "TODO\n"));
 
         try
         {
             var escapedRoot = EscapeSql(root);
-            var exception = Assert.ThrowsException<QueryExecutionException>(() =>
+            var exception = Assert.ThrowsException<MusoqQueryException>(() =>
                 Compile(
                         $"with patterns as (select 'TODO' as Pattern from search.paths('{escapedRoot}') take 1) " +
-                        $"select m.Path from search.many('{escapedRoot}', patterns) m")
-                    .Run()
-                    .Count);
+                        $"select m.Path from search.many('{escapedRoot}', patterns) m"));
 
-            Assert.AreEqual("MQ7010_DataSourceOpenFailed", exception.Envelope!.Code.ToString());
-            var lifecycle = exception.InnerException as DataSourceLifecycleException;
-            Assert.IsNotNull(lifecycle);
-            var requestException = lifecycle!.InnerException as SearchRequestException;
-            Assert.IsNotNull(requestException);
-            Assert.AreEqual("request", requestException!.Diagnostic.Location?.ArgumentName);
+            AssertUnsupportedTableArgument(exception);
 
-            var pathException = Assert.ThrowsException<QueryExecutionException>(() =>
+            var pathException = Assert.ThrowsException<MusoqQueryException>(() =>
                 Compile(
                         $"with paths as (select p.Path as Path from search.paths('{escapedRoot}') p take 1) " +
-                        $"select m.Path from search.many(paths, '{TodoRequest}') m")
-                    .Run()
-                    .Count);
+                        $"select m.Path from search.many(paths, '{TodoRequest}') m"));
 
-            Assert.AreEqual("MQ7010_DataSourceOpenFailed", pathException.Envelope!.Code.ToString());
-            var pathLifecycle = pathException.InnerException as DataSourceLifecycleException;
-            Assert.IsNotNull(pathLifecycle);
-            var rootException = pathLifecycle!.InnerException as SearchRequestException;
-            Assert.IsNotNull(rootException);
-            Assert.AreEqual("root", rootException!.Diagnostic.Location?.ArgumentName);
+            AssertUnsupportedTableArgument(pathException);
         }
         finally
         {
@@ -255,6 +240,15 @@ public sealed class SearchManyTableInputTests
             Guid.NewGuid().ToString(),
             new SearchSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+    }
+
+    private static void AssertUnsupportedTableArgument(MusoqQueryException exception)
+    {
+        Assert.AreEqual("MQ3088_NoMatchingCallableOverload", exception.PrimaryEnvelope.Code.ToString());
+        Assert.IsTrue(exception.PrimaryEnvelope.Arguments["actualTypes"].Contains("object", StringComparison.Ordinal));
+        Assert.IsTrue(exception.PrimaryEnvelope.Arguments["candidateSignatures"].Contains(
+            "many(root: String, request: String)",
+            StringComparison.Ordinal));
     }
 
     private static SourceMetadataContext CreateMetadataContext()

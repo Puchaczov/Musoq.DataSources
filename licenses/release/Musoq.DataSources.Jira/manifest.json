@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Jira",
   "slug": "jira",
-  "version": "2.0.3-alpha.7",
+  "version": "2.0.4-alpha.1",
   "projectPath": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
   "entryProject": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
   "ownPackageId": "Musoq.DataSources.Jira",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+      "sha256": "bec58cd23dbe1c53ae53e34f89fbaaaa2be41c2c9b5fa17c869c89dbb9a43c63"
     },
     {
       "path": "global.json",
@@ -57,15 +57,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "46683c8d49092ad520eaeed98c0f85203e2e0e0bd477547ef11cb16d61a12d7d"
+      "sha256": "14d1674e524500401eb296585559318b73e8d3cee08002d9806888c975d21b8e"
     },
     {
       "path": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
-      "sha256": "3e1803cef0cf4e90fb1dc9b14868052ce1f56243aace0494a23c2d3eefce483b"
+      "sha256": "952959fc1111eda35f3dc2c78c1e2ec9c3b425e41214c24a0494d1dad1d4d820"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "b92214134221c943d6dff8da9dcc042802b2adb4e5d2e3b4db2655b908b2582c"
+      "sha256": "7684af4edd91027c518f8cf04a3c94b15e6e6af75c784bb1b9e21537af26c6b4"
     }
   ],
   "packageGraph": [
@@ -116,17 +116,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
@@ -223,8 +223,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1716,
-      "sha256": "c6cbf686a3f4bcd4b481e00b542142124f373c6781116312d5544554719148fd"
+      "size": 1719,
+      "sha256": "2c8e1bf901ca1100924f8cca57ac0ece2d717234e2e83ba1a8f69b947b25a808"
     },
     {
       "path": "third-party-notices/RestSharp/license.txt",

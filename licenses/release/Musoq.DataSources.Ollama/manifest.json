@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Ollama",
   "slug": "ollama",
-  "version": "5.0.3-alpha.7",
+  "version": "5.0.4-alpha.1",
   "projectPath": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
   "entryProject": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
   "ownPackageId": "Musoq.DataSources.Ollama",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+      "sha256": "bec58cd23dbe1c53ae53e34f89fbaaaa2be41c2c9b5fa17c869c89dbb9a43c63"
     },
     {
       "path": "global.json",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
-      "sha256": "c9fc6b7d2c3444f305b41461022f174bb820314d0b8dba4b4e68d307b64a7f5e"
+      "sha256": "5e9dc408ff2017ef4e71c52217e7e1049f947becc624784bc7d622ee58120d6e"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "b92214134221c943d6dff8da9dcc042802b2adb4e5d2e3b4db2655b908b2582c"
+      "sha256": "7684af4edd91027c518f8cf04a3c94b15e6e6af75c784bb1b9e21537af26c6b4"
     }
   ],
   "packageGraph": [
@@ -171,17 +171,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
@@ -353,8 +353,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 3236,
-      "sha256": "c6abb88315d38c527e66356bb121c1f00b13e5b9dfd16c17938ee9e1dbeab0e8"
+      "size": 3239,
+      "sha256": "6c6d6524afd04e1188f2a9c410289103e90424bd2ea8956708accae843b63004"
     },
     {
       "path": "third-party-notices/SharpToken/license.txt",

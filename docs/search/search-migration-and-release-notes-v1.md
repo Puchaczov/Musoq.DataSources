@@ -5,7 +5,7 @@ artifacts are prepared in this repository; this document does not claim that
 the package has been published or that every Musoq host can execute it.
 
 This note is the short migration boundary for `Musoq.DataSources.Search`
-`1.0.0-alpha.1`. The package targets `net10.0`, uses the Runtime-v2 plugin
+`1.0.1-alpha.1`. The package targets `net10.0`, uses the Runtime-v2 plugin
 compatibility contract, and is an additive datasource. The existing
 `os.files` and `flat.file` datasource behaviors are unchanged; broad shared
 traversal refactoring is deliberately outside this release boundary.

@@ -196,7 +196,7 @@ function Test-DatasourceReleaseValidation {
     Assert-Equal "alpha" $summary.channel "Datasource release validation should resolve channel."
 
     Assert-Throws {
-        & "$PSScriptRoot/release/Validate-Release.ps1" -Tag "3.0.0-alpha.2-Musoq.DataSources.AsyncRowsSource" | Out-Null
+        & "$PSScriptRoot/release/Validate-Release.ps1" -Tag "3.0.1-alpha.1-Musoq.DataSources.AsyncRowsSource" | Out-Null
     } "Datasource release validation should reject helper packages."
 
     Assert-Throws {
@@ -244,8 +244,8 @@ function Test-PluginCompatibilityManifestGeneration {
 
     $systemProject = Join-Path $PSScriptRoot "../Musoq.DataSources.System/Musoq.DataSources.System.csproj"
     $evaluated = Get-MusoqPluginCompatibility -ProjectPath $systemProject
-    Assert-Equal "17.0.9-alpha.1" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
-    Assert-Equal "17.0.9-alpha.1" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
+    Assert-Equal "17.0.11-alpha.1" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
+    Assert-Equal "17.0.11-alpha.1" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
 }
 
 function Test-PluginArtifactIntegrityMetadata {
@@ -402,22 +402,22 @@ function Test-RuntimeV2ReleaseTrain {
     foreach ($package in $packages) {
         $version = [string]$package.version
         if ($package.packageId -eq 'Musoq.DataSources.Roslyn') {
-            Assert-Equal "3.0.4-alpha.8" $version "Roslyn should use the next prerelease command-module version."
+            Assert-Equal "3.0.5-alpha.1" $version "Roslyn should use the next patch alpha version."
         }
         elseif ($package.packageId -eq 'Musoq.DataSources.Json') {
-            Assert-Equal "10.0.3-alpha.3" $version "$($package.packageId) should use its next major alpha version."
+            Assert-Equal "10.0.4-alpha.1" $version "$($package.packageId) should use its next patch alpha version."
         }
         elseif ($package.packageId -eq 'Musoq.DataSources.SeparatedValues') {
-            Assert-Equal "11.0.0-alpha.3" $version "$($package.packageId) should use its next major alpha version."
+            Assert-Equal "11.0.1-alpha.1" $version "$($package.packageId) should use its next patch alpha version."
         }
         elseif ($package.packageId -eq 'Musoq.DataSources.Git') {
-            Assert-Equal "3.0.0-alpha.3" $version "Git should use its next major alpha version."
+            Assert-Equal "3.0.1-alpha.1" $version "Git should use its next patch alpha version."
         }
         elseif ($package.packageId -eq 'Musoq.DataSources.Search') {
-            Assert-Equal "1.0.0-alpha.1" $version "Search should use its initial alpha version."
+            Assert-Equal "1.0.1-alpha.1" $version "Search should use its next patch alpha version."
         }
         else {
-            Assert-True ($version -match '-alpha\.7$') "$($package.packageId) should be pinned to alpha.7 in packages.json."
+            Assert-True ($version -match '-alpha\.1$') "$($package.packageId) should be pinned to alpha.1 in packages.json."
         }
         $projectPath = Join-Path $PSScriptRoot "../$($package.projectPath)"
         [xml]$project = Get-Content -LiteralPath $projectPath
@@ -427,12 +427,12 @@ function Test-RuntimeV2ReleaseTrain {
 
     $roslyn = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Roslyn' })
     Assert-Equal 1 $roslyn.Count "Runtime-v2 release train should contain exactly one Roslyn package."
-    Assert-Equal "3.0.4-alpha.8" ([string]$roslyn[0].version) "Roslyn should use the next prerelease command-module version."
+    Assert-Equal "3.0.5-alpha.1" ([string]$roslyn[0].version) "Roslyn should use its next patch alpha version."
 
     $search = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Search' })
     Assert-Equal 1 $search.Count "Runtime-v2 release train should contain exactly one Search package."
     Assert-Equal "search" ([string]$search[0].slug) "Search should use the canonical release slug."
-    Assert-Equal "1.0.0-alpha.1" ([string]$search[0].version) "Search should use its initial alpha version."
+    Assert-Equal "1.0.1-alpha.1" ([string]$search[0].version) "Search should use its next patch alpha version."
     Assert-Equal "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj" ([string]$search[0].projectPath) "Search should point at the production project."
 
     $excludedProjects = @($packages | Where-Object {

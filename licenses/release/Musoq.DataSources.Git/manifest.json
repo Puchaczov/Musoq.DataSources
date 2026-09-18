@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Git",
   "slug": "git",
-  "version": "3.0.0-alpha.3",
+  "version": "3.0.1-alpha.1",
   "projectPath": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
   "entryProject": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
   "ownPackageId": "Musoq.DataSources.Git",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+      "sha256": "bec58cd23dbe1c53ae53e34f89fbaaaa2be41c2c9b5fa17c869c89dbb9a43c63"
     },
     {
       "path": "global.json",
@@ -57,15 +57,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "46683c8d49092ad520eaeed98c0f85203e2e0e0bd477547ef11cb16d61a12d7d"
+      "sha256": "14d1674e524500401eb296585559318b73e8d3cee08002d9806888c975d21b8e"
     },
     {
       "path": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
-      "sha256": "6a05a6ff7f4d9524f231d7d6069b7fef8ea1aaf78eea9eaf55d50651065da0c1"
+      "sha256": "bf331af047cbbcafaaf59bb01c4dfc10d0efe88e22de1945b013be4709abbacd"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "b92214134221c943d6dff8da9dcc042802b2adb4e5d2e3b4db2655b908b2582c"
+      "sha256": "7684af4edd91027c518f8cf04a3c94b15e6e6af75c784bb1b9e21537af26c6b4"
     }
   ],
   "packageGraph": [
@@ -101,17 +101,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     }
   ],
@@ -168,8 +168,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1106,
-      "sha256": "7e190ebfc9ae052f376d6c78f623a16e84d8a9cd397f8a98e944e5e433300bad"
+      "size": 1109,
+      "sha256": "89b54f1862a7ecb021a0ac799afdb4037b213a4c6e9e52c209806dfd924a63ed"
     }
   ]
 }

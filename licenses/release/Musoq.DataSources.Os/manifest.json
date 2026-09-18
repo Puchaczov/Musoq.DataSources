@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Os",
   "slug": "os",
-  "version": "9.0.3-alpha.7",
+  "version": "9.0.4-alpha.1",
   "projectPath": "Musoq.DataSources.Os/Musoq.DataSources.Os.csproj",
   "entryProject": "Musoq.DataSources.Os/Musoq.DataSources.Os.csproj",
   "ownPackageId": "Musoq.DataSources.Os",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "2115fa95746717b5be2796d517f98f6c1824a4acb12149f3f0b13d02253a2f1c"
+      "sha256": "bec58cd23dbe1c53ae53e34f89fbaaaa2be41c2c9b5fa17c869c89dbb9a43c63"
     },
     {
       "path": "global.json",
@@ -57,15 +57,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "46683c8d49092ad520eaeed98c0f85203e2e0e0bd477547ef11cb16d61a12d7d"
+      "sha256": "14d1674e524500401eb296585559318b73e8d3cee08002d9806888c975d21b8e"
     },
     {
       "path": "Musoq.DataSources.Os/Musoq.DataSources.Os.csproj",
-      "sha256": "6403494781d8da8e488c6d3380022d14c21461c8f70ec12d68a8125d13e2da14"
+      "sha256": "71e555899572c5c006031e363662f58ebb092f50a439c4e50257d0a67a7d53f3"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "b92214134221c943d6dff8da9dcc042802b2adb4e5d2e3b4db2655b908b2582c"
+      "sha256": "7684af4edd91027c518f8cf04a3c94b15e6e6af75c784bb1b9e21537af26c6b4"
     }
   ],
   "packageGraph": [
@@ -111,17 +111,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.9-alpha.1",
+      "version": "17.0.11-alpha.1",
       "direct": true
     },
     {
@@ -193,8 +193,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1402,
-      "sha256": "a24d7b2255763053352b2ec816ea3434f3dd1c047c8b063653dcd5e827d998c0"
+      "size": 1405,
+      "sha256": "96d05a8148373cbaf7c7b345231b33f9a082217771754094ea54b416e13b7e78"
     },
     {
       "path": "third-party-notices/XmpCore/license.txt",
