@@ -70,6 +70,13 @@ function Get-ReleasePackages {
         $packageId = [string]$package.packageId
         $configuredVersion = [string]$package.version
         $projectPath = [string]$package.projectPath
+        $publishToNuGetProperty = $package.PSObject.Properties['publishToNuGet']
+
+        if ($null -eq $publishToNuGetProperty -or $publishToNuGetProperty.Value -isnot [bool]) {
+            throw "Release package '$packageId' must declare publishToNuGet as a JSON boolean."
+        }
+
+        $publishToNuGet = [bool]$publishToNuGetProperty.Value
 
         if ($slug -notmatch '^[a-z][a-z0-9]*$') {
             throw "Release package registry contains an invalid package slug: $slug"
@@ -114,6 +121,7 @@ function Get-ReleasePackages {
             Version = $configuredVersion
             ProjectPath = $projectPath
             FullProjectPath = $fullProjectPath
+            PublishToNuGet = $publishToNuGet
             ShortName = $metadata.ShortName
             Description = $metadata.Description
             Tags = @($metadata.Tags)
@@ -204,6 +212,7 @@ function Resolve-DatasourceReleaseTag {
         Slug = $package.Slug
         ProjectPath = $package.ProjectPath
         FullProjectPath = $package.FullProjectPath
+        PublishToNuGet = $package.PublishToNuGet
         ShortName = $package.ShortName
         Description = $package.Description
         Tags = @($package.Tags)
@@ -224,6 +233,49 @@ function New-DatasourceReleaseSummary {
         slug = $Release.Slug
         packageId = $Release.PackageId
         projectPath = $Release.ProjectPath
+        publishToNuGet = $Release.PublishToNuGet
+    }
+}
+
+function Invoke-ReleaseNuGetPublication {
+    param(
+        [Parameter(Mandatory=$true)]
+        [bool]$PublishToNuGet,
+        [Parameter(Mandatory=$true)]
+        [string[]]$PackageFiles,
+        [Parameter(Mandatory=$true)]
+        [string]$NuGetSource,
+        [string]$NuGetApiKey = "",
+        [scriptblock]$PushAction = $null
+    )
+
+    if (-not $PublishToNuGet) {
+        Write-Host "NuGet publication disabled for this datasource package; retaining package files as release assets." -ForegroundColor Gray
+        return
+    }
+
+    if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
+        throw "NuGet API key is required for a package configured with publishToNuGet=true."
+    }
+
+    foreach ($packageFile in $PackageFiles) {
+        Write-Host "Publishing $([System.IO.Path]::GetFileName($packageFile)) to NuGet..." -ForegroundColor Cyan
+
+        $exitCode = if ($null -eq $PushAction) {
+            dotnet nuget push $packageFile `
+                --source $NuGetSource `
+                --api-key $NuGetApiKey `
+                --skip-duplicate
+            $LASTEXITCODE
+        }
+        else {
+            $result = & $PushAction $packageFile $NuGetSource $NuGetApiKey
+            if ($null -eq $result) { 0 } else { [int]$result }
+        }
+
+        if ($exitCode -ne 0) {
+            throw "dotnet nuget push failed for $packageFile."
+        }
     }
 }
 

@@ -65,7 +65,7 @@
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7684af4edd91027c518f8cf04a3c94b15e6e6af75c784bb1b9e21537af26c6b4"
+      "sha256": "86077796bc391a0bf32bcdf4f763ec675c7b2c09b828a6ddfab66d0e52108769"
     }
   ],
   "packageGraph": [

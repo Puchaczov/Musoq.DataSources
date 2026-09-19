@@ -38,6 +38,7 @@ jobs:
     outputs:
       is_dry_run: ${{ steps.batch.outputs.is_dry_run }}
       release_count: ${{ steps.batch.outputs.release_count }}
+      requires_nuget: ${{ steps.batch.outputs.requires_nuget }}
 
     steps:
       # actions/checkout@v4.2.2
@@ -107,13 +108,14 @@ jobs:
           New-Item -ItemType Directory -Force -Path artifacts/release | Out-Null
           ConvertTo-Json -InputObject $pending -Depth 10 | Set-Content -Path artifacts/release/release-batch.json -Encoding UTF8
           ConvertTo-Json -InputObject $skipped -Depth 10 | Set-Content -Path artifacts/release/skipped-release-batch.json -Encoding UTF8
+          $requiresNuGet = @($pending | Where-Object { $_.publishToNuGet -eq $true }).Count -gt 0
 
           Write-Host 'Selected releases:'
-          $selected | Format-Table tag, packageId, version, channel -AutoSize
+          $selected | Format-Table tag, packageId, version, channel, publishToNuGet -AutoSize
 
           if ($skipped.Count -gt 0) {
             Write-Host 'Skipped existing releases:'
-            $skipped | Format-Table tag, packageId, version, channel -AutoSize
+            $skipped | Format-Table tag, packageId, version, channel, publishToNuGet -AutoSize
           }
 
           if ($pending.Count -eq 0) {
@@ -130,6 +132,7 @@ jobs:
 
           "is_dry_run=$env:BATCH_DRY_RUN" >> $env:GITHUB_OUTPUT
           "release_count=$($pending.Count)" >> $env:GITHUB_OUTPUT
+          "requires_nuget=$($requiresNuGet.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
       - name: Restore
         run: dotnet restore Musoq.DataSources.sln --nologo
@@ -176,7 +179,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish batch to NuGet and plugin registry
+    name: Publish batch releases and plugin registry
     needs: validate-pack
     if: needs.validate-pack.outputs.is_dry_run == 'false'
     runs-on: windows-latest
@@ -234,6 +237,7 @@ jobs:
           }
 
       - name: Select NuGet credentials
+        if: needs.validate-pack.outputs.requires_nuget == 'true'
         id: nuget-credentials
         shell: pwsh
         env:
@@ -251,7 +255,7 @@ jobs:
 
       # NuGet/login@v1
       - name: NuGet login with Trusted Publishing
-        if: steps.nuget-credentials.outputs.use_trusted_publishing == 'true'
+        if: needs.validate-pack.outputs.requires_nuget == 'true' && steps.nuget-credentials.outputs.use_trusted_publishing == 'true'
         id: nuget-login
         continue-on-error: true
         uses: NuGet/login@ebc737b6fc418a6ca0073cf116ec8dc156d8b81e

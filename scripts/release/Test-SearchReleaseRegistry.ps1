@@ -29,6 +29,7 @@ $search = $searchPackages[0]
 Assert-Condition ($search.Slug -eq "search") "Search must use the canonical release slug."
 Assert-Condition ($search.Version -eq "1.0.1-alpha.1") "Search must use its next patch 1.0.1-alpha.1 version."
 Assert-Condition ($search.ProjectPath -eq "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj") "Search must resolve to the production project path."
+Assert-Condition (-not $search.PublishToNuGet) "Search must be configured as registry-only."
 Assert-Condition (Test-ReleasePluginProject -ProjectPath $search.FullProjectPath) "The registered Search project must contain a production datasource schema."
 
 $excludedRegistryProjects = @($packages | Where-Object {
@@ -69,6 +70,7 @@ Assert-Condition ($batchRelease[0].tag -eq $searchTag) "Batch release selection 
         version = $search.Version
         projectPath = $search.ProjectPath
         releaseTag = $release.Tag
+        publishToNuGet = $search.PublishToNuGet
         targetFramework = $compatibility.targetFramework
         hostPackages = $compatibility.hostPackages
     }

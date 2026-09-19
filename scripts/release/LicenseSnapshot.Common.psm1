@@ -75,6 +75,11 @@ function Get-DatasourcePackageDefinitions {
         $packageId = [string]$entry.packageId
         $version = [string]$entry.version
         $projectPath = [string]$entry.projectPath
+        $publishToNuGetProperty = $entry.PSObject.Properties['publishToNuGet']
+        if ($null -eq $publishToNuGetProperty -or $publishToNuGetProperty.Value -isnot [bool]) {
+            throw "Datasource package '$packageId' must declare publishToNuGet as a JSON boolean."
+        }
+        $publishToNuGet = [bool]$publishToNuGetProperty.Value
         if ($slug -notmatch '^[a-z][a-z0-9]*$') { throw "Invalid datasource package slug '$slug'." }
         if ($packageId -notmatch '^Musoq\.DataSources\.[A-Za-z][A-Za-z0-9]*$') { throw "Invalid datasource package id '$packageId'." }
         if ($version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$') { throw "Invalid datasource package version '$version'." }
@@ -102,6 +107,7 @@ function Get-DatasourcePackageDefinitions {
             packageId = $packageId
             version = $version
             projectPath = $projectPath.Replace('\', '/')
+            publishToNuGet = $publishToNuGet
             fullProjectPath = $fullProjectPath
         }
     }

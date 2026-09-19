@@ -32,22 +32,6 @@ if ($LASTEXITCODE -ne 0) {
     throw "Release smoke test failed for $Tag."
 }
 
-if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
-    $NuGetApiKey = $env:TRUSTED_NUGET_API_KEY
-}
-
-if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
-    $NuGetApiKey = $env:NUGET_MUSOQ_KEY
-}
-
-if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
-    $NuGetApiKey = $env:NUGET_API_KEY
-}
-
-if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
-    throw "NuGet API key is required. Configure Trusted Publishing or NUGET_MUSOQ_KEY."
-}
-
 if (-not [string]::IsNullOrWhiteSpace($TargetCommitish) -and $TargetCommitish -notmatch '^[0-9a-fA-F]{7,40}$') {
     throw "TargetCommitish must be a git commit SHA when supplied."
 }
@@ -174,17 +158,25 @@ if ($releaseExists) {
     }
 }
 
-foreach ($packageFile in $nugetPackageFiles) {
-    Write-Host "Publishing $([System.IO.Path]::GetFileName($packageFile)) to NuGet..." -ForegroundColor Cyan
-    dotnet nuget push $packageFile `
-        --source $NuGetSource `
-        --api-key $NuGetApiKey `
-        --skip-duplicate
+if ($release.PublishToNuGet) {
+    if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
+        $NuGetApiKey = $env:TRUSTED_NUGET_API_KEY
+    }
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "dotnet nuget push failed for $packageFile."
+    if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
+        $NuGetApiKey = $env:NUGET_MUSOQ_KEY
+    }
+
+    if ([string]::IsNullOrWhiteSpace($NuGetApiKey)) {
+        $NuGetApiKey = $env:NUGET_API_KEY
     }
 }
+
+Invoke-ReleaseNuGetPublication `
+    -PublishToNuGet $release.PublishToNuGet `
+    -PackageFiles $nugetPackageFiles `
+    -NuGetSource $NuGetSource `
+    -NuGetApiKey $NuGetApiKey
 
 if ($releaseExists) {
     if ($uploadPaths.Count -gt 0) {

@@ -26,6 +26,7 @@ jobs:
       release_version: ${{ steps.release.outputs.release_version }}
       release_package_id: ${{ steps.release.outputs.release_package_id }}
       release_project_path: ${{ steps.release.outputs.release_project_path }}
+      publish_to_nuget: ${{ steps.release.outputs.publish_to_nuget }}
       is_prerelease: ${{ steps.release.outputs.is_prerelease }}
       is_dry_run: ${{ steps.release.outputs.is_dry_run }}
 
@@ -74,6 +75,7 @@ jobs:
           "release_version=$($summary.version)" >> $env:GITHUB_OUTPUT
           "release_package_id=$($summary.packageId)" >> $env:GITHUB_OUTPUT
           "release_project_path=$($summary.projectPath)" >> $env:GITHUB_OUTPUT
+          "publish_to_nuget=$($summary.publishToNuGet.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
           "is_prerelease=$($summary.isPrerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           "is_dry_run=$isDryRun" >> $env:GITHUB_OUTPUT
@@ -135,7 +137,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish to NuGet and plugin registry
+    name: Publish release and plugin registry
     needs: validate-pack
     if: github.event_name == 'push'
     runs-on: windows-latest
@@ -166,6 +168,7 @@ jobs:
           path: artifacts/release
 
       - name: Select NuGet credentials
+        if: needs.validate-pack.outputs.publish_to_nuget == 'true'
         id: nuget-credentials
         shell: pwsh
         env:
@@ -183,7 +186,7 @@ jobs:
 
       # NuGet/login@v1
       - name: NuGet login with Trusted Publishing
-        if: steps.nuget-credentials.outputs.use_trusted_publishing == 'true'
+        if: needs.validate-pack.outputs.publish_to_nuget == 'true' && steps.nuget-credentials.outputs.use_trusted_publishing == 'true'
         id: nuget-login
         continue-on-error: true
         uses: NuGet/login@ebc737b6fc418a6ca0073cf116ec8dc156d8b81e

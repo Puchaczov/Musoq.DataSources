@@ -441,6 +441,74 @@ function Test-RuntimeV2ReleaseTrain {
     Assert-Equal 0 $excludedProjects.Count "The unified release registry must not include test or benchmark projects."
 }
 
+function Test-OptionalNuGetPublicationPolicy {
+    . "$PSScriptRoot/release/Release.Common.ps1"
+    Set-StrictMode -Off
+
+    $registryPath = Join-Path $PSScriptRoot "release/packages.json"
+    $registry = Get-Content -LiteralPath $registryPath -Raw | ConvertFrom-Json
+    $packages = @($registry.packages)
+
+    Assert-Equal 16 $packages.Count "Publication policy should cover all datasource packages."
+
+    $invalidPolicyEntries = @($packages | Where-Object {
+        $property = $_.PSObject.Properties['publishToNuGet']
+        $null -eq $property -or $property.Value -isnot [bool]
+    })
+    Assert-Equal 0 $invalidPolicyEntries.Count "Every datasource package should declare publishToNuGet as a JSON boolean."
+
+    $search = @($packages | Where-Object packageId -eq 'Musoq.DataSources.Search')
+    Assert-Equal 1 $search.Count "Publication policy should contain exactly one Search package."
+    Assert-Equal $false ([bool]$search[0].publishToNuGet) "Search should be registry-only."
+
+    $registryOnly = @($packages | Where-Object { -not $_.publishToNuGet })
+    $nugetEnabled = @($packages | Where-Object { $_.publishToNuGet })
+    Assert-Equal 1 $registryOnly.Count "Exactly one datasource should be registry-only."
+    Assert-Equal 15 $nugetEnabled.Count "All non-Search datasources should publish to NuGet."
+
+    $definitions = @(Get-ReleasePackages)
+    $searchDefinition = @($definitions | Where-Object PackageId -eq 'Musoq.DataSources.Search')[0]
+    Assert-Equal $false ([bool]$searchDefinition.PublishToNuGet) "Release package parsing should preserve Search=false."
+
+    $searchTag = "$($search[0].version)-$($search[0].packageId)"
+    $searchSummary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag $searchTag -Json | ConvertFrom-Json
+    Assert-Equal $false ([bool]$searchSummary.publishToNuGet) "Release validation should expose Search=false."
+
+    $jsonTag = Get-CurrentJsonReleaseTag
+    $jsonSummary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag $jsonTag -Json | ConvertFrom-Json
+    Assert-Equal $true ([bool]$jsonSummary.publishToNuGet) "Release validation should expose NuGet-enabled packages as true."
+
+    $pushCalls = [Collections.Generic.List[string]]::new()
+    $pushAction = {
+        param($packageFile, $source, $apiKey)
+        [void]$pushCalls.Add("$packageFile|$source|$apiKey")
+        return 0
+    }.GetNewClosure()
+
+    Invoke-ReleaseNuGetPublication `
+        -PublishToNuGet $false `
+        -PackageFiles @('Search.nupkg', 'Search.snupkg') `
+        -NuGetSource 'https://example.invalid' `
+        -PushAction $pushAction
+    Assert-Equal 0 $pushCalls.Count "Registry-only packages should not invoke NuGet pushes."
+
+    Invoke-ReleaseNuGetPublication `
+        -PublishToNuGet $true `
+        -PackageFiles @('Json.nupkg', 'Json.snupkg') `
+        -NuGetSource 'https://example.invalid' `
+        -NuGetApiKey 'test-key' `
+        -PushAction $pushAction
+    Assert-Equal 2 $pushCalls.Count "NuGet-enabled packages should push both package files."
+
+    Assert-Throws {
+        Invoke-ReleaseNuGetPublication `
+            -PublishToNuGet $true `
+            -PackageFiles @('Json.nupkg') `
+            -NuGetSource 'https://example.invalid' `
+            -PushAction $pushAction
+    } "NuGet-enabled packages should reject missing credentials."
+}
+
 function Test-PluginLicenseSnapshotPackagingContracts {
     $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "musoq-license-packaging-test-$([guid]::NewGuid().ToString('N'))"
     try {
@@ -504,6 +572,13 @@ function Test-RoslynReleaseWorkflowGates {
     Assert-True ($workflow -match '\./scripts/Test-PluginReleaseScripts\.ps1') "Datasource releases should execute release-script tests."
     Assert-True ($workflow -match 'Pack four-RID release artifacts') "Datasource releases should identify four-RID packaging as a required gate."
     Assert-True ($workflow -match 'Smoke test four-RID release artifacts') "Datasource releases should identify four-RID smoke verification as a required gate."
+    Assert-True ($workflow -match 'publish_to_nuget') "Datasource releases should expose the package NuGet publication policy."
+    Assert-True ($workflow -match "needs\.validate-pack\.outputs\.publish_to_nuget == 'true'") "Datasource releases should condition NuGet credentials on the package policy."
+
+    $batchWorkflowPath = Join-Path $PSScriptRoot "../.github/workflows/release-datasources-batch.yml"
+    $batchWorkflow = Get-Content -LiteralPath $batchWorkflowPath -Raw
+    Assert-True ($batchWorkflow -match 'requires_nuget') "Batch datasource releases should expose whether selected packages need NuGet."
+    Assert-True ($batchWorkflow -match "needs\.validate-pack\.outputs\.requires_nuget == 'true'") "Batch datasource releases should condition NuGet credentials on selected package policies."
 }
 
 function Test-PluginToolingWorkflowGates {
@@ -679,6 +754,7 @@ Test-PackageVersionTextPreservesPrerelease
 Test-SyntheticRegistryJsonShape
 Test-DatasourceReleaseValidation
 Test-BatchDatasourceReleaseResolution
+Test-OptionalNuGetPublicationPolicy
 Test-PluginCompatibilityManifestGeneration
 Test-PluginArtifactIntegrityMetadata
 Test-PluginLicenseSnapshotPackagingContracts
