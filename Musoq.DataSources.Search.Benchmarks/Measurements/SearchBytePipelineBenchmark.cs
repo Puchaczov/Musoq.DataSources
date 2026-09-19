@@ -21,17 +21,17 @@ public static class SearchBytePipelineMeasurement
         new Workload(
             "exact-signature",
             "Exact CA FE signature without a byte window.",
-            "{\"version\":1,\"bytes\":\"ca fe\"}",
+            "ca fe",
             ParseRecords: false),
         new Workload(
             "masked-signature",
             "Masked CA ?? signature without a byte window.",
-            "{\"version\":1,\"bytes\":\"ca ??\"}",
+            "ca ??",
             ParseRecords: false),
         new Workload(
             "match-to-parse",
             "Masked CA ?? candidates with a bounded parse window.",
-            "{\"version\":1,\"bytes\":\"ca ??\",\"window\":{\"beforeBytes\":0,\"afterBytes\":16}}",
+            "ca ??",
             ParseRecords: true)
     ];
 
@@ -70,7 +70,11 @@ public static class SearchBytePipelineMeasurement
 
         foreach (var workload in Workloads)
         {
-            var pattern = SearchBytePatternParser.Parse(workload.PatternJson);
+            var pattern = SearchBytePatternParser.ParseHex(
+                workload.PatternHex,
+                mask: null,
+                windowBeforeBytes: workload.ParseRecords ? 0 : 0,
+                windowAfterBytes: workload.ParseRecords ? 16 : 0);
             var expected = corpus.GetExpected(pattern, workload.ParseRecords);
             var run = Execute(corpus, pattern, workload.ParseRecords);
             AssertExpected(workload, expected, run);
@@ -84,7 +88,11 @@ public static class SearchBytePipelineMeasurement
         SearchBytePipelineCorpus corpus,
         Workload workload)
     {
-        var pattern = SearchBytePatternParser.Parse(workload.PatternJson);
+        var pattern = SearchBytePatternParser.ParseHex(
+            workload.PatternHex,
+            mask: null,
+            windowBeforeBytes: workload.ParseRecords ? 0 : 0,
+            windowAfterBytes: workload.ParseRecords ? 16 : 0);
         var expected = corpus.GetExpected(pattern, workload.ParseRecords);
         var warmup = Execute(corpus, pattern, workload.ParseRecords);
         AssertExpected(workload, expected, warmup);
@@ -100,7 +108,7 @@ public static class SearchBytePipelineMeasurement
         return new SearchBytePipelineCell(
             workload.Id,
             workload.Description,
-            workload.PatternJson,
+            workload.PatternHex,
             workload.ParseRecords ? "parsed_record" : "byte_occurrence",
             expected.CandidateCount,
             expected.ParsedCount,
@@ -341,7 +349,7 @@ public static class SearchBytePipelineMeasurement
     private sealed record Workload(
         string Id,
         string Description,
-        string PatternJson,
+        string PatternHex,
         bool ParseRecords);
 
     private sealed record RawRow(
@@ -403,7 +411,7 @@ public sealed record SearchBytePipelineCorrectness(
 public sealed record SearchBytePipelineCell(
     string Id,
     string Description,
-    string PatternJson,
+    string PatternHex,
     string ResultUnit,
     int ExpectedCandidates,
     int ExpectedParsedRecords,

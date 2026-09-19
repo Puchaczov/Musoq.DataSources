@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using Musoq.DataSources.Search.Components.Diagnostics;
+using Musoq.DataSources.Search.Components.Testing;
 
 namespace Musoq.DataSources.Search.Components.Text;
 
@@ -28,6 +29,7 @@ internal static class SearchTextReader
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
 
+        SearchTestHooks.BeforeContentOpen(path);
         var stream = new FileStream(
             path,
             FileMode.Open,
@@ -58,7 +60,46 @@ internal static class SearchTextReader
         }
     }
 
-    private static Resolution Resolve(FileStream stream, SearchEncodingMode mode)
+    /// <summary>
+    ///     Opens a bounded in-memory byte snapshot with the same encoding and
+    ///     coordinate rules as a file-backed reader. The supplied array is
+    ///     borrowed until the returned reader is disposed.
+    /// </summary>
+    internal static TextReader Open(byte[] bytes, int length, SearchEncodingMode mode)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+        if (length < 0 || length > bytes.Length)
+            throw new ArgumentOutOfRangeException(nameof(length));
+
+        var stream = new MemoryStream(
+            bytes,
+            index: 0,
+            count: length,
+            writable: false,
+            publiclyVisible: true);
+        try
+        {
+            var resolution = Resolve(stream, mode);
+            stream.Position = resolution.DataOffset;
+            var reader = new StreamReader(
+                stream,
+                resolution.Encoding,
+                detectEncodingFromByteOrderMarks: false,
+                bufferSize: SearchCharBuffer.RequestedLength,
+                leaveOpen: false);
+            return new MappedTextReader(
+                reader,
+                resolution.EncodingKind,
+                resolution.DataOffset);
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
+    }
+
+    private static Resolution Resolve(Stream stream, SearchEncodingMode mode)
     {
         Span<byte> prefix = stackalloc byte[ProbeLength];
         var bytesRead = ReadPrefix(stream, prefix);
@@ -138,7 +179,7 @@ internal static class SearchTextReader
         return new Resolution(encoding, dataOffset, decodedEncoding);
     }
 
-    private static int ReadPrefix(FileStream stream, Span<byte> destination)
+    private static int ReadPrefix(Stream stream, Span<byte> destination)
     {
         var total = 0;
         while (total < destination.Length)
@@ -220,6 +261,7 @@ internal static class SearchTextReader
 
             var reader = _reader ?? throw new ObjectDisposedException(nameof(MappedTextReader));
             var charsRead = reader.Read(buffer, index, count);
+            SearchTestHooks.Checkpoint();
             LastReadCoordinateCount = charsRead;
             if (charsRead == 0)
                 return 0;

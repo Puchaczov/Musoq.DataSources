@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 
 using Musoq.DataSources.Search.Entities;
+using Musoq.DataSources.Search.Components.Contracts;
 using Musoq.DataSources.Search.Components.Diagnostics;
 using Musoq.DataSources.Search.Components.Many;
 using Musoq.DataSources.Search.Components.Text;
@@ -26,11 +27,11 @@ internal sealed record SearchResourceLimits
         long maxTotalBytes = Unlimited,
         long maxFileBytes = Unlimited,
         long maxFiles = Unlimited,
-        int maxPatternCount = SearchManyRequestParser.MaxPatternCount,
+        int maxPatternCount = SearchPatternLimits.MaxPatternCount,
         int maxPatternLength = SearchRegexBackend.MaxPatternLength,
         long maxPatternBytes = DefaultPatternBytes,
         int maxPatternCompilationMilliseconds = 5_000,
-        long maxRecordBytes = SearchRegexScanner.MaxMultilineRecordBytes,
+        long? maxRecordBytes = null,
         long maxContextBytes = SearchContextOptions.MaxContextBytes,
         long maxInFlightOutputBytes = Unlimited,
         long maxMatchCount = Unlimited)
@@ -41,7 +42,7 @@ internal sealed record SearchResourceLimits
         ValidateBounded(
             maxPatternCount,
             1,
-            SearchManyRequestParser.MaxPatternCount,
+            SearchPatternLimits.MaxPatternCount,
             nameof(maxPatternCount));
         ValidateBounded(
             maxPatternLength,
@@ -54,8 +55,9 @@ internal sealed record SearchResourceLimits
             0,
             5_000,
             nameof(maxPatternCompilationMilliseconds));
+        var effectiveMaxRecordBytes = maxRecordBytes ?? SearchRegexScanner.MaxMultilineRecordBytes;
         ValidateBounded(
-            maxRecordBytes,
+            effectiveMaxRecordBytes,
             1,
             SearchRegexScanner.MaxMultilineRecordBytes,
             nameof(maxRecordBytes));
@@ -74,7 +76,8 @@ internal sealed record SearchResourceLimits
         MaxPatternLength = maxPatternLength;
         MaxPatternBytes = maxPatternBytes;
         MaxPatternCompilationMilliseconds = maxPatternCompilationMilliseconds;
-        MaxRecordBytes = maxRecordBytes;
+        MaxRecordBytes = effectiveMaxRecordBytes;
+        HasExplicitMaxRecordBytes = maxRecordBytes is not null;
         MaxContextBytes = maxContextBytes;
         MaxInFlightOutputBytes = maxInFlightOutputBytes;
         MaxMatchCount = maxMatchCount;
@@ -95,6 +98,8 @@ internal sealed record SearchResourceLimits
     public int MaxPatternCompilationMilliseconds { get; }
 
     public long MaxRecordBytes { get; }
+
+    public bool HasExplicitMaxRecordBytes { get; }
 
     public long MaxContextBytes { get; }
 
@@ -409,6 +414,29 @@ internal static class SearchRowSizeEstimator
         }
 
         return bytes;
+    }
+
+    public static long EstimateChunk<T>(System.Collections.Generic.IReadOnlyList<T> rows)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+        long total = 0;
+
+        for (var index = 0; index < rows.Count; index++)
+        {
+            var row = rows[index];
+            var estimate = row switch
+            {
+                SearchMatch match => Estimate(match),
+                SearchByteMatch byteMatch => Estimate(byteMatch),
+                SearchLine line => Estimate(line),
+                SearchFile file => Estimate(file),
+                SearchCount count => Estimate(count),
+                _ => 256L
+            };
+            total = checked(total + Math.Max(1L, estimate));
+        }
+
+        return Math.Max(1L, total);
     }
 
     public static long Estimate(SearchByteMatch row)

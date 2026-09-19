@@ -2,6 +2,7 @@ $script:IgnorePatterns = @(
     "Tests$",
     "\.Tests", 
     "\.Benchmarks", 
+    "\.Testing",
     "Helpers$", 
     "\.Common$", 
     "\.CommandLineArguments$"

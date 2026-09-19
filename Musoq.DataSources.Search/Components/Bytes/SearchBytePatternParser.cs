@@ -1,45 +1,44 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 
 using Musoq.DataSources.Search.Components.Diagnostics;
 using Musoq.DataSources.Search.Components.Text;
 
 namespace Musoq.DataSources.Search.Components.Bytes;
 
+/// <summary>
+///     Compiles the typed hexadecimal byte-pattern contract. JSON is
+///     intentionally not parsed here: the SQL and host APIs provide the
+///     pattern, mask, and window as typed arguments.
+/// </summary>
 internal static class SearchBytePatternParser
 {
-    public const int CurrentVersion = 1;
-
     public const int MaxPatternCharacters = SearchRegexBackend.MaxPatternLength;
 
-    private const int MaxJsonDepth = 8;
-
-    private static readonly UTF8Encoding StrictUtf8 = new(
-        encoderShouldEmitUTF8Identifier: false,
-        throwOnInvalidBytes: true);
-
-    public static SearchBytePattern Parse(string? patternJson)
+    internal static SearchBytePattern ParseHex(
+        string? bytes,
+        string? mask,
+        long windowBeforeBytes = 0,
+        long windowAfterBytes = 0)
     {
-        if (patternJson is null)
+        if (bytes is null)
         {
             throw Invalid(
-                "pattern must be a non-null versioned JSON object",
+                "'patternHex' must be a non-null hexadecimal byte sequence",
                 SearchDiagnosticPhase.Argument);
         }
 
-        if (patternJson.Length == 0 || string.IsNullOrWhiteSpace(patternJson))
+        if (bytes.Length == 0 || string.IsNullOrWhiteSpace(bytes))
         {
             throw Invalid(
-                "pattern must contain one non-empty JSON object",
+                "'patternHex' must contain at least one byte value",
                 SearchDiagnosticPhase.Argument);
         }
 
-        if (patternJson.Length > MaxPatternCharacters)
+        if (bytes.Length > MaxPatternCharacters)
         {
             throw new SearchResourceLimitException(
                 SearchDiagnosticCatalog.ResourceLimit(
@@ -48,337 +47,13 @@ internal static class SearchBytePatternParser
                 budgetCode: "pattern-size");
         }
 
-        byte[] utf8;
-        try
-        {
-            utf8 = StrictUtf8.GetBytes(patternJson);
-        }
-        catch (EncoderFallbackException exception)
-        {
-            throw Invalid(
-                "pattern contains an invalid UTF-16 scalar",
-                SearchDiagnosticPhase.Syntax,
-                innerException: exception);
-        }
-
-        try
-        {
-            return ParseJson(utf8);
-        }
-        catch (SearchPatternException)
-        {
-            throw;
-        }
-        catch (SearchResourceLimitException)
-        {
-            throw;
-        }
-        catch (JsonException exception)
-        {
-            throw Invalid(
-                "pattern is not valid JSON",
-                SearchDiagnosticPhase.Syntax,
-                GetJsonErrorOffset(utf8, exception),
-                1,
-                exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            throw Invalid(
-                "pattern contains a value with an invalid JSON type",
-                SearchDiagnosticPhase.Syntax,
-                innerException: exception);
-        }
-    }
-
-    private static SearchBytePattern ParseJson(ReadOnlySpan<byte> utf8)
-    {
-        var reader = new Utf8JsonReader(
-            utf8,
-            isFinalBlock: true,
-            state: new JsonReaderState(
-                new JsonReaderOptions
-                {
-                    AllowTrailingCommas = false,
-                    CommentHandling = JsonCommentHandling.Disallow,
-                    MaxDepth = MaxJsonDepth
-                }));
-        var names = new HashSet<string>(StringComparer.Ordinal);
-        int? version = null;
-        string? bytes = null;
-        string? mask = null;
-        long windowBeforeBytes = 0;
-        long windowAfterBytes = 0;
-        long versionOffset = 0;
-        long bytesOffset = 0;
-        long maskOffset = 0;
-        var hasEndObject = false;
-
-        if (!reader.Read())
-            throw Invalid("pattern must contain one JSON object", SearchDiagnosticPhase.Syntax);
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw Invalid(
-                "pattern must contain one JSON object, not a JSON scalar or array",
-                SearchDiagnosticPhase.Argument,
-                reader.TokenStartIndex,
-                1);
-        }
-
-        while (reader.Read())
-        {
-            if (reader.TokenType == JsonTokenType.EndObject)
-            {
-                hasEndObject = true;
-                break;
-            }
-
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw Invalid(
-                    "pattern objects may contain only named properties",
-                    SearchDiagnosticPhase.Syntax,
-                    reader.TokenStartIndex,
-                    1);
-            }
-
-            var propertyName = reader.GetString() ?? string.Empty;
-            var propertyOffset = reader.TokenStartIndex;
-            if (!names.Add(propertyName))
-            {
-                throw Invalid(
-                    $"duplicate JSON property '{Display(propertyName)}'",
-                    SearchDiagnosticPhase.Argument,
-                    propertyOffset,
-                    Math.Max(1, propertyName.Length));
-            }
-
-            if (!reader.Read())
-            {
-                throw Invalid(
-                    $"property '{Display(propertyName)}' has no value",
-                    SearchDiagnosticPhase.Syntax,
-                    reader.BytesConsumed,
-                    1);
-            }
-
-            switch (propertyName)
-            {
-                case "version":
-                    versionOffset = propertyOffset;
-                    if (reader.TokenType != JsonTokenType.Number ||
-                        !reader.TryGetInt32(out var parsedVersion))
-                    {
-                        throw Invalid(
-                            "'version' must be an integer",
-                            SearchDiagnosticPhase.Argument,
-                            propertyOffset,
-                            1);
-                    }
-
-                    version = parsedVersion;
-                    break;
-                case "bytes":
-                    bytesOffset = propertyOffset;
-                    bytes = ReadString(
-                        ref reader,
-                        "'bytes'",
-                        propertyOffset);
-                    break;
-                case "mask":
-                    maskOffset = propertyOffset;
-                    mask = ReadString(
-                        ref reader,
-                        "'mask'",
-                        propertyOffset);
-                    break;
-                case "window":
-                    (windowBeforeBytes, windowAfterBytes) = ReadWindow(
-                        ref reader,
-                        propertyOffset);
-                    break;
-                case "endianness":
-                    throw Invalid(
-                        "'endianness' is not supported; byte patterns are byte-order neutral, so encode bytes in scan order and no conversion is applied",
-                        SearchDiagnosticPhase.Argument,
-                        propertyOffset,
-                        1);
-                default:
-                    throw Invalid(
-                        $"unknown property '{Display(propertyName)}'; only 'version', 'bytes', optional 'mask' and optional 'window' are supported",
-                        SearchDiagnosticPhase.Argument,
-                        propertyOffset,
-                        Math.Max(1, propertyName.Length));
-            }
-        }
-
-        if (!hasEndObject)
-        {
-            throw Invalid(
-                "pattern object ended before the JSON value was complete",
-                SearchDiagnosticPhase.Syntax,
-                reader.BytesConsumed,
-                1);
-        }
-
-        if (reader.Read())
-        {
-            throw Invalid(
-                "pattern must contain exactly one JSON object",
-                SearchDiagnosticPhase.Syntax,
-                reader.TokenStartIndex,
-                1);
-        }
-
-        if (version is null)
-        {
-            throw Invalid(
-                "'version' is required",
-                SearchDiagnosticPhase.Argument,
-                0,
-                1);
-        }
-
-        if (version.Value != CurrentVersion)
-        {
-            throw Invalid(
-                $"'version' must be {CurrentVersion}",
-                SearchDiagnosticPhase.Argument,
-                versionOffset,
-                1);
-        }
-
-        if (bytes is null)
-        {
-            throw Invalid(
-                "'bytes' is required",
-                SearchDiagnosticPhase.Argument,
-                0,
-                1);
-        }
-
         return Compile(
             bytes,
-            bytesOffset,
+            bytesOffset: 0,
             mask,
-            maskOffset,
+            maskOffset: 0,
             windowBeforeBytes,
             windowAfterBytes);
-    }
-
-    private static (long BeforeBytes, long AfterBytes) ReadWindow(
-        ref Utf8JsonReader reader,
-        long propertyOffset)
-    {
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw Invalid(
-                "'window' must be an object with non-negative 'beforeBytes' and 'afterBytes' integers",
-                SearchDiagnosticPhase.Argument,
-                propertyOffset,
-                1);
-        }
-
-        var names = new HashSet<string>(StringComparer.Ordinal);
-        long beforeBytes = 0;
-        long afterBytes = 0;
-        var hasEndObject = false;
-
-        while (reader.Read())
-        {
-            if (reader.TokenType == JsonTokenType.EndObject)
-            {
-                hasEndObject = true;
-                break;
-            }
-
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw Invalid(
-                    "'window' may contain only named properties",
-                    SearchDiagnosticPhase.Syntax,
-                    reader.TokenStartIndex,
-                    1);
-            }
-
-            var propertyName = reader.GetString() ?? string.Empty;
-            var nestedOffset = reader.TokenStartIndex;
-            if (!names.Add(propertyName))
-            {
-                throw Invalid(
-                    $"duplicate JSON property 'window.{Display(propertyName)}'",
-                    SearchDiagnosticPhase.Argument,
-                    nestedOffset,
-                    Math.Max(1, propertyName.Length));
-            }
-
-            if (!reader.Read())
-            {
-                throw Invalid(
-                    $"property 'window.{Display(propertyName)}' has no value",
-                    SearchDiagnosticPhase.Syntax,
-                    reader.BytesConsumed,
-                    1);
-            }
-
-            if (propertyName is not "beforeBytes" and not "afterBytes")
-            {
-                throw Invalid(
-                    $"unknown window property '{Display(propertyName)}'; only 'beforeBytes' and 'afterBytes' are supported",
-                    SearchDiagnosticPhase.Argument,
-                    nestedOffset,
-                    Math.Max(1, propertyName.Length));
-            }
-
-            if (reader.TokenType != JsonTokenType.Number ||
-                !reader.TryGetInt64(out var parsedValue) ||
-                parsedValue < 0)
-            {
-                throw Invalid(
-                    $"'window.{Display(propertyName)}' must be a non-negative integer",
-                    SearchDiagnosticPhase.Argument,
-                    nestedOffset,
-                    1);
-            }
-
-            if (propertyName == "beforeBytes")
-                beforeBytes = parsedValue;
-            else
-                afterBytes = parsedValue;
-        }
-
-        if (!hasEndObject)
-        {
-            throw Invalid(
-                "'window' ended before its JSON object was complete",
-                SearchDiagnosticPhase.Syntax,
-                reader.BytesConsumed,
-                1);
-        }
-
-        return (beforeBytes, afterBytes);
-    }
-
-    private static string ReadString(
-        ref Utf8JsonReader reader,
-        string property,
-        long propertyOffset)
-    {
-        if (reader.TokenType != JsonTokenType.String)
-        {
-            throw Invalid(
-                $"{property} must be a string",
-                SearchDiagnosticPhase.Argument,
-                propertyOffset,
-                1);
-        }
-
-        return reader.GetString() ??
-               throw Invalid(
-                   $"{property} must not be null",
-                   SearchDiagnosticPhase.Argument,
-                   propertyOffset,
-                   1);
     }
 
     private static SearchBytePattern Compile(
@@ -425,7 +100,8 @@ internal static class SearchBytePatternParser
                     "'bytes' wildcard nibbles and an explicit 'mask' cannot be combined",
                     SearchDiagnosticPhase.Argument,
                     maskOffset,
-                    1);
+                    1,
+                    argumentName: "options.maskHex");
             }
 
             var normalizedMask = NormalizeHexText(maskText, "mask", maskOffset);
@@ -435,7 +111,8 @@ internal static class SearchBytePatternParser
                     $"'mask' must contain exactly {patternBytes.Length} byte values to match 'bytes'",
                     SearchDiagnosticPhase.Argument,
                     maskOffset,
-                    Math.Max(1, normalizedMask.Length));
+                    Math.Max(1, normalizedMask.Length),
+                    argumentName: "options.maskHex");
             }
 
             for (var index = 0; index < masks.Length; index++)
@@ -486,7 +163,8 @@ internal static class SearchBytePatternParser
                 $"'{field}' must contain at least one byte value",
                 SearchDiagnosticPhase.Argument,
                 fieldOffset,
-                1);
+                1,
+                argumentName: field == "mask" ? "options.maskHex" : "patternHex");
         }
 
         if (builder.ToString().StartsWith("0x", StringComparison.OrdinalIgnoreCase))
@@ -495,7 +173,8 @@ internal static class SearchBytePatternParser
                 $"'{field}' must be an explicit byte string; the 0x prefix is not accepted",
                 SearchDiagnosticPhase.Argument,
                 fieldOffset,
-                2);
+                2,
+                argumentName: field == "mask" ? "options.maskHex" : "patternHex");
         }
 
         if ((builder.Length & 1) != 0)
@@ -504,7 +183,8 @@ internal static class SearchBytePatternParser
                 $"'{field}' must contain an even number of hex nibbles, with two nibbles per byte",
                 SearchDiagnosticPhase.Argument,
                 fieldOffset,
-                Math.Max(1, builder.Length));
+                Math.Max(1, builder.Length),
+                argumentName: field == "mask" ? "options.maskHex" : "patternHex");
         }
 
         return builder.ToString();
@@ -541,7 +221,8 @@ internal static class SearchBytePatternParser
             $"'{field}' contains invalid hex nibble '{SearchDiagnosticText.Display(character.ToString())}' at nibble {nibbleIndex.ToString(CultureInfo.InvariantCulture)}",
             SearchDiagnosticPhase.Argument,
             fieldOffset,
-            1);
+            1,
+            argumentName: field == "mask" ? "options.maskHex" : "patternHex");
     }
 
     private static SearchPatternException Invalid(
@@ -549,35 +230,16 @@ internal static class SearchBytePatternParser
         SearchDiagnosticPhase phase,
         long? offset = null,
         long? length = null,
+        string argumentName = "patternHex",
         Exception? innerException = null)
     {
         return new SearchPatternException(
-            SearchDiagnosticCatalog.InvalidBytePattern(reason, phase, offset, length),
+            SearchDiagnosticCatalog.InvalidBytePattern(
+                reason,
+                phase,
+                offset,
+                length,
+                argumentName),
             innerException);
-    }
-
-    private static long GetJsonErrorOffset(
-        ReadOnlySpan<byte> json,
-        JsonException exception)
-    {
-        var line = exception.LineNumber.GetValueOrDefault();
-        var position = exception.BytePositionInLine.GetValueOrDefault();
-        var offset = 0L;
-
-        for (var currentLine = 0L; currentLine < line; currentLine++)
-        {
-            var newline = json[(int)Math.Min(offset, json.Length)..].IndexOf((byte)'\n');
-            if (newline < 0)
-                return Math.Min(json.Length, offset + position);
-
-            offset += newline + 1L;
-        }
-
-        return Math.Min(json.Length, offset + position);
-    }
-
-    private static string Display(string value)
-    {
-        return SearchDiagnosticText.Display(value);
     }
 }

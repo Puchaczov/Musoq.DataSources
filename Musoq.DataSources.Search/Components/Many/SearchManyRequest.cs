@@ -12,8 +12,6 @@ namespace Musoq.DataSources.Search.Components.Many;
 
 internal sealed record SearchManyRequest
 {
-    public const int CurrentVersion = 1;
-
     public SearchManyRequest(
         IEnumerable<SearchManyPattern> patterns,
         SearchManyOptions? options = null)
@@ -21,19 +19,17 @@ internal sealed record SearchManyRequest
         ArgumentNullException.ThrowIfNull(patterns);
 
         var copy = patterns.ToArray();
-        if (copy.Length == 0 || copy.Length > SearchManyRequestParser.MaxPatternCount)
+        if (copy.Length == 0 || copy.Length > SearchPatternLimits.MaxPatternCount)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(patterns),
-                $"A many request must contain 1 to {SearchManyRequestParser.MaxPatternCount} patterns.");
+                $"A many request must contain 1 to {SearchPatternLimits.MaxPatternCount} patterns.");
         }
 
         Options = options ?? SearchManyOptions.Default;
         Options.Limits.ValidatePatternSet(copy);
         Patterns = Array.AsReadOnly(copy);
     }
-
-    public int Version => CurrentVersion;
 
     public IReadOnlyList<SearchManyPattern> Patterns { get; }
 
@@ -72,7 +68,9 @@ internal sealed record SearchManyOptions
         SearchPartialPolicy partialPolicy = SearchPartialPolicy.Reject,
         SearchValidationMode validation = SearchValidationMode.FullInput,
         ScopePolicy? scope = null,
-        SearchResourceLimits? limits = null)
+        SearchResourceLimits? limits = null,
+        bool? maxRecordBytesExplicit = null,
+        SearchContextOptions? context = null)
     {
         CaseMode = caseMode;
         WholeWord = wholeWord;
@@ -83,6 +81,10 @@ internal sealed record SearchManyOptions
         Validation = validation;
         Scope = scope ?? ScopePolicy.Default;
         Limits = limits ?? SearchResourceLimits.Default;
+        HasExplicitMaxRecordBytes = maxRecordBytesExplicit ??
+                                    (limits is not null &&
+                                     limits.HasExplicitMaxRecordBytes);
+        Context = context ?? SearchContextOptions.Disabled;
     }
 
     public SearchCaseMode CaseMode { get; }
@@ -102,6 +104,10 @@ internal sealed record SearchManyOptions
     public ScopePolicy Scope { get; }
 
     public SearchResourceLimits Limits { get; }
+
+    public bool HasExplicitMaxRecordBytes { get; }
+
+    public SearchContextOptions Context { get; }
 }
 
 internal enum SearchSelectionMode

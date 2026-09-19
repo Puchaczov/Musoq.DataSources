@@ -26,6 +26,7 @@ internal sealed class SearchManyLiteralMatcher : ISearchTextMatcher
     private readonly char[] _matchCharacters;
     private readonly SearchCaseMode _caseMode;
     private readonly bool _wholeWord;
+    private readonly bool _retainMatchText;
     private readonly int _coordinateRingLength;
 
     private readonly List<PendingMatch> _pendingMatches = [];
@@ -38,74 +39,27 @@ internal sealed class SearchManyLiteralMatcher : ISearchTextMatcher
     private SearchCharCoordinate _deferredCoordinate;
 
     public SearchManyLiteralMatcher(SearchManyRequest request)
+        : this(LiteralPlan.Create(request), retainMatchText: true)
     {
-        ArgumentNullException.ThrowIfNull(request);
+    }
 
-        if (request.Options.Selection != SearchSelectionMode.LeftmostFirstNonOverlapping)
-        {
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidManyRequest(
-                    "options.selection is not supported by the literal matcher",
-                    SearchDiagnosticPhase.Argument));
-        }
-
-        if (request.Options.CaseMode is not SearchCaseMode.Sensitive and not SearchCaseMode.Insensitive)
-        {
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidManyRequest(
-                    "options.case is not supported by the literal matcher",
-                    SearchDiagnosticPhase.Argument));
-        }
-
-        if (request.Options.Take is not null ||
-            request.Options.PartialPolicy != SearchPartialPolicy.Reject ||
-            request.Options.Validation != SearchValidationMode.FullInput)
-        {
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidManyRequest(
-                    "options.take, options.partialPolicy=allow and options.validation=observed-prefix require the later completion surface",
-                    SearchDiagnosticPhase.Argument));
-        }
-
-        var patterns = new Pattern[request.Patterns.Count];
-        var maximumPatternLength = 0;
-        for (var index = 0; index < request.Patterns.Count; index++)
-        {
-            var pattern = request.Patterns[index];
-            if (pattern.Mode != SearchPatternMode.Literal)
-            {
-                throw new SearchRequestException(
-                    SearchDiagnosticCatalog.InvalidManyRequest(
-                        $"patterns[{index}].mode '{pattern.Mode}' is not supported by the literal matcher",
-                        SearchDiagnosticPhase.Argument));
-            }
-
-            if (pattern.Pattern.Length == 0)
-            {
-                throw new SearchRequestException(
-                    SearchDiagnosticCatalog.InvalidManyRequest(
-                        $"patterns[{index}].pattern must not be empty",
-                        SearchDiagnosticPhase.Argument));
-            }
-
-            patterns[index] = new Pattern(
-                pattern.Id,
-                pattern.Pattern,
-                Normalize(pattern.Pattern, request.Options.CaseMode),
-                pattern.Pattern.IndexOf('\n') < 0);
-            maximumPatternLength = Math.Max(maximumPatternLength, pattern.Pattern.Length);
-        }
-
+    internal SearchManyLiteralMatcher(
+        LiteralPlan plan,
+        bool retainMatchText)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        var patterns = plan.Patterns;
         _patterns = patterns;
-        _caseMode = request.Options.CaseMode;
-        _wholeWord = request.Options.WholeWord;
+        _caseMode = plan.CaseMode;
+        _wholeWord = plan.WholeWord;
+        _retainMatchText = retainMatchText;
         _nextAllowedStarts = new long[patterns.Length];
-        _coordinateRingLength = Math.Max(1, maximumPatternLength);
+        _coordinateRingLength = Math.Max(1, plan.MaximumPatternLength);
         _matchStartLines = new long[_coordinateRingLength];
         _matchStartColumns = new long[_coordinateRingLength];
         _matchCoordinates = new SearchCharCoordinate[_coordinateRingLength];
-        _matchCharacters = new char[checked(maximumPatternLength + 2)];
-        _nodes = BuildTrie(patterns);
+        _matchCharacters = new char[checked(plan.MaximumPatternLength + 2)];
+        _nodes = plan.Nodes;
     }
 
     // These structural counters are an internal measurement seam for the
@@ -333,7 +287,11 @@ internal sealed class SearchManyLiteralMatcher : ISearchTextMatcher
             null)
         {
             PatternId = pattern.Id,
-            MatchText = pattern.Text
+            MatchText = _retainMatchText
+                ? _caseMode == SearchCaseMode.Sensitive
+                    ? pattern.Text
+                    : ReadMatchText(start, pattern.Length)
+                : null
         };
 
         if (TryCreateByteRangeFromRing(
@@ -588,6 +546,117 @@ internal sealed class SearchManyLiteralMatcher : ISearchTextMatcher
         return _matchCharacters[(int)(position % _matchCharacters.Length)];
     }
 
+    private string ReadMatchText(long start, int length)
+    {
+        var characters = new char[length];
+        for (var index = 0; index < length; index++)
+        {
+            characters[index] = _matchCharacters[
+                (int)((start + index) % _matchCharacters.Length)];
+        }
+
+        return new string(characters);
+    }
+
+    /// <summary>
+    ///     Immutable compiled data shared by all file-local matcher cursors.
+    ///     The cursor arrays remain in SearchManyLiteralMatcher because they
+    ///     contain mutable offsets and boundary state.
+    /// </summary>
+    internal sealed class LiteralPlan
+    {
+        private LiteralPlan(
+            Pattern[] patterns,
+            TrieNode[] nodes,
+            SearchCaseMode caseMode,
+            bool wholeWord,
+            int maximumPatternLength)
+        {
+            Patterns = patterns;
+            Nodes = nodes;
+            CaseMode = caseMode;
+            WholeWord = wholeWord;
+            MaximumPatternLength = maximumPatternLength;
+        }
+
+        internal Pattern[] Patterns { get; }
+
+        internal TrieNode[] Nodes { get; }
+
+        internal SearchCaseMode CaseMode { get; }
+
+        internal bool WholeWord { get; }
+
+        internal int MaximumPatternLength { get; }
+
+        internal static LiteralPlan Create(SearchManyRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (request.Options.Selection != SearchSelectionMode.LeftmostFirstNonOverlapping)
+            {
+                throw new SearchRequestException(
+                    SearchDiagnosticCatalog.InvalidManyInput(
+                        "options.selection is not supported by the literal matcher",
+                        SearchDiagnosticPhase.Argument));
+            }
+
+            if (request.Options.CaseMode is not SearchCaseMode.Sensitive and not SearchCaseMode.Insensitive)
+            {
+                throw new SearchRequestException(
+                    SearchDiagnosticCatalog.InvalidManyInput(
+                        "options.case is not supported by the literal matcher",
+                        SearchDiagnosticPhase.Argument));
+            }
+
+            if (request.Options.Take is not null ||
+                request.Options.PartialPolicy != SearchPartialPolicy.Reject ||
+                request.Options.Validation != SearchValidationMode.FullInput)
+            {
+                throw new SearchRequestException(
+                    SearchDiagnosticCatalog.InvalidManyInput(
+                        "options.take, options.partialPolicy=allow and options.validation=observed-prefix require the later completion surface",
+                        SearchDiagnosticPhase.Argument));
+            }
+
+            var patterns = new Pattern[request.Patterns.Count];
+            var maximumPatternLength = 0;
+            for (var index = 0; index < request.Patterns.Count; index++)
+            {
+                var pattern = request.Patterns[index];
+                if (pattern.Mode != SearchPatternMode.Literal)
+                {
+                    throw new SearchRequestException(
+                        SearchDiagnosticCatalog.InvalidManyInput(
+                            $"patterns[{index}].mode '{pattern.Mode}' is not supported by the literal matcher",
+                            SearchDiagnosticPhase.Argument));
+                }
+
+                if (pattern.Pattern.Length == 0)
+                {
+                    throw new SearchRequestException(
+                        SearchDiagnosticCatalog.InvalidManyInput(
+                            $"patterns[{index}].pattern must not be empty",
+                            SearchDiagnosticPhase.Argument));
+                }
+
+                patterns[index] = new Pattern(
+                    pattern.Id,
+                    pattern.Pattern,
+                    Normalize(pattern.Pattern, request.Options.CaseMode),
+                    pattern.Pattern.IndexOf('\n') < 0);
+                maximumPatternLength = Math.Max(maximumPatternLength, pattern.Pattern.Length);
+            }
+
+            return new LiteralPlan(
+                patterns,
+                BuildTrie(patterns),
+                request.Options.CaseMode,
+                request.Options.WholeWord,
+                maximumPatternLength);
+        }
+    }
+
     private static TrieNode[] BuildTrie(Pattern[] patterns)
     {
         var nodes = new List<TrieNode> { new() };
@@ -677,7 +746,7 @@ internal sealed class SearchManyLiteralMatcher : ISearchTextMatcher
             : char.ToUpperInvariant(value);
     }
 
-    private sealed class TrieNode
+    internal sealed class TrieNode
     {
         public Dictionary<char, int> Transitions { get; } = [];
 
@@ -686,7 +755,7 @@ internal sealed class SearchManyLiteralMatcher : ISearchTextMatcher
         public List<int> Outputs { get; } = [];
     }
 
-    private readonly record struct Pattern(
+    internal readonly record struct Pattern(
         string Id,
         string Text,
         string NormalizedText,

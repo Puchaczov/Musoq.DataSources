@@ -62,8 +62,7 @@ public sealed class SearchByteSourceTests
             Directory.CreateDirectory(root);
             var payload = new byte[] { 0x11, 0x02, 0x00, 0x03, 0x04, 0x02, 0x00, 0x03, 0x04, 0x99 };
             File.WriteAllBytes(path, payload);
-            var pattern = SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"02 00 03 04\"}");
+            var pattern = SearchBytePatternParser.ParseHex("02 00 03 04", mask: null);
 
             var matches = Scan(path, pattern, blockSize: 3);
             var expected = Oracle(payload, pattern);
@@ -94,8 +93,7 @@ public sealed class SearchByteSourceTests
             Directory.CreateDirectory(root);
             var payload = new byte[] { 0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6, 0x07 };
             File.WriteAllBytes(path, payload);
-            var pattern = SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"?? ?? ??\"}");
+            var pattern = SearchBytePatternParser.ParseHex("?? ?? ??", mask: null);
 
             var matches = Scan(path, pattern, blockSize: 4);
 
@@ -121,8 +119,7 @@ public sealed class SearchByteSourceTests
             Directory.CreateDirectory(root);
             var payload = new byte[] { 0xA0, 0xB1, 0xC2, 0xB1, 0xC2 };
             File.WriteAllBytes(path, payload);
-            var pattern = SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"b1 c2\",\"window\":{\"beforeBytes\":2,\"afterBytes\":2}}");
+            var pattern = SearchBytePatternParser.ParseHex("b1 c2", null, 2, 2);
 
             var matches = ScanWindows(path, pattern, blockSize: 3);
 
@@ -167,8 +164,7 @@ public sealed class SearchByteSourceTests
             overlapPayload[23] = 0xAB;
             overlapPayload[24] = 0xCD;
             File.WriteAllBytes(overlapPath, overlapPayload);
-            var overlapPattern = SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"ab cd\",\"window\":{\"beforeBytes\":4,\"afterBytes\":4}}");
+            var overlapPattern = SearchBytePatternParser.ParseHex("ab cd", null, 4, 4);
 
             var overlapMatches = ScanWindows(overlapPath, overlapPattern, blockSize: 5);
 
@@ -186,8 +182,7 @@ public sealed class SearchByteSourceTests
             var largePayload = new byte[200_000];
             largePayload[100_000] = 0x7A;
             File.WriteAllBytes(largePath, largePayload);
-            var largePattern = SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"7a\",\"window\":{\"beforeBytes\":60000,\"afterBytes\":60000}}");
+            var largePattern = SearchBytePatternParser.ParseHex("7a", null, 60000, 60000);
 
             var largeMatches = ScanWindows(largePath, largePattern, blockSize: 4096);
 
@@ -210,7 +205,7 @@ public sealed class SearchByteSourceTests
     {
         var root = CreateTemporaryRoot();
         var path = Path.Combine(root, "payload.bin");
-        const string request = "{\"version\":1,\"bytes\":\"00 ff\"}";
+        const string patternHex = "00 ff";
 
         try
         {
@@ -219,7 +214,7 @@ public sealed class SearchByteSourceTests
 
             var directSource = new SearchBytesSource(
                     root,
-                    request,
+                    SearchBytePatternParser.ParseHex(patternHex, mask: null),
                     RuntimeV2TestContexts.CreateExecutionContext());
             var directRows = directSource
                 .Chunks
@@ -240,7 +235,7 @@ public sealed class SearchByteSourceTests
             var escapedRoot = root.Replace("\\", "\\\\", StringComparison.Ordinal);
             var result = InstanceCreatorHelpers.CompileForExecution(
                     $"select Path, MatchIndex, ByteOffset, ByteLength " +
-                    $"from search.bytes('{escapedRoot}', '{request}') b " +
+                    $"from search.bytes('{escapedRoot}', '{patternHex}') b " +
                     "order by ByteOffset",
                     Guid.NewGuid().ToString(),
                     new SearchSchemaProvider(),
@@ -270,7 +265,7 @@ public sealed class SearchByteSourceTests
     {
         var root = CreateTemporaryRoot();
         var path = Path.Combine(root, "payload.bin");
-        const string request = "{\"version\":1,\"bytes\":\"00 ff\",\"window\":{\"beforeBytes\":1,\"afterBytes\":2}}";
+        const string patternHex = "00 ff";
 
         try
         {
@@ -279,7 +274,7 @@ public sealed class SearchByteSourceTests
 
             var directSource = new SearchBytesSource(
                 root,
-                request,
+                SearchBytePatternParser.ParseHex(patternHex, null, 1, 2),
                 RuntimeV2TestContexts.CreateExecutionContext());
             var directRows = directSource.Chunks.SelectMany(static chunk => chunk).ToArray();
 
@@ -300,7 +295,8 @@ public sealed class SearchByteSourceTests
             var escapedRoot = root.Replace("\\", "\\\\", StringComparison.Ordinal);
             var result = InstanceCreatorHelpers.CompileForExecution(
                     $"select ByteOffset, WindowStartByteOffset, WindowByteLength, WindowComplete " +
-                    $"from search.bytes('{escapedRoot}', '{request}') b " +
+                    $"from search.bytes('{escapedRoot}', '{patternHex}', " +
+                    "(Window: (BeforeBytes: 1, AfterBytes: 2))) b " +
                     "order by ByteOffset",
                     Guid.NewGuid().ToString(),
                     new SearchSchemaProvider(),

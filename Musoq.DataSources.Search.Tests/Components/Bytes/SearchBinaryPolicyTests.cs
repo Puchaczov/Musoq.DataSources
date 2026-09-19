@@ -128,7 +128,8 @@ public sealed class SearchBinaryPolicyTests
             Assert.AreEqual(1, rows.Length);
             Assert.AreEqual("visible.txt", rows[0].Path);
             Assert.AreEqual(1L, counters.BinaryFilesSkipped);
-            Assert.AreEqual(3L, counters.ContentOpenAttempts);
+            // Small files are classified and scanned from the same byte snapshot.
+            Assert.AreEqual(2L, counters.ContentOpenAttempts);
         }
         finally
         {

@@ -11,120 +11,86 @@ namespace Musoq.DataSources.Search.Tests.Components.Bytes;
 public sealed class SearchBytePatternTests
 {
     [TestMethod]
-    public void Parse_ShouldCompileExactBytesWithAnImplicitFullMask()
+    public void ParseHex_ShouldCompileExactBytesWithAnImplicitFullMask()
     {
-        var pattern = SearchBytePatternParser.Parse(
-            "{\"version\":1,\"bytes\":\"48 8b c0\"}");
+        var pattern = SearchBytePatternParser.ParseHex("48 8b c0", mask: null);
 
         CollectionAssert.AreEqual(new byte[] { 0x48, 0x8B, 0xC0 }, pattern.Bytes.ToArray());
         CollectionAssert.AreEqual(new byte[] { 0xFF, 0xFF, 0xFF }, pattern.Masks.ToArray());
     }
 
     [TestMethod]
-    public void Parse_ShouldCompileNibbleWildcardsIntoBitMasks()
+    public void ParseHex_ShouldCompileNibbleWildcardsIntoBitMasks()
     {
-        var pattern = SearchBytePatternParser.Parse(
-            "{\"version\":1,\"bytes\":\"4? ?f ??\"}");
+        var pattern = SearchBytePatternParser.ParseHex("4? ?f ??", mask: null);
 
         CollectionAssert.AreEqual(new byte[] { 0x40, 0x0F, 0x00 }, pattern.Bytes.ToArray());
         CollectionAssert.AreEqual(new byte[] { 0xF0, 0x0F, 0x00 }, pattern.Masks.ToArray());
     }
 
     [TestMethod]
-    public void Parse_ShouldCompileAnExplicitNibbleMask()
+    public void ParseHex_ShouldCompileAnExplicitNibbleMask()
     {
-        var pattern = SearchBytePatternParser.Parse(
-            "{\"version\":1,\"bytes\":\"4f 90\",\"mask\":\"f0 0f\"}");
+        var pattern = SearchBytePatternParser.ParseHex("4f 90", "f0 0f");
 
         CollectionAssert.AreEqual(new byte[] { 0x4F, 0x90 }, pattern.Bytes.ToArray());
         CollectionAssert.AreEqual(new byte[] { 0xF0, 0x0F }, pattern.Masks.ToArray());
     }
 
     [TestMethod]
-    public void Parse_ShouldRejectOddHexDigitsWithAnActionableDiagnostic()
+    public void ParseHex_ShouldRejectOddHexDigitsWithAnActionableDiagnostic()
     {
         var exception = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse("{\"version\":1,\"bytes\":\"ABC\"}"));
+            SearchBytePatternParser.ParseHex("ABC", mask: null));
 
         Assert.AreEqual(SearchDiagnosticCodes.InvalidBytePattern, exception.Diagnostic.Code);
         Assert.AreEqual(SearchDiagnosticPhase.Argument, exception.Diagnostic.Phase);
-        Assert.AreEqual("pattern", exception.Diagnostic.Location?.ArgumentName);
+        Assert.AreEqual("patternHex", exception.Diagnostic.Location?.ArgumentName);
         StringAssert.Contains(exception.Diagnostic.Explanation, "even number of hex nibbles");
-        StringAssert.Contains(exception.Diagnostic.SuggestedFix, "explicit even-length hex");
     }
 
     [TestMethod]
-    public void Parse_ShouldRejectInvalidBytesAndNumericLikePrefixes()
+    public void ParseHex_ShouldRejectInvalidBytesNumericLikePrefixesAndJsonShapedInput()
     {
         var invalid = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse("{\"version\":1,\"bytes\":\"GG\"}"));
+            SearchBytePatternParser.ParseHex("GG", mask: null));
         StringAssert.Contains(invalid.Diagnostic.Explanation, "invalid hex nibble");
 
         var numericLike = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse("{\"version\":1,\"bytes\":\"0x90\"}"));
+            SearchBytePatternParser.ParseHex("0x90", mask: null));
         StringAssert.Contains(numericLike.Diagnostic.Explanation, "0x prefix is not accepted");
 
-        var numeric = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse("{\"version\":1,\"bytes\":144}"));
-        StringAssert.Contains(numeric.Diagnostic.Explanation, "'bytes' must be a string");
+        var jsonShaped = Assert.ThrowsException<SearchPatternException>(() =>
+            SearchBytePatternParser.ParseHex("{\"bytes\":\"90\"}", mask: null));
+        StringAssert.Contains(jsonShaped.Diagnostic.Explanation, "invalid hex nibble");
     }
 
     [TestMethod]
-    public void Parse_ShouldRejectEmptyPatternsAndPreserveAllWildcardMasks()
+    public void ParseHex_ShouldRejectEmptyPatternsAndPreserveAllWildcardMasks()
     {
         var empty = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse("{\"version\":1,\"bytes\":\"   \"}"));
+            SearchBytePatternParser.ParseHex("   ", mask: null));
         StringAssert.Contains(empty.Diagnostic.Explanation, "at least one byte value");
 
-        var wildcardOnly = SearchBytePatternParser.Parse(
-            "{\"version\":1,\"bytes\":\"??\"}");
+        var wildcardOnly = SearchBytePatternParser.ParseHex("??", mask: null);
         CollectionAssert.AreEqual(new byte[] { 0x00 }, wildcardOnly.Bytes.ToArray());
         CollectionAssert.AreEqual(new byte[] { 0x00 }, wildcardOnly.Masks.ToArray());
     }
 
     [TestMethod]
-    public void Parse_ShouldRejectConflictingWildcardAndExplicitMaskOptions()
+    public void ParseHex_ShouldRejectConflictingWildcardAndExplicitMaskOptions()
     {
         var exception = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"4? 90\",\"mask\":\"f0 ff\"}"));
+            SearchBytePatternParser.ParseHex("4? 90", "f0 ff"));
 
         StringAssert.Contains(exception.Diagnostic.Explanation, "cannot be combined");
-        Assert.AreEqual("pattern", exception.Diagnostic.Location?.ArgumentName);
+        Assert.AreEqual("options.maskHex", exception.Diagnostic.Location?.ArgumentName);
     }
 
     [TestMethod]
-    public void Parse_ShouldRejectConflictingEndiannessOption()
+    public void ParseHex_ShouldCompileBoundedWindowOptions()
     {
-        var exception = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"90\",\"endianness\":\"little\"}"));
-
-        StringAssert.Contains(exception.Diagnostic.Explanation, "byte-order neutral");
-        StringAssert.Contains(exception.Diagnostic.SuggestedFix, "SQL numeric literal");
-    }
-
-    [TestMethod]
-    public void Parse_ShouldRejectMissingOrUnsupportedVersionAndDuplicateProperties()
-    {
-        var missing = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse("{\"bytes\":\"90\"}"));
-        StringAssert.Contains(missing.Diagnostic.Explanation, "'version' is required");
-
-        var unsupported = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse("{\"version\":2,\"bytes\":\"90\"}"));
-        StringAssert.Contains(unsupported.Diagnostic.Explanation, "'version' must be 1");
-
-        var duplicate = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse("{\"version\":1,\"bytes\":\"90\",\"bytes\":\"91\"}"));
-        StringAssert.Contains(duplicate.Diagnostic.Explanation, "duplicate JSON property");
-    }
-
-    [TestMethod]
-    public void Parse_ShouldCompileBoundedWindowOptions()
-    {
-        var pattern = SearchBytePatternParser.Parse(
-            "{\"version\":1,\"bytes\":\"90 91\",\"window\":{\"beforeBytes\":7,\"afterBytes\":11}}");
+        var pattern = SearchBytePatternParser.ParseHex("90 91", null, 7, 11);
 
         Assert.IsTrue(pattern.Window.IsEnabled);
         Assert.AreEqual(7, pattern.Window.BeforeBytes);
@@ -132,16 +98,14 @@ public sealed class SearchBytePatternTests
     }
 
     [TestMethod]
-    public void Parse_ShouldRejectUnknownOrOverBudgetWindowOptions()
+    public void ParseHex_ShouldRejectMismatchedMasksAndOverBudgetWindows()
     {
-        var unknown = Assert.ThrowsException<SearchPatternException>(() =>
-            SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"90\",\"window\":{\"before\":1}}"));
-        StringAssert.Contains(unknown.Diagnostic.Explanation, "unknown window property");
+        var mismatch = Assert.ThrowsException<SearchPatternException>(() =>
+            SearchBytePatternParser.ParseHex("90 91", "ff", 0, 0));
+        StringAssert.Contains(mismatch.Diagnostic.Explanation, "exactly 2 byte values");
 
         var overBudget = Assert.ThrowsException<SearchResourceLimitException>(() =>
-            SearchBytePatternParser.Parse(
-                "{\"version\":1,\"bytes\":\"90\",\"window\":{\"beforeBytes\":1048576}}"));
+            SearchBytePatternParser.ParseHex("90", null, 1_048_576, 0));
         Assert.AreEqual(SearchDiagnosticCodes.ResourceLimit, overBudget.Diagnostic.Code);
     }
 }

@@ -22,13 +22,14 @@ internal sealed class SearchPathsSource : RowSourceBase<SearchPath>
     private const string SearchSourceName = "paths";
     private readonly string _root;
     private readonly ScopePolicy _scope;
+    private readonly long _maxFiles;
     private readonly SourceExecutionContext _executionContext;
     private readonly SearchScopeCounters _counters;
 
     public SearchPathsSource(
         string root,
         SourceExecutionContext executionContext)
-        : this(root, executionContext, ScopePolicy.Default, null)
+        : this(root, executionContext, ScopePolicy.Default, long.MaxValue, null)
     {
     }
 
@@ -37,9 +38,23 @@ internal sealed class SearchPathsSource : RowSourceBase<SearchPath>
         SourceExecutionContext executionContext,
         ScopePolicy scope,
         SearchScopeCounters? counters)
+        : this(root, executionContext, scope, long.MaxValue, counters)
+    {
+    }
+
+    internal SearchPathsSource(
+        string root,
+        SourceExecutionContext executionContext,
+        ScopePolicy scope,
+        long maxFiles,
+        SearchScopeCounters? counters)
     {
         _root = RequireRoot(root);
         _scope = scope ?? throw new ArgumentNullException(nameof(scope));
+        if (maxFiles < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxFiles));
+
+        _maxFiles = maxFiles;
         _executionContext = executionContext ?? throw new ArgumentNullException(nameof(executionContext));
         _counters = counters ?? new SearchScopeCounters();
     }
@@ -97,6 +112,9 @@ internal sealed class SearchPathsSource : RowSourceBase<SearchPath>
                          _counters))
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (checked(totalRowsProcessed + rows.Count) >= _maxFiles)
+                    break;
+
                 var relativePath = Path.GetRelativePath(relativeRoot, file)
                     .Replace(Path.DirectorySeparatorChar, '/');
                 if (Path.AltDirectorySeparatorChar != Path.DirectorySeparatorChar)

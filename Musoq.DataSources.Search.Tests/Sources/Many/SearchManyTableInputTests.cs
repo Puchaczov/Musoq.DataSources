@@ -7,14 +7,12 @@ using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Musoq.Converter.Exceptions;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Schema.Optimization;
 
+using Musoq.DataSources.Search;
 using Musoq.DataSources.Search.Entities;
-
-using Musoq.DataSources.Search.Components.Diagnostics;
 
 using Musoq.DataSources.Search.Tests.Infrastructure;
 
@@ -23,14 +21,8 @@ namespace Musoq.DataSources.Search.Tests.Sources.Many;
 [TestClass]
 public sealed class SearchManyTableInputTests
 {
-    private const string TodoRequest =
-        "{\"version\":1,\"patterns\":[{\"id\":\"todo\",\"pattern\":\"TODO\",\"mode\":\"literal\"}]}";
-
-    private const string FixmeRequest =
-        "{\"version\":1,\"patterns\":[{\"id\":\"fixme\",\"pattern\":\"FIXME\",\"mode\":\"literal\"}]}";
-
     [TestMethod]
-    public void Metadata_ShouldDescribeManyWithoutRuntimeValues()
+    public void Metadata_ShouldDescribeTypedManyWithoutRuntimeValues()
     {
         var schema = new SearchSchema();
         var descriptor = schema.DescribeSource(
@@ -38,8 +30,8 @@ public sealed class SearchManyTableInputTests
             new SourceDescribeContext(
                 new SourceIdentity("search", "many", "search-tests", "metadata-only"),
                 CreateMetadataContext()),
-            "\0",
-            string.Empty);
+            "fixture",
+            Array.Empty<SearchPatternInput>());
 
         Assert.AreEqual(typeof(SearchMatch), descriptor.RowType);
         CollectionAssert.AreEqual(
@@ -50,15 +42,29 @@ public sealed class SearchManyTableInputTests
             },
             descriptor.Columns.Select(column => column.ColumnName).ToArray());
 
-        var constructor = schema.GetRawConstructors(CreateMetadataContext())
-            .Single(method => method.MethodName == "many");
-        CollectionAssert.AreEqual(
-            new[] { typeof(string), typeof(string) },
-            constructor.ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        var constructors = schema.GetRawConstructors(CreateMetadataContext())
+            .Where(method => method.MethodName == "many")
+            .ToArray();
+        Assert.AreEqual(2, constructors.Length);
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                typeof(string),
+                typeof(IReadOnlyList<SearchPatternInput>)
+            },
+            constructors[0].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                typeof(string),
+                typeof(IReadOnlyList<SearchPatternInput>),
+                typeof(SearchManyOptionsInput)
+            },
+            constructors[1].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
     }
 
     [TestMethod]
-    public void CompiledManyQuery_ShouldConsumeScalarArgumentsProducedByCte()
+    public void CompiledManyQuery_ShouldConsumeACollectionCte()
     {
         var root = CreateFixture(
             ("alpha.txt", "TODO TODO\n"),
@@ -68,11 +74,11 @@ public sealed class SearchManyTableInputTests
         {
             var escapedRoot = EscapeSql(root);
             var result = Compile(
-                    $"with inputs as (" +
-                    $"select '{escapedRoot}' as Root, '{TodoRequest}' as Request " +
+                    $"with patterns as (" +
+                    $"select 'todo' as Id, 'TODO' as Pattern, 'literal' as Mode " +
                     $"from search.paths('{escapedRoot}') p take 1) " +
-                    "select i.Root, m.Path, m.PatternId, m.MatchIndex " +
-                    "from inputs i cross apply search.many(i.Root, i.Request) m " +
+                    $"select m.Path, m.PatternId, m.MatchIndex " +
+                    $"from search.many('{escapedRoot}', patterns) m " +
                     "order by m.Path, m.MatchIndex")
                 .Run();
 
@@ -84,7 +90,7 @@ public sealed class SearchManyTableInputTests
                     ("alpha.txt", "todo", 1L),
                     ("beta.txt", "todo", 0L)
                 },
-                result.Rows.Select(row => ((string)row[1], (string)row[2], (long)row[3])).ToArray());
+                result.Rows.Select(row => ((string)row[0], (string)row[1], (long)row[2])).ToArray());
         }
         finally
         {
@@ -93,7 +99,7 @@ public sealed class SearchManyTableInputTests
     }
 
     [TestMethod]
-    public void CteTake_ShouldBoundCorrelatedManyInvocation()
+    public void CollectionCte_ShouldRemainReusableAcrossCorrelatedRows()
     {
         var root = CreateFixture(
             ("alpha.txt", "TODO TODO\n"),
@@ -103,48 +109,16 @@ public sealed class SearchManyTableInputTests
         {
             var escapedRoot = EscapeSql(root);
             var result = Compile(
-                    $"with inputs as (" +
-                    $"select '{escapedRoot}' as Root, '{TodoRequest}' as Request " +
-                    $"from search.paths('{escapedRoot}') p take 1) " +
-                    "select m.Path, m.MatchIndex " +
-                    "from inputs i cross apply search.many(i.Root, i.Request) m " +
-                    "order by m.Path, m.MatchIndex")
-                .Run();
-
-            Assert.AreEqual(3, result.Count);
-            CollectionAssert.AreEqual(
-                new[]
-                {
-                    ("alpha.txt", 0L),
-                    ("alpha.txt", 1L),
-                    ("beta.txt", 0L)
-                },
-                result.Rows.Select(row => ((string)row[0], (long)row[1])).ToArray());
-        }
-        finally
-        {
-            DeleteFixture(root);
-        }
-    }
-
-    [TestMethod]
-    public void CteUnionAll_ShouldPreserveDuplicatePathIdentity()
-    {
-        var root = CreateFixture(
-            ("alpha.txt", "TODO TODO\n"),
-            ("beta.txt", "TODO\n"));
-
-        try
-        {
-            var escapedRoot = EscapeSql(root);
-            var result = Compile(
-                    $"with inputs as (" +
+                    $"with patterns as (" +
+                    $"select 'todo' as Id, 'TODO' as Pattern, 'literal' as Mode " +
+                    $"from search.paths('{escapedRoot}') p take 1), " +
+                    "inputs as (" +
                     $"select p.Path as InputPath, '{escapedRoot}' as Root " +
                     $"from search.paths('{escapedRoot}') p " +
                     "union all (InputPath, Root) " +
                     $"select p.Path, '{escapedRoot}' from search.paths('{escapedRoot}') p) " +
-                    $"select i.InputPath, m.Path, m.PatternId, m.MatchIndex " +
-                    $"from inputs i cross apply search.many(i.Root, '{TodoRequest}') m " +
+                    "select i.InputPath, m.Path, m.PatternId, m.MatchIndex " +
+                    "from inputs i cross apply search.many(i.Root, patterns) m " +
                     "where m.Path = i.InputPath " +
                     "order by i.InputPath, m.MatchIndex")
                 .Run();
@@ -169,63 +143,23 @@ public sealed class SearchManyTableInputTests
     }
 
     [TestMethod]
-    public void CorrelatedCteRows_ShouldKeepPatternSettingsIsolated()
-    {
-        var root = CreateFixture(
-            ("alpha.txt", "TODO\n"),
-            ("beta.txt", "FIXME\n"));
-
-        try
-        {
-            var escapedRoot = EscapeSql(root);
-            var result = Compile(
-                    $"with requests as (" +
-                    $"select 'todo-run' as RequestId, '{escapedRoot}' as Root, '{TodoRequest}' as Request " +
-                    $"from search.paths('{escapedRoot}') p where p.Path = 'alpha.txt' " +
-                    "union all (RequestId, Root, Request) " +
-                    $"select 'fixme-run', '{escapedRoot}', '{FixmeRequest}' " +
-                    $"from search.paths('{escapedRoot}') p where p.Path = 'alpha.txt') " +
-                    "select r.RequestId, m.Path, m.PatternId, m.MatchIndex " +
-                    "from requests r cross apply search.many(r.Root, r.Request) m " +
-                    "order by r.RequestId, m.Path")
-                .Run();
-
-            CollectionAssert.AreEqual(
-                new[]
-                {
-                    ("fixme-run", "beta.txt", "fixme", 0L),
-                    ("todo-run", "alpha.txt", "todo", 0L)
-                },
-                result.Rows.Select(row =>
-                    ((string)row[0], (string)row[1], (string)row[2], (long)row[3])).ToArray());
-        }
-        finally
-        {
-            DeleteFixture(root);
-        }
-    }
-
-    [TestMethod]
-    public void TableValuedArguments_ShouldBeRejectedByLatestCoreApi()
+    public void TableValuedPatternCte_ShouldBeAcceptedByTypedCoreApi()
     {
         var root = CreateFixture(("alpha.txt", "TODO\n"));
 
         try
         {
             var escapedRoot = EscapeSql(root);
-            var exception = Assert.ThrowsException<MusoqQueryException>(() =>
-                Compile(
-                        $"with patterns as (select 'TODO' as Pattern from search.paths('{escapedRoot}') take 1) " +
-                        $"select m.Path from search.many('{escapedRoot}', patterns) m"));
+            var result = Compile(
+                    $"with patterns as (" +
+                    $"select 'todo' as Id, 'TODO' as Pattern, 'literal' as Mode " +
+                    $"from search.paths('{escapedRoot}') p take 1) " +
+                    $"select m.Path, m.PatternId from search.many('{escapedRoot}', patterns) m")
+                .Run();
 
-            AssertUnsupportedTableArgument(exception);
-
-            var pathException = Assert.ThrowsException<MusoqQueryException>(() =>
-                Compile(
-                        $"with paths as (select p.Path as Path from search.paths('{escapedRoot}') p take 1) " +
-                        $"select m.Path from search.many(paths, '{TodoRequest}') m"));
-
-            AssertUnsupportedTableArgument(pathException);
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual("alpha.txt", result.Rows[0][0]);
+            Assert.AreEqual("todo", result.Rows[0][1]);
         }
         finally
         {
@@ -240,15 +174,6 @@ public sealed class SearchManyTableInputTests
             Guid.NewGuid().ToString(),
             new SearchSchemaProvider(),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-    }
-
-    private static void AssertUnsupportedTableArgument(MusoqQueryException exception)
-    {
-        Assert.AreEqual("MQ3088_NoMatchingCallableOverload", exception.PrimaryEnvelope.Code.ToString());
-        Assert.IsTrue(exception.PrimaryEnvelope.Arguments["actualTypes"].Contains("object", StringComparison.Ordinal));
-        Assert.IsTrue(exception.PrimaryEnvelope.Arguments["candidateSignatures"].Contains(
-            "many(root: String, request: String)",
-            StringComparison.Ordinal));
     }
 
     private static SourceMetadataContext CreateMetadataContext()

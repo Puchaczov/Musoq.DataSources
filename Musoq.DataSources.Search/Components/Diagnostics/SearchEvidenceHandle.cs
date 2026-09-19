@@ -18,13 +18,16 @@ internal sealed class SearchEvidenceHandle
 {
     private readonly SearchSourceVersion _sourceVersion;
     private readonly SearchEncodingMode _encodingMode;
+    private readonly byte[]? _snapshotBytes;
 
     private SearchEvidenceHandle(
         SearchSourceVersion sourceVersion,
-        SearchEncodingMode encodingMode)
+        SearchEncodingMode encodingMode,
+        byte[]? snapshotBytes = null)
     {
         _sourceVersion = sourceVersion;
         _encodingMode = encodingMode;
+        _snapshotBytes = snapshotBytes;
     }
 
     public static SearchEvidenceHandle Capture(
@@ -35,6 +38,23 @@ internal sealed class SearchEvidenceHandle
         return new(
             SearchSourceVersion.Capture(path, cancellationToken),
             encodingMode);
+    }
+
+    public static SearchEvidenceHandle Capture(
+        byte[] bytes,
+        int length,
+        SearchSourceObservation observation,
+        SearchEncodingMode encodingMode)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+        if (length < 0 || length > bytes.Length)
+            throw new ArgumentOutOfRangeException(nameof(length));
+
+        var snapshot = bytes.AsSpan(0, length).ToArray();
+        return new(
+            SearchSourceVersion.FromSnapshot(observation, snapshot),
+            encodingMode,
+            snapshot);
     }
 
     public IReadOnlyList<SearchContextLine> Expand(
@@ -53,12 +73,20 @@ internal sealed class SearchEvidenceHandle
         IReadOnlyList<SearchContextLine> context;
         try
         {
-            context = SearchEvidenceReader.Read(
-                _sourceVersion.CanonicalPath,
-                _encodingMode,
-                matchingLine,
-                options,
-                cancellationToken);
+            context = _snapshotBytes is null
+                ? SearchEvidenceReader.Read(
+                    _sourceVersion.CanonicalPath,
+                    _encodingMode,
+                    matchingLine,
+                    options,
+                    cancellationToken)
+                : SearchEvidenceReader.Read(
+                    _snapshotBytes,
+                    _snapshotBytes.Length,
+                    _encodingMode,
+                    matchingLine,
+                    options,
+                    cancellationToken);
         }
         catch (OperationCanceledException)
         {

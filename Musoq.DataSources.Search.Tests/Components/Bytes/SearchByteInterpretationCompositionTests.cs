@@ -14,11 +14,9 @@ namespace Musoq.DataSources.Search.Tests.Components.Bytes;
 [TestClass]
 public sealed class SearchByteInterpretationCompositionTests
 {
-    private const string SignatureRequest =
-        "{\"version\":1,\"bytes\":\"ca ??\",\"window\":{\"beforeBytes\":0,\"afterBytes\":4}}";
+    private const string SignatureHex = "ca ??";
 
-    private const string NestedSignatureRequest =
-        "{\"version\":1,\"bytes\":\"ca fe\",\"window\":{\"beforeBytes\":0,\"afterBytes\":5}}";
+    private const string NestedSignatureHex = "ca fe";
 
     [TestMethod]
     public void SearchBytes_TryInterpret_ShouldKeepFalseSignaturesAndInvalidLengthsAsCandidates()
@@ -46,7 +44,7 @@ public sealed class SearchByteInterpretationCompositionTests
                     candidate.WindowComplete,
                     record.Length,
                     record.Trailer
-                from search.bytes('{Escape(root)}', '{SignatureRequest}') candidate
+                from search.bytes('{Escape(root)}', '{SignatureHex}', (Window: (BeforeBytes: 0, AfterBytes: 4))) candidate
                 outer apply TryInterpret<BoundedRecord>(candidate.WindowBytes) record
                 order by candidate.Path").Run();
 
@@ -99,7 +97,7 @@ public sealed class SearchByteInterpretationCompositionTests
                     Trailer: byte const 0x7F
                 }};
                 select candidate.Path, candidate.ByteOffset, record.Length, record.Trailer
-                from search.bytes('{Escape(root)}', '{SignatureRequest}') candidate
+                from search.bytes('{Escape(root)}', '{SignatureHex}', (Window: (BeforeBytes: 0, AfterBytes: 4))) candidate
                 cross apply Interpret<BoundedRecord>(candidate.WindowBytes) record").Run();
 
             Assert.AreEqual(1, result.Count);
@@ -141,7 +139,7 @@ public sealed class SearchByteInterpretationCompositionTests
                     parsed.ErrorField,
                     parsed.ErrorMessage,
                     parsed.BytesConsumed
-                from search.bytes('{Escape(root)}', '{NestedSignatureRequest}') candidate
+                from search.bytes('{Escape(root)}', '{NestedSignatureHex}', (Window: (BeforeBytes: 0, AfterBytes: 5))) candidate
                 cross apply PartialInterpret<OuterRecord>(candidate.WindowBytes) parsed
                 order by candidate.Path").Run();
 

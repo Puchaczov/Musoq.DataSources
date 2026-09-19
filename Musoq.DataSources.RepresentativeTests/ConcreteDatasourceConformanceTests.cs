@@ -92,13 +92,21 @@ public sealed class ConcreteDatasourceConformanceTests
         Concrete("os", "metadata", ["./Files", false, true], typeof(string), typeof(bool), typeof(bool)),
 
         Concrete("search", "matches", ["./Files", "TODO"], typeof(string), typeof(string)),
-        Concrete("search", "many", ["./Files", "{}"], typeof(string), typeof(string)),
+        Concrete("search", "matches", ["./Files", "TODO", "options"], typeof(string), typeof(string), typeof(SearchMatchOptionsInput)),
+        Concrete("search", "many", ["./Files", "patterns"], typeof(string), typeof(IReadOnlyList<SearchPatternInput>)),
+        Concrete("search", "many", ["./Files", "patterns", "options"], typeof(string), typeof(IReadOnlyList<SearchPatternInput>), typeof(SearchManyOptionsInput)),
         Concrete("search", "lines", ["./Files", "TODO"], typeof(string), typeof(string)),
+        Concrete("search", "lines", ["./Files", "TODO", "options"], typeof(string), typeof(string), typeof(SearchScanOptionsInput)),
         Concrete("search", "files", ["./Files", "TODO"], typeof(string), typeof(string)),
+        Concrete("search", "files", ["./Files", "TODO", "options"], typeof(string), typeof(string), typeof(SearchScanOptionsInput)),
         Concrete("search", "counts", ["./Files", "TODO"], typeof(string), typeof(string)),
+        Concrete("search", "counts", ["./Files", "TODO", "options"], typeof(string), typeof(string), typeof(SearchScanOptionsInput)),
         Concrete("search", "paths", ["./Files"], typeof(string)),
-        Concrete("search", "bytes", ["./Files", "{}"], typeof(string), typeof(string)),
+        Concrete("search", "paths", ["./Files", "options"], typeof(string), typeof(SearchPathsOptionsInput)),
+        Concrete("search", "bytes", ["./Files", "54 4f 44 4f"], typeof(string), typeof(string)),
+        Concrete("search", "bytes", ["./Files", "54 4f 44 4f", "options"], typeof(string), typeof(string), typeof(SearchBytesOptionsInput)),
         Concrete("search", "audit", ["./Files", "TODO"], typeof(string), typeof(string)),
+        Concrete("search", "audit", ["./Files", "TODO", "options"], typeof(string), typeof(string), typeof(SearchScanOptionsInput)),
 
         Concrete("roslyn", "solution", ["./TestsSolutions/Solution1/Solution1.sln"], typeof(string)),
 
@@ -140,9 +148,9 @@ public sealed class ConcreteDatasourceConformanceTests
     ];
 
     [TestMethod]
-    public void RegisteredConstructors_HaveExactly66ConcreteAnd15DynamicCases()
+    public void RegisteredConstructors_HaveExactly74ConcreteAnd15DynamicCases()
     {
-        Assert.AreEqual(66, ConcreteCases.Length);
+        Assert.AreEqual(74, ConcreteCases.Length);
         Assert.AreEqual(15, DynamicCases.Length);
         Assert.IsTrue(ConcreteCases.All(item =>
             item.Query.StartsWith("select * from ", StringComparison.OrdinalIgnoreCase)));
@@ -185,7 +193,7 @@ public sealed class ConcreteDatasourceConformanceTests
 
         var actualConcrete = actual.Where(signature => expectedConcrete.Contains(signature, StringComparer.Ordinal)).ToArray();
         var actualDynamic = actual.Where(signature => expectedDynamic.Contains(signature, StringComparer.Ordinal)).ToArray();
-        Assert.AreEqual(66, actualConcrete.Length);
+        Assert.AreEqual(74, actualConcrete.Length);
         Assert.AreEqual(15, actualDynamic.Length);
     }
 
@@ -317,7 +325,7 @@ public sealed class ConcreteDatasourceConformanceTests
                 "os.dirscompare.State",
                 "search.audit.Outcome"
             },
-            enumColumns,
+            enumColumns.Distinct(StringComparer.Ordinal).ToArray(),
             "The native enum producer inventory must remain explicit and complete.");
     }
 

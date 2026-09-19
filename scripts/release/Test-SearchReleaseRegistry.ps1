@@ -41,6 +41,8 @@ $discoveredNames = @($discoveredProductionProjects | ForEach-Object { $_.BaseNam
 Assert-Condition ($discoveredNames -contains "Musoq.DataSources.Search") "Production project discovery must include Search."
 Assert-Condition ($discoveredNames -notcontains "Musoq.DataSources.Search.Tests") "Production project discovery must exclude Search.Tests."
 Assert-Condition ($discoveredNames -notcontains "Musoq.DataSources.Search.Benchmarks") "Production project discovery must exclude Search.Benchmarks."
+Assert-Condition ($discoveredNames -notcontains "Musoq.DataSources.Search.Testing") "Production project discovery must exclude Search.Testing."
+Assert-Condition ($discoveredNames -notcontains "Musoq.DataSources.Search.ContractTests") "Production project discovery must exclude Search.ContractTests."
 
 $compatibility = Get-MusoqPluginCompatibility -ProjectPath $search.FullProjectPath
 Assert-Condition ($compatibility.targetFramework -eq "net10.0") "Search compatibility must target net10.0."
@@ -73,6 +75,8 @@ Assert-Condition ($batchRelease[0].tag -eq $searchTag) "Batch release selection 
     excludedRegistryProjectCount = $excludedRegistryProjects.Count
     excludedProductionProjectNames = @(
         "Musoq.DataSources.Search.Tests",
-        "Musoq.DataSources.Search.Benchmarks"
+        "Musoq.DataSources.Search.Benchmarks",
+        "Musoq.DataSources.Search.Testing",
+        "Musoq.DataSources.Search.ContractTests"
     ) | Where-Object { $discoveredNames -contains $_ }
 } | ConvertTo-Json -Depth 10

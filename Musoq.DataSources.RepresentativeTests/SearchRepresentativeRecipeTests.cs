@@ -10,24 +10,23 @@ namespace Musoq.DataSources.RepresentativeTests;
 [TestClass]
 public sealed class SearchRepresentativeRecipeTests
 {
-    private const string TraceabilityRequest =
-        "{\"version\":1,\"patterns\":[" +
-        "{\"id\":\"declaration-1001\",\"pattern\":\"public const string MQ1001\",\"mode\":\"literal\"}," +
-        "{\"id\":\"emission-1001\",\"pattern\":\"EmitDiagnostic(\\\"MQ1001\\\")\",\"mode\":\"literal\"}]}";
+    private const string TraceabilityPatterns =
+        "array { " +
+        "(Id: 'declaration-1001', Pattern: 'public const string MQ1001'), " +
+        "(Id: 'emission-1001', Pattern: 'EmitDiagnostic(\"MQ1001\")') }";
 
-    private const string ProximityRequest =
-        "{\"version\":1,\"patterns\":[" +
-        "{\"id\":\"left\",\"pattern\":\"LEFT\",\"mode\":\"literal\"}," +
-        "{\"id\":\"right\",\"pattern\":\"RIGHT\",\"mode\":\"literal\"}]}";
+    private const string ProximityPatterns =
+        "array { " +
+        "(Id: 'left', Pattern: 'LEFT'), " +
+        "(Id: 'right', Pattern: 'RIGHT') }";
 
-    private const string MigrationRequest =
-        "{\"version\":1,\"patterns\":[" +
-        "{\"id\":\"deprecated\",\"pattern\":\"OldApi()\",\"mode\":\"literal\"}," +
-        "{\"id\":\"replacement\",\"pattern\":\"NewApi()\",\"mode\":\"literal\"}]}";
+    private const string MigrationPatterns =
+        "array { " +
+        "(Id: 'deprecated', Pattern: 'OldApi()'), " +
+        "(Id: 'replacement', Pattern: 'NewApi()') }";
 
-    private const string ConfigurationRequest =
-        "{\"version\":1,\"patterns\":[" +
-        "{\"id\":\"config-key\",\"pattern\":\"FeatureX\",\"mode\":\"literal\"}]}";
+    private const string ConfigurationPatterns =
+        "array { (Id: 'config-key', Pattern: 'FeatureX') }";
 
     [TestMethod]
     public void SearchDiagnosticTraceabilityRecipe_ShouldRunCompiledQueryAndRetainFailureExample()
@@ -41,7 +40,7 @@ public sealed class SearchRepresentativeRecipeTests
 
             var result = Compile(
                     "select m.Path, m.PatternId, m.MatchText " +
-                    $"from search.many('{EscapeSql(root)}', '{EscapeSql(TraceabilityRequest)}') m " +
+                    $"from search.many('{EscapeSql(root)}', {TraceabilityPatterns}) m " +
                     "order by m.Path, m.PatternId, m.MatchIndex")
                 .Run();
 
@@ -78,7 +77,7 @@ public sealed class SearchRepresentativeRecipeTests
             var result = Compile($@"
                 with occurrences as (
                     select m.Path, m.PatternId, m.LineNumber, m.Utf16Column, m.Utf16Length
-                    from search.many('{EscapeSql(root)}', '{EscapeSql(ProximityRequest)}') m
+                    from search.many('{EscapeSql(root)}', {ProximityPatterns}) m
                 ), pairs as (
                     select lefts.Path,
                            lefts.LineNumber as LeftLine,
@@ -135,7 +134,7 @@ public sealed class SearchRepresentativeRecipeTests
 
             var migration = Compile(
                     "with findings as (" +
-                    $"select m.Path, m.PatternId, m.MatchText from search.many('{EscapeSql(root)}', '{EscapeSql(MigrationRequest)}') m" +
+                    $"select m.Path, m.PatternId, m.MatchText from search.many('{EscapeSql(root)}', {MigrationPatterns}) m" +
                     ") " +
                     "select deprecated.Path, deprecated.MatchText " +
                     "from findings deprecated " +
@@ -153,7 +152,7 @@ public sealed class SearchRepresentativeRecipeTests
 
             var configuration = Compile(
                     "select m.Path, m.MatchIndex, m.MatchText " +
-                    $"from search.many('{EscapeSql(root)}', '{EscapeSql(ConfigurationRequest)}') m " +
+                    $"from search.many('{EscapeSql(root)}', {ConfigurationPatterns}) m " +
                     "order by m.Path, m.MatchIndex")
                 .Run();
 

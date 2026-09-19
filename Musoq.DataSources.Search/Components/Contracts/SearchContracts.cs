@@ -26,7 +26,8 @@ internal sealed record SearchRequest
         SearchContextOptions context,
         SearchRecordFraming? recordFraming,
         SearchResourceLimits limits,
-        SearchPartialPolicy partialPolicy)
+        SearchPartialPolicy partialPolicy,
+        bool maxRecordBytesExplicit)
     {
         Root = root;
         Literal = literal;
@@ -41,6 +42,7 @@ internal sealed record SearchRequest
         RecordFraming = recordFraming;
         Limits = limits ?? throw new ArgumentNullException(nameof(limits));
         PartialPolicy = partialPolicy;
+        HasExplicitMaxRecordBytes = maxRecordBytesExplicit;
     }
 
     public string Root { get; }
@@ -67,6 +69,8 @@ internal sealed record SearchRequest
 
     internal SearchPartialPolicy PartialPolicy { get; }
 
+    internal bool HasExplicitMaxRecordBytes { get; }
+
     internal SearchRecordFraming? RecordFraming { get; }
 
     public static SearchRequest Create(
@@ -78,9 +82,13 @@ internal sealed record SearchRequest
         bool wholeWord = false,
         SearchContextOptions? context = null,
         SearchResourceLimits? limits = null,
-        SearchPartialPolicy partialPolicy = SearchPartialPolicy.Reject)
+        SearchPartialPolicy partialPolicy = SearchPartialPolicy.Reject,
+        bool? maxRecordBytesExplicit = null)
     {
         var effectiveLimits = limits ?? SearchResourceLimits.Default;
+        var explicitRecordLimit = maxRecordBytesExplicit ??
+                                   (limits is not null &&
+                                    effectiveLimits.HasExplicitMaxRecordBytes);
         return CreateCore(
             root,
             literal,
@@ -90,13 +98,16 @@ internal sealed record SearchRequest
             caseMode,
             wholeWord,
             SearchRecordMode.PhysicalLine,
-            checked((int)Math.Min(
-                SearchRegexScanner.MaxMultilineRecordBytes,
-                effectiveLimits.MaxRecordBytes)),
+            effectiveLimits.MaxRecordBytes == SearchResourceLimits.Unlimited
+                ? SearchRegexScanner.MaxMultilineRecordBytes
+                : checked((int)Math.Min(
+                    SearchRegexScanner.MaxMultilineRecordBytes,
+                    effectiveLimits.MaxRecordBytes)),
             context ?? SearchContextOptions.Disabled,
             recordFraming: null,
             effectiveLimits,
-            partialPolicy);
+            partialPolicy,
+            explicitRecordLimit);
     }
 
     internal static SearchRequest CreateRegex(
@@ -133,7 +144,8 @@ internal sealed record SearchRequest
             context ?? SearchContextOptions.Disabled,
             recordFraming,
             effectiveLimits,
-            partialPolicy);
+            partialPolicy,
+            maxRecordBytesExplicit: true);
         SearchRegexBackend.Validate(
             request.Literal,
             request.CaseMode,
@@ -156,7 +168,8 @@ internal sealed record SearchRequest
         SearchContextOptions context,
         SearchRecordFraming? recordFraming,
         SearchResourceLimits limits,
-        SearchPartialPolicy partialPolicy)
+        SearchPartialPolicy partialPolicy,
+        bool maxRecordBytesExplicit)
     {
         if (root is null)
             throw new SearchRequestException(SearchDiagnosticCatalog.InvalidArgument("root"));
@@ -216,27 +229,10 @@ internal sealed record SearchRequest
             context,
             recordFraming,
             limits,
-            partialPolicy);
+            partialPolicy,
+            maxRecordBytesExplicit);
     }
 
-    public static SearchRequest FromSourceArguments(object?[]? arguments)
-    {
-        if (arguments is null)
-            throw new SearchRequestException(SearchDiagnosticCatalog.InvalidArgument("arguments"));
-
-        if (arguments.Length != 2)
-            throw new SearchRequestException(SearchDiagnosticCatalog.InvalidArgumentCount(arguments.Length));
-
-        return Create(
-            RequireString(arguments[0], "root"),
-            RequireString(arguments[1], "literal"));
-    }
-
-    private static string RequireString(object? value, string argumentName)
-    {
-        return value as string ??
-               throw new SearchRequestException(SearchDiagnosticCatalog.InvalidArgument(argumentName));
-    }
 }
 
 internal enum SearchPatternMode
@@ -464,6 +460,8 @@ internal readonly record struct MatchSpan(
     public string? MatchText { get; init; }
 
     public IReadOnlyList<SearchCapture>? Captures { get; init; }
+
+    internal IReadOnlyList<SearchContextLine>? Context { get; init; }
 
     public MatchSpan(
         long start,

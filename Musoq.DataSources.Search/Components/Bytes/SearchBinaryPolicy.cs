@@ -46,6 +46,28 @@ internal static class SearchBinaryPolicy
                 exception);
         }
 
+        return IsBinaryReader(path, reader, buffer, cancellationToken);
+    }
+
+    internal static bool IsBinaryBytes(
+        byte[] bytes,
+        int length,
+        SearchEncodingMode encodingMode,
+        SearchCharBuffer buffer,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+        ArgumentNullException.ThrowIfNull(buffer);
+        using var reader = SearchTextReader.Open(bytes, length, encodingMode);
+        return IsBinaryReader("<memory>", reader, buffer, cancellationToken);
+    }
+
+    private static bool IsBinaryReader(
+        string path,
+        TextReader reader,
+        SearchCharBuffer buffer,
+        CancellationToken cancellationToken)
+    {
         try
         {
             using (reader)

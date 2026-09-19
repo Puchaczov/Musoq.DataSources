@@ -14,6 +14,7 @@ using Musoq.DataSources.Search.Components.Diagnostics;
 using Musoq.DataSources.Search.Components.Execution;
 using Musoq.DataSources.Search.Components.Bytes;
 using Musoq.DataSources.Search.Components.Planning;
+using Musoq.DataSources.Search.Components.Testing;
 using Musoq.DataSources.Search.Components.Text;
 using Musoq.DataSources.Search.Components.Traversal;
 
@@ -30,21 +31,10 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
     private readonly string _root;
     private readonly SearchBytePattern _pattern;
     private readonly SourceExecutionContext _executionContext;
+    private readonly ScopePolicy _scope;
+    private readonly SearchResourceLimits _limits;
     private readonly SearchScopeCounters? _scopeCounters;
     private readonly SearchFileParallelOptions _parallelOptions;
-
-    public SearchBytesSource(
-        string root,
-        string patternJson,
-        SourceExecutionContext executionContext)
-        : this(
-            RequireRoot(root),
-            SearchBytePatternParser.Parse(patternJson),
-            executionContext,
-            scopeCounters: null,
-            parallelOptions: null)
-    {
-    }
 
     internal SearchBytesSource(
         string root,
@@ -52,12 +42,34 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
         SourceExecutionContext executionContext,
         SearchScopeCounters? scopeCounters = null,
         SearchFileParallelOptions? parallelOptions = null)
+        : this(
+            root,
+            pattern,
+            executionContext,
+            ScopePolicy.Default,
+            SearchResourceLimits.Default,
+            scopeCounters,
+            parallelOptions)
+    {
+    }
+
+    internal SearchBytesSource(
+        string root,
+        SearchBytePattern pattern,
+        SourceExecutionContext executionContext,
+        ScopePolicy scope,
+        SearchResourceLimits limits,
+        SearchScopeCounters? scopeCounters = null,
+        SearchFileParallelOptions? parallelOptions = null)
     {
         _root = RequireRoot(root);
         _pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
         _executionContext = executionContext ?? throw new ArgumentNullException(nameof(executionContext));
+        _scope = scope ?? throw new ArgumentNullException(nameof(scope));
+        _limits = limits ?? throw new ArgumentNullException(nameof(limits));
         _scopeCounters = scopeCounters;
-        _parallelOptions = parallelOptions ?? SearchFileParallelOptions.Default;
+        _parallelOptions = parallelOptions ??
+            SearchFileParallelOptions.FromRuntimeSettings(executionContext.SourceRuntimeSettings);
     }
 
     internal SearchTerminalSummary? LastExecution { get; private set; }
@@ -70,10 +82,10 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
         CancellationTokenSource? linkedCancellation = null;
         var cancellationToken = writer.CancellationToken;
         var scopeCounters = _scopeCounters ?? new SearchScopeCounters();
-        var resourceBudget = new SearchResourceBudget(SearchResourceLimits.Default);
+        var resourceBudget = new SearchResourceBudget(_limits);
         var accounting = new SearchExecutionAccounting(
             Guid.NewGuid().ToString("N"),
-            SearchScopeFingerprint.Create(_root, ScopePolicy.Default));
+            SearchScopeFingerprint.Create(_root, _scope));
         Exception? terminalException = null;
 
         try
@@ -163,6 +175,7 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                     var sourceObservation = SearchSourceObservation.Capture(
                         file,
                         fileCancellationToken);
+                    SearchTestHooks.AfterObservation(file);
                     var fileBudget = resourceBudget.BeginFile(file);
                     fileBudget.ReserveBytes(sourceObservation.Length);
                     scopeCounters.IncrementContentOpenAttempts();
@@ -250,7 +263,8 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                     acceptedWindow,
                     ReportRowsRead,
                     cancellationToken,
-                    _parallelOptions);
+                    _parallelOptions,
+                    estimateChunkBytes: SearchRowSizeEstimator.EstimateChunk<SearchByteMatch>);
 
                 IEnumerable<string> EnumerateEligibleFiles(
                     string searchRoot,
@@ -258,7 +272,7 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                 {
                     foreach (var file in SearchScopeTraversal.Enumerate(
                                  searchRoot,
-                                 ScopePolicy.Default,
+                                 _scope,
                                  token,
                                  scopeCounters))
                     {

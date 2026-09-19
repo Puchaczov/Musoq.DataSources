@@ -15,16 +15,16 @@ namespace Musoq.DataSources.Search.Tests.Contracts;
 [TestClass]
 public sealed class SearchDiagnosticTraceabilityRecipeTests
 {
-    private const string TraceabilityRequest =
-        "{\"version\":1,\"patterns\":[" +
-        "{\"id\":\"declaration-1001\",\"pattern\":\"public const string MQ1001\",\"mode\":\"literal\"}," +
-        "{\"id\":\"emission-1001\",\"pattern\":\"EmitDiagnostic(\\\"MQ1001\\\")\",\"mode\":\"literal\"}," +
-        "{\"id\":\"test-1001\",\"pattern\":\"MQ1001_ShouldHaveCoverage\",\"mode\":\"literal\"}," +
-        "{\"id\":\"docs-1001\",\"pattern\":\"MQ1001\",\"mode\":\"literal\"}," +
-        "{\"id\":\"declaration-1002\",\"pattern\":\"public const string MQ1002\",\"mode\":\"literal\"}," +
-        "{\"id\":\"emission-1002\",\"pattern\":\"EmitDiagnostic(\\\"MQ1002\\\")\",\"mode\":\"literal\"}," +
-        "{\"id\":\"test-1002\",\"pattern\":\"MQ1002_ShouldHaveCoverage\",\"mode\":\"literal\"}," +
-        "{\"id\":\"docs-1002\",\"pattern\":\"MQ1002\",\"mode\":\"literal\"}]}";
+    private const string TraceabilityPatterns =
+        "array { " +
+        "(Id: 'declaration-1001', Pattern: 'public const string MQ1001'), " +
+        "(Id: 'emission-1001', Pattern: 'EmitDiagnostic(\"MQ1001\")'), " +
+        "(Id: 'test-1001', Pattern: 'MQ1001_ShouldHaveCoverage'), " +
+        "(Id: 'docs-1001', Pattern: 'MQ1001'), " +
+        "(Id: 'declaration-1002', Pattern: 'public const string MQ1002'), " +
+        "(Id: 'emission-1002', Pattern: 'EmitDiagnostic(\"MQ1002\")'), " +
+        "(Id: 'test-1002', Pattern: 'MQ1002_ShouldHaveCoverage'), " +
+        "(Id: 'docs-1002', Pattern: 'MQ1002') }";
 
     [TestMethod]
     public void TraceabilityRecipe_ShouldSeparateLexicalFindingsFromProvenCoverage()
@@ -131,10 +131,9 @@ public sealed class SearchDiagnosticTraceabilityRecipeTests
     private static TraceabilityFinding[] ReadCandidates(string root)
     {
         var escapedRoot = EscapeSql(root);
-        var escapedRequest = EscapeSql(TraceabilityRequest);
         var result = Compile(
                 $"select m.Path, m.PatternId, m.LineNumber, m.Utf16Column, m.MatchText " +
-                $"from search.many('{escapedRoot}', '{escapedRequest}') m " +
+                $"from search.many('{escapedRoot}', {TraceabilityPatterns}) m " +
                 "order by m.Path, m.PatternId, m.LineNumber, m.Utf16Column")
             .Run();
 

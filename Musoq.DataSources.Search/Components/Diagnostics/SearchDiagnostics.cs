@@ -261,18 +261,7 @@ internal static class SearchDiagnosticCatalog
             SearchDiagnosticLocation.ForArgument("arguments"));
     }
 
-    public static SearchDiagnostic InvalidManyArgumentCount(int actualCount)
-    {
-        return new SearchDiagnostic(
-            SearchDiagnosticCodes.InvalidArgument,
-            SearchDiagnosticPhase.Argument,
-            "The Search many source received the wrong number of arguments.",
-            $"The many source requires exactly two arguments, but received {actualCount}.",
-            "Pass exactly a root string and a versioned request JSON string to search.many.",
-            SearchDiagnosticLocation.ForArgument("arguments"));
-    }
-
-    public static SearchDiagnostic InvalidManyRequest(
+    public static SearchDiagnostic InvalidManyInput(
         string reason,
         SearchDiagnosticPhase phase,
         long? offset = null,
@@ -281,38 +270,18 @@ internal static class SearchDiagnosticCatalog
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
 
         var location = offset is null
-            ? SearchDiagnosticLocation.ForArgument("requestJson")
+            ? SearchDiagnosticLocation.ForArgument("patterns")
             : SearchDiagnosticLocation.ForArgumentSpan(
-                "requestJson",
+                "patterns",
                 offset.Value,
                 length ?? 1);
 
         return new SearchDiagnostic(
             SearchDiagnosticCodes.InvalidArgument,
             phase,
-            "The Search many request is invalid.",
-            $"The versioned Search many request is invalid: {SearchDiagnosticText.Display(reason, 384)}.",
-            "Correct the request JSON and use only the documented bounded fields and values.",
-            location);
-    }
-
-    public static SearchDiagnostic ManyRequestResourceLimit(
-        string field,
-        int limit,
-        long? offset = null)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(field);
-
-        var location = offset is null
-            ? SearchDiagnosticLocation.ForArgument("requestJson")
-            : SearchDiagnosticLocation.ForArgumentSpan("requestJson", offset.Value, 1);
-
-        return new SearchDiagnostic(
-            SearchDiagnosticCodes.ResourceLimit,
-            SearchDiagnosticPhase.Resource,
-            "The Search many request exceeds a safety limit.",
-            $"The '{field}' value exceeds the declared limit of {limit}.",
-            "Reduce the request to the declared limit and split larger work into bounded searches.",
+            "The Search many typed input is invalid.",
+            $"The Search many typed input is invalid: {SearchDiagnosticText.Display(reason, 384)}.",
+            "Correct the typed pattern collection and use only the documented bounded fields and values.",
             location);
     }
 
@@ -343,14 +312,15 @@ internal static class SearchDiagnosticCatalog
         string reason,
         SearchDiagnosticPhase phase = SearchDiagnosticPhase.Argument,
         long? offset = null,
-        long? length = null)
+        long? length = null,
+        string argumentName = "patternHex")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
 
         var location = offset is null
-            ? SearchDiagnosticLocation.ForArgument("pattern")
+            ? SearchDiagnosticLocation.ForArgument(argumentName)
             : SearchDiagnosticLocation.ForArgumentSpan(
-                "pattern",
+                argumentName,
                 offset.Value,
                 length ?? 1);
 
@@ -358,8 +328,8 @@ internal static class SearchDiagnosticCatalog
             SearchDiagnosticCodes.InvalidBytePattern,
             phase,
             "The Search byte pattern is invalid.",
-            $"The versioned byte-pattern request is invalid: {SearchDiagnosticText.Display(reason, 384)}.",
-            "Use a JSON object with version 1, an explicit even-length hex 'bytes' string, and an optional same-length hex 'mask' string; do not use an SQL numeric literal.",
+            $"The typed hexadecimal byte pattern is invalid: {SearchDiagnosticText.Display(reason, 384)}.",
+            "Use an explicit even-length hexadecimal pattern, and provide an optional same-length hexadecimal mask through typed byte options; do not use an SQL numeric literal.",
             location);
     }
 
@@ -623,6 +593,6 @@ internal static class SearchDiagnosticValidation
 
     public static SearchBytePattern ValidateBytePattern(string? pattern)
     {
-        return SearchBytePatternParser.Parse(pattern);
+        return SearchBytePatternParser.ParseHex(pattern, mask: null);
     }
 }

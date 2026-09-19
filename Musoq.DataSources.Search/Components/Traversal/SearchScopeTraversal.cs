@@ -193,6 +193,9 @@ internal sealed class SearchScopeMatcher
                 : SearchTraversalAction.Yield;
         }
 
+        if (entry.IsHidden && _scope.HiddenEntries == HiddenEntryPolicy.Exclude)
+            return SearchTraversalAction.Skip;
+
         var parentDirectory = Path.GetDirectoryName(fullPath) ?? _rootPath;
         SearchLinkResolution resolution = default;
         if (entry.IsReparsePoint && !TryResolveLink(entry, out resolution))

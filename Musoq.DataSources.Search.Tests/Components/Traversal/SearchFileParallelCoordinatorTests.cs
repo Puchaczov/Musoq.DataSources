@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Schema.DataSources;
 
@@ -14,6 +15,112 @@ namespace Musoq.DataSources.Search.Tests.Components.Traversal;
 [TestClass]
 public sealed class SearchFileParallelCoordinatorTests
 {
+    [TestMethod]
+    public void RuntimeSettings_ShouldUseDocumentedDefaultsAndRejectInvalidValues()
+    {
+        var defaults = SearchFileParallelOptions.FromRuntimeSettings(
+            new Dictionary<string, string>());
+        Assert.IsTrue(defaults.WorkerCount >= 1 && defaults.WorkerCount <= 8);
+        Assert.AreEqual(32L * 1024 * 1024, defaults.BufferedOutputBytes);
+
+        var explicitValues = SearchFileParallelOptions.FromRuntimeSettings(
+            new Dictionary<string, string>
+            {
+                ["search.max_parallelism"] = "32",
+                ["search.buffered_output_bytes"] = "65536"
+            });
+        Assert.AreEqual(32, explicitValues.WorkerCount);
+        Assert.AreEqual(65536L, explicitValues.BufferedOutputBytes);
+
+        Assert.ThrowsException<ArgumentException>(() =>
+            SearchFileParallelOptions.FromRuntimeSettings(
+                new Dictionary<string, string>
+                {
+                    ["search.max_parallelism"] = "33"
+                }));
+        Assert.ThrowsException<ArgumentException>(() =>
+            SearchFileParallelOptions.FromRuntimeSettings(
+                new Dictionary<string, string>
+                {
+                    ["search.buffered_output_bytes"] = "65535"
+                }));
+    }
+
+    [TestMethod]
+    public void OutputCredits_ShouldObserveCancellationWhileWaiting()
+    {
+        using var credits = new SearchOutputCreditPool(64 * 1024);
+        var firstLease = credits.Acquire(64 * 1024, CancellationToken.None);
+        using var cancellation = new CancellationTokenSource();
+        var waiting = Task.Run(() =>
+        {
+            try
+            {
+                _ = credits.Acquire(64 * 1024, cancellation.Token);
+                return false;
+            }
+            catch (OperationCanceledException)
+            {
+                return true;
+            }
+        });
+
+        Thread.SpinWait(10_000);
+        cancellation.Cancel();
+        Assert.IsTrue(waiting.GetAwaiter().GetResult());
+        credits.Release(firstLease);
+    }
+
+    [TestMethod]
+    public void OutputCredits_ShouldClampOneQueryToTheProcessWideAllowance()
+    {
+        using var credits = new SearchOutputCreditPool(512L * 1024 * 1024);
+
+        Assert.AreEqual(256L * 1024 * 1024, credits.MaximumChunkBytes);
+    }
+
+    [TestMethod]
+    public void ConcurrentCoordinators_ShouldRespectTheProcessWideWorkerLimit()
+    {
+        var activeWorkers = 0;
+        var maximumActiveWorkers = 0;
+        var options = new SearchFileParallelOptions(
+            workerCount: 32,
+            maxInFlightFiles: 64,
+            bufferedChunksPerFile: 1);
+
+        var runs = Enumerable.Range(0, 2)
+            .Select(_ => Task.Run(() =>
+                SearchFileParallelCoordinator.Run(
+                    _ => Enumerable.Range(0, 64).Select(static index => $"file-{index}"),
+                    new RecordingChunkWriter<int>(),
+                    (_, fileWriter, cancellationToken) =>
+                    {
+                        var active = Interlocked.Increment(ref activeWorkers);
+                        UpdateMaximum(ref maximumActiveWorkers, active);
+                        try
+                        {
+                            Thread.Sleep(2);
+                            cancellationToken.ThrowIfCancellationRequested();
+                            fileWriter.Write([1]);
+                        }
+                        finally
+                        {
+                            Interlocked.Decrement(ref activeWorkers);
+                        }
+                    },
+                    acceptedWindow: null,
+                    reportRowsRead: null,
+                    cancellationToken: default,
+                    options: options)))
+            .ToArray();
+
+        Task.WhenAll(runs).GetAwaiter().GetResult();
+
+        Assert.IsTrue(maximumActiveWorkers <= 32, maximumActiveWorkers.ToString());
+        Assert.AreEqual(0, Volatile.Read(ref activeWorkers));
+    }
+
     [TestMethod]
     public void Coordinator_ShouldBoundWorkersAndPreserveFileOrderWithSlowConsumer()
     {
@@ -61,6 +168,44 @@ public sealed class SearchFileParallelCoordinatorTests
             Enumerable.Range(0, 72).ToArray(),
             writer.Rows.ToArray());
         Assert.AreEqual(0, Volatile.Read(ref activeWorkers));
+    }
+
+    [TestMethod]
+    public void Coordinator_ShouldDrainUntilAnInFlightSlotIsReleasedWhenCreditsAreSmall()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var writer = new RecordingChunkWriter<int>(cancellation.Token);
+        var options = new SearchFileParallelOptions(
+            workerCount: 1,
+            maxInFlightFiles: 2,
+            bufferedChunksPerFile: 1,
+            outputOrder: SearchFileOutputOrder.CompletionOrder,
+            bufferedOutputBytes: 64 * 1024);
+
+        var run = Task.Run(() => SearchFileParallelCoordinator.Run(
+            _ => Enumerable.Range(0, 8).Select(static index => $"file-{index}"),
+            writer,
+            (_, fileWriter, token) =>
+            {
+                for (var index = 0; index < 4; index++)
+                {
+                    token.ThrowIfCancellationRequested();
+                    fileWriter.Write([index]);
+                }
+            },
+            acceptedWindow: null,
+            reportRowsRead: null,
+            cancellationToken: cancellation.Token,
+            options: options,
+            estimateChunkBytes: static _ => 64 * 1024));
+
+        if (!run.Wait(TimeSpan.FromSeconds(5)))
+        {
+            cancellation.Cancel();
+            Assert.Fail("The bounded coordinator did not release an in-flight slot.");
+        }
+
+        Assert.AreEqual(32L, run.GetAwaiter().GetResult());
     }
 
     [TestMethod]

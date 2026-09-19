@@ -1,6 +1,0 @@
-Exception: D:\repos\Musoq.DataSources\scripts\release\Assert-LicenseSnapshots.ps1:28
-Line |
-  28 |              throw "$Description entry $index differs. Expected '$($Ex …
-     |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | License snapshot 'Musoq.DataSources.Archives' dependency inputs entry 11 differs. Expected
-     | 'scripts/release/packages.json', got 'scripts/release/packages.json'.

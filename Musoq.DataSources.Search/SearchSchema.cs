@@ -1,5 +1,8 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Exceptions;
@@ -17,13 +20,36 @@ using Musoq.DataSources.Search.Tables;
 namespace Musoq.DataSources.Search;
 
 /// <description>
-///     Provides deterministic literal and raw-byte search over files below a requested root.
+///     Provides deterministic literal, regular-expression and raw-byte search over files below a requested root.
 /// </description>
 /// <short-description>
-///     Provides deterministic literal and raw-byte search over files below a requested root.
+///     Provides deterministic literal, regular-expression and raw-byte search over files below a requested root.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
-/// <summary>Provides deterministic Search sources for literal matches, raw-byte occurrences and eligible paths.</summary>
+    /// <summary>Provides deterministic Search sources for literal or regular-expression matches, raw-byte occurrences and eligible paths.</summary>
+    /// <remarks>
+    ///     Typed structural constructors are the preferred SQL surface. Simple
+    ///     two-argument calls retain their meaning: text is literal and
+    ///     case-sensitive, directory scope is recursive, repository ignores
+    ///     are respected, hidden entries are excluded, and links are not
+    ///     followed. Use <c>CaseMode: 'insensitive'</c> explicitly. The SQL
+    ///     word <c>Case</c> is reserved by the current Core grammar. An insensitive
+    ///     literal match projects the spelling found in the file.
+    ///
+    ///     Use paths for an eligible-file manifest, files for one row per
+    ///     matching file, lines for one row per matching physical line,
+    ///     matches for one row per occurrence, many for labeled literal and
+    ///     regex occurrences, counts for exact per-file totals including
+    ///     zero-hit eligible text files, audit for one terminal count-scan
+    ///     outcome, and bytes for raw data without text decoding.
+    ///
+    ///     Include and Exclude are root-relative path globs, not SQL LIKE
+    ///     patterns. TAKE limits accepted output and does not promise a
+    ///     deterministic path prefix when parallel workers are enabled; use
+    ///     ORDER BY when result order matters. Omitted literal record limits
+    ///     preserve streaming long-line behavior. Regex records, and an
+    ///     explicitly supplied MaxRecordBytes, are bounded at 1 MiB.
+    /// </remarks>
 public sealed class SearchSchema : SchemaBase
 {
     private const string SchemaName = "search";
@@ -38,12 +64,12 @@ public sealed class SearchSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Root file or directory</virtual-param>
-    ///         <virtual-param>Literal text to find</virtual-param>
+    ///         <virtual-param>Root file or directory; it is required and is never inferred from the working directory</virtual-param>
+    ///         <virtual-param>Literal text, typed pattern collection, or hexadecimal byte pattern</virtual-param>
     ///         <examples>
     ///             <example>
-    ///                 <from>search.matches(string root, string literal)</from>
-    ///                 <description>Returns one typed row for every non-overlapping literal occurrence.</description>
+    ///                 <from>search.matches(string root, string pattern[, SearchMatchOptionsInput options])</from>
+    ///                 <description>Returns one typed row for every non-overlapping occurrence. Omitted options mean literal, sensitive, automatic encoding and recursive scope.</description>
     ///                 <columns>
     ///                     <column name="Path" type="string">Path relative to the requested root</column>
     ///                     <column name="PatternId" type="string">Null for the single-pattern scaffold</column>
@@ -53,14 +79,14 @@ public sealed class SearchSchema : SchemaBase
     ///                     <column name="LineNumber" type="long">One-based physical line containing the occurrence</column>
     ///                     <column name="Utf16Column" type="long">Zero-based UTF-16 column within the line</column>
     ///                     <column name="Utf16Length" type="long">Match length in UTF-16 code units</column>
-    ///                     <column name="MatchText" type="string">Matched text when retained by the projection</column>
+    ///                     <column name="MatchText" type="string">Actual matched source spelling when retained by the projection</column>
     ///                     <column name="Captures" type="IReadOnlyList&lt;SearchCapture&gt;">Typed regular-expression captures; empty for literal matches</column>
     ///                     <column name="Context" type="IReadOnlyList&lt;SearchContextLine&gt;">Bounded adjacent physical lines; empty when context is disabled or not projected</column>
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>search.many(string root, string request)</from>
-    ///                 <description>Returns one typed row for every non-overlapping literal occurrence of each labeled pattern in a bounded scalar JSON request.</description>
+    ///                 <from>search.many(string root, IReadOnlyList&lt;SearchPatternInput&gt; patterns[, SearchManyOptionsInput options])</from>
+    ///                 <description>Returns one typed row for every non-overlapping occurrence of each labeled literal or regex pattern. The SQL collection form is array { (Id: 'todo', Pattern: 'TODO'), (Id: 'issue', Pattern: 'ISSUE-[0-9]+', Mode: 'regex') }.</description>
     ///                 <columns>
     ///                     <column name="Path" type="string">Path relative to the requested root</column>
     ///                     <column name="PatternId" type="string">The request label for the matched pattern</column>
@@ -70,14 +96,14 @@ public sealed class SearchSchema : SchemaBase
     ///                     <column name="LineNumber" type="long">One-based physical line containing the occurrence</column>
     ///                     <column name="Utf16Column" type="long">Zero-based UTF-16 column within the line</column>
     ///                     <column name="Utf16Length" type="long">Match length in UTF-16 code units</column>
-    ///                     <column name="MatchText" type="string">Matched literal text</column>
-    ///                     <column name="Captures" type="IReadOnlyList&lt;SearchCapture&gt;">Empty for the literal-only many source</column>
-    ///                     <column name="Context" type="IReadOnlyList&lt;SearchContextLine&gt;">Bounded adjacent physical lines; empty for the current many request contract</column>
+    ///                     <column name="MatchText" type="string">Matched source spelling for literals or matched value for regex</column>
+    ///                     <column name="Captures" type="IReadOnlyList&lt;SearchCapture&gt;">Captures for regex rows; empty for literal rows</column>
+    ///                     <column name="Context" type="IReadOnlyList&lt;SearchContextLine&gt;">Bounded adjacent physical lines when requested and projected; otherwise empty</column>
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>search.bytes(string root, string patternJson)</from>
-    ///                 <description>Returns one typed row for every leftmost, non-overlapping raw-byte occurrence described by the versioned pattern JSON.</description>
+    ///                 <from>search.bytes(string root, string patternHex[, SearchBytesOptionsInput options])</from>
+    ///                 <description>Returns one typed row for every leftmost, non-overlapping raw-byte occurrence. Hex text uses two nibbles per byte; wildcard nibbles and an optional typed mask are supported.</description>
     ///                 <columns>
     ///                     <column name="Path" type="string">Path relative to the requested root</column>
     ///                     <column name="Origin" type="string">Null for a local path row</column>
@@ -100,8 +126,8 @@ public sealed class SearchSchema : SchemaBase
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>search.lines(string root, string literal)</from>
-    ///                 <description>Returns one typed row for every physical line containing one or more non-overlapping literal occurrences.</description>
+    ///                 <from>search.lines(string root, string pattern[, SearchScanOptionsInput options])</from>
+    ///                 <description>Returns one typed row for every physical line containing one or more non-overlapping occurrences. Omitted options mean literal, sensitive, automatic encoding and recursive scope.</description>
     ///                 <columns>
     ///                     <column name="Path" type="string">Path relative to the requested root</column>
     ///                     <column name="Origin" type="string">Null for a local path row</column>
@@ -113,8 +139,8 @@ public sealed class SearchSchema : SchemaBase
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>search.files(string root, string literal)</from>
-    ///                 <description>Returns one typed row for every eligible file containing at least one literal occurrence.</description>
+    ///                 <from>search.files(string root, string pattern[, SearchScanOptionsInput options])</from>
+    ///                 <description>Returns one typed row for every eligible file containing at least one occurrence. Omitted options mean literal, sensitive, automatic encoding and recursive scope.</description>
     ///                 <columns>
     ///                     <column name="Path" type="string">Path relative to the requested root</column>
     ///                     <column name="Origin" type="string">Null for a local path row</column>
@@ -122,8 +148,8 @@ public sealed class SearchSchema : SchemaBase
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>search.counts(string root, string literal)</from>
-    ///                 <description>Returns one exact count row for every eligible file completed by the scan, including zero-hit files.</description>
+    ///                 <from>search.counts(string root, string pattern[, SearchScanOptionsInput options])</from>
+    ///                 <description>Returns one exact count row for every eligible file completed by the scan, including zero-hit files. Omitted options mean literal, sensitive, automatic encoding and recursive scope.</description>
     ///                 <columns>
     ///                     <column name="Path" type="string">Path relative to the requested root</column>
     ///                     <column name="Origin" type="string">Null for a local path row</column>
@@ -135,8 +161,8 @@ public sealed class SearchSchema : SchemaBase
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>search.paths(string root)</from>
-    ///                 <description>Returns one typed row for every eligible regular-file path without opening file content.</description>
+    ///                 <from>search.paths(string root[, SearchPathsOptionsInput options])</from>
+    ///                 <description>Returns one typed row for every eligible regular-file path without opening file content. Omitted options mean recursive scope, hidden exclusion and no path-count limit.</description>
     ///                 <columns>
     ///                     <column name="Path" type="string">Path relative to the requested root</column>
     ///                     <column name="Origin" type="string">Null for a local path row</column>
@@ -144,8 +170,8 @@ public sealed class SearchSchema : SchemaBase
     ///                 </columns>
     ///             </example>
     ///             <example>
-    ///                 <from>search.audit(string root, string literal)</from>
-    ///                 <description>Executes a fresh count scan and returns one typed terminal summary row for that execution.</description>
+    ///                 <from>search.audit(string root, string pattern[, SearchScanOptionsInput options])</from>
+    ///                 <description>Executes a fresh count scan and returns one typed terminal summary row for that execution. Omitted options mean literal, sensitive, automatic encoding and recursive scope.</description>
     ///                 <columns>
     ///                     <column name="Root" type="string">Requested root representation</column>
     ///                     <column name="ScanId" type="string">Opaque identifier for this execution</column>
@@ -180,6 +206,22 @@ public sealed class SearchSchema : SchemaBase
     public SearchSchema()
         : base(SchemaName, CreateLibrary())
     {
+        AddTable<SearchMatchesTable>(MatchesTable);
+        AddTable<SearchLinesTable>(LinesTable);
+        AddTable<SearchFilesTable>(FilesTable);
+        AddTable<SearchCountsTable>(CountsTable);
+        AddTable<SearchPathsTable>(PathsTable);
+        AddTable<SearchBytesTable>(BytesTable);
+        AddTable<SearchAuditsTable>(AuditTable);
+
+        AddTypedSource<SearchMatchesTypedSource>(MatchesTable);
+        AddTypedSource<SearchLinesTypedSource>(LinesTable);
+        AddTypedSource<SearchFilesTypedSource>(FilesTable);
+        AddTypedSource<SearchCountsTypedSource>(CountsTable);
+        AddTypedSource<SearchPathsTypedSource>(PathsTable);
+        AddTypedSource<SearchManyTypedSource>(ManyTable);
+        AddTypedSource<SearchBytesTypedSource>(BytesTable);
+        AddTypedSource<SearchAuditTypedSource>(AuditTable);
     }
 
     /// <summary>
@@ -192,7 +234,7 @@ public sealed class SearchSchema : SchemaBase
     public override ISchemaTable GetTableByName(
         string name,
         SourceMetadataContext metadataContext,
-        params object[] parameters)
+        params object?[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
@@ -218,48 +260,24 @@ public sealed class SearchSchema : SchemaBase
     public override RowSource<T> GetRowSource<T>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        params object?[] parameters)
     {
-        return name.ToLowerInvariant() switch
+        if (!IsKnownSource(name))
         {
-            MatchesTable => EnsureSourceType<T, SearchMatch>(
-                name,
-                new SearchMatchesSource(
-                    SearchRequest.FromSourceArguments(parameters),
-                    executionContext)),
-            ManyTable => EnsureSourceType<T, SearchMatch>(
-                name,
-                CreateManySource(parameters, executionContext)),
-            LinesTable => EnsureSourceType<T, SearchLine>(
-                name,
-                new SearchLinesSource(
-                    SearchRequest.FromSourceArguments(parameters),
-                    executionContext)),
-            FilesTable => EnsureSourceType<T, SearchFile>(
-                name,
-                new SearchFilesSource(
-                    SearchRequest.FromSourceArguments(parameters),
-                    executionContext)),
-            CountsTable => EnsureSourceType<T, SearchCount>(
-                name,
-                new SearchCountsSource(
-                    SearchRequest.FromSourceArguments(parameters),
-                    executionContext)),
-            PathsTable => EnsureSourceType<T, SearchPath>(
-                name,
-                new SearchPathsSource(
-                    RequirePathArguments(parameters),
-                    executionContext)),
-            BytesTable => EnsureSourceType<T, SearchByteMatch>(
-                name,
-                CreateBytesSource(parameters, executionContext)),
-            AuditTable => EnsureSourceType<T, SearchAudit>(
-                name,
-                new SearchAuditSource(
-                    SearchRequest.FromSourceArguments(parameters),
-                    executionContext)),
-            _ => throw new SourceNotFoundException(nameof(name))
-        };
+            throw new SourceNotFoundException(
+                $"Search source '{name}' was not found. Use one of: matches, lines, files, counts, audit, paths, many, bytes.");
+        }
+
+        try
+        {
+            return base.GetRowSource<T>(name, executionContext, parameters);
+        }
+        catch (MethodResolutionException exception)
+        {
+            throw new SearchRequestException(
+                SearchDiagnosticCatalog.InvalidArgument("arguments"),
+                exception);
+        }
     }
 
     /// <summary>
@@ -272,7 +290,7 @@ public sealed class SearchSchema : SchemaBase
     public override SourceDescriptor DescribeSource(
         string name,
         SourceDescribeContext context,
-        params object[] parameters)
+        params object?[] parameters)
     {
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
@@ -292,13 +310,30 @@ public sealed class SearchSchema : SchemaBase
     /// <param name="name">Data source name.</param>
     /// <param name="context">Runtime settings description context.</param>
     /// <param name="parameters">Root and literal parameters.</param>
-    /// <returns>No runtime settings for the minimal source.</returns>
+    /// <returns>Execution-phase worker and buffered-output settings.</returns>
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
         string name,
         SourceRuntimeSettingsDescribeContext context,
-        params object[] parameters)
+        params object?[] parameters)
     {
-        return [];
+        ArgumentNullException.ThrowIfNull(context);
+        context.MetadataContext.EndWorkToken.ThrowIfCancellationRequested();
+
+        return
+        [
+            new SourceRuntimeSettingRequirement(
+                "search.max_parallelism",
+                Required: false,
+                Secret: false,
+                SourceRuntimeSettingPhase.Execution,
+                "Optional worker count for Search file scans. Zero or omission uses twice the CPU count, clamped to 1 through 8; explicit values are 1 through 32."),
+            new SourceRuntimeSettingRequirement(
+                "search.buffered_output_bytes",
+                Required: false,
+                Secret: false,
+                SourceRuntimeSettingPhase.Execution,
+                "Optional per-query buffered output budget in bytes. The default is 33554432; valid values are 65536 through 536870912.")
+        ];
     }
 
     /// <summary>
@@ -308,7 +343,7 @@ public sealed class SearchSchema : SchemaBase
     /// <param name="request">Source planning request.</param>
     /// <param name="parameters">Root and literal parameters.</param>
     /// <returns>Source plan with accepted scalar predicates and residual work.</returns>
-    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
         return SearchSourcePlanner.Plan(name, request);
     }
@@ -319,16 +354,7 @@ public sealed class SearchSchema : SchemaBase
     /// <returns>Search data source constructors.</returns>
     public override SchemaMethodInfo[] GetConstructors()
     {
-        return [
-            CreateMatchesMethodInfo(),
-            CreateManyMethodInfo(),
-            CreateLinesMethodInfo(),
-            CreateFilesMethodInfo(),
-            CreateCountsMethodInfo(),
-            CreatePathsMethodInfo(),
-            CreateBytesMethodInfo(),
-            CreateAuditMethodInfo()
-        ];
+        return base.GetConstructors();
     }
 
     /// <summary>
@@ -341,20 +367,11 @@ public sealed class SearchSchema : SchemaBase
         string methodName,
         SourceMetadataContext metadataContext)
     {
-        return methodName.ToLowerInvariant() switch
-        {
-            MatchesTable => [CreateMatchesMethodInfo()],
-            ManyTable => [CreateManyMethodInfo()],
-            LinesTable => [CreateLinesMethodInfo()],
-            FilesTable => [CreateFilesMethodInfo()],
-            CountsTable => [CreateCountsMethodInfo()],
-            PathsTable => [CreatePathsMethodInfo()],
-            BytesTable => [CreateBytesMethodInfo()],
-            AuditTable => [CreateAuditMethodInfo()],
-            _ => throw new NotSupportedException(
-                $"Data source '{methodName}' is not supported by {SchemaName} schema. " +
-                $"Available data sources: {MatchesTable}, {ManyTable}, {LinesTable}, {FilesTable}, {CountsTable}, {PathsTable}, {BytesTable}, {AuditTable}")
-        };
+        ArgumentNullException.ThrowIfNull(metadataContext);
+        metadataContext.EndWorkToken.ThrowIfCancellationRequested();
+        return TypedConstructors()
+            .Where(constructor => constructor.MethodName.Equals(methodName, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
     }
 
     /// <summary>
@@ -364,192 +381,44 @@ public sealed class SearchSchema : SchemaBase
     /// <returns>Search data source constructors.</returns>
     public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
-        return [
-            CreateMatchesMethodInfo(),
-            CreateManyMethodInfo(),
-            CreateLinesMethodInfo(),
-            CreateFilesMethodInfo(),
-            CreateCountsMethodInfo(),
-            CreatePathsMethodInfo(),
-            CreateBytesMethodInfo(),
-            CreateAuditMethodInfo()
+        ArgumentNullException.ThrowIfNull(metadataContext);
+        metadataContext.EndWorkToken.ThrowIfCancellationRequested();
+        return TypedConstructors();
+    }
+
+    private static SchemaMethodInfo[] TypedConstructors()
+    {
+        return
+        [
+            CreateMethod(MatchesTable, ("root", typeof(string)), ("pattern", typeof(string))),
+            CreateMethod(MatchesTable, ("root", typeof(string)), ("pattern", typeof(string)), ("options", typeof(SearchMatchOptionsInput))),
+            CreateMethod(ManyTable, ("root", typeof(string)), ("patterns", typeof(IReadOnlyList<SearchPatternInput>))),
+            CreateMethod(ManyTable, ("root", typeof(string)), ("patterns", typeof(IReadOnlyList<SearchPatternInput>)), ("options", typeof(SearchManyOptionsInput))),
+            CreateMethod(LinesTable, ("root", typeof(string)), ("pattern", typeof(string))),
+            CreateMethod(LinesTable, ("root", typeof(string)), ("pattern", typeof(string)), ("options", typeof(SearchScanOptionsInput))),
+            CreateMethod(FilesTable, ("root", typeof(string)), ("pattern", typeof(string))),
+            CreateMethod(FilesTable, ("root", typeof(string)), ("pattern", typeof(string)), ("options", typeof(SearchScanOptionsInput))),
+            CreateMethod(CountsTable, ("root", typeof(string)), ("pattern", typeof(string))),
+            CreateMethod(CountsTable, ("root", typeof(string)), ("pattern", typeof(string)), ("options", typeof(SearchScanOptionsInput))),
+            CreateMethod(PathsTable, ("root", typeof(string))),
+            CreateMethod(PathsTable, ("root", typeof(string)), ("options", typeof(SearchPathsOptionsInput))),
+            CreateMethod(BytesTable, ("root", typeof(string)), ("patternHex", typeof(string))),
+            CreateMethod(BytesTable, ("root", typeof(string)), ("patternHex", typeof(string)), ("options", typeof(SearchBytesOptionsInput))),
+            CreateMethod(AuditTable, ("root", typeof(string)), ("pattern", typeof(string))),
+            CreateMethod(AuditTable, ("root", typeof(string)), ("pattern", typeof(string)), ("options", typeof(SearchScanOptionsInput)))
         ];
     }
 
-    private static SchemaMethodInfo CreateMatchesMethodInfo()
+    private static SchemaMethodInfo CreateMethod(
+        string methodName,
+        params (string Name, Type Type)[] arguments)
     {
         var constructorInfo = new ConstructorInfo(
             null!,
             false,
-            [
-                ("root", typeof(string)),
-                ("literal", typeof(string))
-            ]);
+            arguments);
 
-        return new SchemaMethodInfo(MatchesTable, constructorInfo);
-    }
-
-    private static SchemaMethodInfo CreateManyMethodInfo()
-    {
-        var constructorInfo = new ConstructorInfo(
-            null!,
-            false,
-            [
-                ("root", typeof(string)),
-                ("request", typeof(string))
-            ]);
-
-        return new SchemaMethodInfo(ManyTable, constructorInfo);
-    }
-
-    private static SchemaMethodInfo CreateLinesMethodInfo()
-    {
-        var constructorInfo = new ConstructorInfo(
-            null!,
-            false,
-            [
-                ("root", typeof(string)),
-                ("literal", typeof(string))
-            ]);
-
-        return new SchemaMethodInfo(LinesTable, constructorInfo);
-    }
-
-    private static SchemaMethodInfo CreateFilesMethodInfo()
-    {
-        var constructorInfo = new ConstructorInfo(
-            null!,
-            false,
-            [
-                ("root", typeof(string)),
-                ("literal", typeof(string))
-            ]);
-
-        return new SchemaMethodInfo(FilesTable, constructorInfo);
-    }
-
-    private static SchemaMethodInfo CreateCountsMethodInfo()
-    {
-        var constructorInfo = new ConstructorInfo(
-            null!,
-            false,
-            [
-                ("root", typeof(string)),
-                ("literal", typeof(string))
-            ]);
-
-        return new SchemaMethodInfo(CountsTable, constructorInfo);
-    }
-
-    private static SchemaMethodInfo CreatePathsMethodInfo()
-    {
-        var constructorInfo = new ConstructorInfo(
-            null!,
-            false,
-            [("root", typeof(string))]);
-
-        return new SchemaMethodInfo(PathsTable, constructorInfo);
-    }
-
-    private static SchemaMethodInfo CreateBytesMethodInfo()
-    {
-        var constructorInfo = new ConstructorInfo(
-            null!,
-            false,
-            [
-                ("root", typeof(string)),
-                ("patternJson", typeof(string))
-            ]);
-
-        return new SchemaMethodInfo(BytesTable, constructorInfo);
-    }
-
-    private static SchemaMethodInfo CreateAuditMethodInfo()
-    {
-        var constructorInfo = new ConstructorInfo(
-            null!,
-            false,
-            [
-                ("root", typeof(string)),
-                ("literal", typeof(string))
-            ]);
-
-        return new SchemaMethodInfo(AuditTable, constructorInfo);
-    }
-
-    private static SearchManySource CreateManySource(
-        object[] arguments,
-        SourceExecutionContext executionContext)
-    {
-        var (root, requestJson) = RequireManyArguments(arguments);
-        return new SearchManySource(root, requestJson, executionContext);
-    }
-
-    private static SearchBytesSource CreateBytesSource(
-        object[] arguments,
-        SourceExecutionContext executionContext)
-    {
-        var (root, patternJson) = RequireBytesArguments(arguments);
-        return new SearchBytesSource(root, patternJson, executionContext);
-    }
-
-    private static (string Root, string RequestJson) RequireManyArguments(object[] arguments)
-    {
-        if (arguments is null)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgument("arguments"));
-
-        if (arguments.Length != 2)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidManyArgumentCount(arguments.Length));
-
-        if (arguments[0] is not string root)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgument("root"));
-
-        if (arguments[1] is not string requestJson)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgument("request"));
-
-        return (root, requestJson);
-    }
-
-    private static (string Root, string PatternJson) RequireBytesArguments(object[] arguments)
-    {
-        if (arguments is null)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgument("arguments"));
-
-        if (arguments.Length != 2)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgumentCount(arguments.Length));
-
-        if (arguments[0] is not string root)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgument("root"));
-
-        if (arguments[1] is not string patternJson)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgument("patternJson"));
-
-        return (root, patternJson);
-    }
-
-    private static string RequirePathArguments(object[] arguments)
-    {
-        if (arguments is null)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgument("arguments"));
-
-        if (arguments.Length != 1)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgumentCount(arguments.Length));
-
-        if (arguments[0] is not string root)
-            throw new SearchRequestException(
-                SearchDiagnosticCatalog.InvalidArgument("root"));
-
-        return root;
+        return new SchemaMethodInfo(methodName, constructorInfo);
     }
 
     private static MethodsAggregator CreateLibrary()
@@ -560,5 +429,18 @@ public sealed class SearchSchema : SchemaBase
         methodsManager.RegisterLibraries(library);
 
         return new MethodsAggregator(methodsManager);
+    }
+
+    private static bool IsKnownSource(string? name)
+    {
+        return name is not null &&
+               (name.Equals(MatchesTable, StringComparison.OrdinalIgnoreCase) ||
+                name.Equals(ManyTable, StringComparison.OrdinalIgnoreCase) ||
+                name.Equals(LinesTable, StringComparison.OrdinalIgnoreCase) ||
+                name.Equals(FilesTable, StringComparison.OrdinalIgnoreCase) ||
+                name.Equals(CountsTable, StringComparison.OrdinalIgnoreCase) ||
+                name.Equals(PathsTable, StringComparison.OrdinalIgnoreCase) ||
+                name.Equals(BytesTable, StringComparison.OrdinalIgnoreCase) ||
+                name.Equals(AuditTable, StringComparison.OrdinalIgnoreCase));
     }
 }

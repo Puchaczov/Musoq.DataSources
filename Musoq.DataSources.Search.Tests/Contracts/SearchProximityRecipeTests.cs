@@ -15,10 +15,8 @@ namespace Musoq.DataSources.Search.Tests.Contracts;
 [TestClass]
 public sealed class SearchProximityRecipeTests
 {
-    private const string ProximityRequest =
-        "{\"version\":1,\"patterns\":[" +
-        "{\"id\":\"left\",\"pattern\":\"LEFT\",\"mode\":\"literal\"}," +
-        "{\"id\":\"right\",\"pattern\":\"RIGHT\",\"mode\":\"literal\"}]}";
+    private const string ProximityPatterns =
+        "array { (Id: 'left', Pattern: 'LEFT'), (Id: 'right', Pattern: 'RIGHT') }";
 
     [TestMethod]
     public void ProximityRecipe_ShouldBoundPairsAndKeepFileIdentity()
@@ -193,11 +191,10 @@ public sealed class SearchProximityRecipeTests
     private static ProximityOccurrence[] ReadOccurrences(string root)
     {
         var escapedRoot = EscapeSql(root);
-        var escapedRequest = EscapeSql(ProximityRequest);
         var result = Compile(
                 $"select m.Path, m.PatternId, m.MatchIndex, m.LineNumber, " +
                 $"m.Utf16Column, m.Utf16Length, m.MatchText " +
-                $"from search.many('{escapedRoot}', '{escapedRequest}') m " +
+                $"from search.many('{escapedRoot}', {ProximityPatterns}) m " +
                 "order by m.Path, m.PatternId, m.LineNumber, m.Utf16Column, m.MatchIndex")
             .Run();
 

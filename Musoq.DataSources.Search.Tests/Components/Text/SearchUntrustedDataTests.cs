@@ -46,25 +46,6 @@ public sealed class SearchUntrustedDataTests
     }
 
     [TestMethod]
-    public void InvalidRequestValues_ShouldEscapeControlsAndBoundPresentation()
-    {
-        var unknownProperty =
-            "{\"version\":1,\"patterns\":[{\"id\":\"todo\",\"pattern\":\"TODO\",\"mode\":\"literal\"}],\"\\u001B[31m\\u000AFAKE\":true}";
-        var unknownPropertyException = Assert.ThrowsException<SearchRequestException>(
-            () => SearchManyRequestParser.Parse(unknownProperty));
-        AssertSafePresentation(unknownPropertyException.Diagnostic.Explanation);
-        StringAssert.Contains(unknownPropertyException.Diagnostic.Explanation, "\\u001B");
-        StringAssert.Contains(unknownPropertyException.Diagnostic.Explanation, "\\u000A");
-
-        var maliciousValue =
-            "{\"version\":1,\"patterns\":[{\"id\":\"todo\",\"pattern\":\"TODO\",\"mode\":\"\\u000AFAKE\"}]}";
-        var valueException = Assert.ThrowsException<SearchRequestException>(
-            () => SearchManyRequestParser.Parse(maliciousValue));
-        AssertSafePresentation(valueException.Diagnostic.Explanation);
-        StringAssert.Contains(valueException.Diagnostic.Explanation, "\\u000A");
-    }
-
-    [TestMethod]
     public void DiagnosticLocation_ShouldPreserveMachinePathAndExposeSafePresentation()
     {
         const string path = "C:\\quoted\"\\-leading-\nfile\u001B.txt";
@@ -76,12 +57,6 @@ public sealed class SearchUntrustedDataTests
         Assert.IsFalse(location.DisplayPath!.Any(char.IsControl));
         StringAssert.Contains(location.DisplayPath, "\\u000A");
         StringAssert.Contains(location.DisplayPath, "\\u001B");
-    }
-
-    private static void AssertSafePresentation(string value)
-    {
-        Assert.IsFalse(value.Any(char.IsControl), value);
-        Assert.IsTrue(value.Length <= SearchDiagnostic.MaxTextLength);
     }
 
     private static string CreateTemporaryRoot()

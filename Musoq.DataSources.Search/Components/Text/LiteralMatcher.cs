@@ -198,7 +198,10 @@ internal sealed class LiteralMatcher : ISearchTextMatcher
                             lineNumber,
                             utf16Column,
                             byteOffset,
-                            byteLength));
+                            byteLength)
+                        {
+                            MatchText = _literal
+                        });
                         AdvancePositionOnly(
                             candidate,
                             ref lineNumber,
@@ -293,7 +296,10 @@ internal sealed class LiteralMatcher : ISearchTextMatcher
                 lineNumber,
                 utf16Column,
                 byteOffset,
-                byteLength));
+                byteLength)
+            {
+                MatchText = block[index].ToString()
+            });
             AdvancePositionOnly(
                 block.Slice(index, 1),
                 ref lineNumber,
@@ -466,7 +472,10 @@ internal sealed class LiteralMatcher : ISearchTextMatcher
                 _matchStartLines[startRingIndex],
                 _matchStartColumns[startRingIndex],
                 null,
-                null);
+                null)
+            {
+                MatchText = _literal
+            };
             if (TryCreateByteRangeFromRing(startRingIndex, out var byteOffset, out var byteLength))
             {
                 span = span with
@@ -546,7 +555,10 @@ internal sealed class LiteralMatcher : ISearchTextMatcher
             _matchStartLines[startRingIndex],
             _matchStartColumns[startRingIndex],
             null,
-            null);
+            null)
+        {
+            MatchText = ReadMatchText(start)
+        };
         if (TryCreateByteRangeFromRing(startRingIndex, out var byteOffset, out var byteLength))
         {
             span = span with
@@ -675,6 +687,15 @@ internal sealed class LiteralMatcher : ISearchTextMatcher
     {
         var ringIndex = (int)(_characterOffset % _matchCharacters.Length);
         _matchCharacters[ringIndex] = current;
+    }
+
+    private string ReadMatchText(long start)
+    {
+        var text = new char[_literal.Length];
+        for (var index = 0; index < text.Length; index++)
+            text[index] = CharacterAt(start + index);
+
+        return new string(text);
     }
 
     private bool CharactersEqual(char left, char right)

@@ -20,14 +20,12 @@ namespace Musoq.DataSources.Search.Tests.Contracts;
 [TestClass]
 public sealed class SearchMigrationConfigurationRecipeTests
 {
-    private const string MigrationRequest =
-        "{\"version\":1,\"patterns\":[" +
-        "{\"id\":\"deprecated\",\"pattern\":\"OldApi()\",\"mode\":\"literal\"}," +
-        "{\"id\":\"replacement\",\"pattern\":\"NewApi()\",\"mode\":\"literal\"}]}";
+    private const string MigrationPatterns =
+        "array { (Id: 'deprecated', Pattern: 'OldApi()'), " +
+        "(Id: 'replacement', Pattern: 'NewApi()') }";
 
-    private const string ConfigurationRequest =
-        "{\"version\":1,\"patterns\":[" +
-        "{\"id\":\"config-key\",\"pattern\":\"FeatureX\",\"mode\":\"literal\"}]}";
+    private const string ConfigurationPatterns =
+        "array { (Id: 'config-key', Pattern: 'FeatureX') }";
 
     [TestMethod]
     public void MigrationRecipe_ShouldSeparateLexicalFalsePositivesAndUseSetDifference()
@@ -42,7 +40,7 @@ public sealed class SearchMigrationConfigurationRecipeTests
             Write(root, "src/strings.cs", "var note = \"OldApi()\";\n");
             Write(root, "src/replacement-only.cs", "NewApi();\n");
 
-            var findings = ReadFindings(root, MigrationRequest);
+            var findings = ReadFindings(root, MigrationPatterns);
             var deprecated = findings.Where(static finding => finding.Category == "deprecated").ToArray();
             var replacement = findings.Where(static finding => finding.Category == "replacement").ToArray();
 
@@ -104,7 +102,7 @@ public sealed class SearchMigrationConfigurationRecipeTests
             Write(root, "config/legacy.json", "{\"Other\":true}\n");
             Write(root, "config/comments.json", "// \"FeatureX\": true\n");
 
-            var findings = ReadFindings(root, ConfigurationRequest)
+            var findings = ReadFindings(root, ConfigurationPatterns)
                 .Where(static finding => finding.Category == "config-key")
                 .ToArray();
             var eligiblePaths = ReadPaths(root).ToHashSet(StringComparer.Ordinal);
@@ -173,11 +171,10 @@ public sealed class SearchMigrationConfigurationRecipeTests
     private static string[] ReadLexicalUnmigratedPaths(string root)
     {
         var escapedRoot = EscapeSql(root);
-        var escapedRequest = EscapeSql(MigrationRequest);
         var result = Compile(
                 $"select deprecated.Path " +
-                $"from search.many('{escapedRoot}', '{escapedRequest}') deprecated " +
-                $"left outer join search.many('{escapedRoot}', '{escapedRequest}') replacement " +
+                $"from search.many('{escapedRoot}', {MigrationPatterns}) deprecated " +
+                $"left outer join search.many('{escapedRoot}', {MigrationPatterns}) replacement " +
                 "on deprecated.Path = replacement.Path and replacement.PatternId = 'replacement' " +
                 "where deprecated.PatternId = 'deprecated' and replacement.Path is null " +
                 "group by deprecated.Path order by deprecated.Path")
@@ -186,14 +183,13 @@ public sealed class SearchMigrationConfigurationRecipeTests
         return result.Rows.Select(static row => (string)row[0]).ToArray();
     }
 
-    private static MigrationFinding[] ReadFindings(string root, string request)
+    private static MigrationFinding[] ReadFindings(string root, string patterns)
     {
         var escapedRoot = EscapeSql(root);
-        var escapedRequest = EscapeSql(request);
         var result = Compile(
                 $"select m.Path, m.PatternId, m.MatchIndex, m.LineNumber, " +
                 $"m.Utf16Column, m.MatchText " +
-                $"from search.many('{escapedRoot}', '{escapedRequest}') m " +
+                $"from search.many('{escapedRoot}', {patterns}) m " +
                 "order by m.Path, m.PatternId, m.LineNumber, m.Utf16Column, m.MatchIndex")
             .Run();
 

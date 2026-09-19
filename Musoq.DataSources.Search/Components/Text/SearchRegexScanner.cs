@@ -785,6 +785,93 @@ internal static class SearchRegexScanner
         return record.Substring(start, Math.Min(length, maxLength));
     }
 
+    /// <summary>
+    ///     Applies one physical-line regex to an already decoded record. This
+    ///     is used by the mixed many-pattern scanner so literal and regex
+    ///     patterns can share the same reader.
+    /// </summary>
+    internal static void AppendPhysicalRecordMatches(
+        Regex regex,
+        string patternId,
+        string record,
+        List<SearchCharCoordinate>? coordinates,
+        long sourceStart,
+        long lineNumber,
+        long? lineByteOffset,
+        bool wholeWord,
+        bool retainMatchText,
+        bool retainCaptures,
+        List<MatchSpan> matchSpans,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(regex);
+        ArgumentException.ThrowIfNullOrEmpty(patternId);
+        ArgumentNullException.ThrowIfNull(record);
+        ArgumentNullException.ThrowIfNull(matchSpans);
+
+        var captureGroups = retainCaptures
+            ? GetCaptureGroups(regex)
+            : null;
+        try
+        {
+            foreach (Match match in regex.Matches(record))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (wholeWord && !HasWholeWordBoundaries(record, match.Index, match.Length))
+                    continue;
+
+                var span = new MatchSpan(
+                    checked(sourceStart + match.Index),
+                    match.Length,
+                    lineNumber,
+                    match.Index,
+                    null,
+                    null)
+                {
+                    PatternId = patternId,
+                    MatchText = retainMatchText ? match.Value : null
+                };
+                if (captureGroups is not null)
+                {
+                    span = span with
+                    {
+                        Captures = CreateCaptures(
+                            captureGroups,
+                            match,
+                            coordinates,
+                            record.Length,
+                            lineByteOffset)
+                    };
+                }
+
+                if (TryCreateByteRange(
+                        coordinates,
+                        record.Length,
+                        match.Index,
+                        match.Length,
+                        lineByteOffset,
+                        out var byteOffset,
+                        out var byteLength))
+                {
+                    span = span with
+                    {
+                        ByteOffset = byteOffset,
+                        ByteLength = byteLength
+                    };
+                }
+
+                matchSpans.Add(span);
+            }
+        }
+        catch (RegexMatchTimeoutException exception)
+        {
+            throw new SearchResourceLimitException(
+                SearchDiagnosticCatalog.RegexMatchTimedOut(
+                    checked((int)regex.MatchTimeout.TotalMilliseconds)),
+                exception);
+        }
+    }
+
     private static string? GetLineText(StringBuilder line, int maxLength)
     {
         if (maxLength < 0)

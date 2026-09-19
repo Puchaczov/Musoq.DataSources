@@ -68,6 +68,24 @@ internal readonly record struct SearchSourceVersion(
             fileIdentity);
     }
 
+    public static SearchSourceVersion FromSnapshot(
+        SearchSourceObservation observation,
+        ReadOnlySpan<byte> snapshot)
+    {
+        if (snapshot.Length != observation.Length)
+        {
+            throw new SearchSourceChangedException(observation.CanonicalPath);
+        }
+
+        return new SearchSourceVersion(
+            observation.CanonicalPath,
+            observation.Length,
+            observation.LastWriteTimeUtcTicks,
+            Convert.ToHexString(SHA256.HashData(snapshot)),
+            observation.CreationTimeUtcTicks,
+            observation.FileIdentity);
+    }
+
     public bool MatchesCurrent(
         string path,
         CancellationToken cancellationToken = default)

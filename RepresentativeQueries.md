@@ -91,9 +91,7 @@ from os.environmentvariables()
 Search recipes are bounded, literal candidate workflows. They retain the
 Search path and coordinates beside derived values and do not claim language
 semantics from lexical matches. The representative fixtures and compiled
-queries are exercised by `SearchRepresentativeRecipeTests`. For source
-selection, optional methods and scan costs, see
-[`search-capability-card-v1.md`](docs/search/search-capability-card-v1.md).
+queries are exercised by `SearchRepresentativeRecipeTests`.
 
 ### Diagnostic traceability
 

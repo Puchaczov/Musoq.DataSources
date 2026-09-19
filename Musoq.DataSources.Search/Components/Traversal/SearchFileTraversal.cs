@@ -18,6 +18,8 @@ internal readonly record struct SearchTraversalEntry(
     public bool IsReparsePoint { get; init; }
 
     public bool IsSpecial { get; init; }
+
+    public bool IsHidden { get; init; }
 }
 
 internal enum SearchLinkResolutionStatus
@@ -242,6 +244,10 @@ internal static class SearchFileTraversal
             var isSpecial =
                 !isReparsePoint &&
                 attributes.HasFlag(FileAttributes.Device);
+            var fileName = System.IO.Path.GetFileName(path);
+            var isHidden =
+                attributes.HasFlag(FileAttributes.Hidden) ||
+                (fileName.Length > 0 && fileName[0] == '.');
 
             return new SearchTraversalEntry(
                 path,
@@ -249,7 +255,8 @@ internal static class SearchFileTraversal
                 IsFile: !isDirectory && !isSpecial)
             {
                 IsReparsePoint = isReparsePoint,
-                IsSpecial = isSpecial
+                IsSpecial = isSpecial,
+                IsHidden = isHidden
             };
         }
         catch (OperationCanceledException)
@@ -263,7 +270,8 @@ internal static class SearchFileTraversal
             // it or attempt resolution.
             return new SearchTraversalEntry(path, IsDirectory: false, IsFile: true)
             {
-                IsReparsePoint = true
+                IsReparsePoint = true,
+                IsHidden = Path.GetFileName(path) is { Length: > 0 } name && name[0] == '.'
             };
         }
         catch (Exception exception) when (IsTraversalAccessFailure(exception))

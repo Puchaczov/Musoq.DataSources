@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 
 using Musoq.DataSources.Search.Components.Diagnostics;
+using Musoq.DataSources.Search.Components.Testing;
 
 namespace Musoq.DataSources.Search.Components.Bytes;
 
@@ -120,6 +121,7 @@ internal static class SearchByteScanner
         {
             cancellationToken.ThrowIfCancellationRequested();
             var bytesRead = stream.Read(readBuffer, 0, readBuffer.Length);
+            SearchTestHooks.Checkpoint();
             cancellationToken.ThrowIfCancellationRequested();
             if (bytesRead == 0)
                 break;
@@ -235,6 +237,7 @@ internal static class SearchByteScanner
         {
             cancellationToken.ThrowIfCancellationRequested();
             var bytesRead = stream.Read(readBuffer, 0, readBuffer.Length);
+            SearchTestHooks.Checkpoint();
             cancellationToken.ThrowIfCancellationRequested();
             if (bytesRead == 0)
             {
@@ -250,6 +253,7 @@ internal static class SearchByteScanner
 
     private static FileStream Open(string filePath, int blockSize)
     {
+        SearchTestHooks.BeforeContentOpen(filePath);
         return new FileStream(
             filePath,
             FileMode.Open,

@@ -1,9 +1,0 @@
-  Determining projects to restore...
-  All projects are up-to-date for restore.
-  Musoq.DataSources.Search -> D:\repos\Musoq.DataSources\Musoq.DataSources.Search\bin\Release\net10.0\Musoq.DataSources.Search.dll
-  Musoq.DataSources.Tests.Common -> D:\repos\Musoq.DataSources\Musoq.DataSources.Tests.Common\bin\Release\net10.0\Musoq.DataSources.Tests.Common.dll
-  Musoq.DataSources.Search.Tests -> D:\repos\Musoq.DataSources\Musoq.DataSources.Search.Tests\bin\Release\net10.0\Musoq.DataSources.Search.Tests.dll
-Test run for D:\repos\Musoq.DataSources\Musoq.DataSources.Search.Tests\bin\Release\net10.0\Musoq.DataSources.Search.Tests.dll (.NETCoreApp,Version=v10.0)
-A total of 1 test files matched the specified pattern.
-
-Passed!  - Failed:     0, Passed:    32, Skipped:     0, Total:    32, Duration: 2 s - Musoq.DataSources.Search.Tests.dll (net10.0)

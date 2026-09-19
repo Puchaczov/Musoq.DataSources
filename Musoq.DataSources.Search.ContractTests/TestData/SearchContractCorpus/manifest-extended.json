@@ -1,0 +1,38 @@
+{
+  "formatVersion": 1,
+  "seed": 305441741,
+  "generator": "search-contract-extended-v1",
+  "scaleFileCount": 96,
+  "files": [
+    { "profile": "text-extended", "path": "extended/text/combining.txt", "kind": "text", "encoding": "utf8", "recipe": "combining", "expectedLength": 19, "modifiedUtcTicks": 638400000000000000, "metadataTag": "old" },
+    { "profile": "text-extended", "path": "extended/text/supplementary.txt", "kind": "text", "encoding": "utf8", "recipe": "supplementary", "expectedLength": 13, "modifiedUtcTicks": 638500000000000000, "metadataTag": "new" },
+    { "profile": "text-extended", "path": "extended/text/lone-cr.txt", "kind": "text", "encoding": "utf8", "recipe": "lone-cr", "expectedLength": 14 },
+    { "profile": "text-extended", "path": "extended/text/dense.txt", "kind": "text", "encoding": "utf8", "recipe": "dense", "expectedLength": 29 },
+    { "profile": "text-extended", "path": "extended/text/adjacent.txt", "kind": "text", "encoding": "utf8", "recipe": "adjacent", "expectedLength": 14 },
+    { "profile": "text-extended", "path": "extended/text/long-regex.txt", "kind": "text", "encoding": "utf8", "recipe": "long-regex" },
+
+    { "profile": "encoding-extended", "path": "extended/encoding/malformed-le.bin", "kind": "binary", "encoding": "utf16-le", "recipe": "malformed-utf16-le" },
+    { "profile": "encoding-extended", "path": "extended/encoding/malformed-be.bin", "kind": "binary", "encoding": "utf16-be", "recipe": "malformed-utf16-be" },
+
+    { "profile": "regex-extended", "path": "extended/regex/bounded.txt", "kind": "text", "encoding": "utf8", "recipe": "bounded" },
+    { "profile": "regex-extended", "path": "extended/regex/bounded-unterminated.txt", "kind": "text", "encoding": "utf8", "recipe": "bounded-unterminated" },
+    { "profile": "regex-extended", "path": "extended/regex/optional-captures.txt", "kind": "text", "encoding": "utf8", "recipe": "optional-captures" },
+
+    { "profile": "scope-extended", "path": "extended/scope/.gitignore", "kind": "ignore", "encoding": "utf8", "recipe": "nested-gitignore" },
+    { "profile": "scope-extended", "path": "extended/scope/nested/.ignore", "kind": "ignore", "encoding": "utf8", "recipe": "nested-ignore" },
+    { "profile": "scope-extended", "path": "extended/scope/nested/.rgignore", "kind": "ignore", "encoding": "utf8", "recipe": "nested-rgignore" },
+    { "profile": "scope-extended", "path": "extended/scope/keep.txt", "kind": "text", "encoding": "utf8", "recipe": "scope-kept" },
+    { "profile": "scope-extended", "path": "extended/scope/drop.tmp", "kind": "text", "encoding": "utf8", "recipe": "scope-ignored", "ignored": true },
+    { "profile": "scope-extended", "path": "extended/scope/keep.tmp", "kind": "text", "encoding": "utf8", "recipe": "scope-negated" },
+    { "profile": "scope-extended", "path": "extended/scope/nested/secret.secret", "kind": "text", "encoding": "utf8", "recipe": "scope-ignored", "ignored": true },
+    { "profile": "scope-extended", "path": "extended/scope/nested/keep.rgskip", "kind": "text", "encoding": "utf8", "recipe": "scope-negated", "ignored": true },
+    { "profile": "scope-extended", "path": "extended/scope/.hidden.txt", "kind": "text", "encoding": "utf8", "recipe": "scope-kept", "hidden": true },
+    { "profile": "scope-extended", "path": "extended/scope/metadata-small.txt", "kind": "text", "encoding": "utf8", "recipe": "metadata-small", "expectedLength": 5, "modifiedUtcTicks": 638400000000000000 },
+    { "profile": "scope-extended", "path": "extended/scope/metadata-large.txt", "kind": "text", "encoding": "utf8", "recipe": "metadata-large", "expectedLength": 30, "modifiedUtcTicks": 638500000000000000 },
+
+    { "profile": "bytes-extended", "path": "extended/bytes/start.bin", "kind": "binary", "encoding": "binary", "recipe": "byte-start", "expectedLength": 5 },
+    { "profile": "bytes-extended", "path": "extended/bytes/middle.bin", "kind": "binary", "encoding": "binary", "recipe": "byte-middle", "expectedLength": 7 },
+    { "profile": "bytes-extended", "path": "extended/bytes/end.bin", "kind": "binary", "encoding": "binary", "recipe": "byte-end", "expectedLength": 5 },
+    { "profile": "bytes-extended", "path": "extended/bytes/boundary.bin", "kind": "binary", "encoding": "binary", "recipe": "byte-boundary" }
+  ]
+}

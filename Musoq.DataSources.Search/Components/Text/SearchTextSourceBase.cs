@@ -14,6 +14,7 @@ using Musoq.DataSources.Search.Components.Diagnostics;
 using Musoq.DataSources.Search.Components.Execution;
 using Musoq.DataSources.Search.Components.Many;
 using Musoq.DataSources.Search.Components.Planning;
+using Musoq.DataSources.Search.Components.Testing;
 using Musoq.DataSources.Search.Components.Traversal;
 
 namespace Musoq.DataSources.Search.Components.Text;
@@ -21,6 +22,7 @@ namespace Musoq.DataSources.Search.Components.Text;
 internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
 {
     private const string SearchSourceName = "search";
+    private const long SmallFileSnapshotBytes = 4L * 1024 * 1024;
 
     private readonly SearchRequest _request;
     private readonly SourceExecutionContext _executionContext;
@@ -43,7 +45,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
         _readerFactory = readerFactory ?? (path => SearchTextReader.Open(path, _request.EncodingMode));
         _scopeCounters = scopeCounters;
         _parallelOptions = readerFactory is null
-            ? SearchFileParallelOptions.Default
+            ? SearchFileParallelOptions.FromRuntimeSettings(executionContext.SourceRuntimeSettings)
             : SearchFileParallelOptions.Sequential;
     }
 
@@ -135,17 +137,34 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                     var sourceObservation = SearchSourceObservation.Capture(
                         file,
                         fileCancellationToken);
+                    SearchTestHooks.AfterObservation(file);
                     var fileBudget = resourceBudget.BeginFile(file);
                     fileBudget.ReserveBytes(sourceObservation.Length);
                     using var buffer = SearchCharBuffer.Rent();
+                    using var smallInput = _classifyBinaryFiles &&
+                                           sourceObservation.Length <= SmallFileSnapshotBytes
+                        ? SearchSmallFileBuffer.Read(
+                            file,
+                            sourceObservation.Length,
+                            fileCancellationToken)
+                        : null;
+                    Func<string, TextReader> readerFactory = _readerFactory;
                     if (_classifyBinaryFiles)
                     {
                         scopeCounters.IncrementContentOpenAttempts();
-                        if (SearchBinaryPolicy.IsBinaryFile(
+                        var isBinary = smallInput is not null
+                            ? SearchBinaryPolicy.IsBinaryBytes(
+                                smallInput.Array,
+                                smallInput.Length,
+                                _request.EncodingMode,
+                                buffer,
+                                fileCancellationToken)
+                            : SearchBinaryPolicy.IsBinaryFile(
                                 file,
                                 _request.EncodingMode,
                                 buffer,
-                                fileCancellationToken))
+                                fileCancellationToken);
+                        if (isBinary)
                         {
                             scopeCounters.IncrementBinaryFilesSkipped();
                             accounting.RecordBinaryFileSkipped();
@@ -157,18 +176,33 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                                 matched: false);
                             return;
                         }
+
+                        if (smallInput is not null)
+                        {
+                            readerFactory = _ => SearchTextReader.Open(
+                                smallInput.Array,
+                                smallInput.Length,
+                                _request.EncodingMode);
+                        }
                     }
 
-                    scopeCounters.IncrementContentOpenAttempts();
+                    if (smallInput is null)
+                        scopeCounters.IncrementContentOpenAttempts();
                     accounting.RecordFileOpened();
                     var relativePath = SearchTextPath.GetRelativePath(relativeRoot, file);
                     var evidence = projection.RetainContext &&
                                    _request.Context.IsEnabled &&
                                    _classifyBinaryFiles
-                        ? SearchEvidenceHandle.Capture(
-                            file,
-                            _request.EncodingMode,
-                            fileCancellationToken)
+                        ? smallInput is null
+                            ? SearchEvidenceHandle.Capture(
+                                file,
+                                _request.EncodingMode,
+                                fileCancellationToken)
+                            : SearchEvidenceHandle.Capture(
+                                smallInput.Array,
+                                smallInput.Length,
+                                sourceObservation,
+                                _request.EncodingMode)
                         : null;
                     using var sink = CreateSink(
                         relativePath,
@@ -195,11 +229,10 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                             buffer,
                             [],
                             fileCancellationToken,
-                            _readerFactory,
+                            readerFactory,
                             sink,
                             accounting.RecordFileRead,
-                            _request.MaxRecordBytes <
-                            SearchRegexScanner.MaxMultilineRecordBytes
+                            _request.HasExplicitMaxRecordBytes
                                 ? _request.MaxRecordBytes
                                 : SearchResourceLimits.Unlimited,
                             _request.EncodingMode);
@@ -216,7 +249,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                             _request.RecordMode,
                             _request.MaxRecordBytes,
                             fileCancellationToken,
-                            _readerFactory,
+                            readerFactory,
                             sink,
                             _request.RecordFraming,
                             accounting.RecordFileRead,
@@ -236,6 +269,17 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                 }
                 catch (Exception exception)
                 {
+                    if (exception is not OperationCanceledException &&
+                        exception is not ISearchDiagnosticException &&
+                        (exception is IOException ||
+                         exception is UnauthorizedAccessException ||
+                         exception is NotSupportedException))
+                    {
+                        exception = new SearchSourceReadException(
+                            SearchDiagnosticCatalog.SourceReadFailed(file),
+                            exception);
+                    }
+
                     if (exception is not OperationCanceledException)
                     {
                         var failure = SearchTerminalFailure.From(exception);
@@ -262,7 +306,8 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                     acceptedWindow,
                     ReportRowsRead,
                     cancellationToken,
-                    _parallelOptions);
+                    _parallelOptions,
+                    estimateChunkBytes: SearchRowSizeEstimator.EstimateChunk<TRow>);
 
                 IEnumerable<string> EnumerateEligibleFiles(
                     string searchRoot,

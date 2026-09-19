@@ -19,6 +19,8 @@ using Musoq.DataSources.Search.Components.Contracts;
 
 using Musoq.DataSources.Search.Components.Planning;
 
+using Musoq.DataSources.Search.Components.Text;
+
 using Musoq.DataSources.Search.Tests.Infrastructure;
 
 namespace Musoq.DataSources.Search.Tests.Components.Planning;
@@ -746,7 +748,8 @@ public sealed class SearchPlannerDifferentialTests
     {
         return new SearchMatchesSource(
                 SearchRequest.Create(root, Literal),
-                CreateContext(plan, MatchColumns))
+                CreateContext(plan, MatchColumns),
+                readerFactory: static path => SearchTextReader.Open(path, SearchEncodingMode.Auto))
             .Chunks
             .SelectMany(static chunk => chunk)
             .Cast<object>()
@@ -759,7 +762,8 @@ public sealed class SearchPlannerDifferentialTests
     {
         return new SearchLinesSource(
                 SearchRequest.Create(root, Literal),
-                CreateContext(plan, LineColumns))
+                CreateContext(plan, LineColumns),
+                readerFactory: static path => SearchTextReader.Open(path, SearchEncodingMode.Auto))
             .Chunks
             .SelectMany(static chunk => chunk)
             .Cast<object>()
@@ -772,7 +776,8 @@ public sealed class SearchPlannerDifferentialTests
     {
         return new SearchFilesSource(
                 SearchRequest.Create(root, Literal),
-                CreateContext(plan, FileColumns))
+                CreateContext(plan, FileColumns),
+                readerFactory: static path => SearchTextReader.Open(path, SearchEncodingMode.Auto))
             .Chunks
             .SelectMany(static chunk => chunk)
             .Cast<object>()
@@ -785,7 +790,8 @@ public sealed class SearchPlannerDifferentialTests
     {
         return new SearchCountsSource(
                 SearchRequest.Create(root, Literal),
-                CreateContext(plan, CountColumns))
+                CreateContext(plan, CountColumns),
+                readerFactory: static path => SearchTextReader.Open(path, SearchEncodingMode.Auto))
             .Chunks
             .SelectMany(static chunk => chunk)
             .Cast<object>()

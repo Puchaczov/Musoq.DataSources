@@ -30,73 +30,6 @@ namespace Musoq.DataSources.Search.Tests.Contracts;
 [TestClass]
 public sealed class SearchDiagnosticRepairCatalogTests
 {
-    private static readonly string[] SourceNames =
-    [
-        "search.paths",
-        "search.matches",
-        "search.lines",
-        "search.files",
-        "search.counts",
-        "search.audit",
-        "search.many",
-        "search.bytes"
-    ];
-
-    private static readonly string[] RequiredMutationCases =
-    [
-        "A08",
-        "A09",
-        "A10",
-        "A11",
-        "A12",
-        "A13",
-        "A18"
-    ];
-
-    [TestMethod]
-    public void Catalog_ShouldCoverEveryStableCodeAndKeepRepairsBounded()
-    {
-        var catalog = ReadCatalog();
-
-        foreach (var code in SearchDiagnosticCodes.All)
-            StringAssert.Contains(catalog, $"| `{code}` |", code);
-
-        foreach (var sourceName in SourceNames)
-            StringAssert.Contains(catalog, $"`{sourceName}`", sourceName);
-
-        foreach (var mutationCase in RequiredMutationCases)
-            StringAssert.Contains(catalog, $"| `{mutationCase}` |", mutationCase);
-
-        foreach (var heading in new[]
-                 {
-                     "Repair protocol",
-                     "Stable Search diagnostic catalog",
-                     "Source arguments, aliases and names",
-                     "Pattern mode and regex dialect",
-                     "Record framing",
-                     "Request JSON and byte patterns",
-                     "SQL LIKE versus filesystem globs",
-                     "Transport escapes and raw text",
-                     "Case selection",
-                     "Mutation repair table",
-                     "Completeness boundary"
-                 })
-        {
-            StringAssert.Contains(catalog, $"## {heading}", heading);
-        }
-
-        StringAssert.Contains(catalog, "Diagnostic.Location.ArgumentName");
-        StringAssert.Contains(catalog, "SourceNotFoundException");
-        StringAssert.Contains(catalog, "UnsupportedRequiredColumn");
-        StringAssert.Contains(catalog, "invent a Search method");
-        StringAssert.Contains(catalog, "escape JSON first, then escape the SQL literal");
-        StringAssert.Contains(catalog, "search.counts");
-        StringAssert.Contains(catalog, "search.audit");
-        Assert.IsFalse(catalog.Contains("search.discover(", StringComparison.Ordinal));
-        Assert.IsFalse(catalog.Contains("search.find(", StringComparison.Ordinal));
-        Assert.IsFalse(catalog.Contains("search.scan(", StringComparison.Ordinal));
-    }
-
     [TestMethod]
     public void UnknownSourceName_ShouldUseMetadataInsteadOfInventingARepairMethod()
     {
@@ -114,8 +47,7 @@ public sealed class SearchDiagnosticRepairCatalogTests
             RuntimeV2TestContexts.CreateExecutionContext(),
             "fixture",
             "TODO");
-        Assert.IsInstanceOfType<SearchMatchesSource>(repaired);
-        StringAssert.Contains(ReadCatalog(), "Use the name and alias present in metadata");
+        Assert.IsInstanceOfType<SearchMatchesTypedSource>(repaired);
     }
 
     [TestMethod]
@@ -136,7 +68,7 @@ public sealed class SearchDiagnosticRepairCatalogTests
             RuntimeV2TestContexts.CreateExecutionContext(),
             "fixture",
             "TODO");
-        Assert.IsInstanceOfType<SearchMatchesSource>(repaired);
+        Assert.IsInstanceOfType<SearchMatchesTypedSource>(repaired);
     }
 
     [TestMethod]
@@ -176,17 +108,20 @@ public sealed class SearchDiagnosticRepairCatalogTests
     [TestMethod]
     public void WrongMode_ShouldRepairTheRequestValueWithoutChangingLiteralIntent()
     {
-        const string invalid =
-            "{\"version\":1,\"patterns\":[{\"id\":\"todo\",\"pattern\":\"TODO\",\"mode\":\"glob\"}]}";
         var exception = Assert.ThrowsException<SearchRequestException>(
-            () => SearchManyRequestParser.Parse(invalid));
+            () => SearchTypedInputNormalizer.CreateMany(
+                "fixture",
+                [new SearchPatternInput("todo", "TODO", "glob")],
+                options: null));
 
         Assert.AreEqual(SearchDiagnosticCodes.InvalidArgument, exception.Diagnostic.Code);
-        Assert.AreEqual("requestJson", exception.Diagnostic.Location?.ArgumentName);
-        StringAssert.Contains(exception.Diagnostic.Explanation, "unsupported value");
+        Assert.AreEqual("patterns[0].mode", exception.Diagnostic.Location?.ArgumentName);
+        StringAssert.Contains(exception.Diagnostic.Explanation, "unsupported type or value");
 
-        var repaired = SearchManyRequestParser.Parse(
-            "{\"version\":1,\"patterns\":[{\"id\":\"todo\",\"pattern\":\"TODO\",\"mode\":\"literal\"}]}" );
+        var repaired = SearchTypedInputNormalizer.CreateMany(
+            "fixture",
+            [new SearchPatternInput("todo", "TODO")],
+            options: null);
         Assert.AreEqual(SearchPatternMode.Literal, repaired.Patterns.Single().Mode);
     }
 
@@ -239,10 +174,6 @@ public sealed class SearchDiagnosticRepairCatalogTests
         Assert.IsTrue(regex.IsMatch("TODO"));
         Assert.IsFalse(regex.IsMatch("TODOLOGY"));
         Assert.AreEqual(@"\\bTODO\\b", logicalRegex.Replace("\\", "\\\\", StringComparison.Ordinal));
-
-        var catalog = ReadCatalog();
-        StringAssert.Contains(catalog, "C:\\logs\\build");
-        StringAssert.Contains(catalog, "logical pattern is `\\bTODO\\b`");
     }
 
     [TestMethod]
@@ -251,9 +182,11 @@ public sealed class SearchDiagnosticRepairCatalogTests
         var defaultRequest = SearchRequest.Create("fixture", "TODO");
         Assert.AreEqual(SearchCaseMode.Sensitive, defaultRequest.CaseMode);
 
-        var insensitive = SearchManyRequestParser.Parse(
-            "{\"version\":1,\"patterns\":[{\"id\":\"todo\",\"pattern\":\"TODO\",\"mode\":\"literal\"}]," +
-            "\"options\":{\"case\":\"insensitive\"}}");
+        var insensitive = SearchTypedInputNormalizer.CreateMany(
+            "fixture",
+            [new SearchPatternInput("todo", "TODO")],
+            new SearchManyOptionsInput(
+                text: new SearchManyTextInput(caseMode: "insensitive")));
         Assert.AreEqual(SearchCaseMode.Insensitive, insensitive.Options.CaseMode);
 
         var exception = Assert.ThrowsException<SearchRequestException>(
@@ -271,15 +204,6 @@ public sealed class SearchDiagnosticRepairCatalogTests
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
     }
 
-    private static string ReadCatalog()
-    {
-        return File.ReadAllText(Path.Combine(
-            FindRepositoryRoot(),
-            "docs",
-            "search",
-            "search-diagnostic-repair-catalog-v1.md"));
-    }
-
     private static string EscapeSql(string value)
     {
         return value.Replace("\\", "\\\\", StringComparison.Ordinal)
@@ -295,20 +219,6 @@ public sealed class SearchDiagnosticRepairCatalogTests
     {
         if (Directory.Exists(root))
             Directory.Delete(root, recursive: true);
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "Musoq.DataSources.sln")))
-                return directory.FullName;
-
-            directory = directory.Parent;
-        }
-
-        throw new InvalidOperationException("Could not locate the datasource repository root.");
     }
 
     private sealed class NullSearchLoggerResolver : ILoggerResolver

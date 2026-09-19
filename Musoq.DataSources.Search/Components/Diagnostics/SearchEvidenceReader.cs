@@ -1,6 +1,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading;
 using Musoq.DataSources.Search.Components.Text;
@@ -19,6 +20,28 @@ internal static class SearchEvidenceReader
         CancellationToken cancellationToken)
     {
         using var reader = SearchTextReader.Open(path, encodingMode);
+        return Read(reader, matchingLine, options, cancellationToken, path);
+    }
+
+    public static IReadOnlyList<SearchContextLine> Read(
+        byte[] bytes,
+        int length,
+        SearchEncodingMode encodingMode,
+        long matchingLine,
+        SearchContextOptions options,
+        CancellationToken cancellationToken)
+    {
+        using var reader = SearchTextReader.Open(bytes, length, encodingMode);
+        return Read(reader, matchingLine, options, cancellationToken, "<snapshot>");
+    }
+
+    private static IReadOnlyList<SearchContextLine> Read(
+        TextReader reader,
+        long matchingLine,
+        SearchContextOptions options,
+        CancellationToken cancellationToken,
+        string stalePath)
+    {
         using var buffer = SearchCharBuffer.Rent();
         var beforeLines = new Queue<ContextLineData>();
         var result = new List<SearchContextLine>(
@@ -85,7 +108,7 @@ internal static class SearchEvidenceReader
         }
 
         if (!foundMatchingLine)
-            throw new SearchEvidenceStaleException(path);
+            throw new SearchEvidenceStaleException(stalePath);
 
         return result.AsReadOnly();
     }

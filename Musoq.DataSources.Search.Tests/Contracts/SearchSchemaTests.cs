@@ -61,7 +61,7 @@ public sealed class SearchSchemaTests
             "many",
             [typeof(string), typeof(string)],
             [FixtureRoot, ManyRequest],
-            $"select * from search.many('{EscapedFixtureRoot}', '{ManyRequest}')",
+            $"select * from search.many('{EscapedFixtureRoot}', {ManyRequest})",
             [
                 Column(nameof(SearchMatch.Path), typeof(string)),
                 Column(nameof(SearchMatch.PatternId), typeof(string)),
@@ -78,7 +78,7 @@ public sealed class SearchSchemaTests
             "bytes",
             [typeof(string), typeof(string)],
             [FixtureRoot, ByteRequest],
-            $"select * from search.bytes('{EscapedFixtureRoot}', '{ByteRequest}')",
+            $"select * from search.bytes('{EscapedFixtureRoot}', '{ByteRequest}', (Window: (BeforeBytes: 1, AfterBytes: 1)))",
             [
                 Column(nameof(SearchByteMatch.Path), typeof(string)),
                 Column(nameof(SearchByteMatch.Origin), typeof(string)),
@@ -204,10 +204,9 @@ public sealed class SearchSchemaTests
     private static string EscapedFixtureRoot => FixtureRoot.Replace("\\", "\\\\", StringComparison.Ordinal);
 
     private const string ManyRequest =
-        "{\"version\":1,\"patterns\":[{\"id\":\"todo\",\"pattern\":\"TODO\",\"mode\":\"literal\"}]}";
+        "array { (Id: 'todo', Pattern: 'TODO') }";
 
-    private const string ByteRequest =
-        "{\"version\":1,\"bytes\":\"54 4f 44 4f\",\"window\":{\"beforeBytes\":1,\"afterBytes\":1}}";
+    private const string ByteRequest = "54 4f 44 4f";
 
     [TestMethod]
     public void AssemblyDiscovery_ShouldDeclareSearchSchema()
@@ -318,39 +317,64 @@ public sealed class SearchSchemaTests
     {
         var constructors = new SearchSchema().GetRawConstructors(CreateMetadataContext());
 
-        Assert.AreEqual(8, constructors.Length);
+        Assert.AreEqual(16, constructors.Length);
         Assert.AreEqual("matches", constructors[0].MethodName);
         CollectionAssert.AreEqual(
             new[] { typeof(string), typeof(string) },
             constructors[0].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
-        Assert.AreEqual("many", constructors[1].MethodName);
         CollectionAssert.AreEqual(
-            new[] { typeof(string), typeof(string) },
+            new[] { typeof(string), typeof(string), typeof(SearchMatchOptionsInput) },
             constructors[1].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
-        Assert.AreEqual("lines", constructors[2].MethodName);
+        Assert.AreEqual("matches", constructors[1].MethodName);
+        Assert.AreEqual("many", constructors[2].MethodName);
         CollectionAssert.AreEqual(
-            new[] { typeof(string), typeof(string) },
+            new[] { typeof(string), typeof(IReadOnlyList<SearchPatternInput>) },
             constructors[2].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
-        Assert.AreEqual("files", constructors[3].MethodName);
         CollectionAssert.AreEqual(
-            new[] { typeof(string), typeof(string) },
+            new[] { typeof(string), typeof(IReadOnlyList<SearchPatternInput>), typeof(SearchManyOptionsInput) },
             constructors[3].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
-        Assert.AreEqual("counts", constructors[4].MethodName);
+        Assert.AreEqual("lines", constructors[4].MethodName);
         CollectionAssert.AreEqual(
             new[] { typeof(string), typeof(string) },
             constructors[4].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
-        Assert.AreEqual("paths", constructors[5].MethodName);
         CollectionAssert.AreEqual(
-            new[] { typeof(string) },
+            new[] { typeof(string), typeof(string), typeof(SearchScanOptionsInput) },
             constructors[5].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
-        Assert.AreEqual("bytes", constructors[6].MethodName);
+        Assert.AreEqual("files", constructors[6].MethodName);
         CollectionAssert.AreEqual(
             new[] { typeof(string), typeof(string) },
             constructors[6].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
-        Assert.AreEqual("audit", constructors[7].MethodName);
+        CollectionAssert.AreEqual(
+            new[] { typeof(string), typeof(string), typeof(SearchScanOptionsInput) },
+            constructors[7].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        Assert.AreEqual("counts", constructors[8].MethodName);
         CollectionAssert.AreEqual(
             new[] { typeof(string), typeof(string) },
-            constructors[7].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+            constructors[8].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { typeof(string), typeof(string), typeof(SearchScanOptionsInput) },
+            constructors[9].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        Assert.AreEqual("paths", constructors[10].MethodName);
+        CollectionAssert.AreEqual(
+            new[] { typeof(string) },
+            constructors[10].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { typeof(string), typeof(SearchPathsOptionsInput) },
+            constructors[11].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        Assert.AreEqual("bytes", constructors[12].MethodName);
+        CollectionAssert.AreEqual(
+            new[] { typeof(string), typeof(string) },
+            constructors[12].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { typeof(string), typeof(string), typeof(SearchBytesOptionsInput) },
+            constructors[13].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        Assert.AreEqual("audit", constructors[14].MethodName);
+        CollectionAssert.AreEqual(
+            new[] { typeof(string), typeof(string) },
+            constructors[14].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { typeof(string), typeof(string), typeof(SearchScanOptionsInput) },
+            constructors[15].ConstructorInfo.Arguments.Select(argument => argument.Type).ToArray());
     }
 
     [TestMethod]
@@ -654,7 +678,9 @@ public sealed class SearchSchemaTests
                 spans.Add(span);
 
         Assert.AreEqual(1, spans.Count);
-        Assert.AreEqual(new MatchSpan(0, 3, 1, 0), spans[0]);
+        Assert.AreEqual(
+            new MatchSpan(0, 3, 1, 0) { MatchText = "aba" },
+            spans[0]);
         Assert.AreEqual(3L, spans[0].EndExclusive);
     }
 
@@ -765,7 +791,7 @@ public sealed class SearchSchemaTests
         Assert.IsTrue(requests.All(request =>
             request.Identity.SchemaName == "#search" &&
             request.Identity.MethodName == "matches" &&
-            request.Parameters.Length == 2));
+            request.Parameters.Length == 0));
     }
 
     [TestMethod]
@@ -1151,7 +1177,31 @@ public sealed class SearchSchemaTests
         var schema = new SearchSchema();
         var context = CreateMetadataContext();
 
-        StarContractAssertions.AssertConstructors(schema.GetRawConstructors(context), StarCases);
+        var constructorSignatures = schema.GetRawConstructors(context)
+            .Select(constructor =>
+                $"{constructor.MethodName}({string.Join(", ", constructor.ConstructorInfo.Arguments.Select(argument => argument.Type.FullName))})")
+            .ToArray();
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                $"matches({typeof(string).FullName}, {typeof(string).FullName})",
+                $"matches({typeof(string).FullName}, {typeof(string).FullName}, {typeof(SearchMatchOptionsInput).FullName})",
+                $"many({typeof(string).FullName}, {typeof(IReadOnlyList<SearchPatternInput>).FullName})",
+                $"many({typeof(string).FullName}, {typeof(IReadOnlyList<SearchPatternInput>).FullName}, {typeof(SearchManyOptionsInput).FullName})",
+                $"lines({typeof(string).FullName}, {typeof(string).FullName})",
+                $"lines({typeof(string).FullName}, {typeof(string).FullName}, {typeof(SearchScanOptionsInput).FullName})",
+                $"files({typeof(string).FullName}, {typeof(string).FullName})",
+                $"files({typeof(string).FullName}, {typeof(string).FullName}, {typeof(SearchScanOptionsInput).FullName})",
+                $"counts({typeof(string).FullName}, {typeof(string).FullName})",
+                $"counts({typeof(string).FullName}, {typeof(string).FullName}, {typeof(SearchScanOptionsInput).FullName})",
+                $"paths({typeof(string).FullName})",
+                $"paths({typeof(string).FullName}, {typeof(SearchPathsOptionsInput).FullName})",
+                $"bytes({typeof(string).FullName}, {typeof(string).FullName})",
+                $"bytes({typeof(string).FullName}, {typeof(string).FullName}, {typeof(SearchBytesOptionsInput).FullName})",
+                $"audit({typeof(string).FullName}, {typeof(string).FullName})",
+                $"audit({typeof(string).FullName}, {typeof(string).FullName}, {typeof(SearchScanOptionsInput).FullName})"
+            },
+            constructorSignatures);
 
         foreach (var contract in StarCases)
         {

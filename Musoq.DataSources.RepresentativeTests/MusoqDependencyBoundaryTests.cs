@@ -97,6 +97,7 @@ public sealed class MusoqDependencyBoundaryTests
         return !path.Contains($"{Path.DirectorySeparatorChar}TestsSolutions{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
                && !name.Contains(".Tests", StringComparison.OrdinalIgnoreCase)
                && !name.EndsWith("Tests", StringComparison.OrdinalIgnoreCase)
+               && !name.EndsWith(".Testing", StringComparison.OrdinalIgnoreCase)
                && !name.Contains(".Playground", StringComparison.OrdinalIgnoreCase)
                && !name.EndsWith("Benchmarks", StringComparison.OrdinalIgnoreCase);
     }

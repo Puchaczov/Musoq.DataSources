@@ -86,7 +86,7 @@ public sealed class SearchManyLiteralMatcherTests
     [TestMethod]
     public void Matcher_ShouldCompileAndSearchTheBoundedMaximumPatternSet()
     {
-        var patterns = Enumerable.Range(0, SearchManyRequestParser.MaxPatternCount)
+        var patterns = Enumerable.Range(0, SearchPatternLimits.MaxPatternCount)
             .Select(index => (Id: $"pattern-{index:D4}", Pattern: $"token-{index:D4}"))
             .ToArray();
         var request = CreateRequest(patterns);
