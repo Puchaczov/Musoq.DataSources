@@ -209,14 +209,13 @@ internal sealed class SearchScopeMatcher
             if (MatchesDirectoryOnlyExclude(relativePath))
                 return SearchTraversalAction.Skip;
 
-            if (entry.IsReparsePoint)
+            var physicalDirectory = entry.IsReparsePoint
+                ? resolution.IsDirectory ? resolution.PhysicalPath : null
+                : fullPath;
+            if (physicalDirectory is null ||
+                !_visitedPhysicalDirectories.Add(physicalDirectory))
             {
-                if (!resolution.IsDirectory ||
-                    resolution.PhysicalPath is null ||
-                    !_visitedPhysicalDirectories.Add(resolution.PhysicalPath))
-                {
-                    return SearchTraversalAction.Skip;
-                }
+                return SearchTraversalAction.Skip;
             }
 
             EnsureRules(parentDirectory);
