@@ -347,7 +347,9 @@ public sealed class TypedSearchSourceTests
 
     private static string EscapeSql(string value)
     {
-        return value.Replace("'", "''", StringComparison.Ordinal);
+        return value
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("'", "''", StringComparison.Ordinal);
     }
 
     private static void DeleteFixture(string root)
