@@ -8,7 +8,8 @@ param(
     [string]$NuGetApiKey = "",
     [string]$NuGetSource = "https://api.nuget.org/v3/index.json",
     [string]$OutputMetadataPath = "",
-    [string]$TargetCommitish = ""
+    [string]$TargetCommitish = "",
+    [switch]$SkipSmokeTest
 )
 
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
@@ -27,9 +28,14 @@ else {
     [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot $ArtifactDirectory))
 }
 
-& (Join-Path $PSScriptRoot "Test-ReleaseSmoke.ps1") -Tag $Tag -ArtifactDirectory $resolvedArtifactDirectory
-if ($LASTEXITCODE -ne 0) {
-    throw "Release smoke test failed for $Tag."
+if ($SkipSmokeTest) {
+    Write-Host "Fast track: skipped release smoke test for $Tag." -ForegroundColor Yellow
+}
+else {
+    & (Join-Path $PSScriptRoot "Test-ReleaseSmoke.ps1") -Tag $Tag -ArtifactDirectory $resolvedArtifactDirectory
+    if ($LASTEXITCODE -ne 0) {
+        throw "Release smoke test failed for $Tag."
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($TargetCommitish) -and $TargetCommitish -notmatch '^[0-9a-fA-F]{7,40}$') {
@@ -176,7 +182,9 @@ Invoke-ReleaseNuGetPublication `
     -PublishToNuGet $release.PublishToNuGet `
     -PackageFiles $nugetPackageFiles `
     -NuGetSource $NuGetSource `
-    -NuGetApiKey $NuGetApiKey
+    -NuGetApiKey $NuGetApiKey `
+    -PackageId $release.PackageId `
+    -Version $release.Version
 
 if ($releaseExists) {
     if ($uploadPaths.Count -gt 0) {

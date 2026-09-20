@@ -500,6 +500,28 @@ function Test-OptionalNuGetPublicationPolicy {
         -PushAction $pushAction
     Assert-Equal 2 $pushCalls.Count "NuGet-enabled packages should push both package files."
 
+    $failureMessage = ''
+    $failingPushAction = {
+        param($packageFile, $source, $apiKey)
+        return 17
+    }
+    try {
+        Invoke-ReleaseNuGetPublication `
+            -PublishToNuGet $true `
+            -PackageFiles @('Json.nupkg') `
+            -NuGetSource 'https://example.invalid' `
+            -NuGetApiKey 'test-key' `
+            -PackageId 'Musoq.DataSources.Json' `
+            -Version '10.0.4-alpha.1' `
+            -PushAction $failingPushAction
+    }
+    catch {
+        $failureMessage = $_.Exception.Message
+    }
+    Assert-True ($failureMessage -match "package='Musoq\.DataSources\.Json 10\.0\.4-alpha\.1'") "NuGet failures should identify the package and version."
+    Assert-True ($failureMessage -match "file='Json\.nupkg'") "NuGet failures should identify the package file."
+    Assert-True ($failureMessage -match 'exitCode=17') "NuGet failures should expose the push exit code."
+
     Assert-Throws {
         Invoke-ReleaseNuGetPublication `
             -PublishToNuGet $true `
@@ -581,6 +603,10 @@ function Test-RoslynReleaseWorkflowGates {
     Assert-True ($batchWorkflow -notmatch 'dotnet test') "Batch datasource releases should rely on the branch Build workflow for solution tests."
     Assert-True ($batchWorkflow -match 'requires_nuget') "Batch datasource releases should expose whether selected packages need NuGet."
     Assert-True ($batchWorkflow -match "needs\.validate-pack\.outputs\.requires_nuget == 'true'") "Batch datasource releases should condition NuGet credentials on selected package policies."
+    Assert-True ($batchWorkflow -match 'fast_track') "Batch datasource releases should expose a fast-track mode."
+    Assert-True ($batchWorkflow -match 'SkipSmokeTest') "Batch fast-track publication should skip the duplicate publish-time smoke gate."
+    Assert-True ($batchWorkflow -match 'Batch packaging failed') "Batch packaging failures should include release identity context."
+    Assert-True ($batchWorkflow -match 'Batch publication failed') "Batch publication failures should include release identity context."
 }
 
 function Test-PluginToolingWorkflowGates {

@@ -246,6 +246,8 @@ function Invoke-ReleaseNuGetPublication {
         [Parameter(Mandatory=$true)]
         [string]$NuGetSource,
         [string]$NuGetApiKey = "",
+        [string]$PackageId = "",
+        [string]$Version = "",
         [scriptblock]$PushAction = $null
     )
 
@@ -259,23 +261,69 @@ function Invoke-ReleaseNuGetPublication {
     }
 
     foreach ($packageFile in $PackageFiles) {
-        Write-Host "Publishing $([System.IO.Path]::GetFileName($packageFile)) to NuGet..." -ForegroundColor Cyan
-
-        $exitCode = if ($null -eq $PushAction) {
-            dotnet nuget push $packageFile `
-                --source $NuGetSource `
-                --api-key $NuGetApiKey `
-                --skip-duplicate
-            $LASTEXITCODE
+        $fileName = [System.IO.Path]::GetFileName($packageFile)
+        $releaseLabel = if (-not [string]::IsNullOrWhiteSpace($PackageId) -and
+            -not [string]::IsNullOrWhiteSpace($Version)) {
+            "$PackageId $Version"
         }
         else {
-            $result = & $PushAction $packageFile $NuGetSource $NuGetApiKey
-            if ($null -eq $result) { 0 } else { [int]$result }
+            $fileName
+        }
+
+        Write-Host "Publishing package '$releaseLabel' file '$fileName' to '$NuGetSource'..." -ForegroundColor Cyan
+
+        [int]$exitCode = 0
+        $outputLines = @()
+        if ($null -eq $PushAction) {
+            $pushArguments = @(
+                'nuget',
+                'push',
+                $packageFile,
+                '--source',
+                $NuGetSource,
+                '--api-key',
+                $NuGetApiKey,
+                '--skip-duplicate'
+            )
+            if ([System.IO.Path]::GetExtension($packageFile) -ieq '.nupkg') {
+                $pushArguments += '--no-symbols'
+            }
+
+            try {
+                $nativeOutput = @(& dotnet @pushArguments 2>&1)
+                $exitCode = [int]$LASTEXITCODE
+            }
+            catch {
+                throw "NuGet push could not start: package='$releaseLabel' file='$fileName' source='$NuGetSource' error='$($_.Exception.Message)'"
+            }
+
+            $outputLines = @($nativeOutput | ForEach-Object { [string]$_ })
+            foreach ($line in $outputLines) {
+                Write-Host $line
+            }
+        }
+        else {
+            try {
+                $result = & $PushAction $packageFile $NuGetSource $NuGetApiKey
+                $exitCode = if ($null -eq $result) { 0 } else { [int]$result }
+            }
+            catch {
+                throw "NuGet push test action failed: package='$releaseLabel' file='$fileName' source='$NuGetSource' error='$($_.Exception.Message)'"
+            }
         }
 
         if ($exitCode -ne 0) {
-            throw "dotnet nuget push failed for $packageFile."
+            $diagnosticOutput = if ($outputLines.Count -eq 0) {
+                '<no client output>'
+            }
+            else {
+                $outputLines -join [Environment]::NewLine
+            }
+
+            throw "NuGet push failed: package='$releaseLabel' file='$fileName' source='$NuGetSource' exitCode=$exitCode. Client output:$([Environment]::NewLine)$diagnosticOutput"
         }
+
+        Write-Host "NuGet push completed: package='$releaseLabel' file='$fileName' exitCode=$exitCode." -ForegroundColor Green
     }
 }
 

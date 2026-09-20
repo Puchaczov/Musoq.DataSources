@@ -24,6 +24,14 @@ on:
         options:
           - 'true'
           - 'false'
+      fast_track:
+        description: 'Fast track: build, pack, and publish while skipping completed validation and smoke gates'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 permissions:
   contents: read
@@ -39,6 +47,7 @@ jobs:
       is_dry_run: ${{ steps.batch.outputs.is_dry_run }}
       release_count: ${{ steps.batch.outputs.release_count }}
       requires_nuget: ${{ steps.batch.outputs.requires_nuget }}
+      fast_track: ${{ steps.batch.outputs.fast_track }}
 
     steps:
       # actions/checkout@v4.2.2
@@ -59,6 +68,7 @@ jobs:
           BATCH_SELECTION: ${{ inputs.selection }}
           BATCH_DRY_RUN: ${{ inputs.dry_run }}
           BATCH_SKIP_EXISTING: ${{ inputs.skip_existing }}
+          BATCH_FAST_TRACK: ${{ inputs.fast_track }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_API_URL: ${{ github.api_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -133,38 +143,59 @@ jobs:
           "is_dry_run=$env:BATCH_DRY_RUN" >> $env:GITHUB_OUTPUT
           "release_count=$($pending.Count)" >> $env:GITHUB_OUTPUT
           "requires_nuget=$($requiresNuGet.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "fast_track=$env:BATCH_FAST_TRACK" >> $env:GITHUB_OUTPUT
 
       - name: Restore
         run: dotnet restore Musoq.DataSources.sln --nologo
 
       - name: Validate committed license snapshots
+        if: inputs.fast_track != 'true'
         shell: pwsh
         run: ./scripts/release/Assert-LicenseSnapshots.ps1 -PluginName All -ValidatePackageGraph
 
       - name: Build
         run: dotnet build Musoq.DataSources.sln --configuration Release --no-restore --nologo
 
-      - name: Pack and smoke test release artifacts
+      - name: Pack release artifacts
         shell: pwsh
+        env:
+          BATCH_FAST_TRACK: ${{ inputs.fast_track }}
         run: |
           $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
           foreach ($release in $batch) {
             $tag = [string]$release.tag
             $artifactDirectory = Join-Path 'artifacts/release' $tag
-            ./scripts/release/Pack-Release.ps1 -Tag $tag -OutputPath $artifactDirectory
-            ./scripts/release/Test-ReleaseSmoke.ps1 -Tag $tag -ArtifactDirectory $artifactDirectory
+            try {
+              ./scripts/release/Pack-Release.ps1 -Tag $tag -OutputPath $artifactDirectory
+              if ($env:BATCH_FAST_TRACK -ne 'true') {
+                ./scripts/release/Test-ReleaseSmoke.ps1 -Tag $tag -ArtifactDirectory $artifactDirectory
+              }
+              else {
+                Write-Host "Fast track: skipped release smoke test for $tag." -ForegroundColor Yellow
+              }
+            }
+            catch {
+              throw "Batch packaging failed: tag='$tag' package='$($release.packageId)' version='$($release.version)': $($_.Exception.Message)"
+            }
           }
 
       - name: Validate embedded license snapshots
+        if: inputs.fast_track != 'true'
         shell: pwsh
         run: |
           $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
           foreach ($release in $batch) {
+            $tag = [string]$release.tag
             $artifactDirectory = Join-Path 'artifacts/release' ([string]$release.tag)
-            ./scripts/release/Assert-ReleaseLicenseArtifacts.ps1 `
-              -PluginName ([string]$release.packageId) `
-              -AssetsDirectory (Join-Path $artifactDirectory 'plugins') `
-              -ExpectedArchiveCount 4
+            try {
+              ./scripts/release/Assert-ReleaseLicenseArtifacts.ps1 `
+                -PluginName ([string]$release.packageId) `
+                -AssetsDirectory (Join-Path $artifactDirectory 'plugins') `
+                -ExpectedArchiveCount 4
+            }
+            catch {
+              throw "Batch embedded license validation failed: tag='$tag' package='$($release.packageId)' version='$($release.version)': $($_.Exception.Message)"
+            }
           }
 
       # actions/upload-artifact@v4.6.2
@@ -265,6 +296,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARGET_SHA: ${{ github.sha }}
+          BATCH_FAST_TRACK: ${{ needs.validate-pack.outputs.fast_track }}
           TRUSTED_NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           NUGET_MUSOQ_KEY: ${{ secrets.NUGET_MUSOQ_KEY }}
         run: |
@@ -278,12 +310,23 @@ jobs:
             $metadataPath = Join-Path 'published' "$tag.json"
             $artifactDirectory = Join-Path 'artifacts/release' $tag
 
-            ./scripts/release/Publish-Release.ps1 `
-              -Tag $tag `
-              -Repository "${{ github.repository }}" `
-              -ArtifactDirectory $artifactDirectory `
-              -OutputMetadataPath $metadataPath `
-              -TargetCommitish $env:TARGET_SHA
+            $publishParameters = @{
+              Tag = $tag
+              Repository = "${{ github.repository }}"
+              ArtifactDirectory = $artifactDirectory
+              OutputMetadataPath = $metadataPath
+              TargetCommitish = $env:TARGET_SHA
+            }
+            if ($env:BATCH_FAST_TRACK -eq 'true') {
+              $publishParameters.SkipSmokeTest = $true
+            }
+
+            try {
+              & ./scripts/release/Publish-Release.ps1 @publishParameters
+            }
+            catch {
+              throw "Batch publication failed: tag='$tag' package='$($release.packageId)' version='$($release.version)': $($_.Exception.Message)"
+            }
 
             $publishedPlugins += @(Get-Content $metadataPath -Raw | ConvertFrom-Json)
           }
