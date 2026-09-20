@@ -1,4 +1,3 @@
-﻿using Docker.DotNet.Models;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Docker.Containers;
@@ -17,5 +16,5 @@ internal class ContainersTable : ISchemaTable
 
     public ISchemaColumn[] Columns => ContainersSourceHelper.ContainersColumns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(ContainerListResponse));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(ContainerEntity));
 }

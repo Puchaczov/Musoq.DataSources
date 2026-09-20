@@ -1,1 +1,50 @@
-{}
+{
+  "CsvHelper": {
+    "PackageId": "CsvHelper",
+    "Url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+  },
+  "Newtonsoft.Json": {
+    "PackageId": "Newtonsoft.Json",
+    "Url": "https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md"
+  },
+  "Docker.DotNet": {
+    "PackageId": "Docker.DotNet",
+    "Url": "https://raw.githubusercontent.com/dotnet/Docker.DotNet/master/LICENSE"
+  },
+  "Musoq.Parser": {
+    "PackageId": "Musoq.Parser",
+    "Url": "https://raw.githubusercontent.com/Puchaczov/Musoq/main/LICENSE.TXT"
+  },
+  "Musoq.Plugins": {
+    "PackageId": "Musoq.Plugins",
+    "Url": "https://raw.githubusercontent.com/Puchaczov/Musoq/main/LICENSE.TXT"
+  },
+  "Musoq.Schema": {
+    "PackageId": "Musoq.Schema",
+    "Url": "https://raw.githubusercontent.com/Puchaczov/Musoq/main/LICENSE.TXT"
+  },
+  "Atlassian.SDK": {
+    "PackageId": "Atlassian.SDK",
+    "Url": "https://raw.githubusercontent.com/spdx/license-list-data/main/text/BSD-2-Clause.txt"
+  },
+  "RestSharp": {
+    "PackageId": "RestSharp",
+    "Url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+  },
+  "OpenAI": {
+    "PackageId": "OpenAI",
+    "Url": "https://raw.githubusercontent.com/openai/openai-dotnet/edc1b51f9138375a16fc078b9ce175de76529136/LICENSE"
+  },
+  "System.ClientModel": {
+    "PackageId": "System.ClientModel",
+    "Url": "https://raw.githubusercontent.com/Azure/azure-sdk-for-net/6b41983be6c45a7439db0b25f0c0874d7c867ed9/LICENSE.txt"
+  },
+  "HtmlAgilityPack": {
+    "PackageId": "HtmlAgilityPack",
+    "Url": "https://raw.githubusercontent.com/spdx/license-list-data/main/text/MIT.txt"
+  },
+  "Fastenshtein": {
+    "PackageId": "Fastenshtein",
+    "Url": "https://raw.githubusercontent.com/DanHarltey/Fastenshtein/master/LICENSE"
+  }
+}

@@ -32,7 +32,7 @@ public class TimeSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #time";
+        var query = "desc time";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -47,15 +47,15 @@ public class TimeSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("interval", (string)row[0]);
-        Assert.AreEqual("startAt: System.DateTimeOffset", (string)row[1]);
-        Assert.AreEqual("stopAt: System.DateTimeOffset", (string)row[2]);
-        Assert.AreEqual("resolution: System.String", (string)row[3]);
+        Assert.AreEqual("startDateTime: System.String", (string)row[1]);
+        Assert.AreEqual("stopDateTime: System.String", (string)row[2]);
+        Assert.AreEqual("interval: System.String", (string)row[3]);
     }
 
     [TestMethod]
     public void DescInterval_ShouldReturnMethodSignature()
     {
-        var query = "desc #time.interval";
+        var query = "desc time.interval";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -70,15 +70,15 @@ public class TimeSchemaDescribeTests
 
         var row = table.First();
         Assert.AreEqual("interval", (string)row[0]);
-        Assert.AreEqual("startAt: System.DateTimeOffset", (string)row[1]);
-        Assert.AreEqual("stopAt: System.DateTimeOffset", (string)row[2]);
-        Assert.AreEqual("resolution: System.String", (string)row[3]);
+        Assert.AreEqual("startDateTime: System.String", (string)row[1]);
+        Assert.AreEqual("stopDateTime: System.String", (string)row[2]);
+        Assert.AreEqual("interval: System.String", (string)row[3]);
     }
 
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #time.unknownmethod";
+        var query = "desc time.unknownmethod";
 
         try
         {
@@ -102,7 +102,7 @@ public class TimeSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #time";
+        var query = "desc time";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -115,11 +115,11 @@ public class TimeSchemaDescribeTests
     [TestMethod]
     public void DescIntervalNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #time.interval";
+        var queryNoArgs = "desc time.interval";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 
-        var queryWithArgs = "desc #time.interval('2024-01-01', '2024-01-02', 'hours')";
+        var queryWithArgs = "desc time.interval('2024-01-01', '2024-01-02', 'hours')";
         var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
         var tableWithArgs = vmWithArgs.Run();
 

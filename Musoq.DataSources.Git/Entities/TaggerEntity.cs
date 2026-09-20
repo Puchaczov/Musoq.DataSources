@@ -3,27 +3,34 @@ using LibGit2Sharp;
 
 namespace Musoq.DataSources.Git.Entities;
 
-/// <summary>
-///     Represents a tagger entity in a Git repository.
-/// </summary>
-/// <param name="tagger">The signature object from LibGit2Sharp.</param>
-/// <param name="repository">The repository the tagger belongs to.</param>
-public class TaggerEntity(Signature tagger, Repository repository)
+/// <summary>Represents a detached Git tagger snapshot.</summary>
+public class TaggerEntity
 {
-    internal readonly Repository LibGitRepository = repository;
+    private readonly string? _name;
+    private readonly string? _email;
+    private readonly DateTimeOffset _whenSigned;
 
-    /// <summary>
-    ///     Gets the name of the tagger.
-    /// </summary>
-    public string? Name => tagger.Name;
+    /// <summary>Creates a detached tagger snapshot from a LibGit2Sharp signature.</summary>
+    /// <param name="tagger">The tagger signature to copy.</param>
+    /// <param name="repository">The source repository; it is accepted for compatibility and not retained.</param>
+    public TaggerEntity(Signature tagger, Repository repository)
+        : this(tagger?.Name, tagger?.Email, tagger?.When ?? default)
+    {
+    }
 
-    /// <summary>
-    ///     Gets the email of the tagger.
-    /// </summary>
-    public string? Email => tagger.Email;
+    internal TaggerEntity(string? name, string? email, DateTimeOffset whenSigned)
+    {
+        _name = name;
+        _email = email;
+        _whenSigned = whenSigned;
+    }
 
-    /// <summary>
-    ///     Gets the date and time when the tag was signed.
-    /// </summary>
-    public DateTimeOffset WhenSigned => tagger.When;
+    /// <summary>Gets the tagger display name.</summary>
+    public string? Name => _name;
+
+    /// <summary>Gets the tagger email address.</summary>
+    public string? Email => _email;
+
+    /// <summary>Gets the time at which the tag was signed.</summary>
+    public DateTimeOffset WhenSigned => _whenSigned;
 }

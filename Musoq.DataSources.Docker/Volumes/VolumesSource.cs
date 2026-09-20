@@ -1,40 +1,33 @@
-﻿using System.Collections.Concurrent;
-using Docker.DotNet.Models;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Docker.Volumes;
 
-internal class VolumesSource : RowSourceBase<VolumeResponse>
+internal class VolumesSource(IDockerApi api, SourceExecutionContext executionContext)
+    : RowSourceBase<VolumeEntity>
 {
     private const string VolumesSourceName = "docker_volumes";
-    private readonly IDockerApi _api;
-    private readonly RuntimeContext _runtimeContext;
 
-    public VolumesSource(IDockerApi api, RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<VolumeEntity> writer)
     {
-        _api = api;
-        _runtimeContext = runtimeContext;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _runtimeContext.ReportDataSourceBegin(VolumesSourceName);
+        executionContext.ReportDataSourceBegin(VolumesSourceName);
 
         try
         {
-            var volumes = _api.ListVolumesAsync().Result;
-            _runtimeContext.ReportDataSourceRowsKnown(VolumesSourceName, volumes.Count);
+            var volumes = api.ListVolumesAsync().Result;
+            var rows = volumes
+                .Select(volume => new VolumeEntity(volume))
+                .Where(entity => DockerSourcePlanner.Matches(executionContext.Plan.AcceptedPredicate, entity))
+                .ToList();
 
-            chunkedSource.Add(
-                volumes.Select(c => new EntityResolver<VolumeResponse>(c, VolumesSourceHelper.VolumesNameToIndexMap,
-                    VolumesSourceHelper.VolumesIndexToMethodAccessMap)).ToList());
+            executionContext.ReportDataSourceRowsKnown(VolumesSourceName, rows.Count);
+            writer.Write(rows);
 
-            _runtimeContext.ReportDataSourceEnd(VolumesSourceName, volumes.Count);
+            executionContext.ReportDataSourceEnd(VolumesSourceName, rows.Count);
         }
         catch
         {
-            _runtimeContext.ReportDataSourceEnd(VolumesSourceName, 0);
+            executionContext.ReportDataSourceEnd(VolumesSourceName, 0);
             throw;
         }
     }

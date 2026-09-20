@@ -1,66 +1,70 @@
 # SeparatedValues plugin guide
 
 ## Purpose
-- Main CSV/TSV/semicolon plugin with header handling, stream support, query-side typing, and dynamic columns.
+
+- Streams UTF-8 comma-, tab-, semicolon-, and explicitly delimited files through a bounded, byte-native pipeline.
+- The public constructors are `separatedvalues.comma(path, hasHeader, skipLines)`, `tab(...)`, and `semicolon(...)`.
+- `separatedvalues.delimited(path, delimiter, hasHeader, skipLines)` selects one explicit ASCII delimiter; delimiter and header detection are never guessed.
+- Inputs are file paths only. Stream input and archive cross-apply are not supported.
 
 ## Read first
+
 - `SeparatedValuesSchema.cs`
-- `SeparatedValuesTable.cs`
-- `SeparatedValuesFromFileRowsSource.cs`
-- `SeparatedValuesFromStreamRowsSource.cs`
-- `InitiallyInferredTable.cs`
-- `SeparatedValuesHelper.cs`
+- `Components/Planning/SeparatedValuesBoundedSchemaResolver.cs`
+- `Components/Parsing/SeparatedValuesFormat.cs`
+- `Components/Parsing/SeparatedValuesUtf8Reader.cs`
+- `Components/Execution/SeparatedValuesScanPipeline.cs`
+- `Components/Execution/SeparatedValuesParallelBlockScanPipeline.cs`
+- `Tables/SeparatedValuesTable.cs`
+- `Components/Planning/SeparatedValuesSourcePlanner.cs`
 
-## Input modes
-- Public constructors are only `#separatedvalues.comma(path, hasHeader, skipLines)`, `tab(...)`, and `semicolon(...)`.
-- `GetRowSource()` supports three first-argument shapes internally: `string` path, `Stream`, or `IReadOnlyTable`.
-- `IReadOnlyTable` input is the coupling/cross-apply mode and expects rows shaped like `(filePath, hasHeader, skipLines)`.
-- Stream mode is mainly used through archive cross-apply scenarios; it depends on externally provided column metadata rather than self-inference.
+## Schema contract
 
-## Dynamic table rules
-- This is the clearest dynamic-table example in the repo.
-- If `runtimeContext.QuerySourceInfo.HasExternallyProvidedTypes` is true, `GetTableByName()` returns `InitiallyInferredTable`; otherwise the table is built from file headers plus inferred types.
-- File-backed inference opens the file, skips configured leading lines and blank lines, then builds columns from the first logical row.
-- Headerless files become `Column1`, `Column2`, and so on.
-- Stream mode does not infer its schema directly from the stream content; it relies on the runtime column set.
+- A concrete `TABLE` contract is authoritative. Metadata resolution reads only enough to map the header (or obtain the first headerless width); it does not infer declared types from data rows.
+- Direct dynamic sources infer from a bounded sample and stop at the first of 1 MiB, 4,096 complete data records, or 10 ms. The three limits are configurable with `separatedvalues.inference_max_bytes`, `separatedvalues.inference_max_rows`, and `separatedvalues.inference_max_time_ms`.
+- The time limit is cooperative between reads and records; a blocking filesystem read is not a hard real-time deadline. If a complete required header or first record does not fit, resolution fails with guidance to provide a typed `TABLE` contract or increase the limits.
+- Sampled value columns are conservatively nullable. A later value that contradicts a sampled type fails with file, row, column, expected type, and observed token; types never widen during execution.
+- UTF-8 BOM is accepted; other encodings and malformed UTF-8 are rejected.
+- `skipLines` skips physical preamble lines before header or data parsing.
+- Header names are preserved exactly and compared ordinally. Empty or duplicate headers are errors; special names require bracket-quoted SQL identifiers.
+- Headerless dynamic sources use `Column1`, `Column2`, and so on through the maximum sampled width. A concrete headerless TABLE binds its declared names by source ordinal.
+- Short rows expose nulls. A headered row wider than its header is malformed.
+- Under strict defaults an unquoted empty field is null, a quoted empty field is an empty string, and whitespace is preserved.
+- Inference supports `bool`, `long`, `decimal`, `double`, and `string`; conflicts inside the sample widen to `string`.
+- Headerless width is fixed by the resolved sample. A wider later record is schema drift.
+- Missing files, malformed input, schema drift, and conversion failures are errors.
 
-## Patterns to preserve
-- Preserve header sanitization via `SeparatedValuesHelper.MakeHeaderNameValidColumnName()`.
-- Preserve chunked async reading, cancellation, and `RuntimeContext.ReportDataSourceBegin/End(...)`.
-- `Stream` and `IReadOnlyTable` inputs are part of the query contract and support coupling/cross-apply scenarios.
+## Hot-path rules
 
-## Header and type behavior
-- Header names are normalized by `SeparatedValuesHelper.MakeHeaderNameValidColumnName()`; tests treat this as part of the public contract.
-- Type conversion lives in `ParseHelpers.ParseRecords()` and is culture-sensitive.
-- Parse failures usually become `null` rather than hard failures for supported scalar types.
-- `object`-typed inferred columns fall back to `string` when constructing schema columns.
-- Duplicate headers after sanitization currently collide in dictionary maps; treat that behavior carefully.
+- Keep the sequential parser buffered and span-based, and the large-file path on pooled random-access byte blocks. Do not reintroduce `StreamReader`, CsvHelper, per-field delegates, or strings for skipped fields.
+- Keep field location, sampled-schema validation, accepted scalar predicates, and projection fused. Rejected rows must not allocate row arrays, strings, or boxed values.
+- Large files (currently at least 64 MiB) use asynchronous read-ahead, quote-state block summaries, shared process-wide CPU permits, dynamic workers, and a bounded ordered output window. The crossover is deliberately a file-size heuristic; do not add platform-specific drive detection. Preserve complete CSV grammar including multiline quoted fields.
+- Keep I/O depth independent from CPU worker count. Production currently uses 2 MiB blocks and I/O depth 4; change either only after the framing, projected-numeric, and quoted/multiline scheduling matrix clears the documented median thresholds on target hardware.
+- Keep the cooperative pre-analysis yield unless direct scheduling improves median throughput by at least 3% without worsening first-chunk latency, cancellation, or worker utilization.
+- Strict quote-free blocks may use compact framing, one region-level UTF-8 validation, and the unquoted field executor for any supported ASCII separator. Quotes, custom escaping, trimming, null tokens, comments, blank-record emission, and nonstandard endings must retain the general grammar path.
+- Newline-index capacity belongs to the structural memory budget. Reordered materialized output belongs to the separate 256 MiB process-wide output budget; its lease follows work into the ordered result and is released on drain, failure, cancellation, or shutdown. One oversized result reserves the whole budget and runs exclusively.
+- A positive accepted `SKIP`, accepted `TAKE > 4096`, or their combination can use block-row intersections only when there is no accepted predicate or residual work. Keep standalone smaller `TAKE` and every predicate-plus-slice request sequential. Validate values and widths only inside the selected source window; structural work needed to locate it may still fail.
+- Preserve source order, cancellation, early `TAKE`, progress, bounded buffers, and deterministic error propagation.
+- Completed scans may publish memory-only coarse block summaries and an exact count under the current file identity. Never add sidecars or a persistent cache.
+- `separatedvalues.max_parallelism`: missing or `0` is automatic, `1` is sequential, and positive values cap workers.
+- Recommend concrete typed `TABLE` contracts for multi-gigabyte scans. Sampled sources intentionally validate every inferred typed column, including unprojected columns; declared contracts parse only required fields after width validation.
+- The generic source accepts normalized runtime settings: `separatedvalues.quote_char` (`"` or `none`), `escape_mode` (`double`, `backslash`, `none`), `whitespace_mode` (`preserve`, `trim`), `blank_record_mode` (`skip`, `emit`), `comment_prefix`, `null_tokens` (JSON string array), `value_culture`, `record_endings` (`lf_crlf`, `any`), `max_record_bytes`, and `max_buffered_bytes`. Existing comma/tab/semicolon calls retain strict defaults.
+- `null_tokens` apply only to unquoted fields; quoted tokens remain strings. Empty unquoted fields remain null and quoted empty fields remain empty strings.
+- Keep discovery state in the shared linked structured-source files and execution loops format-specific.
 
-## Runtime and chunking behavior
-- File mode uses `AsyncRowsSourceBase` with large chunking and explicit runtime reporting under the `separated_values` source name.
-- Multi-file `IReadOnlyTable` input is processed with `Parallel.ForEachAsync`, so cross-file output order is not guaranteed.
-- Missing files are treated as empty input rather than immediate errors.
-- File mode suppresses CsvHelper `BadDataFound`, so malformed CSV is tolerated more than a strict parser would be.
+## Unsupported legacy behavior
 
-## Common pitfalls
-- Stream mode is safest when the query already supplies types; do not assume it will self-infer like file mode.
-- Culture matters. Tests intentionally pin culture for predictable numeric/date parsing.
-- Empty or nearly empty files can still fail during header processing even though missing files are tolerated.
-- If you change header normalization or scalar coercion, update both schema construction and row materialization paths together.
-
-## Safe extension points
-- Add new scalar conversion rules in `ParseHelpers.cs` first.
-- Extend header normalization in `SeparatedValuesHelper.cs` only if table/schema/name maps stay aligned.
-- Add plugin-specific helper methods in `SeparatedValuesLibrary.cs`.
-- If you add constructor overloads or modes, update both XML docs and `GetRawConstructors()` / describe tests.
-
-## Integrations
-- `CsvHelper`
-- `AsyncRowsSource`
+- No stream-backed source, archive-content cross-apply, alternate encoding, automatic delimiter/header detection, permissive malformed-input handling, or failed-conversion-to-null path. Culture and trimming are explicit generic-source settings, not implicit heuristics.
+- SeparatedValues does not depend on CsvHelper or AsyncRowsSource.
 
 ## Validate with
-- `Musoq.DataSources.SeparatedValues.Tests/CsvTests.cs`
-- `Musoq.DataSources.SeparatedValues.Tests/SeparatedValuesSchemaDescribeTests.cs`
 
-## Cross-project contract
-- `Musoq.DataSources.Archives.Tests/ArchivesAndSeparatedValuesTests.cs` is the best stream/cross-apply integration test.
+- `Musoq.DataSources.SeparatedValues.Tests/Sources/CsvTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Planning/SeparatedValuesDynamicSchemaTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Planning/SeparatedValuesSchemaInferenceTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Planning/SeparatedValuesBoundedInferenceTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Execution/SeparatedValuesParallelBlockPipelineTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Planning/SeparatedValuesStructuralSummaryTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Execution/SeparatedValuesRuntimeV2ProjectionTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Execution/SeparatedValuesParallelExecutionTests.cs`
+- `Musoq.DataSources.SeparatedValues.Tests/Components/Parsing/SeparatedValuesDecimalParserTests.cs`

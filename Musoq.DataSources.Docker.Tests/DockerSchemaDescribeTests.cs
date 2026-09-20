@@ -52,7 +52,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #docker";
+        var query = "desc docker";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -73,7 +73,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescContainers_ShouldReturnMethodSignatureWithNoParameters()
     {
-        var query = "desc #docker.containers";
+        var query = "desc docker.containers";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -88,7 +88,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescImages_ShouldReturnMethodSignatureWithNoParameters()
     {
-        var query = "desc #docker.images";
+        var query = "desc docker.images";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -103,7 +103,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescNetworks_ShouldReturnMethodSignatureWithNoParameters()
     {
-        var query = "desc #docker.networks";
+        var query = "desc docker.networks";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -118,7 +118,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescVolumes_ShouldReturnMethodSignatureWithNoParameters()
     {
-        var query = "desc #docker.volumes";
+        var query = "desc docker.volumes";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -133,7 +133,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescContainersWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #docker.containers()";
+        var query = "desc docker.containers()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -169,7 +169,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescImagesWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #docker.images()";
+        var query = "desc docker.images()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -200,7 +200,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescNetworksWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #docker.networks()";
+        var query = "desc docker.networks()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -238,7 +238,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescVolumesWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #docker.volumes()";
+        var query = "desc docker.volumes()";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -268,7 +268,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #docker.unknownmethod";
+        var query = "desc docker.unknownmethod";
 
         try
         {
@@ -292,7 +292,7 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #docker";
+        var query = "desc docker";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -305,11 +305,11 @@ public class DockerSchemaDescribeTests
     [TestMethod]
     public void DescContainersNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #docker.containers";
+        var queryNoArgs = "desc docker.containers";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 
-        var queryWithArgs = "desc #docker.containers()";
+        var queryWithArgs = "desc docker.containers()";
         var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
         var tableWithArgs = vmWithArgs.Run();
 

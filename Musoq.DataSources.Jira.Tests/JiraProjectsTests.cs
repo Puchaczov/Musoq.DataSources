@@ -28,7 +28,7 @@ public class JiraProjectsTests
                 MockEntityFactory.CreateProject(key: "PROJ2", name: "Project Two")
             });
 
-        var query = "select Key, Name from #jira.projects()";
+        var query = "select Key, Name from jira.projects()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -57,7 +57,7 @@ public class JiraProjectsTests
                 )
             });
 
-        var query = "select Id, Key, Name, Description, Lead, Category from #jira.projects()";
+        var query = "select Id, Key, Name, Description, Lead, Category from jira.projects()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();
@@ -85,7 +85,7 @@ public class JiraProjectsTests
                 MockEntityFactory.CreateProject(key: "OTHER", name: "Other Project")
             });
 
-        var query = "select Key, Name from #jira.projects() where Key = 'PROJ1'";
+        var query = "select Key, Name from jira.projects() where Key = 'PROJ1'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();
@@ -102,7 +102,7 @@ public class JiraProjectsTests
         api.Setup(f => f.GetProjectsAsync())
             .ReturnsAsync(new List<IJiraProject>());
 
-        var query = "select Key, Name from #jira.projects()";
+        var query = "select Key, Name from jira.projects()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
         var table = vm.Run();

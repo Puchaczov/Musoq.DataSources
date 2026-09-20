@@ -1,0 +1,214 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using Musoq.DataSources.Structured;
+using Musoq.Schema.Optimization;
+
+namespace Musoq.DataSources.Json;
+
+internal sealed record JsonReadPlan(bool ProjectionAccepted);
+
+internal static class JsonSourcePlanner
+{
+    public static SourcePlanResult Plan(
+        StructuredSchemaSnapshot snapshot,
+        SourcePlanRequest request)
+    {
+        var requiredColumns = request.RequiredColumns ?? [];
+        var (acceptedPredicate, residualPredicate) = SplitPredicate(
+            request.Predicate,
+            expression => IsSupportedPredicate(snapshot, expression));
+        var residualOrderBy = request.OrderBy ?? [];
+        var acceptsSlice = residualPredicate is null && residualOrderBy.Count == 0;
+        var layout = StructuredExecutionLayout.Bind(
+            snapshot,
+            GetColumnNames(requiredColumns),
+            IncludesCompleteSchema(snapshot, request.RequiredColumns));
+
+        return new SourcePlanResult
+        {
+            ExecutionPlan = new SourceExecutionPlan
+            {
+                Identity = request.Identity,
+                AcceptedColumns = requiredColumns,
+                AcceptedPredicate = acceptedPredicate,
+                AcceptedOrderBy = [],
+                AcceptedSkip = acceptsSlice ? request.Skip : null,
+                AcceptedTake = acceptsSlice ? request.Take : null,
+                Properties = new Dictionary<string, object?>
+                {
+                    [JsonPlanning.LayoutPropertyName] = layout,
+                    [JsonPlanning.ReadPlanPropertyName] = new JsonReadPlan(request.RequiredColumns is not null)
+                }
+            },
+            AcceptedColumns = requiredColumns,
+            AcceptedPredicate = acceptedPredicate,
+            ResidualPredicate = residualPredicate,
+            AcceptedOrderBy = [],
+            ResidualOrderBy = residualOrderBy,
+            AcceptedSkip = acceptsSlice ? request.Skip : null,
+            ResidualSkip = acceptsSlice ? null : request.Skip,
+            AcceptedTake = acceptsSlice ? request.Take : null,
+            ResidualTake = acceptsSlice ? null : request.Take,
+            Cardinality = acceptedPredicate is null
+                ? CardinalityEstimate.Exact(snapshot.RowCount, "Exact JSON discovery row count.")
+                : CardinalityEstimate.Bounded(
+                    0,
+                    snapshot.RowCount,
+                    1.0,
+                    "JSON predicate pushdown bounds the discovered rows."),
+            Diagnostics = [],
+            ContractDiagnostics = []
+        };
+    }
+
+    public static bool IsProjectionAccepted(SourceExecutionPlan plan)
+    {
+        return plan.Properties is not null &&
+               plan.Properties.TryGetValue(JsonPlanning.ReadPlanPropertyName, out var value) &&
+               value is JsonReadPlan { ProjectionAccepted: true };
+    }
+
+    internal static bool TryGetComparisonParts(
+        SourcePredicateComparison comparison,
+        out string columnName,
+        out SourcePredicateLiteral literal,
+        out SourcePredicateComparisonOperator op)
+    {
+        if (comparison.Left is SourcePredicateColumn leftColumn &&
+            comparison.Right is SourcePredicateLiteral rightLiteral)
+        {
+            columnName = leftColumn.Column.Name;
+            literal = rightLiteral;
+            op = comparison.Operator;
+            return true;
+        }
+
+        if (comparison.Right is SourcePredicateColumn rightColumn &&
+            comparison.Left is SourcePredicateLiteral leftLiteral)
+        {
+            columnName = rightColumn.Column.Name;
+            literal = leftLiteral;
+            op = Invert(comparison.Operator);
+            return true;
+        }
+
+        columnName = string.Empty;
+        literal = null!;
+        op = comparison.Operator;
+        return false;
+    }
+
+    private static IEnumerable<string> GetColumnNames(IReadOnlyList<SourceColumnRef> columns)
+    {
+        foreach (var column in columns)
+            yield return column.Name;
+    }
+
+    private static bool IncludesCompleteSchema(
+        StructuredSchemaSnapshot snapshot,
+        IReadOnlyList<SourceColumnRef>? requiredColumns)
+    {
+        if (requiredColumns is null)
+            return true;
+        if (requiredColumns.Count != snapshot.Columns.Length)
+            return false;
+
+        for (var index = 0; index < requiredColumns.Count; index++)
+            if (!string.Equals(requiredColumns[index].Name, snapshot.Columns[index].Name, StringComparison.Ordinal))
+                return false;
+        return true;
+    }
+
+    private static bool IsSupportedPredicate(
+        StructuredSchemaSnapshot snapshot,
+        SourcePredicateExpression expression)
+    {
+        if (expression is not SourcePredicateComparison comparison ||
+            !TryGetComparisonParts(comparison, out var name, out var literal, out var op) ||
+            literal.Value is null ||
+            !snapshot.TryGetColumn(name, out var column))
+            return false;
+
+        return column.TypeState.Kind switch
+        {
+            StructuredValueKind.Long => IsNumericOperator(op) && CanConvert<long>(literal.Value),
+            StructuredValueKind.Decimal => IsNumericOperator(op) && CanConvert<decimal>(literal.Value),
+            StructuredValueKind.Double => IsNumericOperator(op) && CanConvert<double>(literal.Value),
+            StructuredValueKind.Boolean => IsEqualityOperator(op) && literal.Value is bool,
+            StructuredValueKind.String => IsEqualityOperator(op) && literal.Value is string,
+            _ => false
+        };
+    }
+
+    private static bool CanConvert<T>(object value)
+    {
+        try
+        {
+            _ = Convert.ChangeType(value, typeof(T), System.Globalization.CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (Exception exception) when (exception is InvalidCastException or FormatException or OverflowException)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsNumericOperator(SourcePredicateComparisonOperator op)
+    {
+        return op is SourcePredicateComparisonOperator.Equal or
+            SourcePredicateComparisonOperator.NotEqual or
+            SourcePredicateComparisonOperator.GreaterThan or
+            SourcePredicateComparisonOperator.GreaterOrEqual or
+            SourcePredicateComparisonOperator.LessThan or
+            SourcePredicateComparisonOperator.LessOrEqual;
+    }
+
+    private static bool IsEqualityOperator(SourcePredicateComparisonOperator op)
+    {
+        return op is SourcePredicateComparisonOperator.Equal or SourcePredicateComparisonOperator.NotEqual;
+    }
+
+    private static (SourcePredicateExpression? Accepted, SourcePredicateExpression? Residual) SplitPredicate(
+        SourcePredicateExpression? predicate,
+        Func<SourcePredicateExpression, bool> canAccept)
+    {
+        if (predicate is null)
+            return (null, null);
+
+        if (predicate is SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical)
+        {
+            var left = SplitPredicate(logical.Left, canAccept);
+            var right = SplitPredicate(logical.Right, canAccept);
+            return (CombineAnd(left.Accepted, right.Accepted), CombineAnd(left.Residual, right.Residual));
+        }
+
+        return canAccept(predicate) ? (predicate, null) : (null, predicate);
+    }
+
+    private static SourcePredicateExpression? CombineAnd(
+        SourcePredicateExpression? left,
+        SourcePredicateExpression? right)
+    {
+        return (left, right) switch
+        {
+            (null, null) => null,
+            (not null, null) => left,
+            (null, not null) => right,
+            _ => new SourcePredicateLogical(SourcePredicateLogicalOperator.And, left, right)
+        };
+    }
+
+    private static SourcePredicateComparisonOperator Invert(SourcePredicateComparisonOperator op)
+    {
+        return op switch
+        {
+            SourcePredicateComparisonOperator.GreaterThan => SourcePredicateComparisonOperator.LessThan,
+            SourcePredicateComparisonOperator.GreaterOrEqual => SourcePredicateComparisonOperator.LessOrEqual,
+            SourcePredicateComparisonOperator.LessThan => SourcePredicateComparisonOperator.GreaterThan,
+            SourcePredicateComparisonOperator.LessOrEqual => SourcePredicateComparisonOperator.GreaterOrEqual,
+            _ => op
+        };
+    }
+}

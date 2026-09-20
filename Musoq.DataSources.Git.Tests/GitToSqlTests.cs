@@ -2,10 +2,12 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
+using LibGit2Sharp;
+using Musoq.DataSources.Git.Entities;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Parser.Helpers;
+using Musoq.Evaluator.Exceptions;
 
 namespace Musoq.DataSources.Git.Tests;
 
@@ -65,12 +67,18 @@ public class GitToSqlTests
                             Information.IsHeadDetached, 
                             Information.IsHeadUnborn, 
                             Information.IsShallow
-                        from #git.repository('{RepositoryPath}')
+                        from git.repository('{RepositoryPath}')
                     """.Replace("{RepositoryPath}", "C:\\NonExistentPath");
 
         var vm = CreateAndRunVirtualMachine(query);
 
-        Assert.ThrowsException<InvalidOperationException>(() => vm.Run());
+        var exception = Assert.ThrowsExactly<QueryExecutionException>(() =>
+        {
+            var table = vm.Run();
+            _ = table.Count;
+        });
+
+        Assert.IsInstanceOfType<InvalidOperationException>(exception.GetBaseException());
     }
 
     [TestMethod]
@@ -101,7 +109,7 @@ public class GitToSqlTests
                                 Information.IsHeadDetached, 
                                 Information.IsHeadUnborn, 
                                 Information.IsShallow
-                            from #git.repository('{RepositoryPath}')
+                            from git.repository('{RepositoryPath}')
                         """.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
             var vm = CreateAndRunVirtualMachine(query);
@@ -161,7 +169,7 @@ public class GitToSqlTests
                             Branch.Tip.Committer,
                             Branch.UpstreamBranchCanonicalName,
                             Branch.RemoteName
-                        from #git.repository('{RepositoryPath}') repository cross apply repository.Branches as Branch
+                        from git.repository('{RepositoryPath}') repository cross apply repository.Branches as Branch
                     """.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -221,7 +229,7 @@ public class GitToSqlTests
                 Commit.MessageShort,
                 Commit.Author,
                 Commit.Committer
-            from #git.repository('{RepositoryPath}') repository cross apply repository.Commits as Commit";
+            from git.repository('{RepositoryPath}') repository cross apply repository.Commits as Commit";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -280,7 +288,7 @@ public class GitToSqlTests
                 Tag.CanonicalName,
                 Tag.Message,
                 Tag.IsAnnotated
-            from #git.repository('{RepositoryPath}') repository cross apply repository.Tags as Tag
+            from git.repository('{RepositoryPath}') repository cross apply repository.Tags as Tag
             where Tag.IsAnnotated = false";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
@@ -307,7 +315,7 @@ public class GitToSqlTests
                 Tag.Annotation.Tagger.Name,
                 Tag.Annotation.Tagger.Email,
                 Tag.Annotation.Tagger.WhenSigned
-            from #git.repository('{RepositoryPath}') repository cross apply repository.Tags as Tag
+            from git.repository('{RepositoryPath}') repository cross apply repository.Tags as Tag
             where Tag.IsAnnotated = true";
 
         vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
@@ -342,7 +350,7 @@ public class GitToSqlTests
                 t.Message,
                 t.IsAnnotated,
                 t.Commit.Sha
-            from #git.tags('{RepositoryPath}') t";
+            from git.tags('{RepositoryPath}') t";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
@@ -373,7 +381,7 @@ public class GitToSqlTests
         var query = @"
             select
                 Stash.Message
-            from #git.repository('{RepositoryPath}') repository cross apply repository.Stashes as Stash";
+            from git.repository('{RepositoryPath}') repository cross apply repository.Stashes as Stash";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
@@ -384,6 +392,27 @@ public class GitToSqlTests
         var row = result[0];
 
         Assert.IsTrue((string)row[0] == "WIP on master: bf85425 add documentation index");
+    }
+
+    [TestMethod]
+    public async Task WhenStashesQueriedDirectly_ShouldExposeIdentityAndMessage()
+    {
+        using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository4ZipPath);
+
+        var query = @"
+            select
+                s.Selector,
+                s.Sha,
+                s.Message
+            from git.stashes('{RepositoryPath}') s";
+
+        var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
+        var result = vm.Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("stash@{0}", (string)result[0][0]);
+        Assert.IsFalse(string.IsNullOrWhiteSpace((string)result[0][1]));
+        Assert.AreEqual("WIP on master: bf85425 add documentation index", (string)result[0][2]);
     }
 
     [TestMethod]
@@ -400,7 +429,7 @@ public class GitToSqlTests
                 Difference.NewMode,
                 Difference.OldSha,
                 Difference.NewSha
-            from #git.repository('{RepositoryPath}') repository cross apply repository.DifferenceBetween(repository.CommitFrom('bf85425'), repository.CommitFrom('3250d89')) as Difference";
+            from git.repository('{RepositoryPath}') repository cross apply repository.DifferenceBetween(repository.CommitFrom('bf85425'), repository.CommitFrom('3250d89')) as Difference";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
@@ -433,7 +462,7 @@ public class GitToSqlTests
                 Difference.NewMode,
                 Difference.OldSha,
                 Difference.NewSha
-            from #git.repository('{RepositoryPath}') repository cross apply repository.DifferenceBetween(repository.BranchFrom('master'), repository.BranchFrom('feature/feature_a')) as Difference";
+            from git.repository('{RepositoryPath}') repository cross apply repository.DifferenceBetween(repository.BranchFrom('master'), repository.BranchFrom('feature/feature_a')) as Difference";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
@@ -457,33 +486,17 @@ public class GitToSqlTests
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtm1");
 
-        var query = @"
-            with BranchInfo as (
-                select
-                    c.Sha as Sha,
-                    c.Message as Message,
-                    c.Author as Author,
-                    c.AuthorEmail as AuthorEmail,
-                    c.CommittedWhen as CommittedWhen
-                from #git.repository('{RepositoryPath}') r 
-                cross apply r.SearchForBranches('feature/branch_1') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
-            )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
-            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
+        var result = GetBranchSpecificCommitRows(unpackedRepositoryPath.Path, "feature/branch_1", true);
 
         Assert.IsTrue(result.Count == 1);
 
         var row = result[0];
 
-        Assert.IsTrue((string)row[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
-        Assert.IsTrue((string)row[1] == "finished implementation for branch_1\n");
-        Assert.IsTrue((string)row[2] == "anonymous");
-        Assert.IsTrue((string)row[3] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset)row[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
+        Assert.IsTrue(row.Sha == "655595cfb4bdfc4e42b9bb80d48212c2dca95086");
+        Assert.IsTrue(row.Message == "finished implementation for branch_1\n");
+        Assert.IsTrue(row.Author == "anonymous");
+        Assert.IsTrue(row.AuthorEmail == "anonymous@non-existing-domain.com");
+        Assert.IsTrue(row.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1)));
     }
 
     [TestMethod]
@@ -491,40 +504,24 @@ public class GitToSqlTests
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtm2");
 
-        var query = @"
-            with BranchInfo as (
-                select
-                    c.Sha as Sha,
-                    c.Message as Message,
-                    c.Author as Author,
-                    c.AuthorEmail as AuthorEmail,
-                    c.CommittedWhen as CommittedWhen
-                from #git.repository('{RepositoryPath}') r 
-                cross apply r.SearchForBranches('feature/branch_1') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
-            )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
-            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
+        var result = GetBranchSpecificCommitRows(unpackedRepositoryPath.Path, "feature/branch_1", false);
 
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
-                (string)r[1] == "finished implementation for branch_1\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+                r.Sha == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                r.Message == "finished implementation for branch_1\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
-                (string)r[1] == "add documentation index\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 02, 8, 43, 41, TimeSpan.FromHours(1))),
+                r.Sha == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
+                r.Message == "add documentation index\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 02, 8, 43, 41, TimeSpan.FromHours(1))),
             "Missing second commit record");
     }
 
@@ -533,48 +530,32 @@ public class GitToSqlTests
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtab3");
 
-        var query = @"
-            with BranchInfo as (
-                select
-                    c.Sha as Sha,
-                    c.Message as Message,
-                    c.Author as Author,
-                    c.AuthorEmail as AuthorEmail,
-                    c.CommittedWhen as CommittedWhen
-                from #git.repository('{RepositoryPath}') r 
-                cross apply r.SearchForBranches('feature/branch_2') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
-            )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
-            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
+        var result = GetBranchSpecificCommitRows(unpackedRepositoryPath.Path, "feature/branch_2", false);
 
         Assert.IsTrue(result.Count == 3, "Result should contain exactly 3 records");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
-                (string)r[1] == "modified main.py\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
+                r.Sha == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
+                r.Message == "modified main.py\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
-                (string)r[1] == "add file_branch_2.py\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
+                r.Sha == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
+                r.Message == "add file_branch_2.py\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
             "Missing second commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
-                (string)r[1] == "finished implementation for branch_1\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+                r.Sha == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                r.Message == "finished implementation for branch_1\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
             "Missing third commit record");
     }
 
@@ -583,48 +564,32 @@ public class GitToSqlTests
     {
         using var unpackedRepositoryPath = await UnpackGitRepositoryAsync(Repository5ZipPath, "wbscfbtab4");
 
-        var query = @"
-            with BranchInfo as (
-                select
-                    c.Sha as Sha,
-                    c.Message as Message,
-                    c.Author as Author,
-                    c.AuthorEmail as AuthorEmail,
-                    c.CommittedWhen as CommittedWhen
-                from #git.repository('{RepositoryPath}') r 
-                cross apply r.SearchForBranches('feature/branch_2') b
-                cross apply b.GetBranchSpecificCommits(r.Self, b.Self, false) c
-            )
-            select Sha, Message, Author, AuthorEmail, CommittedWhen from BranchInfo;"
-            .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
-
-        var vm = CreateAndRunVirtualMachine(query);
-        var result = vm.Run();
+        var result = GetBranchSpecificCommitRows(unpackedRepositoryPath.Path, "feature/branch_2", false);
 
         Assert.IsTrue(result.Count == 3, "Result should contain exactly 3 records");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
-                (string)r[1] == "modified main.py\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
+                r.Sha == "389642ba15392c4540e82628bdff9c99dc6f7923" &&
+                r.Message == "modified main.py\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 57, 02, TimeSpan.FromHours(1))),
             "Missing first commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
-                (string)r[1] == "add file_branch_2.py\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
+                r.Sha == "fb24727b684a511e7f93df2910e4b280f6b9072f" &&
+                r.Message == "add file_branch_2.py\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 56, 17, TimeSpan.FromHours(1))),
             "Missing second commit record");
 
         Assert.IsTrue(result.Any(r =>
-                (string)r[0] == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
-                (string)r[1] == "finished implementation for branch_1\n" &&
-                (string)r[2] == "anonymous" &&
-                (string)r[3] == "anonymous@non-existing-domain.com" &&
-                (DateTimeOffset)r[4] == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
+                r.Sha == "655595cfb4bdfc4e42b9bb80d48212c2dca95086" &&
+                r.Message == "finished implementation for branch_1\n" &&
+                r.Author == "anonymous" &&
+                r.AuthorEmail == "anonymous@non-existing-domain.com" &&
+                r.CommittedWhen == new DateTimeOffset(2024, 11, 08, 19, 54, 08, TimeSpan.FromHours(1))),
             "Missing third commit record");
     }
 
@@ -636,15 +601,15 @@ public class GitToSqlTests
         var query = @"
             with Commits as (
                 select
-                    c.MinCommit(c.Self) as Min,
-                    c.MaxCommit(c.Self) as Max
-                from #git.repository('{RepositoryPath}') r
+                    c.CommitSha(c.MinCommit(c.Self)) as MinSha,
+                    c.CommitSha(c.MaxCommit(c.Self)) as MaxSha
+                from git.repository('{RepositoryPath}') r
                 cross apply r.Commits c
                 group by 'fake'
             )
             select
-                Min.Sha as MinSha,
-                Max.Sha as MaxSha
+                MinSha,
+                MaxSha
             from Commits;".Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -668,7 +633,7 @@ public class GitToSqlTests
                 c.Sha,
                 c.Author,
                 c.Message
-            from #git.commits('{RepositoryPath}') c
+            from git.commits('{RepositoryPath}') c
             where c.Author = 'anonymous'";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
@@ -692,7 +657,7 @@ public class GitToSqlTests
                 b.FriendlyName,
                 b.IsRemote,
                 b.Tip.Sha
-            from #git.branches('{RepositoryPath}') b";
+            from git.branches('{RepositoryPath}') b";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -718,7 +683,7 @@ public class GitToSqlTests
                 h.FilePath,
                 h.ChangeType,
                 h.OldPath
-            from #git.filehistory('{RepositoryPath}', '*') h";
+            from git.filehistory('{RepositoryPath}', '*') h";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -744,7 +709,7 @@ public class GitToSqlTests
                 h.CommitSha,
                 h.FilePath,
                 h.ChangeType
-            from #git.filehistory('{RepositoryPath}', 'README.md') h";
+            from git.filehistory('{RepositoryPath}', 'README.md') h";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -767,7 +732,7 @@ public class GitToSqlTests
             select 
                 c.Sha, 
                 p.Sha as ParentSha
-            from #git.commits('{RepositoryPath}') c 
+            from git.commits('{RepositoryPath}') c
             cross apply c.Parents as p";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
@@ -785,7 +750,7 @@ public class GitToSqlTests
             select
                 r.Name,
                 r.Url
-            from #git.remotes('{RepositoryPath}') r";
+            from git.remotes('{RepositoryPath}') r";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -803,7 +768,7 @@ public class GitToSqlTests
                 CommitSha,
                 Author,
                 FilePath
-            from #git.filehistory('{RepositoryPath}', 'README.md')";
+            from git.filehistory('{RepositoryPath}', 'README.md')";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -821,7 +786,7 @@ public class GitToSqlTests
                 CommitSha,
                 Author,
                 FilePath
-            from #git.filehistory('{RepositoryPath}', 'README.md', 1)";
+            from git.filehistory('{RepositoryPath}', 'README.md', 1)";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -837,7 +802,7 @@ public class GitToSqlTests
         var queryAll = @"
             select
                 CommitSha
-            from #git.filehistory('{RepositoryPath}', '*')";
+            from git.filehistory('{RepositoryPath}', '*')";
 
         var vmAll = CreateAndRunVirtualMachine(queryAll.Replace("{RepositoryPath}",
             unpackedRepositoryPath.Path.Escape()));
@@ -851,7 +816,7 @@ public class GitToSqlTests
                 CommitSha,
                 Author,
                 FilePath
-            from #git.filehistory('{RepositoryPath}', '*', 1, 1)";
+            from git.filehistory('{RepositoryPath}', '*', 1, 1)";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -870,7 +835,7 @@ public class GitToSqlTests
         var queryAll = @"
             select
                 CommitSha
-            from #git.filehistory('{RepositoryPath}', '*')";
+            from git.filehistory('{RepositoryPath}', '*')";
 
         var vmAll = CreateAndRunVirtualMachine(queryAll.Replace("{RepositoryPath}",
             unpackedRepositoryPath.Path.Escape()));
@@ -884,7 +849,7 @@ public class GitToSqlTests
                 CommitSha,
                 Author,
                 FilePath
-            from #git.filehistory('{RepositoryPath}', '*', -1)";
+            from git.filehistory('{RepositoryPath}', '*', -1)";
 
         var vm = CreateAndRunVirtualMachine(queryOldest.Replace("{RepositoryPath}",
             unpackedRepositoryPath.Path.Escape()));
@@ -893,6 +858,33 @@ public class GitToSqlTests
         Assert.AreEqual(1, result.Count, "Should return exactly 1 change (oldest)");
         Assert.AreEqual(oldestCommitSha, (string)result[0][0], "Should return the oldest commit");
     }
+
+    private static List<CommitRow> GetBranchSpecificCommitRows(
+        string repositoryPath,
+        string branchPattern,
+        bool excludeMergeBase)
+    {
+        using var repository = new Repository(repositoryPath);
+        var repositoryEntity = new RepositoryEntity(repository);
+        var library = new GitLibrary();
+
+        return library.SearchForBranches(repositoryEntity, branchPattern)
+            .SelectMany(branch => library.GetBranchSpecificCommits(repositoryEntity, branch, excludeMergeBase))
+            .Select(commit => new CommitRow(
+                commit.Sha ?? string.Empty,
+                commit.Message ?? string.Empty,
+                commit.Author ?? string.Empty,
+                commit.AuthorEmail ?? string.Empty,
+                commit.CommittedWhen))
+            .ToList();
+    }
+
+    private sealed record CommitRow(
+        string Sha,
+        string Message,
+        string Author,
+        string AuthorEmail,
+        DateTimeOffset CommittedWhen);
 
     private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath,
         [CallerMemberName] string? testName = null)

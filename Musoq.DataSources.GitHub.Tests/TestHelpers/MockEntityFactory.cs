@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Musoq.DataSources.GitHub.Entities;
 using Octokit;
 
@@ -25,7 +26,8 @@ internal static class MockEntityFactory
         string? defaultBranch = "main",
         string ownerLogin = "owner",
         DateTimeOffset? createdAt = null,
-        DateTimeOffset? updatedAt = null)
+        DateTimeOffset? updatedAt = null,
+        IReadOnlyList<string>? topics = null)
     {
         var now = DateTimeOffset.UtcNow;
         var owner = CreateUser(ownerLogin, 1);
@@ -75,7 +77,7 @@ internal static class MockEntityFactory
             0,
             false,
             isPrivate ? RepositoryVisibility.Private : RepositoryVisibility.Public,
-            new List<string>(),
+            topics ?? new List<string>(),
             false,
             null,
             null,
@@ -94,7 +96,8 @@ internal static class MockEntityFactory
         string authorLogin = "testuser",
         DateTimeOffset? createdAt = null,
         DateTimeOffset? updatedAt = null,
-        DateTimeOffset? closedAt = null)
+        DateTimeOffset? closedAt = null,
+        IReadOnlyList<string>? labels = null)
     {
         var now = DateTimeOffset.UtcNow;
         var user = CreateUser(authorLogin, 1);
@@ -111,7 +114,8 @@ internal static class MockEntityFactory
             body,
             null,
             user,
-            new List<Label>(),
+            labels?.Select((name, index) => new Label(index + 1, string.Empty, name, string.Empty, string.Empty, null, false)).ToList()
+                ?? new List<Label>(),
             null,
             new List<User>(),
             null,
@@ -271,7 +275,8 @@ internal static class MockEntityFactory
         DateTimeOffset? createdAt = null,
         DateTimeOffset? updatedAt = null,
         DateTimeOffset? closedAt = null,
-        DateTimeOffset? mergedAt = null)
+        DateTimeOffset? mergedAt = null,
+        IReadOnlyList<string>? labels = null)
     {
         var now = DateTimeOffset.UtcNow;
         var user = CreateUser(authorLogin, 1);
@@ -337,7 +342,8 @@ internal static class MockEntityFactory
             null,
             new List<User>(),
             new List<Team>(),
-            new List<Label>(),
+            labels?.Select((name, index) => new Label(index + 1, string.Empty, name, string.Empty, string.Empty, null, false)).ToList()
+                ?? new List<Label>(),
             null
         );
 

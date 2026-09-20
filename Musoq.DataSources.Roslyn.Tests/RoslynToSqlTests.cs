@@ -5,13 +5,14 @@ using Musoq.DataSources.Roslyn.Entities;
 using Musoq.DataSources.Roslyn.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Parser.Helpers;
 
 namespace Musoq.DataSources.Roslyn.Tests;
 
 [TestClass]
 public class RoslynToSqlTests
 {
+    private static readonly Lazy<SolutionEntity> Solution1 = new(LoadSolution1Core);
+
     static RoslynToSqlTests()
     {
         Culture.Apply(CultureInfo.GetCultureInfo("en-EN"));
@@ -37,7 +38,7 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenSolutionQueried_ShouldPass()
     {
-        var query = $"select s.Id from #csharp.solution('{Solution1SolutionPath.Escape()}') s";
+        var query = $"select s.Id from csharp.solution('{Solution1SolutionPath.Escape()}') s";
 
         var vm = CompileQuery(query);
 
@@ -51,7 +52,7 @@ public class RoslynToSqlTests
     public void WhenProjectQueried_ShouldPass()
     {
         var query =
-            $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p";
+            $"select p.Id, p.FilePath, p.OutputFilePath, p.OutputRefFilePath, p.DefaultNamespace, p.Language, p.AssemblyName, p.Name, p.IsSubmission, p.Version from csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p";
 
         var vm = CompileQuery(query);
 
@@ -88,7 +89,7 @@ public class RoslynToSqlTests
     public void WhenQuickAccessForTypes_ShouldPass()
     {
         var query =
-            $"select t.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t";
+            $"select t.Name from csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t";
 
         var vm = CompileQuery(query);
 
@@ -129,7 +130,7 @@ public class RoslynToSqlTests
     public void WhenChecksKindOfType_ShouldPass()
     {
         var query =
-            $"select t.Name, t.IsClass, t.IsEnum, t.IsInterface from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t where t.Name in ('Class1', 'Interface1', 'Enum1', 'Tests', 'PartialTestClass', 'CyclomaticComplexityClass1')";
+            $"select t.Name, t.IsClass, t.IsEnum, t.IsInterface from csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Types t where t.Name in ('Class1', 'Interface1', 'Enum1', 'Tests', 'PartialTestClass', 'CyclomaticComplexityClass1')";
 
         var vm = CompileQuery(query);
 
@@ -158,7 +159,7 @@ public class RoslynToSqlTests
     public void WhenDocumentQueries_ShouldPass()
     {
         var query =
-            $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
+            $"select d.Name, d.Text, d.ClassCount, d.InterfaceCount, d.EnumCount from csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
 
         var vm = CompileQuery(query);
 
@@ -189,11 +190,6 @@ public class RoslynToSqlTests
                         c.IsAbstract, 
                         c.IsSealed, 
                         c.IsStatic, 
-                        c.BaseTypes, 
-                        c.Interfaces, 
-                        c.TypeParameters, 
-                        c.MemberNames, 
-                        c.Attributes,
                         c.Name,
                         c.FullName,
                         c.Namespace,
@@ -206,7 +202,7 @@ public class RoslynToSqlTests
                         c.NestedInterfacesCount,
                         c.InterfacesCount,
                         c.LackOfCohesion
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -223,26 +219,72 @@ public class RoslynToSqlTests
         Assert.AreEqual(false, result[0][1]);
         Assert.AreEqual(false, result[0][2]);
 
-        var baseTypes = (result[0][3] as IEnumerable<string> ?? []).ToList();
+        Assert.AreEqual("Class1", result[0][3].ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Class1", result[0][4].ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", result[0][5].ToString());
+        Assert.AreEqual(5, result[0][6]);
+        Assert.AreEqual(1, result[0][7]);
+        Assert.AreEqual(0, result[0][8]);
+        Assert.AreEqual(1, result[0][9]);
+        Assert.AreEqual(0, result[0][10]);
+        Assert.AreEqual(0, result[0][11]);
+        Assert.AreEqual(0, result[0][12]);
+        Assert.AreEqual(1, result[0][13]);
+        Assert.AreEqual(2.0, result[0][14]);
 
-        Assert.IsNotNull(baseTypes);
+        var baseTypesResult = CompileQuery("""
+                    select baseType.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.BaseTypes baseType
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        var baseTypes = baseTypesResult.Select(row => row[0]?.ToString()).ToList();
+
         Assert.AreEqual(1, baseTypes.Count);
         Assert.AreEqual("Object", baseTypes.First());
 
-        var interfaces = (result[0][4] as IEnumerable<string> ?? []).ToList();
+        var interfacesResult = CompileQuery("""
+                    select interfaceName.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Interfaces interfaceName
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(interfaces);
+        var interfaces = interfacesResult.Select(row => row[0]?.ToString()).ToList();
+
         Assert.AreEqual(1, interfaces.Count);
         Assert.AreEqual("Interface1", interfaces.First());
 
-        var typeParameters = (result[0][5] as IEnumerable<string> ?? []).ToList();
+        var typeParametersResult = CompileQuery("""
+                    select typeParameter.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.TypeParameters typeParameter
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(typeParameters);
-        Assert.AreEqual(0, typeParameters.Count);
+        Assert.AreEqual(0, typeParametersResult.Count);
 
-        var memberNames = (result[0][6] as IEnumerable<string> ?? []).ToList();
+        var memberNamesResult = CompileQuery("""
+                    select memberName.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.MemberNames memberName
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(memberNames);
+        var memberNames = memberNamesResult.Select(row => row[0]?.ToString()).ToList();
         Assert.AreEqual(8, memberNames.Count);
         Assert.IsTrue(memberNames.Contains("Method1Async"));
         Assert.IsTrue(memberNames.Contains("Method2"));
@@ -252,23 +294,17 @@ public class RoslynToSqlTests
         Assert.IsTrue(memberNames.Contains("Property1"));
         Assert.IsTrue(memberNames.Contains("get_Property1"));
 
-        var attributes = (result[0][7] as IEnumerable<string> ?? []).ToList();
+        var attributesResult = CompileQuery("""
+                    select attribute.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Attributes attribute
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(attributes);
-        Assert.AreEqual(0, attributes.Count);
-
-        Assert.AreEqual("Class1", result[0][8].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Class1", result[0][9].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][10].ToString());
-        Assert.AreEqual(5, result[0][11]);
-        Assert.AreEqual(1, result[0][12]);
-        Assert.AreEqual(0, result[0][13]);
-        Assert.AreEqual(1, result[0][14]);
-        Assert.AreEqual(0, result[0][15]);
-        Assert.AreEqual(0, result[0][16]);
-        Assert.AreEqual(0, result[0][17]);
-        Assert.AreEqual(1, result[0][18]);
-        Assert.AreEqual(2.0, result[0][19]);
+        Assert.AreEqual(0, attributesResult.Count);
     }
 
     [TestMethod]
@@ -276,11 +312,12 @@ public class RoslynToSqlTests
     {
         var query = """
                     select
-                        c.Attributes 
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                        a.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
+                    cross apply c.Attributes a
                     where c.Name = 'Tests'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
 
@@ -290,12 +327,7 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        var attributes = (result[0][0] as IEnumerable<AttributeEntity> ?? []).ToList();
-
-        Assert.IsNotNull(attributes);
-        Assert.AreEqual(1, attributes.Count);
-
-        Assert.AreEqual("ExcludeFromCodeCoverage", attributes.First().Name);
+        Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
     }
 
     [TestMethod]
@@ -305,11 +337,8 @@ public class RoslynToSqlTests
                     select
                         m.Name,
                         m.ReturnType,
-                        m.Parameters,
-                        m.Modifiers,
-                        m.Text,
-                        m.Attributes
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                        m.Text
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -326,46 +355,73 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method1Async" &&
                 r[1].ToString() == "Task" &&
-                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null &&
-                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+                r[2] != null),
             "Missing or invalid Method1Async record");
 
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method2" &&
                 r[1].ToString() == "Void" &&
-                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null &&
-                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+                r[2] != null),
             "Missing or invalid Method2 record");
 
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method3" &&
                 r[1].ToString() == "Class1" &&
-                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null &&
-                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+                r[2] != null),
             "Missing or invalid first Method3 record");
 
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method3" &&
                 r[1].ToString() == "Class1" &&
-                (r[2] as IEnumerable<ParameterEntity> ?? []).Count() == 1 &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null &&
-                !(r[5] as IEnumerable<AttributeEntity> ?? []).Any()),
+                r[2] != null),
             "Missing or invalid second Method3 record");
 
         Assert.IsTrue(result.Any(r =>
                 r[0].ToString() == "Method4" &&
                 r[1].ToString() == "Enum1" &&
-                !(r[2] as IEnumerable<ParameterEntity> ?? []).Any() &&
-                (r[3] as IEnumerable<string> ?? []).Count() == 1 &&
-                r[4] != null),
+                r[2] != null),
             "Missing or invalid Method4 record");
+
+        var parametersResult = CompileQuery("""
+                    select p.Name, p.Type
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p0
+                    cross apply p0.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.Parameters p
+                    where c.Name = 'Class1' and m.Name = 'Method3'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(1, parametersResult.Count);
+        Assert.AreEqual("a", parametersResult[0][0].ToString());
+        Assert.AreEqual("Int32", parametersResult[0][1].ToString());
+
+        var modifiersResult = CompileQuery("""
+                    select modifier.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.Modifiers modifier
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(5, modifiersResult.Count);
+
+        var attributesResult = CompileQuery("""
+                    select attribute.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    cross apply m.Attributes attribute
+                    where c.Name = 'Class1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(0, attributesResult.Count);
     }
 
     [TestMethod]
@@ -375,7 +431,7 @@ public class RoslynToSqlTests
                     select
                         m.Name,
                         m.Text
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -402,7 +458,7 @@ public class RoslynToSqlTests
         var query = """
                     select
                         m.LinesOfCode
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -428,7 +484,7 @@ public class RoslynToSqlTests
                         c.Name,
                         c.MethodsCount,
                         m.Name
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -466,7 +522,7 @@ public class RoslynToSqlTests
                         c.Name,
                         c.MethodsCount,
                         pr.Name
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -501,7 +557,7 @@ public class RoslynToSqlTests
         var query = """
                     select
                         c.LinesOfCode
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -533,9 +589,8 @@ public class RoslynToSqlTests
                         p.IsOverride,
                         p.IsAbstract,
                         p.IsSealed,
-                        p.IsStatic,
-                        p.Modifiers
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                        p.IsStatic
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Classes c
@@ -561,7 +616,19 @@ public class RoslynToSqlTests
         Assert.AreEqual(false, result[0][9]);
         Assert.AreEqual(false, result[0][10]);
         Assert.AreEqual(false, result[0][11]);
-        Assert.AreEqual(1, (result[0][12] as IEnumerable<string> ?? []).Count());
+
+        var modifiersResult = CompileQuery("""
+                    select modifier.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Properties p
+                    cross apply p.Modifiers modifier
+                    where c.Name = 'Class1' and p.Name = 'Property1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(1, modifiersResult.Count);
     }
 
     [TestMethod]
@@ -580,7 +647,7 @@ public class RoslynToSqlTests
                         p.IsRef,
                         p.IsByRef,
                         p.IsByValue
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Classes c
@@ -615,10 +682,8 @@ public class RoslynToSqlTests
                     select
                         e.Name,
                         e.FullName,
-                        e.Namespace,
-                        e.Modifiers,
-                        e.Members
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                        e.Namespace
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Enums e
@@ -634,11 +699,30 @@ public class RoslynToSqlTests
         Assert.AreEqual("Enum1", result[0][0].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1.Enum1", result[0][1].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1", result[0][2].ToString());
-        Assert.AreEqual(1, (result[0][3] as IEnumerable<string> ?? []).Count());
 
-        var members = (result[0][4] as IEnumerable<string> ?? []).ToList();
+        var modifiersResult = CompileQuery("""
+                    select modifier.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Enums e
+                    cross apply e.Modifiers modifier
+                    where e.Name = 'Enum1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(members);
+        Assert.AreEqual(1, modifiersResult.Count);
+
+        var membersResult = CompileQuery("""
+                    select member.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Enums e
+                    cross apply e.Members member
+                    where e.Name = 'Enum1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        var members = membersResult.Select(row => row[0]?.ToString()).ToList();
 
         Assert.AreEqual(2, members.Count);
         Assert.IsTrue(members.Contains("Value1"));
@@ -652,12 +736,8 @@ public class RoslynToSqlTests
                     select
                         i.Name,
                         i.FullName,
-                        i.Namespace,
-                        i.Modifiers,
-                        i.BaseInterfaces,
-                        i.Methods,
-                        i.Properties
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                        i.Namespace
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Interfaces i
@@ -673,29 +753,58 @@ public class RoslynToSqlTests
         Assert.AreEqual("Interface1", result[0][0].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1.Interface1", result[0][1].ToString());
         Assert.AreEqual("Solution1.ClassLibrary1", result[0][2].ToString());
-        Assert.AreEqual(1, (result[0][3] as IEnumerable<string> ?? []).Count());
 
-        var baseInterfaces = (result[0][4] as IEnumerable<string> ?? []).ToList();
+        var modifiersResult = CompileQuery("""
+                    select modifier.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Interfaces i
+                    cross apply i.Modifiers modifier
+                    where i.Name = 'Interface1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(baseInterfaces);
+        Assert.AreEqual(1, modifiersResult.Count);
 
-        Assert.AreEqual(0, baseInterfaces.Count);
+        var baseInterfacesResult = CompileQuery("""
+                    select baseInterface.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Interfaces i
+                    cross apply i.BaseInterfaces baseInterface
+                    where i.Name = 'Interface1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        var methods = (result[0][5] as IEnumerable<MethodEntity> ?? []).ToList();
+        Assert.AreEqual(0, baseInterfacesResult.Count);
 
-        Assert.IsNotNull(methods);
+        var methodsResult = CompileQuery("""
+                    select method.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Interfaces i
+                    cross apply i.Methods method
+                    where i.Name = 'Interface1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.AreEqual(4, methods.Count);
-        Assert.IsTrue(methods.Any(m => m.Name == "Method1Async"));
-        Assert.IsTrue(methods.Any(m => m.Name == "Method2"));
-        Assert.IsTrue(methods.Any(m => m.Name == "Method3"));
-        Assert.IsTrue(methods.Any(m => m.Name == "Method4"));
+        var methodNames = methodsResult.Select(row => row[0]?.ToString()).ToList();
+        Assert.AreEqual(4, methodNames.Count);
+        CollectionAssert.AreEquivalent(
+            new[] { "Method1Async", "Method2", "Method3", "Method4" },
+            methodNames);
 
-        var properties = (result[0][6] as IEnumerable<PropertyEntity> ?? []).ToList();
+        var propertiesResult = CompileQuery("""
+                    select property.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Interfaces i
+                    cross apply i.Properties property
+                    where i.Name = 'Interface1'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        Assert.IsNotNull(properties);
-
-        Assert.AreEqual(0, properties.Count);
+        Assert.AreEqual(0, propertiesResult.Count);
     }
 
     [TestMethod]
@@ -703,9 +812,8 @@ public class RoslynToSqlTests
     {
         var query = """
                     select
-                        a.Name,
-                        a.ConstructorArguments
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                        a.Name
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Classes c
@@ -720,7 +828,19 @@ public class RoslynToSqlTests
         Assert.AreEqual(1, result.Count);
 
         Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
-        Assert.AreEqual(0, (result[0][1] as IEnumerable<string> ?? []).Count());
+
+        var constructorArgumentsResult = CompileQuery("""
+                    select argument.Value
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects pr
+                    cross apply pr.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Attributes a
+                    cross apply a.ConstructorArguments argument
+                    where c.Name = 'Tests'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(0, constructorArgumentsResult.Count);
     }
 
     [TestMethod]
@@ -729,7 +849,7 @@ public class RoslynToSqlTests
         var query = """
                     select
                         m.CyclomaticComplexity
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod1'
@@ -749,7 +869,7 @@ public class RoslynToSqlTests
         var query = """
                     select
                         m.CyclomaticComplexity
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod2'
@@ -769,7 +889,7 @@ public class RoslynToSqlTests
         var query = """
                     select
                         m.CyclomaticComplexity
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.GetClassesByNames('CyclomaticComplexityClass1') c
                     cross apply c.Methods m
                     where m.Name = 'CyclomaticComplexityMethod3'
@@ -786,110 +906,82 @@ public class RoslynToSqlTests
     [TestMethod]
     public void WhenLookingForReferenceToClass_ShouldFind()
     {
-        var query = """
-                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
-                    cross apply s.GetClassesByNames('Class1') c
-                    cross apply s.FindReferences(c.Self) rd
-                    cross apply rd.ReferencedClasses r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CompileQuery(query);
-
-        var result = vm.Run();
+        var result = FindReferenceRows(
+            library => library.GetClassesByNames(LoadSolution1(), "Class1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedClasses.Select(entity => entity.Name));
 
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Class1" &&
-                (int)r[1] == 16 &&
-                (int)r[2] == 11 &&
-                (int)r[3] == 16 &&
-                (int)r[4] == 17),
+                r.Name == "Class1" &&
+                r.StartLine == 16 &&
+                r.StartColumn == 11 &&
+                r.EndLine == 16 &&
+                r.EndColumn == 17),
             "Missing first Class1 location record");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Class1" &&
-                (int)r[1] == 21 &&
-                (int)r[2] == 11 &&
-                (int)r[3] == 21 &&
-                (int)r[4] == 17),
+                r.Name == "Class1" &&
+                r.StartLine == 21 &&
+                r.StartColumn == 11 &&
+                r.EndLine == 21 &&
+                r.EndColumn == 17),
             "Missing second Class1 location record");
     }
 
     [TestMethod]
     public void WhenLookingForReferenceToInterface_ShouldFind()
     {
-        var query = """
-                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
-                    cross apply s.GetInterfacesByNames('Interface1') c
-                    cross apply s.FindReferences(c.Self) rd
-                    cross apply rd.ReferencedInterfaces r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CompileQuery(query);
-
-        var result = vm.Run();
+        var result = FindReferenceRows(
+            library => library.GetInterfacesByNames(LoadSolution1(), "Interface1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedInterfaces.Select(entity => entity.Name));
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Interface2", result[0][0].ToString());
-        Assert.AreEqual(70, result[0][1]);
-        Assert.AreEqual(30, result[0][2]);
-        Assert.AreEqual(70, result[0][3]);
-        Assert.AreEqual(40, result[0][4]);
+        Assert.AreEqual("Interface2", result[0].Name);
+        Assert.AreEqual(70, result[0].StartLine);
+        Assert.AreEqual(30, result[0].StartColumn);
+        Assert.AreEqual(70, result[0].EndLine);
+        Assert.AreEqual(40, result[0].EndColumn);
     }
 
     [TestMethod]
     public void WhenLookingForReferenceToEnum_WithinClass_ShouldFind()
     {
-        var query = """
-                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
-                    cross apply s.GetEnumsByNames('Enum1') c
-                    cross apply s.FindReferences(c.Self) rd
-                    cross apply rd.ReferencedClasses r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CompileQuery(query);
-
-        var result = vm.Run();
+        var result = FindReferenceRows(
+            library => library.GetEnumsByNames(LoadSolution1(), "Enum1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedClasses.Select(entity => entity.Name));
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Class1", result[0][0].ToString());
-        Assert.AreEqual(26, result[0][1]);
-        Assert.AreEqual(11, result[0][2]);
-        Assert.AreEqual(26, result[0][3]);
-        Assert.AreEqual(16, result[0][4]);
+        Assert.AreEqual("Class1", result[0].Name);
+        Assert.AreEqual(26, result[0].StartLine);
+        Assert.AreEqual(11, result[0].StartColumn);
+        Assert.AreEqual(26, result[0].EndLine);
+        Assert.AreEqual(16, result[0].EndColumn);
     }
 
     [TestMethod]
     public void WhenLookingForReferenceToEnum_WithinInterface_ShouldFind()
     {
-        var query = """
-                    select r.Name, rd.StartLine, rd.StartColumn, rd.EndLine, rd.EndColumn from #csharp.solution('{Solution1SolutionPath}') s
-                    cross apply s.GetEnumsByNames('Enum1') c
-                    cross apply s.FindReferences(c.Self) rd
-                    cross apply rd.ReferencedInterfaces r
-                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
-
-        var vm = CompileQuery(query);
-
-        var result = vm.Run();
+        var result = FindReferenceRows(
+            library => library.GetEnumsByNames(LoadSolution1(), "Enum1").SelectMany(library.FindReferences),
+            reference => reference.ReferencedInterfaces.Select(entity => entity.Name));
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Interface1", result[0][0].ToString());
-        Assert.AreEqual(67, result[0][1]);
-        Assert.AreEqual(11, result[0][2]);
-        Assert.AreEqual(67, result[0][3]);
-        Assert.AreEqual(16, result[0][4]);
+        Assert.AreEqual("Interface1", result[0].Name);
+        Assert.AreEqual(67, result[0].StartLine);
+        Assert.AreEqual(11, result[0].StartColumn);
+        Assert.AreEqual(67, result[0].EndLine);
+        Assert.AreEqual(16, result[0].EndColumn);
     }
 
     [TestMethod]
     public void WhenDocumentFilePathQueried_ShouldReturnFilePath()
     {
         var query =
-            $"select d.Name, d.FilePath from #csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
+            $"select d.Name, d.FilePath from csharp.solution('{Solution1SolutionPath.Escape()}') s cross apply s.Projects p cross apply p.Documents d where d.Name = 'Class1.cs'";
 
         var vm = CompileQuery(query);
         var result = vm.Run();
@@ -913,7 +1005,7 @@ public class RoslynToSqlTests
                         m.IsEmpty,
                         m.StatementsCount,
                         m.BodyContainsOnlyTrivia
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -983,7 +1075,7 @@ public class RoslynToSqlTests
                         p.HasGetter,
                         p.HasSetter,
                         p.HasInitSetter
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects pr 
                     cross apply pr.Documents d 
                     cross apply d.Classes c
@@ -1060,7 +1152,7 @@ public class RoslynToSqlTests
                         m.HasBody,
                         m.IsEmpty,
                         m.StatementsCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -1087,7 +1179,7 @@ public class RoslynToSqlTests
                         m.HasBody,
                         m.IsEmpty,
                         m.StatementsCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Interfaces i
@@ -1117,7 +1209,7 @@ public class RoslynToSqlTests
                         f.IsStatic,
                         f.IsVolatile,
                         f.Accessibility
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -1165,7 +1257,7 @@ public class RoslynToSqlTests
                         c.HasBody,
                         c.HasInitializer,
                         c.InitializerKind
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes cls
@@ -1203,7 +1295,7 @@ public class RoslynToSqlTests
                         s.PropertiesCount,
                         s.FieldsCount,
                         s.ConstructorsCount
-                    from #csharp.solution('{Solution1SolutionPath}') sl 
+                    from csharp.solution('{Solution1SolutionPath}') sl
                     cross apply sl.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Structs s
@@ -1239,7 +1331,7 @@ public class RoslynToSqlTests
                         m.IsAsync,
                         m.ContainsAwait,
                         m.AwaitCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -1264,7 +1356,7 @@ public class RoslynToSqlTests
                         m.Name,
                         m.ContainsLambda,
                         m.LambdaCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -1287,7 +1379,7 @@ public class RoslynToSqlTests
                     select
                         m.Name,
                         m.MaxNestingDepth
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -1311,7 +1403,7 @@ public class RoslynToSqlTests
                         u.IsStatic,
                         u.IsGlobal,
                         u.HasAlias
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.UsingDirectives u
@@ -1334,7 +1426,7 @@ public class RoslynToSqlTests
                         e.Type,
                         e.IsStatic,
                         e.IsFieldLike
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -1363,7 +1455,7 @@ public class RoslynToSqlTests
                         c.WeightedMethodsPerClass,
                         c.MaxMethodComplexity,
                         c.AverageMethodComplexity
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -1388,7 +1480,7 @@ public class RoslynToSqlTests
                         c.HasDocumentation,
                         c.MethodDocumentationCoverage,
                         c.PropertyDocumentationCoverage
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects p 
                     cross apply p.Documents d 
                     cross apply d.Classes c
@@ -1411,7 +1503,7 @@ public class RoslynToSqlTests
                     select
                         st.Name,
                         st.IsReadOnly
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.GetStructsByNames('TestStruct', 'ReadOnlyTestStruct') st
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
 
@@ -1432,7 +1524,7 @@ public class RoslynToSqlTests
                         param.Name,
                         param.Type,
                         param.IsUsed
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -1466,7 +1558,7 @@ public class RoslynToSqlTests
                         v.Name,
                         v.Type,
                         v.IsUsed
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -1501,7 +1593,7 @@ public class RoslynToSqlTests
                         lf.ReturnType,
                         lf.IsAsync,
                         lf.IsStatic
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -1544,7 +1636,7 @@ public class RoslynToSqlTests
                     select
                         m.Name,
                         m.UnusedParameterCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -1582,7 +1674,7 @@ public class RoslynToSqlTests
                         m.Name,
                         m.LocalVariableCount,
                         m.UnusedVariableCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -1605,7 +1697,7 @@ public class RoslynToSqlTests
                     select
                         m.Name,
                         m.UnusedParameterCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.GetMethodsWithUnusedParameters() m
                     where m.Name like 'MethodWith%Unused%'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
@@ -1625,7 +1717,7 @@ public class RoslynToSqlTests
                         f.Name,
                         f.IsUsed,
                         f.ReferenceCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -1660,7 +1752,7 @@ public class RoslynToSqlTests
                         c.Name,
                         c.IsUsed,
                         c.ReferenceCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -1686,7 +1778,7 @@ public class RoslynToSqlTests
                         i.Name,
                         i.IsUsed,
                         i.ReferenceCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Interfaces i
@@ -1719,7 +1811,7 @@ public class RoslynToSqlTests
                         e.Name,
                         e.IsUsed,
                         e.ReferenceCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Enums e
@@ -1752,7 +1844,7 @@ public class RoslynToSqlTests
                         st.Name,
                         st.IsUsed,
                         st.ReferenceCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Structs st
@@ -1785,7 +1877,7 @@ public class RoslynToSqlTests
                         m.Name,
                         m.IsUsed,
                         m.ReferenceCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -1815,7 +1907,7 @@ public class RoslynToSqlTests
         var query = """
                     select
                         f.Name
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.GetUnusedFields() f
                     where f.Name = '_unusedField'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
@@ -1837,7 +1929,7 @@ public class RoslynToSqlTests
                         m.CalleeCount,
                         c.Name as CalleeName,
                         c.ContainingTypeName
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -1863,7 +1955,7 @@ public class RoslynToSqlTests
                         m.Name,
                         m.IsRecursive,
                         m.CalleeCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -1897,7 +1989,7 @@ public class RoslynToSqlTests
                         m.IsOverride,
                         m.OverriddenMethodName,
                         m.OverriddenMethodContainingType
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -1925,7 +2017,7 @@ public class RoslynToSqlTests
                         m.ImplementsInterface,
                         i.InterfaceName,
                         i.MethodName
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -1950,7 +2042,7 @@ public class RoslynToSqlTests
                         m.ReturnsTask,
                         m.IsAsync,
                         m.FullReturnType
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -1981,7 +2073,7 @@ public class RoslynToSqlTests
                     select
                         m.Name,
                         m.IsReturnTypeNullable
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -2011,7 +2103,7 @@ public class RoslynToSqlTests
                         m.Name,
                         m.IsPublicApi,
                         m.Accessibility
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -2044,7 +2136,7 @@ public class RoslynToSqlTests
                         m.SourceFilePath,
                         m.ContainingTypeName,
                         m.ContainingNamespace
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes cls
@@ -2074,7 +2166,7 @@ public class RoslynToSqlTests
                         c.PublicMethodCount,
                         c.StartLine,
                         c.EndLine
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     cross apply d.Classes c
@@ -2105,7 +2197,7 @@ public class RoslynToSqlTests
                         d.ReferencedTypeCount,
                         d.ReferencedNamespaceCount,
                         d.ReferencedAssemblyCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     where d.Name = 'TestFeatures.cs'
@@ -2129,7 +2221,7 @@ public class RoslynToSqlTests
                     select
                         d.Name,
                         d.ReferencedNamespaceCount
-                    from #csharp.solution('{Solution1SolutionPath}') s 
+                    from csharp.solution('{Solution1SolutionPath}') s
                     cross apply s.Projects proj 
                     cross apply proj.Documents d 
                     where d.Name = 'TestFeatures.cs'
@@ -2149,7 +2241,7 @@ public class RoslynToSqlTests
             select 
                 c.Name,
                 ai.Value as InterfaceName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2174,7 +2266,7 @@ public class RoslynToSqlTests
             select 
                 c.Name,
                 i.Value as InterfaceName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2195,7 +2287,7 @@ public class RoslynToSqlTests
             select 
                 i.Name,
                 abi.Value as BaseInterfaceName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Interfaces i
@@ -2221,7 +2313,7 @@ public class RoslynToSqlTests
                 rt.UsageKind,
                 rt.Kind,
                 rt.IsInterface
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2245,7 +2337,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.IsInterface
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2268,7 +2360,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2291,7 +2383,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2314,7 +2406,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2337,7 +2429,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2359,7 +2451,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2382,7 +2474,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2407,7 +2499,7 @@ public class RoslynToSqlTests
                 rt.UsageKind,
                 rt.FullName,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2434,7 +2526,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2456,7 +2548,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2479,7 +2571,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.FullName,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2503,7 +2595,7 @@ public class RoslynToSqlTests
                 pr.Name,
                 pr.Type,
                 pr.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2527,7 +2619,7 @@ public class RoslynToSqlTests
                 param.Name,
                 param.Type,
                 param.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2552,7 +2644,7 @@ public class RoslynToSqlTests
                 m.Name,
                 m.ReturnType,
                 m.FullReturnType
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2576,7 +2668,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2604,7 +2696,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2631,7 +2723,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2655,7 +2747,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2684,7 +2776,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2708,7 +2800,7 @@ public class RoslynToSqlTests
                 lv.Name,
                 lv.Type,
                 lv.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2735,7 +2827,7 @@ public class RoslynToSqlTests
                 lv.Name,
                 lv.Type,
                 lv.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2765,7 +2857,7 @@ public class RoslynToSqlTests
             select 
                 c.Name,
                 c.InterfacesCount
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2785,7 +2877,7 @@ public class RoslynToSqlTests
             select 
                 c.Name,
                 ai.Value as InterfaceName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2805,7 +2897,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 ai.Value as InterfaceName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2826,7 +2918,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 i.Name
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Interfaces i
@@ -2842,7 +2934,7 @@ public class RoslynToSqlTests
             select 
                 i.Name,
                 abi.Value
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Interfaces i
@@ -2862,7 +2954,7 @@ public class RoslynToSqlTests
             select 
                 i.Name,
                 abi.Value as BaseInterfaceName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Interfaces i
@@ -2882,7 +2974,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 abi.Value as BaseInterfaceName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Interfaces i
@@ -2909,7 +3001,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.Namespace,
                 rt.FullName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2933,7 +3025,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.LineNumber
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2963,7 +3055,7 @@ public class RoslynToSqlTests
                 rt.IsClass,
                 rt.IsEnum,
                 rt.IsStruct
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -2991,7 +3083,7 @@ public class RoslynToSqlTests
                 rt.Kind,
                 rt.UsageKind,
                 rt.IsClass
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3017,7 +3109,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3042,7 +3134,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3067,7 +3159,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 rt.Name
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3089,7 +3181,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.Kind,
                 rt.IsInterface
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3114,7 +3206,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3136,7 +3228,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3158,7 +3250,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3180,7 +3272,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3202,7 +3294,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3224,7 +3316,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3248,7 +3340,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3275,7 +3367,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 rt.Name
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3296,7 +3388,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3319,7 +3411,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3346,7 +3438,7 @@ public class RoslynToSqlTests
                 lv.Name,
                 lv.Type,
                 lv.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3369,7 +3461,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 ctor.LocalVariableCount
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3390,7 +3482,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 lv.Name
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3412,7 +3504,7 @@ public class RoslynToSqlTests
                 lv.Name,
                 lv.Type,
                 lv.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3438,7 +3530,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 lv.Name
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3460,7 +3552,7 @@ public class RoslynToSqlTests
                 lv.Name,
                 lv.Type,
                 lv.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3484,7 +3576,7 @@ public class RoslynToSqlTests
             select 
                 pr.Name,
                 pr.LocalVariableCount
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3505,7 +3597,7 @@ public class RoslynToSqlTests
         var query = $@"
             select 
                 lv.Name
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3526,7 +3618,7 @@ public class RoslynToSqlTests
             select 
                 lv.Name,
                 lv.Type
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3553,7 +3645,7 @@ public class RoslynToSqlTests
                 pr.Name,
                 pr.Type,
                 pr.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3576,7 +3668,7 @@ public class RoslynToSqlTests
             select 
                 pr.Name,
                 pr.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3599,7 +3691,7 @@ public class RoslynToSqlTests
             select 
                 pr.Name,
                 pr.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3628,7 +3720,7 @@ public class RoslynToSqlTests
                 param.Name,
                 param.Type,
                 param.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3652,7 +3744,7 @@ public class RoslynToSqlTests
             select 
                 param.Name,
                 param.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3677,7 +3769,7 @@ public class RoslynToSqlTests
                 param.Name,
                 param.Type,
                 param.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3701,7 +3793,7 @@ public class RoslynToSqlTests
             select 
                 param.Name,
                 param.FullTypeName
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3741,7 +3833,7 @@ public class RoslynToSqlTests
                 m.Name,
                 m.ReturnType,
                 m.FullReturnType
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3762,7 +3854,7 @@ public class RoslynToSqlTests
             select 
                 m.Name,
                 m.FullReturnType
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3785,7 +3877,7 @@ public class RoslynToSqlTests
             select 
                 m.Name,
                 m.FullReturnType
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3808,7 +3900,7 @@ public class RoslynToSqlTests
             select 
                 m.Name,
                 m.FullReturnType
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3831,7 +3923,7 @@ public class RoslynToSqlTests
             select 
                 m.Name,
                 m.FullReturnType
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3858,7 +3950,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Structs st
@@ -3882,7 +3974,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Structs st
@@ -3906,7 +3998,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Structs st
@@ -3928,7 +4020,7 @@ public class RoslynToSqlTests
             select 
                 lv.Name,
                 lv.Type
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Structs st
@@ -3954,7 +4046,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3969,7 +4061,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -3984,7 +4076,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -4023,7 +4115,7 @@ public class RoslynToSqlTests
     {
         var methodQuery = $@"
             select rt.Name, rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -4036,7 +4128,7 @@ public class RoslynToSqlTests
 
         var ctorQuery = $@"
             select rt.Name, rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -4070,7 +4162,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -4101,7 +4193,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -4127,7 +4219,7 @@ public class RoslynToSqlTests
                 rt.Name,
                 rt.UsageKind,
                 rt.Kind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -4150,7 +4242,7 @@ public class RoslynToSqlTests
             select 
                 rt.Name,
                 rt.UsageKind
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Classes c
@@ -4173,7 +4265,7 @@ public class RoslynToSqlTests
     public void WhenClassIsRecord_ShouldReturnTrue()
     {
         var query =
-            $@"select c.Name, c.IsRecord from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select c.Name, c.IsRecord from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             where c.Name = 'RecordClass'";
 
@@ -4188,7 +4280,7 @@ public class RoslynToSqlTests
     public void WhenClassIsNotRecord_ShouldReturnFalse()
     {
         var query =
-            $@"select c.Name, c.IsRecord from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select c.Name, c.IsRecord from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             where c.Name = 'TestFeatures'";
 
@@ -4203,7 +4295,7 @@ public class RoslynToSqlTests
     public void WhenClassIsPartial_ShouldReturnTrue()
     {
         var query =
-            $@"select c.Name, c.IsPartial from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select c.Name, c.IsPartial from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             where c.Name = 'PartialFeatureClass'";
 
@@ -4218,7 +4310,7 @@ public class RoslynToSqlTests
     public void WhenStructIsPartial_ShouldReturnTrue()
     {
         var query =
-            $@"select st.Name, st.IsPartial from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select st.Name, st.IsPartial from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Structs st
             where st.Name = 'PartialFeatureStruct'";
 
@@ -4233,7 +4325,7 @@ public class RoslynToSqlTests
     public void WhenInterfaceIsPartial_ShouldReturnTrue()
     {
         var query =
-            $@"select i.Name, i.IsPartial from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select i.Name, i.IsPartial from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
             where i.Name = 'IPartialFeatureInterface'";
 
@@ -4248,7 +4340,7 @@ public class RoslynToSqlTests
     public void WhenPropertyQueried_ShouldHaveStartLineAndEndLine()
     {
         var query =
-            $@"select pr.Name, pr.StartLine, pr.EndLine, pr.ContainingTypeName from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select pr.Name, pr.StartLine, pr.EndLine, pr.ContainingTypeName from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects proj cross apply proj.Documents d cross apply d.Classes c
             cross apply c.Properties pr
             where c.Name = 'TestFeatures' and pr.Name = 'AutoProperty'";
@@ -4266,7 +4358,7 @@ public class RoslynToSqlTests
     public void WhenPropertyHasDocumentation_ShouldReturnTrue()
     {
         var query =
-            $@"select pr.Name, pr.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select pr.Name, pr.HasDocumentation from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Properties pr
             where c.Name = 'PropertyEdgeCases' and pr.Name = 'AutoProperty'";
@@ -4286,7 +4378,7 @@ public class RoslynToSqlTests
     public void WhenPropertyHasAttributes_ShouldReturnThem()
     {
         var query =
-            $@"select pr.Name, a.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select pr.Name, a.Name from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Properties pr cross apply pr.Attributes a
             where c.Name = 'AttributeTestClass' and pr.Name = 'OldProperty'";
@@ -4302,7 +4394,7 @@ public class RoslynToSqlTests
     public void WhenParameterHasAttribute_ShouldReturnIt()
     {
         var query =
-            $@"select par.Name, a.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select par.Name, a.Name from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m cross apply m.Parameters par cross apply par.Attributes a
             where c.Name = 'AttributeTestClass' and m.Name = 'MethodWithAttributedParams'";
@@ -4318,7 +4410,7 @@ public class RoslynToSqlTests
     public void WhenInterfaceHasAttribute_ShouldReturnIt()
     {
         var query =
-            $@"select i.Name, a.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select i.Name, a.Name from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
             cross apply i.Attributes a
             where i.Name = 'IAttributedInterface'";
@@ -4334,7 +4426,7 @@ public class RoslynToSqlTests
     public void WhenEnumHasAttributes_ShouldReturnThem()
     {
         var query =
-            $@"select e.Name, a.Name from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select e.Name, a.Name from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
             cross apply e.Attributes a
             where e.Name = 'FlagsEnum'";
@@ -4354,7 +4446,7 @@ public class RoslynToSqlTests
     public void WhenParameterHasDefaultValue_ShouldReturnIt()
     {
         var query =
-            $@"select par.Name, par.HasDefaultValue, par.DefaultValue, par.Ordinal from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select par.Name, par.HasDefaultValue, par.DefaultValue, par.Ordinal from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m cross apply m.Parameters par
             where c.Name = 'ParameterTestClass' and m.Name = 'MethodWithDefaults'";
@@ -4384,7 +4476,7 @@ public class RoslynToSqlTests
     public void WhenStructHasDocumentation_ShouldReturnTrue()
     {
         var query =
-            $@"select st.Name, st.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select st.Name, st.HasDocumentation from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Structs st
             where st.Name = 'TestStruct'";
 
@@ -4399,7 +4491,7 @@ public class RoslynToSqlTests
     public void WhenStructHasAllInterfaces_ShouldReturnThem()
     {
         var query =
-            $@"select st.Name, ai.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select st.Name, ai.Value from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Structs st
             cross apply st.AllInterfaces ai
             where st.Name = 'StructWithPatterns'";
@@ -4416,7 +4508,7 @@ public class RoslynToSqlTests
     {
         // TestStruct doesn't have events, but we test the query works
         var query =
-            $@"select st.Name, st.EventsCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select st.Name, st.EventsCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Structs st
             where st.Name = 'TestStruct'";
 
@@ -4431,7 +4523,7 @@ public class RoslynToSqlTests
     public void WhenInterfaceHasDocumentation_ShouldReturnTrue()
     {
         var query =
-            $@"select i.Name, i.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select i.Name, i.HasDocumentation from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
             where i.Name = 'IAttributedInterface'";
 
@@ -4446,7 +4538,7 @@ public class RoslynToSqlTests
     public void WhenEnumHasDocumentation_ShouldReturnTrue()
     {
         var query =
-            $@"select e.Name, e.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select e.Name, e.HasDocumentation from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
             where e.Name = 'FlagsEnum'";
 
@@ -4465,7 +4557,7 @@ public class RoslynToSqlTests
     public void WhenEnumHasFlagsAttribute_ShouldReturnTrue()
     {
         var query =
-            $@"select e.Name, e.HasFlagsAttribute from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select e.Name, e.HasFlagsAttribute from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
             where e.Name = 'FlagsEnum'";
 
@@ -4480,7 +4572,7 @@ public class RoslynToSqlTests
     public void WhenEnumHasNoFlagsAttribute_ShouldReturnFalse()
     {
         var query =
-            $@"select e.Name, e.HasFlagsAttribute from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select e.Name, e.HasFlagsAttribute from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
             where e.Name = 'Enum1'";
 
@@ -4495,7 +4587,7 @@ public class RoslynToSqlTests
     public void WhenEnumHasUnderlyingByteType_ShouldReturnByte()
     {
         var query =
-            $@"select e.Name, e.UnderlyingType from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select e.Name, e.UnderlyingType from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Enums e
             where e.Name = 'ByteEnum'";
 
@@ -4513,7 +4605,7 @@ public class RoslynToSqlTests
             $@"select 
                 em.Name, 
                 em.Value 
-            from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p 
             cross apply p.Documents d 
             cross apply d.Enums e
@@ -4550,7 +4642,7 @@ public class RoslynToSqlTests
     public void WhenInterfaceHasTypeParameters_ShouldReturnThem()
     {
         var query =
-            $@"select i.Name, tp.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select i.Name, tp.Value from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
             cross apply i.TypeParameters tp
             where i.Name = 'IGenericInterface'";
@@ -4566,7 +4658,7 @@ public class RoslynToSqlTests
     public void WhenInterfaceIsQueried_ShouldHaveMethodsAndPropertiesCounts()
     {
         var query =
-            $@"select i.Name, i.MethodsCount, i.PropertiesCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select i.Name, i.MethodsCount, i.PropertiesCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
             where i.Name = 'IGenericInterface'";
 
@@ -4582,7 +4674,7 @@ public class RoslynToSqlTests
     public void WhenInterfaceHasMembers_ShouldReturnMemberNames()
     {
         var query =
-            $@"select i.Name, mn.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select i.Name, mn.Value from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
             cross apply i.MemberNames mn
             where i.Name = 'IExplicitTestA'";
@@ -4603,7 +4695,7 @@ public class RoslynToSqlTests
     public void WhenClassHasTypeConstraints_ShouldReturnThem()
     {
         var query =
-            $@"select c.Name, tc.Name, tc.HasReferenceTypeConstraint, tc.HasValueTypeConstraint, tc.HasConstructorConstraint, tc.ConstraintSummary from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select c.Name, tc.Name, tc.HasReferenceTypeConstraint, tc.HasValueTypeConstraint, tc.HasConstructorConstraint, tc.ConstraintSummary from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.TypeParameterConstraints tc
             where c.Name = 'ConstrainedGenericClass'";
@@ -4629,7 +4721,7 @@ public class RoslynToSqlTests
     public void WhenMethodHasTypeConstraints_ShouldReturnThem()
     {
         var query =
-            $@"select m.Name, tc.Name, tc.HasReferenceTypeConstraint, tc.HasConstructorConstraint from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, tc.Name, tc.HasReferenceTypeConstraint, tc.HasConstructorConstraint from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m cross apply m.TypeParameterConstraints tc
             where c.Name = 'ConstrainedGenericClass' and m.Name = 'Transform'";
@@ -4651,7 +4743,7 @@ public class RoslynToSqlTests
     public void WhenMethodIsExplicitInterfaceImpl_ShouldReturnTrue()
     {
         var query =
-            $@"select m.Name, m.IsExplicitInterfaceImplementation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, m.IsExplicitInterfaceImplementation from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m
             where c.Name = 'ExplicitImplementor'";
@@ -4668,7 +4760,7 @@ public class RoslynToSqlTests
     public void WhenMethodIsPartial_ShouldReturnTrue()
     {
         var query =
-            $@"select m.Name, m.IsPartial from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, m.IsPartial from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m
             where c.Name = 'TestFeatures' and m.Name = 'PartialMethodNoBody'";
@@ -4684,7 +4776,7 @@ public class RoslynToSqlTests
     public void WhenMethodHasMethodKind_ShouldReturnOrdinary()
     {
         var query =
-            $@"select m.Name, m.MethodKind from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, m.MethodKind from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m
             where c.Name = 'TestFeatures' and m.Name = 'EmptyMethod'";
@@ -4704,7 +4796,7 @@ public class RoslynToSqlTests
     public void WhenDelegatesQueried_ShouldReturnAllDelegates()
     {
         var query =
-            $@"select del.Name, del.ReturnType, del.ParameterCount, del.IsGeneric from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select del.Name, del.ReturnType, del.ParameterCount, del.IsGeneric from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Delegates del
             where del.Name = 'SimpleCallback'";
 
@@ -4722,7 +4814,7 @@ public class RoslynToSqlTests
     public void WhenGenericDelegateQueried_ShouldReturnGenericInfo()
     {
         var query =
-            $@"select del.Name, del.IsGeneric, del.TypeParameterCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select del.Name, del.IsGeneric, del.TypeParameterCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Delegates del
             where del.Name = 'Transformer'";
 
@@ -4738,7 +4830,7 @@ public class RoslynToSqlTests
     public void WhenDelegateCountQueried_ShouldReturnCorrectCount()
     {
         var query =
-            $@"select d.Name, d.DelegateCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select d.Name, d.DelegateCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d
             where d.Name = 'NewFeaturePatterns.cs'";
 
@@ -4757,7 +4849,7 @@ public class RoslynToSqlTests
     public void WhenDiagnosticsQueried_ShouldReturnResults()
     {
         var query =
-            $@"select d.Name, d.DiagnosticCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select d.Name, d.DiagnosticCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d
             where d.Name = 'Class1.cs'";
 
@@ -4777,7 +4869,7 @@ public class RoslynToSqlTests
     public void WhenMethodHasDataFlow_ShouldReturnCapturedVariables()
     {
         var query =
-            $@"select m.Name, m.DataFlow.CapturedCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, m.DataFlow.CapturedCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m
             where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithCapture'";
@@ -4793,7 +4885,7 @@ public class RoslynToSqlTests
     public void WhenDataFlowCapturedVarsQueried_ShouldContainCapturedVar()
     {
         var query =
-            $@"select m.Name, m.DataFlow.CapturedCount, m.DataFlow.ReadInsideCount, m.DataFlow.WrittenInsideCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, m.DataFlow.CapturedCount, m.DataFlow.ReadInsideCount, m.DataFlow.WrittenInsideCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m
             where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithCapture'";
@@ -4809,7 +4901,7 @@ public class RoslynToSqlTests
     public void WhenDataFlowReadWriteQueried_ShouldWork()
     {
         var query =
-            $@"select m.Name, m.DataFlow.ReadInsideCount, m.DataFlow.WrittenInsideCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, m.DataFlow.ReadInsideCount, m.DataFlow.WrittenInsideCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m
             where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithReadWrite'";
@@ -4830,7 +4922,7 @@ public class RoslynToSqlTests
     public void WhenMethodHasControlFlow_ShouldReturnReachability()
     {
         var query =
-            $@"select m.Name, m.ControlFlow.EndPointIsReachable from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, m.ControlFlow.EndPointIsReachable from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m
             where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithUnreachableCode'";
@@ -4846,7 +4938,7 @@ public class RoslynToSqlTests
     public void WhenMethodHasMultipleExitPoints_ShouldCountThem()
     {
         var query =
-            $@"select m.Name, m.ControlFlow.ExitPointCount, m.ControlFlow.ReturnStatementCount from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select m.Name, m.ControlFlow.ExitPointCount, m.ControlFlow.ReturnStatementCount from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Methods m
             where c.Name = 'DataFlowTestClass' and m.Name = 'MethodWithEarlyReturn'";
@@ -4867,7 +4959,7 @@ public class RoslynToSqlTests
     public void WhenPropertyHasDefaultValue_ShouldReturnIt()
     {
         var query =
-            $@"select pr.Name, pr.DefaultValue from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select pr.Name, pr.DefaultValue from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Properties pr
             where c.Name = 'PropertyDefaultValueClass' and pr.Name = 'PropertyWithDefault'";
@@ -4884,7 +4976,7 @@ public class RoslynToSqlTests
     public void WhenPropertyHasNoDefaultValue_ShouldReturnNull()
     {
         var query =
-            $@"select pr.Name, pr.DefaultValue from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select pr.Name, pr.DefaultValue from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Properties pr
             where c.Name = 'PropertyDefaultValueClass' and pr.Name = 'PropertyWithoutDefault'";
@@ -4904,7 +4996,7 @@ public class RoslynToSqlTests
     public void WhenEventQueried_ShouldHaveDocumentationFlag()
     {
         var query =
-            $@"select ev.Name, ev.HasDocumentation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select ev.Name, ev.HasDocumentation from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Events ev
             where c.Name = 'TestFeatures'";
@@ -4920,7 +5012,7 @@ public class RoslynToSqlTests
     public void WhenPropertyIsExplicitInterfaceImpl_ShouldReturnTrue()
     {
         var query =
-            $@"select pr.Name, pr.IsExplicitInterfaceImplementation from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select pr.Name, pr.IsExplicitInterfaceImplementation from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
             cross apply c.Properties pr
             where c.Name = 'ExplicitImplementor'";
@@ -4940,7 +5032,7 @@ public class RoslynToSqlTests
     public void WhenInterfaceBaseInterfacesQueriedAsTable_ShouldWork()
     {
         var query =
-            $@"select i.Name, bi.Value from #csharp.solution('{Solution1SolutionPath.Escape()}') s 
+            $@"select i.Name, bi.Value from csharp.solution('{Solution1SolutionPath.Escape()}') s
             cross apply s.Projects p cross apply p.Documents d cross apply d.Interfaces i
             cross apply i.BaseInterfaces bi
             where i.Name = 'IChildInterface'";
@@ -4965,6 +5057,50 @@ public class RoslynToSqlTests
                     { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
                 }));
     }
+
+    private static SolutionEntity LoadSolution1()
+    {
+        return Solution1.Value;
+    }
+
+    private static SolutionEntity LoadSolution1Core()
+    {
+        var schema = new CSharpSchema((_, _) => new Mock<INuGetPropertiesResolver>().Object);
+        var context = RuntimeV2TestContexts.CreateExecutionContext(
+            sourceRuntimeSettings: new Dictionary<string, string>
+            {
+                { "MUSOQ_SERVER_HTTP_ENDPOINT", "https://localhost/internal/this-doesnt-exists" },
+                { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
+            });
+
+        return schema.GetRowSource<SolutionEntity>("solution", context, Solution1SolutionPath)
+            .Chunks
+            .SelectMany(chunk => chunk)
+            .Single();
+    }
+
+    private static List<ReferenceRow> FindReferenceRows(
+        Func<CSharpLibrary, IEnumerable<ReferencedDocumentEntity>> getReferences,
+        Func<ReferencedDocumentEntity, IEnumerable<string>> getNames)
+    {
+        var library = new CSharpLibrary();
+
+        return getReferences(library)
+            .SelectMany(reference => getNames(reference).Select(name => new ReferenceRow(
+                name,
+                reference.StartLine,
+                reference.StartColumn,
+                reference.EndLine,
+                reference.EndColumn)))
+            .ToList();
+    }
+
+    private sealed record ReferenceRow(
+        string Name,
+        int StartLine,
+        int StartColumn,
+        int EndLine,
+        int EndColumn);
 
     private static bool ValidateIsValidPathFor(string? toString, string extension, bool checkFileExists = true)
     {

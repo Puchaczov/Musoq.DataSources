@@ -31,7 +31,7 @@ public class GitHubRepositoriesTests
             });
 
         var query =
-            "select Id, Name, FullName, Description, StargazersCount, ForksCount, Language from #github.repositories()";
+            "select Id, Name, FullName, Description, StargazersCount, ForksCount, Language from github.repositories()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -59,7 +59,7 @@ public class GitHubRepositoriesTests
                 MockEntityFactory.CreateRepository(2, "repo2", "testowner/repo2", "Second repo")
             });
 
-        var query = "select Id, Name, FullName from #github.repositories('testowner') order by Id";
+        var query = "select Id, Name, FullName from github.repositories('testowner') order by Id";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -86,7 +86,7 @@ public class GitHubRepositoriesTests
                 MockEntityFactory.CreateRepository(2, "python-repo", "owner/python-repo", "Python project", "Python")
             });
 
-        var query = "select Name, Language from #github.repositories() where Language = 'C#'";
+        var query = "select Name, Language from github.repositories() where Language = 'C#'";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -96,6 +96,35 @@ public class GitHubRepositoriesTests
         Assert.AreEqual(1, table.Count);
         Assert.AreEqual("csharp-repo", table[0][0]);
         Assert.AreEqual("C#", table[0][1]);
+    }
+
+    [TestMethod]
+    public void WhenRepositoriesFilteredByVisibility_ShouldPassVisibilityToRequest()
+    {
+        var api = new Mock<IGitHubApi>();
+
+        api.Setup(f => f.GetUserRepositoriesAsync(It.IsAny<RepositoryRequest>(), It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(new List<RepositoryEntity>
+            {
+                MockEntityFactory.CreateRepository(1, "public-repo", "owner/public-repo"),
+                MockEntityFactory.CreateRepository(2, "private-repo", "owner/private-repo", isPrivate: true)
+            });
+
+        var query = "select Name, Visibility from github.repositories() where Visibility = 'public'";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
+
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count);
+        Assert.AreEqual("public-repo", table[0][0]);
+
+        api.Verify(
+            f => f.GetUserRepositoriesAsync(
+                It.Is<RepositoryRequest>(r => r.Visibility == RepositoryRequestVisibility.Public),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()),
+            Times.Once);
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IGitHubApi api)

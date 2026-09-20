@@ -1,13 +1,13 @@
 # Git plugin guide
 
 ## Purpose
-- Exposes local repositories as Musoq sources for `repository`, `commits`, `branches`, `tags`, `filehistory`, `status`, `remotes`, and `blame`.
+- Exposes local repositories as Musoq sources for `repository`, `commits`, `branches`, `tags`, `stashes`, `remotetags`, `filehistory`, `status`, `remotes`, and `blame`.
 
 ## Read first
 - `GitSchema.cs`
 - root-level `*Table.cs` and `*RowsSource.cs` files
 - `Entities/`
-- `GitWhereNodeHelper.cs`
+- `GitSchema.cs` planning methods
 - `GitLibrary.cs`
 - `Musoq.DataSources.Git.Tests/GitToSqlTests.cs`
 - `Musoq.DataSources.Git.Tests/BlameTests.cs`
@@ -16,11 +16,11 @@
 ## Patterns to preserve
 - Keep each Git concept in its own entity/table/source pair instead of adding generic catch-all rows.
 - Many sources inherit from `AsyncRowsSourceBase`; preserve chunking and cancellation for large-history traversal.
-- `GitSchema` method names and overloads define the public query surface and `desc #git` behavior.
-- Simple `WHERE` pushdown happens through `GitWhereNodeHelper`; keep optimization behavior aligned with tests.
+- `GitSchema` method names and overloads define the public query surface and `desc git` behavior.
+- Simple `WHERE` pushdown happens through runtime-v2 source planning; keep optimization behavior aligned with tests. Reference readers must remain streaming and must not materialize all tags or stashes.
 
 ## Source families
-- Direct top-level sources are registered in `GitSchema.GetRowSource()`: `repository`, `tags`, `commits`, `branches`, `filehistory`, `status`, `remotes`, and `blame`.
+- Direct top-level sources are registered in `GitSchema.GetRowSource()`: `repository`, `tags`, `stashes`, `remotetags`, `commits`, `branches`, `filehistory`, `status`, `remotes`, and `blame`.
 - `repository` is the root object graph source. Most richer scenarios flow through nested bindable properties on `RepositoryEntity`, such as `Branches`, `Tags`, `Commits`, `Configuration`, and `Stashes`.
 - Nested/table-valued entity members matter just as much as direct sources:
 	- `RepositoryEntity.Branches`, `Tags`, `Commits`, `Configuration`, `Stashes`
@@ -30,18 +30,20 @@
 - Library-driven source-like expansion lives in `GitLibrary`, especially `DifferenceBetween(...)`, `PatchBetween(...)`, `SearchForBranches(...)`, `GetBranchSpecificCommits(...)`, `FindMergeBase(...)`, `CommitFrom(...)`, `BranchFrom(...)`, and the `MinCommit` / `MaxCommit` aggregations.
 
 ## Where lazy or nested entities matter
-- `RepositoryEntity` and `BranchEntity` deliberately expose nested enumerable properties with `[BindablePropertyAsTable]`. If you change those shapes, validate `cross apply` scenarios, not just direct `#git.*(...)` queries.
+- `RepositoryEntity` and `BranchEntity` deliberately expose nested enumerable properties with `[BindablePropertyAsTable]`. If you change those shapes, validate `cross apply` scenarios, not just direct `git.*(...)` queries.
 - `BlameHunkEntity.Lines` is the most important lazy property: it reads blob content on demand, caches the expanded `BlameLineEntity` list, and powers `cross apply h.Lines` queries.
 - `CommitEntity.Parents` is another nested traversal point that should stay cheap and null-safe.
 - `TagEntity.Commit` is optional because lightweight tags do not always resolve the same way as annotated tags.
 - `BranchEntity.ParentBranch` is intentionally defensive and relatively expensive: it computes merge-base candidates and falls back to `main` / `master` on failure. Treat changes there as behavior-sensitive.
-- `RepositoryEntity` owns a `LibGit2Sharp.Repository` and disposes it in the finalizer. Avoid introducing extra ownership ambiguity when adding nested entities.
+- Direct rows are detached snapshots. Do not retain LibGit2Sharp objects or repository handles in returned entities;
+  nested access must open a short-lived repository scope from a path plus SHA/ref identity.
 
 ## Simple predicate optimization
-- Predicate extraction lives in `GitWhereNodeHelper.ExtractParameters()`.
-- Pushdown is applied manually inside `CommitsRowsSource`, `BranchesRowsSource`, `TagsRowsSource`, `StatusRowsSource`, and `RemotesRowsSource`.
+- Predicate extraction lives in the runtime-v2 source-planning path.
+- Pushdown is applied manually inside `CommitsRowsSource`, `BranchesRowsSource`, `TagsRowsSource`, `StashesRowsSource`, `RemoteTagsRowsSource`, `StatusRowsSource`, and `RemotesRowsSource`.
 - Supported pushdown is intentionally simple:
-	- equality on plain fields such as `Author`, `Sha`, `FriendlyName`, `CanonicalName`, `IsRemote`, `IsTracking`, `IsAnnotated`, `Name` / `RemoteName`, `Url`, and `State`
+	- equality on plain fields such as `Author`, `Sha`, `FriendlyName`, `CanonicalName`, `TargetSha`, `ObjectSha`, `IsRemote`, `IsTracking`, `IsAnnotated`, `Name` / `RemoteName`, `Url`, and `State`
+	- canonical-name cursor predicates and source-order windows for local tags, stashes, and remote-tag streaming
 	- commit date comparisons on `CommittedWhen`
 	- `AND` composition only
 - `OR` nodes are ignored for pushdown, and non-literal expressions are not extracted. Engine-level filtering must still produce correct final results when pushdown does nothing.
@@ -51,11 +53,13 @@
 ## Common pitfalls
 - Path validation happens before source creation: queries must point at a repository root directory or a `.git` directory. Non-existent paths and non-repositories should keep failing early in `GitSchema`.
 - Test and query paths often need `.Escape()` because Windows paths are passed into Musoq scripts as string literals.
-- `filehistory` normalizes absolute paths back to repository-relative paths and matches either file names or full relative paths against the HEAD tree. Preserve that before touching wildcard logic.
-- Negative `take` in `filehistory` means “oldest N changes”, implemented by reversing the commit history in memory. Keep tests in sync if you optimize that path.
+- `filehistory` normalizes absolute paths back to repository-relative paths and matches either file names or full relative paths against every historical raw change, including both rename sides. Preserve that before touching wildcard logic.
+- Negative `take` in `filehistory` means “oldest N changes”. It uses Git's reverse history traversal, which remains a full-history-costed operation without a persistent index; keep the diagnostic metric and tests in sync if you optimize that path.
 - `BlameRowsSource` returns empty results for binary blobs and for blame operations that LibGit2Sharp cannot resolve; invalid revisions and missing files still throw.
 - `StatusRowsSource` currently emits one-row chunks, unlike the 100-row batching used by most other Git row sources. Do not normalize that casually unless you validate behavior and cancellation.
-- `GitWhereNodeHelper` works on raw field names, so aliasing or computed predicates should not be baked into pushdown assumptions.
+- Runtime-v2 source planning works on source field names, so aliasing or computed predicates should not be baked into pushdown assumptions.
+- `git.remotetags` reads a configured remote with `git ls-remote`; tests and fixtures must use only local paths or `file://` URLs. It must never fetch, mutate local refs, or require the client repository to contain the advertised objects.
+- `GIT_REFERENCE_BACKEND=auto|git-cli|libgit2` controls local tag/stash readers. Remote tags intentionally require the CLI backend because LibGit2Sharp does not provide live remote advertisement support.
 
 ## Fixture conventions
 - Canonical fixtures live in `Musoq.DataSources.Git.Tests/Repositories/*.zip`.
@@ -69,10 +73,10 @@
 	- repository basics and nested `Head` / `Information`
 	- `cross apply` over `repository.Branches`, `repository.Tags`, `repository.Commits`, and `commit.Parents`
 	- library methods like `DifferenceBetween(...)`, `SearchForBranches(...)`, `GetBranchSpecificCommits(...)`, `MinCommit(...)`, and `MaxCommit(...)`
-	- direct-source coverage for `#git.commits`, `#git.branches`, `#git.filehistory`, and `#git.remotes`
+	- direct-source coverage for `git.commits`, `git.branches`, `git.filehistory`, and `git.remotes`
 - `BlameTests.cs` is the best reference for lazy nested entities, binary-file handling, revision validation, and `cross apply h.Lines`.
 - `GitWhereNodeOptimizationTests.cs` is the contract for simple pushdown on commits, tags, and branches.
-- `GitSchemaDescribeTests.cs` guards constructor overload counts and `desc #git` / `desc #git.repository(...)` output.
+- `GitSchemaDescribeTests.cs` guards constructor overload counts and `desc git` / `desc git.repository(...)` output.
 
 ## Integrations
 - `LibGit2Sharp`

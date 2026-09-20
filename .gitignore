@@ -15,6 +15,11 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+!scripts/release/
+!scripts/release/**
+!licenses/
+!licenses/release/
+!licenses/release/**
 x64/
 x86/
 bld/
@@ -264,9 +269,15 @@ __pycache__/
 *.pyc
 /Musoq.Tools.CopyReleased/conf.mrf
 
+# BenchmarkDotNet output is machine-local evidence. Curated results belong in docs/performance.
+BenchmarkDotNet.Artifacts/
+
 # License cache
 .licenses-cache/
 LinksCache.json
 
 # NuGet cache in TestsSolutions
 **/TestsSolutions/NugetCache/
+
+.codex/
+docs/campaigns/

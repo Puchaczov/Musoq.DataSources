@@ -1,4 +1,3 @@
-﻿using Docker.DotNet.Models;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
@@ -7,25 +6,25 @@ namespace Musoq.DataSources.Docker.Volumes;
 internal static class VolumesSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> VolumesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<VolumeResponse, object>> VolumesIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<int, Func<VolumeEntity, object?>> VolumesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] VolumesColumns;
 
     static VolumesSourceHelper()
     {
         VolumesNameToIndexMap = new Dictionary<string, int>
         {
-            { nameof(VolumeResponse.CreatedAt), 0 },
-            { nameof(VolumeResponse.Driver), 1 },
-            { nameof(VolumeResponse.Labels), 2 },
-            { nameof(VolumeResponse.Mountpoint), 3 },
-            { nameof(VolumeResponse.Name), 4 },
-            { nameof(VolumeResponse.Options), 5 },
-            { nameof(VolumeResponse.Scope), 6 },
-            { nameof(VolumeResponse.Status), 7 },
-            { nameof(VolumeResponse.UsageData), 8 }
+            { nameof(VolumeEntity.CreatedAt), 0 },
+            { nameof(VolumeEntity.Driver), 1 },
+            { nameof(VolumeEntity.Labels), 2 },
+            { nameof(VolumeEntity.Mountpoint), 3 },
+            { nameof(VolumeEntity.Name), 4 },
+            { nameof(VolumeEntity.Options), 5 },
+            { nameof(VolumeEntity.Scope), 6 },
+            { nameof(VolumeEntity.Status), 7 },
+            { nameof(VolumeEntity.UsageData), 8 }
         };
 
-        VolumesIndexToMethodAccessMap = new Dictionary<int, Func<VolumeResponse, object>>
+        VolumesIndexToMethodAccessMap = new Dictionary<int, Func<VolumeEntity, object?>>
         {
             { 0, info => info.CreatedAt },
             { 1, info => info.Driver },
@@ -40,15 +39,15 @@ internal static class VolumesSourceHelper
 
         VolumesColumns =
         [
-            new SchemaColumn(nameof(VolumeResponse.CreatedAt), 0, typeof(string)),
-            new SchemaColumn(nameof(VolumeResponse.Driver), 1, typeof(string)),
-            new SchemaColumn(nameof(VolumeResponse.Labels), 2, typeof(IDictionary<string, string>)),
-            new SchemaColumn(nameof(VolumeResponse.Mountpoint), 3, typeof(string)),
-            new SchemaColumn(nameof(VolumeResponse.Name), 4, typeof(string)),
-            new SchemaColumn(nameof(VolumeResponse.Options), 5, typeof(IDictionary<string, string>)),
-            new SchemaColumn(nameof(VolumeResponse.Scope), 6, typeof(string)),
-            new SchemaColumn(nameof(VolumeResponse.Status), 7, typeof(IDictionary<string, string>)),
-            new SchemaColumn(nameof(VolumeResponse.UsageData), 8, typeof(VolumeUsageData))
+            new SchemaColumn(nameof(VolumeEntity.CreatedAt), 0, typeof(string)),
+            new SchemaColumn(nameof(VolumeEntity.Driver), 1, typeof(string)),
+            new SchemaColumn(nameof(VolumeEntity.Labels), 2, typeof(IReadOnlyDictionary<string, string>)),
+            new SchemaColumn(nameof(VolumeEntity.Mountpoint), 3, typeof(string)),
+            new SchemaColumn(nameof(VolumeEntity.Name), 4, typeof(string)),
+            new SchemaColumn(nameof(VolumeEntity.Options), 5, typeof(IReadOnlyDictionary<string, string>)),
+            new SchemaColumn(nameof(VolumeEntity.Scope), 6, typeof(string)),
+            new SchemaColumn(nameof(VolumeEntity.Status), 7, typeof(IReadOnlyDictionary<string, string>)),
+            new SchemaColumn(nameof(VolumeEntity.UsageData), 8, typeof(string))
         ];
     }
 }

@@ -1,96 +1,95 @@
-﻿using System;
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
-using Musoq.Schema;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Time;
 
-internal class TimeSource : RowSourceBase<DateTimeOffset>
+internal class TimeSource(
+    DateTimeOffset startAt,
+    DateTimeOffset stopAt,
+    string resolution,
+    SourceExecutionContext executionContext)
+    : RowSourceBase<TimeEntity>
 {
     private const string TimeSourceName = "time";
-    private readonly RuntimeContext _communicator;
-    private readonly string _resolution;
-    private readonly DateTimeOffset _startAt;
-    private readonly DateTimeOffset _stopAt;
-
-    public TimeSource(DateTimeOffset startAt, DateTimeOffset stopAt, string resolution, RuntimeContext communicator)
+    private readonly string _resolution = resolution.ToLowerInvariant();
+    private readonly DateTimeOffset _stopAt = resolution.ToLowerInvariant() switch
     {
-        _startAt = startAt;
-        _resolution = resolution.ToLowerInvariant();
+        "seconds" => stopAt.Add(TimeSpan.FromMilliseconds(1)),
+        "minutes" => stopAt.AddSeconds(1),
+        "hours" => stopAt.AddMinutes(1),
+        "days" => stopAt.AddHours(1),
+        "months" => stopAt.AddDays(1),
+        "years" => stopAt.AddMonths(1),
+        _ => throw new NotSupportedException($"Chosen resolution '{resolution.ToLowerInvariant()}' is not supported.")
+    };
 
-        _stopAt = _resolution switch
-        {
-            "seconds" => stopAt.Add(TimeSpan.FromMilliseconds(1)),
-            "minutes" => stopAt.AddSeconds(1),
-            "hours" => stopAt.AddMinutes(1),
-            "days" => stopAt.AddHours(1),
-            "months" => stopAt.AddDays(1),
-            "years" => stopAt.AddMonths(1),
-            _ => throw new NotSupportedException($"Chosen resolution '{_resolution}' is not supported.")
-        };
-
-        _communicator = communicator;
-    }
-
-    protected override void CollectChunks(
-        BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
+    protected override void CollectChunks(IChunkWriter<TimeEntity> writer)
     {
-        _communicator.ReportDataSourceBegin(TimeSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, TimeSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
         {
-            Func<DateTimeOffset, DateTimeOffset> modify;
-            switch (_resolution)
-            {
-                case "seconds":
-                    modify = offset => offset.AddSeconds(1);
-                    break;
-                case "minutes":
-                    modify = offset => offset.AddMinutes(1);
-                    break;
-                case "hours":
-                    modify = offset => offset.AddHours(1);
-                    break;
-                case "days":
-                    modify = offset => offset.AddDays(1);
-                    break;
-                case "months":
-                    modify = offset => offset.AddMonths(1);
-                    break;
-                case "years":
-                    modify = offset => offset.AddYears(1);
-                    break;
-                default:
-                    throw new NotSupportedException($"Chosen resolution '{_resolution}' is not supported.");
-            }
+            if (executionContext.EndWorkToken.IsCancellationRequested)
+                return;
 
-            var listOfCalcTimes = new List<EntityResolver<DateTimeOffset>>();
-            var currentTime = _startAt;
-            var i = 0;
-            var endWorkToken = _communicator.EndWorkToken;
+            var modify = _resolution switch
+            {
+                "seconds" => (Func<DateTimeOffset, DateTimeOffset>)(offset => offset.AddSeconds(1)),
+                "minutes" => offset => offset.AddMinutes(1),
+                "hours" => offset => offset.AddHours(1),
+                "days" => offset => offset.AddDays(1),
+                "months" => offset => offset.AddMonths(1),
+                "years" => offset => offset.AddYears(1),
+                _ => throw new NotSupportedException($"Chosen resolution '{_resolution}' is not supported.")
+            };
+
+            var chunk = new List<TimeEntity>();
+            var currentTime = startAt;
+            var plan = executionContext.Plan;
+            long skipped = 0;
+            long emitted = 0;
 
             while (currentTime <= _stopAt)
             {
-                listOfCalcTimes.Add(new EntityResolver<DateTimeOffset>(currentTime, TimeHelper.TimeNameToIndexMap,
-                    TimeHelper.TimeIndexToMethodAccessMap));
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                var entity = new TimeEntity(currentTime);
                 currentTime = modify(currentTime);
-                totalRowsProcessed++;
+                progress.RowRead();
 
-                if (i++ > 99)
+                if (!TimeSourcePlanner.Matches(plan.AcceptedPredicate, entity))
                     continue;
 
-                chunkedSource.Add(listOfCalcTimes, endWorkToken);
-                listOfCalcTimes = [];
-                i = 0;
+                if (plan.AcceptedSkip.HasValue && skipped < plan.AcceptedSkip.Value)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                if (plan.AcceptedTake.HasValue && emitted >= plan.AcceptedTake.Value)
+                    break;
+
+                chunk.Add(entity);
+                emitted++;
+                totalRowsProcessed++;
+
+                if (chunk.Count < RowChunking.DefaultChunkSize)
+                    continue;
+
+                writer.Write(chunk);
+                chunk = [];
             }
 
-            chunkedSource.Add(listOfCalcTimes, endWorkToken);
+            if (chunk.Count > 0)
+                writer.Write(chunk);
         }
         finally
         {
-            _communicator.ReportDataSourceEnd(TimeSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 }

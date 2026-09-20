@@ -13,19 +13,19 @@
 - `Defaults.cs`
 
 ## Data flow
-- `OpenAiSchema.cs` exposes a single source family: `#openai.gpt(...)`.
+- `OpenAiSchema.cs` exposes a single source family: `openai.gpt(...)`.
 - `OpenAiSingleRowSource.cs` yields exactly one `OpenAiEntity` that carries model and request settings.
 - `OpenAiLibrary.cs` is where queries actually become useful: helper methods are `[BindableMethod]` functions that inject `OpenAiEntity` and call `IOpenAiApi`.
 - The row source itself has no meaningful schema columns today because `OpenAiSchemaHelper.cs` is effectively empty; user-visible output comes from helper methods, not table fields.
 
 ## Overloads and defaults
-- `#openai.gpt(...)` uses progressive overloads to add `model`, `maxTokens`, `temperature`, and penalty settings.
+- `openai.gpt(...)` uses progressive overloads to add `model`, `maxTokens`, `temperature`, and penalty settings.
 - Default model comes from `Defaults.cs` and is part of the runtime contract.
 - Default request tuning also lives in the schema layer through `OpenAiRequestInfo` construction.
 - The runtime/described overload surface must stay aligned with describe tests; treat overload count changes as public-surface changes.
 
 ## Patterns to preserve
-- The source surface is `#openai.gpt(...)` with several overloads that progressively add model and tuning parameters.
+- The source surface is `openai.gpt(...)` with several overloads that progressively add model and tuning parameters.
 - Keep provider-specific API logic behind `IOpenAiApi` and shared query-facing method names aligned with `LLMHelpers`.
 - Default model behavior from `Defaults.cs` is part of the runtime contract.
 - Preserve current request/response mapping and token-count assumptions used by library methods.
@@ -67,6 +67,6 @@
 
 ## Most representative tests
 - `OpenAiQueryTests.cs` is the main end-to-end contract for helper outputs, image methods, and token counting.
-- `OpenAISchemaDescribeTests.cs` is the authority for `desc #openai` / `desc #openai.gpt` output and overload inventory.
+- `OpenAISchemaDescribeTests.cs` is the authority for `desc openai` / `desc openai.gpt` output and overload inventory.
 - `OpenAiSingleRowSourceTests.cs` is the best focused unit coverage for fallback semantics and single-row behavior.
 - `OpenAiApiPlayground.cs` is exploratory and should not be treated as the formal contract.

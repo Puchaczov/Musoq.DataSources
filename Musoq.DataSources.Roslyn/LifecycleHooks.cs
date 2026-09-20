@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -159,6 +158,13 @@ public static class LifecycleHooks
                 var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
 
                 value = command.GetResolveValueStrategy();
+            });
+
+            app.Add("solution status", () =>
+            {
+                var command = new SolutionOperationsCommand(Logger ?? throw new NullReferenceException(nameof(Logger)));
+
+                value = command.GetStatus();
             });
 
             await app.RunAsync(args);

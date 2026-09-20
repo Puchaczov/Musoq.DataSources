@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Os.Directories;
@@ -8,7 +7,7 @@ internal class DirectoriesBasedTable : ISchemaTable
 {
     public ISchemaColumn[] Columns { get; } = SchemaDirectoriesHelper.DirectoriesColumns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(DirectoryInfo));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(DirectoryEntity));
 
     public ISchemaColumn? GetColumnByName(string name)
     {

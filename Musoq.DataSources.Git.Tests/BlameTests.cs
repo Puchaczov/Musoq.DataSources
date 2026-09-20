@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Parser.Helpers;
+using Musoq.Evaluator.Exceptions;
 
 namespace Musoq.DataSources.Git.Tests;
 
@@ -48,7 +48,7 @@ public class BlameTests
                 Author,
                 AuthorEmail,
                 Summary
-            from #git.blame('{RepositoryPath}', 'test_file.txt')";
+            from git.blame('{RepositoryPath}', 'test_file.txt')";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -77,7 +77,7 @@ public class BlameTests
             select
                 CommitSha,
                 Author
-            from #git.blame('{RepositoryPath}', 'test_file.txt', 'HEAD')";
+            from git.blame('{RepositoryPath}', 'test_file.txt', 'HEAD')";
 
         var vmHead =
             CreateAndRunVirtualMachine(queryHead.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
@@ -89,7 +89,7 @@ public class BlameTests
             select
                 CommitSha,
                 Author
-            from #git.blame('{RepositoryPath}', 'test_file.txt', 'v1.0')";
+            from git.blame('{RepositoryPath}', 'test_file.txt', 'v1.0')";
 
         var vmTag = CreateAndRunVirtualMachine(queryTag.Replace("{RepositoryPath}",
             unpackedRepositoryPath.Path.Escape()));
@@ -107,11 +107,17 @@ public class BlameTests
             select
                 StartLineNumber,
                 CommitSha
-            from #git.blame('{RepositoryPath}', 'NonExistentFile.txt')";
+            from git.blame('{RepositoryPath}', 'NonExistentFile.txt')";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
-        Assert.ThrowsException<FileNotFoundException>(() => vm.Run());
+        var exception = Assert.ThrowsExactly<QueryExecutionException>(() =>
+        {
+            var table = vm.Run();
+            _ = table.Count;
+        });
+
+        Assert.IsInstanceOfType<FileNotFoundException>(exception.GetBaseException());
     }
 
     [TestMethod]
@@ -123,11 +129,17 @@ public class BlameTests
             select
                 StartLineNumber,
                 CommitSha
-            from #git.blame('{RepositoryPath}', 'test_file.txt', 'invalid-sha-12345')";
+            from git.blame('{RepositoryPath}', 'test_file.txt', 'invalid-sha-12345')";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
 
-        Assert.ThrowsException<ArgumentException>(() => vm.Run());
+        var exception = Assert.ThrowsExactly<QueryExecutionException>(() =>
+        {
+            var table = vm.Run();
+            _ = table.Count;
+        });
+
+        Assert.IsInstanceOfType<ArgumentException>(exception.GetBaseException());
     }
 
     [TestMethod]
@@ -139,7 +151,7 @@ public class BlameTests
             select
                 StartLineNumber,
                 CommitSha
-            from #git.blame('{RepositoryPath}', 'main.py')";
+            from git.blame('{RepositoryPath}', 'main.py')";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -157,7 +169,7 @@ public class BlameTests
                 l.LineNumber,
                 l.Content,
                 h.Author
-            from #git.blame('{RepositoryPath}', 'test_file.txt') h
+            from git.blame('{RepositoryPath}', 'test_file.txt') h
             cross apply h.Lines l
             order by l.LineNumber";
 
@@ -183,7 +195,7 @@ public class BlameTests
             select
                 StartLineNumber,
                 LineCount
-            from #git.blame('{RepositoryPath}', 'test_file.txt')";
+            from git.blame('{RepositoryPath}', 'test_file.txt')";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));
         var result = vm.Run();
@@ -202,7 +214,7 @@ public class BlameTests
                 h.Author,
                 l.LineNumber,
                 l.Content
-            from #git.blame('{RepositoryPath}', 'test_file.txt') h
+            from git.blame('{RepositoryPath}', 'test_file.txt') h
             cross apply h.Lines l
             order by l.LineNumber";
 
@@ -234,7 +246,7 @@ public class BlameTests
             select
                 Author,
                 SUM(LineCount) as TotalLines
-            from #git.blame('{RepositoryPath}', 'test_file.txt')
+            from git.blame('{RepositoryPath}', 'test_file.txt')
             group by Author";
 
         var vm = CreateAndRunVirtualMachine(query.Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape()));

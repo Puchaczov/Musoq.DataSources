@@ -1,86 +1,73 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using LibGit2Sharp;
-using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git;
 
-internal sealed class CommitsRowsSource(
-    string repositoryPath,
-    Func<string, Repository> createRepository,
-    RuntimeContext runtimeContext) : AsyncRowsSourceBase<CommitEntity>(runtimeContext.EndWorkToken)
+internal sealed class CommitsRowsSource : GitDiagnosticRowsSourceBase<CommitEntity>
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly Func<string, Repository> _createRepository;
+    private readonly GitFilterParameters _filters;
+    private readonly GitProjection _projection;
+    private readonly string _repositoryPath;
+
+    public CommitsRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
+        : base(executionContext, "git.commits")
     {
-        var repository = createRepository(repositoryPath);
-        var chunk = new List<IObjectResolver>(100);
-        var filters = GitWhereNodeHelper.ExtractParameters(runtimeContext.QuerySourceInfo.WhereNode);
+        _repositoryPath = repositoryPath;
+        _createRepository = createRepository;
+        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
+        _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
+    }
 
-        var commitFilter = new CommitFilter
-        {
-            SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
-        };
+    protected override long CollectRows(DiagnosticChunkWriter<CommitEntity> writer, CancellationToken cancellationToken)
+    {
+        if (Context.Plan.AcceptedTake == 0)
+            return 0;
 
-        foreach (var commit in repository.Commits.QueryBy(commitFilter))
-        {
-            if (filters.Until.HasValue && commit.Author.When > filters.Until.Value)
-                continue;
+        var chunk = new List<CommitEntity>(128);
+        long rowsRead = 0;
+        long skipped = 0;
+        var reader = GitOperationReaders.Commits;
 
-            if (filters.Since.HasValue && commit.Author.When < filters.Since.Value)
-                break;
-
-
-            if (!string.IsNullOrEmpty(filters.Sha) &&
-                !commit.Sha.StartsWith(filters.Sha, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-
-            if (!string.IsNullOrEmpty(filters.Author) &&
-                !string.Equals(commit.Author.Name, filters.Author, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-
-            if (!string.IsNullOrEmpty(filters.AuthorEmail) &&
-                !string.Equals(commit.Author.Email, filters.AuthorEmail, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-
-            if (!string.IsNullOrEmpty(filters.Committer) &&
-                !string.Equals(commit.Committer.Name, filters.Committer, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-
-            if (!string.IsNullOrEmpty(filters.CommitterEmail) &&
-                !string.Equals(commit.Committer.Email, filters.CommitterEmail, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            if (cancellationToken.IsCancellationRequested)
-                break;
-
-            var entity = new CommitEntity(commit, repository);
-            chunk.Add(new EntityResolver<CommitEntity>(
-                entity,
-                CommitEntity.NameToIndexMap,
-                CommitEntity.IndexToObjectAccessMap
-            ));
-
-            if (chunk.Count >= 100)
+        reader.Read(
+            _repositoryPath,
+            _projection,
+            _filters.Sha,
+            _createRepository,
+            cancellationToken,
+            commit =>
             {
-                chunkedSource.Add(chunk.ToArray(), cancellationToken);
-                chunk.Clear();
-            }
-        }
+                if (!GitSourcePlanner.Matches(_filters, commit))
+                    return true;
+                var entity = GitEntitySnapshots.Commit(commit, _projection);
+                if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
+                    return true;
 
-        if (chunk.Count > 0)
-            chunkedSource.Add(chunk.ToArray(), cancellationToken);
+                if (Context.Plan.AcceptedSkip.HasValue && skipped < Context.Plan.AcceptedSkip.Value)
+                {
+                    skipped++;
+                    return true;
+                }
 
-        return Task.CompletedTask;
+                if (Context.Plan.AcceptedTake.HasValue && rowsRead + chunk.Count >= Context.Plan.AcceptedTake.Value)
+                    return false;
+
+                chunk.Add(entity);
+                if (chunk.Count == 128)
+                    rowsRead += WriteChunk(writer, chunk, rowsRead);
+                return true;
+            });
+
+        rowsRead += WriteChunk(writer, chunk, rowsRead);
+        Context.Diagnostics.AddMetric("Git.Commits.Backend", reader.Backend == "git-cli" ? 1 : 2);
+        Context.Diagnostics.AddMetric("Git.Commits.DirectSha", string.IsNullOrWhiteSpace(_filters.Sha) ? 0 : 1);
+        return rowsRead;
     }
 }

@@ -135,6 +135,7 @@ public class StructEntity : TypeEntity
     /// <summary>
     ///     Gets the methods of the struct.
     /// </summary>
+    [BindablePropertyAsTable]
     public override IEnumerable<MethodEntity> Methods => Syntax.Members
         .OfType<MethodDeclarationSyntax>()
         .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution));
@@ -142,6 +143,7 @@ public class StructEntity : TypeEntity
     /// <summary>
     ///     Gets the properties of the struct.
     /// </summary>
+    [BindablePropertyAsTable]
     public override IEnumerable<PropertyEntity> Properties => Syntax.Members
         .OfType<PropertyDeclarationSyntax>()
         .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!, SemanticModel));

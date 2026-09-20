@@ -1,70 +1,79 @@
-﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using Musoq.Schema;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.FlatFile;
 
-internal class FlatFileSource : RowSourceBase<FlatFileEntity>
+internal class FlatFileSource(string filePath, SourceExecutionContext executionContext)
+    : RowSourceBase<FlatFileEntity>
 {
     private const string FlatFileSourceName = "flatfile";
-    private readonly RuntimeContext _communicator;
-    private readonly string _filePath;
 
-    public FlatFileSource(string filePath, RuntimeContext communicator)
+    protected override void CollectChunks(IChunkWriter<FlatFileEntity> writer)
     {
-        _filePath = filePath;
-        _communicator = communicator;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _communicator.ReportDataSourceBegin(FlatFileSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, FlatFileSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
         {
-            const int chunkSize = 1000;
+            if (executionContext.EndWorkToken.IsCancellationRequested)
+                return;
 
-            if (!File.Exists(_filePath))
+            if (!File.Exists(filePath))
                 return;
 
             var rowNum = 0;
-            var endWorkToken = _communicator.EndWorkToken;
+            var chunk = new List<FlatFileEntity>();
+            var plan = executionContext.Plan;
+            long skipped = 0;
+            long emitted = 0;
 
-            using var file = File.OpenRead(_filePath);
+            using var file = File.OpenRead(filePath);
             using var reader = new StreamReader(file);
-            var list = new List<EntityResolver<FlatFileEntity>>();
 
             while (!reader.EndOfStream)
             {
-                var line = reader.ReadLine();
+                writer.CancellationToken.ThrowIfCancellationRequested();
+
                 var entity = new FlatFileEntity
                 {
-                    Line = line,
+                    Line = reader.ReadLine(),
                     LineNumber = ++rowNum
                 };
+                progress.RowRead();
 
-                list.Add(new EntityResolver<FlatFileEntity>(entity, FlatFileHelper.FlatNameToIndexMap,
-                    FlatFileHelper.FlatIndexToMethodAccessMap));
-
-                totalRowsProcessed++;
-
-                if (rowNum <= chunkSize)
+                if (!FlatFileSourcePlanner.Matches(plan.AcceptedPredicate, entity))
                     continue;
 
-                rowNum = 0;
-                chunkedSource.Add(list, endWorkToken);
+                if (plan.AcceptedSkip.HasValue && skipped < plan.AcceptedSkip.Value)
+                {
+                    skipped++;
+                    continue;
+                }
 
-                list = new List<EntityResolver<FlatFileEntity>>(chunkSize);
+                if (plan.AcceptedTake.HasValue && emitted >= plan.AcceptedTake.Value)
+                    break;
+
+                chunk.Add(entity);
+                emitted++;
+                totalRowsProcessed++;
+
+                if (chunk.Count < RowChunking.DefaultChunkSize)
+                    continue;
+
+                writer.Write(chunk);
+                chunk = [];
             }
 
-            chunkedSource.Add(list, endWorkToken);
+            if (chunk.Count > 0)
+                writer.Write(chunk);
         }
         finally
         {
-            _communicator.ReportDataSourceEnd(FlatFileSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
     }
 }

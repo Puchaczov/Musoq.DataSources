@@ -2,64 +2,61 @@ using LibGit2Sharp;
 
 namespace Musoq.DataSources.Git.Entities;
 
-/// <summary>
-///     Represents a wrapper entity for LibGit2Sharp repository information.
-///     This class encapsulates various properties describing the state and configuration of a Git repository.
-/// </summary>
-/// <remarks>
-///     This entity provides read-only access to underlying repository information properties.
-///     All properties are directly mapped from the wrapped RepositoryInformation object.
-/// </remarks>
-/// <param name="repositoryInformation">The LibGit2Sharp RepositoryInformation object to wrap.</param>
-public class RepositoryInformationEntity(RepositoryInformation repositoryInformation, Repository repository)
+/// <summary>Represents detached repository information.</summary>
+public class RepositoryInformationEntity
 {
-    internal readonly Repository LibGitRepository = repository;
+    private readonly string _path;
+    private readonly string _workingDirectory;
+    private readonly bool _isBare;
+    private readonly bool _isHeadDetached;
+    private readonly bool _isHeadUnborn;
+    private readonly bool _isShallow;
 
-    /// <summary>
-    ///     Gets the path to the Git repository.
-    /// </summary>
-    /// <value>
-    ///     The full path to the Git repository's root directory.
-    /// </value>
-    public string Path => repositoryInformation.Path;
+    /// <summary>Creates a detached repository-information snapshot.</summary>
+    /// <param name="repositoryInformation">The information to copy.</param>
+    /// <param name="repository">The source repository; it is used only by the compatibility construction path.</param>
+    public RepositoryInformationEntity(RepositoryInformation repositoryInformation, Repository repository)
+        : this(
+            repositoryInformation.Path,
+            repositoryInformation.WorkingDirectory,
+            repositoryInformation.IsBare,
+            repositoryInformation.IsHeadDetached,
+            repositoryInformation.IsHeadUnborn,
+            repositoryInformation.IsShallow)
+    {
+    }
 
-    /// <summary>
-    ///     Gets the working directory path of the Git repository.
-    /// </summary>
-    /// <value>
-    ///     The full path to the repository's working directory where files are checked out.
-    /// </value>
-    public string WorkingDirectory => repositoryInformation.WorkingDirectory;
+    internal RepositoryInformationEntity(
+        string path,
+        string workingDirectory,
+        bool isBare,
+        bool isHeadDetached,
+        bool isHeadUnborn,
+        bool isShallow)
+    {
+        _path = path;
+        _workingDirectory = workingDirectory;
+        _isBare = isBare;
+        _isHeadDetached = isHeadDetached;
+        _isHeadUnborn = isHeadUnborn;
+        _isShallow = isShallow;
+    }
 
-    /// <summary>
-    ///     Gets a value indicating whether the repository is bare.
-    /// </summary>
-    /// <value>
-    ///     <c>true</c> if the repository is bare (has no working directory); otherwise, <c>false</c>.
-    /// </value>
-    public bool IsBare => repositoryInformation.IsBare;
+    /// <summary>Gets the repository metadata path.</summary>
+    public string Path => _path;
 
-    /// <summary>
-    ///     Gets a value indicating whether the repository HEAD is detached.
-    /// </summary>
-    /// <value>
-    ///     <c>true</c> if HEAD is detached (not pointing to a branch); otherwise, <c>false</c>.
-    /// </value>
-    public bool IsHeadDetached => repositoryInformation.IsHeadDetached;
+    /// <summary>Gets the repository working-directory path.</summary>
+    public string WorkingDirectory => _workingDirectory;
 
-    /// <summary>
-    ///     Gets a value indicating whether the repository HEAD is unborn.
-    /// </summary>
-    /// <value>
-    ///     <c>true</c> if HEAD is unborn (no commits yet); otherwise, <c>false</c>.
-    /// </value>
-    public bool IsHeadUnborn => repositoryInformation.IsHeadUnborn;
+    /// <summary>Gets whether the repository is bare.</summary>
+    public bool IsBare => _isBare;
 
-    /// <summary>
-    ///     Gets a value indicating whether the repository is shallow.
-    /// </summary>
-    /// <value>
-    ///     <c>true</c> if the repository is shallow (has truncated history); otherwise, <c>false</c>.
-    /// </value>
-    public bool IsShallow => repositoryInformation.IsShallow;
+    /// <summary>Gets whether HEAD is detached.</summary>
+    public bool IsHeadDetached => _isHeadDetached;
+
+    /// <summary>Gets whether HEAD is unborn.</summary>
+    public bool IsHeadUnborn => _isHeadUnborn;
+
+    /// <summary>Gets whether the repository is shallow.</summary>
+    public bool IsShallow => _isShallow;
 }

@@ -5,6 +5,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot/common/Plugin-Compatibility.ps1"
+. "$PSScriptRoot/common/Plugin-LicensePackaging.ps1"
+. "$PSScriptRoot/common/CommandLineModule-Packaging.ps1"
+Import-Module "$PSScriptRoot/release/LicenseSnapshot.Common.psm1" -Force
+
 $Targets = @(
     @{ Rid = "win-x64";        Platform = "windows"; Architecture = "x64" },
     @{ Rid = "linux-x64";      Platform = "linux";   Architecture = "x64" },
@@ -12,144 +17,60 @@ $Targets = @(
     @{ Rid = "linux-musl-x64"; Platform = "alpine";  Architecture = "x64" }
 )
 
-$ExcludedAssemblies = @("Musoq.Schema.dll", "Musoq.Parser.dll", "Musoq.Plugins.dll")
-
-$IgnorePatterns = @(
-    "Tests$",
-    "\.Tests", 
-    "\.Benchmarks", 
-    "Helpers$", 
-    "\.Common$", 
-    "\.CommandLineArguments$",
-    "AsyncRowsSource$"
-)
+if ([string]::IsNullOrWhiteSpace($PluginName)) {
+    $PluginName = "All"
+}
 
 if (-not (Test-Path $OutputDirectory)) {
     New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 }
-$OutputDirectory = Resolve-Path $OutputDirectory
+$OutputDirectory = (Resolve-Path $OutputDirectory).Path
 
-$SolutionRoot = Resolve-Path "$PSScriptRoot/.."
+$SolutionRoot = (Resolve-Path "$PSScriptRoot/..").Path
+$SnapshotAssertionScript = Join-Path $SolutionRoot "scripts/release/Assert-LicenseSnapshots.ps1"
 
-$LicenseGathererTool = Join-Path $SolutionRoot "tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe"
-$LinksCacheFile = Join-Path $SolutionRoot "LinksCache.json"
-$LinksManualFile = Join-Path $SolutionRoot "LinksManual.json"
-$LicensesCacheDir = Join-Path $SolutionRoot ".licenses-cache"
-$DownloadedLicensesDir = Join-Path $SolutionRoot "licenses"
-
-if (-not (Test-Path $LinksManualFile)) {
-    Set-Content -Path $LinksManualFile -Value "{}"
+$Definitions = @(Get-DatasourcePackageDefinition -RepositoryRoot $SolutionRoot -Selector $PluginName)
+if ($Definitions.Count -eq 0) {
+    throw "No registered datasource packages matched '$PluginName'."
 }
 
-function Test-IsValidMusoqPlugin {
-    param([string]$ProjectPath)
-    
-    $ProjectDir = Split-Path -Parent $ProjectPath
-    $CsFiles = Get-ChildItem -Path $ProjectDir -Filter "*.cs" -Recurse -ErrorAction SilentlyContinue
-    
-    foreach ($CsFile in $CsFiles) {
-        $Content = Get-Content -Path $CsFile.FullName -Raw -ErrorAction SilentlyContinue
-        if (($Content -match ":\s*.*\bSchemaBase\b") -or ($Content -match ":\s*.*\bISchema\b")) {
-            return $true
-        }
+$Projects = @($Definitions | ForEach-Object {
+    [PSCustomObject]@{
+        Definition = $_
+        FullName = $_.fullProjectPath
+        BaseName = $_.packageId
     }
-    return $false
-}
-
-$Projects = Get-ChildItem -Path $SolutionRoot -Recurse -Filter "Musoq.DataSources.*.csproj"
-
-if ($PluginName -ne "All") {
-    $Projects = $Projects | Where-Object { $_.BaseName -eq $PluginName }
-} else {
-    foreach ($Pattern in $IgnorePatterns) {
-        $Projects = $Projects | Where-Object { $_.BaseName -notmatch $Pattern }
-    }
-}
-
-$ValidProjects = @()
-$InvalidProjects = @()
-foreach ($Project in $Projects) {
-    if (Test-IsValidMusoqPlugin -ProjectPath $Project.FullName) {
-        $ValidProjects += $Project
-    } else {
-        $InvalidProjects += $Project
-    }
-}
-
-if ($InvalidProjects.Count -gt 0) {
-    Write-Host "Skipping non-plugin projects (no SchemaBase/ISchema implementation found):" -ForegroundColor Yellow
-    foreach ($InvalidProject in $InvalidProjects) {
-        Write-Host "  - $($InvalidProject.BaseName)" -ForegroundColor Yellow
-    }
-}
-
-$Projects = $ValidProjects
-
-if ($Projects.Count -eq 0) {
-    Write-Error "No matching plugin projects found."
-}
+})
 
 $ProjectLicenseMap = @{}
 
 foreach ($Project in $Projects) {
-    Write-Host "Gathering Licenses: $($Project.BaseName)" -ForegroundColor Cyan
+    $definition = $Project.Definition
+    Write-Host "Validating committed license snapshot: $($definition.packageId)" -ForegroundColor Cyan
 
-    $LicenseTempDir = Join-Path $OutputDirectory "temp_licenses_$($Project.BaseName)"
-    $ProjectLicensesDir = Join-Path $LicenseTempDir "third-party-notices"
-    $OwnPackageJsonPath = Join-Path $LicenseTempDir "OwnPackage.json"
-    
-    New-Item -ItemType Directory -Path $LicenseTempDir -Force | Out-Null
+    Write-Host "  Restoring NuGet packages..." -ForegroundColor Gray
+    & dotnet restore $definition.fullProjectPath --nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "NuGet restore failed for $($definition.packageId)."
+    }
 
-    try {
-        Write-Host "  Restoring NuGet packages..." -ForegroundColor Gray
-        $RestoreArgs = @(
-            "restore", $Project.FullName
-        )
-        $RestoreOutput = dotnet @RestoreArgs 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warning "NuGet restore failed for $($Project.BaseName): $($RestoreOutput -join "`n")"
-        }
-        
-        [xml]$csproj = Get-Content $Project.FullName
-        $PropertyGroup = $csproj.Project.PropertyGroup | Select-Object -First 1
-        
-        $PackageId = if ($PropertyGroup.PackageId) { $PropertyGroup.PackageId } else { $Project.BaseName }
-        $Version = if ($PropertyGroup.Version) { $PropertyGroup.Version } else { "1.0.0" }
-        $ProjectUrl = if ($PropertyGroup.PackageProjectUrl) { $PropertyGroup.PackageProjectUrl } else { "https://github.com/Puchaczov/Musoq.DataSources" }
-        
-        $OwnPackage = @{
-            PackageId = $PackageId
-            PackageVersion = $Version
-            PackageProjectUrl = $ProjectUrl
-            License = "MIT"
-            LicenseUrl = "$ProjectUrl/blob/main/LICENSE"
-        }
-        
-        $OwnPackage | ConvertTo-Json | Set-Content -Path $OwnPackageJsonPath
-        
-        $GatherArgs = @(
-            "retrieve",
-            "--solution-or-cs-project-file-path", $Project.FullName,
-            "--own-package-file-path", $OwnPackageJsonPath,
-            "--licenses-folder", $ProjectLicensesDir,
-            "--links-cache-file-path", $LinksCacheFile,
-            "--manual-links-file-path", $LinksManualFile,
-            "--licenses-cache-folder", $LicensesCacheDir,
-            "--downloaded-licenses-folder", $DownloadedLicensesDir
-        )
-        
-        & $LicenseGathererTool @GatherArgs | Out-Null
-        $ProjectLicenseMap[$Project.FullName] = $ProjectLicensesDir
-    }
-    catch {
-        Write-Warning "License gathering failed for $($Project.BaseName): $_"
-    }
+    & $SnapshotAssertionScript `
+        -PluginName $definition.packageId `
+        -RepositoryRoot $SolutionRoot `
+        -ValidatePackageGraph | Out-Null
+
+    $snapshotDirectory = Join-Path $SolutionRoot "licenses/release/$($definition.packageId)"
+    $projectLicensesDir = Join-Path $snapshotDirectory "third-party-notices"
+    Add-MusoqPluginLicenseMapEntry `
+        -LicenseMap $ProjectLicenseMap `
+        -ProjectPath $Project.FullName `
+        -LicenseDirectory $projectLicensesDir
 }
 
 Write-Host "Starting Build..." -ForegroundColor Cyan
 
 $BuildScriptBlock = {
-    param($ProjectFullName, $ProjectBaseName, $OutputDirectory, $Targets, $ExcludedAssemblies, $ProjectLicensesDir)
+    param($ProjectFullName, $ProjectBaseName, $ProjectVersion, $OutputDirectory, $Targets, $HostOwnedAssemblyPatterns, $CompatibilityJson, $CompatibilityFileName, $ProjectLicensesDir, $CommandLineModuleProjectPath)
     
     $ErrorActionPreference = "Stop"
     $MinPluginZipSizeBytes = 1000
@@ -166,8 +87,10 @@ $BuildScriptBlock = {
             $PublishArgs = @(
                 "publish", $ProjectFullName,
                 "-c", "Release",
+                "-f", "net10.0",
                 "-r", $Rid,
                 "--no-self-contained",
+                "-p:CopyLocalLockFileAssemblies=false",
                 "-o", $PublishDir
             )
             $PublishOutput = dotnet @PublishArgs 2>&1
@@ -177,14 +100,48 @@ $BuildScriptBlock = {
 
             New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
             
-            foreach ($Dll in $ExcludedAssemblies) {
-                Remove-Item (Join-Path $PublishDir $Dll) -ErrorAction SilentlyContinue
+            $hostOwnedAssemblies = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File | Where-Object {
+                $fileName = $_.Name
+                @($HostOwnedAssemblyPatterns | Where-Object { $fileName -like $_ }).Count -gt 0
+            })
+            foreach ($hostOwnedAssembly in $hostOwnedAssemblies) {
+                Remove-Item -LiteralPath $hostOwnedAssembly.FullName -Force
             }
 
-            if ($ProjectLicensesDir -and (Test-Path $ProjectLicensesDir)) {
-                $DestLicensesDir = Join-Path $PublishDir "third-party-notices"
-                Copy-Item -Path $ProjectLicensesDir -Destination $DestLicensesDir -Recurse -Force
+            $remainingHostOwnedAssemblies = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File | Where-Object {
+                $fileName = $_.Name
+                @($HostOwnedAssemblyPatterns | Where-Object { $fileName -like $_ }).Count -gt 0
+            })
+            if ($remainingHostOwnedAssemblies.Count -gt 0) {
+                $names = @($remainingHostOwnedAssemblies | ForEach-Object { $_.Name } | Sort-Object -Unique) -join ", "
+                throw "Could not remove host-owned Musoq assemblies from publish output: $names"
             }
+
+            $embeddedCommandModules = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File | Where-Object {
+                $_.Name -like '*.CommandLineArguments.*' -or $_.Name -eq 'Musoq.CommandLine.dll'
+            })
+            if ($embeddedCommandModules.Count -gt 0) {
+                throw "Plugin publish contains command-line module or host ABI files: $(@($embeddedCommandModules.Name | Sort-Object -Unique) -join ', ')"
+            }
+
+            $compatibilityPath = Join-Path $PublishDir $CompatibilityFileName
+            [System.IO.File]::WriteAllText(
+                $compatibilityPath,
+                $CompatibilityJson,
+                [System.Text.UTF8Encoding]::new($false))
+
+            if ([string]::IsNullOrWhiteSpace($ProjectLicensesDir)) {
+                throw "No validated license notices directory was supplied for $ProjectBaseName."
+            }
+            if (-not (Test-Path -LiteralPath $ProjectLicensesDir -PathType Container)) {
+                throw "Validated license notices directory is missing for ${ProjectBaseName}: $ProjectLicensesDir"
+            }
+
+            $DestLicensesDir = Join-Path $PublishDir "third-party-notices"
+            Copy-Item -LiteralPath $ProjectLicensesDir -Destination $DestLicensesDir -Recurse -Force
+            Assert-MusoqPluginLicenseNotices `
+                -PluginDirectory $PublishDir `
+                -Context "Published plugin '$ProjectBaseName' for RID '$Rid'" | Out-Null
 
             if (-not (Test-Path $PublishDir)) {
                 throw "Publish directory does not exist: $PublishDir"
@@ -202,6 +159,12 @@ $BuildScriptBlock = {
                 throw "Entry point DLL '$EntryPointDll' not found in publish directory: $PublishDir"
             }
 
+            $EntryPointXml = "${ProjectBaseName}.xml"
+            $EntryPointXmlPath = Join-Path $PublishDir $EntryPointXml
+            if (-not (Test-Path $EntryPointXmlPath)) {
+                throw "XML documentation '$EntryPointXml' not found in publish directory: $PublishDir"
+            }
+
             $InnerZipPath = Join-Path $PackageDir "Plugin.zip"
             $FilesToCompress = Get-ChildItem -Path $PublishDir -Force | Select-Object -ExpandProperty FullName
             Compress-Archive -Path $FilesToCompress -DestinationPath $InnerZipPath -Force
@@ -215,8 +178,18 @@ $BuildScriptBlock = {
             }
 
             Set-Content -Path "$PackageDir\EntryPoint.txt" -Value "${ProjectBaseName}.dll"
+            Set-Content -Path "$PackageDir\LibraryName.txt" -Value $ProjectBaseName
+            Set-Content -Path "$PackageDir\Version.txt" -Value $ProjectVersion
             Set-Content -Path "$PackageDir\Platform.txt" -Value $Target.Platform
             Set-Content -Path "$PackageDir\Architecture.txt" -Value $Target.Architecture
+
+            if ($CommandLineModuleProjectPath) {
+                $commandLineModulesRoot = Join-Path $PackageDir $script:MusoqCommandLineModulesDirectoryName
+                Publish-MusoqCommandLineModule `
+                    -ProjectPath $CommandLineModuleProjectPath `
+                    -DestinationRoot $commandLineModulesRoot `
+                    -HostOwnedAssemblyPatterns $HostOwnedAssemblyPatterns | Out-Null
+            }
 
             $ZipPath = Join-Path $OutputDirectory $ZipName
             $PackageContents = Get-ChildItem -Path $PackageDir -Force | Select-Object -ExpandProperty FullName
@@ -236,14 +209,27 @@ $BuildScriptBlock = {
 
 foreach ($Project in $Projects) {
     Write-Host "Building: $($Project.BaseName)" -ForegroundColor Gray
+
+    $Compatibility = Get-MusoqPluginCompatibility -ProjectPath $Project.FullName
+    $CompatibilityJson = ConvertTo-MusoqPluginCompatibilityJson -Compatibility $Compatibility
+    $commandLineModuleProjectPath = Join-Path `
+        $SolutionRoot `
+        "$($Project.BaseName).CommandLineArguments/$($Project.BaseName).CommandLineArguments.csproj"
+    if (-not (Test-Path -LiteralPath $commandLineModuleProjectPath -PathType Leaf)) {
+        $commandLineModuleProjectPath = $null
+    }
     
     $JobParams = @(
         $Project.FullName,
         $Project.BaseName,
+        $Project.Definition.version,
         $OutputDirectory,
         $Targets,
-        $ExcludedAssemblies,
-        $ProjectLicenseMap[$Project.FullName]
+        $script:MusoqHostOwnedAssemblyPatterns,
+        $CompatibilityJson,
+        $script:MusoqPluginCompatibilityFileName,
+        $ProjectLicenseMap[$Project.FullName],
+        $commandLineModuleProjectPath
     )
     
     $Results = & $BuildScriptBlock @JobParams
@@ -255,9 +241,3 @@ foreach ($Project in $Projects) {
         throw "Build failed for $($Project.BaseName)"
     }
 }
-
-foreach ($Project in $Projects) {
-    $LicenseTempDir = Join-Path $OutputDirectory "temp_licenses_$($Project.BaseName)"
-    if (Test-Path $LicenseTempDir) { Remove-Item $LicenseTempDir -Recurse -Force -ErrorAction SilentlyContinue }
-}
-

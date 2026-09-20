@@ -1,31 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using LibGit2Sharp;
+using Musoq.DataSources.Git;
 using Musoq.Plugins.Attributes;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git.Entities;
 
-/// <summary>
-///     Represents a Git repository entity, providing access to various repository properties and collections.
-/// </summary>
+/// <summary>Represents a detached repository snapshot with lazy, short-lived nested scopes.</summary>
 public class RepositoryEntity
 {
-    /// <summary>
-    ///     A read-only dictionary mapping column names to their respective indices.
-    /// </summary>
+    /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
-    /// <summary>
-    ///     A read-only dictionary mapping column indices to functions that access the corresponding properties.
-    /// </summary>
+    /// <summary>Maps row indexes to property accessors used by the Musoq runtime.</summary>
     public static readonly IReadOnlyDictionary<int, Func<RepositoryEntity, object?>> IndexToObjectAccessMap;
 
-    /// <summary>
-    ///     An array of schema columns representing the structure of the solution entity.
-    /// </summary>
+    /// <summary>Describes the columns exposed by a repository row.</summary>
     public static readonly ISchemaColumn[] Columns =
     [
         new SchemaColumn(nameof(Path), 0, typeof(string)),
@@ -40,122 +34,155 @@ public class RepositoryEntity
         new SchemaColumn(nameof(Self), 9, typeof(RepositoryEntity))
     ];
 
-    /// <summary>
-    ///     Static constructor to initialize the static read-only dictionaries.
-    /// </summary>
+    private readonly string _path;
+    private readonly string _workingDirectory;
+    private readonly RepositoryInformationEntity _information;
+    private readonly GitReferenceBackendOptions _referenceOptions;
+    private readonly GitNestedSnapshot<IReadOnlyList<BranchEntity>> _branches = new();
+    private readonly GitNestedSnapshot<IReadOnlyList<CommitEntity>> _commits = new();
+    private readonly GitNestedSnapshot<BranchEntity> _head = new();
+    private readonly GitNestedSnapshot<IReadOnlyList<ConfigurationEntityKeyValue>> _configuration = new();
+
     static RepositoryEntity()
     {
         NameToIndexMap = new Dictionary<string, int>
         {
-            { nameof(Path), 0 },
-            { nameof(WorkingDirectory), 1 },
-            { nameof(Branches), 2 },
-            { nameof(Tags), 3 },
-            { nameof(Commits), 4 },
-            { nameof(Head), 5 },
-            { nameof(Configuration), 6 },
-            { nameof(Information), 7 },
-            { nameof(Stashes), 8 },
-            { nameof(Self), 9 }
+            { nameof(Path), 0 }, { nameof(WorkingDirectory), 1 }, { nameof(Branches), 2 }, { nameof(Tags), 3 },
+            { nameof(Commits), 4 }, { nameof(Head), 5 }, { nameof(Configuration), 6 }, { nameof(Information), 7 },
+            { nameof(Stashes), 8 }, { nameof(Self), 9 }
         };
 
         IndexToObjectAccessMap = new Dictionary<int, Func<RepositoryEntity, object?>>
         {
-            { 0, entity => entity.Path },
-            { 1, entity => entity.WorkingDirectory },
-            { 2, entity => entity.Branches },
-            { 3, entity => entity.Tags },
-            { 4, entity => entity.Commits },
-            { 5, entity => entity.Head },
-            { 6, entity => entity.Configuration },
-            { 7, entity => entity.Information },
-            { 8, entity => entity.Stashes },
+            { 0, entity => entity.Path }, { 1, entity => entity.WorkingDirectory }, { 2, entity => entity.Branches },
+            { 3, entity => entity.Tags }, { 4, entity => entity.Commits }, { 5, entity => entity.Head },
+            { 6, entity => entity.Configuration }, { 7, entity => entity.Information }, { 8, entity => entity.Stashes },
             { 9, entity => entity.Self }
         };
     }
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="RepositoryEntity" /> class.
-    /// </summary>
-    /// <param name="repository">The Git repository.</param>
+    /// <summary>Copies the repository identity and information; it does not retain the native handle.</summary>
     public RepositoryEntity(Repository repository)
+        : this(
+            repository.Info.Path,
+            repository.Info.WorkingDirectory,
+            new RepositoryInformationEntity(repository.Info, repository),
+            GitReferenceBackendOptions.Default)
     {
-        LibGitRepository = repository;
     }
 
-    /// <summary>
-    ///     Gets the path of the repository.
-    /// </summary>
-    public string Path => LibGitRepository.Info.Path;
+    internal RepositoryEntity(string path, string workingDirectory, RepositoryInformationEntity information)
+        : this(path, workingDirectory, information, GitReferenceBackendOptions.Default)
+    {
+    }
 
-    /// <summary>
-    ///     Gets the working directory of the repository.
-    /// </summary>
-    public string WorkingDirectory => LibGitRepository.Info.WorkingDirectory;
+    internal RepositoryEntity(
+        string path,
+        string workingDirectory,
+        RepositoryInformationEntity information,
+        GitReferenceBackendOptions referenceOptions)
+    {
+        _path = path;
+        _workingDirectory = workingDirectory;
+        _information = information;
+        _referenceOptions = referenceOptions;
+    }
 
-    /// <summary>
-    ///     Gets the branches in the repository.
-    /// </summary>
+    /// <summary>Gets the repository's canonical path.</summary>
+    public string Path => _path;
+
+    /// <summary>Gets the repository working-directory path.</summary>
+    public string WorkingDirectory => _workingDirectory;
+
+    /// <summary>Gets branches as detached snapshots, loading them lazily in a short-lived repository scope.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<BranchEntity> Branches =>
-        LibGitRepository.Branches.Select(branch => new BranchEntity(branch, LibGitRepository));
+    public IEnumerable<BranchEntity> Branches => _branches.GetOrCreate(() => Read(repository =>
+        (IReadOnlyList<BranchEntity>)repository.Branches.Select(branch => new BranchEntity(branch, repository)).ToArray()))
+        ?? Array.Empty<BranchEntity>();
 
-    /// <summary>
-    ///     Gets the tags in the repository.
-    /// </summary>
+    /// <summary>Gets tags as detached snapshots from a bounded streaming reference enumeration.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<TagEntity> Tags => LibGitRepository.Tags.Select(tag => new TagEntity(tag, LibGitRepository));
+    public IEnumerable<TagEntity> Tags => ReadTags();
 
-    /// <summary>
-    ///     Gets the commits in the repository.
-    /// </summary>
+    /// <summary>Gets commits as detached snapshots, loading them lazily in a short-lived repository scope.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<CommitEntity> Commits =>
-        LibGitRepository.Commits.Select(commit => new CommitEntity(commit, LibGitRepository));
+    public IEnumerable<CommitEntity> Commits => _commits.GetOrCreate(() => Read(repository =>
+        (IReadOnlyList<CommitEntity>)repository.Commits.Select(commit => new CommitEntity(commit, repository)).ToArray()))
+        ?? Array.Empty<CommitEntity>();
 
-    /// <summary>
-    ///     Gets the head branch of the repository.
-    /// </summary>
-    public BranchEntity Head => new(LibGitRepository.Head, LibGitRepository);
+    /// <summary>Gets the current head branch, or <see langword="null"/> for a detached or unborn head.</summary>
+    /// <remarks>The value is resolved lazily using a short-lived repository scope.</remarks>
+    public BranchEntity? Head => _head.GetOrCreate(() => Read(repository =>
+    {
+        var branch = repository.Head;
+        return branch is null ? null : new BranchEntity(branch, repository);
+    }));
 
-    /// <summary>
-    ///     Gets the configuration key-value pairs of the repository.
-    /// </summary>
+    /// <summary>Gets configuration entries as detached snapshots, loading them lazily.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ConfigurationEntityKeyValue> Configuration =>
-        LibGitRepository.Config.Select(f => new ConfigurationEntityKeyValue(f, LibGitRepository));
+    public IEnumerable<ConfigurationEntityKeyValue> Configuration => _configuration.GetOrCreate(() => Read(repository =>
+        (IReadOnlyList<ConfigurationEntityKeyValue>)repository.Config
+            .Select(entry => new ConfigurationEntityKeyValue(entry, repository)).ToArray()))
+        ?? Array.Empty<ConfigurationEntityKeyValue>();
 
-    /// <summary>
-    ///     Gets the information about the repository.
-    /// </summary>
-    public RepositoryInformationEntity Information => new(LibGitRepository.Info, LibGitRepository);
+    /// <summary>Gets immutable repository information captured when this row was created.</summary>
+    public RepositoryInformationEntity Information => _information;
 
-    /// <summary>
-    ///     Gets the stashes in the repository.
-    /// </summary>
+    /// <summary>Gets stash entries as detached snapshots from a bounded streaming reference enumeration.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<StashEntity> Stashes =>
-        LibGitRepository.Stashes.Select(stash => new StashEntity(stash, LibGitRepository));
+    public IEnumerable<StashEntity> Stashes => ReadStashes();
 
-    /// <summary>
-    ///     Gets the repository entity itself.
-    /// </summary>
+    /// <summary>Gets this repository row.</summary>
     public RepositoryEntity Self => this;
 
-    /// <summary>
-    ///     Gets the underlying LibGit2Sharp repository.
-    /// </summary>
-    internal Repository LibGitRepository { get; }
+    internal string RepositoryPath => _path;
 
-    ~RepositoryEntity()
+    internal T Read<T>(Func<Repository, T> action)
     {
-        try
+        using var repository = new Repository(_path);
+        return action(repository);
+    }
+
+    private IEnumerable<TagEntity> ReadTags()
+    {
+        var reader = _referenceOptions.Backend == GitHistoryBackend.LibGit2
+            ? GitOperationReaders.Tags
+            : GitOperationReaders.CliTags;
+        var projection = new GitProjection(true, [nameof(TagEntity.FriendlyName), nameof(TagEntity.CanonicalName)]);
+        foreach (var tag in reader.ReadStreaming(
+                     _path,
+                     _referenceOptions,
+                     projection,
+                     GitTagReadQuery.Empty,
+                     static path => new Repository(path),
+                     CancellationToken.None))
         {
-            LibGitRepository.Dispose();
+            yield return GitEntitySnapshots.Tag(
+                tag,
+                projection,
+                () => TagEntity.LoadRichSnapshot(_path, tag.CanonicalName, tag.FriendlyName));
         }
-        catch
-        {
-            // ignored
-        }
+    }
+
+    private IEnumerable<StashEntity> ReadStashes()
+    {
+        var reader = _referenceOptions.Backend == GitHistoryBackend.LibGit2
+            ? GitOperationReaders.Stashes
+            : GitOperationReaders.CliStashes;
+        var projection = new GitProjection(true, [
+            nameof(StashEntity.Selector),
+            nameof(StashEntity.Sha),
+            nameof(StashEntity.Message),
+            nameof(StashEntity.Index),
+            nameof(StashEntity.WorkTree),
+            nameof(StashEntity.UntrackedFiles)]);
+        foreach (var stash in reader.ReadStreaming(
+                     _path,
+                     _referenceOptions,
+                     projection,
+                     GitStashReadQuery.Empty,
+                     static path => new Repository(path),
+                     CancellationToken.None))
+            yield return GitEntitySnapshots.Stash(stash, projection);
     }
 }

@@ -32,7 +32,7 @@ public class SystemSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #system";
+        var query = "desc system";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -57,7 +57,7 @@ public class SystemSchemaDescribeTests
     [TestMethod]
     public void DescDual_ShouldReturnMethodSignatureWithNoParameters()
     {
-        var query = "desc #system.dual";
+        var query = "desc system.dual";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -74,7 +74,7 @@ public class SystemSchemaDescribeTests
     [TestMethod]
     public void DescRange_ShouldReturnAllOverloads()
     {
-        var query = "desc #system.range";
+        var query = "desc system.range";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -99,7 +99,7 @@ public class SystemSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #system.unknownmethod";
+        var query = "desc system.unknownmethod";
 
         try
         {
@@ -123,7 +123,7 @@ public class SystemSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #system";
+        var query = "desc system";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -136,11 +136,11 @@ public class SystemSchemaDescribeTests
     [TestMethod]
     public void DescRangeNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #system.range";
+        var queryNoArgs = "desc system.range";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 
-        var queryWithArgs = "desc #system.range(100)";
+        var queryWithArgs = "desc system.range(100l)";
         var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
         var tableWithArgs = vmWithArgs.Run();
 

@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Parser.Helpers;
 
 namespace Musoq.DataSources.Git.Tests;
 
@@ -44,7 +43,7 @@ public class GitWhereNodeOptimizationTests
             select
                 c.Sha,
                 c.Author
-            from #git.commits('{RepositoryPath}') c
+            from git.commits('{RepositoryPath}') c
             where c.Author = 'anonymous'"
             .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
@@ -65,7 +64,7 @@ public class GitWhereNodeOptimizationTests
             select
                 c.Sha,
                 c.Author
-            from #git.commits('{RepositoryPath}') c
+            from git.commits('{RepositoryPath}') c
             where c.Author = 'nobody'"
             .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
@@ -86,7 +85,7 @@ public class GitWhereNodeOptimizationTests
             select
                 c.Sha,
                 c.MessageShort
-            from #git.commits('{RepositoryPath}') c
+            from git.commits('{RepositoryPath}') c
             where c.Sha = '789f584ce162424f61b33e020e2138aad47e60ba'"
             .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
@@ -107,7 +106,7 @@ public class GitWhereNodeOptimizationTests
             select
                 t.FriendlyName,
                 t.IsAnnotated
-            from #git.tags('{RepositoryPath}') t
+            from git.tags('{RepositoryPath}') t
             where t.IsAnnotated = true"
             .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
@@ -128,7 +127,7 @@ public class GitWhereNodeOptimizationTests
             select
                 t.FriendlyName,
                 t.IsAnnotated
-            from #git.tags('{RepositoryPath}') t
+            from git.tags('{RepositoryPath}') t
             where t.IsAnnotated = false"
             .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
@@ -149,7 +148,7 @@ public class GitWhereNodeOptimizationTests
             select
                 t.FriendlyName,
                 t.CanonicalName
-            from #git.tags('{RepositoryPath}') t
+            from git.tags('{RepositoryPath}') t
             where t.FriendlyName = 'v0.1'"
             .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
@@ -170,7 +169,7 @@ public class GitWhereNodeOptimizationTests
             select
                 b.FriendlyName,
                 b.IsCurrentRepositoryHead
-            from #git.branches('{RepositoryPath}') b
+            from git.branches('{RepositoryPath}') b
             where b.FriendlyName = 'master'"
             .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 
@@ -191,7 +190,7 @@ public class GitWhereNodeOptimizationTests
             select
                 b.FriendlyName,
                 b.IsRemote
-            from #git.branches('{RepositoryPath}') b
+            from git.branches('{RepositoryPath}') b
             where b.IsRemote = false"
             .Replace("{RepositoryPath}", unpackedRepositoryPath.Path.Escape());
 

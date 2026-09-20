@@ -1,58 +1,53 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using LibGit2Sharp;
-using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git;
 
-internal sealed class RemotesRowsSource(
-    string repositoryPath,
-    Func<string, Repository> createRepository,
-    RuntimeContext runtimeContext) : AsyncRowsSourceBase<RemoteEntity>(runtimeContext.EndWorkToken)
+internal sealed class RemotesRowsSource : GitDiagnosticRowsSourceBase<RemoteEntity>
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly Func<string, Repository> _createRepository;
+    private readonly GitFilterParameters _filters;
+    private readonly GitProjection _projection;
+    private readonly string _repositoryPath;
+
+    public RemotesRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
+        : base(executionContext, "git.remotes")
     {
-        var repository = createRepository(repositoryPath);
-        var chunk = new List<IObjectResolver>(100);
-        var filters = GitWhereNodeHelper.ExtractParameters(runtimeContext.QuerySourceInfo.WhereNode);
+        _repositoryPath = repositoryPath;
+        _createRepository = createRepository;
+        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
+        _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
+    }
 
-        foreach (var remote in repository.Network.Remotes)
+    protected override long CollectRows(DiagnosticChunkWriter<RemoteEntity> writer, CancellationToken cancellationToken)
+    {
+        var chunk = new List<RemoteEntity>(128);
+        long rowsRead = 0;
+        var reader = GitOperationReaders.Remotes;
+
+        reader.Read(_repositoryPath, _projection, _createRepository, cancellationToken, remote =>
         {
-            if (cancellationToken.IsCancellationRequested)
-                break;
+            if (!GitSourcePlanner.Matches(_filters, remote))
+                return true;
+            var entity = GitEntitySnapshots.Remote(remote, _projection);
+            if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
+                return true;
 
+            chunk.Add(entity);
+            if (chunk.Count == 128)
+                rowsRead += WriteChunk(writer, chunk, rowsRead);
+            return true;
+        });
 
-            if (!string.IsNullOrEmpty(filters.RemoteName) &&
-                !string.Equals(remote.Name, filters.RemoteName, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            if (!string.IsNullOrEmpty(filters.Url) &&
-                !string.Equals(remote.Url, filters.Url, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            var entity = new RemoteEntity(remote);
-            chunk.Add(new EntityResolver<RemoteEntity>(
-                entity,
-                RemoteEntity.NameToIndexMap,
-                RemoteEntity.IndexToObjectAccessMap
-            ));
-
-            if (chunk.Count >= 100)
-            {
-                chunkedSource.Add(chunk.ToArray(), cancellationToken);
-                chunk.Clear();
-            }
-        }
-
-        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
-
-        return Task.CompletedTask;
+        rowsRead += WriteChunk(writer, chunk, rowsRead);
+        Context.Diagnostics.AddMetric("Git.Remotes.Backend", reader.Backend == "git-cli" ? 1 : 2);
+        return rowsRead;
     }
 }

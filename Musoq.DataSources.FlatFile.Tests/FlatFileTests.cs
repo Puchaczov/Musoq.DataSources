@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -22,7 +21,7 @@ public class FlatFileTests
     [TestMethod]
     public void HasSelectedAllLinesTest()
     {
-        var query = @"select LineNumber, Line from #FlatFile.file('./TestMultilineFile.txt')";
+        var query = @"select LineNumber, Line from FlatFile.file('./TestMultilineFile.txt')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -73,15 +72,9 @@ public class FlatFileTests
         var endWorkTokenSource = new CancellationTokenSource();
         endWorkTokenSource.Cancel();
         var schema = new FlatFileSource("./TestMultilineFile.txt",
-            new RuntimeContext(
-                "test",
-                endWorkTokenSource.Token,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(endWorkTokenSource.Token, logger: mockLogger.Object));
 
-        var fires = schema.Rows.Count();
+        var fires = schema.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(0, fires);
     }
@@ -90,18 +83,19 @@ public class FlatFileTests
     public void FlatFileSource_FullLoadTest()
     {
         var mockLogger = new Mock<ILogger>();
+        var capture = new DataSourceProgressCapture();
         var schema = new FlatFileSource("./TestMultilineFile.txt",
-            new RuntimeContext(
-                "test",
+            RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+                logger: mockLogger.Object,
+                dataSourceProgressCallback: capture.Handler));
 
-        var fires = schema.Rows.Count();
+        var fires = schema.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(6, fires);
+        Assert.AreEqual(1, capture.For("flatfile", DataSourcePhase.Begin).Count);
+        Assert.AreEqual(6L, capture.For("flatfile", DataSourcePhase.RowsRead).Single().RowsProcessed);
+        Assert.AreEqual(6L, capture.For("flatfile", DataSourcePhase.End).Single().RowsProcessed);
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

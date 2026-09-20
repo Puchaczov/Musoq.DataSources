@@ -31,7 +31,7 @@ public class OllamaSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #ollama";
+        var query = "desc ollama";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -60,7 +60,7 @@ public class OllamaSchemaDescribeTests
     [TestMethod]
     public void DescLlm_ShouldReturnAllOverloads()
     {
-        var query = "desc #ollama.llm";
+        var query = "desc ollama.llm";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -85,7 +85,7 @@ public class OllamaSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #ollama.unknownmethod";
+        var query = "desc ollama.unknownmethod";
 
         try
         {
@@ -109,7 +109,7 @@ public class OllamaSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #ollama";
+        var query = "desc ollama";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -122,7 +122,7 @@ public class OllamaSchemaDescribeTests
     [TestMethod]
     public void DescLlmNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #ollama.llm";
+        var queryNoArgs = "desc ollama.llm";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 

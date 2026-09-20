@@ -11,7 +11,7 @@
 - `TimeLibrary.cs`
 
 ## Patterns to preserve
-- The public source is `#time.interval(startAt, stopAt, resolution)`.
+- The public source is `time.interval(startAt, stopAt, resolution)`.
 - Supported resolutions are fixed strings like `seconds`, `minutes`, `hours`, `days`, `months`, and `years`.
 - `TimeSource` adjusts the stop value by one smaller unit so interval generation is effectively inclusive for the requested resolution.
 - Keep generation deterministic and preserve `ReportDataSourceBegin/End(...)` behavior.

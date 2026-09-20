@@ -4,7 +4,7 @@ This document contains a curated set of representative SQL queries demonstrating
 
 ---
 
-## 📁 File System Queries (`#os`)
+## 📁 File System Queries (`os`)
 
 ### List Files with Size Information
 Find all files in a directory with their sizes formatted in human-readable format.
@@ -13,7 +13,7 @@ Find all files in a directory with their sizes formatted in human-readable forma
 select 
     Name, 
     ToDecimal(Length) / 1024 as SizeInKB
-from #os.files('./directory', true)
+from os.files('./directory', true)
 where Extension = '.txt'
 ```
 
@@ -24,7 +24,7 @@ Compute cryptographic hashes for file integrity verification.
 select 
     Name, 
     Sha256File() as Hash
-from #os.files('./directory', false)
+from os.files('./directory', false)
 where Extension = '.dll'
 ```
 
@@ -36,25 +36,186 @@ select
     SourceFileRelative,
     DestinationFileRelative,
     State
-from #os.dirscompare('./source', './destination')
+from os.dirscompare('./source', './destination')
 where State <> 'TheSame'
+```
+
+### Discover Cultures
+Find culture names and formatting defaults exposed by the operating system.
+
+```sql
+select
+    Name,
+    EnglishName,
+    DecimalSeparator,
+    ShortDatePattern
+from os.cultures()
+where Name like 'pl%'
+```
+
+### Discover Text Encodings
+Find text encodings supported by the runtime. JSON and SeparatedValues themselves accept strict UTF-8 only.
+
+```sql
+select
+    WebName,
+    CodePage,
+    EncodingName
+from os.encodings()
+where WebName like '%1250%' or CodePage = 65001
+```
+
+### Inspect Current Culture Defaults
+Inspect the process culture used by culture-aware plugins and helper functions.
+
+```sql
+select
+    CurrentCulture,
+    DecimalSeparator,
+    ShortDatePattern
+from os.currentculture()
+```
+
+### List Safe Environment Variable Names
+Inspect available variable names without exposing environment variable values.
+
+```sql
+select Name, Target
+from os.environmentvariables()
 ```
 
 ---
 
-## 📊 CSV/Separated Values (`#separatedvalues`)
+## 🔎 Search Recipes (`search`)
 
-### Basic CSV Query with Aggregation
-Analyze banking transactions and calculate monthly income/outcome.
+Search recipes are bounded, literal candidate workflows. They retain the
+Search path and coordinates beside derived values and do not claim language
+semantics from lexical matches. The representative fixtures and compiled
+queries are exercised by `SearchRepresentativeRecipeTests`.
+
+### Diagnostic traceability
+
+Use one labeled `search.many` request for declaration and emission evidence,
+then compare the labels by path. A fixture containing a declaration without
+an emission is the required failure example.
 
 ```sql
-select 
-    ExtractFromDate(OperationDate, 'month') as Month,
-    SumIncome(ToDecimal(Money)) as Income,
-    SumOutcome(ToDecimal(Money)) as Outcome,
-    SumIncome(ToDecimal(Money)) + SumOutcome(ToDecimal(Money)) as Balance
-from #separatedvalues.comma('./transactions.csv', true, 0)
-group by ExtractFromDate(OperationDate, 'month')
+select m.Path, m.PatternId, m.LineNumber, m.Utf16Column, m.MatchText
+from search.many('./source-root',
+    '{"version":1,"patterns":[{"id":"declaration","pattern":"public const string MQ1001","mode":"literal"},{"id":"emission","pattern":"EmitDiagnostic(\"MQ1001\")","mode":"literal"}]}') m
+order by m.Path, m.PatternId, m.MatchIndex
+```
+
+Dependencies: a complete relevant source/test/docs scope and the declared
+pattern labels. Missing evidence remains an incomplete finding rather than a
+proof that the diagnostic is unused.
+
+### Bounded proximity
+
+Materialize one labeled occurrence relation, then self-join it with explicit
+same-file, line-distance, same-line-gap and pair-count bounds. A left match in
+one file and a right match in another is the failure example and must not be
+paired.
+
+```sql
+with occurrences as (
+    select m.Path, m.PatternId, m.LineNumber,
+        m.Utf16Column, m.Utf16Length
+    from search.many('./source-root',
+        '{"version":1,"patterns":[{"id":"left","pattern":"LEFT","mode":"literal"},{"id":"right","pattern":"RIGHT","mode":"literal"}]}') m
+)
+select lefts.Path, lefts.LineNumber as LeftLine,
+    rights.LineNumber as RightLine
+from occurrences lefts
+inner join occurrences rights
+    on lefts.Path = rights.Path
+    and lefts.PatternId = 'left'
+    and rights.PatternId = 'right'
+    and rights.LineNumber >= lefts.LineNumber
+    and rights.LineNumber <= lefts.LineNumber + 2
+order by lefts.Path, lefts.LineNumber, rights.LineNumber
+```
+
+Dependencies: labeled occurrences and an explicit bounded window. This is
+lexical proximity, not control-flow or language-structure analysis.
+
+### Migration and configuration comparison
+
+Use labeled deprecated/replacement candidates and an anti-join only for the
+candidate report; apply a separately tested lexical/proven classifier before
+making a code migration claim. For configuration, combine duplicate-preserving
+`search.many` rows with the eligible `search.paths` manifest. A comment-only
+key, duplicate key, or missing manifest path is a failure example that must
+remain distinguishable from a proven key.
+
+```sql
+with findings as (
+    select m.Path, m.PatternId, m.MatchText
+    from search.many('./source-root',
+        '{"version":1,"patterns":[{"id":"deprecated","pattern":"OldApi()","mode":"literal"},{"id":"replacement","pattern":"NewApi()","mode":"literal"}]}') m
+)
+select deprecated.Path, deprecated.MatchText
+from findings deprecated
+left outer join findings replacement
+    on deprecated.Path = replacement.Path
+    and replacement.PatternId = 'replacement'
+where deprecated.PatternId = 'deprecated'
+    and replacement.Path is null
+group by deprecated.Path, deprecated.MatchText
+```
+
+Dependencies: labeled candidate patterns, a bounded manifest where existence
+matters, and complete audit evidence before asserting a negative result.
+
+### Log Search-to-parse
+
+Keep one `search.lines` row per matching physical line and apply a tolerant
+parser once. `OccurrenceCount` is line multiplicity, not repeated parser
+input. `OUTER APPLY TryParse` preserves a malformed candidate and its raw
+line; a line without the `ERROR` prefilter token is the failure example for
+candidate completeness.
+
+```sql
+text LogRecord {
+    EventId: until ' ',
+    Timestamp: until ' ',
+    Level: until ':',
+    Separator: literal ' ',
+    Message: rest trim
+};
+
+with candidates as (
+    select line.Path, line.LineNumber,
+        line.OccurrenceCount, line.LineText
+    from search.lines('./source-root', 'ERROR') line
+)
+select candidates.Path, candidates.LineNumber,
+    candidates.OccurrenceCount, candidates.LineText,
+    log.EventId, log.Timestamp, log.Level, log.Message
+from candidates
+outer apply TryParse<LogRecord>(candidates.LineText) log
+```
+
+Dependencies: a line-oriented record schema and a candidate literal whose
+coverage is understood. Use strict `Parse` only when malformed records should
+fail the query; retain UTF-16 coordinates from `search.matches` when a report
+also needs exact locations.
+
+---
+
+## 📊 CSV/Separated Values (`separatedvalues`)
+
+### Basic CSV Query with Aggregation
+Aggregate a dynamically sampled 1BRC-shaped file. `Temperature` is inferred as a numeric column from at most 1 MiB, 4,096 complete records, or 10 ms of input; a contradictory value later in the scan is reported as schema drift.
+
+```sql
+select
+    Station,
+    Min(Temperature) as Minimum,
+    Max(Temperature) as Maximum,
+    Avg(Temperature) as Average
+from separatedvalues.semicolon('./measurements.csv', true, 0)
+group by Station
 ```
 
 ### Join Two CSV Files
@@ -66,13 +227,13 @@ select
     persons.Surname, 
     grades.Subject, 
     grades.Grade
-from #separatedvalues.comma('./Persons.csv', true, 0) persons 
-inner join #separatedvalues.comma('./Gradebook.csv', true, 0) grades 
+from separatedvalues.comma('./Persons.csv', true, 0) persons
+inner join separatedvalues.comma('./Gradebook.csv', true, 0) grades
     on persons.Id = grades.PersonId
 ```
 
 ### Typed CSV Query
-Read CSV with explicit column types for proper data handling.
+Read CSV with explicit column types for deterministic handling. A coupled `TABLE` contract is authoritative, so metadata resolution maps only the header (or the first headerless width) and does not sample data values. Prefer this form for multi-gigabyte production files.
 
 ```sql
 table Employees {
@@ -80,30 +241,34 @@ table Employees {
    Name 'System.String',
    Salary 'System.Decimal'
 };
-couple #separatedvalues.comma with table Employees as SourceOfEmployees;
+couple separatedvalues.comma with table Employees as SourceOfEmployees;
 select Id, Name, Salary from SourceOfEmployees('./employees.csv', true, 0)
 where Salary > 50000
 ```
 
+Dynamic inference limits can be raised for an individual query with the runtime settings `separatedvalues.inference_max_bytes`, `separatedvalues.inference_max_rows`, and `separatedvalues.inference_max_time_ms`. The time limit is cooperative between filesystem reads rather than a hard I/O deadline.
+
 ---
 
-## 🗂️ JSON Queries (`#json`)
+## 🗂️ JSON Queries (`json`)
 
 ### Query JSON Array
-Extract data from a JSON file using a schema definition.
+Extract data from a JSON file. The complete top-level schema is discovered from the source; no schema file is needed.
 
 ```sql
 select 
     Name, 
     Age, 
-    Length(Books) as BookCount
-from #json.file('./data.json', './data.schema.json')
+    Books
+from json.file('./data.json')
 where Age > 18
 ```
 
+JSON and SeparatedValues accept file paths rather than streams. To query a JSON or separated-values entry from an archive, extract it to a UTF-8 file first.
+
 ---
 
-## 📦 Archive Queries (`#archives`)
+## 📦 Archive Queries (`archives`)
 
 ### List Archive Contents
 Read contents of ZIP or TAR archives and extract text content.
@@ -113,13 +278,13 @@ select
     Key as FileName, 
     IsDirectory,
     (case when IsDirectory = false then GetTextContent() else '' end) as Content
-from #archives.file('./archive.zip')
+from archives.file('./archive.zip')
 where Key like '%.txt'
 ```
 
 ---
 
-## ⏰ Time Queries (`#time`)
+## ⏰ Time Queries (`time`)
 
 ### Generate Date Range
 Create a sequence of dates for reporting or analysis.
@@ -130,7 +295,7 @@ select
     Month, 
     Year, 
     DayOfWeek
-from #time.interval('2024-01-01 00:00:00', '2024-12-31 00:00:00', 'days')
+from time.interval('2024-01-01 00:00:00', '2024-12-31 00:00:00', 'days')
 ```
 
 ### Filter Weekend Days
@@ -138,20 +303,20 @@ Find only weekend days (Saturday=6, Sunday=0 in DayOfWeek).
 
 ```sql
 select Day, DayOfWeek
-from #time.interval('2024-01-01 00:00:00', '2024-01-31 00:00:00', 'days')
+from time.interval('2024-01-01 00:00:00', '2024-01-31 00:00:00', 'days')
 where DayOfWeek = 0 or DayOfWeek = 6
 ```
 
 ---
 
-## 🔧 System Utilities (`#system`)
+## 🔧 System Utilities (`system`)
 
 ### Number Range Generation
 Generate a sequence of numbers for various purposes.
 
 ```sql
 select Value 
-from #system.range(1, 100)
+from system.range(1, 100)
 where Value % 2 = 0
 ```
 
@@ -163,12 +328,12 @@ select
     2 + 2 as Sum,
     10 * 5 as Product,
     ToDecimal(7) / 3 as Division
-from #system.dual()
+from system.dual()
 ```
 
 ---
 
-## 🔀 Git Repository Queries (`#git`)
+## 🔀 Git Repository Queries (`git`)
 
 ### List Recent Commits
 Query commit history with author information.
@@ -179,7 +344,7 @@ select
     c.MessageShort,
     c.Author,
     c.CommittedWhen
-from #git.repository('./repo') r 
+from git.repository('./repo') r
 cross apply r.Commits c
 ```
 
@@ -191,7 +356,7 @@ select
     c.Sha,
     c.Author,
     c.Message
-from #git.commits('./repo') c
+from git.commits('./repo') c
 where c.Author = 'john.doe'
 ```
 
@@ -203,7 +368,7 @@ select
     b.FriendlyName,
     b.IsRemote,
     b.Tip.Sha
-from #git.branches('./repo') b
+from git.branches('./repo') b
 ```
 
 ### Compare Branches
@@ -213,7 +378,7 @@ Find differences between two branches.
 select 
     Difference.Path,
     Difference.ChangeKind
-from #git.repository('./repo') repository 
+from git.repository('./repo') repository
 cross apply repository.DifferenceBetween(
     repository.BranchFrom('main'), 
     repository.BranchFrom('feature/my-feature')
@@ -229,7 +394,32 @@ select
     t.Message,
     t.IsAnnotated,
     t.Commit.Sha
-from #git.tags('./repo') t
+from git.tags('./repo') t
+```
+
+### List Stashes
+Read stash identity without eagerly hydrating the individual commits.
+
+```sql
+select
+    s.Selector,
+    s.Sha,
+    s.Message
+from git.stashes('./repo') s
+```
+
+### Read Tags Advertised by a Local Remote
+Stream tags from a configured local or `file://` remote. The source does not fetch
+objects or update local refs.
+
+```sql
+select
+    t.FriendlyName,
+    t.ObjectSha,
+    t.PeeledSha,
+    t.IsAnnotated
+from git.remotetags('./client-repo', 'origin') t
+where t.CanonicalName > 'refs/tags/v1'
 ```
 
 ### Track File History
@@ -241,7 +431,7 @@ select
     h.Author,
     h.FilePath,
     h.ChangeType
-from #git.filehistory('./repo', 'README.md') h
+from git.filehistory('./repo', 'README.md') h
 ```
 
 ### Analyze Branch-Specific Commits
@@ -253,7 +443,7 @@ with BranchInfo as (
         c.Sha as CommitSha,
         c.Message as CommitMessage,
         c.Author as CommitAuthor
-    from #git.repository('./repo') r 
+    from git.repository('./repo') r
     cross apply r.SearchForBranches('feature/my-feature') b
     cross apply b.GetBranchSpecificCommits(r.Self, b.Self, true) c
 )
@@ -267,13 +457,13 @@ Analyze commit relationships for merge analysis.
 select 
     c.Sha, 
     p.Sha as ParentSha
-from #git.commits('./repo') c 
+from git.commits('./repo') c
 cross apply c.Parents as p
 ```
 
 ---
 
-## 🔬 C# Code Analysis (`#csharp`)
+## 🔬 C# Code Analysis (`csharp`)
 
 ### List All Classes in Solution
 Find all classes across a C# solution with their metrics.
@@ -285,7 +475,7 @@ select
     c.MethodsCount,
     c.PropertiesCount,
     c.LinesOfCode
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -300,7 +490,7 @@ select
     t.IsClass,
     t.IsInterface,
     t.IsEnum
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Types t
 ```
@@ -314,7 +504,7 @@ select
     m.Name as MethodName,
     m.CyclomaticComplexity,
     m.LinesOfCode
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.GetClassesByNames('MyClass') c
 cross apply c.Methods m
 where m.CyclomaticComplexity > 5
@@ -330,7 +520,7 @@ select
     m.IsEmpty,
     m.StatementsCount,
     m.BodyContainsOnlyTrivia
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -349,7 +539,7 @@ select
     p.HasGetter,
     p.HasSetter,
     p.HasInitSetter
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -367,7 +557,7 @@ select
     rd.StartColumn,
     rd.EndLine,
     rd.EndColumn
-from #csharp.solution('./MySolution.sln') s
+from csharp.solution('./MySolution.sln') s
 cross apply s.GetClassesByNames('MyClass') c
 cross apply s.FindReferences(c.Self) rd
 cross apply rd.ReferencedClasses r
@@ -384,7 +574,7 @@ select
     i.BaseInterfaces,
     i.Methods,
     i.Properties
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects pr 
 cross apply pr.Documents d 
 cross apply d.Interfaces i
@@ -399,7 +589,7 @@ select
     e.FullName,
     e.Namespace,
     e.Members
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects pr 
 cross apply pr.Documents d 
 cross apply d.Enums e
@@ -412,7 +602,7 @@ List all project-to-project references.
 select
     p.Name as ProjectName,
     ref.Name as ReferencedProject
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.ProjectReferences ref
 ```
@@ -426,7 +616,7 @@ select
     lib.Name as LibraryName,
     lib.Version,
     lib.Location
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.LibraryReferences lib
 ```
@@ -442,7 +632,7 @@ select
     np.License,
     np.Authors,
     np.IsTransitive
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.GetNugetPackages(false) np
 ```
@@ -455,7 +645,7 @@ select
     c.Name,
     a.Name as AttributeName,
     a.ConstructorArguments
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects pr 
 cross apply pr.Documents d 
 cross apply d.Classes c
@@ -474,7 +664,7 @@ select
     p.IsParams,
     p.IsRef,
     p.IsOut
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects pr 
 cross apply pr.Documents d 
 cross apply d.Classes c
@@ -492,7 +682,7 @@ select
     c.FieldsCount,
     c.LackOfCohesion,
     c.InheritanceDepth
-from #csharp.solution('./MySolution.sln') s 
+from csharp.solution('./MySolution.sln') s
 cross apply s.Projects p 
 cross apply p.Documents d 
 cross apply d.Classes c
@@ -511,14 +701,14 @@ with GitRepos as (
     select 
         dir.Parent.Name as RepoName,
         dir.FullName as GitPath
-    from #os.directories('./projects', true) dir
+    from os.directories('./projects', true) dir
     where dir.Name = '.git'
 )
 select 
     r.RepoName,
     Count(c.Sha) as CommitCount
 from GitRepos r 
-cross apply #git.repository(r.GitPath) repo 
+cross apply git.repository(r.GitPath) repo
 cross apply repo.Commits c
 group by r.RepoName
 order by CommitCount desc
@@ -530,11 +720,11 @@ Compare directories using file hashes to detect modifications.
 ```sql
 with SourceFiles as (
     select GetRelativePath('./source') as RelPath, Sha256File() as Hash 
-    from #os.files('./source', true)
+    from os.files('./source', true)
 ), 
 TargetFiles as (
     select GetRelativePath('./target') as RelPath, Sha256File() as Hash 
-    from #os.files('./target', true)
+    from os.files('./target', true)
 )
 select 
     s.RelPath,
@@ -548,7 +738,7 @@ inner join TargetFiles t on s.RelPath = t.RelPath
 ## Notes
 
 - All queries use standard SQL syntax with Musoq-specific extensions
-- Table functions use `#datasource.table()` syntax
+- Table functions use `datasource.table()` syntax
 - Cross apply enables joining hierarchical data
 - CTEs (Common Table Expressions) are fully supported
 - Queries can combine multiple data sources in a single statement

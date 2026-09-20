@@ -19,7 +19,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenDirectoryPointed_ShouldReturnItsMetadata()
     {
-        var query = "select f.AllMetadataJson() from #os.files('./Images', false) f";
+        var query = "select f.AllMetadataJson() from os.files('./Images', false) f";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -30,7 +30,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenImagePointed_ShouldReturnItsMetadata()
     {
-        var query = "select FullName, DirectoryName, TagName, Description from #os.metadata('./Images/IMG_2426.JPG') f";
+        var query = "select FullName, DirectoryName, TagName, Description from os.metadata('./Images/IMG_2426.JPG') f";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -41,7 +41,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenImagePointedWrongFile_ShouldNotThrow()
     {
-        var query = "select FullName, DirectoryName, TagName, Description from #os.metadata('./Files/File1.txt') f";
+        var query = "select FullName, DirectoryName, TagName, Description from os.metadata('./Files/File1.txt') f";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -52,7 +52,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenGetMetadataWithDirectoryCalled_ShouldReturnMetadata()
     {
-        var query = "select f.GetMetadata('Exif IFD0', 'Resolution Unit') from #os.files('./Images', false) f";
+        var query = "select f.GetMetadata('Exif IFD0', 'Resolution Unit') from os.files('./Images', false) f";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -66,7 +66,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenGetMetadataCalled_ShouldReturnMetadata()
     {
-        var query = "select f.GetMetadata('Resolution Unit') from #os.files('./Images', false) f";
+        var query = "select f.GetMetadata('Resolution Unit') from os.files('./Images', false) f";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -80,7 +80,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenHasMetadataCalled_ShouldReturnTrue()
     {
-        var query = "select 1 from #os.files('./Images', false) f where f.HasMetadataDirectory('Exif IFD0')";
+        var query = "select 1 from os.files('./Images', false) f where f.HasMetadataDirectory('Exif IFD0')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -94,7 +94,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenHasMetadataTagCalled_ShouldReturnTrue()
     {
-        var query = "select 1 from #os.files('./Images', false) f where f.HasMetadataTag('Y Resolution')";
+        var query = "select 1 from os.files('./Images', false) f where f.HasMetadataTag('Y Resolution')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -108,7 +108,7 @@ public class ImagesTests
     [TestMethod]
     public void WhenAllMetadataJsonCalled_ShouldReturnJson()
     {
-        var query = "select f.AllMetadataJson() from #os.files('./Images', false) f";
+        var query = "select f.AllMetadataJson() from os.files('./Images', false) f";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -123,7 +123,7 @@ public class ImagesTests
     public void WhenRetrieveMetadataFromMultipleFiles_ShouldPass()
     {
         var query =
-            "select f.Name, m.DirectoryName, m.TagName, m.Description from #os.files('./Images', false) f cross apply #os.metadata(f.FullPath) m";
+            "select f.Name, m.DirectoryName, m.TagName, m.Description from os.files('./Images', false) f cross apply os.metadata(f.FullPath) m";
 
         var vm = CreateAndRunVirtualMachine(query);
 

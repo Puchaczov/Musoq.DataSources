@@ -1,0 +1,42 @@
+{
+  "formatVersion": 1,
+  "seed": 195936478,
+  "generator": "search-contract-v1",
+  "scaleFileCount": 64,
+  "files": [
+    { "profile": "minimal", "path": "top.txt", "kind": "text", "encoding": "utf8", "recipe": "top" },
+    { "profile": "minimal", "path": "empty.txt", "kind": "text", "encoding": "utf8", "recipe": "empty" },
+    { "profile": "minimal", "path": "none.txt", "kind": "text", "encoding": "utf8", "recipe": "none" },
+    { "profile": "minimal", "path": "nested/child.txt", "kind": "text", "encoding": "utf8", "recipe": "child" },
+    { "profile": "minimal", "path": "nested/none.txt", "kind": "text", "encoding": "utf8", "recipe": "none" },
+    { "profile": "minimal", "path": "nested/overlap.txt", "kind": "text", "encoding": "utf8", "recipe": "overlap" },
+    { "profile": "minimal", "path": "nested/unicode.txt", "kind": "text", "encoding": "utf8", "recipe": "unicode" },
+    { "profile": "minimal", "path": "nested/crlf.txt", "kind": "text", "encoding": "utf8", "recipe": "crlf" },
+
+    { "profile": "text", "path": "text/case.txt", "kind": "text", "encoding": "utf8", "recipe": "case" },
+    { "profile": "text", "path": "text/boundary.txt", "kind": "text", "encoding": "utf8", "recipe": "boundary" },
+    { "profile": "text", "path": "text/long-literal.txt", "kind": "text", "encoding": "utf8", "recipe": "long-literal" },
+    { "profile": "text", "path": "text/unterminated.txt", "kind": "text", "encoding": "utf8", "recipe": "unterminated" },
+
+    { "profile": "encoding", "path": "encoding/utf8-bom.txt", "kind": "text", "encoding": "utf8-bom", "recipe": "bom" },
+    { "profile": "encoding", "path": "encoding/utf16-le.txt", "kind": "text", "encoding": "utf16-le", "recipe": "utf16-le" },
+    { "profile": "encoding", "path": "encoding/utf16-be.txt", "kind": "text", "encoding": "utf16-be", "recipe": "utf16-be" },
+    { "profile": "encoding", "path": "encoding/late-nul.txt", "kind": "text", "encoding": "utf8", "recipe": "late-nul" },
+    { "profile": "encoding", "path": "encoding/invalid.bin", "kind": "binary", "encoding": "binary", "recipe": "invalid-utf8" },
+
+    { "profile": "regex", "path": "regex/issues.txt", "kind": "text", "encoding": "utf8", "recipe": "issues" },
+    { "profile": "regex", "path": "regex/captures.txt", "kind": "text", "encoding": "utf8", "recipe": "captures" },
+    { "profile": "regex", "path": "regex/empty-group.txt", "kind": "text", "encoding": "utf8", "recipe": "empty-group" },
+
+    { "profile": "scope", "path": "scope/.gitignore", "kind": "ignore", "encoding": "utf8", "recipe": "gitignore" },
+    { "profile": "scope", "path": "scope/kept.txt", "kind": "text", "encoding": "utf8", "recipe": "scope-kept" },
+    { "profile": "scope", "path": "scope/ignored/secret.txt", "kind": "text", "encoding": "utf8", "recipe": "scope-ignored", "ignored": true },
+    { "profile": "scope", "path": "scope/ignored/kept.txt", "kind": "text", "encoding": "utf8", "recipe": "scope-negated", "ignored": false },
+    { "profile": "scope", "path": "scope/file.skip", "kind": "text", "encoding": "utf8", "recipe": "scope-ignored", "ignored": true },
+    { "profile": "scope", "path": "scope/.hidden.txt", "kind": "text", "encoding": "utf8", "recipe": "scope-kept", "hidden": true },
+    { "profile": "scope", "path": "scope/.hidden-dir/nested.txt", "kind": "text", "encoding": "utf8", "recipe": "scope-kept", "hidden": true },
+
+    { "profile": "bytes", "path": "bytes/payload.bin", "kind": "binary", "encoding": "binary", "recipe": "payload" },
+    { "profile": "bytes", "path": "bytes/boundary.bin", "kind": "binary", "encoding": "binary", "recipe": "byte-boundary" }
+  ]
+}

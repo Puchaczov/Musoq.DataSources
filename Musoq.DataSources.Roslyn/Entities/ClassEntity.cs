@@ -187,14 +187,14 @@ public class ClassEntity : TypeEntity
 
             var fieldUsage = new Dictionary<string, HashSet<string>>();
 
-            foreach (var variable in fields.SelectMany(field => field.Declaration.Variables))
+            foreach (var variable in fields.SelectMany(fieldDeclaration => fieldDeclaration.Declaration.Variables))
                 fieldUsage[variable.Identifier.Text] = [];
 
             foreach (var method in methods)
             {
                 var usedFields = GetUsedFields(method, SemanticModel);
-                foreach (var field in usedFields.Where(field => fieldUsage.ContainsKey(field)))
-                    fieldUsage[field].Add(method.Identifier.Text);
+                foreach (var usedField in usedFields.Where(usedField => fieldUsage.ContainsKey(usedField)))
+                    fieldUsage[usedField].Add(method.Identifier.Text);
             }
 
             var disjointFieldUsagePairs = 0;
@@ -229,6 +229,7 @@ public class ClassEntity : TypeEntity
     /// <summary>
     ///     Gets the properties of the type.
     /// </summary>
+    [BindablePropertyAsTable]
     public override IEnumerable<MethodEntity> Methods => Syntax.Members
         .OfType<MethodDeclarationSyntax>()
         .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution));
@@ -236,6 +237,7 @@ public class ClassEntity : TypeEntity
     /// <summary>
     ///     Gets the properties of the type.
     /// </summary>
+    [BindablePropertyAsTable]
     public override IEnumerable<PropertyEntity> Properties => Syntax.Members
         .OfType<PropertyDeclarationSyntax>()
         .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!, SemanticModel));

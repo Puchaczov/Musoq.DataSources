@@ -15,12 +15,12 @@
 ## Architecture map
 - `CSharpSchema.GetRowSource()` is the real composition root: it validates environment variables, wires HTTP/cache/rate-limit handlers, selects immediate-load vs in-memory solution flow, and defines the public XML-doc contract.
 - `CSharpLibrary` is the safest extension point for new SQL-callable helpers over existing entities.
-- `RowsSources/` contains solution-loading and query-optimization logic. Read `CSharpImmediateLoadSolutionRowsSource.cs`, `CSharpInMemorySolutionRowsSource.cs`, and `RoslynWhereNodeHelper.cs` first.
+- `RowsSources/` contains solution-loading and query-optimization logic. Read `CSharpImmediateLoadSolutionRowsSource.cs`, `CSharpInMemorySolutionRowsSource.cs`, and the source-planning path in `CSharpSchema.cs` first.
 - The main entity chain is `SolutionEntity -> ProjectEntity -> DocumentEntity -> type/member entities`. Most user-visible behavior comes from entity properties rather than special row-source code.
 - `Tables/` is secondary here; the primary table metadata entry is `CSharpSolutionTable.cs`.
 
 ## Data flow
-- `#csharp.solution(path)` enters `CSharpSchema.GetRowSource()`.
+- `csharp.solution(path)` enters `CSharpSchema.GetRowSource()`.
 - If the solution is already preloaded in `SolutionOperationsCommand.Solutions`, the schema uses the in-memory path; otherwise it opens the solution directly through Roslyn/MSBuild workspace logic.
 - Row sources create a `SolutionEntity` and attach NuGet metadata retrieval services; `SolutionEntity.Projects` then lazily materializes `ProjectEntity` objects.
 - `ProjectEntity.Documents` lazily creates `DocumentEntity` objects, and `DocumentEntity.InitializeAsync()` is the gateway to syntax tree and semantic model work.
@@ -30,7 +30,7 @@
 
 ## Patterns to preserve
 - This is the most complex plugin in the repo; keep schema wiring, analysis logic, NuGet/network integration, and CLI/bootstrap concerns separated.
-- `CSharpSchema.cs` XML docs are a major part of the public contract for `desc #csharp` and additional entity tables.
+- `CSharpSchema.cs` XML docs are a major part of the public contract for `desc csharp` and additional entity tables.
 - Many query surfaces are entity-graph based (`Projects`, `Documents`, `Classes`, `Methods`, etc.), so entity property names and table metadata are user-visible.
 - External metadata and package-resolution behavior rely on existing fallback strategies; do not simplify them casually.
 - Rate limiting, cache/bucket behavior, and solution lifecycle hooks are part of runtime behavior, not just internal plumbing.
@@ -46,7 +46,7 @@
 ## Common pitfalls
 - `MUSOQ_SERVER_HTTP_ENDPOINT` is required for `GetRowSource()` even when the query mostly looks local.
 - `DocumentEntity` members often assume initialization has already happened; ad hoc entity creation must respect that.
-- `RoslynWhereNodeHelper` only supports narrow pushdown for simple equality filters joined by `AND`; `OR` is intentionally ignored for optimization.
+- Runtime-v2 planning only supports narrow pushdown for simple equality filters joined by `AND`; `OR` is intentionally ignored for optimization.
 - Timeout-tolerant analysis helpers return fallback values like `null` or `-1` instead of failing the entire query; preserve that behavior.
 - Entity property names and XML docs are public query surface. Renaming them is a breaking change.
 - NuGet metadata retrieval contains ordered fallbacks and banned-value filtering; “simplifying” it often changes observable results.
@@ -54,7 +54,7 @@
 ## Safe extension points
 - Add new SQL-callable helper methods in `CSharpLibrary.cs` first.
 - Add new entity-derived surfaces in `Entities/`, then reflect them in `CSharpSchema.cs` XML docs.
-- Extend solution/project filter optimization by updating both `RoslynWhereNodeHelper` and the row-source project-matching logic.
+- Extend solution/project filter optimization by updating both the source-planning path and the row-source project-matching logic.
 - Swap external behaviors through interfaces in `Components/` and `Components/NuGet/`, not by editing callers throughout the entity graph.
 - Extend CLI/cache behavior through `LifecycleHooks.cs` and `SolutionOperationsCommand.cs`, not by introducing scattered static state.
 

@@ -28,7 +28,7 @@ public class CSharpSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #csharp";
+        var query = "desc csharp";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -49,7 +49,7 @@ public class CSharpSchemaDescribeTests
     [TestMethod]
     public void DescSolution_ShouldReturnMethodSignature()
     {
-        var query = "desc #csharp.solution";
+        var query = "desc csharp.solution";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -68,7 +68,7 @@ public class CSharpSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #csharp.unknownmethod";
+        var query = "desc csharp.unknownmethod";
 
         try
         {
@@ -92,7 +92,7 @@ public class CSharpSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #csharp";
+        var query = "desc csharp";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -105,7 +105,7 @@ public class CSharpSchemaDescribeTests
     [TestMethod]
     public void DescSolutionNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #csharp.solution";
+        var queryNoArgs = "desc csharp.solution";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 

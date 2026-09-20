@@ -1,36 +1,24 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.System;
 
-internal class DualRowSource : RowSourceBase<DualEntity>
+internal class DualRowSource(SourceExecutionContext executionContext) : RowSourceBase<DualEntity>
 {
     private const string DualSourceName = "dual";
-    private readonly RuntimeContext _runtimeContext;
 
-    public DualRowSource(RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<DualEntity> writer)
     {
-        _runtimeContext = runtimeContext;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _runtimeContext.ReportDataSourceBegin(DualSourceName);
-        _runtimeContext.ReportDataSourceRowsKnown(DualSourceName, 1);
+        executionContext.ReportDataSourceBegin(DualSourceName);
+        executionContext.ReportDataSourceRowsKnown(DualSourceName, 1);
 
         try
         {
-            chunkedSource.Add(
-            [
-                new EntityResolver<DualEntity>(new DualEntity(), SystemSchemaHelper.FlatNameToIndexMap,
-                    SystemSchemaHelper.FlatIndexToMethodAccessMap)
-            ]);
+            writer.Write([new DualEntity()]);
         }
         finally
         {
-            _runtimeContext.ReportDataSourceEnd(DualSourceName, 1);
+            executionContext.ReportDataSourceEnd(DualSourceName, 1);
         }
     }
 }

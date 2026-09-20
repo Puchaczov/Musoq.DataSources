@@ -32,7 +32,7 @@ public class GitHubReleasesTests
                 MockEntityFactory.CreateRelease(3, "v2.0.0", "Version 2.0.0", prerelease: false, draft: false)
             });
 
-        var query = "select Id, TagName, Name, Draft, Prerelease from #github.releases('testowner', 'testrepo')";
+        var query = "select Id, TagName, Name, Draft, Prerelease from github.releases('testowner', 'testrepo')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -67,7 +67,7 @@ public class GitHubReleasesTests
                 MockEntityFactory.CreateRelease(2, "v2.0.0-beta", "Version 2.0.0 Beta", prerelease: true, draft: false)
             });
 
-        var query = "select TagName from #github.releases('testowner', 'testrepo') where Prerelease = false";
+        var query = "select TagName from github.releases('testowner', 'testrepo') where Prerelease = false";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -89,7 +89,7 @@ public class GitHubReleasesTests
                 MockEntityFactory.CreateRelease(2, "v2.0.0-draft", "Draft Release", prerelease: false, draft: true)
             });
 
-        var query = "select TagName from #github.releases('testowner', 'testrepo') where Draft = false";
+        var query = "select TagName from github.releases('testowner', 'testrepo') where Draft = false";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 

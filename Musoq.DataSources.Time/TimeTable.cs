@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Time;
@@ -8,7 +7,7 @@ internal class TimeTable : ISchemaTable
 {
     public ISchemaColumn[] Columns { get; } = TimeHelper.TimeColumns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(DateTimeOffset));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(TimeEntity));
 
     public ISchemaColumn GetColumnByName(string name)
     {

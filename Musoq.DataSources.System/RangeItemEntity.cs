@@ -2,7 +2,7 @@
 
 namespace Musoq.DataSources.System;
 
-internal class RangeItemEntity
+public class RangeItemEntity
 {
     [EntityProperty] public long Value { get; set; }
 }

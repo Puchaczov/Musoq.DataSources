@@ -1,54 +1,49 @@
-﻿using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.OpenAI;
 
-internal class OpenAiSingleRowSource : RowSource
+internal class OpenAiSingleRowSource : RowSourceBase<OpenAiEntity>
 {
     private const string OpenAiSourceName = "openai";
     private readonly IOpenAiApi _openAiApi;
     private readonly OpenAiRequestInfo _openAiRequestInfo;
-    private readonly RuntimeContext? _runtimeContext;
+    private readonly SourceExecutionContext? _executionContext;
 
     protected OpenAiSingleRowSource(IOpenAiApi openAiApi, OpenAiRequestInfo openAiRequestInfo)
     {
         _openAiApi = openAiApi;
         _openAiRequestInfo = openAiRequestInfo;
-        _runtimeContext = null;
     }
 
-    public OpenAiSingleRowSource(RuntimeContext runtimeContext, OpenAiRequestInfo openAiRequestInfo)
+    public OpenAiSingleRowSource(SourceExecutionContext executionContext, OpenAiRequestInfo openAiRequestInfo)
     {
-        _openAiApi = new OpenAiApi(runtimeContext.EnvironmentVariables["OPENAI_API_KEY"]);
+        _openAiApi = new OpenAiApi(executionContext.SourceRuntimeSettings["OPENAI_API_KEY"]);
         _openAiRequestInfo = openAiRequestInfo;
-        _runtimeContext = runtimeContext;
+        _executionContext = executionContext;
     }
 
-    public override IEnumerable<IObjectResolver> Rows
+    protected override void CollectChunks(IChunkWriter<OpenAiEntity> writer)
     {
-        get
-        {
-            _runtimeContext?.ReportDataSourceBegin(OpenAiSourceName);
-            _runtimeContext?.ReportDataSourceRowsKnown(OpenAiSourceName, 1);
+        _executionContext?.ReportDataSourceBegin(OpenAiSourceName);
+        _executionContext?.ReportDataSourceRowsKnown(OpenAiSourceName, 1);
 
-            try
-            {
-                yield return new EntityResolver<OpenAiEntity>(
-                    new OpenAiEntity(
-                        _openAiApi,
-                        _openAiRequestInfo.Model,
-                        _openAiRequestInfo.FrequencyPenalty,
-                        _openAiRequestInfo.MaxTokens,
-                        _openAiRequestInfo.PresencePenalty,
-                        _openAiRequestInfo.Temperature,
-                        _runtimeContext?.EndWorkToken ?? CancellationToken.None),
-                    OpenAiSchemaHelper.NameToIndexMap,
-                    OpenAiSchemaHelper.IndexToMethodAccessMap);
-            }
-            finally
-            {
-                _runtimeContext?.ReportDataSourceEnd(OpenAiSourceName, 1);
-            }
+        try
+        {
+            writer.Write([
+                new OpenAiEntity(
+                    _openAiApi,
+                    _openAiRequestInfo.Model,
+                    _openAiRequestInfo.FrequencyPenalty,
+                    _openAiRequestInfo.MaxTokens,
+                    _openAiRequestInfo.PresencePenalty,
+                    _openAiRequestInfo.Temperature,
+                    writer.CancellationToken)
+            ]);
+        }
+        finally
+        {
+            _executionContext?.ReportDataSourceEnd(OpenAiSourceName, 1);
         }
     }
 }

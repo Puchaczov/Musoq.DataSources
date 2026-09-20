@@ -485,14 +485,14 @@ public class ExtractFromProjectMetadataTests
                     .Where(f => f.StartsWith(path, StringComparison.OrdinalIgnoreCase))
                     .ToArray();
 
-                return files.ToAsyncEnumerable();
+                return AsyncHelpers.ToAsyncEnumerable(files);
             }
 
             if (Directory.Exists(path))
             {
                 var files = Directory.GetFiles(path, "*",
                     recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-                return files.ToAsyncEnumerable();
+                return AsyncHelpers.ToAsyncEnumerable(files);
             }
 
             throw new DirectoryNotFoundException($"Directory not found: {path}");

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
 
         <IsPackable>false</IsPackable>
         <PackageId>Musoq.DataSources.SeparatedValues.Tests</PackageId>
@@ -12,11 +12,10 @@
         <PackageReference Include="Moq" Version="4.20.72"/>
         <PackageReference Include="MSTest.TestAdapter" Version="3.8.2"/>
         <PackageReference Include="MSTest.TestFramework" Version="3.8.2"/>
-        <PackageReference Include="Musoq.Converter" Version="10.0.3" />
-        <PackageReference Include="Musoq.Evaluator" Version="16.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="10.0.0" />
-        <PackageReference Include="Musoq.Plugins" Version="13.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="15.0.0" />
+        <PackageReference Include="Musoq.Converter" Version="$(MusoqConverterVersion)" />
+        <PackageReference Include="Musoq.Evaluator" Version="$(MusoqEvaluatorVersion)" />
+        <PackageReference Include="Musoq.Plugins" Version="$(MusoqPluginsVersion)" />
+        <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -25,43 +24,37 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="Files\AllTypes.csv">
+        <None Update="TestData\Files\AllTypes.csv">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Files\BankingTransactionsNullValues.csv">
+        <None Update="TestData\Files\BankingTransactionsNullValues.csv">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Files\BankingTransactionsWithSkippedLines.csv">
+        <None Update="TestData\Files\BankingTransactionsWithSkippedLines.csv">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Files\BankingTransactionsNoHeader.csv">
+        <None Update="TestData\Files\BankingTransactionsNoHeader.csv">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Files\Categories.txt">
+        <None Update="TestData\Files\Gradebook.csv">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Files\FakeBankingTransactions.csv">
+        <None Update="TestData\Files\Persons.csv">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Files\Gradebook.csv">
+        <None Update="TestData\Files\BankingTransactions.csv">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Files\Persons.csv">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Files\BankingTransactions.csv">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Test1\file1.csv">
+        <None Update="TestData\Test1\file1.csv">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="Test1\file2.csv">
+        <None Update="TestData\Test1\file2.csv">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="Test1\file3.csv">
+        <None Update="TestData\Test1\file3.csv">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="Test1\Query.txt">
+        <None Update="TestData\Test1\Query.txt">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

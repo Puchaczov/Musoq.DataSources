@@ -26,15 +26,14 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #json";
+        var query = "desc json";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
-        Assert.AreEqual(3, table.Columns.Count(), "Should have 3 columns: Name, Param 0, and Param 1");
+        Assert.AreEqual(2, table.Columns.Count(), "Should have 2 columns: Name and Param 0");
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
         Assert.AreEqual("Param 0", table.Columns.ElementAt(1).ColumnName);
-        Assert.AreEqual("Param 1", table.Columns.ElementAt(2).ColumnName);
 
         Assert.AreEqual(1, table.Count, "Should have 1 row (1 unique method)");
 
@@ -44,34 +43,31 @@ public class JsonSchemaDescribeTests
 
         var fileRow = table.First(row => (string)row[0] == "file");
         Assert.AreEqual("jsonFilePath: System.String", (string)fileRow[1]);
-        Assert.AreEqual("jsonSchemaFilePath: System.String", (string)fileRow[2]);
     }
 
     [TestMethod]
     public void DescFile_ShouldReturnMethodSignature()
     {
-        var query = "desc #json.file";
+        var query = "desc json.file";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
-        Assert.AreEqual(3, table.Columns.Count(), "Should have 3 columns");
+        Assert.AreEqual(2, table.Columns.Count(), "Should have 2 columns");
         Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
         Assert.AreEqual("Param 0", table.Columns.ElementAt(1).ColumnName);
-        Assert.AreEqual("Param 1", table.Columns.ElementAt(2).ColumnName);
 
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
         Assert.AreEqual("file", (string)row[0]);
         Assert.AreEqual("jsonFilePath: System.String", (string)row[1]);
-        Assert.AreEqual("jsonSchemaFilePath: System.String", (string)row[2]);
     }
 
     [TestMethod]
     public void DescFileWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
+        var query = "desc json.file('./JsonTestFile_First.json')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -89,7 +85,7 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #json.unknownmethod";
+        var query = "desc json.unknownmethod";
 
         try
         {
@@ -113,7 +109,7 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #json";
+        var query = "desc json";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -126,11 +122,11 @@ public class JsonSchemaDescribeTests
     [TestMethod]
     public void DescFileNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #json.file";
+        var queryNoArgs = "desc json.file";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 
-        var queryWithArgs = "desc #json.file('./JsonTestFile_First.json', './JsonTestFile_First.schema.json')";
+        var queryWithArgs = "desc json.file('./JsonTestFile_First.json')";
         var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
         var tableWithArgs = vmWithArgs.Run();
 

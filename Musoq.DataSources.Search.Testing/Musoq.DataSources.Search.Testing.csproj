@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Musoq.Converter" Version="$(MusoqConverterVersion)" />
+        <PackageReference Include="Musoq.Evaluator" Version="$(MusoqEvaluatorVersion)" />
+        <PackageReference Include="Musoq.Plugins" Version="$(MusoqPluginsVersion)" />
+        <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj" />
+        <ProjectReference Include="..\Musoq.DataSources.Search\Musoq.DataSources.Search.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,117 +1,223 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System;
+using System.Buffers;
 using System.IO;
-using System.Linq;
-using Musoq.DataSources.JsonHelpers;
-using Musoq.Schema;
+using System.Threading;
+using Musoq.DataSources.Common;
+using Musoq.DataSources.Structured;
 using Musoq.Schema.DataSources;
-using Newtonsoft.Json;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Json;
 
 /// <summary>
-///     Represents a json source.
+///     Streams rows from a strict UTF-8 JSON file.
 /// </summary>
-public class JsonSource : RowSourceBase<dynamic>
+public sealed class JsonSource : RowSourceBase<object[]>
 {
+    private const int ZeroColumnInputBufferSize = 256 * 1024;
     private const string JsonSourceName = "json";
-    private readonly RuntimeContext _runtimeContext;
-    private readonly Stream _stream;
+    private readonly SourceExecutionContext _executionContext;
+    private readonly string _path;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="JsonSource" /> class.
+    ///     Initializes a JSON file source.
     /// </summary>
-    /// <param name="stream"></param>
-    /// <param name="runtimeContext"></param>
-    public JsonSource(Stream stream, RuntimeContext runtimeContext)
+    /// <param name="path">Path to strict UTF-8 JSON content.</param>
+    /// <param name="executionContext">Source execution context.</param>
+    public JsonSource(string path, SourceExecutionContext executionContext)
     {
-        _stream = stream;
-        _runtimeContext = runtimeContext;
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentNullException.ThrowIfNull(executionContext);
+        _path = Path.GetFullPath(path);
+        _executionContext = executionContext;
     }
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="JsonSource" /> class.
+    ///     Streams bounded chunks to the current Musoq row contract.
     /// </summary>
-    /// <param name="path"></param>
-    /// <param name="runtimeContext"></param>
-    public JsonSource(string path, RuntimeContext runtimeContext)
+    /// <param name="writer">Chunk writer.</param>
+    protected override void CollectChunks(IChunkWriter<object[]> writer)
     {
-        _runtimeContext = runtimeContext;
-        _stream = File.OpenRead(path);
-    }
-
-    /// <summary>
-    ///     Gets the data from json file.
-    /// </summary>
-    /// <param name="chunkedSource"></param>
-    /// <exception cref="NotSupportedException"></exception>
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _runtimeContext.ReportDataSourceBegin(JsonSourceName);
-        long totalRowsProcessed = 0;
-        var endWorkToken = _runtimeContext.EndWorkToken;
+        var progress = new DataSourceProgressReporter(_executionContext, JsonSourceName);
+        progress.Begin();
+        CancellationTokenSource linkedCancellation = null;
+        long rowsRead = 0;
 
         try
         {
-            using var contentStream = _stream;
-            using var contentReader = new StreamReader(contentStream);
-            using var reader = new JsonTextReader(contentReader);
-            reader.SupportMultipleContent = true;
-
-            if (!reader.Read())
-                throw new NotSupportedException("Cannot read file. Json is probably malformed.");
-
-            var rows = reader.TokenType switch
-            {
-                JsonToken.StartObject => new[] { JsonParser.ParseObject(reader, endWorkToken) },
-                JsonToken.StartArray => JsonParser.ParseArray(reader, endWorkToken),
-                _ => null
-            };
-
-            if (rows == null)
-                throw new NotSupportedException("This type of .json file is not supported.");
-
-            using var enumerator = rows.GetEnumerator();
-
-            if (!enumerator.MoveNext())
+            if (_executionContext.EndWorkToken.IsCancellationRequested || writer.CancellationToken.IsCancellationRequested)
                 return;
 
-            if (enumerator.Current is not IDictionary<string, object> firstRow)
-                return;
-
-            var index = 0;
-            var indexToNameMap = firstRow.Keys.ToDictionary(_ => index++);
-
-            var list = new List<IObjectResolver>
+            var cancellationToken = writer.CancellationToken;
+            if (_executionContext.EndWorkToken.CanBeCanceled &&
+                !_executionContext.EndWorkToken.Equals(writer.CancellationToken))
             {
-                new JsonObjectResolver(firstRow, indexToNameMap)
-            };
-            totalRowsProcessed++;
-
-            while (enumerator.MoveNext())
-            {
-                endWorkToken.ThrowIfCancellationRequested();
-
-                if (enumerator.Current is not IDictionary<string, object> row)
-                    continue;
-
-                list.Add(new JsonObjectResolver(row, indexToNameMap));
-                totalRowsProcessed++;
-
-                if (list.Count < 1000)
-                    continue;
-
-                chunkedSource.Add(list, endWorkToken);
-
-                list = new List<IObjectResolver>(1000);
+                linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                    writer.CancellationToken,
+                    _executionContext.EndWorkToken);
+                cancellationToken = linkedCancellation.Token;
             }
 
-            chunkedSource.Add(list, endWorkToken);
+            var snapshot = JsonSchemaDiscovery.GetSnapshot(_path, cancellationToken);
+            EnsurePlanStillMatches(snapshot);
+            progress.RowsKnown(snapshot.RowCount);
+
+            if (_executionContext.Plan.AcceptedTake is 0)
+                return;
+
+            if (CanUseZeroColumnScan())
+            {
+                rowsRead = ProcessZeroColumnScan(snapshot, writer, progress, cancellationToken);
+                return;
+            }
+
+            var maximumParallelism = JsonParallelScanOptions.Resolve(snapshot, _executionContext);
+            if (maximumParallelism > 1)
+            {
+                _ = OrderedParallelPartitionRunner.Run(
+                    snapshot.Partitions,
+                    maximumParallelism,
+                    writer,
+                    (partition, partitionWriter, token) => ProcessPartition(
+                        snapshot,
+                        partition,
+                        partitionWriter,
+                        token),
+                    progress.RowsRead,
+                    cancellationToken);
+                rowsRead = snapshot.RowCount;
+            }
+            else
+            {
+                rowsRead = ProcessSequential(snapshot, writer, progress, cancellationToken);
+            }
         }
         finally
         {
-            _runtimeContext.ReportDataSourceEnd(JsonSourceName, totalRowsProcessed);
+            linkedCancellation?.Dispose();
+            progress.End(rowsRead);
         }
+    }
+
+    private bool CanUseZeroColumnScan()
+    {
+        var plan = _executionContext.Plan;
+        return JsonSourcePlanner.IsProjectionAccepted(plan) &&
+               plan.AcceptedColumns.Count == 0 &&
+               plan.AcceptedPredicate is null &&
+               plan.AcceptedSkip is null &&
+               plan.AcceptedTake is null;
+    }
+
+    private static long ProcessZeroColumnScan(
+        StructuredSchemaSnapshot snapshot,
+        IChunkWriter<object[]> writer,
+        DataSourceProgressReporter progress,
+        CancellationToken cancellationToken)
+    {
+        using var stream = new FileStream(
+            snapshot.Identity.CanonicalPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            1,
+            FileOptions.SequentialScan);
+        if (stream.Length != snapshot.Identity.Length)
+            throw new StructuredSourceChangedException(snapshot.Identity.CanonicalPath);
+
+        var buffer = ArrayPool<byte>.Shared.Rent(ZeroColumnInputBufferSize);
+        var position = 0L;
+        var partitionIndex = 0;
+        var rowsRead = 0L;
+        var pendingRows = 0L;
+
+        try
+        {
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var read = stream.Read(buffer, 0, buffer.Length);
+                if (read == 0)
+                    break;
+
+                position += read;
+                while (partitionIndex < snapshot.Partitions.Length &&
+                       position >= snapshot.Partitions[partitionIndex].EndOffset)
+                {
+                    var partitionRows = snapshot.Partitions[partitionIndex].RowCount;
+                    progress.RowsRead(partitionRows);
+                    rowsRead += partitionRows;
+                    pendingRows += partitionRows;
+                    while (pendingRows >= RowChunking.DefaultChunkSize)
+                    {
+                        WriteRepeatedRows(writer, RowChunking.DefaultChunkSize);
+                        pendingRows -= RowChunking.DefaultChunkSize;
+                    }
+
+                    partitionIndex++;
+                }
+            }
+
+            if (position != snapshot.Identity.Length ||
+                partitionIndex != snapshot.Partitions.Length ||
+                rowsRead != snapshot.RowCount)
+                throw new StructuredSourceChangedException(snapshot.Identity.CanonicalPath);
+
+            WriteRepeatedRows(writer, pendingRows);
+            return rowsRead;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    private static void WriteRepeatedRows(IChunkWriter<object[]> writer, long rowCount)
+    {
+        while (rowCount > 0)
+        {
+            var count = (int)Math.Min(RowChunking.DefaultChunkSize, rowCount);
+            writer.Write(new RepeatedValueChunk<object[]>(Array.Empty<object>(), count));
+            rowCount -= count;
+        }
+    }
+
+    private long ProcessSequential(
+        StructuredSchemaSnapshot snapshot,
+        IChunkWriter<object[]> writer,
+        DataSourceProgressReporter progress,
+        CancellationToken cancellationToken)
+    {
+        var processor = new JsonRowProcessor(snapshot, _executionContext, writer, progress, cancellationToken);
+        JsonRecordFramer.Read(_path, processor, cancellationToken);
+        processor.Complete();
+        return processor.RowsRead;
+    }
+
+    private void ProcessPartition(
+        StructuredSchemaSnapshot snapshot,
+        StructuredPartition partition,
+        IChunkWriter<object[]> writer,
+        CancellationToken cancellationToken)
+    {
+        var processor = new JsonRowProcessor(snapshot, _executionContext, writer, null, cancellationToken);
+        JsonRecordFramer.ReadPartition(_path, partition, processor, cancellationToken);
+        processor.Complete();
+        if (processor.RowsRead != partition.RowCount)
+        {
+            throw new StructuredSchemaDriftException(
+                snapshot.Identity.CanonicalPath,
+                $"partition expected {partition.RowCount:N0} rows but read {processor.RowsRead:N0}");
+        }
+    }
+
+    private void EnsurePlanStillMatches(StructuredSchemaSnapshot snapshot)
+    {
+        if (_executionContext.Plan.Properties is null ||
+            !_executionContext.Plan.Properties.TryGetValue(JsonPlanning.LayoutPropertyName, out var value) ||
+            value is not StructuredExecutionLayout layout)
+            return;
+
+        layout.EnsureCompatibleWith(snapshot);
     }
 }

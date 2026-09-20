@@ -1,4 +1,3 @@
-﻿using Docker.DotNet.Models;
 using Musoq.Schema;
 
 namespace Musoq.DataSources.Docker.Volumes;
@@ -7,7 +6,7 @@ internal class VolumesTable : ISchemaTable
 {
     public ISchemaColumn[] Columns => VolumesSourceHelper.VolumesColumns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(VolumeResponse));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(VolumeEntity));
 
     public ISchemaColumn? GetColumnByName(string name)
     {

@@ -1,40 +1,33 @@
-﻿using System.Collections.Concurrent;
-using Docker.DotNet.Models;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Docker.Networks;
 
-internal class NetworksSource : RowSourceBase<NetworkResponse>
+internal class NetworksSource(IDockerApi api, SourceExecutionContext executionContext)
+    : RowSourceBase<NetworkEntity>
 {
     private const string NetworksSourceName = "docker_networks";
-    private readonly IDockerApi _api;
-    private readonly RuntimeContext _runtimeContext;
 
-    public NetworksSource(IDockerApi api, RuntimeContext runtimeContext)
+    protected override void CollectChunks(IChunkWriter<NetworkEntity> writer)
     {
-        _api = api;
-        _runtimeContext = runtimeContext;
-    }
-
-    protected override void CollectChunks(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource)
-    {
-        _runtimeContext.ReportDataSourceBegin(NetworksSourceName);
+        executionContext.ReportDataSourceBegin(NetworksSourceName);
 
         try
         {
-            var networks = _api.ListNetworksAsync().Result;
-            _runtimeContext.ReportDataSourceRowsKnown(NetworksSourceName, networks.Count);
+            var networks = api.ListNetworksAsync().Result;
+            var rows = networks
+                .Select(network => new NetworkEntity(network))
+                .Where(entity => DockerSourcePlanner.Matches(executionContext.Plan.AcceptedPredicate, entity))
+                .ToList();
 
-            chunkedSource.Add(
-                networks.Select(c => new EntityResolver<NetworkResponse>(c, NetworksSourceHelper.NetworksNameToIndexMap,
-                    NetworksSourceHelper.NetworksIndexToMethodAccessMap)).ToList());
+            executionContext.ReportDataSourceRowsKnown(NetworksSourceName, rows.Count);
+            writer.Write(rows);
 
-            _runtimeContext.ReportDataSourceEnd(NetworksSourceName, networks.Count);
+            executionContext.ReportDataSourceEnd(NetworksSourceName, rows.Count);
         }
         catch
         {
-            _runtimeContext.ReportDataSourceEnd(NetworksSourceName, 0);
+            executionContext.ReportDataSourceEnd(NetworksSourceName, 0);
             throw;
         }
     }

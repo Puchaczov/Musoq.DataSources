@@ -25,7 +25,7 @@ public class ZipTests
     [TestMethod]
     public void SimpleZipSelectTest()
     {
-        var query = @"select FullName from #disk.zip('./Files.zip')";
+        var query = @"select FullName from disk.zip('./Files.zip')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();

@@ -1,23 +1,24 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
-using Musoq.Schema;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os;
 
 internal abstract class EnumerateFilesSourceBase<TEntity>(
     string path,
     bool useSubDirectories,
-    RuntimeContext communicator)
-    : AsyncRowsSourceBase<TEntity>(communicator.EndWorkToken)
+    SourceExecutionContext executionContext)
+    : AsyncRowsSourceBase<TEntity>(executionContext.EndWorkToken)
 {
-    private readonly OsFileFilterParameters _fileFilters =
-        OsWhereNodeHelper.ExtractFileParameters(communicator.QuerySourceInfo.WhereNode);
+    private const int ChunkSize = 100;
+    private readonly SourcePredicateExpression? _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+    private readonly OsFileFilterParameters _fileFilters = OsSourcePlanner.GetFileFilters(executionContext.Plan);
 
     private readonly DirectorySourceSearchOptions[] _source =
     [
@@ -26,87 +27,158 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
 
     protected virtual string DataSourceName => "files";
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    protected override Task CollectChunksAsync(IChunkWriter<TEntity> writer, CancellationToken cancellationToken)
     {
-        communicator.ReportDataSourceBegin(DataSourceName);
+        var progress = new DataSourceProgressReporter(executionContext, DataSourceName);
+        progress.Begin();
         long totalRowsProcessed = 0;
 
         try
         {
-            await Parallel.ForEachAsync(
-                _source,
-                cancellationToken,
-                (source, token) =>
+            foreach (var source in _source)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (!Directory.Exists(source.Path))
+                    continue;
+
+                foreach (var chunk in EnumerateChunks(source, progress, cancellationToken))
                 {
-                    var sources = new Stack<DirectorySourceSearchOptions>();
-
-                    if (!Directory.Exists(source.Path))
-                        return ValueTask.CompletedTask;
-
-                    sources.Push(source);
-
-                    while (sources.Count > 0)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-
-                        var currentSource = sources.Pop();
-                        var dir = new DirectoryInfo(currentSource.Path);
-                        var dirFiles = new List<EntityResolver<TEntity>>();
-
-                        try
-                        {
-                            foreach (var file in GetFiles(dir))
-                            {
-                                cancellationToken.ThrowIfCancellationRequested();
-
-                                ProcessFile(file, source, dirFiles);
-                            }
-                        }
-                        catch (UnauthorizedAccessException)
-                        {
-                            continue;
-                        }
-
-                        if (dirFiles.Count > 0)
-                        {
-                            Interlocked.Add(ref totalRowsProcessed, dirFiles.Count);
-                            chunkedSource.Add(dirFiles, token);
-                        }
-
-                        if (currentSource.WithSubDirectories)
-                            foreach (var subDir in dir.GetDirectories())
-                                sources.Push(new DirectorySourceSearchOptions(subDir.FullName,
-                                    currentSource.WithSubDirectories));
-                    }
-
-                    return ValueTask.CompletedTask;
-                });
+                    writer.Write(chunk);
+                    totalRowsProcessed += chunk.Count;
+                }
+            }
         }
         finally
         {
-            communicator.ReportDataSourceEnd(DataSourceName, totalRowsProcessed);
+            progress.End(totalRowsProcessed);
         }
+
+        return Task.CompletedTask;
     }
 
-    protected virtual FileInfo[] GetFiles(DirectoryInfo directoryInfo)
+    private IEnumerable<IReadOnlyList<TEntity>> EnumerateChunks(
+        DirectorySourceSearchOptions source,
+        DataSourceProgressReporter progress,
+        CancellationToken cancellationToken)
     {
-        if (_fileFilters.Name != null)
-            return directoryInfo.GetFiles(_fileFilters.Name);
+        var sources = new Stack<DirectorySourceSearchOptions>();
+        var chunk = new List<TEntity>(ChunkSize);
+        sources.Push(source);
 
-        if (_fileFilters.Extension != null)
+        while (sources.Count > 0)
         {
-            var pattern = _fileFilters.Extension.StartsWith('*')
-                ? _fileFilters.Extension
-                : $"*{_fileFilters.Extension}";
-            return directoryInfo.GetFiles(pattern);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var currentSource = sources.Pop();
+            var dir = new DirectoryInfo(currentSource.Path);
+
+            IEnumerator<FileInfo> files;
+            try
+            {
+                files = GetFiles(dir).GetEnumerator();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                continue;
+            }
+            catch (PathTooLongException)
+            {
+                continue;
+            }
+
+            var fileEnumerationFailed = false;
+            using (files)
+            {
+                while (true)
+                {
+                    bool hasNext;
+                    try
+                    {
+                        hasNext = files.MoveNext();
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        fileEnumerationFailed = true;
+                        break;
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        fileEnumerationFailed = true;
+                        break;
+                    }
+                    catch (PathTooLongException)
+                    {
+                        fileEnumerationFailed = true;
+                        break;
+                    }
+
+                    if (!hasNext)
+                        break;
+
+                    var file = files.Current;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    progress.RowRead();
+
+                    if (!OsSourcePlanner.MatchesFilePredicate(_acceptedPredicate, file))
+                        continue;
+
+                    ProcessFile(file, source, chunk);
+
+                    if (chunk.Count < ChunkSize)
+                        continue;
+
+                    yield return chunk;
+                    chunk = [];
+                }
+            }
+
+            if (fileEnumerationFailed)
+                continue;
+
+            if (!currentSource.WithSubDirectories)
+                continue;
+
+            try
+            {
+                foreach (var subDir in dir.EnumerateDirectories())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    sources.Push(new DirectorySourceSearchOptions(subDir.FullName, currentSource.WithSubDirectories));
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                continue;
+            }
+            catch (PathTooLongException)
+            {
+                continue;
+            }
         }
 
-        return directoryInfo.GetFiles();
+        if (chunk.Count > 0)
+            yield return chunk;
     }
 
-    protected virtual void ProcessFile(FileInfo file, DirectorySourceSearchOptions source,
-        List<EntityResolver<TEntity>> dirFiles)
+    protected virtual IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
+    {
+        var searchPattern = _fileFilters.GetSearchPattern();
+        if (searchPattern is not null)
+            return directoryInfo.EnumerateFiles(searchPattern);
+
+        return directoryInfo.EnumerateFiles();
+    }
+
+    protected virtual void ProcessFile(FileInfo file, DirectorySourceSearchOptions source, List<TEntity> dirFiles)
     {
         var entity = CreateBasedOnFile(file, source.Path);
 
@@ -114,8 +186,8 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
             dirFiles.Add(entity);
     }
 
-    protected virtual EntityResolver<TEntity>? CreateBasedOnFile(FileInfo file, string rootDirectory)
+    protected virtual TEntity? CreateBasedOnFile(FileInfo file, string rootDirectory)
     {
-        return null;
+        return default;
     }
 }

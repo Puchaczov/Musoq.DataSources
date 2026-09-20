@@ -17,7 +17,7 @@ public class MessagesOrSignalsTests
     [TestMethod]
     public void WhenDbcFileHasUnnecessarySpaceBeforeTheSemicolon_AndSignalsToRetrieve_ShouldSuccess()
     {
-        const string query = "select Name from #can.signals('./Data/4/4.dbc')";
+        const string query = "select Name from can.signals('./Data/4/4.dbc')";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -41,7 +41,7 @@ public class MessagesOrSignalsTests
     [TestMethod]
     public void WhenSignalOrderRetrieved_ShouldSuccess()
     {
-        const string query = "select MessageOrder, Name from #can.signals('./Data/1/1.dbc') s";
+        const string query = "select MessageOrder, Name from can.signals('./Data/1/1.dbc') s";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -65,7 +65,7 @@ public class MessagesOrSignalsTests
     [TestMethod]
     public void WhenDbcFileHasUnnecessarySpaceBeforeTheSemicolon_AndMessagesToRetrieve_ShouldSuccess()
     {
-        const string query = "select Name from #can.messages('./Data/4/4.dbc')";
+        const string query = "select Name from can.messages('./Data/4/4.dbc')";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -80,7 +80,7 @@ public class MessagesOrSignalsTests
     [TestMethod]
     public void WhenDescMessages_ShouldSucceed()
     {
-        const string query = @"desc #can.messages('./Data/1/1.dbc')";
+        const string query = @"desc can.messages('./Data/1/1.dbc')";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -134,7 +134,7 @@ public class MessagesOrSignalsTests
     [TestMethod]
     public void WhenDescSignals_ShouldSucceed()
     {
-        const string query = @"desc #can.signals('./Data/1/1.dbc')";
+        const string query = @"desc can.signals('./Data/1/1.dbc')";
 
         var vm = CreateAndRunVirtualMachine(query);
 
@@ -246,11 +246,11 @@ public class MessagesOrSignalsTests
 select 
     1
 from 
-    #can.messages('./Data/2/2.dbc') m1
+    can.messages('./Data/2/2.dbc') m1
 inner join
-    #can.signals('./Data/2/2.dbc') s1 on m1.Name = s1.MessageName
+    can.signals('./Data/2/2.dbc') s1 on m1.Name = s1.MessageName
 inner join
-    #can.signals('./Data/2/2.dbc') s2 on m1.Name = s2.MessageName
+    can.signals('./Data/2/2.dbc') s2 on m1.Name = s2.MessageName
 where
     s1.Name <> s2.Name and
     (
@@ -273,11 +273,11 @@ select
     s1.Name,
     s2.Name
 from 
-    #can.messages('./Data/3/3.dbc') m1
+    can.messages('./Data/3/3.dbc') m1
 inner join
-    #can.signals('./Data/3/3.dbc') s1 on m1.Name = s1.MessageName
+    can.signals('./Data/3/3.dbc') s1 on m1.Name = s1.MessageName
 inner join
-    #can.signals('./Data/3/3.dbc') s2 on m1.Name = s2.MessageName
+    can.signals('./Data/3/3.dbc') s2 on m1.Name = s2.MessageName
 where
     s1.Name <> s2.Name and
     (
@@ -303,7 +303,7 @@ where
         var queryEncode = @"
 select 
     messages.EncodeMessage('Exhaust_Gas_Temperature', 124) 
-from #can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_System'";
+from can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_System'";
 
         var vm = CreateAndRunVirtualMachine(queryEncode);
 
@@ -312,7 +312,7 @@ from #can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_Sys
         var queryDecode = $@"
 select 
     messages.DecodeMessage('Exhaust_Gas_Temperature', {(ulong)table[0].Values[0]})
-from #can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_System'";
+from can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_System'";
 
         vm = CreateAndRunVirtualMachine(queryDecode);
 
@@ -335,7 +335,7 @@ select
     Transmitter,
     Comment,
     CycleTime
-from #can.messages('./Data/1/1.dbc')
+from can.messages('./Data/1/1.dbc')
 where Id = 293";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -370,11 +370,10 @@ select
     Minimum,
     Maximum,
     Unit,
-    Receiver,
     Comment,
     Multiplexing,
     MessageName
-from #can.signals('./Data/1/1.dbc')
+from can.signals('./Data/1/1.dbc')
 where Name = 'Oil_Temperature'";
 
         var vm = CreateAndRunVirtualMachine(query);
@@ -395,16 +394,27 @@ where Name = 'Oil_Temperature'";
         Assert.AreEqual(-50d, table[0].Values[9]);
         Assert.AreEqual(100d, table[0].Values[10]);
         Assert.AreEqual("CelciusDegree", table[0].Values[11]);
-        Assert.AreEqual("Vector__XXX", ((string[])table[0].Values[12])[0]);
-        Assert.AreEqual(null, table[0].Values[13]);
-        Assert.AreEqual(string.Empty, table[0].Values[14]);
-        Assert.AreEqual("Engine", table[0].Values[15]);
+        Assert.AreEqual(null, table[0].Values[12]);
+        Assert.AreEqual(string.Empty, table[0].Values[13]);
+        Assert.AreEqual("Engine", table[0].Values[14]);
+
+        const string receiverQuery = @"
+select
+    r.Value
+from can.signals('./Data/1/1.dbc') s
+cross apply s.Receiver r
+where s.Name = 'Oil_Temperature'";
+
+        var receiverTable = CreateAndRunVirtualMachine(receiverQuery).Run();
+
+        Assert.AreEqual(1, receiverTable.Count);
+        Assert.AreEqual("Vector__XXX", receiverTable[0].Values[0]);
     }
 
     [TestMethod]
     public void WhenMessagesCrossAppliedWithSignals_ShouldPass()
     {
-        const string query = "select m.Name, s.Name from #can.messages('./Data/1/1.dbc') m cross apply m.Signals s";
+        const string query = "select m.Name, s.Name from can.messages('./Data/1/1.dbc') m cross apply m.Signals s";
 
         var vm = CreateAndRunVirtualMachine(query);
 

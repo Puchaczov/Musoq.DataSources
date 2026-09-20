@@ -12,7 +12,7 @@ public class RangeTests
     [TestMethod]
     public void RangeMaxTest()
     {
-        var query = "select Value from #system.range(5)";
+        var query = "select Value from system.range(5l)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -29,7 +29,7 @@ public class RangeTests
     [TestMethod]
     public void RangeMinMaxTest()
     {
-        var query = "select Value from #system.range(1, 5)";
+        var query = "select Value from system.range(1l, 5l)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -46,7 +46,7 @@ public class RangeTests
     [TestMethod]
     public void RangeMinSignedMaxTest()
     {
-        var query = "select Value from #system.range(-1, 2)";
+        var query = "select Value from system.range(-1l, 2l)";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -63,7 +63,7 @@ public class RangeTests
     [TestMethod]
     public void RowNumberEvenForRangeMinSignedMaxTest()
     {
-        var query = "select Value from #system.range(0, 5) where RowNumber() % 2 = 0";
+        var query = "select Value from system.range(0l, 5l) where RowNumber() % 2 = 0";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();

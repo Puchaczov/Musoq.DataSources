@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Files;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
@@ -769,6 +770,18 @@ public partial class OsLibrary : LibraryBase
     /// <returns>SubPath based on nesting</returns>
     [BindableMethod]
     public string? SubPath([InjectSpecificSource(typeof(DirectoryInfo))] DirectoryInfo context, int nesting)
+    {
+        return SubPath(context.FullName, nesting);
+    }
+
+    /// <summary>
+    ///     Gets the SubPath from a directory datasource row.
+    /// </summary>
+    /// <param name="context">The directory datasource row</param>
+    /// <param name="nesting">The nesting</param>
+    /// <returns>SubPath based on nesting</returns>
+    [BindableMethod]
+    public string? SubPath([InjectSpecificSource(typeof(DirectoryEntity))] DirectoryEntity context, int nesting)
     {
         return SubPath(context.FullName, nesting);
     }

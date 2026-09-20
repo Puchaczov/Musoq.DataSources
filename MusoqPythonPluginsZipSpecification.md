@@ -75,7 +75,7 @@ class DataPlugin:
         """Return the schema name used in SQL queries.
         
         Example: return "weather"
-        SQL Usage: SELECT * FROM #weather.current()
+        SQL Usage: SELECT * FROM weather.current()
         """
         pass
     

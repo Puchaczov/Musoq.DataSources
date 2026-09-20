@@ -1,83 +1,73 @@
-﻿using System;
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.CANBus.Components;
 
-internal abstract class MessageFrameSourceBase : AsyncRowsSourceBase<MessageFrameEntity>
+internal abstract class MessageFrameSourceBase(SourceExecutionContext executionContext)
+    : AsyncRowsSourceBase<MessageFrameEntity>(executionContext.EndWorkToken)
 {
-    protected MessageFrameSourceBase(CancellationToken endWorkToken) : base(endWorkToken)
-    {
-    }
+    private readonly IReadOnlySet<string>? _requestedColumns = GetRequestedColumns(executionContext);
+    private readonly SourcePredicateExpression? _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
 
     protected abstract HashSet<string> AllMessagesSet { get; }
-
-    protected abstract IReadOnlyDictionary<string, int> MessagesNameToIndexMap { get; }
-
-    protected abstract IReadOnlyDictionary<int, Func<MessageFrameEntity, object?>> MessagesIndexToMethodAccessMap
-    {
-        get;
-    }
 
     protected abstract Task InitializeAsync(CancellationToken cancellationToken);
 
     protected abstract IAsyncEnumerable<SourceCanFrame> GetFramesAsync(CancellationToken cancellationToken);
 
-    protected override async Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
+    protected override async Task CollectChunksAsync(
+        IChunkWriter<MessageFrameEntity> writer,
         CancellationToken cancellationToken)
     {
         await InitializeAsync(cancellationToken);
 
-        var itemsAdded = 0;
-        const int maxItems = 1000;
-        var chunk = new List<IObjectResolver>();
+        var chunk = new List<MessageFrameEntity>();
 
         await foreach (var frame in GetFramesAsync(cancellationToken))
         {
-            var messageFrame = new MessageFrameEntity(
+            if (!CANBusSourcePlanner.MatchesFrame(_acceptedPredicate, frame))
+                continue;
+
+            chunk.Add(new MessageFrameEntity(
                 frame.Timestamp,
                 frame.Frame,
                 frame.Message,
-                AllMessagesSet);
+                AllMessagesSet,
+                _requestedColumns));
 
-            var nameToIndexMap = messageFrame.CreateMessageNameToIndexMap();
-            var nameToIndexMapFinal = new Dictionary<string, int>(nameToIndexMap);
-            var addedKeysIndexes = new List<(string Key, int Index)>();
-            foreach (var keyValuePair in MessagesNameToIndexMap)
-            {
-                var count = nameToIndexMap.Count;
-                if (nameToIndexMapFinal.TryAdd(keyValuePair.Key, count))
-                    addedKeysIndexes.Add((keyValuePair.Key, count));
-            }
-
-            var indexToMethodAccessMap = messageFrame.CreateMessageIndexToMethodAccessMap();
-            var indexToMethodAccessMapFinal =
-                new Dictionary<int, Func<MessageFrameEntity, object?>>(indexToMethodAccessMap);
-
-            foreach (var grouping in addedKeysIndexes.GroupBy(f => f.Index))
-                indexToMethodAccessMapFinal.Add(grouping.Key, _ => null);
-
-            if (itemsAdded != maxItems)
-            {
-                chunk.Add(new EntityResolver<MessageFrameEntity>(messageFrame, nameToIndexMapFinal,
-                    indexToMethodAccessMapFinal));
-                itemsAdded += 1;
+            if (chunk.Count < RowChunking.DefaultChunkSize)
                 continue;
-            }
 
-            chunk.Add(new EntityResolver<MessageFrameEntity>(messageFrame, nameToIndexMapFinal,
-                indexToMethodAccessMapFinal));
-            chunkedSource.Add(chunk, cancellationToken);
+            writer.Write(chunk);
             chunk = [];
-            itemsAdded = 0;
         }
 
         if (chunk.Count > 0)
-            chunkedSource.Add(chunk, cancellationToken);
+            writer.Write(chunk);
+    }
+
+    private static IReadOnlySet<string>? GetRequestedColumns(SourceExecutionContext executionContext)
+    {
+        var acceptedColumns = executionContext.Plan.AcceptedColumns;
+
+        if (acceptedColumns.Count == 0)
+            return null;
+
+        var requestedColumns = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var acceptedColumn in acceptedColumns)
+        {
+            requestedColumns.Add(acceptedColumn.Name);
+
+            foreach (var part in acceptedColumn.Name.Split('.'))
+                requestedColumns.Add(part);
+        }
+
+        return requestedColumns;
     }
 }

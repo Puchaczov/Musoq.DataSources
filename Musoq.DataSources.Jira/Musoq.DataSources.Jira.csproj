@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.1.4</Version>
+        <Version>2.0.4-alpha.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
-        <Description>Lets you query Jira issues, projects, sprints and other resources with SQL-style queries. Supports predicate pushdown for efficient filtering via JQL.</Description>
+        <Description>Lets you query Jira issues, projects, sprints and other resources with SQL-style queries.</Description>
         <PackageProjectUrl>https://github.com/Puchaczov/Musoq</PackageProjectUrl>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>sql, jira, atlassian, issues, projects, sprints, musoq, plugin, datasource, dotnet, jql</PackageTags>
@@ -33,15 +33,8 @@
     <ItemGroup>
         <PackageReference Include="Atlassian.SDK" Version="13.0.0"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="Musoq.Converter" Version="10.0.3" />
-        <PackageReference Include="Musoq.Evaluator" Version="16.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="10.0.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="13.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="15.0.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
+        <PackageReference Include="Musoq.Plugins" Version="$(MusoqPluginsVersion)" ExcludeAssets="runtime" />
+        <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" ExcludeAssets="runtime" />
     </ItemGroup>
 
     <ItemGroup>

@@ -3,7 +3,7 @@ using Musoq.DataSources.Os.Files;
 
 namespace Musoq.DataSources.Os.Compare.Directories;
 
-internal class CompareDirectoriesResult(
+public class CompareDirectoriesResult(
     DirectoryInfo sourceRoot,
     FileEntity? sourceFile,
     DirectoryInfo destinationRoot,

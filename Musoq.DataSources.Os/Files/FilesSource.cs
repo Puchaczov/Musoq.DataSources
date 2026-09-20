@@ -1,18 +1,13 @@
-﻿using System.IO;
-using Musoq.Schema;
-using Musoq.Schema.DataSources;
+using System.IO;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Os.Files;
 
-internal class FilesSource(string path, bool useSubDirectories, RuntimeContext communicator)
-    : EnumerateFilesSourceBase<FileEntity>(path, useSubDirectories, communicator)
+internal class FilesSource(string path, bool useSubDirectories, SourceExecutionContext executionContext)
+    : EnumerateFilesSourceBase<FileEntity>(path, useSubDirectories, executionContext)
 {
-    protected override EntityResolver<FileEntity> CreateBasedOnFile(FileInfo file, string rootDirectory)
+    protected override FileEntity CreateBasedOnFile(FileInfo file, string rootDirectory)
     {
-        return new EntityResolver<FileEntity>(
-            new FileEntity(file, rootDirectory),
-            SchemaFilesHelper.FilesNameToIndexMap,
-            SchemaFilesHelper.FilesIndexToMethodAccessMap
-        );
+        return new FileEntity(file, rootDirectory);
     }
 }

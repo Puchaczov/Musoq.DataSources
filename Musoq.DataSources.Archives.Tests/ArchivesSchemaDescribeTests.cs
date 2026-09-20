@@ -26,7 +26,7 @@ public class ArchivesSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #archives";
+        var query = "desc archives";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -45,7 +45,7 @@ public class ArchivesSchemaDescribeTests
     [TestMethod]
     public void DescFile_ShouldReturnMethodSignature()
     {
-        var query = "desc #archives.file";
+        var query = "desc archives.file";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -64,7 +64,7 @@ public class ArchivesSchemaDescribeTests
     [TestMethod]
     public void DescFileWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #archives.file('./Files/Example1/archives.zip')";
+        var query = "desc archives.file('./Files/Example1/archives.zip')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -102,7 +102,7 @@ public class ArchivesSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #archives.unknownmethod";
+        var query = "desc archives.unknownmethod";
 
         try
         {
@@ -126,7 +126,7 @@ public class ArchivesSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #archives";
+        var query = "desc archives";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -139,11 +139,11 @@ public class ArchivesSchemaDescribeTests
     [TestMethod]
     public void DescFileNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #archives.file";
+        var queryNoArgs = "desc archives.file";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 
-        var queryWithArgs = "desc #archives.file('./Files/Example1/archives.zip')";
+        var queryWithArgs = "desc archives.file('./Files/Example1/archives.zip')";
         var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
         var tableWithArgs = vmWithArgs.Run();
 

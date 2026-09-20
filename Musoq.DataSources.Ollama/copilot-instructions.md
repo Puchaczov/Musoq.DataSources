@@ -13,7 +13,7 @@
 
 ## Patterns to preserve
 - Keep schema/source behavior separate from helper-method behavior.
-- The production source surface is `#ollama.llm(...)`; tests may use custom schemas for convenience, but production naming is the contract.
+- The production source surface is `ollama.llm(...)`; tests may use custom schemas for convenience, but production naming is the contract.
 - Token counting, retries, and response-shape handling are easy places to introduce regressions.
 - Keep provider-specific logic behind `IOllamaApi` and preserve current helper method names.
 

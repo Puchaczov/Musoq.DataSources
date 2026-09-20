@@ -1,4 +1,3 @@
-﻿using Docker.DotNet.Models;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 
@@ -7,33 +6,33 @@ namespace Musoq.DataSources.Docker.Networks;
 internal static class NetworksSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> NetworksNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<NetworkResponse, object>> NetworksIndexToMethodAccessMap;
+    public static readonly IReadOnlyDictionary<int, Func<NetworkEntity, object?>> NetworksIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] NetworksColumns;
 
     static NetworksSourceHelper()
     {
         NetworksNameToIndexMap = new Dictionary<string, int>
         {
-            { nameof(NetworkResponse.Name), 0 },
-            { nameof(NetworkResponse.ID), 1 },
-            { nameof(NetworkResponse.Created), 2 },
-            { nameof(NetworkResponse.Scope), 3 },
-            { nameof(NetworkResponse.Driver), 4 },
-            { nameof(NetworkResponse.EnableIPv6), 5 },
-            { nameof(NetworkResponse.IPAM), 6 },
-            { nameof(NetworkResponse.Internal), 7 },
-            { nameof(NetworkResponse.Attachable), 8 },
-            { nameof(NetworkResponse.Ingress), 9 },
-            { nameof(NetworkResponse.ConfigFrom), 10 },
-            { nameof(NetworkResponse.ConfigOnly), 11 },
-            { nameof(NetworkResponse.Containers), 12 },
-            { nameof(NetworkResponse.Options), 13 },
-            { nameof(NetworkResponse.Labels), 14 },
-            { nameof(NetworkResponse.Peers), 15 },
-            { nameof(NetworkResponse.Services), 16 }
+            { nameof(NetworkEntity.Name), 0 },
+            { nameof(NetworkEntity.ID), 1 },
+            { nameof(NetworkEntity.Created), 2 },
+            { nameof(NetworkEntity.Scope), 3 },
+            { nameof(NetworkEntity.Driver), 4 },
+            { nameof(NetworkEntity.EnableIPv6), 5 },
+            { nameof(NetworkEntity.IPAM), 6 },
+            { nameof(NetworkEntity.Internal), 7 },
+            { nameof(NetworkEntity.Attachable), 8 },
+            { nameof(NetworkEntity.Ingress), 9 },
+            { nameof(NetworkEntity.ConfigFrom), 10 },
+            { nameof(NetworkEntity.ConfigOnly), 11 },
+            { nameof(NetworkEntity.Containers), 12 },
+            { nameof(NetworkEntity.Options), 13 },
+            { nameof(NetworkEntity.Labels), 14 },
+            { nameof(NetworkEntity.Peers), 15 },
+            { nameof(NetworkEntity.Services), 16 }
         };
 
-        NetworksIndexToMethodAccessMap = new Dictionary<int, Func<NetworkResponse, object>>
+        NetworksIndexToMethodAccessMap = new Dictionary<int, Func<NetworkEntity, object?>>
         {
             { 0, info => info.Name },
             { 1, info => info.ID },
@@ -56,23 +55,23 @@ internal static class NetworksSourceHelper
 
         NetworksColumns =
         [
-            new SchemaColumn(nameof(NetworkResponse.Name), 0, typeof(string)),
-            new SchemaColumn(nameof(NetworkResponse.ID), 1, typeof(string)),
-            new SchemaColumn(nameof(NetworkResponse.Created), 2, typeof(DateTime)),
-            new SchemaColumn(nameof(NetworkResponse.Scope), 3, typeof(string)),
-            new SchemaColumn(nameof(NetworkResponse.Driver), 4, typeof(string)),
-            new SchemaColumn(nameof(NetworkResponse.EnableIPv6), 5, typeof(bool)),
-            new SchemaColumn(nameof(NetworkResponse.IPAM), 6, typeof(IPAM)),
-            new SchemaColumn(nameof(NetworkResponse.Internal), 7, typeof(bool)),
-            new SchemaColumn(nameof(NetworkResponse.Attachable), 8, typeof(bool)),
-            new SchemaColumn(nameof(NetworkResponse.Ingress), 9, typeof(bool)),
-            new SchemaColumn(nameof(NetworkResponse.ConfigFrom), 10, typeof(ConfigReference)),
-            new SchemaColumn(nameof(NetworkResponse.ConfigOnly), 11, typeof(bool)),
-            new SchemaColumn(nameof(NetworkResponse.Containers), 12, typeof(IDictionary<string, EndpointResource>)),
-            new SchemaColumn(nameof(NetworkResponse.Options), 13, typeof(IDictionary<string, string>)),
-            new SchemaColumn(nameof(NetworkResponse.Labels), 14, typeof(IDictionary<string, string>)),
-            new SchemaColumn(nameof(NetworkResponse.Peers), 15, typeof(IList<PeerInfo>)),
-            new SchemaColumn(nameof(NetworkResponse.Services), 16, typeof(IDictionary<string, ServiceInfo>))
+            new SchemaColumn(nameof(NetworkEntity.Name), 0, typeof(string)),
+            new SchemaColumn(nameof(NetworkEntity.ID), 1, typeof(string)),
+            new SchemaColumn(nameof(NetworkEntity.Created), 2, typeof(DateTime)),
+            new SchemaColumn(nameof(NetworkEntity.Scope), 3, typeof(string)),
+            new SchemaColumn(nameof(NetworkEntity.Driver), 4, typeof(string)),
+            new SchemaColumn(nameof(NetworkEntity.EnableIPv6), 5, typeof(bool)),
+            new SchemaColumn(nameof(NetworkEntity.IPAM), 6, typeof(string)),
+            new SchemaColumn(nameof(NetworkEntity.Internal), 7, typeof(bool)),
+            new SchemaColumn(nameof(NetworkEntity.Attachable), 8, typeof(bool)),
+            new SchemaColumn(nameof(NetworkEntity.Ingress), 9, typeof(bool)),
+            new SchemaColumn(nameof(NetworkEntity.ConfigFrom), 10, typeof(string)),
+            new SchemaColumn(nameof(NetworkEntity.ConfigOnly), 11, typeof(bool)),
+            new SchemaColumn(nameof(NetworkEntity.Containers), 12, typeof(IReadOnlyDictionary<string, string>)),
+            new SchemaColumn(nameof(NetworkEntity.Options), 13, typeof(IReadOnlyDictionary<string, string>)),
+            new SchemaColumn(nameof(NetworkEntity.Labels), 14, typeof(IReadOnlyDictionary<string, string>)),
+            new SchemaColumn(nameof(NetworkEntity.Peers), 15, typeof(IReadOnlyList<string>)),
+            new SchemaColumn(nameof(NetworkEntity.Services), 16, typeof(IReadOnlyDictionary<string, string>))
         ];
     }
 }

@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>7.4.7</Version>
+        <Version>8.0.4-alpha.1</Version>
         <Authors>Jakub Puchaa</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query system info, hardware, and running processes with SQL-style queries for quick diagnostics and inventory-style reporting.</Description>
@@ -30,15 +30,8 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="Musoq.Converter" Version="10.0.3" />
-        <PackageReference Include="Musoq.Evaluator" Version="16.0.0" />
-        <PackageReference Include="Musoq.Parser" Version="10.0.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
-        <PackageReference Include="Musoq.Plugins" Version="13.0.0" />
-        <PackageReference Include="Musoq.Schema" Version="15.0.0">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </PackageReference>
+        <PackageReference Include="Musoq.Plugins" Version="$(MusoqPluginsVersion)" ExcludeAssets="runtime" />
+        <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" ExcludeAssets="runtime" />
     </ItemGroup>
 
 </Project>

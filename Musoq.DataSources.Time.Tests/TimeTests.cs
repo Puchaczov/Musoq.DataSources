@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -22,7 +21,7 @@ public class TimeTests
     [TestMethod]
     public void EnumerateAllDaysInMonthTest()
     {
-        var query = "select Day from #time.interval('01.04.2018 00:00:00', '30.04.2018 00:00:00', 'days') order by Day";
+        var query = "select Day from time.interval('01.04.2018 00:00:00', '30.04.2018 00:00:00', 'days') order by Day";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -41,15 +40,9 @@ public class TimeTests
         var now = DateTimeOffset.Now;
         var nextHour = now.AddHours(1);
         var source = new TimeSource(now, nextHour, "minutes",
-            new RuntimeContext(
-                "test",
-                tokenSource.Token,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+            RuntimeV2TestContexts.CreateExecutionContext(tokenSource.Token, logger: mockLogger.Object));
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(0, fired);
     }
@@ -58,20 +51,21 @@ public class TimeTests
     public void TimeSource_FullLoadTest()
     {
         var mockLogger = new Mock<ILogger>();
+        var capture = new DataSourceProgressCapture();
         var now = DateTimeOffset.Parse("01/01/2000");
         var nextHour = now.AddHours(1);
         var source = new TimeSource(now, nextHour, "minutes",
-            new RuntimeContext(
-                "test",
+            RuntimeV2TestContexts.CreateExecutionContext(
                 CancellationToken.None,
-                Array.Empty<ISchemaColumn>(),
-                new Dictionary<string, string>(),
-                QuerySourceInfo.Empty,
-                mockLogger.Object));
+                logger: mockLogger.Object,
+                dataSourceProgressCallback: capture.Handler));
 
-        var fired = source.Rows.Count();
+        var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
         Assert.AreEqual(61, fired);
+        Assert.AreEqual(1, capture.For("time", DataSourcePhase.Begin).Count);
+        Assert.AreEqual(61L, capture.For("time", DataSourcePhase.RowsRead).Single().RowsProcessed);
+        Assert.AreEqual(61L, capture.For("time", DataSourcePhase.End).Single().RowsProcessed);
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

@@ -207,23 +207,17 @@ public class ProjectEntity
             var id = packageRef.Attribute("Include")?.Value ?? string.Empty;
             var version = packageRef.Attribute("Version")?.Value ?? string.Empty;
             var packagesToResolve =
-                new BlockingCollection<(string PackageId, string VersionRange, bool IsTransistive, uint Level)>();
-
-            packagesToResolve.Add((id, version, false, 0), token);
-
-            var processPackagesExtractionTask =
-                Task.Run(
-                    async () => await ProcessPackagesExtractionAsync(nuGetPackageMetadataRetriever, packagesToResolve,
-                        nugetPackages, token), token);
+                new List<(string PackageId, string VersionRange, bool IsTransistive, uint Level)>
+                {
+                    (id, version, false, 0)
+                };
 
             if (withTransitivePackages)
                 await foreach (var dependency in nuGetPackageMetadataRetriever.GetDependenciesAsync(id, version, token))
-                    packagesToResolve.Add((dependency.PackageId, dependency.VersionRange, true, dependency.Level),
-                        token);
+                    packagesToResolve.Add((dependency.PackageId, dependency.VersionRange, true, dependency.Level));
 
-            packagesToResolve.CompleteAdding();
-
-            await processPackagesExtractionTask;
+            await ProcessPackagesExtractionAsync(nuGetPackageMetadataRetriever, packagesToResolve, nugetPackages,
+                token);
         });
 
         return nugetPackages.ToList();
@@ -231,16 +225,15 @@ public class ProjectEntity
 
     private static async Task ProcessPackagesExtractionAsync(
         INuGetPackageMetadataRetriever nuGetPackageMetadataRetriever,
-        BlockingCollection<(string PackageId, string VersionRange, bool IsTransistive, uint Level)> packagesToResolve,
+        IEnumerable<(string PackageId, string VersionRange, bool IsTransistive, uint Level)> packagesToResolve,
         ConcurrentQueue<NugetPackageEntity> nugetPackages,
         CancellationToken token
     )
     {
-        while ((!packagesToResolve.IsCompleted || packagesToResolve.Count > 0) && !token.IsCancellationRequested)
+        foreach (var packageIdVersionPair in packagesToResolve)
             try
             {
-                if (!packagesToResolve.TryTake(out var packageIdVersionPair, Timeout.Infinite, token))
-                    continue;
+                token.ThrowIfCancellationRequested();
 
                 await foreach (var metadata in nuGetPackageMetadataRetriever.GetMetadataAsync(
                                    packageIdVersionPair.PackageId, packageIdVersionPair.VersionRange, token))

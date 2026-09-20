@@ -1,68 +1,53 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using LibGit2Sharp;
-using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Git.Entities;
-using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git;
 
-internal sealed class BranchesRowsSource(
-    string repositoryPath,
-    Func<string, Repository> createRepository,
-    RuntimeContext runtimeContext) : AsyncRowsSourceBase<BranchEntity>(runtimeContext.EndWorkToken)
+internal sealed class BranchesRowsSource : GitDiagnosticRowsSourceBase<BranchEntity>
 {
-    protected override Task CollectChunksAsync(BlockingCollection<IReadOnlyList<IObjectResolver>> chunkedSource,
-        CancellationToken cancellationToken)
+    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly Func<string, Repository> _createRepository;
+    private readonly GitFilterParameters _filters;
+    private readonly GitProjection _projection;
+    private readonly string _repositoryPath;
+
+    public BranchesRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
+        : base(executionContext, "git.branches")
     {
-        var repository = createRepository(repositoryPath);
-        var chunk = new List<IObjectResolver>(100);
-        var filters = GitWhereNodeHelper.ExtractParameters(runtimeContext.QuerySourceInfo.WhereNode);
+        _repositoryPath = repositoryPath;
+        _createRepository = createRepository;
+        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
+        _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
+    }
 
-        foreach (var branch in repository.Branches)
+    protected override long CollectRows(DiagnosticChunkWriter<BranchEntity> writer, CancellationToken cancellationToken)
+    {
+        var chunk = new List<BranchEntity>(128);
+        long rowsRead = 0;
+        var reader = GitOperationReaders.Branches;
+
+        reader.Read(_repositoryPath, _projection, _createRepository, cancellationToken, branch =>
         {
-            if (cancellationToken.IsCancellationRequested)
-                break;
+            if (!GitSourcePlanner.Matches(_filters, branch))
+                return true;
+            var entity = GitEntitySnapshots.Branch(branch, _projection);
+            if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
+                return true;
 
+            chunk.Add(entity);
+            if (chunk.Count == 128)
+                rowsRead += WriteChunk(writer, chunk, rowsRead);
+            return true;
+        });
 
-            if (!string.IsNullOrEmpty(filters.FriendlyName) &&
-                !string.Equals(branch.FriendlyName, filters.FriendlyName, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            if (!string.IsNullOrEmpty(filters.CanonicalName) &&
-                !string.Equals(branch.CanonicalName, filters.CanonicalName, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            if (filters.IsRemote.HasValue && branch.IsRemote != filters.IsRemote.Value)
-                continue;
-
-            if (filters.IsCurrentRepositoryHead.HasValue &&
-                branch.IsCurrentRepositoryHead != filters.IsCurrentRepositoryHead.Value)
-                continue;
-
-            if (filters.IsTracking.HasValue && branch.IsTracking != filters.IsTracking.Value)
-                continue;
-
-            var entity = new BranchEntity(branch, repository);
-            chunk.Add(new EntityResolver<BranchEntity>(
-                entity,
-                BranchEntity.NameToIndexMap,
-                BranchEntity.IndexToObjectAccessMap
-            ));
-
-            if (chunk.Count >= 100)
-            {
-                chunkedSource.Add(chunk.ToArray(), cancellationToken);
-                chunk.Clear();
-            }
-        }
-
-        if (chunk.Count > 0) chunkedSource.Add(chunk.ToArray(), cancellationToken);
-
-        return Task.CompletedTask;
+        rowsRead += WriteChunk(writer, chunk, rowsRead);
+        Context.Diagnostics.AddMetric("Git.Branches.Backend", reader.Backend == "git-cli" ? 1 : 2);
+        return rowsRead;
     }
 }

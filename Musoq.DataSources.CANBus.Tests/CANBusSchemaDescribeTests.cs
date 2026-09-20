@@ -28,7 +28,7 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldListAllAvailableMethods()
     {
-        var query = "desc #can";
+        var query = "desc can";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -61,7 +61,7 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescMessages_ShouldReturnMethodSignature()
     {
-        var query = "desc #can.messages";
+        var query = "desc can.messages";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -80,7 +80,7 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescSignals_ShouldReturnMethodSignature()
     {
-        var query = "desc #can.signals";
+        var query = "desc can.signals";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -99,7 +99,7 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescSeparatedValues_ShouldReturnAllOverloads()
     {
-        var query = "desc #can.separatedvalues";
+        var query = "desc can.separatedvalues";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -136,7 +136,7 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescMessagesWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #can.messages('./Data/1/1.dbc')";
+        var query = "desc can.messages('./Data/1/1.dbc')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -165,7 +165,7 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescSignalsWithArgs_ShouldReturnTableSchema()
     {
-        var query = "desc #can.signals('./Data/1/1.dbc')";
+        var query = "desc can.signals('./Data/1/1.dbc')";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -204,7 +204,7 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescUnknownMethod_ShouldThrowException()
     {
-        var query = "desc #can.unknownmethod";
+        var query = "desc can.unknownmethod";
 
         try
         {
@@ -228,7 +228,7 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescSchema_ShouldHaveConsistentColumnTypes()
     {
-        var query = "desc #can";
+        var query = "desc can";
 
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
@@ -241,11 +241,11 @@ public class CANBusSchemaDescribeTests
     [TestMethod]
     public void DescMessagesNoArgs_VsWithArgs_ShouldReturnDifferentResults()
     {
-        var queryNoArgs = "desc #can.messages";
+        var queryNoArgs = "desc can.messages";
         var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
         var tableNoArgs = vmNoArgs.Run();
 
-        var queryWithArgs = "desc #can.messages('./Data/1/1.dbc')";
+        var queryWithArgs = "desc can.messages('./Data/1/1.dbc')";
         var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
         var tableWithArgs = vmWithArgs.Run();
 

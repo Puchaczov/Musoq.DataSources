@@ -34,7 +34,7 @@ public class GitHubCommitsTests
             });
 
         var query =
-            "select Sha, ShortSha, Message, AuthorName, AuthorEmail from #github.commits('testowner', 'testrepo') order by Sha";
+            "select Sha, ShortSha, Message, AuthorName, AuthorEmail from github.commits('testowner', 'testrepo') order by Sha";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -65,7 +65,7 @@ public class GitHubCommitsTests
                 MockEntityFactory.CreateCommit("abc123def456", "Commit on branch", "Test User", "test@test.com")
             });
 
-        var query = "select Sha, Message from #github.commits('testowner', 'testrepo', 'feature-branch')";
+        var query = "select Sha, Message from github.commits('testowner', 'testrepo', 'feature-branch')";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -96,7 +96,7 @@ public class GitHubCommitsTests
                 MockEntityFactory.CreateCommit("def456abc789", "Another on main", "Test User", "test@test.com")
             });
 
-        var query = "select c.Sha, c.Message from #github.commits('testowner', 'testrepo', 'main') c";
+        var query = "select c.Sha, c.Message from github.commits('testowner', 'testrepo', 'main') c";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -126,7 +126,7 @@ public class GitHubCommitsTests
             });
 
         var query =
-            "select c.Sha, c.Message, c.AuthorName from #github.branchcommits('testowner', 'testrepo', 'main', 'feature/my-feature') c order by c.Sha";
+            "select c.Sha, c.Message, c.AuthorName from github.branchcommits('testowner', 'testrepo', 'main', 'feature/my-feature') c order by c.Sha";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
@@ -154,13 +154,47 @@ public class GitHubCommitsTests
         api.Setup(f => f.GetBranchSpecificCommitsAsync("testowner", "testrepo", "main", "feature/empty"))
             .ReturnsAsync(new List<CommitEntity>());
 
-        var query = "select c.Sha from #github.branchcommits('testowner', 'testrepo', 'main', 'feature/empty') c";
+        var query = "select c.Sha from github.branchcommits('testowner', 'testrepo', 'main', 'feature/empty') c";
 
         var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
 
         var table = vm.Run();
 
         Assert.AreEqual(0, table.Count);
+    }
+
+    [TestMethod]
+    public void WhenCommitsFilteredByAuthorLogin_ShouldPassAuthorToRequest()
+    {
+        var api = new Mock<IGitHubApi>();
+
+        api.Setup(f =>
+                f.GetCommitsAsync("testowner", "testrepo", It.IsAny<CommitRequest>(), It.IsAny<int?>(),
+                    It.IsAny<int?>()))
+            .ReturnsAsync(new List<CommitEntity>
+            {
+                MockEntityFactory.CreateCommit("abc123def456", "Commit by user1", authorLogin: "user1"),
+                MockEntityFactory.CreateCommit("def456abc789", "Commit by user2", authorLogin: "user2")
+            });
+
+        var query =
+            "select Sha, AuthorLogin from github.commits('testowner', 'testrepo') where AuthorLogin = 'user1'";
+
+        var vm = CreateAndRunVirtualMachineWithResponse(query, api.Object);
+
+        var table = vm.Run();
+
+        Assert.AreEqual(1, table.Count);
+        Assert.AreEqual("user1", table[0][1]);
+
+        api.Verify(
+            f => f.GetCommitsAsync(
+                "testowner",
+                "testrepo",
+                It.Is<CommitRequest>(r => r.Author == "user1"),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()),
+            Times.Once);
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IGitHubApi api)

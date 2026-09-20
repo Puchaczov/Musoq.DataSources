@@ -1,10 +1,9 @@
 using System.Globalization;
-using Musoq.Parser.Nodes;
 
 namespace Musoq.DataSources.Jira.Helpers;
 
 /// <summary>
-///     Parameters extracted from WHERE clause for Jira API queries.
+///     Parameters used to build Jira API queries.
 /// </summary>
 internal class JiraFilterParameters
 {
@@ -34,9 +33,19 @@ internal class JiraFilterParameters
     public string? Assignee { get; set; }
 
     /// <summary>
+    ///     Gets or sets the assignee display-name filter.
+    /// </summary>
+    public string? AssigneeDisplayName { get; set; }
+
+    /// <summary>
     ///     Gets or sets the reporter filter.
     /// </summary>
     public string? Reporter { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the reporter display-name filter.
+    /// </summary>
+    public string? ReporterDisplayName { get; set; }
 
     /// <summary>
     ///     Gets or sets the project key filter.
@@ -64,9 +73,19 @@ internal class JiraFilterParameters
     public DateTimeOffset? CreatedAfter { get; set; }
 
     /// <summary>
+    ///     Gets or sets a value indicating whether the created date range start is inclusive.
+    /// </summary>
+    public bool CreatedAfterInclusive { get; set; } = true;
+
+    /// <summary>
     ///     Gets or sets the created date range end.
     /// </summary>
     public DateTimeOffset? CreatedBefore { get; set; }
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether the created date range end is inclusive.
+    /// </summary>
+    public bool CreatedBeforeInclusive { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets the updated date range start.
@@ -74,9 +93,19 @@ internal class JiraFilterParameters
     public DateTimeOffset? UpdatedAfter { get; set; }
 
     /// <summary>
+    ///     Gets or sets a value indicating whether the updated date range start is inclusive.
+    /// </summary>
+    public bool UpdatedAfterInclusive { get; set; } = true;
+
+    /// <summary>
     ///     Gets or sets the updated date range end.
     /// </summary>
     public DateTimeOffset? UpdatedBefore { get; set; }
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether the updated date range end is inclusive.
+    /// </summary>
+    public bool UpdatedBeforeInclusive { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets the parent issue key (for subtasks).
@@ -97,68 +126,96 @@ internal class JiraFilterParameters
     ///     Gets or sets the summary search query.
     /// </summary>
     public string? SummaryContains { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the accepted JQL order field.
+    /// </summary>
+    public string? OrderByField { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the accepted JQL order direction.
+    /// </summary>
+    public string? OrderByDirection { get; set; }
+
+    public void SetCreatedAfter(DateTimeOffset value, bool inclusive)
+    {
+        (CreatedAfter, CreatedAfterInclusive) = SelectLower(CreatedAfter, CreatedAfterInclusive, value, inclusive);
+    }
+
+    public void SetCreatedBefore(DateTimeOffset value, bool inclusive)
+    {
+        (CreatedBefore, CreatedBeforeInclusive) = SelectUpper(CreatedBefore, CreatedBeforeInclusive, value, inclusive);
+    }
+
+    public void SetUpdatedAfter(DateTimeOffset value, bool inclusive)
+    {
+        (UpdatedAfter, UpdatedAfterInclusive) = SelectLower(UpdatedAfter, UpdatedAfterInclusive, value, inclusive);
+    }
+
+    public void SetUpdatedBefore(DateTimeOffset value, bool inclusive)
+    {
+        (UpdatedBefore, UpdatedBeforeInclusive) = SelectUpper(UpdatedBefore, UpdatedBeforeInclusive, value, inclusive);
+    }
+
+    private static (DateTimeOffset? Value, bool Inclusive) SelectLower(
+        DateTimeOffset? target,
+        bool targetInclusive,
+        DateTimeOffset value,
+        bool inclusive)
+    {
+        if (target is null || value > target.Value || value == target.Value && !inclusive)
+            return (value, inclusive);
+
+        return (target, targetInclusive);
+    }
+
+    private static (DateTimeOffset? Value, bool Inclusive) SelectUpper(
+        DateTimeOffset? target,
+        bool targetInclusive,
+        DateTimeOffset value,
+        bool inclusive)
+    {
+        if (target is null || value < target.Value || value == target.Value && !inclusive)
+            return (value, inclusive);
+
+        return (target, targetInclusive);
+    }
 }
 
 /// <summary>
-///     Helper class to extract filter parameters from WHERE clause nodes and build JQL queries.
+///     Helper class to build JQL queries from filter parameters.
 /// </summary>
 internal static class JqlBuilder
 {
     /// <summary>
-    ///     Field name mappings from entity properties to JQL field names.
-    /// </summary>
-    private static readonly Dictionary<string, string> FieldMappings = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "status", "status" },
-        { "type", "issuetype" },
-        { "priority", "priority" },
-        { "resolution", "resolution" },
-        { "assignee", "assignee" },
-        { "assigneedisplayname", "assignee" },
-        { "reporter", "reporter" },
-        { "reporterdisplayname", "reporter" },
-        { "projectkey", "project" },
-        { "key", "key" },
-        { "labels", "labels" },
-        { "components", "component" },
-        { "createdat", "created" },
-        { "updatedat", "updated" },
-        { "resolvedat", "resolved" },
-        { "duedate", "duedate" },
-        { "parentkey", "parent" },
-        { "fixversions", "fixVersion" },
-        { "affectsversions", "affectedVersion" },
-        { "summary", "summary" },
-        { "description", "description" },
-        { "environment", "environment" }
-    };
-
-    /// <summary>
-    ///     Extracts Jira filter parameters from a WHERE node.
-    /// </summary>
-    public static JiraFilterParameters ExtractParameters(WhereNode? whereNode)
-    {
-        var parameters = new JiraFilterParameters();
-
-        if (whereNode?.Expression == null)
-            return parameters;
-
-        ExtractFromNode(whereNode.Expression, parameters);
-
-        return parameters;
-    }
-
-    /// <summary>
     ///     Builds a JQL query string from filter parameters.
     /// </summary>
     /// <param name="baseJql">Optional base JQL to extend (e.g., "project = PROJ")</param>
-    /// <param name="parameters">Filter parameters extracted from WHERE clause</param>
+    /// <param name="parameters">Filter parameters to include in the JQL query.</param>
     /// <returns>Complete JQL query string</returns>
     public static string BuildJql(string? baseJql, JiraFilterParameters parameters)
     {
         var conditions = new List<string>();
+        var orderBy = string.Empty;
 
-        if (!string.IsNullOrEmpty(baseJql)) conditions.Add(baseJql);
+        if (!string.IsNullOrWhiteSpace(baseJql))
+        {
+            var orderByIndex = CultureInfo.InvariantCulture.CompareInfo.IndexOf(
+                baseJql,
+                "order by",
+                CompareOptions.IgnoreCase);
+
+            if (orderByIndex >= 0)
+            {
+                orderBy = baseJql[orderByIndex..].Trim();
+                baseJql = baseJql[..orderByIndex].Trim();
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(baseJql)) conditions.Add(baseJql);
+
+        if (!string.IsNullOrWhiteSpace(parameters.OrderByField))
+            orderBy = $"ORDER BY {parameters.OrderByField} {parameters.OrderByDirection ?? "ASC"}";
 
         if (!string.IsNullOrEmpty(parameters.Status)) conditions.Add($"status = \"{EscapeJql(parameters.Status)}\"");
 
@@ -179,8 +236,14 @@ internal static class JqlBuilder
                 conditions.Add($"assignee = \"{EscapeJql(parameters.Assignee)}\"");
         }
 
+        if (!string.IsNullOrEmpty(parameters.AssigneeDisplayName))
+            conditions.Add($"assignee = \"{EscapeJql(parameters.AssigneeDisplayName)}\"");
+
         if (!string.IsNullOrEmpty(parameters.Reporter))
             conditions.Add($"reporter = \"{EscapeJql(parameters.Reporter)}\"");
+
+        if (!string.IsNullOrEmpty(parameters.ReporterDisplayName))
+            conditions.Add($"reporter = \"{EscapeJql(parameters.ReporterDisplayName)}\"");
 
         if (!string.IsNullOrEmpty(parameters.ProjectKey)) conditions.Add($"project = {parameters.ProjectKey}");
 
@@ -196,16 +259,20 @@ internal static class JqlBuilder
         foreach (var component in parameters.Components) conditions.Add($"component = \"{EscapeJql(component)}\"");
 
         if (parameters.CreatedAfter.HasValue)
-            conditions.Add($"created >= \"{FormatDate(parameters.CreatedAfter.Value)}\"");
+            conditions.Add(
+                $"created {FormatLowerOperator(parameters.CreatedAfterInclusive)} \"{FormatDate(parameters.CreatedAfter.Value)}\"");
 
         if (parameters.CreatedBefore.HasValue)
-            conditions.Add($"created <= \"{FormatDate(parameters.CreatedBefore.Value)}\"");
+            conditions.Add(
+                $"created {FormatUpperOperator(parameters.CreatedBeforeInclusive)} \"{FormatDate(parameters.CreatedBefore.Value)}\"");
 
         if (parameters.UpdatedAfter.HasValue)
-            conditions.Add($"updated >= \"{FormatDate(parameters.UpdatedAfter.Value)}\"");
+            conditions.Add(
+                $"updated {FormatLowerOperator(parameters.UpdatedAfterInclusive)} \"{FormatDate(parameters.UpdatedAfter.Value)}\"");
 
         if (parameters.UpdatedBefore.HasValue)
-            conditions.Add($"updated <= \"{FormatDate(parameters.UpdatedBefore.Value)}\"");
+            conditions.Add(
+                $"updated {FormatUpperOperator(parameters.UpdatedBeforeInclusive)} \"{FormatDate(parameters.UpdatedBefore.Value)}\"");
 
         if (!string.IsNullOrEmpty(parameters.SummaryContains))
             conditions.Add($"summary ~ \"{EscapeJql(parameters.SummaryContains)}\"");
@@ -213,208 +280,16 @@ internal static class JqlBuilder
         if (!string.IsNullOrEmpty(parameters.TextSearch))
             conditions.Add($"text ~ \"{EscapeJql(parameters.TextSearch)}\"");
 
-        return conditions.Count > 0
+        var conditionsJql = conditions.Count > 0
             ? string.Join(" AND ", conditions)
-            : "order by created DESC";
-    }
+            : string.Empty;
 
-    /// <summary>
-    ///     Builds a JQL query string directly from a WHERE node.
-    /// </summary>
-    /// <param name="baseJql">Optional base JQL to extend</param>
-    /// <param name="whereNode">WHERE clause node</param>
-    /// <returns>Complete JQL query string</returns>
-    public static string BuildJqlFromWhereNode(string? baseJql, WhereNode? whereNode)
-    {
-        var parameters = ExtractParameters(whereNode);
-        return BuildJql(baseJql, parameters);
-    }
-
-    private static void ExtractFromNode(Node node, JiraFilterParameters parameters)
-    {
-        switch (node)
+        return (conditionsJql, orderBy) switch
         {
-            case AndNode andNode:
-                ExtractFromNode(andNode.Left, parameters);
-                ExtractFromNode(andNode.Right, parameters);
-                break;
-
-            case OrNode:
-
-
-                break;
-
-            case EqualityNode equalityNode:
-                ExtractEqualityCondition(equalityNode, parameters);
-                break;
-
-            case GreaterOrEqualNode greaterEqualNode:
-                ExtractComparisonCondition(greaterEqualNode, ">=", parameters);
-                break;
-
-            case LessOrEqualNode lessEqualNode:
-                ExtractComparisonCondition(lessEqualNode, "<=", parameters);
-                break;
-
-            case GreaterNode greaterNode:
-                ExtractComparisonCondition(greaterNode, ">", parameters);
-                break;
-
-            case LessNode lessNode:
-                ExtractComparisonCondition(lessNode, "<", parameters);
-                break;
-
-            case LikeNode likeNode:
-                ExtractLikeCondition(likeNode, parameters);
-                break;
-        }
-    }
-
-    private static void ExtractEqualityCondition(EqualityNode node, JiraFilterParameters parameters)
-    {
-        var (fieldName, value) = ExtractFieldAndValue(node.Left, node.Right);
-
-        if (fieldName == null || value == null)
-            return;
-
-        var lowerFieldName = fieldName.ToLowerInvariant();
-
-        switch (lowerFieldName)
-        {
-            case "status":
-                parameters.Status = value.ToString();
-                break;
-            case "type":
-                parameters.Type = value.ToString();
-                break;
-            case "priority":
-                parameters.Priority = value.ToString();
-                break;
-            case "resolution":
-                parameters.Resolution = value.ToString();
-                break;
-            case "assignee":
-            case "assigneedisplayname":
-                parameters.Assignee = value.ToString();
-                break;
-            case "reporter":
-            case "reporterdisplayname":
-                parameters.Reporter = value.ToString();
-                break;
-            case "projectkey":
-                parameters.ProjectKey = value.ToString();
-                break;
-            case "key":
-                parameters.Key = value.ToString();
-                break;
-            case "parentkey":
-                parameters.ParentKey = value.ToString();
-                break;
-        }
-    }
-
-    private static void ExtractComparisonCondition(Node node, string op, JiraFilterParameters parameters)
-    {
-        Node left, right;
-
-        switch (node)
-        {
-            case GreaterOrEqualNode ge:
-                left = ge.Left;
-                right = ge.Right;
-                break;
-            case LessOrEqualNode le:
-                left = le.Left;
-                right = le.Right;
-                break;
-            case GreaterNode g:
-                left = g.Left;
-                right = g.Right;
-                break;
-            case LessNode l:
-                left = l.Left;
-                right = l.Right;
-                break;
-            default:
-                return;
-        }
-
-        var (fieldName, value) = ExtractFieldAndValue(left, right);
-
-        if (fieldName == null || value == null)
-            return;
-
-        var lowerFieldName = fieldName.ToLowerInvariant();
-
-
-        if (lowerFieldName == "createdat" && value is DateTimeOffset createdDate)
-        {
-            if (op is ">=" or ">")
-                parameters.CreatedAfter = createdDate;
-            else if (op is "<=" or "<")
-                parameters.CreatedBefore = createdDate;
-        }
-        else if (lowerFieldName == "updatedat" && value is DateTimeOffset updatedDate)
-        {
-            if (op is ">=" or ">")
-                parameters.UpdatedAfter = updatedDate;
-            else if (op is "<=" or "<")
-                parameters.UpdatedBefore = updatedDate;
-        }
-    }
-
-    private static void ExtractLikeCondition(LikeNode node, JiraFilterParameters parameters)
-    {
-        if (node.Left is not FieldNode fieldNode)
-            return;
-
-        var pattern = node.Right switch
-        {
-            StringNode stringNode => stringNode.Value,
-            _ => null
-        };
-
-        if (pattern == null)
-            return;
-
-
-        var searchText = pattern.Trim('%', '_');
-
-        var lowerFieldName = fieldNode.FieldName.ToLowerInvariant();
-
-        if (lowerFieldName == "summary")
-            parameters.SummaryContains = searchText;
-        else if (lowerFieldName == "description" || lowerFieldName == "text") parameters.TextSearch = searchText;
-    }
-
-    private static (string? fieldName, object? value) ExtractFieldAndValue(Node left, Node right)
-    {
-        string? fieldName = null;
-        object? value = null;
-
-        if (left is FieldNode fieldNode)
-        {
-            fieldName = fieldNode.FieldName;
-            value = ExtractValue(right);
-        }
-        else if (right is FieldNode fieldNode2)
-        {
-            fieldName = fieldNode2.FieldName;
-            value = ExtractValue(left);
-        }
-
-        return (fieldName, value);
-    }
-
-    private static object? ExtractValue(Node node)
-    {
-        return node switch
-        {
-            StringNode stringNode => stringNode.Value,
-            IntegerNode intNode => intNode.ObjValue,
-            DecimalNode decimalNode => decimalNode.Value,
-            BooleanNode boolNode => boolNode.Value,
-            _ => null
+            ("", "") => "order by created DESC",
+            ("", _) => orderBy,
+            (_, "") => conditionsJql,
+            _ => $"{conditionsJql} {orderBy}"
         };
     }
 
@@ -428,5 +303,15 @@ internal static class JqlBuilder
     private static string FormatDate(DateTimeOffset date)
     {
         return date.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatLowerOperator(bool inclusive)
+    {
+        return inclusive ? ">=" : ">";
+    }
+
+    private static string FormatUpperOperator(bool inclusive)
+    {
+        return inclusive ? "<=" : "<";
     }
 }
