@@ -577,6 +577,8 @@ function Test-RoslynReleaseWorkflowGates {
 
     $batchWorkflowPath = Join-Path $PSScriptRoot "../.github/workflows/release-datasources-batch.yml"
     $batchWorkflow = Get-Content -LiteralPath $batchWorkflowPath -Raw
+    Assert-True ($batchWorkflow -match 'dotnet build Musoq\.DataSources\.sln') "Batch datasource releases should build the solution before packaging."
+    Assert-True ($batchWorkflow -notmatch 'dotnet test') "Batch datasource releases should rely on the branch Build workflow for solution tests."
     Assert-True ($batchWorkflow -match 'requires_nuget') "Batch datasource releases should expose whether selected packages need NuGet."
     Assert-True ($batchWorkflow -match "needs\.validate-pack\.outputs\.requires_nuget == 'true'") "Batch datasource releases should condition NuGet credentials on selected package policies."
 }

@@ -385,6 +385,6 @@ The copied workflow must pass its own GitHub repository as `owner/repo` to the r
 
 Rollback is handled by `scripts/release/Rollback-Release.ps1` and `.github/workflows/rollback-release.yml`. It accepts an exact datasource release tag, deletes that GitHub release only when explicitly applied, and regenerates the registry from remaining releases. NuGet-only helper packages that do not implement a datasource schema are not part of the unified datasource release flow yet.
 
-Use the single-tag workflow for canary or one-off releases. Use `release-datasources-batch.yml` for coordinated releases because it restores, builds, and tests once, publishes all selected datasource artifacts, and updates the registry once.
+Use the single-tag workflow for canary or one-off releases. Use `release-datasources-batch.yml` for coordinated releases because it restores and builds once, publishes all selected datasource artifacts, and updates the registry once. Solution tests are supplied by the branch `Build` workflow.
 
 See `MusoqThirdPartyDatasourceRepositorySetup.md` for the full third-party repository checklist.

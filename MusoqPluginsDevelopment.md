@@ -1083,7 +1083,7 @@ For a copy-ready external repository checklist, see `MusoqThirdPartyDatasourceRe
 
 Rollback is tag-scoped through `scripts/release/Rollback-Release.ps1`. Helper NuGet-only packages that do not implement datasource schemas are not handled by the unified datasource release flow yet.
 
-For coordinated releases, prefer the manual `release-datasources-batch.yml` workflow over pushing many tags. It validates the selected datasource set, restores/builds/tests once, publishes each selected datasource, and updates the registry once.
+For coordinated releases, prefer the manual `release-datasources-batch.yml` workflow over pushing many tags. It validates the selected datasource set, restores/builds once, publishes each selected datasource, and updates the registry once. Solution tests are supplied by the branch `Build` workflow.
 
 The default import command for hosts using datasource packages is:
 

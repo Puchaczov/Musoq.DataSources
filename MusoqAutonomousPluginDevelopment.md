@@ -1704,7 +1704,7 @@ https://github.com/{owner}/{repo}/releases/download/plugin-registry/plugin-regis
 
 Rollback is explicit and tag-scoped through `scripts/release/Rollback-Release.ps1`. NuGet-only helper packages that do not implement datasource schemas need a separate NuGet-only release flow.
 
-For coordinated releases, use the manual `release-datasources-batch.yml` workflow instead of pushing many tags. It validates the selected datasource set, restores/builds/tests once, publishes each selected datasource, and updates the registry once.
+For coordinated releases, use the manual `release-datasources-batch.yml` workflow instead of pushing many tags. It validates the selected datasource set, restores/builds once, publishes each selected datasource, and updates the registry once. Solution tests are supplied by the branch `Build` workflow.
 
 ### 6.2 Excluded Assemblies
 

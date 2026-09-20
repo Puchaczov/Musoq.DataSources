@@ -17,7 +17,7 @@ on:
           - 'true'
           - 'false'
       dry_run:
-        description: 'Dry run: validate, build, test, pack, and smoke-test without publishing'
+        description: 'Dry run: validate, build, pack, and smoke-test without publishing'
         required: true
         default: 'true'
         type: choice
@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   validate-pack:
-    name: Validate, test, and pack batch
+    name: Validate, build, and pack batch
     runs-on: windows-latest
     timeout-minutes: 90
     permissions:
@@ -143,9 +143,6 @@ jobs:
 
       - name: Build
         run: dotnet build Musoq.DataSources.sln --configuration Release --no-restore --nologo
-
-      - name: Test
-        run: dotnet test Musoq.DataSources.sln --configuration Release --no-build --nologo --logger "console;verbosity=minimal"
 
       - name: Pack and smoke test release artifacts
         shell: pwsh

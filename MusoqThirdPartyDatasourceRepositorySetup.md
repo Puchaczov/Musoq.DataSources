@@ -169,7 +169,7 @@ git tag 2.0.0-alpha.1-Musoq.DataSources.Inventory
 git push origin 1.2.3-alpha.1-Musoq.DataSources.Weather 2.0.0-alpha.1-Musoq.DataSources.Inventory
 ```
 
-Pushing multiple tags starts one workflow run per tag. For larger coordinated releases, use the manual `release-datasources-batch.yml` workflow instead. It accepts `All` or a comma/newline/space separated list of datasource slugs, package IDs, suffixes, or exact release tags. The batch workflow restores, builds, and tests once, then packs and publishes each selected datasource, and updates `plugin-registry.json` once at the end.
+Pushing multiple tags starts one workflow run per tag. For larger coordinated releases, use the manual `release-datasources-batch.yml` workflow instead. It accepts `All` or a comma/newline/space separated list of datasource slugs, package IDs, suffixes, or exact release tags. The batch workflow restores and builds once, then packs and publishes each selected datasource, and updates `plugin-registry.json` once at the end. Solution tests are supplied by the branch `Build` workflow.
 
 Batch workflow examples:
 
