@@ -17,7 +17,6 @@ public class RepositoryEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>Maps row indexes to property accessors used by the Musoq runtime.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<RepositoryEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a repository row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -52,13 +51,6 @@ public class RepositoryEntity
             { nameof(Stashes), 8 }, { nameof(Self), 9 }
         };
 
-        IndexToObjectAccessMap = new Dictionary<int, Func<RepositoryEntity, object?>>
-        {
-            { 0, entity => entity.Path }, { 1, entity => entity.WorkingDirectory }, { 2, entity => entity.Branches },
-            { 3, entity => entity.Tags }, { 4, entity => entity.Commits }, { 5, entity => entity.Head },
-            { 6, entity => entity.Configuration }, { 7, entity => entity.Information }, { 8, entity => entity.Stashes },
-            { 9, entity => entity.Self }
-        };
     }
 
     /// <summary>Copies the repository identity and information; it does not retain the native handle.</summary>

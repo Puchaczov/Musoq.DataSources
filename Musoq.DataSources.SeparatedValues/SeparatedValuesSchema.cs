@@ -35,9 +35,9 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
-    ///         <virtual-param>Whether the first logical record is a header</virtual-param>
-    ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
+    ///         <virtual-param name="hasHeader">Whether the first logical record is a header</virtual-param>
+    ///         <virtual-param name="skipLines">Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>separatedvalues.comma(string path, bool hasHeader, int skipLines)</from>
@@ -47,9 +47,9 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
-    ///         <virtual-param>Whether the first logical record is a header</virtual-param>
-    ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
+    ///         <virtual-param name="hasHeader">Whether the first logical record is a header</virtual-param>
+    ///         <virtual-param name="skipLines">Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>separatedvalues.tab(string path, bool hasHeader, int skipLines)</from>
@@ -59,13 +59,26 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
-    ///         <virtual-param>Whether the first logical record is a header</virtual-param>
-    ///         <virtual-param>Number of physical preamble lines to skip</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
+    ///         <virtual-param name="hasHeader">Whether the first logical record is a header</virtual-param>
+    ///         <virtual-param name="skipLines">Number of physical preamble lines to skip</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>separatedvalues.semicolon(string path, bool hasHeader, int skipLines)</from>
     ///                 <description>Resolves a bounded semicolon-separated schema and streams requested columns</description>
+    ///                 <columns isDynamic="true"></columns>
+    ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to a strict UTF-8 separated-values file; UTF-8 BOM is allowed</virtual-param>
+    ///         <virtual-param name="delimiter">Explicit single ASCII delimiter</virtual-param>
+    ///         <virtual-param name="hasHeader">Whether the first logical record is a header</virtual-param>
+    ///         <virtual-param name="skipLines">Number of physical preamble lines to skip</virtual-param>
+    ///         <examples>
+    ///             <example>
+    ///                 <from>separatedvalues.delimited(string path, string delimiter, bool hasHeader, int skipLines)</from>
+    ///                 <description>Reads a separated-values file using the explicitly supplied ASCII delimiter</description>
     ///                 <columns isDynamic="true"></columns>
     ///             </example>
     ///         </examples>
@@ -113,10 +126,10 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object?[] parameters)
+        TArguments parameters)
     {
         ArgumentNullException.ThrowIfNull(executionContext);
 
@@ -126,18 +139,19 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
                 executionContext.Plan.Identity,
                 name,
                 typeof(T)),
-            _ => base.GetRowSource<T>(name, executionContext, parameters)
+            _ => base.GetRowSource<T, TArguments>(name, executionContext, parameters)
         };
     }
 
     /// <summary>
     ///     Gets a row source that materializes directly into the current query's private row carrier.
     /// </summary>
-    public RowSource<TRow> GetQueryScopedRowSource<TRow, TMaterializer>(
+    public RowSource<TRow> GetQueryScopedRowSource<TRow, TMaterializer, TArguments>(
         string name,
         QueryScopedRowSourceRequest request,
-        params object?[] parameters)
+        TArguments parameters)
         where TMaterializer : struct, IQueryRowMaterializer<TRow>
+        where TArguments : struct, ISourceArguments
     {
         ArgumentNullException.ThrowIfNull(request);
         var identity = request.ExecutionContext.Plan.Identity;
@@ -203,7 +217,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         {
             Identity = context.Identity,
             Columns = table.Columns,
-            RowType = typeof(object[]),
+            RowType = typeof(QueryScopedRowContract),
             Diagnostics = contract.Diagnostics,
             ContractDiagnostics = [],
             TransferCapabilities = SourceTransferCapabilities.QueryScopedRows |
@@ -485,6 +499,25 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
             $"(context '{identity.SourceContextId}', alias '{identity.Alias}') cannot create legacy row type " +
             $"'{requestedRowType}': the core planner selected unsupported legacy row transfer; " +
             "SeparatedValues requires query-scoped row transfer.");
+    }
+
+    private static SourceParameters ParseParameters<TArguments>(string name, TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
+        var delimited = string.Equals(name, DelimitedTable, StringComparison.OrdinalIgnoreCase);
+        var expectedCount = delimited ? 4 : 3;
+        if (parameters.Count != expectedCount)
+            throw new ArgumentException("Separated-values source arguments do not match the declared constructor.", nameof(parameters));
+        var path = parameters.GetValue<string>(0);
+        var separator = delimited ? parameters.GetValue<string>(1) : GetSeparator(name);
+        var offset = delimited ? 1 : 0;
+        var hasHeader = parameters.GetValue<bool>(1 + offset);
+        var skipLines = parameters.GetValue<int>(2 + offset);
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentException.ThrowIfNullOrWhiteSpace(separator);
+        _ = SeparatedValuesFormat.GetSeparatorByte(separator);
+        ArgumentOutOfRangeException.ThrowIfNegative(skipLines);
+        return new SourceParameters(path, separator, hasHeader, skipLines);
     }
 
     private static SourceParameters ParseParameters(string name, object?[] parameters)

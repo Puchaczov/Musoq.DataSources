@@ -42,20 +42,20 @@ public class CANBusSchemaDescribeTests
 
         Assert.AreEqual(5, table.Count, "Should have 5 rows (messages, signals, and 3 separatedvalues overloads)");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
 
         Assert.AreEqual(1, methodNames.Count(m => m == "messages"), "Should contain 'messages' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "signals"), "Should contain 'signals' method once");
         Assert.AreEqual(3, methodNames.Count(m => m == "separatedvalues"),
             "Should contain 'separatedvalues' method 3 times (3 overloads)");
 
-        var messagesRow = table.First(row => (string)row[0] == "messages");
-        Assert.AreEqual("dbc: System.String", (string)messagesRow[1]);
-        Assert.IsNull(messagesRow[2]);
+        var messagesRow = table.First(row => (string)row.ReadValue(0) == "messages");
+        Assert.AreEqual("dbc: System.String", (string)messagesRow.ReadValue(1));
+        Assert.IsNull(messagesRow.ReadValue(2));
 
-        var signalsRow = table.First(row => (string)row[0] == "signals");
-        Assert.AreEqual("dbc: System.String", (string)signalsRow[1]);
-        Assert.IsNull(signalsRow[2]);
+        var signalsRow = table.First(row => (string)row.ReadValue(0) == "signals");
+        Assert.AreEqual("dbc: System.String", (string)signalsRow.ReadValue(1));
+        Assert.IsNull(signalsRow.ReadValue(2));
     }
 
     [TestMethod]
@@ -73,8 +73,8 @@ public class CANBusSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("messages", (string)row[0]);
-        Assert.AreEqual("dbc: System.String", (string)row[1]);
+        Assert.AreEqual("messages", (string)row.ReadValue(0));
+        Assert.AreEqual("dbc: System.String", (string)row.ReadValue(1));
     }
 
     [TestMethod]
@@ -92,8 +92,8 @@ public class CANBusSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("signals", (string)row[0]);
-        Assert.AreEqual("dbc: System.String", (string)row[1]);
+        Assert.AreEqual("signals", (string)row.ReadValue(0));
+        Assert.AreEqual("dbc: System.String", (string)row.ReadValue(1));
     }
 
     [TestMethod]
@@ -107,30 +107,30 @@ public class CANBusSchemaDescribeTests
         Assert.AreEqual(5, table.Columns.Count(), "Should have 5 columns (Name, Param 0-3)");
         Assert.AreEqual(3, table.Count, "Should have 3 rows for 3 overloads");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(methodNames.All(name => name == "separatedvalues"),
             "All rows should be for separatedvalues method");
 
         var overload1 = table.ElementAt(0);
-        Assert.AreEqual("separatedvalues", (string)overload1[0]);
-        Assert.AreEqual("csvData: System.String", (string)overload1[1]);
-        Assert.AreEqual("dbcData: System.String", (string)overload1[2]);
-        Assert.IsNull(overload1[3]);
-        Assert.IsNull(overload1[4]);
+        Assert.AreEqual("separatedvalues", (string)overload1.ReadValue(0));
+        Assert.AreEqual("csvData: System.String", (string)overload1.ReadValue(1));
+        Assert.AreEqual("dbcData: System.String", (string)overload1.ReadValue(2));
+        Assert.IsNull(overload1.ReadValue(3));
+        Assert.IsNull(overload1.ReadValue(4));
 
         var overload2 = table.ElementAt(1);
-        Assert.AreEqual("separatedvalues", (string)overload2[0]);
-        Assert.AreEqual("csvData: System.String", (string)overload2[1]);
-        Assert.AreEqual("dbcData: System.String", (string)overload2[2]);
-        Assert.AreEqual("idOfType: System.String", (string)overload2[3]);
-        Assert.IsNull(overload2[4]);
+        Assert.AreEqual("separatedvalues", (string)overload2.ReadValue(0));
+        Assert.AreEqual("csvData: System.String", (string)overload2.ReadValue(1));
+        Assert.AreEqual("dbcData: System.String", (string)overload2.ReadValue(2));
+        Assert.AreEqual("idOfType: System.String", (string)overload2.ReadValue(3));
+        Assert.IsNull(overload2.ReadValue(4));
 
         var overload3 = table.ElementAt(2);
-        Assert.AreEqual("separatedvalues", (string)overload3[0]);
-        Assert.AreEqual("csvData: System.String", (string)overload3[1]);
-        Assert.AreEqual("dbcData: System.String", (string)overload3[2]);
-        Assert.AreEqual("idOfType: System.String", (string)overload3[3]);
-        Assert.AreEqual("endianness: System.String", (string)overload3[4]);
+        Assert.AreEqual("separatedvalues", (string)overload3.ReadValue(0));
+        Assert.AreEqual("csvData: System.String", (string)overload3.ReadValue(1));
+        Assert.AreEqual("dbcData: System.String", (string)overload3.ReadValue(2));
+        Assert.AreEqual("idOfType: System.String", (string)overload3.ReadValue(3));
+        Assert.AreEqual("endianness: System.String", (string)overload3.ReadValue(4));
     }
 
     [TestMethod]
@@ -144,7 +144,7 @@ public class CANBusSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0, "Should have rows describing the table columns");
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(MessageEntity.Id),
@@ -173,7 +173,7 @@ public class CANBusSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0, "Should have rows describing the table columns");
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(SignalEntity.Id),
@@ -253,10 +253,10 @@ public class CANBusSchemaDescribeTests
             "Method signature vs table schema should have different row counts");
 
         Assert.AreEqual(1, tableNoArgs.Count);
-        Assert.AreEqual("messages", (string)tableNoArgs.First()[0]);
+        Assert.AreEqual("messages", (string)tableNoArgs.First().ReadValue(0));
 
         Assert.IsTrue(tableWithArgs.Count > 1);
-        var columnNames = tableWithArgs.Select(row => (string)row[0]).ToList();
+        var columnNames = tableWithArgs.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(columnNames.Contains(nameof(MessageEntity.Id)));
         Assert.IsTrue(columnNames.Contains(nameof(MessageEntity.Name)));
     }

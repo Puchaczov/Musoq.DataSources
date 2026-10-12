@@ -313,6 +313,39 @@ function Get-DatasourceSnapshotAdditionalInputs {
     return @($paths)
 }
 
+function Copy-DatasourceVerifiedLicenseSeeds {
+    param(
+        [Parameter(Mandatory)] [string] $RepositoryRoot,
+        [Parameter(Mandatory)] [string] $ExistingSnapshot,
+        [Parameter(Mandatory)] [string] $Destination,
+        [Parameter(Mandatory)] [object[]] $PackageGraph
+    )
+    $root = [IO.Path]::GetFullPath($RepositoryRoot)
+    $existing = [IO.Path]::GetFullPath($ExistingSnapshot)
+    $destinationRoot = [IO.Path]::GetFullPath($Destination)
+    Assert-DatasourcePathUnderRoot -Root $root -Path $existing -Description 'Existing license snapshot'
+    Assert-DatasourcePathUnderRoot -Root $root -Path $destinationRoot -Description 'License seed destination'
+    $manifestPath = Join-Path $existing 'manifest.json'
+    if (!(Test-Path -LiteralPath $manifestPath)) { return }
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -Depth 100
+    foreach ($package in $PackageGraph) {
+        $prior = @($manifest.packageGraph | Where-Object { $_.id -eq $package.id -and $_.version -eq $package.version })
+        if ($prior.Count -ne 1) { continue }
+        $relative = "third-party-notices/$($package.id)/license.txt"
+        $record = @($manifest.files | Where-Object path -EQ $relative)
+        if ($record.Count -ne 1) { continue }
+        $source = [IO.Path]::GetFullPath((Join-Path $existing $relative))
+        $target = [IO.Path]::GetFullPath((Join-Path $destinationRoot "$($package.id).txt"))
+        Assert-DatasourcePathUnderRoot -Root $existing -Path $source -Description 'Version-matched license notice'
+        Assert-DatasourcePathUnderRoot -Root $destinationRoot -Path $target -Description 'Version-matched license seed'
+        if (!(Test-Path -LiteralPath $source)) { throw "Version-matched notice is missing: $($package.id)" }
+        if ((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant() -cne $record[0].sha256) {
+            throw "Existing notice hash differs: $($package.id)"
+        }
+        Copy-Item -LiteralPath $source -Destination $target -Force
+    }
+}
+
 Export-ModuleMember -Function @(
     'Assert-DatasourcePathUnderRoot',
     'Test-DatasourcePathUnderRoot',
@@ -323,5 +356,6 @@ Export-ModuleMember -Function @(
     'Get-DatasourceDependencyInputManifest',
     'Get-DatasourcePackageGraph',
     'Get-DatasourceSnapshotFileManifest',
-    'Get-DatasourceSnapshotAdditionalInputs'
+    'Get-DatasourceSnapshotAdditionalInputs',
+    'Copy-DatasourceVerifiedLicenseSeeds'
 )

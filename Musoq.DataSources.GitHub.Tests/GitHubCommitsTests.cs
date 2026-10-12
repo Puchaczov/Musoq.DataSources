@@ -41,11 +41,11 @@ public class GitHubCommitsTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count);
-        Assert.AreEqual("abc123def456", table[0][0]);
-        Assert.AreEqual("abc123d", table[0][1]);
-        Assert.AreEqual("Initial commit", table[0][2]);
-        Assert.AreEqual("Test User", table[0][3]);
-        Assert.AreEqual("test@test.com", table[0][4]);
+        Assert.AreEqual("abc123def456", table[0].ReadValue(0));
+        Assert.AreEqual("abc123d", table[0].ReadValue(1));
+        Assert.AreEqual("Initial commit", table[0].ReadValue(2));
+        Assert.AreEqual("Test User", table[0].ReadValue(3));
+        Assert.AreEqual("test@test.com", table[0].ReadValue(4));
 
         api.Verify(
             f => f.GetCommitsAsync("testowner", "testrepo", It.IsAny<CommitRequest>(), It.IsAny<int?>(),
@@ -72,7 +72,7 @@ public class GitHubCommitsTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("abc123def456", table[0][0]);
+        Assert.AreEqual("abc123def456", table[0].ReadValue(0));
 
 
         api.Verify(f => f.GetCommitsAsync(
@@ -133,10 +133,10 @@ public class GitHubCommitsTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count);
-        Assert.AreEqual("feat001def456", (string)table[0][0]);
-        Assert.AreEqual("Add feature part 1", (string)table[0][1]);
-        Assert.AreEqual("feat002abc789", (string)table[1][0]);
-        Assert.AreEqual("Add feature part 2", (string)table[1][1]);
+        Assert.AreEqual("feat001def456", (string)table[0].ReadValue(0));
+        Assert.AreEqual("Add feature part 1", (string)table[0].ReadValue(1));
+        Assert.AreEqual("feat002abc789", (string)table[1].ReadValue(0));
+        Assert.AreEqual("Add feature part 2", (string)table[1].ReadValue(1));
 
         api.Verify(f => f.GetBranchSpecificCommitsAsync("testowner", "testrepo", "main", "feature/my-feature"),
             Times.Once);
@@ -185,7 +185,7 @@ public class GitHubCommitsTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("user1", table[0][1]);
+        Assert.AreEqual("user1", table[0].ReadValue(1));
 
         api.Verify(
             f => f.GetCommitsAsync(

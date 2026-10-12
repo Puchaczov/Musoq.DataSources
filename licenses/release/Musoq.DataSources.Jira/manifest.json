@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Jira",
   "slug": "jira",
-  "version": "2.0.4-alpha.1",
+  "version": "2.0.5-alpha.1",
   "projectPath": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
   "entryProject": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
   "ownPackageId": "Musoq.DataSources.Jira",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "bec58cd23dbe1c53ae53e34f89fbaaaa2be41c2c9b5fa17c869c89dbb9a43c63"
+      "sha256": "397fdac0f43fdd244a5ee95273faf064a5f5c1a099261a9f3548fd6f0b175826"
     },
     {
       "path": "global.json",
@@ -53,19 +53,23 @@
     },
     {
       "path": "LinksManual.json",
-      "sha256": "9b88b408e00b8e4ad7f69c59a9390af41c72a6d169d1fc0d8ce22a3acc68875b"
+      "sha256": "77ccb72c11ffc8a193d56c82270089becf27791267ba9f342bcbe33be04ca41f"
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "14d1674e524500401eb296585559318b73e8d3cee08002d9806888c975d21b8e"
+      "sha256": "ae33a406d42c5ca325de1a24d951151f9c09dab169411a0940c5594db62f648d"
     },
     {
       "path": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
-      "sha256": "952959fc1111eda35f3dc2c78c1e2ec9c3b425e41214c24a0494d1dad1d4d820"
+      "sha256": "95b906db6719e8204a1a4e0ce131f7e0b2af730e6db42b2e2ec1233856fe52c2"
+    },
+    {
+      "path": "NuGet.config",
+      "sha256": "806d7891959d57673a3d4b5e99e5390bf0dad91cc6f618d9229b6cc3ceafe702"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "86077796bc391a0bf32bcdf4f763ec675c7b2c09b828a6ddfab66d0e52108769"
+      "sha256": "ebe2a052bee52ac3addac86d2d0edfe513753c68d6a02381a576ebad566493d2"
     }
   ],
   "packageGraph": [
@@ -86,7 +90,7 @@
     },
     {
       "id": "Microsoft.Build.Tasks.Git",
-      "version": "8.0.0",
+      "version": "10.0.303",
       "direct": false
     },
     {
@@ -100,48 +104,43 @@
       "direct": false
     },
     {
-      "id": "Microsoft.NETCore.Platforms",
-      "version": "1.1.0",
-      "direct": false
-    },
-    {
       "id": "Microsoft.SourceLink.Common",
-      "version": "8.0.0",
+      "version": "10.0.303",
       "direct": false
     },
     {
       "id": "Microsoft.SourceLink.GitHub",
-      "version": "8.0.0",
+      "version": "10.0.303",
       "direct": true
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.11-alpha.1",
+      "version": "17.0.12-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.11-alpha.1",
+      "version": "17.0.12-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.11-alpha.1",
+      "version": "17.0.12-alpha.1",
       "direct": true
     },
     {
-      "id": "NETStandard.Library",
-      "version": "1.6.1",
-      "direct": false
-    },
-    {
       "id": "Newtonsoft.Json",
-      "version": "10.0.3",
-      "direct": false
+      "version": "13.0.4",
+      "direct": true
     },
     {
       "id": "RestSharp",
       "version": "106.12.0",
+      "direct": false
+    },
+    {
+      "id": "System.IO.Hashing",
+      "version": "10.0.11",
       "direct": false
     }
   ],
@@ -182,11 +181,6 @@
       "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
     },
     {
-      "path": "third-party-notices/Microsoft.NETCore.Platforms/license.txt",
-      "size": 2211,
-      "sha256": "90960371a70adfbf49586dc0d1faf895c1468d72b1904ad8288ff4e441a45f22"
-    },
-    {
       "path": "third-party-notices/Microsoft.SourceLink.Common/license.txt",
       "size": 1116,
       "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
@@ -212,24 +206,24 @@
       "sha256": "d51d4a617c5ba2207998dd6a09da4d9aee70a393682c7964ea3366fd11c776f1"
     },
     {
-      "path": "third-party-notices/NETStandard.Library/license.txt",
-      "size": 2211,
-      "sha256": "90960371a70adfbf49586dc0d1faf895c1468d72b1904ad8288ff4e441a45f22"
-    },
-    {
       "path": "third-party-notices/Newtonsoft.Json/license.txt",
       "size": 1084,
       "sha256": "d7f83bbea3264a8e23d7739e44d9db1a4994b357274df6f00876eb2e623827ad"
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1719,
-      "sha256": "2c8e1bf901ca1100924f8cca57ac0ece2d717234e2e83ba1a8f69b947b25a808"
+      "size": 1619,
+      "sha256": "f52f3a04e3e9e50503f61178d5c06515c66ef8b60db07cac73b4fe08fd3f997e"
     },
     {
       "path": "third-party-notices/RestSharp/license.txt",
       "size": 11358,
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "third-party-notices/System.IO.Hashing/license.txt",
+      "size": 1116,
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
     }
   ]
 }

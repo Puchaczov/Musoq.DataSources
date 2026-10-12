@@ -35,8 +35,8 @@ public class JiraProjectsTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count);
-        Assert.IsTrue(table.Any(row => (string)row[0] == "PROJ1" && (string)row[1] == "Project One"));
-        Assert.IsTrue(table.Any(row => (string)row[0] == "PROJ2" && (string)row[1] == "Project Two"));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "PROJ1" && (string)row.ReadValue(1) == "Project One"));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "PROJ2" && (string)row.ReadValue(1) == "Project Two"));
     }
 
     [TestMethod]
@@ -64,12 +64,12 @@ public class JiraProjectsTests
 
         Assert.AreEqual(1, table.Count);
         var row = table[0];
-        Assert.AreEqual("10000", row[0]);
-        Assert.AreEqual("TEST", row[1]);
-        Assert.AreEqual("Test Project", row[2]);
-        Assert.AreEqual("A test project description", row[3]);
-        Assert.AreEqual("projectlead", row[4]);
-        Assert.AreEqual("Development", row[5]);
+        Assert.AreEqual("10000", row.ReadValue(0));
+        Assert.AreEqual("TEST", row.ReadValue(1));
+        Assert.AreEqual("Test Project", row.ReadValue(2));
+        Assert.AreEqual("A test project description", row.ReadValue(3));
+        Assert.AreEqual("projectlead", row.ReadValue(4));
+        Assert.AreEqual("Development", row.ReadValue(5));
     }
 
     [TestMethod]
@@ -91,7 +91,7 @@ public class JiraProjectsTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("PROJ1", table[0][0]);
+        Assert.AreEqual("PROJ1", table[0].ReadValue(0));
     }
 
     [TestMethod]

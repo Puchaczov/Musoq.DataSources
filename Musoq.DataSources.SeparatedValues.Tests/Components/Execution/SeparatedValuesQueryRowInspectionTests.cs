@@ -1,7 +1,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -10,7 +9,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
-using Musoq.Evaluator.Exceptions;
 using Musoq.Schema;
 using Musoq.Schema.Optimization;
 using Musoq.DataSources.SeparatedValues.Tests.Infrastructure;
@@ -35,7 +33,7 @@ public sealed class SeparatedValuesQueryRowInspectionTests
                 $"select d.Name, d.Age from separatedvalues.comma('{QueryPath(path)}', true, 0) d " +
                 "where d.Age >= 30 order by d.Age, d.Name skip 0 take 2").GeneratedCSharpCode;
 
-            StringAssert.Contains(code, "GetQueryScopedRowSource<");
+            StringAssert.Contains(code, "QuerySourceInvocation<");
             StringAssert.Contains(code, "IQueryRowMaterializer<");
             StringAssert.Contains(code, "Read<long?>(0)");
             StringAssert.Contains(code, "Read<string>(1)");
@@ -44,43 +42,33 @@ public sealed class SeparatedValuesQueryRowInspectionTests
     }
 
     [TestMethod]
-    public void CompileForInspection_WhenCorePlannerFallsBack_EmitsGuardedLegacyCall()
+    public void CompileForInspection_WhenNativeTransferIsUnavailable_RejectsErasedRows()
     {
         WithCsv("Name,Age\nAda,36\n", path =>
-        {
-            var code = Inspect(
+            AssertNativeTransferDiagnostic(() => Inspect(
                 $"select d.Name, d.Age from separatedvalues.comma('{QueryPath(path)}', true, 0) d",
-                new ForcedLegacySchemaProvider()).GeneratedCSharpCode;
-
-            Assert.IsFalse(code.Contains("GetQueryScopedRowSource<", StringComparison.Ordinal));
-            StringAssert.Contains(code, "GetRowSource<object");
-        });
+                new ForcedLegacySchemaProvider())));
     }
 
     [TestMethod]
-    public void CompiledQuery_WhenCorePlannerFallsBack_ThrowsLegacyGuardBeforeFileAccess()
+    public void CompiledQuery_WhenNativeTransferIsUnavailable_RejectsBeforeExecution()
     {
         WithCsv("Name,Age\nAda,36\n", path =>
         {
-            var query = $"select d.Name from separatedvalues.comma('{QueryPath(path)}', true, 0) d";
-            using var compiled = InstanceCreatorHelpers.CompileForExecution(
-                query,
+            AssertNativeTransferDiagnostic(() => InstanceCreatorHelpers.CompileForExecution(
+                $"select d.Name from separatedvalues.comma('{QueryPath(path)}', true, 0) d",
                 $"SeparatedValuesForbiddenLegacy_{Guid.NewGuid():N}",
                 new ForcedLegacySchemaProvider(),
-                EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
-            File.Delete(path);
-
-            using var table = compiled.Run();
-            var exception = Assert.ThrowsExactly<QueryExecutionException>(() =>
-            {
-                _ = table.Count;
-            });
-            var messages = FlattenMessages(exception);
-
-            StringAssert.Contains(messages, "separatedvalues.comma");
-            StringAssert.Contains(messages, "System.Object[]");
-            StringAssert.Contains(messages, "core planner selected unsupported legacy row transfer");
+                EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables()));
         });
+    }
+
+    private static void AssertNativeTransferDiagnostic(Action compile)
+    {
+        var exception = Assert.Throws<Musoq.Converter.Exceptions.MusoqQueryException>(compile);
+        Assert.AreEqual(Musoq.Parser.Diagnostics.DiagnosticCode.MQ3071_SourceContractError, exception.PrimaryEnvelope.Code);
+        StringAssert.Contains(exception.Message, "native QueryScopedRows transfer");
+        StringAssert.Contains(exception.Message, "QueryScopedContractMissingTransfer");
     }
 
     [TestMethod]
@@ -94,7 +82,7 @@ public sealed class SeparatedValuesQueryRowInspectionTests
                 $"select Name, Amount from Rows('{QueryPath(path)}', true, 0)";
             var code = Inspect(query).GeneratedCSharpCode;
 
-            StringAssert.Contains(code, "GetQueryScopedRowSource<");
+            StringAssert.Contains(code, "QuerySourceInvocation<");
             StringAssert.Contains(code, "Read<string>(0)");
             StringAssert.Contains(code, "Read<int?>(1)");
         });
@@ -108,27 +96,20 @@ public sealed class SeparatedValuesQueryRowInspectionTests
             var query = $"select d.Name from separatedvalues.comma('{QueryPath(path)}', true, 0) d";
 
             var enabledFirst = Inspect(query).GeneratedCSharpCode;
-            var disabled = Inspect(query, new ForcedLegacySchemaProvider()).GeneratedCSharpCode;
+            AssertNativeTransferDiagnostic(() => Inspect(query, new ForcedLegacySchemaProvider()));
             var enabledAgain = Inspect(query).GeneratedCSharpCode;
 
-            StringAssert.Contains(enabledFirst, "GetQueryScopedRowSource<");
-            Assert.IsFalse(disabled.Contains("GetQueryScopedRowSource<", StringComparison.Ordinal));
-            StringAssert.Contains(disabled, "GetRowSource<object");
-            StringAssert.Contains(enabledAgain, "GetQueryScopedRowSource<");
+            StringAssert.Contains(enabledFirst, "QuerySourceInvocation<");
+            StringAssert.Contains(enabledAgain, "QuerySourceInvocation<");
         });
     }
 
     [TestMethod]
-    public void CompileForInspection_WhenDescriptorDoesNotAdvertiseUsableMetadata_FallsBackToDeclaredRows()
+    public void CompileForInspection_WhenDescriptorDoesNotAdvertiseUsableMetadata_RejectsErasedRows()
     {
-        WithCsv("Payload\nvalue\n", path =>
-        {
-            var query = $"select d.Payload from separatedvalues.comma('{QueryPath(path)}', true, 0) d";
-            var code = Inspect(query, new ForcedLegacySchemaProvider()).GeneratedCSharpCode;
-
-            Assert.IsFalse(code.Contains("GetQueryScopedRowSource<", StringComparison.Ordinal));
-            StringAssert.Contains(code, "GetRowSource<object");
-        });
+        WithCsv("Payload\nvalue\n", path => AssertNativeTransferDiagnostic(() => Inspect(
+            $"select d.Payload from separatedvalues.comma('{QueryPath(path)}', true, 0) d",
+            new ForcedLegacySchemaProvider())));
     }
 
     [TestMethod]
@@ -167,14 +148,6 @@ public sealed class SeparatedValuesQueryRowInspectionTests
         return Path.GetFullPath(path)
             .Replace('\\', '/')
             .Replace("'", "''", StringComparison.Ordinal);
-    }
-
-    private static string FlattenMessages(Exception exception)
-    {
-        var messages = new List<string>();
-        for (var current = exception; current is not null; current = current.InnerException)
-            messages.Add(current.Message);
-        return string.Join(Environment.NewLine, messages);
     }
 
     private static void WithCsv(string contents, Action<string> assertion)

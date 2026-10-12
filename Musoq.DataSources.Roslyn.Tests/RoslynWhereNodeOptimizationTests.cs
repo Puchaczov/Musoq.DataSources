@@ -46,8 +46,8 @@ public class RoslynWhereNodeOptimizationTests
 
         Assert.AreEqual(1, result.Count,
             "Exactly one project with AssemblyName = 'Solution1.ClassLibrary1' should be returned");
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][0]?.ToString());
-        Assert.AreEqual("C#", result[0][1]?.ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", result[0].ReadValue(0)?.ToString());
+        Assert.AreEqual("C#", result[0].ReadValue(1)?.ToString());
     }
 
     [TestMethod]
@@ -63,10 +63,10 @@ public class RoslynWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(2, result.Count, "Both projects in Solution1 are C# and should be returned");
-        Assert.IsTrue(result.All(r => r[1]?.ToString() == "C#"), "All returned projects should have Language = C#");
-        Assert.IsTrue(result.Any(r => r[0]?.ToString() == "Solution1.ClassLibrary1"),
+        Assert.IsTrue(result.All(r => r.ReadValue(1)?.ToString() == "C#"), "All returned projects should have Language = C#");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0)?.ToString() == "Solution1.ClassLibrary1"),
             "Solution1.ClassLibrary1 should be in results");
-        Assert.IsTrue(result.Any(r => r[0]?.ToString() == "Solution1.ClassLibrary1.Tests"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0)?.ToString() == "Solution1.ClassLibrary1.Tests"),
             "Solution1.ClassLibrary1.Tests should be in results");
     }
 
@@ -99,8 +99,8 @@ public class RoslynWhereNodeOptimizationTests
 
         Assert.AreEqual(1, result.Count,
             "Exactly one project named 'Solution1.ClassLibrary1.Tests' should be returned");
-        Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[0][0]?.ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[0][1]?.ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[0].ReadValue(0)?.ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Tests", result[0].ReadValue(1)?.ToString());
     }
 
     private CompiledQuery CompileQuery(string script)

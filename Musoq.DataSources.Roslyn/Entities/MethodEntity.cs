@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
+using Musoq.DataSources.Roslyn.Components;
 using Musoq.Plugins.Attributes;
 
 namespace Musoq.DataSources.Roslyn.Entities;
@@ -16,6 +19,37 @@ public class MethodEntity
 {
     private readonly MethodDeclarationSyntax _methodDeclaration;
     private readonly SemanticModel? _semanticModel;
+    private readonly Func<CancellationToken, Task<IEnumerable<ReferencedSymbol>?>>? _findReferencesAsync;
+    private readonly Lazy<InvocationAnalysis> _invocationAnalysis;
+
+    private sealed class ResolvedInvocation
+    {
+        public ResolvedInvocation(IMethodSymbol symbol, CalledMethodInfo info)
+        {
+            Symbol = symbol;
+            Info = info;
+        }
+
+        public IMethodSymbol Symbol { get; }
+
+        public CalledMethodInfo Info { get; }
+    }
+
+    private sealed class InvocationAnalysis
+    {
+        public InvocationAnalysis(bool isAvailable, IReadOnlyList<ResolvedInvocation> resolved, int unresolvedCount)
+        {
+            IsAvailable = isAvailable;
+            Resolved = resolved;
+            UnresolvedCount = unresolvedCount;
+        }
+
+        public bool IsAvailable { get; }
+
+        public IReadOnlyList<ResolvedInvocation> Resolved { get; }
+
+        public int UnresolvedCount { get; }
+    }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="MethodEntity" /> class.
@@ -23,11 +57,8 @@ public class MethodEntity
     /// <param name="methodSymbol">The method symbol to extract information from.</param>
     /// <param name="methodDeclaration">The method declaration syntax node.</param>
     public MethodEntity(IMethodSymbol methodSymbol, MethodDeclarationSyntax methodDeclaration)
+        : this(methodSymbol, methodDeclaration, null, null, null)
     {
-        Symbol = methodSymbol;
-        _methodDeclaration = methodDeclaration;
-        _semanticModel = null;
-        Solution = null;
     }
 
     /// <summary>
@@ -38,11 +69,8 @@ public class MethodEntity
     /// <param name="semanticModel">The semantic model for analyzing usage.</param>
     public MethodEntity(IMethodSymbol methodSymbol, MethodDeclarationSyntax methodDeclaration,
         SemanticModel semanticModel)
+        : this(methodSymbol, methodDeclaration, semanticModel, null, null)
     {
-        Symbol = methodSymbol;
-        _methodDeclaration = methodDeclaration;
-        _semanticModel = semanticModel;
-        Solution = null;
     }
 
     /// <summary>
@@ -54,11 +82,20 @@ public class MethodEntity
     /// <param name="solution">The solution for finding references.</param>
     public MethodEntity(IMethodSymbol methodSymbol, MethodDeclarationSyntax methodDeclaration,
         SemanticModel semanticModel, Solution solution)
+        : this(methodSymbol, methodDeclaration, semanticModel, solution, null)
+    {
+    }
+
+    internal MethodEntity(IMethodSymbol methodSymbol, MethodDeclarationSyntax methodDeclaration,
+        SemanticModel? semanticModel, Solution? solution,
+        Func<CancellationToken, Task<IEnumerable<ReferencedSymbol>?>>? findReferencesAsync)
     {
         Symbol = methodSymbol;
         _methodDeclaration = methodDeclaration;
         _semanticModel = semanticModel;
         Solution = solution;
+        _findReferencesAsync = findReferencesAsync;
+        _invocationAnalysis = new Lazy<InvocationAnalysis>(AnalyzeInvocations);
     }
 
     /// <summary>
@@ -121,6 +158,12 @@ public class MethodEntity
             return stripped.ToFullString();
         }
     }
+
+    /// <summary>
+    ///     Gets a versioned SHA-256 fingerprint of the method body syntax.
+    ///     Returns null for methods without a body, malformed syntax, or bodies containing directives.
+    /// </summary>
+    public string? BodyFingerprint => MethodBodyFingerprint.Create(_methodDeclaration);
 
     /// <summary>
     ///     Gets the lines of code metric for the class.
@@ -468,8 +511,11 @@ public class MethodEntity
             if (Solution == null)
                 return null;
 
+            var findReferencesAsync = _findReferencesAsync ??
+                (ct => SymbolFinder.FindReferencesAsync(Symbol, Solution!, ct)!);
+
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
-                ct => SymbolFinder.FindReferencesAsync(Symbol, Solution, ct)!,
+                findReferencesAsync,
                 RoslynAsyncHelper.DefaultReferenceTimeout,
                 null);
 
@@ -479,7 +525,7 @@ public class MethodEntity
 
     /// <summary>
     ///     Gets a value indicating whether the method is used (referenced) in the solution.
-    ///     Returns null if the solution context is not available.
+    ///     Returns null if the solution context or reference analysis is not available.
     /// </summary>
     public bool? IsUsed
     {
@@ -489,8 +535,39 @@ public class MethodEntity
                 return null;
 
             var refCount = ReferenceCount;
-            return refCount > 0;
+            return refCount.HasValue ? refCount.Value > 0 : null;
         }
+    }
+
+    private InvocationAnalysis AnalyzeInvocations()
+    {
+        if (_semanticModel == null)
+            return new InvocationAnalysis(false, Array.Empty<ResolvedInvocation>(), 0);
+
+        var resolved = new List<ResolvedInvocation>();
+        var unresolvedCount = 0;
+
+        foreach (var invocation in _methodDeclaration.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            var symbolInfo = _semanticModel.GetSymbolInfo(invocation);
+            if (symbolInfo.CandidateReason != CandidateReason.None ||
+                symbolInfo.Symbol is not IMethodSymbol calledMethod)
+            {
+                unresolvedCount++;
+                continue;
+            }
+
+            resolved.Add(new ResolvedInvocation(
+                calledMethod,
+                new CalledMethodInfo(
+                    calledMethod.Name,
+                    calledMethod.ContainingType?.Name ?? string.Empty,
+                    calledMethod.ContainingNamespace?.ToDisplayString() ?? string.Empty,
+                    calledMethod.IsStatic,
+                    calledMethod.IsExtensionMethod)));
+        }
+
+        return new InvocationAnalysis(true, resolved, unresolvedCount);
     }
 
     /// <summary>
@@ -502,38 +579,38 @@ public class MethodEntity
     {
         get
         {
-            if (_semanticModel == null)
+            var analysis = _invocationAnalysis.Value;
+            if (!analysis.IsAvailable)
                 return Enumerable.Empty<CalledMethodInfo>();
 
-            var invocations = _methodDeclaration.DescendantNodes()
-                .OfType<InvocationExpressionSyntax>();
-
-            var callees = new List<CalledMethodInfo>();
-
-            foreach (var invocation in invocations)
-            {
-                var symbolInfo = _semanticModel.GetSymbolInfo(invocation);
-                var calledMethod = symbolInfo.Symbol as IMethodSymbol ??
-                                   symbolInfo.CandidateSymbols.OfType<IMethodSymbol>().FirstOrDefault();
-
-                if (calledMethod != null)
-                    callees.Add(new CalledMethodInfo(
-                        calledMethod.Name,
-                        calledMethod.ContainingType?.Name ?? string.Empty,
-                        calledMethod.ContainingNamespace?.ToDisplayString() ?? string.Empty,
-                        calledMethod.IsStatic,
-                        calledMethod.IsExtensionMethod
-                    ));
-            }
-
-            return callees;
+            return analysis.Resolved.Select(invocation => invocation.Info);
         }
     }
 
     /// <summary>
     ///     Gets the number of methods called by this method.
     /// </summary>
-    public int CalleeCount => Callees.Count();
+    public int CalleeCount
+    {
+        get
+        {
+            var analysis = _invocationAnalysis.Value;
+            return analysis.IsAvailable ? analysis.Resolved.Count : 0;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the number of method invocations that do not have a unique resolved method symbol.
+    ///     Returns null if the semantic model is not available.
+    /// </summary>
+    public int? UnresolvedInvocationCount
+    {
+        get
+        {
+            var analysis = _invocationAnalysis.Value;
+            return analysis.IsAvailable ? analysis.UnresolvedCount : null;
+        }
+    }
 
     /// <summary>
     ///     Gets the methods that call this method.
@@ -588,29 +665,13 @@ public class MethodEntity
     {
         get
         {
-            if (_semanticModel == null)
-                return false;
-
             var thisMethodQualifiedName = $"{Symbol.ContainingType?.ToDisplayString()}.{Symbol.Name}";
-
-            var invocations = _methodDeclaration.DescendantNodes()
-                .OfType<InvocationExpressionSyntax>();
-
-            foreach (var invocation in invocations)
+            return _invocationAnalysis.Value.Resolved.Any(invocation =>
             {
-                var symbolInfo = _semanticModel.GetSymbolInfo(invocation);
-                var calledMethod = symbolInfo.Symbol as IMethodSymbol ??
-                                   symbolInfo.CandidateSymbols.OfType<IMethodSymbol>().FirstOrDefault();
-
-                if (calledMethod != null)
-                {
-                    var calledMethodQualifiedName =
-                        $"{calledMethod.ContainingType?.ToDisplayString()}.{calledMethod.Name}";
-                    if (calledMethodQualifiedName == thisMethodQualifiedName) return true;
-                }
-            }
-
-            return false;
+                var calledMethodQualifiedName =
+                    $"{invocation.Symbol.ContainingType?.ToDisplayString()}.{invocation.Symbol.Name}";
+                return calledMethodQualifiedName == thisMethodQualifiedName;
+            });
         }
     }
 

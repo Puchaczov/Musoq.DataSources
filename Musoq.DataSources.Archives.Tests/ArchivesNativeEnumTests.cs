@@ -44,7 +44,7 @@ public sealed class ArchivesNativeEnumTests
                 "text2.txt|0|None"
             },
             table.Select(row =>
-                    $"{row[0]}|{row[1]}|{row[2] ?? "<null>"}")
+                    $"{row.ReadValue(0)}|{row.ReadValue(1)}|{row.ReadValue(2) ?? "<null>"}")
                 .ToArray());
     }
 
@@ -70,7 +70,7 @@ public sealed class ArchivesNativeEnumTests
 
         CollectionAssert.AreEqual(
             new[] { "0|others/", "0|others/text3.txt", "0|text1.txt", "0|text2.txt" },
-            table.Select(row => $"{row[0]}|{row[1]}").ToArray());
+            table.Select(row => $"{row.ReadValue(0)}|{row.ReadValue(1)}").ToArray());
     }
 
     [TestMethod]
@@ -92,10 +92,10 @@ public sealed class ArchivesNativeEnumTests
                 ["None", "Deflate"]);
             PortableEnumAssertions.AssertNoClrEnumValues(table);
 
-            Assert.IsTrue(table.Any(row => (string)row[0] == "stored.txt" && (int)row[1] == 0 &&
-                                           (string)row[2] == "None"));
-            Assert.IsTrue(table.Any(row => (string)row[0] == "deflated.txt" && (int)row[1] == 4 &&
-                                           (string)row[2] == "Deflate"));
+            Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "stored.txt" && (int)row.ReadValue(1) == 0 &&
+                                           (string)row.ReadValue(2) == "None"));
+            Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "deflated.txt" && (int)row.ReadValue(1) == 4 &&
+                                           (string)row.ReadValue(2) == "Deflate"));
         });
     }
 
@@ -151,16 +151,16 @@ public sealed class ArchivesNativeEnumTests
 
             CollectionAssert.AreEqual(
                 new[] { "deflated.txt|4" },
-                deflated.Select(row => $"{row[0]}|{row[1]}").ToArray());
+                deflated.Select(row => $"{row.ReadValue(0)}|{row.ReadValue(1)}").ToArray());
             CollectionAssert.AreEqual(
                 new[] { "stored.txt|0" },
-                notDeflated.Select(row => $"{row[0]}|{row[1]}").ToArray());
+                notDeflated.Select(row => $"{row.ReadValue(0)}|{row.ReadValue(1)}").ToArray());
             CollectionAssert.AreEqual(
                 new[] { "deflated.txt|4", "stored.txt|0" },
-                all.Select(row => $"{row[0]}|{row[1]}").ToArray());
+                all.Select(row => $"{row.ReadValue(0)}|{row.ReadValue(1)}").ToArray());
             CollectionAssert.AreEqual(
                 new[] { "stored.txt|0" },
-                onlyStored.Select(row => $"{row[0]}|{row[1]}").ToArray());
+                onlyStored.Select(row => $"{row.ReadValue(0)}|{row.ReadValue(1)}").ToArray());
         });
     }
 

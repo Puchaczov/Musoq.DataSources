@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -110,22 +111,18 @@ public sealed class SearchPredicatePlanningTests
             [new SourcePredicateLiteral("other"), new SourcePredicateLiteral(null)],
             IsNegated: true);
 
-        Assert.IsTrue(SearchPredicateEvaluator.Matches(
+        Assert.IsTrue(TypedPredicateFixture.Matches(
             isNull,
-            row,
-            SearchPredicateValues.GetLineValue));
-        Assert.IsFalse(SearchPredicateEvaluator.Matches(
+            row));
+        Assert.IsFalse(TypedPredicateFixture.Matches(
             isNotNull,
-            row,
-            SearchPredicateValues.GetLineValue));
-        Assert.IsFalse(SearchPredicateEvaluator.Matches(
+            row));
+        Assert.IsFalse(TypedPredicateFixture.Matches(
             ordinaryNullComparison,
-            row,
-            SearchPredicateValues.GetLineValue));
-        Assert.IsFalse(SearchPredicateEvaluator.Matches(
+            row));
+        Assert.IsFalse(TypedPredicateFixture.Matches(
             notInWithNull,
-            row,
-            SearchPredicateValues.GetLineValue));
+            row));
     }
 
     [TestMethod]
@@ -140,14 +137,12 @@ public sealed class SearchPredicatePlanningTests
         var result = Plan("matches", predicate);
 
         Assert.AreSame(predicate, result.AcceptedPredicate);
-        Assert.IsTrue(SearchPredicateEvaluator.Matches(
+        Assert.IsTrue(TypedPredicateFixture.Matches(
             predicate,
-            row,
-            SearchPredicateValues.GetMatchValue));
-        Assert.IsFalse(SearchPredicateEvaluator.Matches(
+            row));
+        Assert.IsFalse(TypedPredicateFixture.Matches(
             predicate,
-            new SearchMatch("a.txt", 0, 2, 0, "TODO"),
-            SearchPredicateValues.GetMatchValue));
+            new SearchMatch("a.txt", 0, 2, 0, "TODO")));
     }
 
     [TestMethod]
@@ -166,17 +161,16 @@ public sealed class SearchPredicatePlanningTests
                     RuntimeV2TestContexts.CreateExecutionContext())
                 .Chunks
                 .SelectMany(static chunk => chunk)
-                .Where(row => SearchPredicateEvaluator.Matches(
+                .Where(row => TypedPredicateFixture.Matches(
                     matchPredicate,
-                    row,
-                    SearchPredicateValues.GetMatchValue))
+                    row))
                 .Select(static row => $"{row.Path}:{row.MatchIndex}")
                 .OrderBy(static value => value, StringComparer.Ordinal)
                 .ToArray();
             var acceptedMatches = new SearchMatchesSource(
                     SearchRequest.Create(root, "TODO"),
                     RuntimeV2TestContexts.CreateExecutionContext(
-                        executionPlan: ExecutionPlan(matchPredicate)))
+                        executionPlan: ExecutionPlan(matchPredicate, "matches")))
                 .Chunks
                 .SelectMany(static chunk => chunk)
                 .Select(static row => $"{row.Path}:{row.MatchIndex}")
@@ -192,17 +186,16 @@ public sealed class SearchPredicatePlanningTests
                     RuntimeV2TestContexts.CreateExecutionContext())
                 .Chunks
                 .SelectMany(static chunk => chunk)
-                .Where(row => SearchPredicateEvaluator.Matches(
+                .Where(row => TypedPredicateFixture.Matches(
                     countPredicate,
-                    row,
-                    SearchPredicateValues.GetCountValue))
+                    row))
                 .Select(static row => row.Path)
                 .OrderBy(static value => value, StringComparer.Ordinal)
                 .ToArray();
             var acceptedCounts = new SearchCountsSource(
                     SearchRequest.Create(root, "TODO"),
                     RuntimeV2TestContexts.CreateExecutionContext(
-                        executionPlan: ExecutionPlan(countPredicate)))
+                        executionPlan: ExecutionPlan(countPredicate, "counts")))
                 .Chunks
                 .SelectMany(static chunk => chunk)
                 .Select(static row => row.Path)
@@ -218,17 +211,16 @@ public sealed class SearchPredicatePlanningTests
                     RuntimeV2TestContexts.CreateExecutionContext())
                 .Chunks
                 .SelectMany(static chunk => chunk)
-                .Where(row => SearchPredicateEvaluator.Matches(
+                .Where(row => TypedPredicateFixture.Matches(
                     linePredicate,
-                    row,
-                    SearchPredicateValues.GetLineValue))
+                    row))
                 .Select(static row => $"{row.Path}:{row.LineNumber}")
                 .OrderBy(static value => value, StringComparer.Ordinal)
                 .ToArray();
             var acceptedLines = new SearchLinesSource(
                     SearchRequest.Create(root, "TODO"),
                     RuntimeV2TestContexts.CreateExecutionContext(
-                        executionPlan: ExecutionPlan(linePredicate)))
+                        executionPlan: ExecutionPlan(linePredicate, "lines")))
                 .Chunks
                 .SelectMany(static chunk => chunk)
                 .Select(static row => $"{row.Path}:{row.LineNumber}")
@@ -241,7 +233,7 @@ public sealed class SearchPredicatePlanningTests
             var acceptedFiles = new SearchFilesSource(
                     SearchRequest.Create(root, "TODO"),
                     RuntimeV2TestContexts.CreateExecutionContext(
-                        executionPlan: ExecutionPlan(filePredicate)))
+                        executionPlan: ExecutionPlan(filePredicate, "files")))
                 .Chunks
                 .SelectMany(static chunk => chunk)
                 .Select(static row => row.Path)
@@ -252,7 +244,7 @@ public sealed class SearchPredicatePlanningTests
             var acceptedPaths = new SearchPathsSource(
                     root,
                     RuntimeV2TestContexts.CreateExecutionContext(
-                        executionPlan: ExecutionPlan(pathPredicate)),
+                        executionPlan: ExecutionPlan(pathPredicate, "paths")),
                     ScopePolicy.Default,
                     new SearchScopeCounters())
                 .Chunks
@@ -289,7 +281,7 @@ public sealed class SearchPredicatePlanningTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("alpha.txt", result.Rows[0][0]);
+            Assert.AreEqual("alpha.txt", result.Rows[0].ReadValue(0));
         }
         finally
         {
@@ -310,12 +302,16 @@ public sealed class SearchPredicatePlanningTests
             });
     }
 
-    private static SourceExecutionPlan ExecutionPlan(SourcePredicateExpression predicate)
+    private static SourceExecutionPlan ExecutionPlan(SourcePredicateExpression predicate, string name)
     {
         return new SourceExecutionPlan
         {
             Identity = new SourceIdentity("search", "matches", "tests", "predicate"),
-            AcceptedPredicate = predicate
+            AcceptedPredicate = predicate,
+            Properties = new Dictionary<string, object?>
+            {
+                [Musoq.DataSources.Common.TypedPredicatePlan.PropertyName] = SearchSourcePlanner.BindPredicate(name, predicate)
+            }
         };
     }
 

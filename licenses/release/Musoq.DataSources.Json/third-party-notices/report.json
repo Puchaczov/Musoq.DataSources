@@ -11,7 +11,7 @@
   },
   {
     "PackageId": "Microsoft.Build.Tasks.Git",
-    "PackageVersion": "8.0.0",
+    "PackageVersion": "10.0.303",
     "License": "MIT"
   },
   {
@@ -26,32 +26,37 @@
   },
   {
     "PackageId": "Microsoft.SourceLink.Common",
-    "PackageVersion": "8.0.0",
+    "PackageVersion": "10.0.303",
     "License": "MIT"
   },
   {
     "PackageId": "Microsoft.SourceLink.GitHub",
-    "PackageVersion": "8.0.0",
+    "PackageVersion": "10.0.303",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Parser",
-    "PackageVersion": "17.0.11-alpha.1",
+    "PackageVersion": "17.0.12-alpha.1",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Plugins",
-    "PackageVersion": "17.0.11-alpha.1",
+    "PackageVersion": "17.0.12-alpha.1",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Schema",
-    "PackageVersion": "17.0.11-alpha.1",
+    "PackageVersion": "17.0.12-alpha.1",
+    "License": "MIT"
+  },
+  {
+    "PackageId": "System.IO.Hashing",
+    "PackageVersion": "10.0.11",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.DataSources.Json",
-    "PackageVersion": "10.0.4-alpha.1",
+    "PackageVersion": "10.0.5-alpha.1",
     "License": "MIT"
   }
 ]

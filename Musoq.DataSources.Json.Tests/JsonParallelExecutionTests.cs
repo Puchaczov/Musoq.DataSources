@@ -34,7 +34,7 @@ public class JsonParallelExecutionTests
             Assert.AreEqual(sequential.Length, parallel.Length);
             Assert.AreEqual(10_000, parallel.Length);
             for (var index = 0; index < parallel.Length; index++)
-                CollectionAssert.AreEqual(sequential[index], parallel[index]);
+                CollectionAssert.AreEqual(sequential[index].ReadValues(), parallel[index].ReadValues());
             Assert.AreEqual(5L, parallel[0][0]);
             Assert.AreEqual(19_999L, parallel[^1][0]);
         });
@@ -50,7 +50,7 @@ public class JsonParallelExecutionTests
             var capture = new DataSourceProgressCapture();
             var context = Context(plan, MaximumParallelism("4"), capture.Handler);
 
-            var rows = new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
+            var rows = new NativeJsonFixtureSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
 
             Assert.AreEqual(4_000, rows.Length);
             Assert.AreEqual(20_000L, capture.For("json", DataSourcePhase.RowsKnown).Single().TotalRows);
@@ -89,7 +89,7 @@ public class JsonParallelExecutionTests
                 [new SchemaColumn("Value", 0, typeof(long))],
                 MaximumParallelism("4"),
                 executionPlan: plan);
-            var source = new JsonSource(path, context);
+            var source = new NativeJsonFixtureSource(path, context);
 
             var exception = Assert.ThrowsExactly<FormatException>(() =>
                 source.Chunks.SelectMany(chunk => chunk).ToArray());
@@ -124,7 +124,7 @@ public class JsonParallelExecutionTests
                 MaximumParallelism("4"),
                 dataSourceProgressCallback: callback,
                 executionPlan: plan);
-            var source = new JsonSource(path, context);
+            var source = new NativeJsonFixtureSource(path, context);
 
             Assert.ThrowsExactly<OperationCanceledException>(() =>
                 source.Chunks.SelectMany(chunk => chunk).ToArray());
@@ -213,13 +213,13 @@ public class JsonParallelExecutionTests
         Assert.AreEqual(SourceRuntimeSettingPhase.Execution, requirement.Phases);
     }
 
-    private static object[][] ReadRows(
+    private static NativeQueryRowFixtures.FixtureRow[] ReadRows(
         string path,
         SourceExecutionPlan plan,
         IReadOnlyDictionary<string, string> settings)
     {
         var context = Context(plan, settings);
-        return new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
+        return new NativeJsonFixtureSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
     }
 
     private static SourceExecutionContext Context(

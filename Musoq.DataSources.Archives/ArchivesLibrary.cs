@@ -54,7 +54,7 @@ public class ArchivesLibrary : LibraryBase
     private static MemoryStream InternalGetStreamContent(EntryWrapper source)
     {
         using var fileStream = File.OpenRead(source.PathToArchive);
-        using var reader = ReaderFactory.Open(fileStream, new ReaderOptions
+        using var reader = ReaderFactory.OpenReader(fileStream, new ReaderOptions
         {
             LeaveStreamOpen = true
         });

@@ -44,7 +44,7 @@ public sealed class OsNativeEnumRelationalTests
             {
                 // A nullable outer-join projection deliberately drops the
                 // nominal descriptor while retaining the primitive carrier.
-                var outerColumn = table.Columns.Single(column => column.ColumnName.EndsWith(".State", StringComparison.Ordinal));
+                var outerColumn = table.Columns.Single(column => column.ColumnName == "State");
                 Assert.AreEqual(typeof(int), outerColumn.ColumnType, query);
                 Assert.AreEqual(typeof(int), outerColumn.SourceReadType, query);
             }
@@ -55,7 +55,7 @@ public sealed class OsNativeEnumRelationalTests
                 Assert.AreEqual(typeof(int), enumColumn.SourceReadType, query);
             }
             Assert.IsTrue(table.Count > 0, query);
-            Assert.IsTrue(table.SelectMany(static row => row.Values).All(static value => value is not Enum), query);
+            Assert.IsTrue(table.SelectMany(static row => row.ReadValues()).All(static value => value is not Enum), query);
         }
     }
 
@@ -68,7 +68,7 @@ public sealed class OsNativeEnumRelationalTests
 
         PortableEnumAssertions.AssertEnumColumn(
             table,
-            "s.ComparisonState",
+            "ComparisonState",
             typeof(int),
             typeof(int),
             typeof(State),
@@ -78,7 +78,7 @@ public sealed class OsNativeEnumRelationalTests
         PortableEnumAssertions.AssertNoClrEnumValues(table);
         Assert.IsTrue(table.All(row =>
         {
-            var value = (int)row[0];
+            var value = (int)row.ReadValue(0);
             return value == (int)State.Added || value == (int)State.Removed;
         }));
     }

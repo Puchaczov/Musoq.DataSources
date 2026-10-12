@@ -31,6 +31,7 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
     private readonly string _root;
     private readonly SearchBytePattern _pattern;
     private readonly SourceExecutionContext _executionContext;
+    private readonly Func<SearchByteMatch, bool>? _acceptedRow;
     private readonly ScopePolicy _scope;
     private readonly SearchResourceLimits _limits;
     private readonly SearchScopeCounters? _scopeCounters;
@@ -65,6 +66,7 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
         _root = RequireRoot(root);
         _pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
         _executionContext = executionContext ?? throw new ArgumentNullException(nameof(executionContext));
+        _acceptedRow = TypedPredicatePlan.Get<SearchByteMatch>(executionContext.Plan);
         _scope = scope ?? throw new ArgumentNullException(nameof(scope));
         _limits = limits ?? throw new ArgumentNullException(nameof(limits));
         _scopeCounters = scopeCounters;
@@ -120,12 +122,7 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                 : rootPath;
             var projection = SearchProjectionRequirements.From(_executionContext);
             var acceptedPredicate = _executionContext.Plan.AcceptedPredicate;
-            Func<SearchByteMatch, bool>? acceptedRow = acceptedPredicate is null
-                ? null
-                : row => SearchPredicateEvaluator.Matches(
-                    acceptedPredicate,
-                    row,
-                    SearchPredicateValues.GetByteValue);
+            Func<SearchByteMatch, bool>? acceptedRow = _acceptedRow;
             var acceptedWindow = SearchSliceWindow.Create(
                 _executionContext.Plan.AcceptedSkip,
                 _executionContext.Plan.AcceptedTake);

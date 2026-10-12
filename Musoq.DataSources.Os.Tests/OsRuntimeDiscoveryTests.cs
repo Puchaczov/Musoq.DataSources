@@ -31,7 +31,7 @@ public class OsRuntimeDiscoveryTests
 
         Assert.AreEqual(1, table.Columns.Count());
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(methodName, (string)table[0][0]);
+        Assert.AreEqual(methodName, (string)table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -41,8 +41,8 @@ public class OsRuntimeDiscoveryTests
 
         Assert.AreEqual(2, table.Columns.Count());
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("pathinfo", (string)table[0][0]);
-        Assert.AreEqual("path: System.String", (string)table[0][1]);
+        Assert.AreEqual("pathinfo", (string)table[0].ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)table[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -51,7 +51,7 @@ public class OsRuntimeDiscoveryTests
         var table = CreateAndRunVirtualMachine("select Name, DecimalSeparator, ShortDatePattern from os.cultures()").Run();
 
         Assert.IsTrue(table.Count > 0);
-        Assert.IsTrue(table.Any(row => (string)row[0] == CultureInfo.CurrentCulture.Name));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == CultureInfo.CurrentCulture.Name));
         Assert.IsTrue(table.Columns.Any(column => column.ColumnName == "DecimalSeparator"));
         Assert.IsTrue(table.Columns.Any(column => column.ColumnName == "ShortDatePattern"));
     }
@@ -62,9 +62,9 @@ public class OsRuntimeDiscoveryTests
         var table = CreateAndRunVirtualMachine("select CurrentCulture, CurrentUICulture, DecimalSeparator from os.currentculture()").Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(CultureInfo.CurrentCulture.Name, (string)table[0][0]);
-        Assert.AreEqual(CultureInfo.CurrentUICulture.Name, (string)table[0][1]);
-        Assert.IsFalse(string.IsNullOrEmpty((string)table[0][2]));
+        Assert.AreEqual(CultureInfo.CurrentCulture.Name, (string)table[0].ReadValue(0));
+        Assert.AreEqual(CultureInfo.CurrentUICulture.Name, (string)table[0].ReadValue(1));
+        Assert.IsFalse(string.IsNullOrEmpty((string)table[0].ReadValue(2)));
     }
 
     [TestMethod]
@@ -72,8 +72,8 @@ public class OsRuntimeDiscoveryTests
     {
         var table = CreateAndRunVirtualMachine("select WebName, CodePage from os.encodings()").Run();
 
-        Assert.IsTrue(table.Any(row => string.Equals((string)row[0], "utf-8", StringComparison.OrdinalIgnoreCase)));
-        Assert.IsTrue(table.Any(row => (int)row[1] == 1250), "Code page provider should expose windows-1250.");
+        Assert.IsTrue(table.Any(row => string.Equals((string)row.ReadValue(0), "utf-8", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(table.Any(row => (int)row.ReadValue(1) == 1250), "Code page provider should expose windows-1250.");
     }
 
     [TestMethod]
@@ -95,7 +95,7 @@ public class OsRuntimeDiscoveryTests
         Assert.IsFalse(table.Columns.Any(column => column.ColumnName == "UserName"));
         Assert.IsFalse(table.Columns.Any(column => column.ColumnName == "MachineName"));
         Assert.IsFalse(table.Columns.Any(column => column.ColumnName == "CommandLine"));
-        Assert.IsFalse(string.IsNullOrEmpty((string)table[0][0]));
+        Assert.IsFalse(string.IsNullOrEmpty((string)table[0].ReadValue(0)));
     }
 
     [TestMethod]
@@ -113,14 +113,14 @@ public class OsRuntimeDiscoveryTests
     {
         var table = CreateAndRunVirtualMachine("select s.Name, s.Path, s.Exists from os.specialfolders() s").Run();
 
-        Assert.IsTrue(table.Any(row => (string)row[0] == nameof(Environment.SpecialFolder.Desktop)));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == nameof(Environment.SpecialFolder.Desktop)));
     }
 
     [TestMethod]
     public void FileAttributes_ShouldExposeCommonFileAttributeValues()
     {
         var table = CreateAndRunVirtualMachine("select Name, Value from os.fileattributes()").Run();
-        var names = table.Select(row => (string)row[0]).ToArray();
+        var names = table.Select(row => (string)row.ReadValue(0)).ToArray();
 
         CollectionAssert.Contains(names, "Directory");
         CollectionAssert.Contains(names, "Hidden");
@@ -144,13 +144,13 @@ public class OsRuntimeDiscoveryTests
         var missing = CreateAndRunVirtualMachine("select p.Exists, p.IsFile, p.IsDirectory from os.pathinfo('./MissingPathForRuntimeDiscoveryTests') p").Run();
 
         Assert.AreEqual(1, existing.Count);
-        Assert.AreEqual(true, existing[0][0]);
-        Assert.AreEqual(true, existing[0][1]);
+        Assert.AreEqual(true, existing[0].ReadValue(0));
+        Assert.AreEqual(true, existing[0].ReadValue(1));
 
         Assert.AreEqual(1, missing.Count);
-        Assert.AreEqual(false, missing[0][0]);
-        Assert.AreEqual(false, missing[0][1]);
-        Assert.AreEqual(false, missing[0][2]);
+        Assert.AreEqual(false, missing[0].ReadValue(0));
+        Assert.AreEqual(false, missing[0].ReadValue(1));
+        Assert.AreEqual(false, missing[0].ReadValue(2));
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)

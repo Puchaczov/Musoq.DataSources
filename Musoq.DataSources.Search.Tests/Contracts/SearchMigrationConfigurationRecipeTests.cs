@@ -180,7 +180,7 @@ public sealed class SearchMigrationConfigurationRecipeTests
                 "group by deprecated.Path order by deprecated.Path")
             .Run();
 
-        return result.Rows.Select(static row => (string)row[0]).ToArray();
+        return result.Rows.Select(static row => (string)row.ReadValue(0)).ToArray();
     }
 
     private static MigrationFinding[] ReadFindings(string root, string patterns)
@@ -196,20 +196,20 @@ public sealed class SearchMigrationConfigurationRecipeTests
         return result.Rows
             .Select(row =>
             {
-                var path = NormalizePath((string)row[0]);
-                var category = (string)row[1];
-                var lineNumber = (long)row[3];
-                var utf16Column = (long)row[4];
+                var path = NormalizePath((string)row.ReadValue(0));
+                var category = (string)row.ReadValue(1);
+                var lineNumber = (long)row.ReadValue(3);
+                var utf16Column = (long)row.ReadValue(4);
                 var line = File.ReadLines(Path.Combine(root, path.Replace('/', Path.DirectorySeparatorChar)))
                     .ElementAt(checked((int)lineNumber - 1));
                 return new MigrationFinding(
                     path,
                     category,
-                    (long)row[2],
+                    (long)row.ReadValue(2),
                     lineNumber,
                     utf16Column,
                     EvidenceFor(category, line, checked((int)utf16Column)),
-                    (string?)row[5]);
+                    (string?)row.ReadValue(5));
             })
             .ToArray();
     }
@@ -220,7 +220,7 @@ public sealed class SearchMigrationConfigurationRecipeTests
         var result = Compile(
                 $"select p.Path from search.paths('{escapedRoot}') p order by p.Path")
             .Run();
-        return result.Rows.Select(static row => NormalizePath((string)row[0])).ToArray();
+        return result.Rows.Select(static row => NormalizePath((string)row.ReadValue(0))).ToArray();
     }
 
     private static string EvidenceFor(string category, string line, int utf16Column)

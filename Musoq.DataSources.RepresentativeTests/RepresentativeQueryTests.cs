@@ -64,7 +64,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should find CSV files");
-        Assert.IsTrue(table.All(row => (string)row.Values[1] == ".csv"), "All files should be CSV");
+        Assert.IsTrue(table.All(row => (string)row.ReadValues()[1] == ".csv"), "All files should be CSV");
     }
 
     /// <summary>
@@ -86,8 +86,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.IsNotNull(table[0][1], "Hash should not be null");
-        Assert.AreEqual(64, ((string)table[0][1]).Length, "SHA256 hash should be 64 characters");
+        Assert.IsNotNull(table[0].ReadValue(1), "Hash should not be null");
+        Assert.AreEqual(64, ((string)table[0].ReadValue(1)).Length, "SHA256 hash should be 64 characters");
     }
 
     /// <summary>
@@ -150,9 +150,9 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(8000m, table[0][0], "Total income should be 8000");
-        Assert.AreEqual(-472.50m, table[0][1], "Total expenses should be -472.50");
-        Assert.AreEqual(7527.50m, table[0][2], "Net balance should be 7527.50");
+        Assert.AreEqual(8000m, table[0].ReadValue(0), "Total income should be 8000");
+        Assert.AreEqual(-472.50m, table[0].ReadValue(1), "Total expenses should be -472.50");
+        Assert.AreEqual(7527.50m, table[0].ReadValue(2), "Net balance should be 7527.50");
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "Should have 2 salary payments");
-        Assert.IsTrue(table.All(row => (decimal)row.Values[1] > 0), "All amounts should be positive");
+        Assert.IsTrue(table.All(row => (decimal)row.ReadValues()[1] > 0), "All amounts should be positive");
     }
 
     /// <summary>
@@ -221,8 +221,8 @@ public class RepresentativeQueryTests
 
         Assert.AreEqual(3, table.Count, "Should have 3 departments");
 
-        var engineeringRow = table.First(r => (string)r[0] == "Engineering");
-        Assert.AreEqual(3L, engineeringRow[1], "Engineering should have 3 employees");
+        var engineeringRow = table.First(r => (string)r.ReadValue(0) == "Engineering");
+        Assert.AreEqual(3L, engineeringRow.ReadValue(1), "Engineering should have 3 employees");
     }
 
     /// <summary>
@@ -272,8 +272,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(31, table.Count, "January has 31 days");
-        Assert.AreEqual(1, table[0][0], "First day should be 1");
-        Assert.AreEqual(31, table[30][0], "Last day should be 31");
+        Assert.AreEqual(1, table[0].ReadValue(0), "First day should be 1");
+        Assert.AreEqual(31, table[30].ReadValue(0), "Last day should be 31");
     }
 
     /// <summary>
@@ -293,8 +293,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "First week of 2024 has 2 weekend days");
-        Assert.IsTrue(table.Any(r => (int)r[1] == 6), "Should include Saturday (6)");
-        Assert.IsTrue(table.Any(r => (int)r[1] == 0), "Should include Sunday (0)");
+        Assert.IsTrue(table.Any(r => (int)r.ReadValue(1) == 6), "Should include Saturday (6)");
+        Assert.IsTrue(table.Any(r => (int)r.ReadValue(1) == 0), "Should include Sunday (0)");
     }
 
     #endregion
@@ -318,7 +318,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(5, table.Count, "Should have 5 even numbers from 1-10");
-        Assert.IsTrue(table.All(r => (long)r[0] % 2 == 0), "All values should be even");
+        Assert.IsTrue(table.All(r => (long)r.ReadValue(0) % 2 == 0), "All values should be even");
     }
 
     /// <summary>
@@ -340,9 +340,9 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(4, table[0][0], "2+2 should equal 4");
-        Assert.AreEqual(50, table[0][1], "10*5 should equal 50");
-        Assert.IsTrue((decimal)table[0][2] > 2.33m && (decimal)table[0][2] < 2.34m,
+        Assert.AreEqual(4, table[0].ReadValue(0), "2+2 should equal 4");
+        Assert.AreEqual(50, table[0].ReadValue(1), "10*5 should equal 50");
+        Assert.IsTrue((decimal)table[0].ReadValue(2) > 2.33m && (decimal)table[0].ReadValue(2) < 2.34m,
             "7/3 should be approximately 2.333");
     }
 
@@ -387,7 +387,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(3, table.Count, "Should have 3 people");
-        Assert.IsTrue(table.Any(r => (string)r[0] == "Alice" && (long)r[1] == 28), "Should find Alice, age 28");
+        Assert.IsTrue(table.Any(r => (string)r.ReadValue(0) == "Alice" && (long)r.ReadValue(1) == 28), "Should find Alice, age 28");
     }
 
     /// <summary>
@@ -407,7 +407,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "Should find 2 people over 30");
-        Assert.IsTrue(table.All(r => (long)r[1] > 30), "All ages should be over 30");
+        Assert.IsTrue(table.All(r => (long)r.ReadValue(1) > 30), "All ages should be over 30");
     }
 
     /// <summary>
@@ -450,8 +450,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "Archive should contain 2 files");
-        Assert.IsTrue(table.Any(r => r[0].ToString()!.Contains("test1.txt")), "Should contain test1.txt");
-        Assert.IsTrue(table.Any(r => r[0].ToString()!.Contains("test2.txt")), "Should contain test2.txt");
+        Assert.IsTrue(table.Any(r => r.ReadValue(0).ToString()!.Contains("test1.txt")), "Should contain test1.txt");
+        Assert.IsTrue(table.Any(r => r.ReadValue(0).ToString()!.Contains("test2.txt")), "Should contain test2.txt");
     }
 
     /// <summary>
@@ -473,8 +473,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "Should have 2 files");
-        Assert.IsTrue(table.Any(r => r[1].ToString()!.Contains("Hello World")), "Should contain Hello World content");
-        Assert.IsTrue(table.Any(r => r[1].ToString()!.Contains("Second file content")),
+        Assert.IsTrue(table.Any(r => r.ReadValue(1).ToString()!.Contains("Hello World")), "Should contain Hello World content");
+        Assert.IsTrue(table.Any(r => r.ReadValue(1).ToString()!.Contains("Second file content")),
             "Should contain second file content");
     }
 
@@ -529,7 +529,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have departments with more than 1 employee");
-        Assert.IsTrue(table.All(r => (long)r[1] > 1), "All counts should be > 1");
+        Assert.IsTrue(table.All(r => (long)r.ReadValue(1) > 1), "All counts should be > 1");
     }
 
     /// <summary>
@@ -590,9 +590,9 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have at least one commit");
-        Assert.IsNotNull(table[0][0], "Sha should not be null");
-        Assert.IsNotNull(table[0][1], "MessageShort should not be null");
-        Assert.IsNotNull(table[0][2], "Author should not be null");
+        Assert.IsNotNull(table[0].ReadValue(0), "Sha should not be null");
+        Assert.IsNotNull(table[0].ReadValue(1), "MessageShort should not be null");
+        Assert.IsNotNull(table[0].ReadValue(2), "Author should not be null");
     }
 
     /// <summary>
@@ -615,7 +615,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have at least one branch");
-        var masterBranch = table.FirstOrDefault(r => ((string)r[0])?.Contains("master") == true);
+        var masterBranch = table.FirstOrDefault(r => ((string)r.ReadValue(0))?.Contains("master") == true);
         Assert.IsNotNull(masterBranch, "Should find master branch");
     }
 
@@ -639,7 +639,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have at least one tag");
-        Assert.IsNotNull(table[0][0], "FriendlyName should not be null");
+        Assert.IsNotNull(table[0].ReadValue(0), "FriendlyName should not be null");
     }
 
     /// <summary>
@@ -665,8 +665,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have at least one difference");
-        Assert.AreEqual("documentation/index.md", table[0][0], "Path should match");
-        Assert.AreEqual("Deleted", table[0][1], "ChangeKind should be Deleted");
+        Assert.AreEqual("documentation/index.md", table[0].ReadValue(0), "Path should match");
+        Assert.AreEqual("Deleted", table[0].ReadValue(1), "ChangeKind should be Deleted");
     }
 
     /// <summary>
@@ -689,7 +689,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should have file history");
-        Assert.IsNotNull(table[0][0], "CommitSha should not be null");
+        Assert.IsNotNull(table[0].ReadValue(0), "CommitSha should not be null");
     }
 
     /// <summary>
@@ -757,10 +757,10 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count >= 3, "Should find at least 3 types");
-        Assert.IsTrue(table.Any(r => r[0].ToString() == "Class1" && (bool)r[1]), "Should find Class1 as a class");
-        Assert.IsTrue(table.Any(r => r[0].ToString() == "Interface1" && (bool)r[3]),
+        Assert.IsTrue(table.Any(r => r.ReadValue(0).ToString() == "Class1" && (bool)r.ReadValue(1)), "Should find Class1 as a class");
+        Assert.IsTrue(table.Any(r => r.ReadValue(0).ToString() == "Interface1" && (bool)r.ReadValue(3)),
             "Should find Interface1 as an interface");
-        Assert.IsTrue(table.Any(r => r[0].ToString() == "Enum1" && (bool)r[2]), "Should find Enum1 as an enum");
+        Assert.IsTrue(table.Any(r => r.ReadValue(0).ToString() == "Enum1" && (bool)r.ReadValue(2)), "Should find Enum1 as an enum");
     }
 
     /// <summary>
@@ -787,9 +787,9 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count, "Should find exactly one Class1");
-        Assert.AreEqual("Class1", table[0][0].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1", table[0][1].ToString());
-        Assert.IsTrue((int)table[0][2] >= 1, "Class1 should have methods");
+        Assert.AreEqual("Class1", table[0].ReadValue(0).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", table[0].ReadValue(1).ToString());
+        Assert.IsTrue((int)table[0].ReadValue(2) >= 1, "Class1 should have methods");
     }
 
     /// <summary>
@@ -818,11 +818,11 @@ public class RepresentativeQueryTests
         Assert.IsTrue(table.Count > 0, "Should find methods in TestFeatures class");
 
 
-        var emptyMethod = table.FirstOrDefault(r => r[0].ToString() == "EmptyMethod");
+        var emptyMethod = table.FirstOrDefault(r => r.ReadValue(0).ToString() == "EmptyMethod");
         Assert.IsNotNull(emptyMethod, "Should find EmptyMethod");
-        Assert.AreEqual(true, emptyMethod[1], "EmptyMethod HasBody should be true");
-        Assert.AreEqual(true, emptyMethod[2], "EmptyMethod IsEmpty should be true");
-        Assert.AreEqual(0, emptyMethod[3], "EmptyMethod StatementsCount should be 0");
+        Assert.AreEqual(true, emptyMethod.ReadValue(1), "EmptyMethod HasBody should be true");
+        Assert.AreEqual(true, emptyMethod.ReadValue(2), "EmptyMethod IsEmpty should be true");
+        Assert.AreEqual(0, emptyMethod.ReadValue(3), "EmptyMethod StatementsCount should be 0");
     }
 
     /// <summary>
@@ -852,16 +852,16 @@ public class RepresentativeQueryTests
         Assert.IsTrue(table.Count > 0, "Should find properties in TestFeatures class");
 
 
-        var autoProperty = table.FirstOrDefault(r => r[0].ToString() == "AutoProperty");
+        var autoProperty = table.FirstOrDefault(r => r.ReadValue(0).ToString() == "AutoProperty");
         Assert.IsNotNull(autoProperty, "Should find AutoProperty");
-        Assert.AreEqual(true, autoProperty[1], "AutoProperty IsAutoProperty should be true");
-        Assert.AreEqual(true, autoProperty[2], "AutoProperty HasGetter should be true");
-        Assert.AreEqual(true, autoProperty[3], "AutoProperty HasSetter should be true");
+        Assert.AreEqual(true, autoProperty.ReadValue(1), "AutoProperty IsAutoProperty should be true");
+        Assert.AreEqual(true, autoProperty.ReadValue(2), "AutoProperty HasGetter should be true");
+        Assert.AreEqual(true, autoProperty.ReadValue(3), "AutoProperty HasSetter should be true");
 
 
-        var initProperty = table.FirstOrDefault(r => r[0].ToString() == "AutoPropertyWithInit");
+        var initProperty = table.FirstOrDefault(r => r.ReadValue(0).ToString() == "AutoPropertyWithInit");
         Assert.IsNotNull(initProperty, "Should find AutoPropertyWithInit");
-        Assert.AreEqual(true, initProperty[4], "AutoPropertyWithInit HasInitSetter should be true");
+        Assert.AreEqual(true, initProperty.ReadValue(4), "AutoPropertyWithInit HasInitSetter should be true");
     }
 
     /// <summary>
@@ -884,12 +884,12 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count > 0, "Should find methods");
-        Assert.IsTrue(table.All(r => r[1] != null), "CyclomaticComplexity should not be null");
+        Assert.IsTrue(table.All(r => r.ReadValue(1) != null), "CyclomaticComplexity should not be null");
 
 
-        var method1 = table.FirstOrDefault(r => r[0].ToString() == "CyclomaticComplexityMethod1");
+        var method1 = table.FirstOrDefault(r => r.ReadValue(0).ToString() == "CyclomaticComplexityMethod1");
         Assert.IsNotNull(method1, "Should find CyclomaticComplexityMethod1");
-        Assert.AreEqual(1, method1[1], "CyclomaticComplexityMethod1 should have complexity 1");
+        Assert.AreEqual(1, method1.ReadValue(1), "CyclomaticComplexityMethod1 should have complexity 1");
     }
 
     /// <summary>
@@ -914,8 +914,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count, "Should find Interface1");
-        Assert.AreEqual("Interface1", table[0][0].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Interface1", table[0][1].ToString());
+        Assert.AreEqual("Interface1", table[0].ReadValue(0).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Interface1", table[0].ReadValue(1).ToString());
     }
 
     /// <summary>
@@ -941,11 +941,11 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count, "Should find two Enum1 members");
-        Assert.AreEqual("Enum1", table[0][0].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Enum1", table[0][1].ToString());
+        Assert.AreEqual("Enum1", table[0].ReadValue(0).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Enum1", table[0].ReadValue(1).ToString());
         CollectionAssert.AreEquivalent(
             new[] { "Value1", "Value2" },
-            table.Select(row => row[2]?.ToString()).ToArray());
+            table.Select(row => row.ReadValue(2)?.ToString()).ToArray());
     }
 
     /// <summary>
@@ -988,8 +988,8 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count, "Should find one parameter for Method3");
-        Assert.AreEqual("a", table[0][1].ToString());
-        Assert.AreEqual("Int32", table[0][2].ToString());
+        Assert.AreEqual("a", table[0].ReadValue(1).ToString());
+        Assert.AreEqual("Int32", table[0].ReadValue(2).ToString());
     }
 
     /// <summary>
@@ -1014,7 +1014,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count, "Should find attribute on Tests class");
-        Assert.AreEqual("ExcludeFromCodeCoverage", table[0][1].ToString());
+        Assert.AreEqual("ExcludeFromCodeCoverage", table[0].ReadValue(1).ToString());
     }
 
     /// <summary>
@@ -1041,9 +1041,9 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count, "Should find Class1");
-        Assert.AreEqual("Class1", table[0][0].ToString());
-        Assert.IsTrue((int)table[0][1] >= 1, "Class1 should have methods");
-        Assert.IsTrue((int)table[0][3] >= 1, "Class1 should have inheritance depth >= 1");
+        Assert.AreEqual("Class1", table[0].ReadValue(0).ToString());
+        Assert.IsTrue((int)table[0].ReadValue(1) >= 1, "Class1 should have methods");
+        Assert.IsTrue((int)table[0].ReadValue(3) >= 1, "Class1 should have inheritance depth >= 1");
     }
 
     /// <summary>
@@ -1063,7 +1063,7 @@ public class RepresentativeQueryTests
         var table = vm.Run();
 
         Assert.IsTrue(table.Count >= 2, "Should find at least 2 projects");
-        Assert.IsTrue(table.Any(r => r[0].ToString()!.Contains("ClassLibrary1")), "Should find ClassLibrary1 project");
+        Assert.IsTrue(table.Any(r => r.ReadValue(0).ToString()!.Contains("ClassLibrary1")), "Should find ClassLibrary1 project");
     }
 
     /// <summary>
@@ -1132,7 +1132,7 @@ public class RepresentativeQueryTests
                 { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
             });
 
-        return schema.GetRowSource<SolutionEntity>("solution", context, Solution1SolutionPath)
+        return global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create(Solution1SolutionPath, global::Musoq.Schema.SourceArguments.Empty)).Read<SolutionEntity>("solution", context)
             .Chunks
             .SelectMany(chunk => chunk)
             .Single();

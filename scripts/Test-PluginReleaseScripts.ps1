@@ -218,6 +218,41 @@ function Test-BatchDatasourceReleaseResolution {
     } "Batch release selection should reject helper packages."
 }
 
+function Test-LocalDatasourcePublisherContract {
+    $publisherPath = Join-Path $PSScriptRoot "Publish-LocalDataSources.ps1"
+    Assert-True (Test-Path -LiteralPath $publisherPath -PathType Leaf) "Local datasource publisher script should exist."
+
+    $publisher = Get-Content -LiteralPath $publisherPath -Raw
+    Assert-True ($publisher -match '\$OutputDirectory\s*=') "Local datasource publisher should declare an output directory parameter."
+    Assert-True ($publisher -match 'C:/Shared/Musoq\.DataSources') "Local datasource publisher should use the shared default output directory."
+    Assert-True ($publisher -match 'Resolve-BatchRelease\.ps1') "Local datasource publisher should reuse batch selector resolution."
+    Assert-True ($publisher -match 'Pack-Plugin\.ps1') "Local datasource publisher should reuse the standard plugin packer."
+    Assert-True ($publisher -match 'Assert-ReleaseLicenseArtifacts\.ps1') "Local datasource publisher should validate embedded license artifacts."
+    Assert-True ($publisher -match '\$slug') "Local datasource publisher should create per-slug output directories."
+
+    foreach ($archiveName in @(
+        'windows-x64\.zip',
+        'linux-x64\.zip',
+        'macos-arm64\.zip',
+        'alpine-x64\.zip'
+    )) {
+        Assert-True ($publisher -match $archiveName) "Local datasource publisher should require the $archiveName archive."
+    }
+
+    Assert-True ($publisher -notmatch '(?im)\b(git|gh)\b') "Local datasource publisher must not invoke Git or GitHub tooling."
+    Assert-True ($publisher -notmatch '(?im)dotnet\s+nuget\s+push') "Local datasource publisher must not push NuGet packages."
+    Assert-True ($publisher -notmatch '(?im)registry[-\s]?upload|Update-PluginRegistry|Publish-Release|git\s+(commit|push|tag)') "Local datasource publisher must not publish releases or update the registry."
+
+    $multiSelection = & (Join-Path $PSScriptRoot "release/Resolve-BatchRelease.ps1") -Selection "json,git" -Json | ConvertFrom-Json
+    Assert-Equal 2 @($multiSelection).Count "Local datasource publisher should support multiple batch selectors."
+    $selectedIds = @($multiSelection | ForEach-Object { [string]$_.packageId })
+    Assert-True ($selectedIds -contains "Musoq.DataSources.Git") "Multiple selections should resolve the Git datasource."
+    Assert-True ($selectedIds -contains "Musoq.DataSources.Json") "Multiple selections should resolve the JSON datasource."
+
+    $tagSelection = & (Join-Path $PSScriptRoot "release/Resolve-BatchRelease.ps1") -Selection "10.0.5-alpha.1-Musoq.DataSources.Json" -Json | ConvertFrom-Json
+    Assert-Equal "Musoq.DataSources.Json" $tagSelection[0].packageId "Exact current release tags should resolve to the datasource package."
+}
+
 function Test-PluginCompatibilityManifestGeneration {
     $compatibility = New-MusoqPluginCompatibility `
         -TargetFramework "net10.0" `
@@ -244,8 +279,102 @@ function Test-PluginCompatibilityManifestGeneration {
 
     $systemProject = Join-Path $PSScriptRoot "../Musoq.DataSources.System/Musoq.DataSources.System.csproj"
     $evaluated = Get-MusoqPluginCompatibility -ProjectPath $systemProject
-    Assert-Equal "17.0.11-alpha.1" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
-    Assert-Equal "17.0.11-alpha.1" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
+    Assert-Equal "17.0.12-alpha.1" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
+    Assert-Equal "17.0.12-alpha.1" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
+}
+
+function Test-PluginDirectAssemblyReferenceGuard {
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "musoq-direct-reference-test-$([guid]::NewGuid().ToString('N'))"
+    $parserProjectDir = Join-Path $tempDir "Musoq.Parser"
+    $targetsProjectDir = Join-Path $tempDir "musoq.targets.fixture"
+    $pluginProjectDir = Join-Path $tempDir "FixturePlugin"
+    $isolatedDirectory = Join-Path $tempDir "isolated"
+    try {
+        New-Item -ItemType Directory -Path $parserProjectDir, $targetsProjectDir, $pluginProjectDir, $isolatedDirectory -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $parserProjectDir "Musoq.Parser.csproj") -Encoding utf8NoBOM -Value @'
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Musoq.Parser</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>
+'@
+        Set-Content -LiteralPath (Join-Path $parserProjectDir "Stub.cs") -Encoding utf8NoBOM -Value @'
+namespace Musoq.Parser;
+public sealed class Stub { }
+'@
+        Set-Content -LiteralPath (Join-Path $targetsProjectDir "TargetsFixture.csproj") -Encoding utf8NoBOM -Value @'
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>musoq.targets.fixture</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>
+'@
+        Set-Content -LiteralPath (Join-Path $targetsProjectDir "Stub.cs") -Encoding utf8NoBOM -Value @'
+namespace Musoq.Targets;
+public sealed class FixtureStub { }
+'@
+        Set-Content -LiteralPath (Join-Path $pluginProjectDir "FixturePlugin.csproj") -Encoding utf8NoBOM -Value @'
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>FixturePlugin</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Musoq.Parser/Musoq.Parser.csproj" />
+    <ProjectReference Include="../musoq.targets.fixture/TargetsFixture.csproj" />
+  </ItemGroup>
+</Project>
+'@
+        Set-Content -LiteralPath (Join-Path $pluginProjectDir "Plugin.cs") -Encoding utf8NoBOM -Value @'
+public sealed class Plugin
+{
+    public Musoq.Parser.Stub? ParserReference { get; set; }
+    public Musoq.Targets.FixtureStub? TargetsReference { get; set; }
+}
+'@
+
+        $buildOutput = & dotnet build (Join-Path $pluginProjectDir "FixturePlugin.csproj") --configuration Release --nologo --verbosity quiet 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not build the forbidden-reference fixture: $($buildOutput -join "`n")"
+        }
+
+        $builtEntryPoint = Join-Path $pluginProjectDir "bin/Release/net10.0/FixturePlugin.dll"
+        Copy-Item -LiteralPath $builtEntryPoint -Destination (Join-Path $isolatedDirectory "FixturePlugin.dll")
+        Assert-True (-not (Test-Path -LiteralPath (Join-Path $isolatedDirectory "Musoq.Parser.dll"))) "Isolated fixture must not contain the referenced Parser DLL."
+        Assert-True (-not (Test-Path -LiteralPath (Join-Path $isolatedDirectory "musoq.targets.fixture.dll"))) "Isolated fixture must not contain the referenced Targets DLL."
+
+        $failureMessage = $null
+        try {
+            Assert-MusoqPluginDirectAssemblyReferences -EntryPointPath (Join-Path $isolatedDirectory "FixturePlugin.dll")
+        }
+        catch {
+            $failureMessage = $_.Exception.Message
+        }
+
+        Assert-True ($failureMessage -match "Musoq.Parser") "Direct-reference validation should reject a Parser reference even when its DLL is absent."
+        Assert-True ($failureMessage -match "musoq.targets.fixture") "Targets references should be rejected without case-sensitive name matching."
+        $packScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot "Pack-Plugin.ps1") -Raw
+        Assert-True ($packScript -match "Assert-MusoqPluginDirectAssemblyReferences") "Plugin packaging must run the direct-reference validation gate."
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempDir) {
+            $resolvedTempDirectory = [System.IO.Path]::GetFullPath($tempDir)
+            $expectedTempParent = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath()).TrimEnd(
+                [System.IO.Path]::DirectorySeparatorChar,
+                [System.IO.Path]::AltDirectorySeparatorChar)
+            if ([System.IO.Path]::GetDirectoryName($resolvedTempDirectory) -ne $expectedTempParent -or
+                [System.IO.Path]::GetFileName($resolvedTempDirectory) -notlike "musoq-direct-reference-test-*") {
+                throw "Refusing to remove unexpected release-test directory '$resolvedTempDirectory'."
+            }
+
+            Remove-Item -LiteralPath $resolvedTempDirectory -Recurse -Force
+        }
+    }
 }
 
 function Test-PluginArtifactIntegrityMetadata {
@@ -399,26 +528,28 @@ function Test-RuntimeV2ReleaseTrain {
     $packages = @($registry.packages)
     Assert-Equal 16 $packages.Count "Runtime-v2 release train should contain all 16 datasource packages."
 
+    $expectedVersions = @{
+        'Musoq.DataSources.Archives' = '6.0.5-alpha.1'
+        'Musoq.DataSources.CANBus' = '4.0.5-alpha.1'
+        'Musoq.DataSources.Docker' = '5.0.5-alpha.1'
+        'Musoq.DataSources.FlatFile' = '8.0.5-alpha.1'
+        'Musoq.DataSources.Git' = '3.0.2-alpha.1'
+        'Musoq.DataSources.GitHub' = '2.0.5-alpha.1'
+        'Musoq.DataSources.Jira' = '2.0.5-alpha.1'
+        'Musoq.DataSources.Json' = '10.0.5-alpha.1'
+        'Musoq.DataSources.Ollama' = '5.0.5-alpha.1'
+        'Musoq.DataSources.OpenAI' = '6.0.5-alpha.1'
+        'Musoq.DataSources.Os' = '9.0.5-alpha.1'
+        'Musoq.DataSources.Roslyn' = '3.0.6-alpha.1'
+        'Musoq.DataSources.Search' = '1.0.2-alpha.1'
+        'Musoq.DataSources.SeparatedValues' = '11.0.2-alpha.1'
+        'Musoq.DataSources.System' = '8.0.5-alpha.1'
+        'Musoq.DataSources.Time' = '8.0.5-alpha.1'
+    }
+
     foreach ($package in $packages) {
         $version = [string]$package.version
-        if ($package.packageId -eq 'Musoq.DataSources.Roslyn') {
-            Assert-Equal "3.0.5-alpha.1" $version "Roslyn should use the next patch alpha version."
-        }
-        elseif ($package.packageId -eq 'Musoq.DataSources.Json') {
-            Assert-Equal "10.0.4-alpha.1" $version "$($package.packageId) should use its next patch alpha version."
-        }
-        elseif ($package.packageId -eq 'Musoq.DataSources.SeparatedValues') {
-            Assert-Equal "11.0.1-alpha.1" $version "$($package.packageId) should use its next patch alpha version."
-        }
-        elseif ($package.packageId -eq 'Musoq.DataSources.Git') {
-            Assert-Equal "3.0.1-alpha.1" $version "Git should use its next patch alpha version."
-        }
-        elseif ($package.packageId -eq 'Musoq.DataSources.Search') {
-            Assert-Equal "1.0.1-alpha.1" $version "Search should use its next patch alpha version."
-        }
-        else {
-            Assert-True ($version -match '-alpha\.1$') "$($package.packageId) should be pinned to alpha.1 in packages.json."
-        }
+        Assert-Equal $expectedVersions[[string]$package.packageId] $version "$($package.packageId) should use its expected release-train version."
         $projectPath = Join-Path $PSScriptRoot "../$($package.projectPath)"
         [xml]$project = Get-Content -LiteralPath $projectPath
         $projectVersion = [string](@($project.Project.PropertyGroup | Where-Object { $_.Version })[0].Version)
@@ -427,12 +558,12 @@ function Test-RuntimeV2ReleaseTrain {
 
     $roslyn = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Roslyn' })
     Assert-Equal 1 $roslyn.Count "Runtime-v2 release train should contain exactly one Roslyn package."
-    Assert-Equal "3.0.5-alpha.1" ([string]$roslyn[0].version) "Roslyn should use its next patch alpha version."
+    Assert-Equal "3.0.6-alpha.1" ([string]$roslyn[0].version) "Roslyn should use its next alpha version."
 
     $search = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Search' })
     Assert-Equal 1 $search.Count "Runtime-v2 release train should contain exactly one Search package."
     Assert-Equal "search" ([string]$search[0].slug) "Search should use the canonical release slug."
-    Assert-Equal "1.0.1-alpha.1" ([string]$search[0].version) "Search should use its next patch alpha version."
+    Assert-Equal "1.0.2-alpha.1" ([string]$search[0].version) "Search should use its next alpha version."
     Assert-Equal "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj" ([string]$search[0].projectPath) "Search should point at the production project."
 
     $excludedProjects = @($packages | Where-Object {
@@ -459,20 +590,20 @@ function Test-OptionalNuGetPublicationPolicy {
 
     $search = @($packages | Where-Object packageId -eq 'Musoq.DataSources.Search')
     Assert-Equal 1 $search.Count "Publication policy should contain exactly one Search package."
-    Assert-Equal $false ([bool]$search[0].publishToNuGet) "Search should be registry-only."
+    Assert-Equal $true ([bool]$search[0].publishToNuGet) "Search should publish to NuGet."
 
     $registryOnly = @($packages | Where-Object { -not $_.publishToNuGet })
     $nugetEnabled = @($packages | Where-Object { $_.publishToNuGet })
-    Assert-Equal 1 $registryOnly.Count "Exactly one datasource should be registry-only."
-    Assert-Equal 15 $nugetEnabled.Count "All non-Search datasources should publish to NuGet."
+    Assert-Equal 0 $registryOnly.Count "All datasource packages should be NuGet-enabled."
+    Assert-Equal 16 $nugetEnabled.Count "All datasource packages should publish to NuGet."
 
     $definitions = @(Get-ReleasePackages)
     $searchDefinition = @($definitions | Where-Object PackageId -eq 'Musoq.DataSources.Search')[0]
-    Assert-Equal $false ([bool]$searchDefinition.PublishToNuGet) "Release package parsing should preserve Search=false."
+    Assert-Equal $true ([bool]$searchDefinition.PublishToNuGet) "Release package parsing should preserve Search=true."
 
     $searchTag = "$($search[0].version)-$($search[0].packageId)"
     $searchSummary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag $searchTag -Json | ConvertFrom-Json
-    Assert-Equal $false ([bool]$searchSummary.publishToNuGet) "Release validation should expose Search=false."
+    Assert-Equal $true ([bool]$searchSummary.publishToNuGet) "Release validation should expose Search=true."
 
     $jsonTag = Get-CurrentJsonReleaseTag
     $jsonSummary = & "$PSScriptRoot/release/Validate-Release.ps1" -Tag $jsonTag -Json | ConvertFrom-Json
@@ -512,13 +643,13 @@ function Test-OptionalNuGetPublicationPolicy {
             -NuGetSource 'https://example.invalid' `
             -NuGetApiKey 'test-key' `
             -PackageId 'Musoq.DataSources.Json' `
-            -Version '10.0.4-alpha.1' `
+            -Version '10.0.5-alpha.1' `
             -PushAction $failingPushAction
     }
     catch {
         $failureMessage = $_.Exception.Message
     }
-    Assert-True ($failureMessage -match "package='Musoq\.DataSources\.Json 10\.0\.4-alpha\.1'") "NuGet failures should identify the package and version."
+    Assert-True ($failureMessage -match "package='Musoq\.DataSources\.Json 10\.0\.5-alpha\.1'") "NuGet failures should identify the package and version."
     Assert-True ($failureMessage -match "file='Json\.nupkg'") "NuGet failures should identify the package file."
     Assert-True ($failureMessage -match 'exitCode=17') "NuGet failures should expose the push exit code."
 
@@ -782,8 +913,10 @@ Test-PackageVersionTextPreservesPrerelease
 Test-SyntheticRegistryJsonShape
 Test-DatasourceReleaseValidation
 Test-BatchDatasourceReleaseResolution
+Test-LocalDatasourcePublisherContract
 Test-OptionalNuGetPublicationPolicy
 Test-PluginCompatibilityManifestGeneration
+Test-PluginDirectAssemblyReferenceGuard
 Test-PluginArtifactIntegrityMetadata
 Test-PluginLicenseSnapshotPackagingContracts
 Test-Registry12RuntimeMetadataContract

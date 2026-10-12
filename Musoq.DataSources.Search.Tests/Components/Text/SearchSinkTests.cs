@@ -96,13 +96,13 @@ public sealed class SearchSinkTests
             Assert.AreEqual(3, matches.Count);
             CollectionAssert.AreEqual(
                 new[] { "first.txt", "first.txt", "first.txt" },
-                matches.Rows.Select(row => (string)row[0]!).ToArray());
+                matches.Rows.Select(row => (string)row.ReadValue(0)!).ToArray());
             Assert.AreEqual(2, lines.Count);
             CollectionAssert.AreEqual(
                 new[] { "first.txt", "first.txt" },
-                lines.Rows.Select(row => (string)row[0]!).ToArray());
+                lines.Rows.Select(row => (string)row.ReadValue(0)!).ToArray());
             Assert.AreEqual(1, files.Count);
-            Assert.AreEqual("first.txt", files.Rows.Single()[0]);
+            Assert.AreEqual("first.txt", files.Rows.Single().ReadValue(0));
         }
         finally
         {

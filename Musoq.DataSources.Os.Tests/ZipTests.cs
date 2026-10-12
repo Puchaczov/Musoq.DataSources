@@ -37,15 +37,15 @@ public class ZipTests
         Assert.IsTrue(table.Count == 3, "Table should have 3 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Files/File1.txt"
+            (string)row.ReadValues()[0] == "Files/File1.txt"
         ), "First entry should be Files/File1.txt");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Files/File2.txt"
+            (string)row.ReadValues()[0] == "Files/File2.txt"
         ), "Second entry should be Files/File2.txt");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Files/SubFolder/File3.txt"
+            (string)row.ReadValues()[0] == "Files/SubFolder/File3.txt"
         ), "Third entry should be Files/SubFolder/File3.txt");
     }
 

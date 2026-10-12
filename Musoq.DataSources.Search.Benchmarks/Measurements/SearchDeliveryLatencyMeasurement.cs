@@ -391,10 +391,8 @@ internal static class SearchDeliveryLatencyMeasurement
     private static (string Path, long MatchIndex) ReadQueryRow(Row row)
     {
         return (
-            row[0] as string ?? throw new InvalidOperationException("The compiled Search path column was not a string."),
-            row[1] is long matchIndex
-                ? matchIndex
-                : throw new InvalidOperationException("The compiled Search MatchIndex column was not Int64."));
+            row.GetValue<string>(0) ?? throw new InvalidOperationException("The compiled Search path column was null."),
+            row.GetValue<long>(1));
     }
 
     private static string HashResultRows(IEnumerable<(string Path, long MatchIndex)> rows)

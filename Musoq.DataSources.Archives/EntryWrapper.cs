@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using SharpCompress.Common;
+using SharpCompress.Common.Options;
 
 namespace Musoq.DataSources.Archives;
 
@@ -48,28 +49,6 @@ public class EntryWrapper : IEntry
         { nameof(Size), 15 },
         { nameof(Attrib), 16 }
     };
-
-    internal static IReadOnlyDictionary<int, Func<EntryWrapper, object>> IndexToMethodAccessMap { get; } =
-        new Dictionary<int, Func<EntryWrapper, object>>
-        {
-            { 0, wrapper => wrapper.CompressionType },
-            { 1, wrapper => wrapper.ArchivedTime },
-            { 2, wrapper => wrapper.CompressedSize },
-            { 3, wrapper => wrapper.Crc },
-            { 4, wrapper => wrapper.CreatedTime },
-            { 5, wrapper => wrapper.Key },
-            { 6, wrapper => wrapper.LinkTarget },
-            { 7, wrapper => wrapper.IsDirectory },
-            { 8, wrapper => wrapper.IsEncrypted },
-            { 9, wrapper => wrapper.IsSplitAfter },
-            { 10, wrapper => wrapper.IsSolid },
-            { 11, wrapper => wrapper.VolumeIndexFirst },
-            { 12, wrapper => wrapper.VolumeIndexLast },
-            { 13, wrapper => wrapper.LastAccessedTime },
-            { 14, wrapper => wrapper.LastModifiedTime },
-            { 15, wrapper => wrapper.Size },
-            { 16, wrapper => wrapper.Attrib }
-        };
 
     /// <summary>
     ///     Gets the compression type of the entry.
@@ -155,4 +134,9 @@ public class EntryWrapper : IEntry
     ///     Gets the file attributes of the entry, if available.
     /// </summary>
     public int? Attrib => null;
+
+    /// <summary>
+    ///     Gets the reader options used when opening the entry.
+    /// </summary>
+    public IReaderOptions Options => _entry.Options;
 }

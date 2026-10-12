@@ -271,7 +271,9 @@ internal sealed class SearchRecordFramer
                 _recordHasUnmappedCoordinates = true;
                 _recordStartByteOffset = null;
                 _recordEndByteExclusive = null;
-                _recordByteCount = checked((long)(_record?.Length ?? 0) * sizeof(char));
+                _recordByteCount = checked(
+                    _recordByteCount +
+                    (coordinate.ByteLength > 0 ? coordinate.ByteLength : sizeof(char)));
             }
             else if (!_recordHasUnmappedCoordinates)
             {
@@ -279,6 +281,10 @@ internal sealed class SearchRecordFramer
                 _recordEndByteExclusive = coordinate.ByteEndExclusive;
                 _recordByteCount = checked(
                     _recordEndByteExclusive.Value - _recordStartByteOffset!.Value);
+            }
+            else if (coordinate.CanStart)
+            {
+                _recordByteCount = checked(_recordByteCount + coordinate.ByteLength);
             }
         }
         else
@@ -364,6 +370,11 @@ internal sealed class SearchRecordFramer
                 bigEndian: true,
                 byteOrderMark: false,
                 throwOnInvalidBytes: true).GetEncoder(),
+            SearchEncodingMode.Windows1250 or
+                SearchEncodingMode.Windows1252 or
+                SearchEncodingMode.Iso88592 => SearchEncodingPolicy
+                .CreateLegacyEncoding(encodingMode)
+                .GetEncoder(),
             _ => throw new ArgumentOutOfRangeException(nameof(encodingMode))
         };
     }

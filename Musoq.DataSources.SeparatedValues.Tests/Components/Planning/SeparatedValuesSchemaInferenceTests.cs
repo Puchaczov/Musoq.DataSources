@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Structured;
+using Musoq.Schema.Diagnostics;
 
 using Musoq.DataSources.SeparatedValues.Components.Contracts;
 using Musoq.DataSources.SeparatedValues.Components.Planning;
@@ -217,21 +218,26 @@ public class SeparatedValuesSchemaInferenceTests
     }
 
     [TestMethod]
-    public void Discover_StrictGrammar_RejectsMalformedRecords()
+    public void Discover_UnterminatedQuotedField_ShouldReturnTypedSafeInputDiagnostic()
     {
-        string[] malformed =
-        [
-            "A\n\"unterminated\n",
-            "A,B\nab\"cd,value\n",
-            "A,B\n\"value\"x,next\n",
-            "A,B\nfirst\rsecond,next\n"
-        ];
-
-        foreach (var contents in malformed)
+        WithCsv("A\n\"unterminated\n", path =>
         {
-            WithCsv(contents, path =>
-                Assert.ThrowsExactly<InvalidDataException>(() => Discover(path)));
-        }
+            var exception = Assert.ThrowsExactly<DataSourceInputException>(() => Discover(path));
+
+            Assert.AreEqual(DataSourceInputFailureReason.UnterminatedQuotedField, exception.Reason);
+            Assert.AreEqual("The final quoted field is not terminated.", exception.Message);
+            Assert.AreEqual(new FileInfo(path).Length, exception.Location?.ByteOffset);
+        });
+    }
+
+    [DataTestMethod]
+    [DataRow("A,B\nab\"cd,value\n")]
+    [DataRow("A,B\n\"value\"x,next\n")]
+    [DataRow("A,B\nfirst\rsecond,next\n")]
+    public void Discover_StrictGrammar_RejectsMalformedRecords(string contents)
+    {
+        WithCsv(contents, path =>
+            Assert.ThrowsExactly<InvalidDataException>(() => Discover(path)));
     }
 
     [TestMethod]

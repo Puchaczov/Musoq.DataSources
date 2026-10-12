@@ -575,6 +575,11 @@ internal static class SearchRegexScanner
                 bigEndian: true,
                 byteOrderMark: false,
                 throwOnInvalidBytes: true).GetEncoder(),
+            SearchEncodingMode.Windows1250 or
+                SearchEncodingMode.Windows1252 or
+                SearchEncodingMode.Iso88592 => SearchEncodingPolicy
+                .CreateLegacyEncoding(encodingMode)
+                .GetEncoder(),
             _ => throw new ArgumentOutOfRangeException(nameof(encodingMode))
         };
     }

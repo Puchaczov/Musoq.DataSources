@@ -30,7 +30,7 @@ public class JiraSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Project key (e.g., PROJ)</virtual-param>
+    ///         <virtual-param name="projectKeyOrJql">Project key (e.g., PROJ)</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -42,7 +42,7 @@ public class JiraSchema : SchemaBase
     ///                         <environmentVariable name="JIRA_USERNAME" isRequired="true">Jira username or email</environmentVariable>
     ///                         <environmentVariable name="JIRA_API_TOKEN" isRequired="true">Jira API token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     jira.issues(string projectKey)
+    ///                     jira.issues(string projectKeyOrJql)
     ///                 </from>
     ///                 <description>
     ///                     Gets issues for a specific project. Supports predicate pushdown for Status, Type,
@@ -81,7 +81,7 @@ public class JiraSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>JQL query string</virtual-param>
+    ///         <virtual-param name="projectKeyOrJql">JQL query string</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -90,7 +90,7 @@ public class JiraSchema : SchemaBase
     ///                         <environmentVariable name="JIRA_USERNAME" isRequired="true">Jira username or email</environmentVariable>
     ///                         <environmentVariable name="JIRA_API_TOKEN" isRequired="true">Jira API token</environmentVariable>
     ///                     </environmentVariables>
-    ///                     jira.issues(string jql)
+    ///                     jira.issues(string projectKeyOrJql)
     ///                 </from>
     ///                 <description>Gets issues matching a JQL query</description>
     ///                 <columns>
@@ -125,7 +125,7 @@ public class JiraSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Issue key (e.g., PROJ-123)</virtual-param>
+    ///         <virtual-param name="issueKey">Issue key (e.g., PROJ-123)</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -203,31 +203,31 @@ public class JiraSchema : SchemaBase
     /// <summary>
     ///     Gets the row source by name.
     /// </summary>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         var api = _api ?? CreateApi(executionContext);
 
         return name.ToLowerInvariant() switch
         {
-            IssuesTableName => parameters.Length switch
+            IssuesTableName => parameters.Count switch
             {
                 1 => EnsureSourceType<T, IJiraIssue>(
                     name,
-                    new IssuesSource(api, executionContext, Convert.ToString(parameters[0])!)),
+                    new IssuesSource(api, executionContext, parameters.GetValue<string>(0)!)),
                 _ => throw new ArgumentException(
                     $"Invalid number of parameters for {name}. Expected 1 (project key or JQL).")
             },
             ProjectsTableName => EnsureSourceType<T, IJiraProject>(
                 name,
                 new ProjectsSource(api, executionContext)),
-            CommentsTableName => parameters.Length switch
+            CommentsTableName => parameters.Count switch
             {
                 1 => EnsureSourceType<T, IJiraComment>(
                     name,
-                    new CommentsSource(api, executionContext, Convert.ToString(parameters[0])!)),
+                    new CommentsSource(api, executionContext, parameters.GetValue<string>(0)!)),
                 _ => throw new ArgumentException($"Invalid number of parameters for {name}. Expected 1 (issue key).")
             },
             _ => throw new NotSupportedException($"Table {name} not supported.")

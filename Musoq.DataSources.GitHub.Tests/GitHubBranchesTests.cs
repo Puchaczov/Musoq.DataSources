@@ -42,18 +42,18 @@ public class GitHubBranchesTests
         Assert.AreEqual(3, table.Count);
 
         // Check first row - note: order may not be guaranteed, so we check existence
-        var names = new List<string> { (string)table[0][0], (string)table[1][0], (string)table[2][0] };
+        var names = new List<string> { (string)table[0].ReadValue(0), (string)table[1].ReadValue(0), (string)table[2].ReadValue(0) };
         Assert.IsTrue(names.Contains("main"), "Expected 'main' branch");
         Assert.IsTrue(names.Contains("develop"), "Expected 'develop' branch");
         Assert.IsTrue(names.Contains("feature-branch"), "Expected 'feature-branch' branch");
 
 
-        var mainRow = table.FirstOrDefault(r => (string)r[0] == "main");
+        var mainRow = table.FirstOrDefault(r => (string)r.ReadValue(0) == "main");
         Assert.IsNotNull(mainRow, "Main branch should exist");
-        Assert.AreEqual("abc123", mainRow?[1]);
-        Assert.AreEqual(true, mainRow?[2]);
-        Assert.AreEqual("testowner", mainRow?[3]);
-        Assert.AreEqual("testrepo", mainRow?[4]);
+        Assert.AreEqual("abc123", mainRow?.ReadValue(1));
+        Assert.AreEqual(true, mainRow?.ReadValue(2));
+        Assert.AreEqual("testowner", mainRow?.ReadValue(3));
+        Assert.AreEqual("testrepo", mainRow?.ReadValue(4));
 
         api.Verify(f => f.GetBranchesAsync("testowner", "testrepo", It.IsAny<int?>(), It.IsAny<int?>()), Times.Once);
     }
@@ -79,8 +79,8 @@ public class GitHubBranchesTests
 
         Assert.AreEqual(2, table.Count);
 
-        Assert.IsTrue(table.Any(row => (string)row[0] == "main"));
-        Assert.IsTrue(table.Any(row => (string)row[0] == "develop"));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "main"));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "develop"));
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IGitHubApi api)

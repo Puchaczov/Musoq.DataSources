@@ -397,8 +397,17 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
 
             if (!sliceComplete && incomingQuoted)
             {
-                throw new InvalidDataException(
-                    $"The final quoted field in '{snapshot.Identity.CanonicalPath}' is not terminated.");
+                using var incompleteRecord = carry.TakeFinalRecord();
+                var record = new SeparatedValuesUtf8Record(
+                    incompleteRecord.Span,
+                    dialect.Separator,
+                    carryStartOffset,
+                    snapshot.Identity.Length,
+                    dialect);
+                var fields = record.GetEnumerator();
+                fields.ValidateAllFields();
+
+                throw new InvalidOperationException("The parallel quote scan disagreed with field parsing.");
             }
 
             var finalRecord = sliceComplete ? default : carry.TakeFinalRecord();

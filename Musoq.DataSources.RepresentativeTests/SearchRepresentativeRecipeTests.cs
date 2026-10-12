@@ -52,10 +52,10 @@ public sealed class SearchRepresentativeRecipeTests
                     "src/diagnostics.cs|emission-1001|EmitDiagnostic(\"MQ1001\")",
                     "src/missing-emission.cs|declaration-1001|public const string MQ1001"
                 },
-                result.Rows.Select(row => $"{NormalizePath((string)row[0])}|{row[1]}|{row[2]}").ToArray());
+                result.Rows.Select(row => $"{NormalizePath((string)row.ReadValue(0))}|{row.ReadValue(1)}|{row.ReadValue(2)}").ToArray());
             Assert.IsFalse(result.Rows.Any(row =>
-                NormalizePath((string)row[0]) == "src/missing-emission.cs" &&
-                (string)row[1] == "emission-1001"));
+                NormalizePath((string)row.ReadValue(0)) == "src/missing-emission.cs" &&
+                (string)row.ReadValue(1) == "emission-1001"));
         }
         finally
         {
@@ -109,8 +109,8 @@ public sealed class SearchRepresentativeRecipeTests
                     "alpha.log|2|3|"
                 },
                 result.Rows.Select(row =>
-                    $"{NormalizePath((string)row[0])}|{row[1]}|{row[2]}|{row[3]}").ToArray());
-            Assert.IsFalse(result.Rows.Any(row => NormalizePath((string)row[0]) != "alpha.log"));
+                    $"{NormalizePath((string)row.ReadValue(0))}|{row.ReadValue(1)}|{row.ReadValue(2)}|{row.ReadValue(3)}").ToArray());
+            Assert.IsFalse(result.Rows.Any(row => NormalizePath((string)row.ReadValue(0)) != "alpha.log"));
         }
         finally
         {
@@ -148,7 +148,7 @@ public sealed class SearchRepresentativeRecipeTests
             Assert.AreEqual(2, migration.Count);
             CollectionAssert.AreEqual(
                 new[] { "src/comments.cs|OldApi()", "src/legacy.cs|OldApi()" },
-                migration.Rows.Select(row => $"{NormalizePath((string)row[0])}|{row[1]}").ToArray());
+                migration.Rows.Select(row => $"{NormalizePath((string)row.ReadValue(0))}|{row.ReadValue(1)}").ToArray());
 
             var configuration = Compile(
                     "select m.Path, m.MatchIndex, m.MatchText " +
@@ -157,12 +157,12 @@ public sealed class SearchRepresentativeRecipeTests
                 .Run();
 
             Assert.AreEqual(2, configuration.Count);
-            Assert.IsTrue(configuration.Rows.All(row => NormalizePath((string)row[0]) == "config/app.json"));
-            CollectionAssert.AreEqual(new[] { 0L, 1L }, configuration.Rows.Select(row => (long)row[1]).ToArray());
+            Assert.IsTrue(configuration.Rows.All(row => NormalizePath((string)row.ReadValue(0)) == "config/app.json"));
+            CollectionAssert.AreEqual(new[] { 0L, 1L }, configuration.Rows.Select(row => (long)row.ReadValue(1)).ToArray());
 
             var paths = Compile($"select p.Path from search.paths('{EscapeSql(root)}') p order by p.Path").Run();
-            Assert.IsFalse(paths.Rows.Any(row => NormalizePath((string)row[0]) == "config/missing.json"));
-            Assert.IsTrue(paths.Rows.Any(row => NormalizePath((string)row[0]) == "config/legacy.json"));
+            Assert.IsFalse(paths.Rows.Any(row => NormalizePath((string)row.ReadValue(0)) == "config/missing.json"));
+            Assert.IsTrue(paths.Rows.Any(row => NormalizePath((string)row.ReadValue(0)) == "config/legacy.json"));
         }
         finally
         {
@@ -207,12 +207,12 @@ public sealed class SearchRepresentativeRecipeTests
                 .Run();
 
             Assert.AreEqual(3, result.Count);
-            Assert.AreEqual(5L, result.Rows.Sum(row => (long)row[2]));
-            Assert.AreEqual("evt-1", result.Rows[0][4]);
-            Assert.AreEqual("café 🚀 ERROR", result.Rows[1][5]);
-            Assert.IsNull(result.Rows[2][4]);
-            StringAssert.Contains((string)result.Rows[2][3], "missing-separator");
-            Assert.IsFalse(result.Rows.Any(row => (long)row[1] == 4));
+            Assert.AreEqual(5L, result.Rows.Sum(row => (long)row.ReadValue(2)));
+            Assert.AreEqual("evt-1", result.Rows[0].ReadValue(4));
+            Assert.AreEqual("café 🚀 ERROR", result.Rows[1].ReadValue(5));
+            Assert.IsNull(result.Rows[2].ReadValue(4));
+            StringAssert.Contains((string)result.Rows[2].ReadValue(3), "missing-separator");
+            Assert.IsFalse(result.Rows.Any(row => (long)row.ReadValue(1) == 4));
         }
         finally
         {

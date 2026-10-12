@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -22,9 +23,9 @@ public class CSharpLibrary : LibraryBase
     /// <returns>Projects with the specified names.</returns>
     [BindableMethod]
     public IEnumerable<ProjectEntity> GetProjectsByNames(
-        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params string[] names)
+        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params ReadOnlySpan<string> names)
     {
-        return entity.Projects.Where(f => names.Contains(f.Name));
+        return SelectByNames(entity.Projects, names, static item => item.Name);
     }
 
     /// <summary>
@@ -35,10 +36,9 @@ public class CSharpLibrary : LibraryBase
     /// <returns>Classes with the specified names.</returns>
     [BindableMethod]
     public IEnumerable<ClassEntity> GetClassesByNames(
-        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params string[] names)
+        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params ReadOnlySpan<string> names)
     {
-        return entity.Projects.SelectMany(f => f.Documents).SelectMany(f => f.Classes)
-            .Where(f => names.Contains(f.Name));
+        return SelectByNames(entity.Projects.SelectMany(f => f.Documents).SelectMany(f => f.Classes), names, static item => item.Name);
     }
 
     /// <summary>
@@ -49,10 +49,9 @@ public class CSharpLibrary : LibraryBase
     /// <returns>Classes with the specified names.</returns>
     [BindableMethod]
     public IEnumerable<InterfaceEntity> GetInterfacesByNames(
-        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params string[] names)
+        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params ReadOnlySpan<string> names)
     {
-        return entity.Projects.SelectMany(f => f.Documents).SelectMany(f => f.Interfaces)
-            .Where(f => names.Contains(f.Name));
+        return SelectByNames(entity.Projects.SelectMany(f => f.Documents).SelectMany(f => f.Interfaces), names, static item => item.Name);
     }
 
     /// <summary>
@@ -63,9 +62,9 @@ public class CSharpLibrary : LibraryBase
     /// <returns>Classes with the specified names.</returns>
     [BindableMethod]
     public IEnumerable<EnumEntity> GetEnumsByNames([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity,
-        params string[] names)
+        params ReadOnlySpan<string> names)
     {
-        return entity.Projects.SelectMany(f => f.Documents).SelectMany(f => f.Enums).Where(f => names.Contains(f.Name));
+        return SelectByNames(entity.Projects.SelectMany(f => f.Documents).SelectMany(f => f.Enums), names, static item => item.Name);
     }
 
     /// <summary>
@@ -184,10 +183,9 @@ public class CSharpLibrary : LibraryBase
     /// <returns>Structs with the specified names.</returns>
     [BindableMethod]
     public IEnumerable<StructEntity> GetStructsByNames(
-        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params string[] names)
+        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params ReadOnlySpan<string> names)
     {
-        return entity.Projects.SelectMany(f => f.Documents).SelectMany(f => f.Structs)
-            .Where(f => names.Contains(f.Name));
+        return SelectByNames(entity.Projects.SelectMany(f => f.Documents).SelectMany(f => f.Structs), names, static item => item.Name);
     }
 
     /// <summary>
@@ -198,13 +196,11 @@ public class CSharpLibrary : LibraryBase
     /// <returns>Methods with the specified names.</returns>
     [BindableMethod]
     public IEnumerable<MethodEntity> GetMethodsByNames(
-        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params string[] names)
+        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, params ReadOnlySpan<string> names)
     {
-        return entity.Projects
-            .SelectMany(p => p.Documents)
-            .SelectMany(d => d.Classes)
-            .SelectMany(c => c.Methods)
-            .Where(m => names.Contains(m.Name));
+        return SelectByNames(entity.Projects.SelectMany(static project => project.Documents)
+            .SelectMany(static document => document.Classes).SelectMany(static type => type.Methods),
+            names, static method => method.Name);
     }
 
     /// <summary>
@@ -658,4 +654,14 @@ public class CSharpLibrary : LibraryBase
 
         return project.NugetPackageEntities;
     }
+    private static IReadOnlyList<TEntity> SelectByNames<TEntity>(IEnumerable<TEntity> source,
+        ReadOnlySpan<string> names, Func<TEntity, string> selectName)
+    {
+        var results = new List<TEntity>();
+        foreach (var entity in source)
+            if (names.Contains(selectName(entity)))
+                results.Add(entity);
+        return results;
+    }
+
 }

@@ -200,10 +200,20 @@ internal static class SeparatedValuesLargeProfile
     {
         var table = query.Run();
         long checksum = table.Count;
-        foreach (var row in table)
-        foreach (var value in row.Values)
-            checksum = unchecked(checksum * 31 + (value?.GetHashCode() ?? 0));
+        var visitor = new NativeHashVisitor { Checksum = checksum };
+        foreach (var row in table) row.VisitColumns(ref visitor);
+        checksum = visitor.Checksum;
         return new ProfileOperationResult(table.Count, bytes, checksum, null);
+    }
+
+    private struct NativeHashVisitor : IColumnValueVisitor
+    {
+        public long Checksum;
+        public void Visit<T>(int columnIndex, in T value)
+        {
+            var hash = value?.GetHashCode() ?? 0;
+            Checksum = unchecked(Checksum * 31 + hash);
+        }
     }
 
     private static LargeProfileMeasurement Measure(

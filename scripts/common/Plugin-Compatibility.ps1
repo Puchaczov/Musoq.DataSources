@@ -192,6 +192,63 @@ function ConvertTo-MusoqPluginCompatibilityJson {
     return ($Compatibility | ConvertTo-Json -Depth 10)
 }
 
+function Get-MusoqAssemblyReferenceNames {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$AssemblyPath
+    )
+
+    $resolvedAssemblyPath = (Resolve-Path -LiteralPath $AssemblyPath -ErrorAction Stop).Path
+    $stream = [System.IO.File]::Open(
+        $resolvedAssemblyPath,
+        [System.IO.FileMode]::Open,
+        [System.IO.FileAccess]::Read,
+        [System.IO.FileShare]::Read)
+    $peReader = $null
+    try {
+        $peReader = [System.Reflection.PortableExecutable.PEReader]::new($stream)
+        if (-not $peReader.HasMetadata) {
+            throw "Entry point is not a managed assembly: $resolvedAssemblyPath"
+        }
+
+        $metadataReader = [System.Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($peReader)
+        $names = foreach ($handle in $metadataReader.AssemblyReferences) {
+            $metadataReader.GetString($metadataReader.GetAssemblyReference($handle).Name)
+        }
+        return @($names)
+    }
+    finally {
+        if ($null -ne $peReader) {
+            $peReader.Dispose()
+        }
+        else {
+            $stream.Dispose()
+        }
+    }
+}
+
+function Assert-MusoqPluginDirectAssemblyReferences {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$EntryPointPath
+    )
+
+    $forbiddenExactNames = @(
+        "Musoq.Parser",
+        "Musoq.Converter",
+        "Musoq.Evaluator",
+        "Musoq.CommandLine"
+    )
+    $assemblyReferences = @(Get-MusoqAssemblyReferenceNames -AssemblyPath $EntryPointPath)
+    $forbiddenReferences = @($assemblyReferences | Where-Object {
+        $_ -in $forbiddenExactNames -or $_.StartsWith("Musoq.Targets.", [System.StringComparison]::OrdinalIgnoreCase)
+    } | Sort-Object -Unique)
+
+    if ($forbiddenReferences.Count -gt 0) {
+        throw "Plugin entry point '$EntryPointPath' directly references forbidden Musoq host assembly(s): $($forbiddenReferences -join ', '). Only Musoq.Schema and Musoq.Plugins are supported host references."
+    }
+}
+
 function Read-MusoqPluginCompatibilityManifest {
     param(
         [Parameter(Mandatory=$true)]

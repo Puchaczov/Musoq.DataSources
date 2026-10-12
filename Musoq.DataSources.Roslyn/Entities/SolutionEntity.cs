@@ -21,11 +21,6 @@ public class SolutionEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>
-    ///     A read-only dictionary mapping column indices to functions that access the corresponding properties.
-    /// </summary>
-    public static readonly IReadOnlyDictionary<int, Func<SolutionEntity, object?>> IndexToObjectAccessMap;
-
-    /// <summary>
     ///     An array of schema columns representing the structure of the solution entity.
     /// </summary>
     public static readonly ISchemaColumn[] Columns =
@@ -52,11 +47,6 @@ public class SolutionEntity
             { nameof(Projects), 1 }
         };
 
-        IndexToObjectAccessMap = new Dictionary<int, Func<SolutionEntity, object?>>
-        {
-            { 0, entity => entity.Id },
-            { 1, entity => entity.Projects }
-        };
     }
 
     /// <summary>

@@ -17,7 +17,7 @@ public class DualTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("single", table[0][0]);
+        Assert.AreEqual("single", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -29,7 +29,7 @@ public class DualTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(3, table[0][0]);
+        Assert.AreEqual(3, table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -41,7 +41,7 @@ public class DualTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(0.6m, table[0][0]);
+        Assert.AreEqual(0.6m, table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -53,8 +53,8 @@ public class DualTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count);
-        Assert.AreEqual(1, table[0][0]);
-        Assert.AreEqual(2, table[1][0]);
+        Assert.AreEqual(1, table[0].ReadValue(0));
+        Assert.AreEqual(2, table[1].ReadValue(0));
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

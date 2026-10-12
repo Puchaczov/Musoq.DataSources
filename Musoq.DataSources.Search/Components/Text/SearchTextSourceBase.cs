@@ -25,6 +25,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
     private const long SmallFileSnapshotBytes = 4L * 1024 * 1024;
 
     private readonly SearchRequest _request;
+    private readonly Func<TRow, bool>? _acceptedRow;
     private readonly SourceExecutionContext _executionContext;
     private readonly Func<string, TextReader> _readerFactory;
     private readonly bool _classifyBinaryFiles;
@@ -41,6 +42,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
     {
         _request = request ?? throw new ArgumentNullException(nameof(request));
         _executionContext = executionContext ?? throw new ArgumentNullException(nameof(executionContext));
+        _acceptedRow = TypedPredicatePlan.Get<TRow>(executionContext.Plan);
         _classifyBinaryFiles = readerFactory is null;
         _readerFactory = readerFactory ?? (path => SearchTextReader.Open(path, _request.EncodingMode));
         _scopeCounters = scopeCounters;
@@ -60,7 +62,6 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
         Action<long> rowsWritten,
         SearchResourceBudget resourceBudget);
 
-    protected abstract object? GetPredicateValue(TRow row, string columnName);
 
     protected override void CollectChunks(IChunkWriter<TRow> writer)
     {
@@ -116,13 +117,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                 ? Path.GetDirectoryName(rootPath) ?? rootPath
                 : rootPath;
             var projection = SearchProjectionRequirements.From(_executionContext);
-            var acceptedPredicate = _executionContext.Plan.AcceptedPredicate;
-            Func<TRow, bool>? acceptedRow = acceptedPredicate is null
-                ? null
-                : row => SearchPredicateEvaluator.Matches(
-                    acceptedPredicate,
-                    row,
-                    GetPredicateValue);
+            var acceptedRow = _acceptedRow;
             var acceptedWindow = SearchSliceWindow.Create(
                 _executionContext.Plan.AcceptedSkip,
                 _executionContext.Plan.AcceptedTake);
@@ -154,6 +149,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                         scopeCounters.IncrementContentOpenAttempts();
                         var isBinary = smallInput is not null
                             ? SearchBinaryPolicy.IsBinaryBytes(
+                                file,
                                 smallInput.Array,
                                 smallInput.Length,
                                 _request.EncodingMode,

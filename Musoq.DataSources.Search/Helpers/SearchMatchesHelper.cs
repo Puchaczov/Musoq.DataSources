@@ -12,7 +12,7 @@ namespace Musoq.DataSources.Search.Helpers;
 internal static class SearchMatchesHelper
 {
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<SearchMatch, object?>> IndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] Columns;
 
     static SearchMatchesHelper()
@@ -30,21 +30,6 @@ internal static class SearchMatchesHelper
             { nameof(SearchMatch.MatchText), 8 },
             { nameof(SearchMatch.Captures), 9 },
             { nameof(SearchMatch.Context), 10 }
-        };
-
-        IndexToMethodAccessMap = new Dictionary<int, Func<SearchMatch, object?>>
-        {
-            { 0, match => match.Path },
-            { 1, match => match.PatternId },
-            { 2, match => match.MatchIndex },
-            { 3, match => match.ByteOffset },
-            { 4, match => match.ByteLength },
-            { 5, match => match.LineNumber },
-            { 6, match => match.Utf16Column },
-            { 7, match => match.Utf16Length },
-            { 8, match => match.MatchText },
-            { 9, match => match.Captures },
-            { 10, match => match.Context }
         };
 
         Columns =

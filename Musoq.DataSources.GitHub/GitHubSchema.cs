@@ -79,7 +79,7 @@ public class GitHubSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Owner name (user or organization)</virtual-param>
+    ///         <virtual-param name="owner">Owner name (user or organization)</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -105,8 +105,8 @@ public class GitHubSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Repository owner</virtual-param>
-    ///         <virtual-param>Repository name</virtual-param>
+    ///         <virtual-param name="owner">Repository owner</virtual-param>
+    ///         <virtual-param name="repo">Repository name</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -140,8 +140,8 @@ public class GitHubSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Repository owner</virtual-param>
-    ///         <virtual-param>Repository name</virtual-param>
+    ///         <virtual-param name="owner">Repository owner</virtual-param>
+    ///         <virtual-param name="repo">Repository name</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -176,8 +176,8 @@ public class GitHubSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Repository owner</virtual-param>
-    ///         <virtual-param>Repository name</virtual-param>
+    ///         <virtual-param name="owner">Repository owner</virtual-param>
+    ///         <virtual-param name="repo">Repository name</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -209,9 +209,9 @@ public class GitHubSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Repository owner</virtual-param>
-    ///         <virtual-param>Repository name</virtual-param>
-    ///         <virtual-param>SHA or branch name (optional)</virtual-param>
+    ///         <virtual-param name="owner">Repository owner</virtual-param>
+    ///         <virtual-param name="repo">Repository name</virtual-param>
+    ///         <virtual-param name="sha">SHA or branch name (optional)</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -231,8 +231,8 @@ public class GitHubSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Repository owner</virtual-param>
-    ///         <virtual-param>Repository name</virtual-param>
+    ///         <virtual-param name="owner">Repository owner</virtual-param>
+    ///         <virtual-param name="repo">Repository name</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -253,8 +253,8 @@ public class GitHubSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Repository owner</virtual-param>
-    ///         <virtual-param>Repository name</virtual-param>
+    ///         <virtual-param name="owner">Repository owner</virtual-param>
+    ///         <virtual-param name="repo">Repository name</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -367,65 +367,65 @@ public class GitHubSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         var api = _api ?? new GitHubApi(executionContext.SourceRuntimeSettings["GITHUB_TOKEN"]);
 
         return name.ToLowerInvariant() switch
         {
-            RepositoriesTableName => parameters.Length switch
+            RepositoriesTableName => parameters.Count switch
             {
                 0 => EnsureSourceType<T, RepositoryEntity>(name, new RepositoriesSource(api, executionContext)),
                 1 => EnsureSourceType<T, RepositoryEntity>(
                     name,
-                    new RepositoriesSource(api, executionContext, Convert.ToString(parameters[0]))),
+                    new RepositoriesSource(api, executionContext, parameters.GetValue<string>(0))),
                 _ => throw new ArgumentException($"Invalid number of parameters for {name}")
             },
             IssuesTableName => EnsureSourceType<T, IssueEntity>(
                 name,
                 new IssuesSource(api, executionContext,
-                    Convert.ToString(parameters[0])!,
-                    Convert.ToString(parameters[1])!)),
+                    parameters.GetValue<string>(0)!,
+                    parameters.GetValue<string>(1)!)),
             PullRequestsTableName => EnsureSourceType<T, PullRequestEntity>(
                 name,
                 new PullRequestsSource(api, executionContext,
-                    Convert.ToString(parameters[0])!,
-                    Convert.ToString(parameters[1])!)),
-            CommitsTableName => parameters.Length switch
+                    parameters.GetValue<string>(0)!,
+                    parameters.GetValue<string>(1)!)),
+            CommitsTableName => parameters.Count switch
             {
                 2 => EnsureSourceType<T, CommitEntity>(
                     name,
                     new CommitsSource(api, executionContext,
-                        Convert.ToString(parameters[0])!,
-                        Convert.ToString(parameters[1])!)),
+                        parameters.GetValue<string>(0)!,
+                        parameters.GetValue<string>(1)!)),
                 3 => EnsureSourceType<T, CommitEntity>(
                     name,
                     new CommitsSource(api, executionContext,
-                        Convert.ToString(parameters[0])!,
-                        Convert.ToString(parameters[1])!,
-                        Convert.ToString(parameters[2]))),
+                        parameters.GetValue<string>(0)!,
+                        parameters.GetValue<string>(1)!,
+                        parameters.GetValue<string>(2))),
                 _ => throw new ArgumentException($"Invalid number of parameters for {name}")
             },
             BranchesTableName => EnsureSourceType<T, BranchEntity>(
                 name,
                 new BranchesSource(api, executionContext,
-                    Convert.ToString(parameters[0])!,
-                    Convert.ToString(parameters[1])!)),
+                    parameters.GetValue<string>(0)!,
+                    parameters.GetValue<string>(1)!)),
             BranchCommitsTableName => EnsureSourceType<T, CommitEntity>(
                 name,
                 new BranchCommitsSource(api, executionContext,
-                    Convert.ToString(parameters[0])!,
-                    Convert.ToString(parameters[1])!,
-                    Convert.ToString(parameters[2])!,
-                    Convert.ToString(parameters[3])!)),
+                    parameters.GetValue<string>(0)!,
+                    parameters.GetValue<string>(1)!,
+                    parameters.GetValue<string>(2)!,
+                    parameters.GetValue<string>(3)!)),
             ReleasesTableName => EnsureSourceType<T, ReleaseEntity>(
                 name,
                 new ReleasesSource(api, executionContext,
-                    Convert.ToString(parameters[0])!,
-                    Convert.ToString(parameters[1])!)),
+                    parameters.GetValue<string>(0)!,
+                    parameters.GetValue<string>(1)!)),
             _ => throw new NotSupportedException($"Table {name} not supported.")
         };
     }

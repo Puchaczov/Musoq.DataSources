@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -8,7 +8,6 @@ namespace Musoq.DataSources.FlatFile;
 internal static class FlatFileHelper
 {
     public static readonly IReadOnlyDictionary<string, int> FlatNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<FlatFileEntity, object>> FlatIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] FlatColumns;
 
     static FlatFileHelper()
@@ -17,12 +16,6 @@ internal static class FlatFileHelper
         {
             { nameof(FlatFileEntity.LineNumber), 0 },
             { nameof(FlatFileEntity.Line), 1 }
-        };
-
-        FlatIndexToMethodAccessMap = new Dictionary<int, Func<FlatFileEntity, object>>
-        {
-            { 0, info => info.LineNumber },
-            { 1, info => info.Line }
         };
 
         FlatColumns =

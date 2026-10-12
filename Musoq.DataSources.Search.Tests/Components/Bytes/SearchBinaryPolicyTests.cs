@@ -11,6 +11,8 @@ using Musoq.DataSources.Search.Sources;
 
 using Musoq.DataSources.Search.Components.Contracts;
 
+using Musoq.DataSources.Search.Components.Diagnostics;
+
 using Musoq.DataSources.Search.Components.Text;
 
 using Musoq.DataSources.Search.Components.Bytes;
@@ -154,6 +156,35 @@ public sealed class SearchBinaryPolicyTests
                     path,
                     SearchEncodingMode.Utf8,
                     buffer));
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
+    [TestMethod]
+    public void SmallSnapshotReadFailure_ShouldRetainThePhysicalPath()
+    {
+        var root = CreateTemporaryRoot();
+        var path = Path.Combine(root, "malformed.txt");
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var bytes = new byte[] { 0xe2 };
+            File.WriteAllBytes(path, bytes);
+
+            using var buffer = SearchCharBuffer.Rent();
+            var exception = Assert.ThrowsException<SearchSourceReadException>(() =>
+                SearchBinaryPolicy.IsBinaryBytes(
+                    path,
+                    bytes,
+                    bytes.Length,
+                    SearchEncodingMode.Utf8,
+                    buffer));
+
+            Assert.AreEqual(path, exception.Diagnostic.Location?.Path);
         }
         finally
         {

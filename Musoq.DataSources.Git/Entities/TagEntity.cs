@@ -20,7 +20,6 @@ public class TagEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>Maps row indexes to property accessors used by the Musoq runtime.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<TagEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a tag row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -56,12 +55,7 @@ public class TagEntity
             { nameof(FriendlyName), 0 }, { nameof(CanonicalName), 1 }, { nameof(TargetSha), 2 },
             { nameof(Message), 3 }, { nameof(IsAnnotated), 4 }, { nameof(Annotation), 5 }, { nameof(Commit), 6 }
         };
-        IndexToObjectAccessMap = new Dictionary<int, Func<TagEntity, object?>>
-        {
-            { 0, entity => entity.FriendlyName }, { 1, entity => entity.CanonicalName },
-            { 2, entity => entity.TargetSha }, { 3, entity => entity.Message }, { 4, entity => entity.IsAnnotated },
-            { 5, entity => entity.Annotation }, { 6, entity => entity.Commit }
-        };
+
     }
 
     /// <summary>Creates a detached tag snapshot from a LibGit2Sharp tag.</summary>

@@ -27,27 +27,27 @@ public class ArchivesTests
         Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "others/" &&
-            (bool)row.Values[1] &&
-            (string)row.Values[2] == ""
+            (string)row.ReadValues()[0] == "others/" &&
+            (bool)row.ReadValues()[1] &&
+            (string)row.ReadValues()[2] == ""
         ), "First row should match others/, true, empty string");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "others/text3.txt" &&
-            !(bool)row.Values[1] &&
-            (string)row.Values[2] == "Text 3"
+            (string)row.ReadValues()[0] == "others/text3.txt" &&
+            !(bool)row.ReadValues()[1] &&
+            (string)row.ReadValues()[2] == "Text 3"
         ), "Second row should match others/text3.txt, false, Text 3");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "text1.txt" &&
-            !(bool)row.Values[1] &&
-            (string)row.Values[2] == "Text 1"
+            (string)row.ReadValues()[0] == "text1.txt" &&
+            !(bool)row.ReadValues()[1] &&
+            (string)row.ReadValues()[2] == "Text 1"
         ), "Third row should match text1.txt, false, Text 1");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "text2.txt" &&
-            !(bool)row.Values[1] &&
-            (string)row.Values[2] == "Text 2"
+            (string)row.ReadValues()[0] == "text2.txt" &&
+            !(bool)row.ReadValues()[1] &&
+            (string)row.ReadValues()[2] == "Text 2"
         ), "Fourth row should match text2.txt, false, Text 2");
     }
 
@@ -64,27 +64,27 @@ public class ArchivesTests
         Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "others/" &&
-            (bool)row.Values[1] &&
-            (string)row.Values[2] == ""
+            (string)row.ReadValues()[0] == "others/" &&
+            (bool)row.ReadValues()[1] &&
+            (string)row.ReadValues()[2] == ""
         ), "First row should match others/, true, empty string");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "others/text3.txt" &&
-            !(bool)row.Values[1] &&
-            (string)row.Values[2] == "Text 3"
+            (string)row.ReadValues()[0] == "others/text3.txt" &&
+            !(bool)row.ReadValues()[1] &&
+            (string)row.ReadValues()[2] == "Text 3"
         ), "Second row should match others/text3.txt, false, Text 3");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "text1.txt" &&
-            !(bool)row.Values[1] &&
-            (string)row.Values[2] == "Text 1"
+            (string)row.ReadValues()[0] == "text1.txt" &&
+            !(bool)row.ReadValues()[1] &&
+            (string)row.ReadValues()[2] == "Text 1"
         ), "Third row should match text1.txt, false, Text 1");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "text2.txt" &&
-            !(bool)row.Values[1] &&
-            (string)row.Values[2] == "Text 2"
+            (string)row.ReadValues()[0] == "text2.txt" &&
+            !(bool)row.ReadValues()[1] &&
+            (string)row.ReadValues()[2] == "Text 2"
         ), "Fourth row should match text2.txt, false, Text 2");
     }
 

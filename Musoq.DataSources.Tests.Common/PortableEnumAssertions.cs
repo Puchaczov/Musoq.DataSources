@@ -71,10 +71,10 @@ public static class PortableEnumAssertions
         {
             for (var index = 0; index < row.Count; index++)
             {
-                if (row[index] is Enum)
+                if (row.ReadValue(index) is Enum)
                 {
                     throw new InvalidOperationException(
-                        $"Result column {index} contains a CLR enum value '{row[index].GetType()}'.");
+                        $"Result column {index} contains a CLR enum value '{row.ReadValue(index).GetType()}'.");
                 }
             }
         }

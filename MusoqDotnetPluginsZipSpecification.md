@@ -107,11 +107,11 @@ Example registry entry:
           "targetFramework": "net10.0",
           "hostPackages": {
             "Musoq.Schema": {
-              "minimumVersionInclusive": "17.0.2-alpha.1",
+              "minimumVersionInclusive": "17.0.11-alpha.2",
               "maximumVersionExclusive": "18.0.0"
             },
             "Musoq.Plugins": {
-              "minimumVersionInclusive": "17.0.2-alpha.1",
+              "minimumVersionInclusive": "17.0.11-alpha.2",
               "maximumVersionExclusive": "18.0.0"
             }
           }
@@ -220,6 +220,14 @@ The following core Musoq assemblies **MUST NOT** be included in the `Plugin.zip`
 - `Musoq.Evaluator.dll`
 - `Musoq.Targets.*.dll`
 
+The entry-point assembly's PE AssemblyReference table is also part of this
+boundary. Packaging and release smoke validation **MUST** reject direct
+references to `Musoq.Parser`, `Musoq.Converter`, `Musoq.Evaluator`,
+`Musoq.CommandLine`, or `Musoq.Targets.*`, even when those DLLs are absent from
+the archive. The only supported direct host ABI references are `Musoq.Schema`
+and `Musoq.Plugins`; removing host DLLs from the publish directory does not
+remove or satisfy an invalid assembly reference.
+
 ### Runtime Compatibility Manifest
 
 `MusoqPluginCompatibility.json` is generated for every RID from evaluated MSBuild properties and package references. It must not be maintained by hand. Packaging fails unless the project targets `net10.0`, references matching supported versions of `Musoq.Schema` and `Musoq.Plugins`, and excludes their runtime assets.
@@ -231,11 +239,11 @@ The following core Musoq assemblies **MUST NOT** be included in the `Plugin.zip`
   "targetFramework": "net10.0",
   "hostPackages": {
     "Musoq.Schema": {
-      "minimumVersionInclusive": "17.0.2-alpha.1",
+      "minimumVersionInclusive": "17.0.11-alpha.2",
       "maximumVersionExclusive": "18.0.0"
     },
     "Musoq.Plugins": {
-      "minimumVersionInclusive": "17.0.2-alpha.1",
+      "minimumVersionInclusive": "17.0.11-alpha.2",
       "maximumVersionExclusive": "18.0.0"
     }
   }
@@ -280,6 +288,7 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
 
 2. **Prepare the Inner Zip:**
    - Remove host-owned assemblies (`Musoq.Schema.dll`, `Musoq.Plugins.dll`, `Musoq.Parser.dll`, `Musoq.Converter.dll`, `Musoq.Evaluator.dll`, and `Musoq.Targets.*.dll`) recursively from `./publish`, then fail if any remain before compression.
+   - Inspect the entry-point PE assembly references and fail on direct references to Parser, Converter, Evaluator, CommandLine, or Targets host assemblies, regardless of whether those files are present.
    - Generate `MusoqPluginCompatibility.json` from evaluated MSBuild data.
    - Verify the main plugin XML documentation file exists in `./publish`.
    - Gather and place all license files into a `third-party-notices` folder within `./publish`; fail if the directory is missing or contains no non-empty files.
@@ -388,3 +397,9 @@ Rollback is handled by `scripts/release/Rollback-Release.ps1` and `.github/workf
 Use the single-tag workflow for canary or one-off releases. Use `release-datasources-batch.yml` for coordinated releases because it restores and builds once, publishes all selected datasource artifacts, and updates the registry once. Solution tests are supplied by the branch `Build` workflow.
 
 See `MusoqThirdPartyDatasourceRepositorySetup.md` for the full third-party repository checklist.
+
+## Native typed ABI and local qualification
+
+Plugin entrypoints must implement the accepted typed source/library contracts described by the tutorial and autonomous guide. Matching framework/runtime-family metadata alone does not establish that a host supports the breaking native APIs. Compile and execute against the intended host ABI; use concrete source arguments, materializers and kernels. Host-owned assembly exclusions remain mandatory.
+
+The compatibility JSON above is illustrative, not a manually maintained manifest. Generate the actual range from evaluated references with scripts/common/Plugin-Compatibility.ps1. The accepted local qualification package identity has a unique suffix while its host assembly semantic version remains 17.0.11-alpha.2; do not substitute the package suffix for a running host version. Local candidate consumption is verified through immutable package and DLL hashes. Installation compatibility must be checked against the intended host, separately from a successful local package build. No publication or live plugin replacement is part of documentation qualification.

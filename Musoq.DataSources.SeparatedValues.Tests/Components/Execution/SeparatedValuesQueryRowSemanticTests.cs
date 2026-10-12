@@ -8,6 +8,8 @@ using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.DataSources.SeparatedValues.Tests.Infrastructure;
+using Musoq.Evaluator.Exceptions;
+using Musoq.Parser.Diagnostics;
 
 namespace Musoq.DataSources.SeparatedValues.Tests.Components.Execution;
 
@@ -136,12 +138,12 @@ public sealed class SeparatedValuesQueryRowSemanticTests
             Assert.AreEqual(typeof(int?), statusColumn.ColumnType);
             Assert.AreEqual(typeof(int?), statusColumn.SourceReadType);
             Assert.IsNotNull(statusColumn.EnumType);
-            Assert.IsFalse(table.SelectMany(static row => row.Values).Any(static value => value is Enum));
+            Assert.IsFalse(table.SelectMany(static row => row.ReadValues()).Any(static value => value is Enum));
             CollectionAssert.AreEqual(
                 new[] { "20|Running", "10|Queued", "99|<null>" },
                 table.Select(row => string.Join(
                     "|",
-                    Enumerable.Range(0, row.Count).Select(index => row[index]?.ToString() ?? "<null>")))
+                    Enumerable.Range(0, row.Count).Select(index => row.ReadValue(index)?.ToString() ?? "<null>")))
                     .ToArray());
         });
     }
@@ -241,6 +243,41 @@ public sealed class SeparatedValuesQueryRowSemanticTests
     }
 
     [TestMethod]
+    public void CompiledQuery_UnterminatedQuotedCsvField_ShouldExposeSafeInputDiagnostic()
+    {
+        const string contents = "Name\n\"private-record-content";
+        WithCsv(contents, path =>
+        {
+            var query =
+                "table CsvShape { Name: string };" +
+                "couple separatedvalues.comma with table CsvShape as Rows;" +
+                $"select Name from Rows('{QueryPath(path)}', true, 0)";
+            using var compiled = InstanceCreatorHelpers.CompileForExecution(
+                query,
+                $"SeparatedValuesMalformedQuote_{Guid.NewGuid():N}",
+                new CsvSchemaProvider(),
+                EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
+
+            var exception = Assert.Throws<QueryExecutionException>(() =>
+            {
+                using var table = compiled.Run();
+                _ = table.Count;
+            });
+            var envelope = exception.Envelope ?? throw new AssertFailedException("Expected an input diagnostic envelope.");
+
+            Assert.AreEqual(DiagnosticCode.MQ7014_MalformedRuntimeInput, envelope.Code);
+            Assert.AreEqual(DiagnosticPhase.Runtime, envelope.Phase);
+            Assert.AreEqual(DiagnosticSourceKind.DataSource, envelope.SourceKind);
+            Assert.AreEqual("unterminated-quoted-field", envelope.Arguments["inputReason"]);
+            Assert.AreEqual(new FileInfo(path).Length, envelope.InputLocation?.ByteOffset);
+            Assert.IsNull(envelope.Offset);
+            Assert.IsNull(envelope.Details);
+            Assert.IsFalse(exception.Message.Contains(path, StringComparison.Ordinal));
+            Assert.IsFalse(exception.Message.Contains("private-record-content", StringComparison.Ordinal));
+        });
+    }
+
+    [TestMethod]
     public void CompiledQuery_ExplicitEnumTable_HeaderlessCustomDelimiterUsesCarrierMetadata()
     {
         WithCsv("20|10|99\n", path =>
@@ -264,9 +301,9 @@ public sealed class SeparatedValuesQueryRowSemanticTests
                 new[] { "20|Running|99" },
                 table.Select(row => string.Join(
                     "|",
-                    Enumerable.Range(0, row.Count).Select(index => row[index]?.ToString() ?? "<null>")))
+                    Enumerable.Range(0, row.Count).Select(index => row.ReadValue(index)?.ToString() ?? "<null>")))
                     .ToArray());
-            Assert.IsFalse(table.SelectMany(static row => row.Values).Any(static value => value is Enum));
+            Assert.IsFalse(table.SelectMany(static row => row.ReadValues()).Any(static value => value is Enum));
         });
     }
 
@@ -300,7 +337,7 @@ public sealed class SeparatedValuesQueryRowSemanticTests
                     new CsvSchemaProvider(),
                     EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
                 using var table = compiled.Run();
-                Assert.IsFalse(table.SelectMany(static row => row.Values).Any(static value => value is Enum));
+                Assert.IsFalse(table.SelectMany(static row => row.ReadValues()).Any(static value => value is Enum));
                 Assert.IsTrue(table.Columns.Any(column => column.EnumType is not null) ||
                               query.Contains("l.Name, r.Name", StringComparison.Ordinal));
             }
@@ -319,7 +356,7 @@ public sealed class SeparatedValuesQueryRowSemanticTests
         return table
             .Select(static row => string.Join(
                 "|",
-                Enumerable.Range(0, row.Count).Select(index => Format(row[index]))))
+                Enumerable.Range(0, row.Count).Select(index => Format(row.ReadValue(index)))))
             .ToArray();
     }
 

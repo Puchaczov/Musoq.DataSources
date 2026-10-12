@@ -63,8 +63,5 @@ internal sealed class SearchMatchesSource : SearchTextSourceBase<SearchMatch>
             resourceBudget);
     }
 
-    protected override object? GetPredicateValue(SearchMatch row, string columnName)
-    {
-        return SearchPredicateValues.GetMatchValue(row, columnName);
-    }
+
 }

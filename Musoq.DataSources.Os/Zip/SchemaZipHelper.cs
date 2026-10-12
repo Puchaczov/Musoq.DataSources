@@ -8,7 +8,6 @@ namespace Musoq.DataSources.Os.Zip;
 internal static class SchemaZipHelper
 {
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<ZipEntryEntity, object>> IndexToMethodAccessMap;
     public static readonly ISchemaColumn[] SchemaColumns;
 
     static SchemaZipHelper()
@@ -22,17 +21,6 @@ internal static class SchemaZipHelper
             { nameof(ZipEntryEntity.Length), 4 },
             { nameof(ZipEntryEntity.IsDirectory), 5 },
             { nameof(ZipEntryEntity.Level), 6 }
-        };
-
-        IndexToMethodAccessMap = new Dictionary<int, Func<ZipEntryEntity, object>>
-        {
-            { 0, info => info.Name },
-            { 1, info => info.FullName },
-            { 2, info => info.CompressedLength },
-            { 3, info => info.LastWriteTime },
-            { 4, info => info.Length },
-            { 5, info => info.IsDirectory },
-            { 6, info => info.Level }
         };
 
         SchemaColumns =

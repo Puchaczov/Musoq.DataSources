@@ -7,7 +7,7 @@ namespace Musoq.DataSources.Jira.Sources.Issues;
 internal static class IssuesSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> IssuesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<IJiraIssue, object?>> IssuesIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] IssuesColumns;
 
     static IssuesSourceHelper()
@@ -46,42 +46,6 @@ internal static class IssuesSourceHelper
             { nameof(IJiraIssue.Votes), 29 },
             { nameof(IJiraIssue.SecurityLevel), 30 },
             { nameof(IJiraIssue.Url), 31 }
-        };
-
-        IssuesIndexToMethodAccessMap = new Dictionary<int, Func<IJiraIssue, object?>>
-        {
-            { 0, issue => issue.Key },
-            { 1, issue => issue.Id },
-            { 2, issue => issue.Summary },
-            { 3, issue => issue.Description },
-            { 4, issue => issue.Type },
-            { 5, issue => issue.Status },
-            { 6, issue => issue.Priority },
-            { 7, issue => issue.Resolution },
-            { 8, issue => issue.Assignee },
-            { 9, issue => issue.AssigneeDisplayName },
-            { 10, issue => issue.Reporter },
-            { 11, issue => issue.ReporterDisplayName },
-            { 12, issue => issue.ProjectKey },
-            { 13, issue => issue.CreatedAt },
-            { 14, issue => issue.UpdatedAt },
-            { 15, issue => issue.ResolvedAt },
-            { 16, issue => issue.DueDate },
-            { 17, issue => issue.Labels },
-            { 18, issue => issue.Components },
-            { 19, issue => issue.FixVersions },
-            { 20, issue => issue.AffectsVersions },
-            { 21, issue => issue.OriginalEstimateSeconds },
-            { 22, issue => issue.RemainingEstimateSeconds },
-            { 23, issue => issue.TimeSpentSeconds },
-            { 24, issue => issue.OriginalEstimate },
-            { 25, issue => issue.RemainingEstimate },
-            { 26, issue => issue.TimeSpent },
-            { 27, issue => issue.ParentKey },
-            { 28, issue => issue.Environment },
-            { 29, issue => issue.Votes },
-            { 30, issue => issue.SecurityLevel },
-            { 31, issue => issue.Url }
         };
 
         IssuesColumns =

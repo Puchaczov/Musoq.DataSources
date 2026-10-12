@@ -320,12 +320,7 @@ public class SeparatedValuesQueryScopedSourceMaterializationBenchmarks
         where TMaterializer : struct, IQueryRowMaterializer<TRow>
     {
         var request = new QueryScopedRowSourceRequest(context, shape);
-        var source = _queryScopedSchema.GetQueryScopedRowSource<TRow, TMaterializer>(
-            "comma",
-            request,
-            path ?? _path,
-            true,
-            0);
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Query(_queryScopedSchema, global::Musoq.Schema.SourceArguments.Create(path ?? _path, global::Musoq.Schema.SourceArguments.Create(true, global::Musoq.Schema.SourceArguments.Create(0, global::Musoq.Schema.SourceArguments.Empty)))).Read<TRow, TMaterializer>("comma", request);
         var outcome = new BenchmarkOutcomeBuilder();
         foreach (var chunk in source.Chunks)
         {

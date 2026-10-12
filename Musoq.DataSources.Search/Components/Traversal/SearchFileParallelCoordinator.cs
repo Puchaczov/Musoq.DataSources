@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Musoq.Schema.DataSources;
 
 using Musoq.DataSources.Search.Components.Diagnostics;
+using Musoq.DataSources.Search.Components.Testing;
 using Musoq.DataSources.Search.Components.Text;
 
 namespace Musoq.DataSources.Search.Components.Traversal;
@@ -667,9 +668,15 @@ internal static class SearchFileParallelCoordinator
         Task[] tasks,
         CancellationToken cancellationToken)
     {
+        foreach (var task in tasks)
+            EnsureFaultObservation(task);
+
+        SearchTestHooks.BeforeParallelWait();
+
         if (!cancellationToken.CanBeCanceled)
         {
             Task.WhenAny(tasks).GetAwaiter().GetResult();
+            ObserveFaults(tasks);
             return;
         }
 
@@ -682,7 +689,43 @@ internal static class SearchFileParallelCoordinator
         Array.Copy(tasks, waiters, tasks.Length);
         waiters[^1] = cancellation.Task;
         Task.WhenAny(waiters).GetAwaiter().GetResult();
+        ObserveFaults(tasks);
         cancellationToken.ThrowIfCancellationRequested();
+    }
+
+    private static void EnsureFaultObservation(Task task)
+    {
+        if (task.IsFaulted)
+        {
+            ObserveFault(task);
+            return;
+        }
+
+        if (task.IsCompleted)
+            return;
+
+        _ = task.ContinueWith(
+            static completed => ObserveFault(completed),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted |
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
+    private static void ObserveFaults(IEnumerable<Task> tasks)
+    {
+        foreach (var task in tasks)
+            ObserveFault(task);
+    }
+
+    private static void ObserveFault(Task task)
+    {
+        if (!task.IsFaulted)
+            return;
+
+        var exception = task.Exception;
+        if (exception is not null)
+            SearchTestHooks.TaskExceptionObserved(exception);
     }
 
     private readonly record struct QueuedChunk<T>(

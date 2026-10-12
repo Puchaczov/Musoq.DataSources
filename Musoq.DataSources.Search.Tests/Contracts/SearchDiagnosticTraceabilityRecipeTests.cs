@@ -140,14 +140,14 @@ public sealed class SearchDiagnosticTraceabilityRecipeTests
         return result.Rows
             .Select(row =>
             {
-                var path = NormalizePath((string)row[0]);
-                var patternId = (string)row[1];
+                var path = NormalizePath((string)row.ReadValue(0));
+                var patternId = (string)row.ReadValue(1);
                 var parts = patternId.Split('-', 2, StringSplitOptions.None);
                 var category = parts[0];
                 var diagnosticId = parts.Length == 2 ? parts[1] : string.Empty;
                 var origin = OriginFor(path);
                 var line = File.ReadLines(Path.Combine(root, path.Replace('/', Path.DirectorySeparatorChar)))
-                    .ElementAt(checked((int)(long)row[2] - 1));
+                    .ElementAt(checked((int)(long)row.ReadValue(2) - 1));
                 var evidence = line.TrimStart().StartsWith("//", StringComparison.Ordinal)
                     ? "lexical-comment"
                     : "lexical-mention";
@@ -157,9 +157,9 @@ public sealed class SearchDiagnosticTraceabilityRecipeTests
                     diagnosticId,
                     origin,
                     evidence,
-                    (string?)row[4],
-                    (long)row[2],
-                    (long)row[3]);
+                    (string?)row.ReadValue(4),
+                    (long)row.ReadValue(2),
+                    (long)row.ReadValue(3));
             })
             .ToArray();
     }

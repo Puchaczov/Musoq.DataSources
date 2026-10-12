@@ -24,6 +24,7 @@ internal sealed class SearchPathsSource : RowSourceBase<SearchPath>
     private readonly ScopePolicy _scope;
     private readonly long _maxFiles;
     private readonly SourceExecutionContext _executionContext;
+    private readonly Func<SearchPath, bool>? _acceptedRow;
     private readonly SearchScopeCounters _counters;
 
     public SearchPathsSource(
@@ -56,6 +57,7 @@ internal sealed class SearchPathsSource : RowSourceBase<SearchPath>
 
         _maxFiles = maxFiles;
         _executionContext = executionContext ?? throw new ArgumentNullException(nameof(executionContext));
+        _acceptedRow = TypedPredicatePlan.Get<SearchPath>(executionContext.Plan);
         _counters = counters ?? new SearchScopeCounters();
     }
 
@@ -121,11 +123,8 @@ internal sealed class SearchPathsSource : RowSourceBase<SearchPath>
                     relativePath = relativePath.Replace(Path.AltDirectorySeparatorChar, '/');
 
                 var row = new SearchPath(relativePath, null, "file");
-                if (_executionContext.Plan.AcceptedPredicate is not null &&
-                    !SearchPredicateEvaluator.Matches(
-                        _executionContext.Plan.AcceptedPredicate,
-                        row,
-                        SearchPredicateValues.GetPathValue))
+                if (_acceptedRow is not null &&
+                    !_acceptedRow!(row))
                     continue;
 
                 if (acceptedWindow is not null && !acceptedWindow.TryAccept())

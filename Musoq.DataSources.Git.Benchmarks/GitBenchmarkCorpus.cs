@@ -25,7 +25,7 @@ public sealed record GitBenchmarkCorpus(
 
 internal static class GitBenchmarkCorpusFactory
 {
-    private const string CorpusVersion = "v12";
+    private const string CorpusVersion = "v12-typed-predicates12c";
     private const int InitialTimestamp = 1_700_000_000;
 
     public static GitBenchmarkCorpus Ensure(GitBenchmarkProfile profile, bool withCommitGraph = true)

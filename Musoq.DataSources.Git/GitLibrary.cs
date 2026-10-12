@@ -288,6 +288,9 @@ public class GitLibrary : LibraryBase
 /// <summary>Implements the engine kernel that selects the newest non-null commit.</summary>
 public static class MaxCommitAggregateKernel
 {
+    /// <summary>Initializes independently owned kernel state.</summary>
+    public static void Reset(ref State state) => state = default;
+
     /// <summary>Stores the current maximum-commit aggregate value.</summary>
     public struct State
     {
@@ -316,6 +319,9 @@ public static class MaxCommitAggregateKernel
 /// <summary>Implements the engine kernel that selects the oldest non-null commit.</summary>
 public static class MinCommitAggregateKernel
 {
+    /// <summary>Initializes independently owned kernel state.</summary>
+    public static void Reset(ref State state) => state = default;
+
     /// <summary>Stores the current minimum-commit aggregate value.</summary>
     public struct State
     {

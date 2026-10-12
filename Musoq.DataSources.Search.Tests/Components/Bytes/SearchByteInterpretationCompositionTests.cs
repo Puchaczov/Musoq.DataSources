@@ -51,28 +51,28 @@ public sealed class SearchByteInterpretationCompositionTests
             Assert.AreEqual(3, result.Count);
             CollectionAssert.AreEqual(
                 new[] { "01-valid.bin", "02-false-magic.bin", "03-invalid-length.bin" },
-                Enumerable.Range(0, result.Count).Select(index => result[index][0]).ToArray());
+                Enumerable.Range(0, result.Count).Select(index => result[index].ReadValue(0)).ToArray());
 
-            Assert.AreEqual(0L, result[0][1]);
-            Assert.AreEqual(0L, result[0][2]);
-            Assert.AreEqual(6L, result[0][3]);
-            Assert.AreEqual(true, result[0][4]);
-            Assert.AreEqual((byte)2, result[0][5]);
-            Assert.AreEqual((byte)0x7F, result[0][6]);
+            Assert.AreEqual(0L, result[0].ReadValue(1));
+            Assert.AreEqual(0L, result[0].ReadValue(2));
+            Assert.AreEqual(6L, result[0].ReadValue(3));
+            Assert.AreEqual(true, result[0].ReadValue(4));
+            Assert.AreEqual((byte)2, result[0].ReadValue(5));
+            Assert.AreEqual((byte)0x7F, result[0].ReadValue(6));
 
-            Assert.AreEqual(0L, result[1][1]);
-            Assert.AreEqual(0L, result[1][2]);
-            Assert.AreEqual(6L, result[1][3]);
-            Assert.AreEqual(true, result[1][4]);
-            Assert.IsNull(result[1][5]);
-            Assert.IsNull(result[1][6]);
+            Assert.AreEqual(0L, result[1].ReadValue(1));
+            Assert.AreEqual(0L, result[1].ReadValue(2));
+            Assert.AreEqual(6L, result[1].ReadValue(3));
+            Assert.AreEqual(true, result[1].ReadValue(4));
+            Assert.IsNull(result[1].ReadValue(5));
+            Assert.IsNull(result[1].ReadValue(6));
 
-            Assert.AreEqual(0L, result[2][1]);
-            Assert.AreEqual(0L, result[2][2]);
-            Assert.AreEqual(6L, result[2][3]);
-            Assert.AreEqual(true, result[2][4]);
-            Assert.IsNull(result[2][5]);
-            Assert.IsNull(result[2][6]);
+            Assert.AreEqual(0L, result[2].ReadValue(1));
+            Assert.AreEqual(0L, result[2].ReadValue(2));
+            Assert.AreEqual(6L, result[2].ReadValue(3));
+            Assert.AreEqual(true, result[2].ReadValue(4));
+            Assert.IsNull(result[2].ReadValue(5));
+            Assert.IsNull(result[2].ReadValue(6));
         }
         finally
         {
@@ -101,10 +101,10 @@ public sealed class SearchByteInterpretationCompositionTests
                 cross apply Interpret<BoundedRecord>(candidate.WindowBytes) record").Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("record.bin", result[0][0]);
-            Assert.AreEqual(0L, result[0][1]);
-            Assert.AreEqual((byte)2, result[0][2]);
-            Assert.AreEqual((byte)0x7F, result[0][3]);
+            Assert.AreEqual("record.bin", result[0].ReadValue(0));
+            Assert.AreEqual(0L, result[0].ReadValue(1));
+            Assert.AreEqual((byte)2, result[0].ReadValue(2));
+            Assert.AreEqual((byte)0x7F, result[0].ReadValue(3));
         }
         finally
         {
@@ -145,22 +145,22 @@ public sealed class SearchByteInterpretationCompositionTests
 
             Assert.AreEqual(2, result.Count);
 
-            Assert.AreEqual("01-valid-nested.bin", result[0][0]);
-            Assert.AreEqual(0L, result[0][1]);
-            Assert.AreEqual(7L, result[0][2]);
-            Assert.AreEqual(true, result[0][3]);
-            Assert.IsNull(result[0][4]);
-            Assert.IsNull(result[0][5]);
-            Assert.AreEqual(7, result[0][6]);
+            Assert.AreEqual("01-valid-nested.bin", result[0].ReadValue(0));
+            Assert.AreEqual(0L, result[0].ReadValue(1));
+            Assert.AreEqual(7L, result[0].ReadValue(2));
+            Assert.AreEqual(true, result[0].ReadValue(3));
+            Assert.IsNull(result[0].ReadValue(4));
+            Assert.IsNull(result[0].ReadValue(5));
+            Assert.AreEqual(7, result[0].ReadValue(6));
 
-            Assert.AreEqual("02-nested-overread.bin", result[1][0]);
-            Assert.AreEqual(0L, result[1][1]);
-            Assert.AreEqual(4L, result[1][2]);
-            Assert.AreEqual(false, result[1][3]);
-            Assert.AreEqual("Payload.Value", result[1][4]);
-            StringAssert.Contains((string)result[1][5]!, "ISE0001");
-            StringAssert.Contains((string)result[1][5]!, "Payload.Value");
-            Assert.AreEqual(2, result[1][6]);
+            Assert.AreEqual("02-nested-overread.bin", result[1].ReadValue(0));
+            Assert.AreEqual(0L, result[1].ReadValue(1));
+            Assert.AreEqual(4L, result[1].ReadValue(2));
+            Assert.AreEqual(false, result[1].ReadValue(3));
+            Assert.AreEqual("Payload.Value", result[1].ReadValue(4));
+            StringAssert.Contains((string)result[1].ReadValue(5)!, "ISE0001");
+            StringAssert.Contains((string)result[1].ReadValue(5)!, "Payload.Value");
+            Assert.AreEqual(2, result[1].ReadValue(6));
         }
         finally
         {

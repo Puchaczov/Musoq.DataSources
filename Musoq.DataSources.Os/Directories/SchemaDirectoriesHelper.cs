@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Musoq.Schema;
@@ -9,7 +9,6 @@ namespace Musoq.DataSources.Os.Directories;
 internal static class SchemaDirectoriesHelper
 {
     public static readonly IReadOnlyDictionary<string, int> DirectoriesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<DirectoryInfo, object?>> DirectoriesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] DirectoriesColumns;
 
     static SchemaDirectoriesHelper()
@@ -30,24 +29,6 @@ internal static class SchemaDirectoriesHelper
             { nameof(DirectoryInfo.Parent), 11 },
             { nameof(DirectoryInfo.Root), 12 },
             { nameof(DirectoryInfo), 13 }
-        };
-
-        DirectoriesIndexToMethodAccessMap = new Dictionary<int, Func<DirectoryInfo, object?>>
-        {
-            { 0, info => info.FullName },
-            { 1, info => info.Attributes },
-            { 2, info => info.CreationTime },
-            { 3, info => info.CreationTimeUtc },
-            { 4, info => info.LastAccessTime },
-            { 5, info => info.LastAccessTimeUtc },
-            { 6, info => info.LastWriteTime },
-            { 7, info => info.LastWriteTimeUtc },
-            { 8, info => info.Exists },
-            { 9, info => info.Extension },
-            { 10, info => info.Name },
-            { 11, info => info.Parent },
-            { 12, info => info.Root },
-            { 13, info => info }
         };
 
         DirectoriesColumns =

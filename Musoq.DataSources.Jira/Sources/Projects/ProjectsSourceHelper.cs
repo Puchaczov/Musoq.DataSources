@@ -7,7 +7,7 @@ namespace Musoq.DataSources.Jira.Sources.Projects;
 internal static class ProjectsSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> ProjectsNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<IJiraProject, object?>> ProjectsIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] ProjectsColumns;
 
     static ProjectsSourceHelper()
@@ -23,19 +23,6 @@ internal static class ProjectsSourceHelper
             { nameof(IJiraProject.Category), 6 },
             { nameof(IJiraProject.CategoryDescription), 7 },
             { nameof(IJiraProject.AvatarUrl), 8 }
-        };
-
-        ProjectsIndexToMethodAccessMap = new Dictionary<int, Func<IJiraProject, object?>>
-        {
-            { 0, project => project.Id },
-            { 1, project => project.Key },
-            { 2, project => project.Name },
-            { 3, project => project.Description },
-            { 4, project => project.Lead },
-            { 5, project => project.Url },
-            { 6, project => project.Category },
-            { 7, project => project.CategoryDescription },
-            { 8, project => project.AvatarUrl }
         };
 
         ProjectsColumns =

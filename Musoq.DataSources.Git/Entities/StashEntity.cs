@@ -13,7 +13,6 @@ public class StashEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>Maps row indexes to property accessors.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<StashEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a stash row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -44,11 +43,7 @@ public class StashEntity
             { nameof(Selector), 0 }, { nameof(Sha), 1 }, { nameof(Message), 2 },
             { nameof(Index), 3 }, { nameof(WorkTree), 4 }, { nameof(UntrackedFiles), 5 }
         };
-        IndexToObjectAccessMap = new Dictionary<int, Func<StashEntity, object?>>
-        {
-            { 0, entity => entity.Selector }, { 1, entity => entity.Sha }, { 2, entity => entity.Message },
-            { 3, entity => entity.Index }, { 4, entity => entity.WorkTree }, { 5, entity => entity.UntrackedFiles }
-        };
+
     }
 
     /// <summary>Creates a detached stash snapshot from a LibGit2Sharp stash.</summary>

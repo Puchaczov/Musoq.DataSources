@@ -19,11 +19,6 @@ public class CommitEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>
-    ///     A read-only dictionary mapping column indices to functions that access the corresponding properties.
-    /// </summary>
-    public static readonly IReadOnlyDictionary<int, Func<CommitEntity, object?>> IndexToObjectAccessMap;
-
-    /// <summary>
     ///     An array of schema columns representing the structure of the commit entity.
     /// </summary>
     public static readonly ISchemaColumn[] Columns =
@@ -70,19 +65,6 @@ public class CommitEntity
             { nameof(Self), 9 }
         };
 
-        IndexToObjectAccessMap = new Dictionary<int, Func<CommitEntity, object?>>
-        {
-            { 0, entity => entity.Sha },
-            { 1, entity => entity.Message },
-            { 2, entity => entity.MessageShort },
-            { 3, entity => entity.Author },
-            { 4, entity => entity.AuthorEmail },
-            { 5, entity => entity.Committer },
-            { 6, entity => entity.CommitterEmail },
-            { 7, entity => entity.CommittedWhen },
-            { 8, entity => entity.Parents },
-            { 9, entity => entity.Self }
-        };
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -22,7 +22,7 @@ public class ArchivesSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to the archive file</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the archive file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>archives.file(string path)</from>
@@ -78,17 +78,17 @@ public class ArchivesSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return name.ToLowerInvariant() switch
         {
             FileTable => EnsureSourceType<T, EntryWrapper>(
                 name,
-                new ArchivesRowSource((string)parameters[0], executionContext)),
-            _ => throw new NotSupportedException($"Source {parameters[0]} is not supported.")
+                new ArchivesRowSource(parameters.GetValue<string>(0), executionContext)),
+            _ => throw new NotSupportedException($"Source {parameters.GetValue<string>(0)} is not supported.")
         };
     }
 

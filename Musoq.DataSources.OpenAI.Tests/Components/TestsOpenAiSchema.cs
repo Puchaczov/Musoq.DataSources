@@ -15,22 +15,22 @@ internal class TestsOpenAiSchema(IOpenAiApi openAiApi) : OpenAiSchema
         ];
     }
 
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return EnsureSourceType<T, OpenAiEntity>(
             name,
             new TestsOpenAiSingleRowSource(openAiApi, new OpenAiRequestInfo
             {
-                Model = parameters.Length > 0
-                    ? Convert.ToString(parameters[0]) ?? Defaults.DefaultModel
+                Model = parameters.Count > 0
+                    ? parameters.GetValue<string>(0) ?? Defaults.DefaultModel
                     : Defaults.DefaultModel,
-                MaxTokens = parameters.Length > 1 ? Convert.ToInt32(parameters[1]) : 4000,
-                Temperature = parameters.Length > 2 ? Convert.ToSingle(parameters[2]) : 0,
-                FrequencyPenalty = parameters.Length > 3 ? Convert.ToSingle(parameters[3]) : 0,
-                PresencePenalty = parameters.Length > 4 ? Convert.ToSingle(parameters[4]) : 0
+                MaxTokens = parameters.Count > 1 ? parameters.GetValue<int>(1) : 4000,
+                Temperature = parameters.Count > 2 ? parameters.GetValue<float>(2) : 0,
+                FrequencyPenalty = parameters.Count > 3 ? parameters.GetValue<float>(3) : 0,
+                PresencePenalty = parameters.Count > 4 ? parameters.GetValue<float>(4) : 0
             }));
     }
 }

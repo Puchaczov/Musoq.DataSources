@@ -189,18 +189,18 @@ public sealed class SearchPlannerDifferentialTests
             Assert.AreEqual(2, result.Count);
             CollectionAssert.AreEqual(
                 new[] { "nested/gamma.txt", "alpha.txt" },
-                result.Rows.Select(static row => (string)row[0]!).ToArray());
+                result.Rows.Select(static row => (string)row.ReadValue(0)!).ToArray());
             CollectionAssert.AreEqual(
                 new long[] { 1, 1 },
-                result.Rows.Select(static row => (long)row[4]).ToArray());
-            Assert.IsTrue(result.Rows.All(row => row[1] is null));
-            Assert.IsTrue(result.Rows.All(row => (string)row[2]! == "file"));
-            Assert.IsTrue(result.Rows.All(row => row[3] is null));
-            Assert.IsTrue(result.Rows.All(row => (long)row[7] == 2));
+                result.Rows.Select(static row => (long)row.ReadValue(4)).ToArray());
+            Assert.IsTrue(result.Rows.All(row => row.ReadValue(1) is null));
+            Assert.IsTrue(result.Rows.All(row => (string)row.ReadValue(2)! == "file"));
+            Assert.IsTrue(result.Rows.All(row => row.ReadValue(3) is null));
+            Assert.IsTrue(result.Rows.All(row => (long)row.ReadValue(7) == 2));
             CollectionAssert.AreEqual(
                 new long[] { 0, 5 },
-                result.Rows.Select(static row => (long)row[8]).ToArray());
-            Assert.IsTrue(result.Rows.All(row => (long)row[9] == 4));
+                result.Rows.Select(static row => (long)row.ReadValue(8)).ToArray());
+            Assert.IsTrue(result.Rows.All(row => (long)row.ReadValue(9) == 4));
         }
         finally
         {
@@ -663,26 +663,26 @@ public sealed class SearchPlannerDifferentialTests
     {
         return row => row switch
         {
-            SearchMatch match => SearchPredicateEvaluator.Matches(
+            SearchMatch match => FrozenPredicateOracle.Matches(
                 predicate,
                 match,
-                SearchPredicateValues.GetMatchValue),
-            SearchLine line => SearchPredicateEvaluator.Matches(
+                FrozenPredicateValues.GetMatchValue),
+            SearchLine line => FrozenPredicateOracle.Matches(
                 predicate,
                 line,
-                SearchPredicateValues.GetLineValue),
-            SearchFile file => SearchPredicateEvaluator.Matches(
+                FrozenPredicateValues.GetLineValue),
+            SearchFile file => FrozenPredicateOracle.Matches(
                 predicate,
                 file,
-                SearchPredicateValues.GetFileValue),
-            SearchCount count => SearchPredicateEvaluator.Matches(
+                FrozenPredicateValues.GetFileValue),
+            SearchCount count => FrozenPredicateOracle.Matches(
                 predicate,
                 count,
-                SearchPredicateValues.GetCountValue),
-            SearchPath path => SearchPredicateEvaluator.Matches(
+                FrozenPredicateValues.GetCountValue),
+            SearchPath path => FrozenPredicateOracle.Matches(
                 predicate,
                 path,
-                SearchPredicateValues.GetPathValue),
+                FrozenPredicateValues.GetPathValue),
             _ => throw new InvalidOperationException($"Unknown Search row type '{row.GetType()}'.")
         };
     }

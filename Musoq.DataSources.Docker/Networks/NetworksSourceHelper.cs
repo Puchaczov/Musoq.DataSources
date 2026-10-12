@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Docker.Networks;
 internal static class NetworksSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> NetworksNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<NetworkEntity, object?>> NetworksIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] NetworksColumns;
 
     static NetworksSourceHelper()
@@ -30,27 +30,6 @@ internal static class NetworksSourceHelper
             { nameof(NetworkEntity.Labels), 14 },
             { nameof(NetworkEntity.Peers), 15 },
             { nameof(NetworkEntity.Services), 16 }
-        };
-
-        NetworksIndexToMethodAccessMap = new Dictionary<int, Func<NetworkEntity, object?>>
-        {
-            { 0, info => info.Name },
-            { 1, info => info.ID },
-            { 2, info => info.Created },
-            { 3, info => info.Scope },
-            { 4, info => info.Driver },
-            { 5, info => info.EnableIPv6 },
-            { 6, info => info.IPAM },
-            { 7, info => info.Internal },
-            { 8, info => info.Attachable },
-            { 9, info => info.Ingress },
-            { 10, info => info.ConfigFrom },
-            { 11, info => info.ConfigOnly },
-            { 12, info => info.Containers },
-            { 13, info => info.Options },
-            { 14, info => info.Labels },
-            { 15, info => info.Peers },
-            { 16, info => info.Services }
         };
 
         NetworksColumns =

@@ -59,8 +59,8 @@ public class ImagesTests
 
         Assert.AreEqual(2, table.Count);
 
-        Assert.AreEqual("Inch", table[0][0]);
-        Assert.AreEqual("Inch", table[1][0]);
+        Assert.AreEqual("Inch", table[0].ReadValue(0));
+        Assert.AreEqual("Inch", table[1].ReadValue(0));
     }
 
     [TestMethod]
@@ -73,8 +73,8 @@ public class ImagesTests
 
         Assert.AreEqual(2, table.Count);
 
-        Assert.AreEqual("Inch", table[0][0]);
-        Assert.AreEqual("Inch", table[1][0]);
+        Assert.AreEqual("Inch", table[0].ReadValue(0));
+        Assert.AreEqual("Inch", table[1].ReadValue(0));
     }
 
     [TestMethod]
@@ -87,8 +87,8 @@ public class ImagesTests
 
         Assert.AreEqual(2, table.Count);
 
-        Assert.AreEqual(1, table[0][0]);
-        Assert.AreEqual(1, table[1][0]);
+        Assert.AreEqual(1, table[0].ReadValue(0));
+        Assert.AreEqual(1, table[1].ReadValue(0));
     }
 
     [TestMethod]
@@ -101,8 +101,8 @@ public class ImagesTests
 
         Assert.AreEqual(2, table.Count);
 
-        Assert.AreEqual(1, table[0][0]);
-        Assert.AreEqual(1, table[1][0]);
+        Assert.AreEqual(1, table[0].ReadValue(0));
+        Assert.AreEqual(1, table[1].ReadValue(0));
     }
 
     [TestMethod]
@@ -115,8 +115,8 @@ public class ImagesTests
 
         Assert.AreEqual(2, table.Count);
 
-        Assert.IsTrue(IsValidJson((string)table[0][0]));
-        Assert.IsTrue(IsValidJson((string)table[1][0]));
+        Assert.IsTrue(IsValidJson((string)table[0].ReadValue(0)));
+        Assert.IsTrue(IsValidJson((string)table[1].ReadValue(0)));
     }
 
     [TestMethod]
@@ -131,16 +131,16 @@ public class ImagesTests
 
         Assert.AreEqual(4, table.Columns.Count());
 
-        Assert.AreEqual("f.Name", table.Columns.ElementAt(0).ColumnName);
+        Assert.AreEqual("Name", table.Columns.ElementAt(0).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
-        Assert.AreEqual("m.DirectoryName", table.Columns.ElementAt(1).ColumnName);
+        Assert.AreEqual("DirectoryName", table.Columns.ElementAt(1).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(1).ColumnType);
 
-        Assert.AreEqual("m.TagName", table.Columns.ElementAt(2).ColumnName);
+        Assert.AreEqual("TagName", table.Columns.ElementAt(2).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(2).ColumnType);
 
-        Assert.AreEqual("m.Description", table.Columns.ElementAt(3).ColumnName);
+        Assert.AreEqual("Description", table.Columns.ElementAt(3).ColumnName);
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(3).ColumnType);
 
         Assert.IsTrue(table.Count() > 100);

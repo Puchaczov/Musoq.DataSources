@@ -42,18 +42,18 @@ public class GitHubPullRequestsTests
         Assert.AreEqual(2, table.Count);
 
 
-        Assert.IsTrue(table.Any(row => (long)row[0] == 1L && (int)row[1] == 201));
-        Assert.IsTrue(table.Any(row => (long)row[0] == 2L && (int)row[1] == 202));
+        Assert.IsTrue(table.Any(row => (long)row.ReadValue(0) == 1L && (int)row.ReadValue(1) == 201));
+        Assert.IsTrue(table.Any(row => (long)row.ReadValue(0) == 2L && (int)row.ReadValue(1) == 202));
 
-        var pr1 = table.First(row => (long)row[0] == 1L);
-        Assert.AreEqual(201, pr1[1]);
-        Assert.AreEqual("Add new feature", pr1[2]);
-        Assert.AreEqual("open", pr1[3]);
-        Assert.AreEqual(false, pr1[4]);
+        var pr1 = table.First(row => (long)row.ReadValue(0) == 1L);
+        Assert.AreEqual(201, pr1.ReadValue(1));
+        Assert.AreEqual("Add new feature", pr1.ReadValue(2));
+        Assert.AreEqual("open", pr1.ReadValue(3));
+        Assert.AreEqual(false, pr1.ReadValue(4));
 
-        var pr2 = table.First(row => (long)row[0] == 2L);
-        Assert.AreEqual(202, pr2[1]);
-        Assert.AreEqual(true, pr2[4]);
+        var pr2 = table.First(row => (long)row.ReadValue(0) == 2L);
+        Assert.AreEqual(202, pr2.ReadValue(1));
+        Assert.AreEqual(true, pr2.ReadValue(4));
 
         api.Verify(
             f => f.GetPullRequestsAsync("testowner", "testrepo", It.IsAny<PullRequestRequest>(), It.IsAny<int?>(),
@@ -80,7 +80,7 @@ public class GitHubPullRequestsTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(201, table[0][0]);
+        Assert.AreEqual(201, table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -104,8 +104,8 @@ public class GitHubPullRequestsTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(201, table[0][0]);
-        Assert.AreEqual(true, table[0][2]);
+        Assert.AreEqual(201, table[0].ReadValue(0));
+        Assert.AreEqual(true, table[0].ReadValue(2));
     }
 
     [TestMethod]
@@ -128,7 +128,7 @@ public class GitHubPullRequestsTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(201, table[0][0]);
+        Assert.AreEqual(201, table[0].ReadValue(0));
 
         api.Verify(
             f => f.GetPullRequestsAsync(

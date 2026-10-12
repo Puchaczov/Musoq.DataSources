@@ -6,12 +6,28 @@ using System.Linq;
 using LibGit2Sharp;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.Optimization;
+using Musoq.DataSources.Common;
+using System.Linq.Expressions;
 
 namespace Musoq.DataSources.Git;
 
 internal sealed class GitFilterParameters
 {
-    public SourcePredicateExpression? RawPredicate { get; set; }
+    public TypedPredicatePlan TypedPredicates { get; } = new();
+    public Func<Commit, bool>? CommitPredicate { get; set; }
+    public Func<GitCommitRecord, bool>? GitCommitRecordPredicate { get; set; }
+    public Func<Branch, bool>? BranchPredicate { get; set; }
+    public Func<GitBranchRecord, bool>? GitBranchRecordPredicate { get; set; }
+    public Func<Tag, bool>? TagPredicate { get; set; }
+    public Func<GitTagRecord, bool>? GitTagRecordPredicate { get; set; }
+    public Func<GitStashRecord, bool>? GitStashRecordPredicate { get; set; }
+    public Func<StashEntity, bool>? StashEntityPredicate { get; set; }
+    public Func<GitRemoteTagRecord, bool>? GitRemoteTagRecordPredicate { get; set; }
+    public Func<RemoteTagEntity, bool>? RemoteTagEntityPredicate { get; set; }
+    public Func<Remote, bool>? RemotePredicate { get; set; }
+    public Func<GitRemoteRecord, bool>? GitRemoteRecordPredicate { get; set; }
+    public Func<StatusEntry, bool>? StatusEntryPredicate { get; set; }
+    public Func<GitStatusRecord, bool>? GitStatusRecordPredicate { get; set; }
     public string? Author { get; set; }
     public string? AuthorEmail { get; set; }
     public string? Committer { get; set; }
@@ -204,9 +220,11 @@ internal static class GitSourcePlanner
                            residualPredicate is null &&
                            residualOrderBy.Count == 0 &&
                            IsNonNegativeWindow(request.Skip, request.Take);
+        var filters = ExtractFilters(tableName, acceptedPredicate);
         var properties = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            [FiltersPropertyName] = ExtractFilters(tableName, acceptedPredicate),
+            [FiltersPropertyName] = filters,
+            [TypedPredicatePlan.PropertyName] = filters.TypedPredicates,
             [ProjectionPropertyName] = projection
         };
 
@@ -253,23 +271,6 @@ internal static class GitSourcePlanner
     public static IReadOnlyList<string>? OrderedExactValues(IReadOnlySet<string> values) =>
         values.Count == 0 ? null : values.OrderBy(static value => value, StringComparer.Ordinal).ToArray();
 
-    public static bool Matches(SourcePredicateExpression? predicate, object entity)
-    {
-        return predicate switch
-        {
-            null => true,
-            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
-                Matches(logical.Left, entity) && Matches(logical.Right, entity),
-            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.Or } logical =>
-                Matches(logical.Left, entity) || Matches(logical.Right, entity),
-            SourcePredicateComparison comparison => EvaluateComparison(comparison, entity),
-            SourcePredicateIn inPredicate => EvaluateIn(inPredicate, entity),
-            SourcePredicateNullCheck nullCheck =>
-                (EvaluateValue(nullCheck.Expression, entity) is null) ^ nullCheck.IsNegated,
-            _ => false
-        };
-    }
-
     public static bool Matches(GitFilterParameters filters, Commit commit)
     {
         if (filters.Since is not null)
@@ -291,16 +292,7 @@ internal static class GitSourcePlanner
                Matches(filters.AuthorEmail, commit.Author.Email) &&
                Matches(filters.Committer, commit.Committer.Name) &&
                Matches(filters.CommitterEmail, commit.Committer.Email) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(CommitEntity.Author) => commit.Author.Name,
-                   nameof(CommitEntity.AuthorEmail) => commit.Author.Email,
-                   nameof(CommitEntity.Committer) => commit.Committer.Name,
-                   nameof(CommitEntity.CommitterEmail) => commit.Committer.Email,
-                   nameof(CommitEntity.Sha) => commit.Sha,
-                   nameof(CommitEntity.CommittedWhen) => commit.Committer.When,
-                   _ => null
-               });
+               (filters.CommitPredicate?.Invoke(commit) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, GitCommitRecord commit)
@@ -324,16 +316,7 @@ internal static class GitSourcePlanner
                Matches(filters.AuthorEmail, commit.AuthorEmail) &&
                Matches(filters.Committer, commit.Committer) &&
                Matches(filters.CommitterEmail, commit.CommitterEmail) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(CommitEntity.Author) => commit.Author,
-                   nameof(CommitEntity.AuthorEmail) => commit.AuthorEmail,
-                   nameof(CommitEntity.Committer) => commit.Committer,
-                   nameof(CommitEntity.CommitterEmail) => commit.CommitterEmail,
-                   nameof(CommitEntity.Sha) => commit.Sha,
-                   nameof(CommitEntity.CommittedWhen) => commit.CommittedWhen,
-                   _ => null
-               });
+               (filters.GitCommitRecordPredicate?.Invoke(commit) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, Branch branch)
@@ -343,15 +326,7 @@ internal static class GitSourcePlanner
                Matches(filters.IsRemote, branch.IsRemote) &&
                Matches(filters.IsCurrentRepositoryHead, branch.IsCurrentRepositoryHead) &&
                Matches(filters.IsTracking, branch.IsTracking) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(BranchEntity.FriendlyName) => branch.FriendlyName,
-                   nameof(BranchEntity.CanonicalName) => branch.CanonicalName,
-                   nameof(BranchEntity.IsRemote) => branch.IsRemote,
-                   nameof(BranchEntity.IsCurrentRepositoryHead) => branch.IsCurrentRepositoryHead,
-                   nameof(BranchEntity.IsTracking) => branch.IsTracking,
-                   _ => null
-               });
+               (filters.BranchPredicate?.Invoke(branch) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, GitBranchRecord branch)
@@ -361,15 +336,7 @@ internal static class GitSourcePlanner
                Matches(filters.IsRemote, branch.IsRemote) &&
                Matches(filters.IsCurrentRepositoryHead, branch.IsCurrentRepositoryHead) &&
                Matches(filters.IsTracking, branch.IsTracking) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(BranchEntity.FriendlyName) => branch.FriendlyName,
-                   nameof(BranchEntity.CanonicalName) => branch.CanonicalName,
-                   nameof(BranchEntity.IsRemote) => branch.IsRemote,
-                   nameof(BranchEntity.IsCurrentRepositoryHead) => branch.IsCurrentRepositoryHead,
-                   nameof(BranchEntity.IsTracking) => branch.IsTracking,
-                   _ => null
-               });
+               (filters.GitBranchRecordPredicate?.Invoke(branch) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, Tag tag)
@@ -379,13 +346,7 @@ internal static class GitSourcePlanner
                Matches(filters.CanonicalName, tag.CanonicalName) &&
                Matches(filters.CanonicalNames, tag.CanonicalName) &&
                Matches(filters.IsAnnotated, tag.IsAnnotated) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(TagEntity.FriendlyName) => tag.FriendlyName,
-                   nameof(TagEntity.CanonicalName) => tag.CanonicalName,
-                   nameof(TagEntity.IsAnnotated) => tag.IsAnnotated,
-                   _ => null
-               });
+               (filters.TagPredicate?.Invoke(tag) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, GitTagRecord tag)
@@ -397,14 +358,7 @@ internal static class GitSourcePlanner
                Matches(filters.TargetSha, tag.TargetSha) &&
                Matches(filters.TargetShas, tag.TargetSha) &&
                Matches(filters.IsAnnotated, tag.IsAnnotated) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(TagEntity.FriendlyName) => tag.FriendlyName,
-                   nameof(TagEntity.CanonicalName) => tag.CanonicalName,
-                   nameof(TagEntity.TargetSha) => tag.TargetSha,
-                   nameof(TagEntity.IsAnnotated) => tag.IsAnnotated,
-                   _ => null
-               });
+               (filters.GitTagRecordPredicate?.Invoke(tag) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, GitStashRecord stash)
@@ -413,13 +367,7 @@ internal static class GitSourcePlanner
                Matches(filters.Selectors, stash.Selector) &&
                Matches(filters.Sha, stash.Sha) &&
                Matches(filters.Shas, stash.Sha) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(StashEntity.Selector) => stash.Selector,
-                   nameof(StashEntity.Sha) => stash.Sha,
-                   nameof(StashEntity.Message) => stash.Message,
-                   _ => null
-               });
+               (filters.GitStashRecordPredicate?.Invoke(stash) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, StashEntity stash)
@@ -428,13 +376,7 @@ internal static class GitSourcePlanner
                Matches(filters.Selectors, stash.Selector) &&
                Matches(filters.Sha, stash.Sha) &&
                Matches(filters.Shas, stash.Sha) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(StashEntity.Selector) => stash.Selector,
-                   nameof(StashEntity.Sha) => stash.Sha,
-                   nameof(StashEntity.Message) => stash.Message,
-                   _ => null
-               });
+               (filters.StashEntityPredicate?.Invoke(stash) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, GitRemoteTagRecord tag)
@@ -446,17 +388,7 @@ internal static class GitSourcePlanner
                Matches(filters.ObjectSha, tag.ObjectSha) &&
                Matches(filters.ObjectShas, tag.ObjectSha) &&
                Matches(filters.IsAnnotated, tag.IsAnnotated) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(RemoteTagEntity.RemoteName) => tag.RemoteName,
-                   nameof(RemoteTagEntity.RemoteUrl) => tag.RemoteUrl,
-                   nameof(RemoteTagEntity.FriendlyName) => tag.FriendlyName,
-                   nameof(RemoteTagEntity.CanonicalName) => tag.CanonicalName,
-                   nameof(RemoteTagEntity.ObjectSha) => tag.ObjectSha,
-                   nameof(RemoteTagEntity.PeeledSha) => tag.PeeledSha,
-                   nameof(RemoteTagEntity.IsAnnotated) => tag.IsAnnotated,
-                   _ => null
-               });
+               (filters.GitRemoteTagRecordPredicate?.Invoke(tag) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, RemoteTagEntity tag)
@@ -468,59 +400,31 @@ internal static class GitSourcePlanner
                Matches(filters.ObjectSha, tag.ObjectSha) &&
                Matches(filters.ObjectShas, tag.ObjectSha) &&
                Matches(filters.IsAnnotated, tag.IsAnnotated) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(RemoteTagEntity.RemoteName) => tag.RemoteName,
-                   nameof(RemoteTagEntity.RemoteUrl) => tag.RemoteUrl,
-                   nameof(RemoteTagEntity.FriendlyName) => tag.FriendlyName,
-                   nameof(RemoteTagEntity.CanonicalName) => tag.CanonicalName,
-                   nameof(RemoteTagEntity.ObjectSha) => tag.ObjectSha,
-                   nameof(RemoteTagEntity.PeeledSha) => tag.PeeledSha,
-                   nameof(RemoteTagEntity.IsAnnotated) => tag.IsAnnotated,
-                   _ => null
-               });
+               (filters.RemoteTagEntityPredicate?.Invoke(tag) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, Remote remote)
     {
         return Matches(filters.RemoteName, remote.Name) && Matches(filters.Url, remote.Url) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(RemoteEntity.Name) => remote.Name,
-                   nameof(RemoteEntity.Url) => remote.Url,
-                   _ => null
-               });
+               (filters.RemotePredicate?.Invoke(remote) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, GitRemoteRecord remote)
     {
         return Matches(filters.RemoteName, remote.Name) && Matches(filters.Url, remote.Url) &&
-               MatchesNative(filters.RawPredicate, column => column switch
-               {
-                   nameof(RemoteEntity.Name) => remote.Name,
-                   nameof(RemoteEntity.Url) => remote.Url,
-                   _ => null
-               });
+               (filters.GitRemoteRecordPredicate?.Invoke(remote) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, StatusEntry entry)
     {
         var state = entry.State.ToString();
-        return Matches(filters.State, state) && MatchesNative(filters.RawPredicate, column => column switch
-        {
-            nameof(StatusEntity.State) => state,
-            _ => null
-        });
+        return Matches(filters.State, state) && (filters.StatusEntryPredicate?.Invoke(entry) ?? true);
     }
 
     public static bool Matches(GitFilterParameters filters, GitStatusRecord entry)
     {
         var state = entry.State.ToString();
-        return Matches(filters.State, state) && MatchesNative(filters.RawPredicate, column => column switch
-        {
-            nameof(StatusEntity.State) => state,
-            _ => null
-        });
+        return Matches(filters.State, state) && (filters.GitStatusRecordPredicate?.Invoke(entry) ?? true);
     }
 
     private static IReadOnlyList<OptimizationDiagnostic> CreateDiagnostics(
@@ -700,9 +604,150 @@ internal static class GitSourcePlanner
 
     private static GitFilterParameters ExtractFilters(string tableName, SourcePredicateExpression? predicate)
     {
-        var filters = new GitFilterParameters { RawPredicate = predicate };
+        var filters = new GitFilterParameters();
         ExtractFilters(tableName, predicate, filters);
+        BindTypedPredicates(tableName, predicate, filters);
         return filters;
+    }
+
+    private static void BindTypedPredicates(string tableName, SourcePredicateExpression? predicate, GitFilterParameters filters)
+    {
+        switch (tableName)
+        {
+            case "commits":
+                BindNative<Commit>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(CommitEntity.Author)] = "Author.Name",
+                        [nameof(CommitEntity.AuthorEmail)] = "Author.Email",
+                        [nameof(CommitEntity.Committer)] = "Committer.Name",
+                        [nameof(CommitEntity.CommitterEmail)] = "Committer.Email",
+                        [nameof(CommitEntity.Sha)] = "Sha",
+                        [nameof(CommitEntity.CommittedWhen)] = "Committer.When"
+                    });
+                filters.CommitPredicate = filters.TypedPredicates.Get<Commit>();
+                BindNative<GitCommitRecord>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(CommitEntity.Author)] = "Author",
+                        [nameof(CommitEntity.AuthorEmail)] = "AuthorEmail",
+                        [nameof(CommitEntity.Committer)] = "Committer",
+                        [nameof(CommitEntity.CommitterEmail)] = "CommitterEmail",
+                        [nameof(CommitEntity.Sha)] = "Sha",
+                        [nameof(CommitEntity.CommittedWhen)] = "CommittedWhen"
+                    });
+                filters.GitCommitRecordPredicate = filters.TypedPredicates.Get<GitCommitRecord>();
+                filters.TypedPredicates.Bind<CommitEntity>(predicate);
+                break;
+            case "branches":
+                BindNative<Branch>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(BranchEntity.FriendlyName)] = "FriendlyName",
+                        [nameof(BranchEntity.CanonicalName)] = "CanonicalName",
+                        [nameof(BranchEntity.IsRemote)] = "IsRemote",
+                        [nameof(BranchEntity.IsCurrentRepositoryHead)] = "IsCurrentRepositoryHead",
+                        [nameof(BranchEntity.IsTracking)] = "IsTracking"
+                    });
+                filters.BranchPredicate = filters.TypedPredicates.Get<Branch>();
+                BindNative<GitBranchRecord>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(BranchEntity.FriendlyName)] = "FriendlyName",
+                        [nameof(BranchEntity.CanonicalName)] = "CanonicalName",
+                        [nameof(BranchEntity.IsRemote)] = "IsRemote",
+                        [nameof(BranchEntity.IsCurrentRepositoryHead)] = "IsCurrentRepositoryHead",
+                        [nameof(BranchEntity.IsTracking)] = "IsTracking"
+                    });
+                filters.GitBranchRecordPredicate = filters.TypedPredicates.Get<GitBranchRecord>();
+                filters.TypedPredicates.Bind<BranchEntity>(predicate);
+                break;
+            case "tags":
+                BindNative<Tag>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(TagEntity.FriendlyName)] = "FriendlyName",
+                        [nameof(TagEntity.CanonicalName)] = "CanonicalName",
+                        [nameof(TagEntity.IsAnnotated)] = "IsAnnotated"
+                    });
+                filters.TagPredicate = filters.TypedPredicates.Get<Tag>();
+                BindNative<GitTagRecord>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(TagEntity.FriendlyName)] = "FriendlyName",
+                        [nameof(TagEntity.CanonicalName)] = "CanonicalName",
+                        [nameof(TagEntity.TargetSha)] = "TargetSha",
+                        [nameof(TagEntity.IsAnnotated)] = "IsAnnotated"
+                    });
+                filters.GitTagRecordPredicate = filters.TypedPredicates.Get<GitTagRecord>();
+                filters.TypedPredicates.Bind<TagEntity>(predicate);
+                break;
+            case "stashes":
+                BindNative<GitStashRecord>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(StashEntity.Selector)] = "Selector",
+                        [nameof(StashEntity.Sha)] = "Sha",
+                        [nameof(StashEntity.Message)] = "Message"
+                    });
+                filters.GitStashRecordPredicate = filters.TypedPredicates.Get<GitStashRecord>();
+                filters.TypedPredicates.Bind<StashEntity>(predicate);
+                filters.StashEntityPredicate = filters.TypedPredicates.Get<StashEntity>();
+                break;
+            case "remotetags":
+                BindNative<GitRemoteTagRecord>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(RemoteTagEntity.RemoteName)] = "RemoteName",
+                        [nameof(RemoteTagEntity.RemoteUrl)] = "RemoteUrl",
+                        [nameof(RemoteTagEntity.FriendlyName)] = "FriendlyName",
+                        [nameof(RemoteTagEntity.CanonicalName)] = "CanonicalName",
+                        [nameof(RemoteTagEntity.ObjectSha)] = "ObjectSha",
+                        [nameof(RemoteTagEntity.PeeledSha)] = "PeeledSha",
+                        [nameof(RemoteTagEntity.IsAnnotated)] = "IsAnnotated"
+                    });
+                filters.GitRemoteTagRecordPredicate = filters.TypedPredicates.Get<GitRemoteTagRecord>();
+                filters.TypedPredicates.Bind<RemoteTagEntity>(predicate);
+                filters.RemoteTagEntityPredicate = filters.TypedPredicates.Get<RemoteTagEntity>();
+                break;
+            case "remotes":
+                BindNative<Remote>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(RemoteEntity.Name)] = "Name",
+                        [nameof(RemoteEntity.Url)] = "Url"
+                    });
+                filters.RemotePredicate = filters.TypedPredicates.Get<Remote>();
+                BindNative<GitRemoteRecord>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(RemoteEntity.Name)] = "Name",
+                        [nameof(RemoteEntity.Url)] = "Url"
+                    });
+                filters.GitRemoteRecordPredicate = filters.TypedPredicates.Get<GitRemoteRecord>();
+                filters.TypedPredicates.Bind<RemoteEntity>(predicate);
+                break;
+            case "status":
+                BindNative<StatusEntry>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(StatusEntity.State)] = "State.ToString()"
+                    });
+                filters.StatusEntryPredicate = filters.TypedPredicates.Get<StatusEntry>();
+                BindNative<GitStatusRecord>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [nameof(StatusEntity.State)] = "State.ToString()"
+                    });
+                filters.GitStatusRecordPredicate = filters.TypedPredicates.Get<GitStatusRecord>();
+                filters.TypedPredicates.Bind<StatusEntity>(predicate);
+                break;
+        }
+    }
+
+    private static void BindNative<TRow>(SourcePredicateExpression? predicate, TypedPredicatePlan bindings,
+        IReadOnlyDictionary<string, string> paths)
+    {
+        // Native pruning is optional; the complete entity predicate remains authoritative.
+        if (GetPredicateColumns(predicate).Any(name => !paths.ContainsKey(NormalizeColumnName(name))))
+            return;
+        bindings.Bind<TRow>(predicate, (row, name) =>
+        {
+            Expression value = row;
+            foreach (var member in paths[name].Split('.'))
+                value = member == "ToString()"
+                    ? Expression.Call(value, nameof(ToString), null)
+                    : Expression.PropertyOrField(value, member);
+            return value;
+        });
     }
 
     private static void ExtractFilters(string tableName, SourcePredicateExpression? predicate, GitFilterParameters filters)
@@ -876,164 +921,6 @@ internal static class GitSourcePlanner
         }
     }
 
-    private static bool EvaluateComparison(SourcePredicateComparison comparison, object entity)
-    {
-        if (!TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
-            return false;
-
-        var left = GetColumnValue(entity, columnName);
-        var right = literal.Value;
-        if (left is DateTimeOffset && TryGetDateTimeOffset(right, out var date))
-            right = date;
-
-        return op switch
-        {
-            SourcePredicateComparisonOperator.Equal => ValuesEqual(left, right),
-            SourcePredicateComparisonOperator.NotEqual => !ValuesEqual(left, right),
-            SourcePredicateComparisonOperator.GreaterThan => Compare(left, right) > 0,
-            SourcePredicateComparisonOperator.GreaterOrEqual => Compare(left, right) >= 0,
-            SourcePredicateComparisonOperator.LessThan => Compare(left, right) < 0,
-            SourcePredicateComparisonOperator.LessOrEqual => Compare(left, right) <= 0,
-            _ => false
-        };
-    }
-
-    private static bool MatchesNative(SourcePredicateExpression? predicate, Func<string, object?> value)
-    {
-        return predicate switch
-        {
-            null => true,
-            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
-                MatchesNative(logical.Left, value) && MatchesNative(logical.Right, value),
-            SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.Or } logical =>
-                MatchesNative(logical.Left, value) || MatchesNative(logical.Right, value),
-            SourcePredicateComparison comparison => EvaluateNativeComparison(comparison, value),
-            SourcePredicateIn inPredicate => EvaluateNativeIn(inPredicate, value),
-            SourcePredicateNullCheck nullCheck when TryGetColumn(nullCheck.Expression, out var column) =>
-                (value(column) is null) ^ nullCheck.IsNegated,
-            _ => false
-        };
-    }
-
-    private static bool EvaluateNativeComparison(SourcePredicateComparison comparison, Func<string, object?> value)
-    {
-        if (!TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
-            return false;
-
-        var left = value(columnName);
-        var right = literal.Value;
-        if (left is DateTimeOffset && TryGetDateTimeOffset(right, out var date))
-            right = date;
-
-        return op switch
-        {
-            SourcePredicateComparisonOperator.Equal => ValuesEqual(left, right),
-            SourcePredicateComparisonOperator.NotEqual => !ValuesEqual(left, right),
-            SourcePredicateComparisonOperator.GreaterThan => Compare(left, right) > 0,
-            SourcePredicateComparisonOperator.GreaterOrEqual => Compare(left, right) >= 0,
-            SourcePredicateComparisonOperator.LessThan => Compare(left, right) < 0,
-            SourcePredicateComparisonOperator.LessOrEqual => Compare(left, right) <= 0,
-            _ => false
-        };
-    }
-
-    private static bool EvaluateNativeIn(SourcePredicateIn predicate, Func<string, object?> value)
-    {
-        if (!TryGetColumn(predicate.Expression, out var column))
-            return false;
-
-        var sourceValue = value(column);
-        var contains = predicate.Values.OfType<SourcePredicateLiteral>().Any(item =>
-        {
-            object? candidate = item.Value;
-            if (sourceValue is DateTimeOffset && TryGetDateTimeOffset(candidate, out var date))
-                candidate = date;
-            return ValuesEqual(sourceValue, candidate);
-        });
-        return predicate.IsNegated ? !contains : contains;
-    }
-
-    private static bool EvaluateIn(SourcePredicateIn predicate, object entity)
-    {
-        var value = EvaluateValue(predicate.Expression, entity);
-        var contains = predicate.Values.Any(item => ValuesEqual(value, EvaluateValue(item, entity)));
-        return predicate.IsNegated ? !contains : contains;
-    }
-
-    private static object? EvaluateValue(SourcePredicateExpression expression, object entity)
-    {
-        return expression switch
-        {
-            SourcePredicateColumn column => GetColumnValue(entity, NormalizeColumnName(column.Column.Name)),
-            SourcePredicateLiteral literal => literal.Value,
-            _ => null
-        };
-    }
-
-    private static object? GetColumnValue(object entity, string columnName)
-    {
-        return entity switch
-        {
-            CommitEntity commit => columnName switch
-            {
-                nameof(CommitEntity.Author) => commit.Author,
-                nameof(CommitEntity.AuthorEmail) => commit.AuthorEmail,
-                nameof(CommitEntity.Committer) => commit.Committer,
-                nameof(CommitEntity.CommitterEmail) => commit.CommitterEmail,
-                nameof(CommitEntity.Sha) => commit.Sha,
-                nameof(CommitEntity.CommittedWhen) => commit.CommittedWhen,
-                _ => null
-            },
-            BranchEntity branch => columnName switch
-            {
-                nameof(BranchEntity.FriendlyName) => branch.FriendlyName,
-                nameof(BranchEntity.CanonicalName) => branch.CanonicalName,
-                nameof(BranchEntity.IsRemote) => branch.IsRemote,
-                nameof(BranchEntity.IsCurrentRepositoryHead) => branch.IsCurrentRepositoryHead,
-                nameof(BranchEntity.IsTracking) => branch.IsTracking,
-                _ => null
-            },
-            TagEntity tag => columnName switch
-            {
-                nameof(TagEntity.FriendlyName) => tag.FriendlyName,
-                nameof(TagEntity.CanonicalName) => tag.CanonicalName,
-                nameof(TagEntity.TargetSha) => tag.TargetSha,
-                nameof(TagEntity.IsAnnotated) => tag.IsAnnotated,
-                _ => null
-            },
-            StashEntity stash => columnName switch
-            {
-                nameof(StashEntity.Selector) => stash.Selector,
-                nameof(StashEntity.Sha) => stash.Sha,
-                nameof(StashEntity.Message) => stash.Message,
-                _ => null
-            },
-            RemoteTagEntity remoteTag => columnName switch
-            {
-                nameof(RemoteTagEntity.RemoteName) => remoteTag.RemoteName,
-                nameof(RemoteTagEntity.RemoteUrl) => remoteTag.RemoteUrl,
-                nameof(RemoteTagEntity.FriendlyName) => remoteTag.FriendlyName,
-                nameof(RemoteTagEntity.CanonicalName) => remoteTag.CanonicalName,
-                nameof(RemoteTagEntity.ObjectSha) => remoteTag.ObjectSha,
-                nameof(RemoteTagEntity.PeeledSha) => remoteTag.PeeledSha,
-                nameof(RemoteTagEntity.IsAnnotated) => remoteTag.IsAnnotated,
-                _ => null
-            },
-            RemoteEntity remote => columnName switch
-            {
-                nameof(RemoteEntity.Name) => remote.Name,
-                nameof(RemoteEntity.Url) => remote.Url,
-                _ => null
-            },
-            StatusEntity status => columnName switch
-            {
-                nameof(StatusEntity.State) => status.State,
-                _ => null
-            },
-            _ => null
-        };
-    }
-
     private static bool TryGetComparisonParts(
         SourcePredicateComparison comparison,
         out string columnName,
@@ -1123,35 +1010,6 @@ internal static class GitSourcePlanner
                 return false;
         }
     }
-
-    private static bool ValuesEqual(object? left, object? right)
-    {
-        if (ReferenceEquals(left, right))
-            return true;
-        if (left is null || right is null)
-            return false;
-        if (IsNumber(left) && IsNumber(right))
-            return Convert.ToDecimal(left, CultureInfo.InvariantCulture) == Convert.ToDecimal(right, CultureInfo.InvariantCulture);
-        return Equals(left, right);
-    }
-
-    private static int Compare(object? left, object? right)
-    {
-        if (ReferenceEquals(left, right))
-            return 0;
-        if (left is null)
-            return -1;
-        if (right is null)
-            return 1;
-        if (left is string leftText && right is string rightText)
-            return string.Compare(leftText, rightText, StringComparison.Ordinal);
-        if (IsNumber(left) && IsNumber(right))
-            return Convert.ToDecimal(left, CultureInfo.InvariantCulture).CompareTo(Convert.ToDecimal(right, CultureInfo.InvariantCulture));
-        return left is IComparable comparable ? comparable.CompareTo(right) : 0;
-    }
-
-    private static bool IsNumber(object value) =>
-        value is byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal;
 
     private static bool Matches(string? expected, string? actual) =>
         expected is null || string.Equals(actual, expected, StringComparison.Ordinal);

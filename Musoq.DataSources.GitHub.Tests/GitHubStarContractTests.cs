@@ -174,7 +174,7 @@ public sealed class GitHubStarContractTests
         {
             var result = Compile(pair.Value.Query, api.Object).Run();
             Assert.AreEqual(1, result.Count, $"GitHub apply '{pair.Key}' returned an unexpected row count.");
-            Assert.AreEqual(pair.Value.ExpectedValue, result[0][0]);
+            Assert.AreEqual(pair.Value.ExpectedValue, result[0].ReadValue(0));
         }
     }
 

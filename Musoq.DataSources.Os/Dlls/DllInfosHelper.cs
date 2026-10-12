@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,7 +11,6 @@ namespace Musoq.DataSources.Os.Dlls;
 internal static class DllInfosHelper
 {
     public static readonly IReadOnlyDictionary<string, int> DllInfosNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<DllInfo, object?>> DllInfosIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] DllInfosColumns;
 
     static DllInfosHelper()
@@ -21,13 +20,6 @@ internal static class DllInfosHelper
             { nameof(DllInfo.FileInfo), 0 },
             { nameof(DllInfo.Assembly), 1 },
             { nameof(DllInfo.Version), 2 }
-        };
-
-        DllInfosIndexToMethodAccessMap = new Dictionary<int, Func<DllInfo, object?>>
-        {
-            { 0, info => info.FileInfo },
-            { 1, info => info.Assembly },
-            { 2, info => info.Version }
         };
 
         DllInfosColumns =

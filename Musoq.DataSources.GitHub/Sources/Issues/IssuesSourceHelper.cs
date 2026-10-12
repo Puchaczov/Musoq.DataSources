@@ -7,7 +7,7 @@ namespace Musoq.DataSources.GitHub.Sources.Issues;
 internal static class IssuesSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> IssuesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<IssueEntity, object?>> IssuesIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] IssuesColumns;
 
     static IssuesSourceHelper()
@@ -38,34 +38,6 @@ internal static class IssuesSourceHelper
             { nameof(IssueEntity.ActiveLockReason), 21 },
             { nameof(IssueEntity.RepositoryUrl), 22 },
             { nameof(IssueEntity.StateReason), 23 }
-        };
-
-        IssuesIndexToMethodAccessMap = new Dictionary<int, Func<IssueEntity, object?>>
-        {
-            { 0, issue => issue.Id },
-            { 1, issue => issue.Number },
-            { 2, issue => issue.Title },
-            { 3, issue => issue.Body },
-            { 4, issue => issue.State },
-            { 5, issue => issue.Url },
-            { 6, issue => issue.AuthorLogin },
-            { 7, issue => issue.AuthorId },
-            { 8, issue => issue.AssigneeLogin },
-            { 9, issue => issue.Assignees },
-            { 10, issue => issue.Labels },
-            { 11, issue => issue.LabelNames },
-            { 12, issue => issue.MilestoneTitle },
-            { 13, issue => issue.MilestoneNumber },
-            { 14, issue => issue.Comments },
-            { 15, issue => issue.IsPullRequest },
-            { 16, issue => issue.CreatedAt },
-            { 17, issue => issue.UpdatedAt },
-            { 18, issue => issue.ClosedAt },
-            { 19, issue => issue.ClosedByLogin },
-            { 20, issue => issue.Locked },
-            { 21, issue => issue.ActiveLockReason },
-            { 22, issue => issue.RepositoryUrl },
-            { 23, issue => issue.StateReason }
         };
 
         IssuesColumns =

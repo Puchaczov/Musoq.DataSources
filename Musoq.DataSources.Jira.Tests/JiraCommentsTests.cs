@@ -35,8 +35,8 @@ public class JiraCommentsTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count);
-        Assert.IsTrue(table.Any(row => (string)row[0] == "1" && (string)row[2] == "First comment"));
-        Assert.IsTrue(table.Any(row => (string)row[0] == "2" && (string)row[2] == "Second comment"));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "1" && (string)row.ReadValue(2) == "First comment"));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "2" && (string)row.ReadValue(2) == "Second comment"));
     }
 
     [TestMethod]
@@ -74,7 +74,7 @@ public class JiraCommentsTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count);
-        Assert.IsTrue(table.All(row => (string)row[2] == "user1"));
+        Assert.IsTrue(table.All(row => (string)row.ReadValue(2) == "user1"));
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IJiraApi api)

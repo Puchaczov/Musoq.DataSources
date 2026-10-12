@@ -15,14 +15,14 @@ namespace Musoq.DataSources.Json;
 ///     Streams strict UTF-8 JSON files with dynamic top-level columns.
 /// </short-description>
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
-public class JsonSchema : SchemaBase
+public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
 {
     private const string FileTable = "file";
     private const string SchemaName = "json";
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to a strict UTF-8 JSON file; UTF-8 BOM is allowed</virtual-param>
+    ///         <virtual-param name="jsonFilePath" kind="path" relative-to="invocation-directory">Path to a strict UTF-8 JSON file; UTF-8 BOM is allowed</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>json.file(string jsonFilePath)</from>
@@ -67,21 +67,15 @@ public class JsonSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
-        return name.ToLowerInvariant() switch
-        {
-            FileTable when parameters is [string path] => EnsureSourceType<T, object[]>(
-                name,
-                new JsonSource(path, executionContext)),
-            FileTable => throw new ArgumentException(
-                "json.file requires exactly one string path parameter.",
-                nameof(parameters)),
-            _ => throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.")
-        };
+        if (!string.Equals(name, FileTable, StringComparison.OrdinalIgnoreCase))
+            throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.");
+        _ = ReadPath(parameters);
+        throw new NotSupportedException("json.file requires query-scoped concrete rows and a typed materializer. Use GetQueryScopedRowSource.");
     }
 
     /// <summary>
@@ -100,8 +94,44 @@ public class JsonSchema : SchemaBase
             Columns = table.Columns,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
-            ContractDiagnostics = []
+            ContractDiagnostics = [],
+            TransferCapabilities = SourceTransferCapabilities.QueryScopedRows |
+                                   SourceTransferCapabilities.LogicalScalarReads
         };
+    }
+
+    /// <summary>
+    /// Streams directly into the concrete row carrier selected by query compilation.
+    /// </summary>
+    public RowSource<TRow> GetQueryScopedRowSource<TRow, TMaterializer, TArguments>(
+        string name,
+        QueryScopedRowSourceRequest request,
+        TArguments parameters)
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>
+        where TArguments : struct, ISourceArguments
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (!string.Equals(name, FileTable, StringComparison.OrdinalIgnoreCase))
+            throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.");
+        if (parameters.Count != 1)
+            throw new ArgumentException("json.file requires exactly one string path parameter.", nameof(parameters));
+        return new JsonQueryRowSource<TRow, TMaterializer>(ReadPath(parameters), request);
+    }
+
+    private static string ReadPath<TArguments>(TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
+        if (parameters.Count != 1)
+            throw new ArgumentException("json.file requires exactly one string path parameter.", nameof(parameters));
+        try
+        {
+            return parameters.GetValue<string>(0) ??
+                throw new ArgumentException("json.file requires exactly one string path parameter.", nameof(parameters));
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new ArgumentException("json.file requires exactly one string path parameter.", nameof(parameters), exception);
+        }
     }
 
     /// <summary>

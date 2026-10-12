@@ -9,7 +9,7 @@ using Musoq.Evaluator;
 namespace Musoq.DataSources.Roslyn.Tests;
 
 [TestClass]
-public class RoslynToSqlTests
+public partial class RoslynToSqlTests
 {
     private static readonly Lazy<SolutionEntity> Solution1 = new(LoadSolution1Core);
 
@@ -45,7 +45,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue(Guid.TryParse(result[0][0].ToString(), out _));
+        Assert.IsTrue(Guid.TryParse(result[0].ReadValue(0).ToString(), out _));
     }
 
     [TestMethod]
@@ -61,27 +61,27 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count == 2, "Result should have 2 entries");
 
         Assert.IsTrue(result.Any(row =>
-            Guid.TryParse(row[0].ToString(), out _) &&
-            ValidateIsValidPathFor(row[1].ToString(), ".csproj") &&
-            ValidateIsValidPathFor(row[2].ToString(), ".dll", false) &&
-            ValidateIsValidPathFor(row[3].ToString(), ".dll", false) &&
-            row[4].ToString() == "Solution1.ClassLibrary1" &&
-            row[5].ToString() == "C#" &&
-            row[6].ToString() == "Solution1.ClassLibrary1" &&
-            row[7].ToString() == "Solution1.ClassLibrary1" &&
-            row[8] != null
+            Guid.TryParse(row.ReadValue(0).ToString(), out _) &&
+            ValidateIsValidPathFor(row.ReadValue(1).ToString(), ".csproj") &&
+            ValidateIsValidPathFor(row.ReadValue(2).ToString(), ".dll", false) &&
+            ValidateIsValidPathFor(row.ReadValue(3).ToString(), ".dll", false) &&
+            row.ReadValue(4).ToString() == "Solution1.ClassLibrary1" &&
+            row.ReadValue(5).ToString() == "C#" &&
+            row.ReadValue(6).ToString() == "Solution1.ClassLibrary1" &&
+            row.ReadValue(7).ToString() == "Solution1.ClassLibrary1" &&
+            row.ReadValue(8) != null
         ), "First entry does not match expected details");
 
         Assert.IsTrue(result.Any(row =>
-            Guid.TryParse(row[0].ToString(), out _) &&
-            ValidateIsValidPathFor(row[1].ToString(), ".csproj") &&
-            ValidateIsValidPathFor(row[2].ToString(), ".dll", false) &&
-            ValidateIsValidPathFor(row[3].ToString(), ".dll", false) &&
-            row[4].ToString() == "Solution1.ClassLibrary1.Tests" &&
-            row[5].ToString() == "C#" &&
-            row[6].ToString() == "Solution1.ClassLibrary1.Tests" &&
-            row[7].ToString() == "Solution1.ClassLibrary1.Tests" &&
-            row[8] != null
+            Guid.TryParse(row.ReadValue(0).ToString(), out _) &&
+            ValidateIsValidPathFor(row.ReadValue(1).ToString(), ".csproj") &&
+            ValidateIsValidPathFor(row.ReadValue(2).ToString(), ".dll", false) &&
+            ValidateIsValidPathFor(row.ReadValue(3).ToString(), ".dll", false) &&
+            row.ReadValue(4).ToString() == "Solution1.ClassLibrary1.Tests" &&
+            row.ReadValue(5).ToString() == "C#" &&
+            row.ReadValue(6).ToString() == "Solution1.ClassLibrary1.Tests" &&
+            row.ReadValue(7).ToString() == "Solution1.ClassLibrary1.Tests" &&
+            row.ReadValue(8) != null
         ), "Second entry does not match expected details");
     }
 
@@ -97,33 +97,33 @@ public class RoslynToSqlTests
 
 
         Assert.IsTrue(result.Count >= 20, $"Result should contain at least 20 types, but got {result.Count}");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1") == 1, "Class1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface1") == 1, "Interface1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Interface2") == 1, "Interface2 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Enum1") == 1, "Enum1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Tests") == 1, "Tests should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "PartialTestClass") == 2,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "Class1") == 1, "Class1 should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "Interface1") == 1, "Interface1 should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "Interface2") == 1, "Interface2 should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "Enum1") == 1, "Enum1 should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "Tests") == 1, "Tests should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "PartialTestClass") == 2,
             "PartialTestClass should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "CyclomaticComplexityClass1") == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "CyclomaticComplexityClass1") == 1,
             "CyclomaticComplexityClass1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "TestFeatures") == 1, "TestFeatures should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "AbstractClassWithAbstractMethod") == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "TestFeatures") == 1, "TestFeatures should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "AbstractClassWithAbstractMethod") == 1,
             "AbstractClassWithAbstractMethod should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "IInterfaceWithMethods") == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "IInterfaceWithMethods") == 1,
             "IInterfaceWithMethods should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "InterfaceImplementor") == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "InterfaceImplementor") == 1,
             "InterfaceImplementor should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "UnusedCodeTestClass") == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "UnusedCodeTestClass") == 1,
             "UnusedCodeTestClass should be present");
 
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "IUnusedInterface") == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "IUnusedInterface") == 1,
             "IUnusedInterface should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "IUsedInterface") == 1, "IUsedInterface should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "UsedInterfaceImplementor") == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "IUsedInterface") == 1, "IUsedInterface should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "UsedInterfaceImplementor") == 1,
             "UsedInterfaceImplementor should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "UnusedEnum") == 1, "UnusedEnum should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "UsedEnum") == 1, "UsedEnum should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "EnumUser") == 1, "EnumUser should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "UnusedEnum") == 1, "UnusedEnum should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "UsedEnum") == 1, "UsedEnum should be present");
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "EnumUser") == 1, "EnumUser should be present");
     }
 
     [TestMethod]
@@ -137,21 +137,21 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count == 7, "Result must contain 6 records");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Class1" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "Class1" && (bool)r.ReadValue(1) && !(bool)r.ReadValue(2) && !(bool)r.ReadValue(3)) == 1,
             "Class1 should be present");
         Assert.IsTrue(
-            result.Count(r => r[0].ToString() == "Interface1" && !(bool)r[1] && !(bool)r[2] && (bool)r[3]) == 1,
+            result.Count(r => r.ReadValue(0).ToString() == "Interface1" && !(bool)r.ReadValue(1) && !(bool)r.ReadValue(2) && (bool)r.ReadValue(3)) == 1,
             "Interface1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Enum1" && !(bool)r[1] && (bool)r[2] && !(bool)r[3]) == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "Enum1" && !(bool)r.ReadValue(1) && (bool)r.ReadValue(2) && !(bool)r.ReadValue(3)) == 1,
             "Enum1 should be present");
-        Assert.IsTrue(result.Count(r => r[0].ToString() == "Tests" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1,
+        Assert.IsTrue(result.Count(r => r.ReadValue(0).ToString() == "Tests" && (bool)r.ReadValue(1) && !(bool)r.ReadValue(2) && !(bool)r.ReadValue(3)) == 1,
             "Tests should be present");
         Assert.IsTrue(
-            result.Count(r => r[0].ToString() == "PartialTestClass" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 2,
+            result.Count(r => r.ReadValue(0).ToString() == "PartialTestClass" && (bool)r.ReadValue(1) && !(bool)r.ReadValue(2) && !(bool)r.ReadValue(3)) == 2,
             "PartialTestClass should be present");
         Assert.IsTrue(
             result.Count(r =>
-                r[0].ToString() == "CyclomaticComplexityClass1" && (bool)r[1] && !(bool)r[2] && !(bool)r[3]) == 1,
+                r.ReadValue(0).ToString() == "CyclomaticComplexityClass1" && (bool)r.ReadValue(1) && !(bool)r.ReadValue(2) && !(bool)r.ReadValue(3)) == 1,
             "CyclomaticComplexityClass1 should be present");
     }
 
@@ -167,9 +167,9 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Class1.cs", result[0][0].ToString());
+        Assert.AreEqual("Class1.cs", result[0].ReadValue(0).ToString());
 
-        var documentContent = result[0][1].ToString();
+        var documentContent = result[0].ReadValue(1).ToString();
 
         Assert.IsNotNull(documentContent);
         Assert.IsTrue(
@@ -177,9 +177,9 @@ public class RoslynToSqlTests
             documentContent.Contains("interface Interface1") &&
             documentContent.Contains("enum Enum1")
         );
-        Assert.AreEqual(2, result[0][2]);
-        Assert.AreEqual(2, result[0][3]);
-        Assert.AreEqual(1, result[0][4]);
+        Assert.AreEqual(2, result[0].ReadValue(2));
+        Assert.AreEqual(2, result[0].ReadValue(3));
+        Assert.AreEqual(1, result[0].ReadValue(4));
     }
 
     [TestMethod]
@@ -215,22 +215,22 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual(false, result[0][0]);
-        Assert.AreEqual(false, result[0][1]);
-        Assert.AreEqual(false, result[0][2]);
+        Assert.AreEqual(false, result[0].ReadValue(0));
+        Assert.AreEqual(false, result[0].ReadValue(1));
+        Assert.AreEqual(false, result[0].ReadValue(2));
 
-        Assert.AreEqual("Class1", result[0][3].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Class1", result[0][4].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][5].ToString());
-        Assert.AreEqual(5, result[0][6]);
-        Assert.AreEqual(1, result[0][7]);
-        Assert.AreEqual(0, result[0][8]);
-        Assert.AreEqual(1, result[0][9]);
-        Assert.AreEqual(0, result[0][10]);
-        Assert.AreEqual(0, result[0][11]);
-        Assert.AreEqual(0, result[0][12]);
-        Assert.AreEqual(1, result[0][13]);
-        Assert.AreEqual(2.0, result[0][14]);
+        Assert.AreEqual("Class1", result[0].ReadValue(3).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Class1", result[0].ReadValue(4).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", result[0].ReadValue(5).ToString());
+        Assert.AreEqual(5, result[0].ReadValue(6));
+        Assert.AreEqual(1, result[0].ReadValue(7));
+        Assert.AreEqual(0, result[0].ReadValue(8));
+        Assert.AreEqual(1, result[0].ReadValue(9));
+        Assert.AreEqual(0, result[0].ReadValue(10));
+        Assert.AreEqual(0, result[0].ReadValue(11));
+        Assert.AreEqual(0, result[0].ReadValue(12));
+        Assert.AreEqual(1, result[0].ReadValue(13));
+        Assert.AreEqual(2.0, result[0].ReadValue(14));
 
         var baseTypesResult = CompileQuery("""
                     select baseType.Value
@@ -242,7 +242,7 @@ public class RoslynToSqlTests
                     where c.Name = 'Class1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        var baseTypes = baseTypesResult.Select(row => row[0]?.ToString()).ToList();
+        var baseTypes = baseTypesResult.Select(row => row.ReadValue(0)?.ToString()).ToList();
 
         Assert.AreEqual(1, baseTypes.Count);
         Assert.AreEqual("Object", baseTypes.First());
@@ -257,7 +257,7 @@ public class RoslynToSqlTests
                     where c.Name = 'Class1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        var interfaces = interfacesResult.Select(row => row[0]?.ToString()).ToList();
+        var interfaces = interfacesResult.Select(row => row.ReadValue(0)?.ToString()).ToList();
 
         Assert.AreEqual(1, interfaces.Count);
         Assert.AreEqual("Interface1", interfaces.First());
@@ -284,7 +284,7 @@ public class RoslynToSqlTests
                     where c.Name = 'Class1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        var memberNames = memberNamesResult.Select(row => row[0]?.ToString()).ToList();
+        var memberNames = memberNamesResult.Select(row => row.ReadValue(0)?.ToString()).ToList();
         Assert.AreEqual(8, memberNames.Count);
         Assert.IsTrue(memberNames.Contains("Method1Async"));
         Assert.IsTrue(memberNames.Contains("Method2"));
@@ -327,7 +327,7 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
+        Assert.AreEqual("ExcludeFromCodeCoverage", result[0].ReadValue(0).ToString());
     }
 
     [TestMethod]
@@ -353,33 +353,33 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count == 5, "Result should contain exactly 5 records");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Method1Async" &&
-                r[1].ToString() == "Task" &&
-                r[2] != null),
+                r.ReadValue(0).ToString() == "Method1Async" &&
+                r.ReadValue(1).ToString() == "Task" &&
+                r.ReadValue(2) != null),
             "Missing or invalid Method1Async record");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Method2" &&
-                r[1].ToString() == "Void" &&
-                r[2] != null),
+                r.ReadValue(0).ToString() == "Method2" &&
+                r.ReadValue(1).ToString() == "Void" &&
+                r.ReadValue(2) != null),
             "Missing or invalid Method2 record");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Method3" &&
-                r[1].ToString() == "Class1" &&
-                r[2] != null),
+                r.ReadValue(0).ToString() == "Method3" &&
+                r.ReadValue(1).ToString() == "Class1" &&
+                r.ReadValue(2) != null),
             "Missing or invalid first Method3 record");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Method3" &&
-                r[1].ToString() == "Class1" &&
-                r[2] != null),
+                r.ReadValue(0).ToString() == "Method3" &&
+                r.ReadValue(1).ToString() == "Class1" &&
+                r.ReadValue(2) != null),
             "Missing or invalid second Method3 record");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "Method4" &&
-                r[1].ToString() == "Enum1" &&
-                r[2] != null),
+                r.ReadValue(0).ToString() == "Method4" &&
+                r.ReadValue(1).ToString() == "Enum1" &&
+                r.ReadValue(2) != null),
             "Missing or invalid Method4 record");
 
         var parametersResult = CompileQuery("""
@@ -394,8 +394,8 @@ public class RoslynToSqlTests
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
         Assert.AreEqual(1, parametersResult.Count);
-        Assert.AreEqual("a", parametersResult[0][0].ToString());
-        Assert.AreEqual("Int32", parametersResult[0][1].ToString());
+        Assert.AreEqual("a", parametersResult[0].ReadValue(0).ToString());
+        Assert.AreEqual("Int32", parametersResult[0].ReadValue(1).ToString());
 
         var modifiersResult = CompileQuery("""
                     select modifier.Value
@@ -444,7 +444,7 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        var methodText = result[0][1]?.ToString() ?? string.Empty;
+        var methodText = result[0].ReadValue(1)?.ToString() ?? string.Empty;
 
         Assert.IsFalse(string.IsNullOrWhiteSpace(methodText), "Method text should not be empty");
         Assert.IsFalse(methodText.Contains("///"), "Method text should not include XML doc comments");
@@ -472,7 +472,7 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual(4, result[0][0]);
+        Assert.AreEqual(4, result[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -499,18 +499,113 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "PartialTestClass_1.cs" &&
-                r[1].ToString() == "PartialTestClass" &&
-                (int)r[2] == 1 &&
-                r[3].ToString() == "Method1"),
+                r.ReadValue(0).ToString() == "PartialTestClass_1.cs" &&
+                r.ReadValue(1).ToString() == "PartialTestClass" &&
+                (int)r.ReadValue(2) == 1 &&
+                r.ReadValue(3).ToString() == "Method1"),
             "Missing PartialTestClass_1.cs record");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "PartialTestClass_2.cs" &&
-                r[1].ToString() == "PartialTestClass" &&
-                (int)r[2] == 1 &&
-                r[3].ToString() == "Method2"),
+                r.ReadValue(0).ToString() == "PartialTestClass_2.cs" &&
+                r.ReadValue(1).ToString() == "PartialTestClass" &&
+                (int)r.ReadValue(2) == 1 &&
+                r.ReadValue(3).ToString() == "Method2"),
             "Missing PartialTestClass_2.cs record");
+    }
+
+    [TestMethod]
+    public void WhenMethodBodyFingerprintsQueried_ShouldGroupBodiesAndPreserveLocations()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.BodyFingerprint,
+                        m.StartLine,
+                        m.EndLine,
+                        m.SourceFilePath
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'MethodBodyFingerprintPatterns'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+
+        var result = CompileQuery(query).Run();
+
+        Assert.AreEqual(8, result.Count);
+        foreach (var row in result)
+        {
+            var fingerprint = row.ReadValue(1)?.ToString();
+            Assert.IsNotNull(fingerprint);
+            Assert.IsTrue(fingerprint!.StartsWith("v1:", StringComparison.Ordinal));
+            Assert.AreEqual(67, fingerprint.Length);
+            Assert.IsTrue((int)row.ReadValue(2) > 0, "StartLine should be a real source location");
+            Assert.IsTrue((int)row.ReadValue(3) >= (int)row.ReadValue(2), "EndLine should not precede StartLine");
+            Assert.IsTrue(row.ReadValue(4)?.ToString()?.EndsWith("MethodBodyFingerprintPatterns.cs") == true,
+                "SourceFilePath should identify the fixture file");
+        }
+
+        var sameBodyFirst = result.Single(row => row.ReadValue(0).ToString() == "SameBodyFirst").ReadValue(1).ToString();
+        var sameBodySecond = result.Single(row => row.ReadValue(0).ToString() == "SameBodySecond").ReadValue(1).ToString();
+        Assert.AreEqual(sameBodyFirst, sameBodySecond);
+
+        var literalWithSpace = result.Single(row => row.ReadValue(0).ToString() == "LiteralWithSpace").ReadValue(1).ToString();
+        var literalWithoutSpace = result.Single(row => row.ReadValue(0).ToString() == "LiteralWithoutSpace").ReadValue(1).ToString();
+        Assert.AreNotEqual(literalWithSpace, literalWithoutSpace);
+
+        var addition = result.Single(row => row.ReadValue(0).ToString() == "OperatorAdd").ReadValue(1).ToString();
+        var subtraction = result.Single(row => row.ReadValue(0).ToString() == "OperatorSubtract").ReadValue(1).ToString();
+        Assert.AreNotEqual(addition, subtraction);
+
+        var noBodyResult = CompileQuery("""
+                                       select m.BodyFingerprint
+                                       from csharp.solution('{Solution1SolutionPath}') s
+                                       cross apply s.Projects p
+                                       cross apply p.Documents d
+                                       cross apply d.Classes c
+                                       cross apply c.Methods m
+                                       where c.Name = 'AbstractClassWithAbstractMethod' and m.Name = 'AbstractMethod'
+                                       """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
+
+        Assert.AreEqual(1, noBodyResult.Count);
+        Assert.IsNull(noBodyResult[0].ReadValue(0));
+    }
+
+    [TestMethod]
+    public void WhenPartialClassMethodsFingerprintsQueried_ShouldNotDuplicateDeclarations()
+    {
+        var query = """
+                    select
+                        d.Name,
+                        m.Name,
+                        m.BodyFingerprint,
+                        m.StartLine,
+                        m.EndLine
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects p
+                    cross apply p.Documents d
+                    cross apply d.Classes c
+                    cross apply c.Methods m
+                    where c.Name = 'PartialTestClass'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+
+        var result = CompileQuery(query).Run();
+
+        Assert.AreEqual(2, result.Count);
+        Assert.AreEqual(2, result.Select(row => row.ReadValue(1).ToString()).Distinct().Count());
+        Assert.IsTrue(result.Any(row =>
+            row.ReadValue(0).ToString() == "PartialTestClass_1.cs" &&
+            row.ReadValue(1).ToString() == "Method1" &&
+            row.ReadValue(2) != null &&
+            (int)row.ReadValue(3) > 0 &&
+            (int)row.ReadValue(4) >= (int)row.ReadValue(3)));
+        Assert.IsTrue(result.Any(row =>
+            row.ReadValue(0).ToString() == "PartialTestClass_2.cs" &&
+            row.ReadValue(1).ToString() == "Method2" &&
+            row.ReadValue(2) != null &&
+            (int)row.ReadValue(3) > 0 &&
+            (int)row.ReadValue(4) >= (int)row.ReadValue(3)));
     }
 
     [TestMethod]
@@ -537,17 +632,17 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count == 2, "Result should contain exactly 2 records");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "PartialTestClass_1.cs" &&
-                r[1].ToString() == "PartialTestClass" &&
-                (int)r[2] == 1 &&
-                r[3].ToString() == "Property1"),
+                r.ReadValue(0).ToString() == "PartialTestClass_1.cs" &&
+                r.ReadValue(1).ToString() == "PartialTestClass" &&
+                (int)r.ReadValue(2) == 1 &&
+                r.ReadValue(3).ToString() == "Property1"),
             "Missing PartialTestClass_1.cs record");
 
         Assert.IsTrue(result.Any(r =>
-                r[0].ToString() == "PartialTestClass_2.cs" &&
-                r[1].ToString() == "PartialTestClass" &&
-                (int)r[2] == 1 &&
-                r[3].ToString() == "Property2"),
+                r.ReadValue(0).ToString() == "PartialTestClass_2.cs" &&
+                r.ReadValue(1).ToString() == "PartialTestClass" &&
+                (int)r.ReadValue(2) == 1 &&
+                r.ReadValue(3).ToString() == "Property2"),
             "Missing PartialTestClass_2.cs record");
     }
 
@@ -570,7 +665,7 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual(29, result[0][0]);
+        Assert.AreEqual(29, result[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -604,18 +699,18 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Property1", result[0][0].ToString());
-        Assert.AreEqual("Int32", result[0][1].ToString());
-        Assert.AreEqual(false, result[0][2]);
-        Assert.AreEqual(true, result[0][3]);
-        Assert.AreEqual(false, result[0][4]);
-        Assert.AreEqual(false, result[0][5]);
-        Assert.AreEqual(false, result[0][6]);
-        Assert.AreEqual(false, result[0][7]);
-        Assert.AreEqual(false, result[0][8]);
-        Assert.AreEqual(false, result[0][9]);
-        Assert.AreEqual(false, result[0][10]);
-        Assert.AreEqual(false, result[0][11]);
+        Assert.AreEqual("Property1", result[0].ReadValue(0).ToString());
+        Assert.AreEqual("Int32", result[0].ReadValue(1).ToString());
+        Assert.AreEqual(false, result[0].ReadValue(2));
+        Assert.AreEqual(true, result[0].ReadValue(3));
+        Assert.AreEqual(false, result[0].ReadValue(4));
+        Assert.AreEqual(false, result[0].ReadValue(5));
+        Assert.AreEqual(false, result[0].ReadValue(6));
+        Assert.AreEqual(false, result[0].ReadValue(7));
+        Assert.AreEqual(false, result[0].ReadValue(8));
+        Assert.AreEqual(false, result[0].ReadValue(9));
+        Assert.AreEqual(false, result[0].ReadValue(10));
+        Assert.AreEqual(false, result[0].ReadValue(11));
 
         var modifiersResult = CompileQuery("""
                     select modifier.Value
@@ -662,17 +757,17 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("a", result[0][0].ToString());
-        Assert.AreEqual("Int32", result[0][1].ToString());
-        Assert.AreEqual(false, result[0][2]);
-        Assert.AreEqual(false, result[0][3]);
-        Assert.AreEqual(false, result[0][4]);
-        Assert.AreEqual(false, result[0][5]);
-        Assert.AreEqual(false, result[0][6]);
-        Assert.AreEqual(false, result[0][7]);
-        Assert.AreEqual(false, result[0][8]);
-        Assert.AreEqual(false, result[0][9]);
-        Assert.AreEqual(true, result[0][10]);
+        Assert.AreEqual("a", result[0].ReadValue(0).ToString());
+        Assert.AreEqual("Int32", result[0].ReadValue(1).ToString());
+        Assert.AreEqual(false, result[0].ReadValue(2));
+        Assert.AreEqual(false, result[0].ReadValue(3));
+        Assert.AreEqual(false, result[0].ReadValue(4));
+        Assert.AreEqual(false, result[0].ReadValue(5));
+        Assert.AreEqual(false, result[0].ReadValue(6));
+        Assert.AreEqual(false, result[0].ReadValue(7));
+        Assert.AreEqual(false, result[0].ReadValue(8));
+        Assert.AreEqual(false, result[0].ReadValue(9));
+        Assert.AreEqual(true, result[0].ReadValue(10));
     }
 
     [TestMethod]
@@ -696,9 +791,9 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Enum1", result[0][0].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Enum1", result[0][1].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][2].ToString());
+        Assert.AreEqual("Enum1", result[0].ReadValue(0).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Enum1", result[0].ReadValue(1).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", result[0].ReadValue(2).ToString());
 
         var modifiersResult = CompileQuery("""
                     select modifier.Value
@@ -722,7 +817,7 @@ public class RoslynToSqlTests
                     where e.Name = 'Enum1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        var members = membersResult.Select(row => row[0]?.ToString()).ToList();
+        var members = membersResult.Select(row => row.ReadValue(0)?.ToString()).ToList();
 
         Assert.AreEqual(2, members.Count);
         Assert.IsTrue(members.Contains("Value1"));
@@ -750,9 +845,9 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("Interface1", result[0][0].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1.Interface1", result[0][1].ToString());
-        Assert.AreEqual("Solution1.ClassLibrary1", result[0][2].ToString());
+        Assert.AreEqual("Interface1", result[0].ReadValue(0).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.Interface1", result[0].ReadValue(1).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1", result[0].ReadValue(2).ToString());
 
         var modifiersResult = CompileQuery("""
                     select modifier.Value
@@ -788,7 +883,7 @@ public class RoslynToSqlTests
                     where i.Name = 'Interface1'
                     """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape())).Run();
 
-        var methodNames = methodsResult.Select(row => row[0]?.ToString()).ToList();
+        var methodNames = methodsResult.Select(row => row.ReadValue(0)?.ToString()).ToList();
         Assert.AreEqual(4, methodNames.Count);
         CollectionAssert.AreEquivalent(
             new[] { "Method1Async", "Method2", "Method3", "Method4" },
@@ -827,7 +922,7 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
 
-        Assert.AreEqual("ExcludeFromCodeCoverage", result[0][0].ToString());
+        Assert.AreEqual("ExcludeFromCodeCoverage", result[0].ReadValue(0).ToString());
 
         var constructorArgumentsResult = CompileQuery("""
                     select argument.Value
@@ -860,7 +955,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(1, result[0][0]);
+        Assert.AreEqual(1, result[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -880,7 +975,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(2, result[0][0]);
+        Assert.AreEqual(2, result[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -900,7 +995,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(3, result[0][0]);
+        Assert.AreEqual(3, result[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -987,9 +1082,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("Class1.cs", result[0][0].ToString());
+        Assert.AreEqual("Class1.cs", result[0].ReadValue(0).ToString());
 
-        var filePath = result[0][1]?.ToString();
+        var filePath = result[0].ReadValue(1)?.ToString();
         Assert.IsNotNull(filePath);
         Assert.IsTrue(filePath.EndsWith("Class1.cs"));
         Assert.IsTrue(File.Exists(filePath));
@@ -1017,52 +1112,52 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
 
-        var emptyMethod = result.FirstOrDefault(r => r[0].ToString() == "EmptyMethod");
+        var emptyMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "EmptyMethod");
         Assert.IsNotNull(emptyMethod);
-        Assert.AreEqual(true, emptyMethod[1]);
-        Assert.AreEqual(true, emptyMethod[2]);
-        Assert.AreEqual(0, emptyMethod[3]);
-        Assert.AreEqual(true, emptyMethod[4]);
+        Assert.AreEqual(true, emptyMethod.ReadValue(1));
+        Assert.AreEqual(true, emptyMethod.ReadValue(2));
+        Assert.AreEqual(0, emptyMethod.ReadValue(3));
+        Assert.AreEqual(true, emptyMethod.ReadValue(4));
 
 
-        var methodWithComments = result.FirstOrDefault(r => r[0].ToString() == "MethodWithOnlyComments");
+        var methodWithComments = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "MethodWithOnlyComments");
         Assert.IsNotNull(methodWithComments);
-        Assert.AreEqual(true, methodWithComments[1]);
-        Assert.AreEqual(true, methodWithComments[2]);
-        Assert.AreEqual(0, methodWithComments[3]);
-        Assert.AreEqual(true, methodWithComments[4]);
+        Assert.AreEqual(true, methodWithComments.ReadValue(1));
+        Assert.AreEqual(true, methodWithComments.ReadValue(2));
+        Assert.AreEqual(0, methodWithComments.ReadValue(3));
+        Assert.AreEqual(true, methodWithComments.ReadValue(4));
 
 
-        var singleStatementMethod = result.FirstOrDefault(r => r[0].ToString() == "SingleStatementMethod");
+        var singleStatementMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "SingleStatementMethod");
         Assert.IsNotNull(singleStatementMethod);
-        Assert.AreEqual(true, singleStatementMethod[1]);
-        Assert.AreEqual(false, singleStatementMethod[2]);
-        Assert.AreEqual(1, singleStatementMethod[3]);
-        Assert.AreEqual(false, singleStatementMethod[4]);
+        Assert.AreEqual(true, singleStatementMethod.ReadValue(1));
+        Assert.AreEqual(false, singleStatementMethod.ReadValue(2));
+        Assert.AreEqual(1, singleStatementMethod.ReadValue(3));
+        Assert.AreEqual(false, singleStatementMethod.ReadValue(4));
 
 
-        var multipleStatementsMethod = result.FirstOrDefault(r => r[0].ToString() == "MultipleStatementsMethod");
+        var multipleStatementsMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "MultipleStatementsMethod");
         Assert.IsNotNull(multipleStatementsMethod);
-        Assert.AreEqual(true, multipleStatementsMethod[1]);
-        Assert.AreEqual(false, multipleStatementsMethod[2]);
-        Assert.AreEqual(3, multipleStatementsMethod[3]);
-        Assert.AreEqual(false, multipleStatementsMethod[4]);
+        Assert.AreEqual(true, multipleStatementsMethod.ReadValue(1));
+        Assert.AreEqual(false, multipleStatementsMethod.ReadValue(2));
+        Assert.AreEqual(3, multipleStatementsMethod.ReadValue(3));
+        Assert.AreEqual(false, multipleStatementsMethod.ReadValue(4));
 
 
-        var expressionBodiedMethod = result.FirstOrDefault(r => r[0].ToString() == "ExpressionBodiedMethod");
+        var expressionBodiedMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "ExpressionBodiedMethod");
         Assert.IsNotNull(expressionBodiedMethod);
-        Assert.AreEqual(true, expressionBodiedMethod[1]);
-        Assert.AreEqual(false, expressionBodiedMethod[2]);
-        Assert.AreEqual(0, expressionBodiedMethod[3]);
-        Assert.AreEqual(false, expressionBodiedMethod[4]);
+        Assert.AreEqual(true, expressionBodiedMethod.ReadValue(1));
+        Assert.AreEqual(false, expressionBodiedMethod.ReadValue(2));
+        Assert.AreEqual(0, expressionBodiedMethod.ReadValue(3));
+        Assert.AreEqual(false, expressionBodiedMethod.ReadValue(4));
 
 
-        var methodWithNestedBlocks = result.FirstOrDefault(r => r[0].ToString() == "MethodWithNestedBlocks");
+        var methodWithNestedBlocks = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "MethodWithNestedBlocks");
         Assert.IsNotNull(methodWithNestedBlocks);
-        Assert.AreEqual(true, methodWithNestedBlocks[1]);
-        Assert.AreEqual(false, methodWithNestedBlocks[2]);
-        Assert.AreEqual(2, methodWithNestedBlocks[3]);
-        Assert.AreEqual(false, methodWithNestedBlocks[4]);
+        Assert.AreEqual(true, methodWithNestedBlocks.ReadValue(1));
+        Assert.AreEqual(false, methodWithNestedBlocks.ReadValue(2));
+        Assert.AreEqual(2, methodWithNestedBlocks.ReadValue(3));
+        Assert.AreEqual(false, methodWithNestedBlocks.ReadValue(4));
     }
 
     [TestMethod]
@@ -1087,60 +1182,60 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
 
-        var autoProperty = result.FirstOrDefault(r => r[0].ToString() == "AutoProperty");
+        var autoProperty = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "AutoProperty");
         Assert.IsNotNull(autoProperty);
-        Assert.AreEqual(true, autoProperty[1]);
-        Assert.AreEqual(true, autoProperty[2]);
-        Assert.AreEqual(true, autoProperty[3]);
-        Assert.AreEqual(false, autoProperty[4]);
+        Assert.AreEqual(true, autoProperty.ReadValue(1));
+        Assert.AreEqual(true, autoProperty.ReadValue(2));
+        Assert.AreEqual(true, autoProperty.ReadValue(3));
+        Assert.AreEqual(false, autoProperty.ReadValue(4));
 
 
-        var autoPropertyWithInit = result.FirstOrDefault(r => r[0].ToString() == "AutoPropertyWithInit");
+        var autoPropertyWithInit = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "AutoPropertyWithInit");
         Assert.IsNotNull(autoPropertyWithInit);
-        Assert.AreEqual(true, autoPropertyWithInit[1]);
-        Assert.AreEqual(true, autoPropertyWithInit[2]);
-        Assert.AreEqual(true, autoPropertyWithInit[3]);
-        Assert.AreEqual(true, autoPropertyWithInit[4]);
+        Assert.AreEqual(true, autoPropertyWithInit.ReadValue(1));
+        Assert.AreEqual(true, autoPropertyWithInit.ReadValue(2));
+        Assert.AreEqual(true, autoPropertyWithInit.ReadValue(3));
+        Assert.AreEqual(true, autoPropertyWithInit.ReadValue(4));
 
 
-        var autoPropertyReadOnly = result.FirstOrDefault(r => r[0].ToString() == "AutoPropertyReadOnly");
+        var autoPropertyReadOnly = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "AutoPropertyReadOnly");
         Assert.IsNotNull(autoPropertyReadOnly);
-        Assert.AreEqual(true, autoPropertyReadOnly[1]);
-        Assert.AreEqual(true, autoPropertyReadOnly[2]);
-        Assert.AreEqual(false, autoPropertyReadOnly[3]);
-        Assert.AreEqual(false, autoPropertyReadOnly[4]);
+        Assert.AreEqual(true, autoPropertyReadOnly.ReadValue(1));
+        Assert.AreEqual(true, autoPropertyReadOnly.ReadValue(2));
+        Assert.AreEqual(false, autoPropertyReadOnly.ReadValue(3));
+        Assert.AreEqual(false, autoPropertyReadOnly.ReadValue(4));
 
 
-        var propertyWithCustomGetter = result.FirstOrDefault(r => r[0].ToString() == "PropertyWithCustomGetter");
+        var propertyWithCustomGetter = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "PropertyWithCustomGetter");
         Assert.IsNotNull(propertyWithCustomGetter);
-        Assert.AreEqual(false, propertyWithCustomGetter[1]);
-        Assert.AreEqual(true, propertyWithCustomGetter[2]);
-        Assert.AreEqual(true, propertyWithCustomGetter[3]);
-        Assert.AreEqual(false, propertyWithCustomGetter[4]);
+        Assert.AreEqual(false, propertyWithCustomGetter.ReadValue(1));
+        Assert.AreEqual(true, propertyWithCustomGetter.ReadValue(2));
+        Assert.AreEqual(true, propertyWithCustomGetter.ReadValue(3));
+        Assert.AreEqual(false, propertyWithCustomGetter.ReadValue(4));
 
 
-        var expressionBodiedProperty = result.FirstOrDefault(r => r[0].ToString() == "ExpressionBodiedProperty");
+        var expressionBodiedProperty = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "ExpressionBodiedProperty");
         Assert.IsNotNull(expressionBodiedProperty);
-        Assert.AreEqual(false, expressionBodiedProperty[1]);
-        Assert.AreEqual(true, expressionBodiedProperty[2]);
-        Assert.AreEqual(false, expressionBodiedProperty[3]);
-        Assert.AreEqual(false, expressionBodiedProperty[4]);
+        Assert.AreEqual(false, expressionBodiedProperty.ReadValue(1));
+        Assert.AreEqual(true, expressionBodiedProperty.ReadValue(2));
+        Assert.AreEqual(false, expressionBodiedProperty.ReadValue(3));
+        Assert.AreEqual(false, expressionBodiedProperty.ReadValue(4));
 
 
-        var getterOnly = result.FirstOrDefault(r => r[0].ToString() == "GetterOnly");
+        var getterOnly = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "GetterOnly");
         Assert.IsNotNull(getterOnly);
-        Assert.AreEqual(true, getterOnly[1]);
-        Assert.AreEqual(true, getterOnly[2]);
-        Assert.AreEqual(false, getterOnly[3]);
-        Assert.AreEqual(false, getterOnly[4]);
+        Assert.AreEqual(true, getterOnly.ReadValue(1));
+        Assert.AreEqual(true, getterOnly.ReadValue(2));
+        Assert.AreEqual(false, getterOnly.ReadValue(3));
+        Assert.AreEqual(false, getterOnly.ReadValue(4));
 
 
-        var initOnly = result.FirstOrDefault(r => r[0].ToString() == "InitOnly");
+        var initOnly = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "InitOnly");
         Assert.IsNotNull(initOnly);
-        Assert.AreEqual(true, initOnly[1]);
-        Assert.AreEqual(false, initOnly[2]);
-        Assert.AreEqual(true, initOnly[3]);
-        Assert.AreEqual(true, initOnly[4]);
+        Assert.AreEqual(true, initOnly.ReadValue(1));
+        Assert.AreEqual(false, initOnly.ReadValue(2));
+        Assert.AreEqual(true, initOnly.ReadValue(3));
+        Assert.AreEqual(true, initOnly.ReadValue(4));
     }
 
     [TestMethod]
@@ -1164,10 +1259,10 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("AbstractMethod", result[0][0].ToString());
-        Assert.AreEqual(false, result[0][1]);
-        Assert.AreEqual(false, result[0][2]);
-        Assert.AreEqual(0, result[0][3]);
+        Assert.AreEqual("AbstractMethod", result[0].ReadValue(0).ToString());
+        Assert.AreEqual(false, result[0].ReadValue(1));
+        Assert.AreEqual(false, result[0].ReadValue(2));
+        Assert.AreEqual(0, result[0].ReadValue(3));
     }
 
     [TestMethod]
@@ -1191,10 +1286,10 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("InterfaceMethod", result[0][0].ToString());
-        Assert.AreEqual(false, result[0][1]);
-        Assert.AreEqual(false, result[0][2]);
-        Assert.AreEqual(0, result[0][3]);
+        Assert.AreEqual("InterfaceMethod", result[0].ReadValue(0).ToString());
+        Assert.AreEqual(false, result[0].ReadValue(1));
+        Assert.AreEqual(false, result[0].ReadValue(2));
+        Assert.AreEqual(0, result[0].ReadValue(3));
     }
 
     [TestMethod]
@@ -1224,27 +1319,27 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count >= 4, $"Should have at least 4 fields, got {result.Count}");
 
 
-        var readonlyField = result.FirstOrDefault(r => r[0].ToString() == "_readonlyField");
+        var readonlyField = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "_readonlyField");
         Assert.IsNotNull(readonlyField);
-        Assert.AreEqual("Int32", readonlyField[1].ToString());
-        Assert.AreEqual(true, readonlyField[2]);
-        Assert.AreEqual(false, readonlyField[3]);
-        Assert.AreEqual(false, readonlyField[4]);
+        Assert.AreEqual("Int32", readonlyField.ReadValue(1).ToString());
+        Assert.AreEqual(true, readonlyField.ReadValue(2));
+        Assert.AreEqual(false, readonlyField.ReadValue(3));
+        Assert.AreEqual(false, readonlyField.ReadValue(4));
 
 
-        var constField = result.FirstOrDefault(r => r[0].ToString() == "ConstField");
+        var constField = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "ConstField");
         Assert.IsNotNull(constField);
-        Assert.AreEqual(true, constField[3]);
+        Assert.AreEqual(true, constField.ReadValue(3));
 
 
-        var staticField = result.FirstOrDefault(r => r[0].ToString() == "_staticField");
+        var staticField = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "_staticField");
         Assert.IsNotNull(staticField);
-        Assert.AreEqual(true, staticField[4]);
+        Assert.AreEqual(true, staticField.ReadValue(4));
 
 
-        var volatileField = result.FirstOrDefault(r => r[0].ToString() == "_volatileField");
+        var volatileField = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "_volatileField");
         Assert.IsNotNull(volatileField);
-        Assert.AreEqual(true, volatileField[5]);
+        Assert.AreEqual(true, volatileField.ReadValue(5));
     }
 
     [TestMethod]
@@ -1272,16 +1367,16 @@ public class RoslynToSqlTests
         Assert.AreEqual(3, result.Count);
 
 
-        var defaultCtor = result.FirstOrDefault(r => (int)r[1] == 0);
+        var defaultCtor = result.FirstOrDefault(r => (int)r.ReadValue(1) == 0);
         Assert.IsNotNull(defaultCtor);
-        Assert.AreEqual(true, defaultCtor[2]);
-        Assert.AreEqual(false, defaultCtor[3]);
+        Assert.AreEqual(true, defaultCtor.ReadValue(2));
+        Assert.AreEqual(false, defaultCtor.ReadValue(3));
 
 
-        var ctorWithInit = result.FirstOrDefault(r => (int)r[1] == 2);
+        var ctorWithInit = result.FirstOrDefault(r => (int)r.ReadValue(1) == 2);
         Assert.IsNotNull(ctorWithInit);
-        Assert.AreEqual(true, ctorWithInit[3]);
-        Assert.AreEqual("this", ctorWithInit[4]?.ToString());
+        Assert.AreEqual(true, ctorWithInit.ReadValue(3));
+        Assert.AreEqual("this", ctorWithInit.ReadValue(4)?.ToString());
     }
 
     [TestMethod]
@@ -1308,18 +1403,18 @@ public class RoslynToSqlTests
         Assert.AreEqual(2, result.Count);
 
 
-        var testStruct = result.FirstOrDefault(r => r[0].ToString() == "TestStruct");
+        var testStruct = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "TestStruct");
         Assert.IsNotNull(testStruct);
-        Assert.AreEqual(false, testStruct[1]);
-        Assert.AreEqual(1, testStruct[2]);
-        Assert.AreEqual(2, testStruct[3]);
-        Assert.AreEqual(1, testStruct[4]);
-        Assert.AreEqual(1, testStruct[5]);
+        Assert.AreEqual(false, testStruct.ReadValue(1));
+        Assert.AreEqual(1, testStruct.ReadValue(2));
+        Assert.AreEqual(2, testStruct.ReadValue(3));
+        Assert.AreEqual(1, testStruct.ReadValue(4));
+        Assert.AreEqual(1, testStruct.ReadValue(5));
 
 
-        var readonlyStruct = result.FirstOrDefault(r => r[0].ToString() == "ReadOnlyTestStruct");
+        var readonlyStruct = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "ReadOnlyTestStruct");
         Assert.IsNotNull(readonlyStruct);
-        Assert.AreEqual(true, readonlyStruct[1]);
+        Assert.AreEqual(true, readonlyStruct.ReadValue(1));
     }
 
     [TestMethod]
@@ -1343,9 +1438,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
-        Assert.AreEqual(true, result[0][2]);
-        Assert.AreEqual(2, result[0][3]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
+        Assert.AreEqual(true, result[0].ReadValue(2));
+        Assert.AreEqual(2, result[0].ReadValue(3));
     }
 
     [TestMethod]
@@ -1368,8 +1463,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
-        Assert.AreEqual(2, result[0][2]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
+        Assert.AreEqual(2, result[0].ReadValue(2));
     }
 
     [TestMethod]
@@ -1391,7 +1486,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(3, result[0][1]);
+        Assert.AreEqual(3, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -1438,10 +1533,10 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("SimpleEvent", result[0][0].ToString());
-        Assert.AreEqual("EventHandler", result[0][1].ToString());
-        Assert.AreEqual(false, result[0][2]);
-        Assert.AreEqual(true, result[0][3]);
+        Assert.AreEqual("SimpleEvent", result[0].ReadValue(0).ToString());
+        Assert.AreEqual("EventHandler", result[0].ReadValue(1).ToString());
+        Assert.AreEqual(false, result[0].ReadValue(2));
+        Assert.AreEqual(true, result[0].ReadValue(3));
     }
 
     [TestMethod]
@@ -1466,9 +1561,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue((int)result[0][1] >= 0);
-        Assert.IsTrue((double)result[0][2] >= 0 && (double)result[0][2] <= 1);
-        Assert.IsTrue((int)result[0][3] >= 0);
+        Assert.IsTrue((int)result[0].ReadValue(1) >= 0);
+        Assert.IsTrue((double)result[0].ReadValue(2) >= 0 && (double)result[0].ReadValue(2) <= 1);
+        Assert.IsTrue((int)result[0].ReadValue(3) >= 0);
     }
 
     [TestMethod]
@@ -1491,9 +1586,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
-        Assert.IsTrue((double)result[0][2] >= 0 && (double)result[0][2] <= 100);
-        Assert.IsTrue((double)result[0][3] >= 0 && (double)result[0][3] <= 100);
+        Assert.AreEqual(true, result[0].ReadValue(1));
+        Assert.IsTrue((double)result[0].ReadValue(2) >= 0 && (double)result[0].ReadValue(2) <= 100);
+        Assert.IsTrue((double)result[0].ReadValue(3) >= 0 && (double)result[0].ReadValue(3) <= 100);
     }
 
     [TestMethod]
@@ -1511,8 +1606,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(2, result.Count);
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "TestStruct" && !(bool)r[1]));
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "ReadOnlyTestStruct" && (bool)r[1]));
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "TestStruct" && !(bool)r.ReadValue(1)));
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "ReadOnlyTestStruct" && (bool)r.ReadValue(1)));
     }
 
     [TestMethod]
@@ -1539,14 +1634,14 @@ public class RoslynToSqlTests
         Assert.AreEqual(2, result.Count);
 
 
-        var usedParam = result.FirstOrDefault(r => r[1].ToString() == "usedParam");
+        var usedParam = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "usedParam");
         Assert.IsNotNull(usedParam);
-        Assert.AreEqual(true, usedParam[3]);
+        Assert.AreEqual(true, usedParam.ReadValue(3));
 
 
-        var unusedParam = result.FirstOrDefault(r => r[1].ToString() == "unusedParam");
+        var unusedParam = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "unusedParam");
         Assert.IsNotNull(unusedParam);
-        Assert.AreEqual(false, unusedParam[3]);
+        Assert.AreEqual(false, unusedParam.ReadValue(3));
     }
 
     [TestMethod]
@@ -1573,14 +1668,14 @@ public class RoslynToSqlTests
         Assert.AreEqual(2, result.Count);
 
 
-        var usedVar = result.FirstOrDefault(r => r[1].ToString() == "usedVar");
+        var usedVar = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "usedVar");
         Assert.IsNotNull(usedVar);
-        Assert.AreEqual(true, usedVar[3]);
+        Assert.AreEqual(true, usedVar.ReadValue(3));
 
 
-        var unusedVar = result.FirstOrDefault(r => r[1].ToString() == "unusedVar");
+        var unusedVar = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "unusedVar");
         Assert.IsNotNull(unusedVar);
-        Assert.AreEqual(false, unusedVar[3]);
+        Assert.AreEqual(false, unusedVar.ReadValue(3));
     }
 
     [TestMethod]
@@ -1608,25 +1703,25 @@ public class RoslynToSqlTests
         Assert.AreEqual(3, result.Count);
 
 
-        var localAdd = result.FirstOrDefault(r => r[1].ToString() == "LocalAdd");
+        var localAdd = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "LocalAdd");
         Assert.IsNotNull(localAdd);
-        Assert.AreEqual("Int32", localAdd[2].ToString());
-        Assert.AreEqual(false, localAdd[3]);
-        Assert.AreEqual(false, localAdd[4]);
+        Assert.AreEqual("Int32", localAdd.ReadValue(2).ToString());
+        Assert.AreEqual(false, localAdd.ReadValue(3));
+        Assert.AreEqual(false, localAdd.ReadValue(4));
 
 
-        var localAsync = result.FirstOrDefault(r => r[1].ToString() == "LocalAsyncFunction");
+        var localAsync = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "LocalAsyncFunction");
         Assert.IsNotNull(localAsync);
-        Assert.AreEqual("Task", localAsync[2].ToString());
-        Assert.AreEqual(true, localAsync[3]);
-        Assert.AreEqual(false, localAsync[4]);
+        Assert.AreEqual("Task", localAsync.ReadValue(2).ToString());
+        Assert.AreEqual(true, localAsync.ReadValue(3));
+        Assert.AreEqual(false, localAsync.ReadValue(4));
 
 
-        var localStatic = result.FirstOrDefault(r => r[1].ToString() == "LocalStaticFunction");
+        var localStatic = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "LocalStaticFunction");
         Assert.IsNotNull(localStatic);
-        Assert.AreEqual("Int32", localStatic[2].ToString());
-        Assert.AreEqual(false, localStatic[3]);
-        Assert.AreEqual(true, localStatic[4]);
+        Assert.AreEqual("Int32", localStatic.ReadValue(2).ToString());
+        Assert.AreEqual(false, localStatic.ReadValue(3));
+        Assert.AreEqual(true, localStatic.ReadValue(4));
     }
 
     [TestMethod]
@@ -1651,19 +1746,19 @@ public class RoslynToSqlTests
         Assert.AreEqual(3, result.Count);
 
 
-        var oneUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithUnusedParameter");
+        var oneUnused = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "MethodWithUnusedParameter");
         Assert.IsNotNull(oneUnused);
-        Assert.AreEqual(1, oneUnused[1]);
+        Assert.AreEqual(1, oneUnused.ReadValue(1));
 
 
-        var threeUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithMultipleUnusedParams");
+        var threeUnused = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "MethodWithMultipleUnusedParams");
         Assert.IsNotNull(threeUnused);
-        Assert.AreEqual(3, threeUnused[1]);
+        Assert.AreEqual(3, threeUnused.ReadValue(1));
 
 
-        var noneUnused = result.FirstOrDefault(r => r[0].ToString() == "MethodWithAllParamsUsed");
+        var noneUnused = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "MethodWithAllParamsUsed");
         Assert.IsNotNull(noneUnused);
-        Assert.AreEqual(0, noneUnused[1]);
+        Assert.AreEqual(0, noneUnused.ReadValue(1));
     }
 
     [TestMethod]
@@ -1686,8 +1781,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(2, result[0][1]);
-        Assert.AreEqual(1, result[0][2]);
+        Assert.AreEqual(2, result[0].ReadValue(1));
+        Assert.AreEqual(1, result[0].ReadValue(2));
     }
 
     [TestMethod]
@@ -1732,16 +1827,16 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count >= 2);
 
 
-        var usedField = result.FirstOrDefault(r => r[0].ToString() == "_usedField");
+        var usedField = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "_usedField");
         Assert.IsNotNull(usedField);
-        Assert.AreEqual(true, usedField[1]);
-        Assert.IsTrue((int)usedField[2] > 0);
+        Assert.AreEqual(true, usedField.ReadValue(1));
+        Assert.IsTrue((int)usedField.ReadValue(2) > 0);
 
 
-        var unusedField = result.FirstOrDefault(r => r[0].ToString() == "_unusedField");
+        var unusedField = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "_unusedField");
         Assert.IsNotNull(unusedField);
-        Assert.AreEqual(false, unusedField[1]);
-        Assert.AreEqual(0, unusedField[2]);
+        Assert.AreEqual(false, unusedField.ReadValue(1));
+        Assert.AreEqual(0, unusedField.ReadValue(2));
     }
 
     [TestMethod]
@@ -1765,9 +1860,9 @@ public class RoslynToSqlTests
         Assert.AreEqual(2, result.Count);
 
 
-        var class1 = result.FirstOrDefault(r => r[0].ToString() == "Class1");
+        var class1 = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "Class1");
         Assert.IsNotNull(class1);
-        Assert.IsNotNull(class1[1]);
+        Assert.IsNotNull(class1.ReadValue(1));
     }
 
     [TestMethod]
@@ -1791,16 +1886,16 @@ public class RoslynToSqlTests
         Assert.AreEqual(2, result.Count);
 
 
-        var usedInterface = result.FirstOrDefault(r => r[0].ToString() == "IUsedInterface");
+        var usedInterface = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IUsedInterface");
         Assert.IsNotNull(usedInterface);
-        Assert.AreEqual(true, usedInterface[1]);
-        Assert.IsTrue((int)usedInterface[2] > 0);
+        Assert.AreEqual(true, usedInterface.ReadValue(1));
+        Assert.IsTrue((int)usedInterface.ReadValue(2) > 0);
 
 
-        var unusedInterface = result.FirstOrDefault(r => r[0].ToString() == "IUnusedInterface");
+        var unusedInterface = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IUnusedInterface");
         Assert.IsNotNull(unusedInterface);
-        Assert.AreEqual(false, unusedInterface[1]);
-        Assert.AreEqual(0, unusedInterface[2]);
+        Assert.AreEqual(false, unusedInterface.ReadValue(1));
+        Assert.AreEqual(0, unusedInterface.ReadValue(2));
     }
 
     [TestMethod]
@@ -1824,16 +1919,16 @@ public class RoslynToSqlTests
         Assert.AreEqual(2, result.Count);
 
 
-        var usedEnum = result.FirstOrDefault(r => r[0].ToString() == "UsedEnum");
+        var usedEnum = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "UsedEnum");
         Assert.IsNotNull(usedEnum);
-        Assert.AreEqual(true, usedEnum[1]);
-        Assert.IsTrue((int)usedEnum[2] > 0);
+        Assert.AreEqual(true, usedEnum.ReadValue(1));
+        Assert.IsTrue((int)usedEnum.ReadValue(2) > 0);
 
 
-        var unusedEnum = result.FirstOrDefault(r => r[0].ToString() == "UnusedEnum");
+        var unusedEnum = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "UnusedEnum");
         Assert.IsNotNull(unusedEnum);
-        Assert.AreEqual(false, unusedEnum[1]);
-        Assert.AreEqual(0, unusedEnum[2]);
+        Assert.AreEqual(false, unusedEnum.ReadValue(1));
+        Assert.AreEqual(0, unusedEnum.ReadValue(2));
     }
 
     [TestMethod]
@@ -1857,16 +1952,16 @@ public class RoslynToSqlTests
         Assert.AreEqual(2, result.Count);
 
 
-        var usedStruct = result.FirstOrDefault(r => r[0].ToString() == "UsedStruct");
+        var usedStruct = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "UsedStruct");
         Assert.IsNotNull(usedStruct);
-        Assert.AreEqual(true, usedStruct[1]);
-        Assert.IsTrue((int)usedStruct[2] > 0);
+        Assert.AreEqual(true, usedStruct.ReadValue(1));
+        Assert.IsTrue((int)usedStruct.ReadValue(2) > 0);
 
 
-        var unusedStruct = result.FirstOrDefault(r => r[0].ToString() == "UnusedStruct");
+        var unusedStruct = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "UnusedStruct");
         Assert.IsNotNull(unusedStruct);
-        Assert.AreEqual(false, unusedStruct[1]);
-        Assert.AreEqual(0, unusedStruct[2]);
+        Assert.AreEqual(false, unusedStruct.ReadValue(1));
+        Assert.AreEqual(0, unusedStruct.ReadValue(2));
     }
 
     [TestMethod]
@@ -1890,15 +1985,15 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(2, result.Count);
 
-        var usedMethod = result.FirstOrDefault(r => r[0].ToString() == "GetUsedField");
+        var usedMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "GetUsedField");
         Assert.IsNotNull(usedMethod);
-        Assert.AreEqual(true, usedMethod[1]);
-        Assert.IsTrue((int)usedMethod[2] > 0);
+        Assert.AreEqual(true, usedMethod.ReadValue(1));
+        Assert.IsTrue((int)usedMethod.ReadValue(2) > 0);
 
-        var unusedMethod = result.FirstOrDefault(r => r[0].ToString() == "UnusedPrivateMethod");
+        var unusedMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "UnusedPrivateMethod");
         Assert.IsNotNull(unusedMethod);
-        Assert.AreEqual(false, unusedMethod[1]);
-        Assert.AreEqual(0, unusedMethod[2]);
+        Assert.AreEqual(false, unusedMethod.ReadValue(1));
+        Assert.AreEqual(0, unusedMethod.ReadValue(2));
     }
 
     [TestMethod]
@@ -1917,7 +2012,7 @@ public class RoslynToSqlTests
 
 
         Assert.IsTrue(result.Count >= 1);
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "_unusedField"));
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "_unusedField"));
     }
 
     [TestMethod]
@@ -1943,8 +2038,47 @@ public class RoslynToSqlTests
 
 
         Assert.IsTrue(result.Count >= 2, "CallerMethod should call at least 2 methods");
-        Assert.IsTrue(result.Any(r => r[2].ToString() == "HelperMethod1"), "Should call HelperMethod1");
-        Assert.IsTrue(result.Any(r => r[2].ToString() == "HelperMethod2"), "Should call HelperMethod2");
+        Assert.IsTrue(result.Any(r => r.ReadValue(2).ToString() == "HelperMethod1"), "Should call HelperMethod1");
+        Assert.IsTrue(result.Any(r => r.ReadValue(2).ToString() == "HelperMethod2"), "Should call HelperMethod2");
+    }
+
+    [TestMethod]
+    public void WhenAmbiguousMethodInvocationQueried_ShouldRemainUnresolved()
+    {
+        var query = """
+                    select
+                        m.Name,
+                        m.CalleeCount,
+                        m.UnresolvedInvocationCount,
+                        m.IsRecursive
+                    from csharp.solution('{Solution1SolutionPath}') s
+                    cross apply s.Projects proj
+                    cross apply proj.Documents d
+                    cross apply d.Classes cls
+                    cross apply cls.Methods m
+                    where cls.Name = 'AmbiguousInvocationTestClass' and m.Name = 'CallsAmbiguousTarget'
+                    """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+
+        var result = CompileQuery(query).Run();
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(0, result[0].ReadValue(1));
+        Assert.AreEqual(1, result[0].ReadValue(2));
+        Assert.AreEqual(false, result[0].ReadValue(3));
+
+        var calleesQuery = """
+                           select callee.Name
+                           from csharp.solution('{Solution1SolutionPath}') s
+                           cross apply s.Projects proj
+                           cross apply proj.Documents d
+                           cross apply d.Classes cls
+                           cross apply cls.Methods m
+                           cross apply m.Callees callee
+                           where cls.Name = 'AmbiguousInvocationTestClass' and m.Name = 'CallsAmbiguousTarget'
+                           """.Replace("{Solution1SolutionPath}", Solution1SolutionPath.Escape());
+
+        Assert.AreEqual(0, CompileQuery(calleesQuery).Run().Count,
+            "An ambiguous invocation must not invent a confirmed callee");
     }
 
     [TestMethod]
@@ -1968,16 +2102,16 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(2, result.Count);
 
-        var recursiveMethod = result.FirstOrDefault(r => r[0].ToString() == "RecursiveMethod");
+        var recursiveMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "RecursiveMethod");
         Assert.IsNotNull(recursiveMethod);
-        Assert.IsTrue((int)recursiveMethod[2] >= 1,
-            $"RecursiveMethod should have at least one callee (itself), has {recursiveMethod[2]}");
-        Assert.AreEqual(true, recursiveMethod[1], "RecursiveMethod should be marked as recursive");
+        Assert.IsTrue((int)recursiveMethod.ReadValue(2) >= 1,
+            $"RecursiveMethod should have at least one callee (itself), has {recursiveMethod.ReadValue(2)}");
+        Assert.AreEqual(true, recursiveMethod.ReadValue(1), "RecursiveMethod should be marked as recursive");
 
-        var nonRecursiveMethod = result.FirstOrDefault(r => r[0].ToString() == "NonRecursiveMethod");
+        var nonRecursiveMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "NonRecursiveMethod");
         Assert.IsNotNull(nonRecursiveMethod);
-        Assert.AreEqual(0, (int)nonRecursiveMethod[2], "NonRecursiveMethod should not have callees");
-        Assert.AreEqual(false, nonRecursiveMethod[1], "NonRecursiveMethod should not be recursive");
+        Assert.AreEqual(0, (int)nonRecursiveMethod.ReadValue(2), "NonRecursiveMethod should not have callees");
+        Assert.AreEqual(false, nonRecursiveMethod.ReadValue(1), "NonRecursiveMethod should not be recursive");
     }
 
     [TestMethod]
@@ -2002,10 +2136,10 @@ public class RoslynToSqlTests
 
         Assert.IsTrue(result.Count >= 1, "Should find at least one overridden method");
 
-        var virtualMethod = result.FirstOrDefault(r => r[0].ToString() == "VirtualMethod");
+        var virtualMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "VirtualMethod");
         Assert.IsNotNull(virtualMethod);
-        Assert.AreEqual("VirtualMethod", virtualMethod[2], "Should override VirtualMethod");
-        Assert.AreEqual("BaseClassForOverride", virtualMethod[3], "Should be from BaseClassForOverride");
+        Assert.AreEqual("VirtualMethod", virtualMethod.ReadValue(2), "Should override VirtualMethod");
+        Assert.AreEqual("BaseClassForOverride", virtualMethod.ReadValue(3), "Should be from BaseClassForOverride");
     }
 
     [TestMethod]
@@ -2030,7 +2164,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, "Should find interface implementations");
-        Assert.IsTrue(result.Any(r => r[2].ToString() == "ITestInterface"), "Should implement ITestInterface");
+        Assert.IsTrue(result.Any(r => r.ReadValue(2).ToString() == "ITestInterface"), "Should implement ITestInterface");
     }
 
     [TestMethod]
@@ -2055,15 +2189,15 @@ public class RoslynToSqlTests
 
         Assert.IsTrue(result.Count >= 4, "Should find async test methods");
 
-        var asyncVoidMethod = result.FirstOrDefault(r => r[0].ToString() == "AsyncVoidMethod");
+        var asyncVoidMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "AsyncVoidMethod");
         Assert.IsNotNull(asyncVoidMethod);
-        Assert.AreEqual(true, asyncVoidMethod[1], "AsyncVoidMethod should return Task");
-        Assert.AreEqual(true, asyncVoidMethod[2], "AsyncVoidMethod should be async");
+        Assert.AreEqual(true, asyncVoidMethod.ReadValue(1), "AsyncVoidMethod should return Task");
+        Assert.AreEqual(true, asyncVoidMethod.ReadValue(2), "AsyncVoidMethod should be async");
 
-        var syncMethod = result.FirstOrDefault(r => r[0].ToString() == "SyncMethod");
+        var syncMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "SyncMethod");
         Assert.IsNotNull(syncMethod);
-        Assert.AreEqual(false, syncMethod[1], "SyncMethod should not return Task");
-        Assert.AreEqual(false, syncMethod[2], "SyncMethod should not be async");
+        Assert.AreEqual(false, syncMethod.ReadValue(1), "SyncMethod should not return Task");
+        Assert.AreEqual(false, syncMethod.ReadValue(2), "SyncMethod should not be async");
     }
 
     [TestMethod]
@@ -2086,13 +2220,13 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(2, result.Count);
 
-        var nullableMethod = result.FirstOrDefault(r => r[0].ToString() == "NullableReturnMethod");
+        var nullableMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "NullableReturnMethod");
         Assert.IsNotNull(nullableMethod);
-        Assert.AreEqual(true, nullableMethod[1], "NullableReturnMethod should have nullable return");
+        Assert.AreEqual(true, nullableMethod.ReadValue(1), "NullableReturnMethod should have nullable return");
 
-        var nonNullableMethod = result.FirstOrDefault(r => r[0].ToString() == "NonNullableReturnMethod");
+        var nonNullableMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "NonNullableReturnMethod");
         Assert.IsNotNull(nonNullableMethod);
-        Assert.AreEqual(false, nonNullableMethod[1], "NonNullableReturnMethod should not have nullable return");
+        Assert.AreEqual(false, nonNullableMethod.ReadValue(1), "NonNullableReturnMethod should not have nullable return");
     }
 
     [TestMethod]
@@ -2116,13 +2250,13 @@ public class RoslynToSqlTests
 
         Assert.IsTrue(result.Count >= 3, "Should find methods in PublicApiClass");
 
-        var publicMethod = result.FirstOrDefault(r => r[0].ToString() == "PublicMethod");
+        var publicMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "PublicMethod");
         Assert.IsNotNull(publicMethod);
-        Assert.AreEqual(true, publicMethod[1], "PublicMethod should be part of public API");
+        Assert.AreEqual(true, publicMethod.ReadValue(1), "PublicMethod should be part of public API");
 
-        var protectedMethod = result.FirstOrDefault(r => r[0].ToString() == "ProtectedMethod");
+        var protectedMethod = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "ProtectedMethod");
         Assert.IsNotNull(protectedMethod);
-        Assert.AreEqual(true, protectedMethod[1], "ProtectedMethod should be part of public API");
+        Assert.AreEqual(true, protectedMethod.ReadValue(1), "ProtectedMethod should be part of public API");
     }
 
     [TestMethod]
@@ -2150,10 +2284,10 @@ public class RoslynToSqlTests
         Assert.AreEqual(1, result.Count);
 
         var method = result[0];
-        Assert.IsTrue((int)method[1] > 0, "StartLine should be positive");
-        Assert.IsTrue((int)method[2] > (int)method[1], "EndLine should be greater than StartLine");
-        Assert.IsTrue(method[3]?.ToString()?.EndsWith(".cs") == true, "SourceFilePath should end with .cs");
-        Assert.AreEqual("CallGraphTestClass", method[4]?.ToString(), "ContainingTypeName should be CallGraphTestClass");
+        Assert.IsTrue((int)method.ReadValue(1) > 0, "StartLine should be positive");
+        Assert.IsTrue((int)method.ReadValue(2) > (int)method.ReadValue(1), "EndLine should be greater than StartLine");
+        Assert.IsTrue(method.ReadValue(3)?.ToString()?.EndsWith(".cs") == true, "SourceFilePath should end with .cs");
+        Assert.AreEqual("CallGraphTestClass", method.ReadValue(4)?.ToString(), "ContainingTypeName should be CallGraphTestClass");
     }
 
     [TestMethod]
@@ -2178,14 +2312,14 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(2, result.Count);
 
-        var publicClass = result.FirstOrDefault(r => r[0].ToString() == "PublicApiClass");
+        var publicClass = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "PublicApiClass");
         Assert.IsNotNull(publicClass);
-        Assert.AreEqual(true, publicClass[1], "PublicApiClass should be part of public API");
-        Assert.IsTrue((int)publicClass[2] >= 1, "Should have at least 1 public method");
+        Assert.AreEqual(true, publicClass.ReadValue(1), "PublicApiClass should be part of public API");
+        Assert.IsTrue((int)publicClass.ReadValue(2) >= 1, "Should have at least 1 public method");
 
-        var internalClass = result.FirstOrDefault(r => r[0].ToString() == "InternalApiClass");
+        var internalClass = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "InternalApiClass");
         Assert.IsNotNull(internalClass);
-        Assert.AreEqual(false, internalClass[1], "InternalApiClass should not be part of public API");
+        Assert.AreEqual(false, internalClass.ReadValue(1), "InternalApiClass should not be part of public API");
     }
 
     [TestMethod]
@@ -2209,9 +2343,9 @@ public class RoslynToSqlTests
         Assert.AreEqual(1, result.Count);
 
         var doc = result[0];
-        Assert.IsTrue((int)doc[1] > 0, "Should reference some types");
-        Assert.IsTrue((int)doc[2] > 0, "Should reference some namespaces");
-        Assert.IsTrue((int)doc[3] > 0, "Should reference some assemblies");
+        Assert.IsTrue((int)doc.ReadValue(1) > 0, "Should reference some types");
+        Assert.IsTrue((int)doc.ReadValue(2) > 0, "Should reference some namespaces");
+        Assert.IsTrue((int)doc.ReadValue(3) > 0, "Should reference some assemblies");
     }
 
     [TestMethod]
@@ -2231,7 +2365,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count > 0, "Should find document");
-        Assert.IsTrue((int)result[0][1] > 0, "Should reference some namespaces");
+        Assert.IsTrue((int)result[0].ReadValue(1) > 0, "Should reference some namespaces");
     }
 
     [TestMethod]
@@ -2253,7 +2387,7 @@ public class RoslynToSqlTests
 
         Assert.IsTrue(result.Count >= 3, $"DeepImplementor should implement at least 3 interfaces transitively, got {result.Count}");
         
-        var interfaceNames = result.Select(r => r[1].ToString()).ToList();
+        var interfaceNames = result.Select(r => r.ReadValue(1).ToString()).ToList();
         Assert.IsTrue(interfaceNames.Any(n => n!.Contains("ISuperAdvancedProcessable")), "Should contain ISuperAdvancedProcessable");
         Assert.IsTrue(interfaceNames.Any(n => n!.Contains("IAdvancedProcessable")), "Should contain IAdvancedProcessable (transitive)");
         Assert.IsTrue(interfaceNames.Any(n => n!.Contains("IProcessable")), "Should contain IProcessable (transitive)");
@@ -2277,7 +2411,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "DeepImplementor directly implements only ISuperAdvancedProcessable");
-        Assert.AreEqual("ISuperAdvancedProcessable", result[0][1].ToString());
+        Assert.AreEqual("ISuperAdvancedProcessable", result[0].ReadValue(1).ToString());
     }
 
     [TestMethod]
@@ -2299,7 +2433,7 @@ public class RoslynToSqlTests
 
         Assert.IsTrue(result.Count >= 2, $"ISuperAdvancedProcessable should have at least 2 transitive base interfaces, got {result.Count}");
         
-        var baseNames = result.Select(r => r[1].ToString()).ToList();
+        var baseNames = result.Select(r => r.ReadValue(1).ToString()).ToList();
         Assert.IsTrue(baseNames.Any(n => n!.Contains("IAdvancedProcessable")), "Should contain IAdvancedProcessable");
         Assert.IsTrue(baseNames.Any(n => n!.Contains("IProcessable")), "Should contain IProcessable (transitive)");
     }
@@ -2325,7 +2459,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast" && (bool)r[3]),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "Cast" && (bool)r.ReadValue(3)),
             "Should find IProcessable used as Cast and marked as interface");
     }
 
@@ -2349,7 +2483,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Is"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "Is"),
             "Should find IProcessable used with 'is' operator");
     }
 
@@ -2372,7 +2506,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "As"),
             "Should find IProcessable used with 'as' operator");
     }
 
@@ -2395,7 +2529,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "PatternMatch"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "PatternMatch"),
             "Should find IProcessable used in pattern matching");
     }
 
@@ -2418,7 +2552,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "LocalVariable"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "LocalVariable"),
             "Should find IProcessable used as local variable type");
     }
 
@@ -2440,7 +2574,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "GenericArgument"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "GenericArgument"),
             "Should find IProcessable used as generic type argument");
     }
 
@@ -2463,7 +2597,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "TypeOf"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "TypeOf"),
             "Should find IProcessable used in typeof()");
     }
 
@@ -2486,7 +2620,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Default"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "Default"),
             "Should find IProcessable used in default()");
     }
 
@@ -2512,11 +2646,11 @@ public class RoslynToSqlTests
 
         Assert.IsTrue(result.Count >= 3, $"Should find at least 3 type references, got {result.Count}");
         
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable"), "Should reference IProcessable");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable"), "Should reference IAdvancedProcessable");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "ISuperAdvancedProcessable"), "Should reference ISuperAdvancedProcessable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable"), "Should reference IProcessable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IAdvancedProcessable"), "Should reference IAdvancedProcessable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "ISuperAdvancedProcessable"), "Should reference ISuperAdvancedProcessable");
         
-        Assert.IsTrue(result.All(r => r[3].ToString() == "Interface"), "All referenced types should be interfaces");
+        Assert.IsTrue(result.All(r => r.ReadValue(3).ToString() == "Interface"), "All referenced types should be interfaces");
     }
 
     [TestMethod]
@@ -2537,7 +2671,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "ArrayCreation"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "ArrayCreation"),
             "Should find IProcessable used in array creation");
     }
 
@@ -2560,7 +2694,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 pattern references, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable"), "Should find IProcessable in switch pattern");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable"), "Should find IProcessable in switch pattern");
     }
 
     [TestMethod]
@@ -2583,7 +2717,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 3, $"Should find at least 3 interface references, got {result.Count}");
-        Assert.IsTrue(result.All(r => r[1].ToString()!.Contains("Solution1.ClassLibrary1")),
+        Assert.IsTrue(result.All(r => r.ReadValue(1).ToString()!.Contains("Solution1.ClassLibrary1")),
             "All FullName values should contain the namespace");
     }
 
@@ -2606,9 +2740,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, $"Should find exactly 1 property, got {result.Count}");
-        Assert.AreEqual("CastingProperty", result[0][0].ToString());
-        Assert.IsTrue(result[0][2].ToString()!.Contains("IProcessable"), 
-            $"FullTypeName should contain IProcessable, got {result[0][2]}");
+        Assert.AreEqual("CastingProperty", result[0].ReadValue(0).ToString());
+        Assert.IsTrue(result[0].ReadValue(2).ToString()!.Contains("IProcessable"),
+            $"FullTypeName should contain IProcessable, got {result[0].ReadValue(2)}");
     }
 
     [TestMethod]
@@ -2631,9 +2765,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should find exactly 1 parameter");
-        Assert.AreEqual("obj", result[0][0].ToString());
-        Assert.AreEqual("Object", result[0][1].ToString());
-        Assert.AreEqual("object", result[0][2].ToString());
+        Assert.AreEqual("obj", result[0].ReadValue(0).ToString());
+        Assert.AreEqual("Object", result[0].ReadValue(1).ToString());
+        Assert.AreEqual("object", result[0].ReadValue(2).ToString());
     }
 
     [TestMethod]
@@ -2655,9 +2789,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should find exactly 1 method");
-        Assert.AreEqual("MethodWithDefault", result[0][0].ToString());
-        Assert.IsTrue(result[0][2].ToString()!.Contains("IProcessable"),
-            $"FullReturnType should contain IProcessable, got {result[0][2]}");
+        Assert.AreEqual("MethodWithDefault", result[0].ReadValue(0).ToString());
+        Assert.IsTrue(result[0].ReadValue(2).ToString()!.Contains("IProcessable"),
+            $"FullReturnType should contain IProcessable, got {result[0].ReadValue(2)}");
     }
 
     [TestMethod]
@@ -2681,10 +2815,10 @@ public class RoslynToSqlTests
 
         Assert.IsTrue(result.Count >= 2, $"Should find at least 2 type references in constructor, got {result.Count}");
         
-        var castRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast");
+        var castRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "Cast");
         Assert.IsNotNull(castRef, "Should detect IProcessable cast in constructor body");
         
-        var patternRef = result.FirstOrDefault(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "PatternMatch");
+        var patternRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IAdvancedProcessable" && r.ReadValue(1).ToString() == "PatternMatch");
         Assert.IsNotNull(patternRef, "Should detect IAdvancedProcessable pattern match in constructor body");
     }
 
@@ -2709,10 +2843,10 @@ public class RoslynToSqlTests
 
         Assert.IsTrue(result.Count >= 2, $"Should find at least 2 type references in property accessors, got {result.Count}");
         
-        var asRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As");
+        var asRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "As");
         Assert.IsNotNull(asRef, "Should detect IProcessable 'as' usage in getter body");
         
-        var patternRef = result.FirstOrDefault(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "PatternMatch");
+        var patternRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IAdvancedProcessable" && r.ReadValue(1).ToString() == "PatternMatch");
         Assert.IsNotNull(patternRef, "Should detect IAdvancedProcessable pattern match in setter body");
     }
 
@@ -2735,8 +2869,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, $"Should find exactly 1 type reference in expression-bodied property, got {result.Count}");
-        Assert.AreEqual("IProcessable", result[0][0].ToString());
-        Assert.AreEqual("TypeOf", result[0][1].ToString());
+        Assert.AreEqual("IProcessable", result[0].ReadValue(0).ToString());
+        Assert.AreEqual("TypeOf", result[0].ReadValue(1).ToString());
     }
 
     [TestMethod]
@@ -2761,11 +2895,11 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count >= 2, $"Should find at least 2 type references, got {result.Count}");
         
         // The explicit IProcessable local variable should be detected
-        var explicitLocal = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "LocalVariable");
+        var explicitLocal = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "LocalVariable");
         Assert.IsNotNull(explicitLocal, "Should detect explicit IProcessable local variable");
         
         // The cast should also be detected  
-        var castRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast");
+        var castRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "Cast");
         Assert.IsNotNull(castRef, "Should detect IProcessable cast");
     }
 
@@ -2788,7 +2922,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable type reference in constructor, got {result.Count}");
-        var localRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable");
+        var localRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IProcessable");
         Assert.IsNotNull(localRef, "Should detect IProcessable local variable in constructor body");
     }
 
@@ -2812,11 +2946,11 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable in constructor, got {result.Count}");
-        var localVar = result.FirstOrDefault(r => r[0].ToString() == "local");
+        var localVar = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "local");
         Assert.IsNotNull(localVar, "Should find local variable named 'local'");
-        Assert.AreEqual("IProcessable", localVar![1].ToString());
-        Assert.IsTrue(localVar[2].ToString()!.Contains("IProcessable"),
-            $"FullTypeName should contain IProcessable, got {localVar[2]}");
+        Assert.AreEqual("IProcessable", localVar!.ReadValue(1).ToString());
+        Assert.IsTrue(localVar.ReadValue(2).ToString()!.Contains("IProcessable"),
+            $"FullTypeName should contain IProcessable, got {localVar.ReadValue(2)}");
     }
 
     [TestMethod]
@@ -2839,11 +2973,11 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable in property accessor, got {result.Count}");
-        var backupVar = result.FirstOrDefault(r => r[0].ToString() == "backup");
+        var backupVar = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "backup");
         Assert.IsNotNull(backupVar, "Should find local variable named 'backup'");
-        Assert.AreEqual("IProcessable", backupVar![1].ToString());
-        Assert.IsTrue(backupVar[2].ToString()!.Contains("IProcessable"),
-            $"FullTypeName should contain IProcessable, got {backupVar[2]}");
+        Assert.AreEqual("IProcessable", backupVar!.ReadValue(1).ToString());
+        Assert.IsTrue(backupVar.ReadValue(2).ToString()!.Contains("IProcessable"),
+            $"FullTypeName should contain IProcessable, got {backupVar.ReadValue(2)}");
     }
 
     // =====================================================================
@@ -2867,7 +3001,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should find exactly 1 class");
-        Assert.AreEqual(0, Convert.ToInt32(result[0][1]), "NoInterfaceClass should have 0 interfaces");
+        Assert.AreEqual(0, Convert.ToInt32(result[0].ReadValue(1)), "NoInterfaceClass should have 0 interfaces");
     }
 
     [TestMethod]
@@ -2888,7 +3022,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "SingleInterfaceClass should have exactly 1 interface in AllInterfaces");
-        Assert.IsTrue(result[0][1].ToString()!.Contains("IProcessable"), "Should be IProcessable");
+        Assert.IsTrue(result[0].ReadValue(1).ToString()!.Contains("IProcessable"), "Should be IProcessable");
     }
 
     [TestMethod]
@@ -2908,7 +3042,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 3, "Should have at least 3 transitive interfaces");
-        Assert.IsTrue(result.All(r => r[0].ToString()!.Contains("Solution1.ClassLibrary1")),
+        Assert.IsTrue(result.All(r => r.ReadValue(0).ToString()!.Contains("Solution1.ClassLibrary1")),
             "AllInterfaces should return fully qualified names including namespace");
     }
 
@@ -2965,7 +3099,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "IChildInterface should have exactly 1 base interface");
-        Assert.IsTrue(result[0][1].ToString()!.Contains("IStandaloneInterface"), "Should be IStandaloneInterface");
+        Assert.IsTrue(result[0].ReadValue(1).ToString()!.Contains("IStandaloneInterface"), "Should be IStandaloneInterface");
     }
 
     [TestMethod]
@@ -2985,7 +3119,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 2, "Should have at least 2 base interfaces");
-        Assert.IsTrue(result.All(r => r[0].ToString()!.Contains("Solution1.ClassLibrary1")),
+        Assert.IsTrue(result.All(r => r.ReadValue(0).ToString()!.Contains("Solution1.ClassLibrary1")),
             "AllBaseInterfaces should return fully qualified names");
     }
 
@@ -3013,9 +3147,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, "Should find at least 1 type reference");
-        var ipRef = result.First(r => r[0].ToString() == "IProcessable");
-        Assert.AreEqual("Solution1.ClassLibrary1", ipRef[1].ToString(), "Namespace should be correct");
-        Assert.AreEqual("Solution1.ClassLibrary1.IProcessable", ipRef[2].ToString(), "FullName should be Namespace.Name");
+        var ipRef = result.First(r => r.ReadValue(0).ToString() == "IProcessable");
+        Assert.AreEqual("Solution1.ClassLibrary1", ipRef.ReadValue(1).ToString(), "Namespace should be correct");
+        Assert.AreEqual("Solution1.ClassLibrary1.IProcessable", ipRef.ReadValue(2).ToString(), "FullName should be Namespace.Name");
     }
 
     [TestMethod]
@@ -3039,7 +3173,7 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count >= 1, "Should find at least 1 type reference");
         foreach (var row in result)
         {
-            var lineNumber = Convert.ToInt32(row[1]);
+            var lineNumber = Convert.ToInt32(row.ReadValue(1));
             Assert.IsTrue(lineNumber > 0, $"LineNumber should be positive (1-based), got {lineNumber}");
         }
     }
@@ -3066,12 +3200,12 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        var ipRef = result.First(r => r[0].ToString() == "IProcessable");
-        Assert.AreEqual("Interface", ipRef[1].ToString(), "Kind should be 'Interface'");
-        Assert.IsTrue((bool)ipRef[2], "IsInterface should be true");
-        Assert.IsFalse((bool)ipRef[3], "IsClass should be false");
-        Assert.IsFalse((bool)ipRef[4], "IsEnum should be false");
-        Assert.IsFalse((bool)ipRef[5], "IsStruct should be false");
+        var ipRef = result.First(r => r.ReadValue(0).ToString() == "IProcessable");
+        Assert.AreEqual("Interface", ipRef.ReadValue(1).ToString(), "Kind should be 'Interface'");
+        Assert.IsTrue((bool)ipRef.ReadValue(2), "IsInterface should be true");
+        Assert.IsFalse((bool)ipRef.ReadValue(3), "IsClass should be false");
+        Assert.IsFalse((bool)ipRef.ReadValue(4), "IsEnum should be false");
+        Assert.IsFalse((bool)ipRef.ReadValue(5), "IsStruct should be false");
     }
 
     [TestMethod]
@@ -3095,10 +3229,10 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         // DeepImplementor is used as ObjectCreation  
-        var classRef = result.FirstOrDefault(r => r[0].ToString() == "DeepImplementor");
+        var classRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "DeepImplementor");
         Assert.IsNotNull(classRef, "Should find DeepImplementor class reference");
-        Assert.AreEqual("Class", classRef[1].ToString(), "Kind should be 'Class'");
-        Assert.IsTrue((bool)classRef[3], "IsClass should be true for DeepImplementor");
+        Assert.AreEqual("Class", classRef.ReadValue(1).ToString(), "Kind should be 'Class'");
+        Assert.IsTrue((bool)classRef.ReadValue(3), "IsClass should be true for DeepImplementor");
     }
 
     [TestMethod]
@@ -3120,9 +3254,9 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "DeepImplementor" && r[1].ToString() == "ObjectCreation"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "DeepImplementor" && r.ReadValue(1).ToString() == "ObjectCreation"),
             "Should detect DeepImplementor as ObjectCreation");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "LocalVariable"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "LocalVariable"),
             "Should detect IProcessable as LocalVariable type");
     }
 
@@ -3145,11 +3279,11 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        var catchRefs = result.Where(r => r[1].ToString() == "CatchDeclaration").ToList();
+        var catchRefs = result.Where(r => r.ReadValue(1).ToString() == "CatchDeclaration").ToList();
         Assert.IsTrue(catchRefs.Count >= 2, $"Should find at least 2 catch declaration type references, got {catchRefs.Count}");
-        Assert.IsTrue(catchRefs.Any(r => r[0].ToString() == "InvalidOperationException"),
+        Assert.IsTrue(catchRefs.Any(r => r.ReadValue(0).ToString() == "InvalidOperationException"),
             "Should detect InvalidOperationException in catch");
-        Assert.IsTrue(catchRefs.Any(r => r[0].ToString() == "ArgumentNullException"),
+        Assert.IsTrue(catchRefs.Any(r => r.ReadValue(0).ToString() == "ArgumentNullException"),
             "Should detect ArgumentNullException in catch");
     }
 
@@ -3217,7 +3351,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "GenericArgument"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "GenericArgument"),
             "Should detect IProcessable as generic argument in List<IProcessable>");
     }
 
@@ -3239,7 +3373,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "InvalidOperationException" && r[1].ToString() == "CatchDeclaration"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "InvalidOperationException" && r.ReadValue(1).ToString() == "CatchDeclaration"),
             "Should detect InvalidOperationException as CatchDeclaration in constructor");
     }
 
@@ -3261,7 +3395,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "ISuperAdvancedProcessable" && r[1].ToString() == "PatternMatch"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "ISuperAdvancedProcessable" && r.ReadValue(1).ToString() == "PatternMatch"),
             "Should detect ISuperAdvancedProcessable pattern match in constructor");
     }
 
@@ -3283,7 +3417,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "ArrayCreation"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "ArrayCreation"),
             "Should detect IProcessable array creation in constructor");
     }
 
@@ -3305,7 +3439,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "TypeOf"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IAdvancedProcessable" && r.ReadValue(1).ToString() == "TypeOf"),
             "Should detect IAdvancedProcessable typeof in constructor");
     }
 
@@ -3328,7 +3462,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         // Default constructor only has `new List<IProcessable>()` - should detect IProcessable as GenericArgument
-        var interfaceRefs = result.Where(r => r[0].ToString() == "IProcessable").ToList();
+        var interfaceRefs = result.Where(r => r.ReadValue(0).ToString() == "IProcessable").ToList();
         Assert.IsTrue(interfaceRefs.Count >= 1, "Default constructor should reference IProcessable via generic argument");
     }
 
@@ -3351,9 +3485,9 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "Cast"),
             "Should detect cast to IProcessable");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IAdvancedProcessable"),
             "Should detect IAdvancedProcessable reference");
     }
 
@@ -3400,7 +3534,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 type reference, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "As"),
             "Should detect IProcessable 'as' usage in getter body");
     }
 
@@ -3422,7 +3556,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "As"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IAdvancedProcessable" && r.ReadValue(1).ToString() == "As"),
             "Should detect IAdvancedProcessable 'as' usage in setter body");
     }
 
@@ -3450,9 +3584,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 3, $"Should find at least 3 local variables, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "localFirst"), "Should find 'localFirst' variable");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "localSecond"), "Should find 'localSecond' variable");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "combined"), "Should find 'combined' variable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "localFirst"), "Should find 'localFirst' variable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "localSecond"), "Should find 'localSecond' variable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "combined"), "Should find 'combined' variable");
     }
 
     [TestMethod]
@@ -3472,7 +3606,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should find exactly 1 constructor");
-        var count = Convert.ToInt32(result[0][0]);
+        var count = Convert.ToInt32(result[0].ReadValue(0));
         Assert.IsTrue(count >= 3, $"LocalVariableCount should be at least 3, got {count}");
     }
 
@@ -3516,8 +3650,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should find exactly 1 variable named 'localFirst'");
-        Assert.IsTrue(result[0][2].ToString()!.Contains("IProcessable"),
-            $"FullTypeName should contain IProcessable, got {result[0][2]}");
+        Assert.IsTrue(result[0].ReadValue(2).ToString()!.Contains("IProcessable"),
+            $"FullTypeName should contain IProcessable, got {result[0].ReadValue(2)}");
     }
 
     // =====================================================================
@@ -3564,9 +3698,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 3, $"Should find at least 3 local variables in setter, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "backup"), "Should find 'backup' variable");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "advanced"), "Should find 'advanced' variable");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "description"), "Should find 'description' variable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "backup"), "Should find 'backup' variable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "advanced"), "Should find 'advanced' variable");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "description"), "Should find 'description' variable");
     }
 
     [TestMethod]
@@ -3587,7 +3721,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should find exactly 1 property");
-        var count = Convert.ToInt32(result[0][1]);
+        var count = Convert.ToInt32(result[0].ReadValue(1));
         Assert.IsTrue(count >= 3, $"LocalVariableCount should be at least 3, got {count}");
     }
 
@@ -3630,7 +3764,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable in getter, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "impl"), "Should find 'impl' variable in getter");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "impl"), "Should find 'impl' variable in getter");
     }
 
     // =====================================================================
@@ -3656,7 +3790,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullTypeName = result[0][2].ToString();
+        var fullTypeName = result[0].ReadValue(2).ToString();
         Assert.IsTrue(fullTypeName!.Contains("List"), $"FullTypeName should contain 'List', got {fullTypeName}");
         Assert.IsTrue(fullTypeName.Contains("IProcessable"), $"FullTypeName should contain 'IProcessable', got {fullTypeName}");
     }
@@ -3679,7 +3813,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullTypeName = result[0][1].ToString();
+        var fullTypeName = result[0].ReadValue(1).ToString();
         Assert.IsTrue(fullTypeName!.Contains("int") || fullTypeName.Contains("Int32") || fullTypeName.Contains("Nullable"),
             $"FullTypeName for nullable int should contain int/Int32/Nullable, got {fullTypeName}");
     }
@@ -3702,7 +3836,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullTypeName = result[0][1].ToString();
+        var fullTypeName = result[0].ReadValue(1).ToString();
         Assert.IsTrue(fullTypeName!.Contains("Dictionary"), $"FullTypeName should contain 'Dictionary', got {fullTypeName}");
         Assert.IsTrue(fullTypeName.Contains("string"), $"FullTypeName should contain 'string', got {fullTypeName}");
         Assert.IsTrue(fullTypeName.Contains("IProcessable"), $"FullTypeName should contain 'IProcessable', got {fullTypeName}");
@@ -3732,7 +3866,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullTypeName = result[0][2].ToString();
+        var fullTypeName = result[0].ReadValue(2).ToString();
         Assert.IsTrue(fullTypeName!.Contains("List"), $"FullTypeName should contain 'List', got {fullTypeName}");
         Assert.IsTrue(fullTypeName.Contains("IProcessable"), $"FullTypeName should contain 'IProcessable', got {fullTypeName}");
     }
@@ -3756,7 +3890,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullTypeName = result[0][1].ToString();
+        var fullTypeName = result[0].ReadValue(1).ToString();
         Assert.IsTrue(fullTypeName!.Contains("IProcessable") && fullTypeName.Contains("[]"),
             $"FullTypeName for array param should contain 'IProcessable[]', got {fullTypeName}");
     }
@@ -3781,9 +3915,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("IProcessable", result[0][1].ToString());
-        Assert.IsTrue(result[0][2].ToString()!.Contains("Solution1.ClassLibrary1.IProcessable"),
-            $"FullTypeName should be fully qualified, got {result[0][2]}");
+        Assert.AreEqual("IProcessable", result[0].ReadValue(1).ToString());
+        Assert.IsTrue(result[0].ReadValue(2).ToString()!.Contains("Solution1.ClassLibrary1.IProcessable"),
+            $"FullTypeName should be fully qualified, got {result[0].ReadValue(2)}");
     }
 
     [TestMethod]
@@ -3806,17 +3940,17 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(4, result.Count, "Should find exactly 4 parameters");
         
-        var nameParam = result.First(r => r[0].ToString() == "name");
-        Assert.AreEqual("string", nameParam[1].ToString());
+        var nameParam = result.First(r => r.ReadValue(0).ToString() == "name");
+        Assert.AreEqual("string", nameParam.ReadValue(1).ToString());
         
-        var processableParam = result.First(r => r[0].ToString() == "processable");
-        Assert.IsTrue(processableParam[1].ToString()!.Contains("IProcessable"));
+        var processableParam = result.First(r => r.ReadValue(0).ToString() == "processable");
+        Assert.IsTrue(processableParam.ReadValue(1).ToString()!.Contains("IProcessable"));
         
-        var numbersParam = result.First(r => r[0].ToString() == "numbers");
-        Assert.IsTrue(numbersParam[1].ToString()!.Contains("List"));
+        var numbersParam = result.First(r => r.ReadValue(0).ToString() == "numbers");
+        Assert.IsTrue(numbersParam.ReadValue(1).ToString()!.Contains("List"));
         
-        var lookupParam = result.First(r => r[0].ToString() == "lookup");
-        var lookupType = lookupParam[1].ToString();
+        var lookupParam = result.First(r => r.ReadValue(0).ToString() == "lookup");
+        var lookupType = lookupParam.ReadValue(1).ToString();
         Assert.IsTrue(lookupType!.Contains("Dictionary") && lookupType.Contains("IAdvancedProcessable"),
             $"Lookup param FullTypeName should contain Dictionary and IAdvancedProcessable, got {lookupType}");
     }
@@ -3844,7 +3978,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("void", result[0][2].ToString());
+        Assert.AreEqual("void", result[0].ReadValue(2).ToString());
     }
 
     [TestMethod]
@@ -3865,7 +3999,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullReturnType = result[0][1].ToString();
+        var fullReturnType = result[0].ReadValue(1).ToString();
         Assert.IsTrue(fullReturnType!.Contains("List") && fullReturnType.Contains("IProcessable"),
             $"FullReturnType should contain List and IProcessable, got {fullReturnType}");
     }
@@ -3888,7 +4022,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullReturnType = result[0][1].ToString();
+        var fullReturnType = result[0].ReadValue(1).ToString();
         Assert.IsTrue(fullReturnType!.Contains("Task") && fullReturnType.Contains("IProcessable"),
             $"FullReturnType should contain Task and IProcessable, got {fullReturnType}");
     }
@@ -3911,7 +4045,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullReturnType = result[0][1].ToString();
+        var fullReturnType = result[0].ReadValue(1).ToString();
         Assert.IsTrue(fullReturnType!.Contains("IProcessable") && fullReturnType.Contains("[]"),
             $"FullReturnType should contain IProcessable[], got {fullReturnType}");
     }
@@ -3934,7 +4068,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        var fullReturnType = result[0][1].ToString();
+        var fullReturnType = result[0].ReadValue(1).ToString();
         Assert.IsTrue(fullReturnType!.Contains("Dictionary") && fullReturnType.Contains("List") && fullReturnType.Contains("IProcessable"),
             $"FullReturnType should contain Dictionary, List, IProcessable, got {fullReturnType}");
     }
@@ -3961,9 +4095,9 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "Cast"),
             "Should detect IProcessable cast in struct method");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IAdvancedProcessable" && r[1].ToString() == "PatternMatch"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IAdvancedProcessable" && r.ReadValue(1).ToString() == "PatternMatch"),
             "Should detect IAdvancedProcessable pattern match in struct method");
     }
 
@@ -3985,9 +4119,9 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "PatternMatch"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "PatternMatch"),
             "Should detect IProcessable pattern match in struct constructor");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "LocalVariable"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "LocalVariable"),
             "Should detect IProcessable as local variable type in struct constructor");
     }
 
@@ -4009,7 +4143,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "As"),
             "Should detect IProcessable 'as' usage in struct property getter");
     }
 
@@ -4032,7 +4166,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1, $"Should find at least 1 local variable, got {result.Count}");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "local"), "Should find 'local' variable in struct constructor");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "local"), "Should find 'local' variable in struct constructor");
     }
 
     // =====================================================================
@@ -4088,21 +4222,21 @@ public class RoslynToSqlTests
         var propResult = vm3.Run();
 
         // Method should find IAdvancedProcessable (pattern match)
-        Assert.IsTrue(methodResult.Any(r => r[0].ToString() == "IAdvancedProcessable"),
+        Assert.IsTrue(methodResult.Any(r => r.ReadValue(0).ToString() == "IAdvancedProcessable"),
             "Method should reference IAdvancedProcessable");
 
         // Constructor should find IProcessable (cast)
-        Assert.IsTrue(ctorResult.Any(r => r[0].ToString() == "IProcessable"),
+        Assert.IsTrue(ctorResult.Any(r => r.ReadValue(0).ToString() == "IProcessable"),
             "Constructor should reference IProcessable");
 
         // Property should find ISuperAdvancedProcessable (as)
-        Assert.IsTrue(propResult.Any(r => r[0].ToString() == "ISuperAdvancedProcessable"),
+        Assert.IsTrue(propResult.Any(r => r.ReadValue(0).ToString() == "ISuperAdvancedProcessable"),
             "Property should reference ISuperAdvancedProcessable");
 
         // Combine all interface names found across all members
-        var allInterfaces = methodResult.Select(r => r[0].ToString())
-            .Concat(ctorResult.Select(r => r[0].ToString()))
-            .Concat(propResult.Select(r => r[0].ToString()))
+        var allInterfaces = methodResult.Select(r => r.ReadValue(0).ToString())
+            .Concat(ctorResult.Select(r => r.ReadValue(0).ToString()))
+            .Concat(propResult.Select(r => r.ReadValue(0).ToString()))
             .Distinct()
             .ToList();
 
@@ -4143,8 +4277,8 @@ public class RoslynToSqlTests
         Assert.IsTrue(ctorResult.Count >= 1, $"Constructors should reference at least 1 interface, got {ctorResult.Count}");
 
         // Different interfaces found in different locations
-        var methodInterfaces = methodResult.Select(r => r[0].ToString()).Distinct().ToList();
-        var ctorInterfaces = ctorResult.Select(r => r[0].ToString()).Distinct().ToList();
+        var methodInterfaces = methodResult.Select(r => r.ReadValue(0).ToString()).Distinct().ToList();
+        var ctorInterfaces = ctorResult.Select(r => r.ReadValue(0).ToString()).Distinct().ToList();
         var allInterfaces = methodInterfaces.Union(ctorInterfaces).ToList();
 
         Assert.IsTrue(allInterfaces.Count >= 2, 
@@ -4173,7 +4307,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        var usageKinds = result.Select(r => r[1].ToString()).Distinct().ToList();
+        var usageKinds = result.Select(r => r.ReadValue(1).ToString()).Distinct().ToList();
         Assert.IsTrue(usageKinds.Contains("LocalVariable"), "Should contain LocalVariable usage kind");
         Assert.IsTrue(usageKinds.Contains("CatchDeclaration"), "Should contain CatchDeclaration usage kind");
         Assert.IsTrue(usageKinds.Contains("PatternMatch"), "Should contain PatternMatch usage kind");
@@ -4207,7 +4341,7 @@ public class RoslynToSqlTests
         // 'var processed = (IProcessable)obj;' should produce:
         // 1. Cast reference to IProcessable
         // 2. var-inferred LocalVariable reference to IProcessable
-        var castRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "Cast");
+        var castRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "Cast");
         Assert.IsNotNull(castRef, "Should detect direct cast to IProcessable");
     }
 
@@ -4231,7 +4365,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         // 'var processed = obj as IProcessable;' should produce As reference
-        var asRef = result.FirstOrDefault(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "As");
+        var asRef = result.FirstOrDefault(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "As");
         Assert.IsNotNull(asRef, "Should detect 'as' IProcessable reference");
     }
 
@@ -4253,7 +4387,7 @@ public class RoslynToSqlTests
         var vm = CompileQuery(query);
         var result = vm.Run();
 
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "IProcessable" && r[1].ToString() == "GenericArgument"),
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "IProcessable" && r.ReadValue(1).ToString() == "GenericArgument"),
             "Should detect IProcessable as GenericArgument in new List<IProcessable>()");
     }
 
@@ -4273,7 +4407,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4288,7 +4422,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(false, result[0][1]);
+        Assert.AreEqual(false, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4303,7 +4437,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4318,7 +4452,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4333,7 +4467,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4349,9 +4483,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue((int)result[0][1] > 0, "StartLine should be > 0");
-        Assert.IsTrue((int)result[0][2] > 0, "EndLine should be > 0");
-        Assert.AreEqual("TestFeatures", result[0][3].ToString());
+        Assert.IsTrue((int)result[0].ReadValue(1) > 0, "StartLine should be > 0");
+        Assert.IsTrue((int)result[0].ReadValue(2) > 0, "EndLine should be > 0");
+        Assert.AreEqual("TestFeatures", result[0].ReadValue(3).ToString());
     }
 
     [TestMethod]
@@ -4367,7 +4501,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     // ============================================================
@@ -4387,7 +4521,30 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1);
-        Assert.IsTrue(result.Any(r => r[1].ToString() == "Obsolete"));
+        Assert.IsTrue(result.Any(r => r.ReadValue(1).ToString() == "Obsolete"));
+    }
+
+    [TestMethod]
+    public void WhenAttributeIdentityQueried_ShouldExposeShortAndFullyQualifiedNames()
+    {
+        var query =
+            $@"select pr.Name, a.Name, a.FullName from csharp.solution('{Solution1SolutionPath.Escape()}') s
+            cross apply s.Projects p cross apply p.Documents d cross apply d.Classes c
+            cross apply c.Properties pr cross apply pr.Attributes a
+            where c.Name = 'AttributeTestClass' and
+                (pr.Name = 'OldProperty' or pr.Name = 'NewProperty')";
+
+        var result = CompileQuery(query).Run();
+
+        Assert.AreEqual(2, result.Count);
+
+        var obsolete = result.Single(r => r.ReadValue(0).ToString() == "OldProperty");
+        Assert.AreEqual("Obsolete", obsolete.ReadValue(1).ToString());
+        Assert.AreEqual("System.ObsoleteAttribute", obsolete.ReadValue(2).ToString());
+
+        var custom = result.Single(r => r.ReadValue(0).ToString() == "NewProperty");
+        Assert.AreEqual("TestCustom", custom.ReadValue(1).ToString());
+        Assert.AreEqual("Solution1.ClassLibrary1.TestCustomAttribute", custom.ReadValue(2).ToString());
     }
 
     [TestMethod]
@@ -4403,7 +4560,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1);
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "name" && r[1].ToString() == "TestCustom"));
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "name" && r.ReadValue(1).ToString() == "TestCustom"));
     }
 
     [TestMethod]
@@ -4419,7 +4576,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1);
-        Assert.IsTrue(result.Any(r => r[1].ToString() == "TestCustom"));
+        Assert.IsTrue(result.Any(r => r.ReadValue(1).ToString() == "TestCustom"));
     }
 
     [TestMethod]
@@ -4435,7 +4592,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1);
-        Assert.IsTrue(result.Any(r => r[1].ToString() == "Flags"));
+        Assert.IsTrue(result.Any(r => r.ReadValue(1).ToString() == "Flags"));
     }
 
     // ============================================================
@@ -4457,15 +4614,15 @@ public class RoslynToSqlTests
         Assert.AreEqual(4, result.Count);
         
         // required (ordinal 0): no default
-        var required = result.First(r => r[0].ToString() == "required");
-        Assert.AreEqual(false, required[1]);
-        Assert.AreEqual(0, (int)required[3]);
+        var required = result.First(r => r.ReadValue(0).ToString() == "required");
+        Assert.AreEqual(false, required.ReadValue(1));
+        Assert.AreEqual(0, (int)required.ReadValue(3));
         
         // optional (ordinal 1): default = 42
-        var optional = result.First(r => r[0].ToString() == "optional");
-        Assert.AreEqual(true, optional[1]);
-        Assert.AreEqual("42", optional[2].ToString());
-        Assert.AreEqual(1, (int)optional[3]);
+        var optional = result.First(r => r.ReadValue(0).ToString() == "optional");
+        Assert.AreEqual(true, optional.ReadValue(1));
+        Assert.AreEqual("42", optional.ReadValue(2).ToString());
+        Assert.AreEqual(1, (int)optional.ReadValue(3));
     }
 
     // ============================================================
@@ -4484,7 +4641,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4500,7 +4657,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 1);
-        Assert.IsTrue(result.Any(r => r[1].ToString().Contains("IProcessable")));
+        Assert.IsTrue(result.Any(r => r.ReadValue(1).ToString().Contains("IProcessable")));
     }
 
     [TestMethod]
@@ -4516,7 +4673,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(0, (int)result[0][1]);
+        Assert.AreEqual(0, (int)result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4531,7 +4688,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4546,7 +4703,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     // ============================================================
@@ -4565,7 +4722,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4580,7 +4737,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(false, result[0][1]);
+        Assert.AreEqual(false, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4595,7 +4752,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("byte", result[0][1].ToString());
+        Assert.AreEqual("byte", result[0].ReadValue(1).ToString());
     }
 
     [TestMethod]
@@ -4629,7 +4786,7 @@ public class RoslynToSqlTests
 
         foreach (var expectedMember in expectedMembers)
         {
-            Assert.IsTrue(result.Any(r => r[0].ToString() == expectedMember.Name && r[1].ToString() == expectedMember.Value),
+            Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == expectedMember.Name && r.ReadValue(1).ToString() == expectedMember.Value),
                 $"Expected enum member {expectedMember.Name}={expectedMember.Value}.");
         }
     }
@@ -4651,7 +4808,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("T", result[0][1].ToString());
+        Assert.AreEqual("T", result[0].ReadValue(1).ToString());
     }
 
     [TestMethod]
@@ -4666,8 +4823,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(2, (int)result[0][1]); // GetValue + SetValue
-        Assert.AreEqual(0, (int)result[0][2]); // no properties
+        Assert.AreEqual(2, (int)result[0].ReadValue(1)); // GetValue + SetValue
+        Assert.AreEqual(0, (int)result[0].ReadValue(2)); // no properties
     }
 
     [TestMethod]
@@ -4683,8 +4840,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 2);
-        Assert.IsTrue(result.Any(r => r[1].ToString() == "SharedMethod"));
-        Assert.IsTrue(result.Any(r => r[1].ToString() == "SharedProperty"));
+        Assert.IsTrue(result.Any(r => r.ReadValue(1).ToString() == "SharedMethod"));
+        Assert.IsTrue(result.Any(r => r.ReadValue(1).ToString() == "SharedProperty"));
     }
 
     // ============================================================
@@ -4706,15 +4863,15 @@ public class RoslynToSqlTests
         Assert.IsTrue(result.Count >= 2);
         
         // T: class, IDisposable, new()
-        var tConstraint = result.FirstOrDefault(r => r[1].ToString() == "T");
+        var tConstraint = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "T");
         Assert.IsNotNull(tConstraint);
-        Assert.AreEqual(true, tConstraint[2]); // HasReferenceTypeConstraint
-        Assert.AreEqual(true, tConstraint[4]); // HasConstructorConstraint
+        Assert.AreEqual(true, tConstraint.ReadValue(2)); // HasReferenceTypeConstraint
+        Assert.AreEqual(true, tConstraint.ReadValue(4)); // HasConstructorConstraint
         
         // TKey: struct
-        var tkeyConstraint = result.FirstOrDefault(r => r[1].ToString() == "TKey");
+        var tkeyConstraint = result.FirstOrDefault(r => r.ReadValue(1).ToString() == "TKey");
         Assert.IsNotNull(tkeyConstraint);
-        Assert.AreEqual(true, tkeyConstraint[3]); // HasValueTypeConstraint
+        Assert.AreEqual(true, tkeyConstraint.ReadValue(3)); // HasValueTypeConstraint
     }
 
     [TestMethod]
@@ -4730,9 +4887,9 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("TResult", result[0][1].ToString());
-        Assert.AreEqual(true, result[0][2]); // HasReferenceTypeConstraint
-        Assert.AreEqual(true, result[0][3]); // HasConstructorConstraint
+        Assert.AreEqual("TResult", result[0].ReadValue(1).ToString());
+        Assert.AreEqual(true, result[0].ReadValue(2)); // HasReferenceTypeConstraint
+        Assert.AreEqual(true, result[0].ReadValue(3)); // HasConstructorConstraint
     }
 
     // ============================================================
@@ -4752,8 +4909,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 3);
-        Assert.IsTrue(result.Any(r => (bool)r[1] == true), "Should have at least one explicit implementation");
-        Assert.IsTrue(result.Any(r => r[0].ToString() == "RegularMethod" && (bool)r[1] == false));
+        Assert.IsTrue(result.Any(r => (bool)r.ReadValue(1) == true), "Should have at least one explicit implementation");
+        Assert.IsTrue(result.Any(r => r.ReadValue(0).ToString() == "RegularMethod" && (bool)r.ReadValue(1) == false));
     }
 
     [TestMethod]
@@ -4769,7 +4926,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -4785,7 +4942,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("Ordinary", result[0][1].ToString());
+        Assert.AreEqual("Ordinary", result[0].ReadValue(1).ToString());
     }
 
     // ============================================================
@@ -4804,10 +4961,10 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("SimpleCallback", result[0][0].ToString());
-        Assert.AreEqual("Void", result[0][1].ToString());
-        Assert.AreEqual(1, (int)result[0][2]);
-        Assert.AreEqual(false, result[0][3]);
+        Assert.AreEqual("SimpleCallback", result[0].ReadValue(0).ToString());
+        Assert.AreEqual("Void", result[0].ReadValue(1).ToString());
+        Assert.AreEqual(1, (int)result[0].ReadValue(2));
+        Assert.AreEqual(false, result[0].ReadValue(3));
     }
 
     [TestMethod]
@@ -4822,8 +4979,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(true, result[0][1]);
-        Assert.AreEqual(2, (int)result[0][2]);
+        Assert.AreEqual(true, result[0].ReadValue(1));
+        Assert.AreEqual(2, (int)result[0].ReadValue(2));
     }
 
     [TestMethod]
@@ -4838,7 +4995,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue((int)result[0][1] >= 3, "Should have at least 3 delegates");
+        Assert.IsTrue((int)result[0].ReadValue(1) >= 3, "Should have at least 3 delegates");
     }
 
     // ============================================================
@@ -4858,7 +5015,7 @@ public class RoslynToSqlTests
 
         Assert.AreEqual(1, result.Count);
         // DiagnosticCount could be warnings or errors
-        Assert.IsTrue((int)result[0][1] >= 0, "DiagnosticCount should be non-negative");
+        Assert.IsTrue((int)result[0].ReadValue(1) >= 0, "DiagnosticCount should be non-negative");
     }
 
     // ============================================================
@@ -4878,7 +5035,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue((int)result[0][1] >= 1, "Should have at least 1 captured variable");
+        Assert.IsTrue((int)result[0].ReadValue(1) >= 1, "Should have at least 1 captured variable");
     }
 
     [TestMethod]
@@ -4894,7 +5051,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue((int)result[0][1] >= 1, "Should have at least 1 captured variable");
+        Assert.IsTrue((int)result[0].ReadValue(1) >= 1, "Should have at least 1 captured variable");
     }
 
     [TestMethod]
@@ -4910,8 +5067,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue((int)result[0][1] > 0, "Should have reads");
-        Assert.IsTrue((int)result[0][2] > 0, "Should have writes");
+        Assert.IsTrue((int)result[0].ReadValue(1) > 0, "Should have reads");
+        Assert.IsTrue((int)result[0].ReadValue(2) > 0, "Should have writes");
     }
 
     // ============================================================
@@ -4931,7 +5088,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(false, result[0][1], "End point should not be reachable");
+        Assert.AreEqual(false, result[0].ReadValue(1), "End point should not be reachable");
     }
 
     [TestMethod]
@@ -4947,8 +5104,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsTrue((int)result[0][1] >= 2, "Should have at least 2 exit points");
-        Assert.IsTrue((int)result[0][2] >= 2, "Should have at least 2 return statements");
+        Assert.IsTrue((int)result[0].ReadValue(1) >= 2, "Should have at least 2 exit points");
+        Assert.IsTrue((int)result[0].ReadValue(2) >= 2, "Should have at least 2 return statements");
     }
 
     // ============================================================
@@ -4968,8 +5125,8 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsNotNull(result[0][1]);
-        Assert.IsTrue(result[0][1].ToString().Contains("DefaultValue"));
+        Assert.IsNotNull(result[0].ReadValue(1));
+        Assert.IsTrue(result[0].ReadValue(1).ToString().Contains("DefaultValue"));
     }
 
     [TestMethod]
@@ -4985,7 +5142,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.IsNull(result[0][1]);
+        Assert.IsNull(result[0].ReadValue(1));
     }
 
     // ============================================================
@@ -5021,7 +5178,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.IsTrue(result.Count >= 2);
-        Assert.IsTrue(result.Any(r => (bool)r[1] == true), "Should have at least one explicit property implementation");
+        Assert.IsTrue(result.Any(r => (bool)r.ReadValue(1) == true), "Should have at least one explicit property implementation");
     }
 
     // ============================================================
@@ -5041,7 +5198,7 @@ public class RoslynToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("IStandaloneInterface", result[0][1].ToString());
+        Assert.AreEqual("IStandaloneInterface", result[0].ReadValue(1).ToString());
     }
 
     private CompiledQuery CompileQuery(string script)
@@ -5073,7 +5230,7 @@ public class RoslynToSqlTests
                 { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
             });
 
-        return schema.GetRowSource<SolutionEntity>("solution", context, Solution1SolutionPath)
+        return global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create(Solution1SolutionPath, global::Musoq.Schema.SourceArguments.Empty)).Read<SolutionEntity>("solution", context)
             .Chunks
             .SelectMany(chunk => chunk)
             .Single();

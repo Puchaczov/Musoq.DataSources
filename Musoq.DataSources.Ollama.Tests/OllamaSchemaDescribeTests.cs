@@ -43,18 +43,18 @@ public class OllamaSchemaDescribeTests
 
         Assert.AreEqual(2, table.Count, "Should have 2 rows (2 llm overloads)");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.AreEqual(2, methodNames.Count(m => m == "llm"), "Should contain 'llm' method 2 times (2 overloads)");
 
         var overload1 = table.ElementAt(0);
-        Assert.AreEqual("llm", (string)overload1[0]);
-        Assert.AreEqual("model: System.String", (string)overload1[1]);
-        Assert.IsNull(overload1[2], "First overload should have only 1 parameter");
+        Assert.AreEqual("llm", (string)overload1.ReadValue(0));
+        Assert.AreEqual("model: System.String", (string)overload1.ReadValue(1));
+        Assert.IsNull(overload1.ReadValue(2), "First overload should have only 1 parameter");
 
         var overload2 = table.ElementAt(1);
-        Assert.AreEqual("llm", (string)overload2[0]);
-        Assert.AreEqual("model: System.String", (string)overload2[1]);
-        Assert.AreEqual("temperature: System.Decimal", (string)overload2[2]);
+        Assert.AreEqual("llm", (string)overload2.ReadValue(0));
+        Assert.AreEqual("model: System.String", (string)overload2.ReadValue(1));
+        Assert.AreEqual("temperature: System.Decimal", (string)overload2.ReadValue(2));
     }
 
     [TestMethod]
@@ -68,18 +68,18 @@ public class OllamaSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count(), "Should have 3 columns (Name, Param 0, Param 1)");
         Assert.AreEqual(2, table.Count, "Should have 2 rows for 2 overloads");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(methodNames.All(name => name == "llm"), "All rows should be for llm method");
 
         var overload1 = table.ElementAt(0);
-        Assert.AreEqual("llm", (string)overload1[0]);
-        Assert.AreEqual("model: System.String", (string)overload1[1]);
-        Assert.IsNull(overload1[2]);
+        Assert.AreEqual("llm", (string)overload1.ReadValue(0));
+        Assert.AreEqual("model: System.String", (string)overload1.ReadValue(1));
+        Assert.IsNull(overload1.ReadValue(2));
 
         var overload2 = table.ElementAt(1);
-        Assert.AreEqual("llm", (string)overload2[0]);
-        Assert.AreEqual("model: System.String", (string)overload2[1]);
-        Assert.AreEqual("temperature: System.Decimal", (string)overload2[2]);
+        Assert.AreEqual("llm", (string)overload2.ReadValue(0));
+        Assert.AreEqual("model: System.String", (string)overload2.ReadValue(1));
+        Assert.AreEqual("temperature: System.Decimal", (string)overload2.ReadValue(2));
     }
 
     [TestMethod]
@@ -127,7 +127,7 @@ public class OllamaSchemaDescribeTests
         var tableNoArgs = vmNoArgs.Run();
 
         Assert.AreEqual(2, tableNoArgs.Count, "Should have 2 overloads");
-        var methodNames = tableNoArgs.Select(row => (string)row[0]).ToList();
+        var methodNames = tableNoArgs.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(methodNames.All(name => name == "llm"));
     }
 }

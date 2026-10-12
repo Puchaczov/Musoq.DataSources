@@ -7,7 +7,7 @@ namespace Musoq.DataSources.GitHub.Sources.Commits;
 internal static class CommitsSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> CommitsNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<CommitEntity, object?>> CommitsIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] CommitsColumns;
 
     static CommitsSourceHelper()
@@ -37,33 +37,6 @@ internal static class CommitsSourceHelper
             { nameof(CommitEntity.Verified), 20 },
             { nameof(CommitEntity.VerificationReason), 21 },
             { nameof(CommitEntity.FilesChanged), 22 }
-        };
-
-        CommitsIndexToMethodAccessMap = new Dictionary<int, Func<CommitEntity, object?>>
-        {
-            { 0, commit => commit.Sha },
-            { 1, commit => commit.ShortSha },
-            { 2, commit => commit.Message },
-            { 3, commit => commit.Url },
-            { 4, commit => commit.AuthorName },
-            { 5, commit => commit.AuthorEmail },
-            { 6, commit => commit.AuthorLogin },
-            { 7, commit => commit.AuthorId },
-            { 8, commit => commit.AuthorDate },
-            { 9, commit => commit.CommitterName },
-            { 10, commit => commit.CommitterEmail },
-            { 11, commit => commit.CommitterLogin },
-            { 12, commit => commit.CommitterId },
-            { 13, commit => commit.CommitterDate },
-            { 14, commit => commit.Additions },
-            { 15, commit => commit.Deletions },
-            { 16, commit => commit.Total },
-            { 17, commit => commit.ParentShas },
-            { 18, commit => commit.ParentCount },
-            { 19, commit => commit.CommentCount },
-            { 20, commit => commit.Verified },
-            { 21, commit => commit.VerificationReason },
-            { 22, commit => commit.FilesChanged }
         };
 
         CommitsColumns =

@@ -12,7 +12,7 @@ namespace Musoq.DataSources.Search.Helpers;
 internal static class SearchCountsHelper
 {
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<SearchCount, object?>> IndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] Columns;
 
     static SearchCountsHelper()
@@ -26,17 +26,6 @@ internal static class SearchCountsHelper
             { nameof(SearchCount.MatchingLineCount), 4 },
             { nameof(SearchCount.BytesScanned), 5 },
             { nameof(SearchCount.Complete), 6 }
-        };
-
-        IndexToMethodAccessMap = new Dictionary<int, Func<SearchCount, object?>>
-        {
-            { 0, count => count.Path },
-            { 1, count => count.Origin },
-            { 2, count => count.PatternId },
-            { 3, count => count.OccurrenceCount },
-            { 4, count => count.MatchingLineCount },
-            { 5, count => count.BytesScanned },
-            { 6, count => count.Complete }
         };
 
         Columns =

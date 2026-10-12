@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Structured;
 using Musoq.DataSources.Tests.Common;
+using Musoq.Schema.Diagnostics;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -27,6 +28,28 @@ namespace Musoq.DataSources.SeparatedValues.Tests.Components.Execution;
 [TestClass]
 public class SeparatedValuesParallelBlockPipelineTests
 {
+    [TestMethod]
+    public void ParallelScan_UnterminatedFinalQuotedField_ShouldIncludeSafeByteOffset()
+    {
+        const string contents = "A,B\n1,2\n3,\"unterminated-private-record";
+        WithCsv(contents, path =>
+        {
+            var plan = DeclaredZeroColumnPlan(path);
+            var scan = new SeparatedValuesScanPipeline(
+                new SeparatedValuesParallelBlockScanPipeline(blockSize: 64),
+                forceParallel: true);
+
+            var exception = Assert.ThrowsExactly<DataSourceInputException>(
+                () => ReadZeroColumnCount(path, plan, scan));
+
+            Assert.AreEqual(DataSourceInputFailureReason.UnterminatedQuotedField, exception.Reason);
+            Assert.AreEqual(new FileInfo(path).Length, exception.Location?.ByteOffset);
+            Assert.AreEqual("The final quoted field is not terminated.", exception.Message);
+            Assert.IsFalse(exception.Message.Contains(path, StringComparison.Ordinal));
+            Assert.IsFalse(exception.Message.Contains("unterminated-private-record", StringComparison.Ordinal));
+        });
+    }
+
     [TestMethod]
     public void TinyBlocks_WithQuotedMultilineRecords_MatchSequentialOrderAndValues()
     {

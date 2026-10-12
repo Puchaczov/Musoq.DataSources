@@ -15,7 +15,6 @@ public class StatusEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>Maps row indexes to property accessors used by the Musoq runtime.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<StatusEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a status row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -41,13 +40,6 @@ public class StatusEntity
             { nameof(WorkDirStatus), 3 }
         };
 
-        IndexToObjectAccessMap = new Dictionary<int, Func<StatusEntity, object?>>
-        {
-            { 0, entity => entity.FilePath },
-            { 1, entity => entity.State },
-            { 2, entity => entity.IndexStatus },
-            { 3, entity => entity.WorkDirStatus }
-        };
     }
 
     /// <summary>Creates a detached status snapshot from a LibGit2Sharp status entry.</summary>

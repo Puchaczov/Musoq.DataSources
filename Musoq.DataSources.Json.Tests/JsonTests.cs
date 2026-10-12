@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
+using System.IO;
 using System.Threading;
 using Musoq.Converter.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -37,18 +38,18 @@ public class JsonTests
         Assert.IsTrue(table.Count == 3, "Table should have 3 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Aleksander" &&
-            (long)row.Values[1] == 24L
+            (string)row.ReadValues()[0] == "Aleksander" &&
+            (long)row.ReadValues()[1] == 24L
         ), "First entry should be Aleksander, 24");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Mikolaj" &&
-            (long)row.Values[1] == 11L
+            (string)row.ReadValues()[0] == "Mikolaj" &&
+            (long)row.ReadValues()[1] == 11L
         ), "Second entry should be Mikolaj, 11");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Marek" &&
-            (long)row.Values[1] == 45L
+            (string)row.ReadValues()[0] == "Marek" &&
+            (long)row.ReadValues()[1] == 45L
         ), "Third entry should be Marek, 45");
     }
 
@@ -81,7 +82,7 @@ public class JsonTests
         using var tokenSource = new CancellationTokenSource();
         tokenSource.Cancel();
         var executionContext = RuntimeV2TestContexts.CreateExecutionContext(tokenSource.Token, logger: mockLogger.Object);
-        var source = new JsonSource("./JsonTestFile_First.json", executionContext);
+        var source = new NativeJsonFixtureSource("./JsonTestFile_First.json", executionContext);
 
         var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
@@ -97,7 +98,7 @@ public class JsonTests
             CancellationToken.None,
             logger: mockLogger.Object,
             dataSourceProgressCallback: capture.Handler);
-        var source = new JsonSource("./JsonTestFile_First.json", executionContext);
+        var source = new NativeJsonFixtureSource("./JsonTestFile_First.json", executionContext);
 
         var fired = source.Chunks.SelectMany(chunk => chunk).Count();
 
@@ -106,6 +107,36 @@ public class JsonTests
         Assert.AreEqual(3L, capture.For("json", DataSourcePhase.RowsKnown).Single().TotalRows);
         Assert.AreEqual(3L, capture.For("json", DataSourcePhase.RowsRead).Single().RowsProcessed);
         Assert.AreEqual(3L, capture.For("json", DataSourcePhase.End).Single().RowsProcessed);
+    }
+
+    [TestMethod]
+    [DataRow("long")]
+    [DataRow("long?")]
+    public void TableDefinedSource_ReorderedSubset_ShouldRetainNullableDeclarationTypes(string integerType)
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "[{\"Id\":7,\"Name\":\"Ada\",\"Ignored\":\"x\"},{\"Id\":null,\"Name\":\"Mira\",\"Ignored\":\"y\"}]");
+            var query = $"table Contract {{ Name: string, Id: {integerType} }}; " +
+                        "couple json.file with table Contract as People; " +
+                        $"select Name as Name, Id as Id from People('{path.Replace("\\", "/").Replace("'", "''")}') order by Name";
+            using var compiled = CreateAndRunVirtualMachine(query);
+            using var result = compiled.Run();
+            Assert.AreEqual(typeof(string), result.Columns.ElementAt(0).ColumnType);
+            Assert.AreEqual(typeof(long?), result.Columns.ElementAt(1).ColumnType);
+            Assert.AreEqual("Name", result.Columns.ElementAt(0).ColumnName);
+            Assert.AreEqual("Id", result.Columns.ElementAt(1).ColumnName);
+            Assert.AreEqual(2, result.Count);
+            Assert.AreEqual("Ada", result[0].ReadValues()[0]);
+            Assert.AreEqual(7L, result[0].ReadValues()[1]);
+            Assert.AreEqual("Mira", result[1].ReadValues()[0]);
+            Assert.IsNull(result[1].ReadValues()[1]);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

@@ -14,12 +14,15 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Converter;
+using Musoq.Converter.Exceptions;
+using Musoq.Parser.Diagnostics;
 using Musoq.Evaluator;
 using Musoq.Evaluator.Exceptions;
 using Musoq.Evaluator.Tables;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
+using Musoq.Schema.Helpers;
 
 using Musoq.DataSources.Search.Entities;
 
@@ -225,6 +228,39 @@ public sealed class SearchSchemaTests
                 : [argument.Value?.ToString()])
             .ToArray();
         CollectionAssert.Contains(schemaNames, "search");
+    }
+
+    [TestMethod]
+    public void DocumentedColumns_ShouldMatchFixedTablesAndDeclaredNullability()
+    {
+        var document = XDocument.Load(Path.ChangeExtension(typeof(SearchSchema).Assembly.Location, ".xml"));
+        var examples = document.Descendants("example").Where(example =>
+            example.Element("from")?.Value.Trim().StartsWith("search.", StringComparison.Ordinal) == true && example.Element("columns") != null).ToArray();
+        Assert.AreEqual(8, examples.Length);
+        var schema = new SearchSchema();
+        var nullability = new NullabilityInfoContext();
+        foreach (var example in examples)
+        {
+            var signature = example.Element("from")!.Value.Trim();
+            var name = signature["search.".Length..signature.IndexOf('(')];
+            var table = schema.GetTableByName(name, CreateMetadataContext());
+            var columns = example.Element("columns")!.Elements("column").ToArray();
+            CollectionAssert.AreEqual(table.Columns.Select(column => column.ColumnName).ToArray(),
+                columns.Select(column => (string)column.Attribute("name")!).ToArray(), name);
+            foreach (var (column, index) in columns.Select((column, index) => (column, index)))
+            {
+                var actual = table.Columns[index];
+                var property = table.Metadata.TableEntityType.GetProperty(actual.ColumnName)!;
+                var bindingType = property.PropertyType.IsEnum ? Enum.GetUnderlyingType(property.PropertyType) : property.PropertyType;
+                Assert.AreEqual(actual.ColumnType, bindingType, name + "." + actual.ColumnName);
+                var nullable = Nullable.GetUnderlyingType(actual.ColumnType) != null ||
+                    !actual.ColumnType.IsValueType && nullability.Create(property).ReadState == NullabilityState.Nullable;
+                var type = CSharpTypeNameHelper.GetCSharpTypeName(actual.ColumnType);
+                if (nullable && !type.EndsWith('?')) type += "?";
+                Assert.AreEqual(type, (string?)column.Attribute("type"), name + "." + actual.ColumnName);
+                Assert.AreEqual(nullable ? "true" : "false", (string?)column.Attribute("nullable"), name + "." + actual.ColumnName);
+            }
+        }
     }
 
     [TestMethod]
@@ -474,12 +510,12 @@ public sealed class SearchSchemaTests
             new[] { "Path", "Origin", "EntryKind" },
             result.Columns.Select(column => column.ColumnName).ToArray());
         Assert.AreEqual(2, result.Count);
-        Assert.AreEqual("first.txt", result[0][0]);
-        Assert.IsNull(result[0][1]);
-        Assert.AreEqual("file", result[0][2]);
-        Assert.AreEqual("nested/other.txt", result[1][0]);
-        Assert.IsNull(result[1][1]);
-        Assert.AreEqual("file", result[1][2]);
+        Assert.AreEqual("first.txt", result[0].ReadValue(0));
+        Assert.IsNull(result[0].ReadValue(1));
+        Assert.AreEqual("file", result[0].ReadValue(2));
+        Assert.AreEqual("nested/other.txt", result[1].ReadValue(0));
+        Assert.IsNull(result[1].ReadValue(1));
+        Assert.AreEqual("file", result[1].ReadValue(2));
     }
 
     [TestMethod]
@@ -563,10 +599,12 @@ public sealed class SearchSchemaTests
     }
 
     [TestMethod]
-    public void UnsupportedEncoding_ShouldProduceTypedSourceDiagnostic()
+    public void EncodingValidation_ShouldAcceptSupportedLegacyAndRejectUnsupportedModes()
     {
+        SearchDiagnosticValidation.ValidateEncoding("windows-1252");
+
         var exception = Assert.ThrowsException<SearchEncodingException>(() =>
-            SearchDiagnosticValidation.ValidateEncoding("windows-1252"));
+            SearchDiagnosticValidation.ValidateEncoding("ascii"));
 
         Assert.AreEqual(SearchDiagnosticCodes.UnsupportedEncoding, exception.Diagnostic.Code);
         Assert.AreEqual(SearchDiagnosticPhase.SourceAccess, exception.Diagnostic.Phase);
@@ -587,15 +625,11 @@ public sealed class SearchSchemaTests
     [TestMethod]
     public void MalformedSourceArguments_ShouldProduceTypedArgumentDiagnostic()
     {
-        var exception = Assert.ThrowsException<SearchRequestException>(() =>
-            new SearchSchema().GetRowSource<SearchMatch>(
-                "matches",
-                RuntimeV2TestContexts.CreateExecutionContext(),
-                FixtureRoot));
-
-        Assert.AreEqual(SearchDiagnosticCodes.InvalidArgument, exception.Diagnostic.Code);
-        Assert.AreEqual(SearchDiagnosticPhase.Argument, exception.Diagnostic.Phase);
-        Assert.AreEqual("arguments", exception.Diagnostic.Location?.ArgumentName);
+        var exception = Assert.ThrowsException<MusoqQueryException>(() =>
+            Compile($"select Path from search.matches('{EscapedFixtureRoot}')"));
+        Assert.AreEqual(DiagnosticCode.MQ3088_NoMatchingCallableOverload, exception.PrimaryEnvelope.Code);
+        Assert.AreEqual(DiagnosticPhase.Bind, exception.PrimaryEnvelope.Phase);
+        StringAssert.Contains(exception.Message, "pattern");
     }
 
     [TestMethod]
@@ -714,16 +748,16 @@ public sealed class SearchSchemaTests
             result.Columns.Select(column => column.ColumnType).ToArray());
 
         Assert.AreEqual(2, result.Count);
-        Assert.AreEqual("first.txt", result[0][0]);
-        Assert.AreEqual(0L, result[0][1]);
-        Assert.AreEqual(1L, result[0][2]);
-        Assert.AreEqual(0L, result[0][3]);
-        Assert.AreEqual("TODO", result[0][4]);
-        Assert.AreEqual("first.txt", result[1][0]);
-        Assert.AreEqual(1L, result[1][1]);
-        Assert.AreEqual(1L, result[1][2]);
-        Assert.AreEqual(5L, result[1][3]);
-        Assert.AreEqual("TODO", result[1][4]);
+        Assert.AreEqual("first.txt", result[0].ReadValue(0));
+        Assert.AreEqual(0L, result[0].ReadValue(1));
+        Assert.AreEqual(1L, result[0].ReadValue(2));
+        Assert.AreEqual(0L, result[0].ReadValue(3));
+        Assert.AreEqual("TODO", result[0].ReadValue(4));
+        Assert.AreEqual("first.txt", result[1].ReadValue(0));
+        Assert.AreEqual(1L, result[1].ReadValue(1));
+        Assert.AreEqual(1L, result[1].ReadValue(2));
+        Assert.AreEqual(5L, result[1].ReadValue(3));
+        Assert.AreEqual("TODO", result[1].ReadValue(4));
     }
 
     [TestMethod]
@@ -1257,7 +1291,7 @@ public sealed class SearchSchemaTests
         return table.Rows
             .Select(row => string.Join(
                 "\u001f",
-                row.Values.Select(value => value?.ToString() ?? string.Empty)))
+                row.ReadValues().Select(value => value?.ToString() ?? string.Empty)))
             .ToArray();
     }
 

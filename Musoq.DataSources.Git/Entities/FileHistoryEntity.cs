@@ -15,7 +15,6 @@ public class FileHistoryEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>Maps row indexes to property accessors used by the Musoq runtime.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<FileHistoryEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a file-history row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -50,16 +49,6 @@ public class FileHistoryEntity
             { nameof(OldPath), 6 }
         };
 
-        IndexToObjectAccessMap = new Dictionary<int, Func<FileHistoryEntity, object?>>
-        {
-            { 0, entity => entity.CommitSha },
-            { 1, entity => entity.Author },
-            { 2, entity => entity.AuthorEmail },
-            { 3, entity => entity.CommittedWhen },
-            { 4, entity => entity.FilePath },
-            { 5, entity => entity.ChangeType },
-            { 6, entity => entity.OldPath }
-        };
     }
 
     /// <summary>Creates a detached file-history snapshot from a commit and tree change.</summary>

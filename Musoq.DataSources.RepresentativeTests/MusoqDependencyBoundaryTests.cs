@@ -19,11 +19,11 @@ public sealed class MusoqDependencyBoundaryTests
     private static readonly IReadOnlyDictionary<string, string> ExpectedVersions =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["MusoqConverterVersion"] = "17.0.11-alpha.1",
-            ["MusoqEvaluatorVersion"] = "17.0.11-alpha.1",
-            ["MusoqParserVersion"] = "17.0.11-alpha.1",
-            ["MusoqPluginsVersion"] = "17.0.11-alpha.1",
-            ["MusoqSchemaVersion"] = "17.0.11-alpha.1"
+            ["MusoqConverterVersion"] = "$(MusoqTypedCoreVersion)",
+            ["MusoqEvaluatorVersion"] = "$(MusoqTypedCoreVersion)",
+            ["MusoqParserVersion"] = "$(MusoqTypedCoreVersion)",
+            ["MusoqPluginsVersion"] = "$(MusoqTypedCoreVersion)",
+            ["MusoqSchemaVersion"] = "$(MusoqTypedCoreVersion)"
         };
 
     [TestMethod]
@@ -31,6 +31,8 @@ public sealed class MusoqDependencyBoundaryTests
     {
         var root = FindSolutionRoot();
         var properties = XDocument.Load(Path.Combine(root, "Directory.Build.props"));
+        Assert.AreEqual("17.0.12-alpha.1",
+            properties.Descendants("MusoqTypedCoreVersion").Single().Value, "Musoq runtime package versions must remain aligned.");
 
         foreach (var (propertyName, expectedVersion) in ExpectedVersions)
         {

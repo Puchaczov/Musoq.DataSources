@@ -50,16 +50,18 @@ internal static class SearchBinaryPolicy
     }
 
     internal static bool IsBinaryBytes(
+        string path,
         byte[] bytes,
         int length,
         SearchEncodingMode encodingMode,
         SearchCharBuffer buffer,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentNullException.ThrowIfNull(bytes);
         ArgumentNullException.ThrowIfNull(buffer);
         using var reader = SearchTextReader.Open(bytes, length, encodingMode);
-        return IsBinaryReader("<memory>", reader, buffer, cancellationToken);
+        return IsBinaryReader(path, reader, buffer, cancellationToken);
     }
 
     private static bool IsBinaryReader(

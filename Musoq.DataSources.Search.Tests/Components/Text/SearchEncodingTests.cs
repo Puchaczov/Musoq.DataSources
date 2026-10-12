@@ -23,7 +23,7 @@ namespace Musoq.DataSources.Search.Tests.Components.Text;
 public sealed class SearchEncodingTests
 {
     [TestMethod]
-    public void Auto_ShouldHonorSupportedBomsAndDefaultToStrictUtf8()
+    public void Auto_ShouldHonorSupportedBomsAndTolerateMalformedText()
     {
         var root = CreateTemporaryRoot();
 
@@ -41,6 +41,112 @@ public sealed class SearchEncodingTests
                 new[] { "plain.txt", "utf8-bom.txt", "utf16-le.txt", "utf16-be.txt" },
                 rows.Select(static row => row.Path).ToArray());
             Assert.IsTrue(rows.All(static row => row.MatchText == "TODO"));
+
+            var malformedPath = Path.Combine(root, "malformed-utf8.txt");
+            File.WriteAllBytes(malformedPath, [
+                (byte)'T', (byte)'O', (byte)'D', (byte)'O',
+                0x80,
+                (byte)'T', (byte)'O', (byte)'D', (byte)'O'
+            ]);
+
+            var malformedRows = ReadMatches(malformedPath, "auto");
+
+            Assert.AreEqual(2, malformedRows.Length);
+            Assert.AreEqual(0L, malformedRows[0].ByteOffset);
+            Assert.AreEqual(4L, malformedRows[0].ByteLength);
+            Assert.AreEqual(5L, malformedRows[1].ByteOffset);
+            Assert.AreEqual(4L, malformedRows[1].ByteLength);
+
+            var replacementRows = ReadMatches(malformedPath, "\ufffd", "auto");
+
+            Assert.AreEqual(1, replacementRows.Length);
+            Assert.IsNull(replacementRows[0].ByteOffset);
+            Assert.IsNull(replacementRows[0].ByteLength);
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
+    [TestMethod]
+    public void Auto_ShouldContinueAfterMalformedUtf16Tail()
+    {
+        var root = CreateTemporaryRoot();
+        var path = Path.Combine(root, "malformed-utf16.txt");
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            var encoding = new UnicodeEncoding(
+                bigEndian: false,
+                byteOrderMark: true,
+                throwOnInvalidBytes: true);
+            File.WriteAllBytes(
+                path,
+                encoding.GetPreamble()
+                    .Concat(encoding.GetBytes("TODO"))
+                    .Concat(new byte[] { 0x41 })
+                    .ToArray());
+
+            var rows = ReadMatches(path, "auto");
+
+            Assert.AreEqual(1, rows.Length);
+            Assert.AreEqual(2L, rows[0].ByteOffset);
+            Assert.AreEqual(8L, rows[0].ByteLength);
+
+            var replacementRows = ReadMatches(path, "\ufffd", "auto");
+            Assert.AreEqual(1, replacementRows.Length);
+            Assert.IsNull(replacementRows[0].ByteOffset);
+            Assert.IsNull(replacementRows[0].ByteLength);
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
+    [TestMethod]
+    public void Auto_ShouldReturnRowsForMalformedTextAcrossTextSources()
+    {
+        var root = CreateTemporaryRoot();
+        var path = Path.Combine(root, "malformed.txt");
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllBytes(path, [
+                (byte)'T', (byte)'O', (byte)'D', (byte)'O',
+                0x80,
+                (byte)'\n'
+            ]);
+
+            var request = SearchRequest.Create(root, "TODO");
+            var matches = new SearchMatchesSource(
+                    request,
+                    RuntimeV2TestContexts.CreateExecutionContext())
+                .Chunks
+                .SelectMany(static chunk => chunk)
+                .ToArray();
+            var lines = new SearchLinesSource(
+                    request,
+                    RuntimeV2TestContexts.CreateExecutionContext())
+                .Chunks
+                .SelectMany(static chunk => chunk)
+                .ToArray();
+            var files = new SearchFilesSource(
+                    request,
+                    RuntimeV2TestContexts.CreateExecutionContext())
+                .Chunks
+                .SelectMany(static chunk => chunk)
+                .ToArray();
+
+            Assert.AreEqual(1, matches.Length);
+            Assert.AreEqual(1, lines.Length);
+            Assert.AreEqual(1, files.Length);
+            Assert.AreEqual("malformed.txt", matches[0].Path);
+            Assert.AreEqual("malformed.txt", lines[0].Path);
+            Assert.AreEqual("malformed.txt", files[0].Path);
         }
         finally
         {
@@ -196,7 +302,17 @@ public sealed class SearchEncodingTests
     [TestMethod]
     public void ContractValues_ShouldRoundTripToCanonicalEncodingModes()
     {
-        var values = new[] { "auto", "utf8", "utf8-bom", "utf16-le-bom", "utf16-be-bom" };
+        var values = new[]
+        {
+            "auto",
+            "utf8",
+            "utf8-bom",
+            "utf16-le-bom",
+            "utf16-be-bom",
+            "windows-1250",
+            "windows-1252",
+            "iso-8859-2"
+        };
 
         foreach (var value in values)
         {
@@ -207,10 +323,72 @@ public sealed class SearchEncodingTests
         }
     }
 
+    [TestMethod]
+    public void ExplicitLegacyModes_ShouldDecodeAndMapSingleByteText()
+    {
+        var root = CreateTemporaryRoot();
+        var cases = new[]
+        {
+            ("windows-1250", SearchEncodingMode.Windows1250, "Zażółć"),
+            ("windows-1252", SearchEncodingMode.Windows1252, "Café"),
+            ("iso-8859-2", SearchEncodingMode.Iso88592, "Zażółć")
+        };
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            foreach (var (contractValue, mode, nonAsciiText) in cases)
+            {
+                var path = Path.Combine(
+                    root,
+                    contractValue.Replace("-", "_", StringComparison.Ordinal) + ".txt");
+                var prefix = "prefix ";
+                var content = prefix + nonAsciiText + " TODO\n";
+                var encoding = SearchEncodingPolicy.CreateLegacyEncoding(mode);
+                File.WriteAllBytes(path, encoding.GetBytes(content));
+
+                var asciiMatch = ReadMatches(path, "TODO", contractValue);
+                Assert.AreEqual(1, asciiMatch.Length, contractValue);
+                Assert.AreEqual(
+                    encoding.GetByteCount(prefix + nonAsciiText + " "),
+                    asciiMatch[0].ByteOffset,
+                    contractValue);
+                Assert.AreEqual(
+                    encoding.GetByteCount("TODO"),
+                    asciiMatch[0].ByteLength,
+                    contractValue);
+
+                var nonAsciiMatch = ReadMatches(path, nonAsciiText, contractValue);
+                Assert.AreEqual(1, nonAsciiMatch.Length, contractValue);
+                Assert.AreEqual(
+                    encoding.GetByteCount(prefix),
+                    nonAsciiMatch[0].ByteOffset,
+                    contractValue);
+                Assert.AreEqual(
+                    encoding.GetByteCount(nonAsciiText),
+                    nonAsciiMatch[0].ByteLength,
+                    contractValue);
+                Assert.AreEqual(nonAsciiText.Length, nonAsciiMatch[0].Utf16Length);
+            }
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
     private static SearchMatch[] ReadMatches(string root, string encoding)
     {
+        return ReadMatches(root, "TODO", encoding);
+    }
+
+    private static SearchMatch[] ReadMatches(
+        string root,
+        string literal,
+        string encoding)
+    {
         return new SearchMatchesSource(
-                SearchRequest.Create(root, "TODO", encoding: encoding),
+                SearchRequest.Create(root, literal, encoding: encoding),
                 RuntimeV2TestContexts.CreateExecutionContext())
             .Chunks
             .SelectMany(static chunk => chunk)

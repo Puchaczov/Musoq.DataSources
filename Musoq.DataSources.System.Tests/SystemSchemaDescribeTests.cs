@@ -44,14 +44,14 @@ public class SystemSchemaDescribeTests
 
         Assert.AreEqual(3, table.Count, "Should have 3 rows (dual + 2 range overloads)");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
 
         Assert.AreEqual(1, methodNames.Count(m => m == "dual"), "Should contain 'dual' method once");
         Assert.AreEqual(2, methodNames.Count(m => m == "range"), "Should contain 'range' method twice (2 overloads)");
 
-        var dualRow = table.First(row => (string)row[0] == "dual");
-        Assert.IsNull(dualRow[1], "Dual should have no parameters");
-        Assert.IsNull(dualRow[2], "Dual should have no parameters");
+        var dualRow = table.First(row => (string)row.ReadValue(0) == "dual");
+        Assert.IsNull(dualRow.ReadValue(1), "Dual should have no parameters");
+        Assert.IsNull(dualRow.ReadValue(2), "Dual should have no parameters");
     }
 
     [TestMethod]
@@ -68,7 +68,7 @@ public class SystemSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("dual", (string)row[0]);
+        Assert.AreEqual("dual", (string)row.ReadValue(0));
     }
 
     [TestMethod]
@@ -82,18 +82,18 @@ public class SystemSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count(), "Should have 3 columns (Name, Param 0, Param 1)");
         Assert.AreEqual(2, table.Count, "Should have 2 rows for 2 overloads");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(methodNames.All(name => name == "range"), "All rows should be for range method");
 
         var overload1 = table.ElementAt(0);
-        Assert.AreEqual("range", (string)overload1[0]);
-        Assert.AreEqual("max: System.Int64", (string)overload1[1]);
-        Assert.IsNull(overload1[2]);
+        Assert.AreEqual("range", (string)overload1.ReadValue(0));
+        Assert.AreEqual("max: System.Int64", (string)overload1.ReadValue(1));
+        Assert.IsNull(overload1.ReadValue(2));
 
         var overload2 = table.ElementAt(1);
-        Assert.AreEqual("range", (string)overload2[0]);
-        Assert.AreEqual("min: System.Int64", (string)overload2[1]);
-        Assert.AreEqual("max: System.Int64", (string)overload2[2]);
+        Assert.AreEqual("range", (string)overload2.ReadValue(0));
+        Assert.AreEqual("min: System.Int64", (string)overload2.ReadValue(1));
+        Assert.AreEqual("max: System.Int64", (string)overload2.ReadValue(2));
     }
 
     [TestMethod]

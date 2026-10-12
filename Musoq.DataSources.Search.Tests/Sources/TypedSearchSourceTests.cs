@@ -29,8 +29,8 @@ public sealed class TypedSearchSourceTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("alpha.txt", result.Rows[0][0]);
-            Assert.AreEqual("TODO", result.Rows[0][1]);
+            Assert.AreEqual("alpha.txt", result.Rows[0].ReadValue(0));
+            Assert.AreEqual("TODO", result.Rows[0].ReadValue(1));
         }
         finally
         {
@@ -57,11 +57,11 @@ public sealed class TypedSearchSourceTests
                 .Run();
 
             CollectionAssert.AreEqual(
-                simple.Rows.Select(row => (string)row[0]).ToArray(),
-                explicitDefaults.Rows.Select(row => (string)row[0]).ToArray());
+                simple.Rows.Select(row => (string)row.ReadValue(0)).ToArray(),
+                explicitDefaults.Rows.Select(row => (string)row.ReadValue(0)).ToArray());
             CollectionAssert.AreEqual(
                 new[] { "nested/child.txt", "top.txt" },
-                simple.Rows.Select(row => (string)row[0]).ToArray());
+                simple.Rows.Select(row => (string)row.ReadValue(0)).ToArray());
         }
         finally
         {
@@ -82,7 +82,7 @@ public sealed class TypedSearchSourceTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("ISSUE-42", result.Rows[0][0]);
+            Assert.AreEqual("ISSUE-42", result.Rows[0].ReadValue(0));
         }
         finally
         {
@@ -149,18 +149,18 @@ public sealed class TypedSearchSourceTests
                 .Run();
 
             Assert.AreEqual(2, counts.Count);
-            Assert.AreEqual("match.txt", counts.Rows[0][0]);
-            Assert.AreEqual(2L, counts.Rows[0][1]);
-            Assert.AreEqual(true, counts.Rows[0][2]);
-            Assert.AreEqual("none.txt", counts.Rows[1][0]);
-            Assert.AreEqual(0L, counts.Rows[1][1]);
-            Assert.AreEqual(true, counts.Rows[1][2]);
+            Assert.AreEqual("match.txt", counts.Rows[0].ReadValue(0));
+            Assert.AreEqual(2L, counts.Rows[0].ReadValue(1));
+            Assert.AreEqual(true, counts.Rows[0].ReadValue(2));
+            Assert.AreEqual("none.txt", counts.Rows[1].ReadValue(0));
+            Assert.AreEqual(0L, counts.Rows[1].ReadValue(1));
+            Assert.AreEqual(true, counts.Rows[1].ReadValue(2));
 
             Assert.AreEqual(1, audit.Count);
-            Assert.AreEqual(true, audit.Rows[0][0]);
-            Assert.AreEqual(true, audit.Rows[0][1]);
-            Assert.AreEqual(true, audit.Rows[0][2]);
-            Assert.AreEqual(2L, audit.Rows[0][3]);
+            Assert.AreEqual(true, audit.Rows[0].ReadValue(0));
+            Assert.AreEqual(true, audit.Rows[0].ReadValue(1));
+            Assert.AreEqual(true, audit.Rows[0].ReadValue(2));
+            Assert.AreEqual(2L, audit.Rows[0].ReadValue(3));
         }
         finally
         {
@@ -184,7 +184,7 @@ public sealed class TypedSearchSourceTests
 
             CollectionAssert.AreEqual(
                 new[] { "fixme", "todo" },
-                result.Rows.Select(row => (string)row[0]).ToArray());
+                result.Rows.Select(row => (string)row.ReadValue(0)).ToArray());
         }
         finally
         {
@@ -209,7 +209,7 @@ public sealed class TypedSearchSourceTests
             Assert.AreEqual(3, result.Count);
             CollectionAssert.AreEqual(
                 new[] { "ISSUE-42", "TODO", "TODO" },
-                result.Rows.Select(row => (string)row[1]).ToArray());
+                result.Rows.Select(row => (string)row.ReadValue(1)).ToArray());
         }
         finally
         {
@@ -232,7 +232,7 @@ public sealed class TypedSearchSourceTests
             Assert.AreEqual(3, result.Count);
             CollectionAssert.AreEqual(
                 new[] { "todo", "TODO", "ToDo" },
-                result.Rows.Select(row => (string)row[1]).ToArray());
+                result.Rows.Select(row => (string)row.ReadValue(1)).ToArray());
         }
         finally
         {
@@ -258,10 +258,10 @@ public sealed class TypedSearchSourceTests
             Assert.AreEqual(4, result.Count);
             CollectionAssert.AreEqual(
                 new[] { "-1", "1", "-1", "1" },
-                result.Rows.Select(row => row[2].ToString()).ToArray());
+                result.Rows.Select(row => row.ReadValue(2).ToString()).ToArray());
             CollectionAssert.AreEqual(
                 new[] { "before\n", "after\n", "before\n", "after\n" },
-                result.Rows.Select(row => (string)row[3]).ToArray());
+                result.Rows.Select(row => (string)row.ReadValue(3)).ToArray());
         }
         finally
         {
@@ -282,9 +282,9 @@ public sealed class TypedSearchSourceTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("alpha.bin", result.Rows[0][0]);
-            Assert.AreEqual(1L, result.Rows[0][1]);
-            Assert.AreEqual(6L, result.Rows[0][2]);
+            Assert.AreEqual("alpha.bin", result.Rows[0].ReadValue(0));
+            Assert.AreEqual(1L, result.Rows[0].ReadValue(1));
+            Assert.AreEqual(6L, result.Rows[0].ReadValue(2));
         }
         finally
         {
@@ -310,10 +310,10 @@ public sealed class TypedSearchSourceTests
                 .Run();
 
             CollectionAssert.AreEqual(new[] { "visible.txt" },
-                defaultResult.Rows.Select(row => (string)row[0]).ToArray());
+                defaultResult.Rows.Select(row => (string)row.ReadValue(0)).ToArray());
             CollectionAssert.AreEqual(
                 new[] { ".hidden-dir/nested.txt", ".hidden.txt", "visible.txt" },
-                hiddenResult.Rows.Select(row => (string)row[0]).ToArray());
+                hiddenResult.Rows.Select(row => (string)row.ReadValue(0)).ToArray());
         }
         finally
         {

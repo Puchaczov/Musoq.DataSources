@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -1020,7 +1020,7 @@ public partial class OsLibrary : LibraryBase
     /// <param name="paths">The paths</param>
     /// <returns>Combined paths</returns>
     [BindableMethod]
-    public string Combine(params string[] paths)
+    public string Combine(params ReadOnlySpan<string> paths)
     {
         return Path.Combine(paths);
     }

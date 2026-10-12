@@ -45,7 +45,7 @@ public abstract class PlaygroundTestsBase
             var sampleCount = Math.Min(3, table.Count);
             for (var index = 0; index < sampleCount; index++)
             {
-                var values = table[index].Values
+                var values = table[index].ReadValues()
                     .Select(value => value?.ToString() ?? "<null>");
 
                 testContext.WriteLine($"Row {index}: {string.Join(" | ", values)}");

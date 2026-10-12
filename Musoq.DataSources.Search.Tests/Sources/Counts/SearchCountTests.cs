@@ -90,17 +90,17 @@ public sealed class SearchCountTests
                 .Run();
 
             Assert.AreEqual(2, result.Count);
-            Assert.AreEqual("empty.txt", result.Rows[0][0]);
-            Assert.AreEqual(0L, result.Rows[0][1]);
-            Assert.AreEqual(0L, result.Rows[0][2]);
-            Assert.AreEqual(0L, result.Rows[0][3]);
-            Assert.AreEqual(true, result.Rows[0][4]);
+            Assert.AreEqual("empty.txt", result.Rows[0].ReadValue(0));
+            Assert.AreEqual(0L, result.Rows[0].ReadValue(1));
+            Assert.AreEqual(0L, result.Rows[0].ReadValue(2));
+            Assert.AreEqual(0L, result.Rows[0].ReadValue(3));
+            Assert.AreEqual(true, result.Rows[0].ReadValue(4));
 
-            Assert.AreEqual("first.txt", result.Rows[1][0]);
-            Assert.AreEqual(3L, result.Rows[1][1]);
-            Assert.AreEqual(2L, result.Rows[1][2]);
-            Assert.AreEqual((long)Encoding.UTF8.GetByteCount("TODO TODO\nTODO\n"), result.Rows[1][3]);
-            Assert.AreEqual(true, result.Rows[1][4]);
+            Assert.AreEqual("first.txt", result.Rows[1].ReadValue(0));
+            Assert.AreEqual(3L, result.Rows[1].ReadValue(1));
+            Assert.AreEqual(2L, result.Rows[1].ReadValue(2));
+            Assert.AreEqual((long)Encoding.UTF8.GetByteCount("TODO TODO\nTODO\n"), result.Rows[1].ReadValue(3));
+            Assert.AreEqual(true, result.Rows[1].ReadValue(4));
         }
         finally
         {

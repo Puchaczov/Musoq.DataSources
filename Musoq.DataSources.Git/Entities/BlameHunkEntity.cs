@@ -17,8 +17,6 @@ public class BlameHunkEntity
 {
     /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    /// <summary>Maps row indexes to the corresponding property accessors used by the Musoq runtime.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<BlameHunkEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a blame-hunk row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -67,15 +65,7 @@ public class BlameHunkEntity
             { nameof(CommitterDate), 9 }, { nameof(Summary), 10 }, { nameof(OriginalStartLineNumber), 11 },
             { nameof(OriginalFilePath), 12 }, { nameof(Lines), 13 }, { nameof(Self), 14 }
         };
-        IndexToObjectAccessMap = new Dictionary<int, Func<BlameHunkEntity, object?>>
-        {
-            { 0, entity => entity.StartLineNumber }, { 1, entity => entity.EndLineNumber },
-            { 2, entity => entity.LineCount }, { 3, entity => entity.CommitSha }, { 4, entity => entity.Author },
-            { 5, entity => entity.AuthorEmail }, { 6, entity => entity.AuthorDate }, { 7, entity => entity.Committer },
-            { 8, entity => entity.CommitterEmail }, { 9, entity => entity.CommitterDate },
-            { 10, entity => entity.Summary }, { 11, entity => entity.OriginalStartLineNumber },
-            { 12, entity => entity.OriginalFilePath }, { 13, entity => entity.Lines }, { 14, entity => entity.Self }
-        };
+
     }
 
     /// <summary>Compatibility constructor. Returned rows no longer retain the supplied repository.</summary>

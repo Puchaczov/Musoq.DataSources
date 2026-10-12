@@ -66,39 +66,39 @@ public class DockerTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual("1", table[0][0]);
+        Assert.AreEqual("1", table[0].ReadValue(0));
 
-        Assert.AreEqual("1", table[0][1]);
-        Assert.AreEqual("1", table[0][2]);
-        Assert.AreEqual("1", table[0][3]);
-        Assert.AreEqual(DateTime.MinValue, table[0][4]);
-        Assert.AreEqual("1", table[0][5]);
-        Assert.AreEqual("1", table[0][6]);
-        Assert.AreEqual(1L, table[0][7]);
-        Assert.AreEqual(1L, table[0][8]);
+        Assert.AreEqual("1", table[0].ReadValue(1));
+        Assert.AreEqual("1", table[0].ReadValue(2));
+        Assert.AreEqual("1", table[0].ReadValue(3));
+        Assert.AreEqual(DateTime.MinValue, table[0].ReadValue(4));
+        Assert.AreEqual("1", table[0].ReadValue(5));
+        Assert.AreEqual("1", table[0].ReadValue(6));
+        Assert.AreEqual(1L, table[0].ReadValue(7));
+        Assert.AreEqual(1L, table[0].ReadValue(8));
 
-        var networkSettings = (string)table[0][9];
+        var networkSettings = (string)table[0].ReadValue(9);
 
         Assert.IsTrue(networkSettings.Contains("1:1:1"));
 
-        Assert.AreEqual("1:1", table[0][10]);
+        Assert.AreEqual("1:1", table[0].ReadValue(10));
 
         var names = RunQuery("select n.Value from docker.containers() c cross apply c.Names n", api.Object);
         Assert.AreEqual(1, names.Count);
-        Assert.AreEqual("1", names[0][0]);
+        Assert.AreEqual("1", names[0].ReadValue(0));
 
         var ports = RunQuery("select p.Value from docker.containers() c cross apply c.Ports p", api.Object);
         Assert.AreEqual(1, ports.Count);
-        Assert.AreEqual("1:1", ports[0][0]);
+        Assert.AreEqual("1:1", ports[0].ReadValue(0));
 
         var labels = RunQuery("select l.Key, l.Value from docker.containers() c cross apply c.Labels l", api.Object);
         Assert.AreEqual(1, labels.Count);
-        Assert.AreEqual("1", labels[0][0]);
-        Assert.AreEqual("1", labels[0][1]);
+        Assert.AreEqual("1", labels[0].ReadValue(0));
+        Assert.AreEqual("1", labels[0].ReadValue(1));
 
         var mounts = RunQuery("select m.Value from docker.containers() c cross apply c.Mounts m", api.Object);
         Assert.AreEqual(1, mounts.Count);
-        Assert.AreEqual("1:1:1:1:1:1:True", mounts[0][0]);
+        Assert.AreEqual("1:1:1:1:1:1:True", mounts[0].ReadValue(0));
 
         api.Verify(f => f.ListContainersAsync(), Times.Exactly(5));
     }
@@ -133,20 +133,20 @@ public class DockerTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(DateTime.MinValue, table[0][0]);
-        Assert.AreEqual("1", table[0][1]);
+        Assert.AreEqual(DateTime.MinValue, table[0].ReadValue(0));
+        Assert.AreEqual("1", table[0].ReadValue(1));
 
-        Assert.AreEqual(1L, table[0][3]);
-        Assert.AreEqual(1L, table[0][4]);
-        Assert.AreEqual(1L, table[0][5]);
+        Assert.AreEqual(1L, table[0].ReadValue(3));
+        Assert.AreEqual(1L, table[0].ReadValue(4));
+        Assert.AreEqual(1L, table[0].ReadValue(5));
 
         var repoDigests = RunQuery("select d.Value from docker.images() i cross apply i.RepoDigests d", api.Object);
         Assert.AreEqual(1, repoDigests.Count);
-        Assert.AreEqual("1", repoDigests[0][0]);
+        Assert.AreEqual("1", repoDigests[0].ReadValue(0));
 
         var repoTags = RunQuery("select t.Value from docker.images() i cross apply i.RepoTags t", api.Object);
         Assert.AreEqual(1, repoTags.Count);
-        Assert.AreEqual("1", repoTags[0][0]);
+        Assert.AreEqual("1", repoTags[0].ReadValue(0));
 
         api.Verify(f => f.ListImagesAsync(), Times.Exactly(3));
     }
@@ -179,22 +179,22 @@ public class DockerTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual("now", table[0][0]);
-        Assert.AreEqual("1", table[0][1]);
+        Assert.AreEqual("now", table[0].ReadValue(0));
+        Assert.AreEqual("1", table[0].ReadValue(1));
 
-        Assert.AreEqual("1", table[0][2]);
-        Assert.AreEqual("1", table[0][3]);
-        Assert.AreEqual("1", table[0][4]);
+        Assert.AreEqual("1", table[0].ReadValue(2));
+        Assert.AreEqual("1", table[0].ReadValue(3));
+        Assert.AreEqual("1", table[0].ReadValue(4));
 
         var labels = RunQuery("select l.Key, l.Value from docker.volumes() v cross apply v.Labels l", api.Object);
         Assert.AreEqual(1, labels.Count);
-        Assert.AreEqual("1", labels[0][0]);
-        Assert.AreEqual("1", labels[0][1]);
+        Assert.AreEqual("1", labels[0].ReadValue(0));
+        Assert.AreEqual("1", labels[0].ReadValue(1));
 
         var options = RunQuery("select o.Key, o.Value from docker.volumes() v cross apply v.Options o", api.Object);
         Assert.AreEqual(1, options.Count);
-        Assert.AreEqual("1", options[0][0]);
-        Assert.AreEqual("1", options[0][1]);
+        Assert.AreEqual("1", options[0].ReadValue(0));
+        Assert.AreEqual("1", options[0].ReadValue(1));
 
         api.Verify(f => f.ListVolumesAsync(), Times.Exactly(3));
     }
@@ -230,24 +230,24 @@ public class DockerTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(DateTime.MinValue, table[0][0]);
-        Assert.AreEqual("1", table[0][1]);
-        Assert.AreEqual(true, table[0][2]);
-        Assert.AreEqual("1", table[0][3]);
-        Assert.AreEqual(true, table[0][4]);
+        Assert.AreEqual(DateTime.MinValue, table[0].ReadValue(0));
+        Assert.AreEqual("1", table[0].ReadValue(1));
+        Assert.AreEqual(true, table[0].ReadValue(2));
+        Assert.AreEqual("1", table[0].ReadValue(3));
+        Assert.AreEqual(true, table[0].ReadValue(4));
 
-        Assert.AreEqual("1", table[0][5]);
-        Assert.AreEqual("1", table[0][6]);
+        Assert.AreEqual("1", table[0].ReadValue(5));
+        Assert.AreEqual("1", table[0].ReadValue(6));
 
         var labels = RunQuery("select l.Key, l.Value from docker.networks() n cross apply n.Labels l", api.Object);
         Assert.AreEqual(1, labels.Count);
-        Assert.AreEqual("1", labels[0][0]);
-        Assert.AreEqual("1", labels[0][1]);
+        Assert.AreEqual("1", labels[0].ReadValue(0));
+        Assert.AreEqual("1", labels[0].ReadValue(1));
 
         var options = RunQuery("select o.Key, o.Value from docker.networks() n cross apply n.Options o", api.Object);
         Assert.AreEqual(1, options.Count);
-        Assert.AreEqual("1", options[0][0]);
-        Assert.AreEqual("1", options[0][1]);
+        Assert.AreEqual("1", options[0].ReadValue(0));
+        Assert.AreEqual("1", options[0].ReadValue(1));
 
         api.Verify(f => f.ListNetworksAsync(), Times.Exactly(3));
     }

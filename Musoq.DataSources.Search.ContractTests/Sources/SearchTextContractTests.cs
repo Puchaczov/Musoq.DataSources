@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Search.Components.Diagnostics;
 using Musoq.DataSources.Search.ContractTests.Infrastructure;
@@ -63,7 +64,45 @@ public sealed class SearchTextContractTests : SearchContractTestBase
 
     [TestMethod]
     [TestCategory("SearchContractFast")]
-    public void BinaryPolicy_ShouldSkipLateNulFilesAndDiagnoseMalformedText()
+    public void ExplicitLegacyEncoding_ShouldDecodeKnownWindows1250Text()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            $"musoq-search-contract-legacy-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, "legacy.txt");
+
+        try
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            var encoding = Encoding.GetEncoding(1250);
+            const string prefix = "prefix ";
+            const string literal = "żółć";
+            File.WriteAllBytes(
+                path,
+                encoding.GetBytes(prefix + literal + " TODO\n"));
+
+            var result = Sql.ExecuteForRoot(
+                path,
+                file => $"select m.MatchText, m.ByteOffset, m.ByteLength " +
+                        $"from search.matches('{file}', '{literal}', " +
+                        "(Text: (Encoding: 'windows-1250'))) m");
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(literal, result.Value<string>(0, 0));
+            Assert.AreEqual(encoding.GetByteCount(prefix), result.Value<long>(0, 1));
+            Assert.AreEqual(encoding.GetByteCount(literal), result.Value<long>(0, 2));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    [TestCategory("SearchContractFast")]
+    public void BinaryPolicy_ShouldSkipLateNulAndMalformedBinaryFiles()
     {
         WithCorpus(ContractCorpusProfile.Encoding, fixture =>
         {
@@ -73,14 +112,11 @@ public sealed class SearchTextContractTests : SearchContractTestBase
 
             Assert.AreEqual(0, result.Count);
 
-            var exception = Assert.ThrowsException<QueryExecutionException>(() =>
-                Sql.ExecuteForRoot(
-                    fixture.PathFor("encoding/invalid.bin"),
-                    root => $"select m.Path from search.matches('{root}', 'TODO') m"));
+            var malformedBinary = Sql.ExecuteForRoot(
+                fixture.PathFor("encoding/invalid.bin"),
+                root => $"select m.Path from search.matches('{root}', 'TODO') m");
 
-            var readFailure = FindInner<SearchSourceReadException>(exception);
-            Assert.IsNotNull(readFailure, exception.ToString());
-            Assert.AreEqual(SearchDiagnosticCodes.SourceReadFailed, readFailure!.Diagnostic.Code);
+            Assert.AreEqual(0, malformedBinary.Count);
         });
     }
 

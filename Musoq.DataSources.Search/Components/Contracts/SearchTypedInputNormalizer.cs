@@ -60,7 +60,7 @@ internal static class SearchTypedInputNormalizer
                 maxRecordBytesExplicit: maxRecordBytesExplicit);
         }
 
-        var effectiveRecords = records ?? new SearchRecordsInput();
+        var effectiveRecords = records ?? new SearchRecordsInput(mode: SearchRecordsInput.DefaultMode);
         var recordMode = ParseRecordMode(effectiveRecords.Mode);
         var maxRecordBytes = ValidateRecordBytes(
             effectiveRecords.MaxBytes,

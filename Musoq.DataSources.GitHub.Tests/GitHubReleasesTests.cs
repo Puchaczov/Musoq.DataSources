@@ -41,16 +41,16 @@ public class GitHubReleasesTests
         Assert.AreEqual(3, table.Count);
 
 
-        var v1Release = table.FirstOrDefault(row => (string)row[1] == "v1.0.0");
+        var v1Release = table.FirstOrDefault(row => (string)row.ReadValue(1) == "v1.0.0");
         Assert.IsNotNull(v1Release);
-        Assert.AreEqual(1L, v1Release[0]);
-        Assert.AreEqual("Version 1.0.0", v1Release[2]);
-        Assert.AreEqual(false, v1Release[3]);
-        Assert.AreEqual(false, v1Release[4]);
+        Assert.AreEqual(1L, v1Release.ReadValue(0));
+        Assert.AreEqual("Version 1.0.0", v1Release.ReadValue(2));
+        Assert.AreEqual(false, v1Release.ReadValue(3));
+        Assert.AreEqual(false, v1Release.ReadValue(4));
 
-        var v2BetaRelease = table.FirstOrDefault(row => (string)row[1] == "v2.0.0-beta");
+        var v2BetaRelease = table.FirstOrDefault(row => (string)row.ReadValue(1) == "v2.0.0-beta");
         Assert.IsNotNull(v2BetaRelease);
-        Assert.AreEqual(true, v2BetaRelease[4]);
+        Assert.AreEqual(true, v2BetaRelease.ReadValue(4));
 
         api.Verify(f => f.GetReleasesAsync("testowner", "testrepo", It.IsAny<int?>(), It.IsAny<int?>()), Times.Once);
     }
@@ -74,7 +74,7 @@ public class GitHubReleasesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("v1.0.0", table[0][0]);
+        Assert.AreEqual("v1.0.0", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -96,7 +96,7 @@ public class GitHubReleasesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("v1.0.0", table[0][0]);
+        Assert.AreEqual("v1.0.0", table[0].ReadValue(0));
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IGitHubApi api)

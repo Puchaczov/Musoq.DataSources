@@ -7,7 +7,7 @@ namespace Musoq.DataSources.GitHub.Sources.Repositories;
 internal static class RepositoriesSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> RepositoriesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<RepositoryEntity, object?>> RepositoriesIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] RepositoriesColumns;
 
     static RepositoriesSourceHelper()
@@ -41,37 +41,6 @@ internal static class RepositoriesSourceHelper
             { nameof(RepositoryEntity.HasWiki), 24 },
             { nameof(RepositoryEntity.HasDownloads), 25 },
             { nameof(RepositoryEntity.Visibility), 26 }
-        };
-
-        RepositoriesIndexToMethodAccessMap = new Dictionary<int, Func<RepositoryEntity, object?>>
-        {
-            { 0, repo => repo.Id },
-            { 1, repo => repo.Name },
-            { 2, repo => repo.FullName },
-            { 3, repo => repo.Description },
-            { 4, repo => repo.Url },
-            { 5, repo => repo.CloneUrl },
-            { 6, repo => repo.SshUrl },
-            { 7, repo => repo.DefaultBranch },
-            { 8, repo => repo.IsPrivate },
-            { 9, repo => repo.IsFork },
-            { 10, repo => repo.IsArchived },
-            { 11, repo => repo.Language },
-            { 12, repo => repo.ForksCount },
-            { 13, repo => repo.StargazersCount },
-            { 14, repo => repo.WatchersCount },
-            { 15, repo => repo.OpenIssuesCount },
-            { 16, repo => repo.Size },
-            { 17, repo => repo.CreatedAt },
-            { 18, repo => repo.UpdatedAt },
-            { 19, repo => repo.PushedAt },
-            { 20, repo => repo.OwnerLogin },
-            { 21, repo => repo.License },
-            { 22, repo => repo.Topics },
-            { 23, repo => repo.HasIssues },
-            { 24, repo => repo.HasWiki },
-            { 25, repo => repo.HasDownloads },
-            { 26, repo => repo.Visibility }
         };
 
         RepositoriesColumns =

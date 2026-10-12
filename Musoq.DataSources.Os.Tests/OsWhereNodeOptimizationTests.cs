@@ -32,9 +32,9 @@ public class OsWhereNodeOptimizationTests
 
         Assert.AreEqual(2, result.Count,
             "Both File1.txt and File2.txt should be returned when filtering by .txt extension");
-        Assert.IsTrue(result.All(r => (string)r[1] == ".txt"), "All returned files should have .txt extension");
-        Assert.IsTrue(result.Any(r => (string)r[0] == "File1.txt"), "File1.txt should be in results");
-        Assert.IsTrue(result.Any(r => (string)r[0] == "File2.txt"), "File2.txt should be in results");
+        Assert.IsTrue(result.All(r => (string)r.ReadValue(1) == ".txt"), "All returned files should have .txt extension");
+        Assert.IsTrue(result.Any(r => (string)r.ReadValue(0) == "File1.txt"), "File1.txt should be in results");
+        Assert.IsTrue(result.Any(r => (string)r.ReadValue(0) == "File2.txt"), "File2.txt should be in results");
     }
 
     [TestMethod]
@@ -46,8 +46,8 @@ public class OsWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Exactly one file named 'File1.txt' should be returned");
-        Assert.AreEqual("File1.txt", (string)result[0][0]);
-        Assert.AreEqual(".txt", (string)result[0][1]);
+        Assert.AreEqual("File1.txt", (string)result[0].ReadValue(0));
+        Assert.AreEqual(".txt", (string)result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -70,7 +70,7 @@ public class OsWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Exactly one directory named 'Directory1' should be returned");
-        Assert.AreEqual("Directory1", (string)result[0][0]);
+        Assert.AreEqual("Directory1", (string)result[0].ReadValue(0));
     }
 
     [TestMethod]

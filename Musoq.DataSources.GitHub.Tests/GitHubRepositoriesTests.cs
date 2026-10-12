@@ -38,10 +38,10 @@ public class GitHubRepositoriesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(1L, table[0][0]);
-        Assert.AreEqual("test-repo", table[0][1]);
-        Assert.AreEqual("testowner/test-repo", table[0][2]);
-        Assert.AreEqual("Test repository", table[0][3]);
+        Assert.AreEqual(1L, table[0].ReadValue(0));
+        Assert.AreEqual("test-repo", table[0].ReadValue(1));
+        Assert.AreEqual("testowner/test-repo", table[0].ReadValue(2));
+        Assert.AreEqual("Test repository", table[0].ReadValue(3));
 
         api.Verify(f => f.GetUserRepositoriesAsync(It.IsAny<RepositoryRequest>(), It.IsAny<int?>(), It.IsAny<int?>()),
             Times.Once);
@@ -66,10 +66,10 @@ public class GitHubRepositoriesTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count);
-        Assert.AreEqual(1L, table[0][0]);
-        Assert.AreEqual("repo1", table[0][1]);
-        Assert.AreEqual(2L, table[1][0]);
-        Assert.AreEqual("repo2", table[1][1]);
+        Assert.AreEqual(1L, table[0].ReadValue(0));
+        Assert.AreEqual("repo1", table[0].ReadValue(1));
+        Assert.AreEqual(2L, table[1].ReadValue(0));
+        Assert.AreEqual("repo2", table[1].ReadValue(1));
 
         api.Verify(f => f.GetRepositoriesForOwnerAsync("testowner", It.IsAny<int?>(), It.IsAny<int?>()), Times.Once);
     }
@@ -94,8 +94,8 @@ public class GitHubRepositoriesTests
 
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("csharp-repo", table[0][0]);
-        Assert.AreEqual("C#", table[0][1]);
+        Assert.AreEqual("csharp-repo", table[0].ReadValue(0));
+        Assert.AreEqual("C#", table[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -117,7 +117,7 @@ public class GitHubRepositoriesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("public-repo", table[0][0]);
+        Assert.AreEqual("public-repo", table[0].ReadValue(0));
 
         api.Verify(
             f => f.GetUserRepositoriesAsync(

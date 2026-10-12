@@ -114,7 +114,8 @@ public class GitRuntimeV2PlanningTests
             Assert.AreEqual(predicate, result.AcceptedPredicate);
             Assert.IsNull(result.ResidualPredicate);
             var filters = (GitFilterParameters)result.ExecutionPlan.Properties[GitSourcePlanner.FiltersPropertyName]!;
-            Assert.AreEqual(predicate, filters.RawPredicate);
+            Assert.IsNotNull(filters.GitCommitRecordPredicate);
+            Assert.IsNotNull(filters.TypedPredicates.Get<CommitEntity>());
         }
     }
 

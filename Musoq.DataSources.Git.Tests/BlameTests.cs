@@ -56,15 +56,15 @@ public class BlameTests
         Assert.IsTrue(result.Count > 0, "Should return at least one hunk");
 
         var firstRow = result[0];
-        Assert.IsTrue((int)firstRow[0] >= 1, "StartLineNumber should be 1-based");
-        Assert.IsTrue((int)firstRow[1] >= (int)firstRow[0], "EndLineNumber should be >= StartLineNumber");
-        Assert.IsTrue((int)firstRow[2] > 0, "LineCount should be > 0");
-        Assert.IsNotNull(firstRow[3], "CommitSha should not be null");
-        Assert.AreEqual("Test User", (string)firstRow[4], "Author should be 'Test User'");
-        Assert.AreEqual("test@example.com", (string)firstRow[5], "AuthorEmail should be 'test@example.com'");
-        Assert.IsNotNull(firstRow[6], "Summary should not be null");
+        Assert.IsTrue((int)firstRow.ReadValue(0) >= 1, "StartLineNumber should be 1-based");
+        Assert.IsTrue((int)firstRow.ReadValue(1) >= (int)firstRow.ReadValue(0), "EndLineNumber should be >= StartLineNumber");
+        Assert.IsTrue((int)firstRow.ReadValue(2) > 0, "LineCount should be > 0");
+        Assert.IsNotNull(firstRow.ReadValue(3), "CommitSha should not be null");
+        Assert.AreEqual("Test User", (string)firstRow.ReadValue(4), "Author should be 'Test User'");
+        Assert.AreEqual("test@example.com", (string)firstRow.ReadValue(5), "AuthorEmail should be 'test@example.com'");
+        Assert.IsNotNull(firstRow.ReadValue(6), "Summary should not be null");
 
-        var totalLines = result.Sum(row => (int)row[2]);
+        var totalLines = result.Sum(row => (int)row.ReadValue(2));
         Assert.AreEqual(4, totalLines, "Total lines across all hunks should be 4");
     }
 
@@ -180,10 +180,10 @@ public class BlameTests
         Assert.AreEqual(4, result.Count, "test_file.txt has 4 lines");
 
         var firstLine = result[0];
-        Assert.AreEqual(1, (int)firstLine[0], "First line number should be 1");
-        Assert.IsNotNull(firstLine[1], "Line content should not be null");
-        Assert.IsTrue(((string)firstLine[1]).Contains("line 1"), "First line should contain 'line 1'");
-        Assert.AreEqual("Test User", (string)firstLine[2], "Author should be 'Test User'");
+        Assert.AreEqual(1, (int)firstLine.ReadValue(0), "First line number should be 1");
+        Assert.IsNotNull(firstLine.ReadValue(1), "Line content should not be null");
+        Assert.IsTrue(((string)firstLine.ReadValue(1)).Contains("line 1"), "First line should contain 'line 1'");
+        Assert.AreEqual("Test User", (string)firstLine.ReadValue(2), "Author should be 'Test User'");
     }
 
     [TestMethod]
@@ -226,15 +226,15 @@ public class BlameTests
 
         foreach (var row in result)
         {
-            Assert.IsNotNull(row[0], "CommitSha should not be null");
-            Assert.IsNotNull(row[1], "Author should not be null");
-            Assert.IsNotNull(row[2], "LineNumber should not be null");
-            Assert.IsNotNull(row[3], "Content should not be null");
+            Assert.IsNotNull(row.ReadValue(0), "CommitSha should not be null");
+            Assert.IsNotNull(row.ReadValue(1), "Author should not be null");
+            Assert.IsNotNull(row.ReadValue(2), "LineNumber should not be null");
+            Assert.IsNotNull(row.ReadValue(3), "Content should not be null");
         }
 
         var firstLine = result[0];
-        Assert.AreEqual(1, (int)firstLine[2], "First line number should be 1");
-        Assert.IsTrue(((string)firstLine[3]).Contains("line 1"), "First line content should contain 'line 1'");
+        Assert.AreEqual(1, (int)firstLine.ReadValue(2), "First line number should be 1");
+        Assert.IsTrue(((string)firstLine.ReadValue(3)).Contains("line 1"), "First line content should contain 'line 1'");
     }
 
     [TestMethod]
@@ -256,8 +256,8 @@ public class BlameTests
         Assert.AreEqual(1, result.Count, "Should have exactly 1 author (Test User)");
 
         var row = result[0];
-        Assert.AreEqual("Test User", (string)row[0], "Author should be 'Test User'");
-        Assert.AreEqual(4L, Convert.ToInt64(row[1]), "Total lines should be 4");
+        Assert.AreEqual("Test User", (string)row.ReadValue(0), "Author should be 'Test User'");
+        Assert.AreEqual(4L, Convert.ToInt64(row.ReadValue(1)), "Total lines should be 4");
     }
 
     private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath,

@@ -38,12 +38,12 @@ public class FlatFileSchemaDescribeTests
 
         Assert.AreEqual(1, table.Count, "Should have 1 row (1 unique method)");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
 
         Assert.AreEqual(1, methodNames.Count(m => m == "file"), "Should contain 'file' method once");
 
-        var fileRow = table.First(row => (string)row[0] == "file");
-        Assert.AreEqual("path: System.String", (string)fileRow[1]);
+        var fileRow = table.First(row => (string)row.ReadValue(0) == "file");
+        Assert.AreEqual("path: System.String", (string)fileRow.ReadValue(1));
     }
 
     [TestMethod]
@@ -61,8 +61,8 @@ public class FlatFileSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("file", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
+        Assert.AreEqual("file", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
     }
 
     [TestMethod]
@@ -81,7 +81,7 @@ public class FlatFileSchemaDescribeTests
             Assert.AreEqual(3, table.Columns.Count());
             Assert.IsTrue(table.Count > 0, "Should have rows describing the table columns");
 
-            var columnNames = table.Select(row => (string)row[0]).ToList();
+            var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
             var expectedColumns = new[]
             {
                 nameof(FlatFileEntity.Line),
@@ -156,10 +156,10 @@ public class FlatFileSchemaDescribeTests
                 "Method signature vs table schema should have different row counts");
 
             Assert.AreEqual(1, tableNoArgs.Count);
-            Assert.AreEqual("file", (string)tableNoArgs.First()[0]);
+            Assert.AreEqual("file", (string)tableNoArgs.First().ReadValue(0));
 
             Assert.IsTrue(tableWithArgs.Count > 1);
-            var columnNames = tableWithArgs.Select(row => (string)row[0]).ToList();
+            var columnNames = tableWithArgs.Select(row => (string)row.ReadValue(0)).ToList();
             Assert.IsTrue(columnNames.Contains(nameof(FlatFileEntity.Line)));
             Assert.IsTrue(columnNames.Contains(nameof(FlatFileEntity.LineNumber)));
         }

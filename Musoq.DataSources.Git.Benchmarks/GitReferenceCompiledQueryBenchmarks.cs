@@ -153,10 +153,16 @@ public class GitReferenceCompiledQueryBenchmarks
     {
         using var table = query.Run();
         long checksum = 17;
-        foreach (var row in table)
-            for (var index = 0; index < row.Count; index++)
-                checksum = GitFileHistoryBenchmarks.Fold(checksum, row[index]?.ToString());
-        return checksum;
+        var visitor = new NativeFoldVisitor { Checksum = checksum };
+        foreach (var row in table) row.VisitColumns(ref visitor);
+        return visitor.Checksum;
+    }
+
+    private struct NativeFoldVisitor : IColumnValueVisitor
+    {
+        public long Checksum;
+        public void Visit<T>(int columnIndex, in T value)
+            => Checksum = GitFileHistoryBenchmarks.FoldOne(Checksum, value?.ToString());
     }
 
     private IEnumerable<CompiledQuery> Queries()

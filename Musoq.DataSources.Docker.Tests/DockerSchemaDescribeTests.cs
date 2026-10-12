@@ -62,7 +62,7 @@ public class DockerSchemaDescribeTests
 
         Assert.AreEqual(4, table.Count, "Should have 4 rows (4 unique methods)");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
 
         Assert.AreEqual(1, methodNames.Count(m => m == "containers"), "Should contain 'containers' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "images"), "Should contain 'images' method once");
@@ -82,7 +82,7 @@ public class DockerSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("containers", (string)row[0]);
+        Assert.AreEqual("containers", (string)row.ReadValue(0));
     }
 
     [TestMethod]
@@ -97,7 +97,7 @@ public class DockerSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("images", (string)row[0]);
+        Assert.AreEqual("images", (string)row.ReadValue(0));
     }
 
     [TestMethod]
@@ -112,7 +112,7 @@ public class DockerSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("networks", (string)row[0]);
+        Assert.AreEqual("networks", (string)row.ReadValue(0));
     }
 
     [TestMethod]
@@ -127,7 +127,7 @@ public class DockerSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("volumes", (string)row[0]);
+        Assert.AreEqual("volumes", (string)row.ReadValue(0));
     }
 
     [TestMethod]
@@ -141,7 +141,7 @@ public class DockerSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0, "Should have rows describing the table columns");
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(ContainerListResponse.ID),
@@ -177,7 +177,7 @@ public class DockerSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(ImagesListResponse.Containers),
@@ -208,7 +208,7 @@ public class DockerSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(NetworkResponse.Name),
@@ -246,7 +246,7 @@ public class DockerSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(VolumeResponse.CreatedAt),
@@ -317,10 +317,10 @@ public class DockerSchemaDescribeTests
             "Method signature vs table schema should have different row counts");
 
         Assert.AreEqual(1, tableNoArgs.Count);
-        Assert.AreEqual("containers", (string)tableNoArgs.First()[0]);
+        Assert.AreEqual("containers", (string)tableNoArgs.First().ReadValue(0));
 
         Assert.IsTrue(tableWithArgs.Count > 1);
-        var columnNames = tableWithArgs.Select(row => (string)row[0]).ToList();
+        var columnNames = tableWithArgs.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(columnNames.Contains(nameof(ContainerListResponse.ID)));
         Assert.IsTrue(columnNames.Contains(nameof(ContainerListResponse.Image)));
     }

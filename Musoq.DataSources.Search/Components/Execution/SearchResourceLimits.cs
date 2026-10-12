@@ -552,10 +552,14 @@ internal sealed class SearchRecordByteBudget
                 continue;
             }
 
-            var byteCount = hasCoordinates && coordinates[index].IsMapped
-                ? coordinates[index].CanStart
-                    ? coordinates[index].ByteLength
-                    : 0
+            var byteCount = hasCoordinates
+                ? coordinates[index].IsMapped
+                    ? coordinates[index].CanStart
+                        ? coordinates[index].ByteLength
+                        : 0
+                    : coordinates[index].ByteLength > 0
+                        ? coordinates[index].ByteLength
+                        : CountFallbackBytes(characters, ref index)
                 : CountFallbackBytes(characters, ref index);
             _currentLineBytes = checked(_currentLineBytes + byteCount);
             if (_currentLineBytes > _limit)
@@ -581,6 +585,11 @@ internal sealed class SearchRecordByteBudget
         return _encodingMode is SearchEncodingMode.Utf16LittleEndianBom or
             SearchEncodingMode.Utf16BigEndianBom
             ? checked(length * sizeof(char))
-            : Encoding.UTF8.GetByteCount(characters.Slice(index - length + 1, length));
+            : _encodingMode is SearchEncodingMode.Windows1250 or
+                SearchEncodingMode.Windows1252 or
+                SearchEncodingMode.Iso88592
+                ? SearchEncodingPolicy.CreateLegacyEncoding(_encodingMode)
+                    .GetByteCount(characters.Slice(index - length + 1, length))
+                : Encoding.UTF8.GetByteCount(characters.Slice(index - length + 1, length));
     }
 }

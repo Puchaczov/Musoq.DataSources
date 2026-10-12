@@ -121,29 +121,29 @@ public class GitToSqlTests
             var row = result[0];
             var repoPath = unpackedRepositoryPath.Path;
 
-            Assert.IsTrue(((string)row[0]).TrimEnd(Path.DirectorySeparatorChar) ==
+            Assert.IsTrue(((string)row.ReadValue(0)).TrimEnd(Path.DirectorySeparatorChar) ==
                           Path.Combine(repoPath, ".git").TrimEnd(Path.DirectorySeparatorChar));
-            Assert.IsTrue(((string)row[1]).TrimEnd(Path.DirectorySeparatorChar) ==
+            Assert.IsTrue(((string)row.ReadValue(1)).TrimEnd(Path.DirectorySeparatorChar) ==
                           repoPath.TrimEnd(Path.DirectorySeparatorChar));
-            Assert.IsTrue((string)row[2] == "master");
-            Assert.IsTrue((string)row[3] == "refs/heads/master");
-            Assert.IsTrue(!(bool)row[4]);
-            Assert.IsTrue(!(bool)row[5]);
-            Assert.IsTrue((bool)row[6]);
-            Assert.IsNull((string)row[7]);
-            Assert.IsTrue((string)row[8] == "789f584ce162424f61b33e020e2138aad47e60ba");
-            Assert.IsTrue((string)row[9] == "initial commit\n");
-            Assert.IsTrue((string)row[10] == "initial commit");
-            Assert.IsTrue((string)row[11] == "anonymous");
-            Assert.IsTrue((string)row[12] == "anonymous");
-            Assert.IsTrue(((string)row[13]).TrimEnd(Path.DirectorySeparatorChar) ==
+            Assert.IsTrue((string)row.ReadValue(2) == "master");
+            Assert.IsTrue((string)row.ReadValue(3) == "refs/heads/master");
+            Assert.IsTrue(!(bool)row.ReadValue(4));
+            Assert.IsTrue(!(bool)row.ReadValue(5));
+            Assert.IsTrue((bool)row.ReadValue(6));
+            Assert.IsNull((string)row.ReadValue(7));
+            Assert.IsTrue((string)row.ReadValue(8) == "789f584ce162424f61b33e020e2138aad47e60ba");
+            Assert.IsTrue((string)row.ReadValue(9) == "initial commit\n");
+            Assert.IsTrue((string)row.ReadValue(10) == "initial commit");
+            Assert.IsTrue((string)row.ReadValue(11) == "anonymous");
+            Assert.IsTrue((string)row.ReadValue(12) == "anonymous");
+            Assert.IsTrue(((string)row.ReadValue(13)).TrimEnd(Path.DirectorySeparatorChar) ==
                           Path.Combine(repoPath, ".git").TrimEnd(Path.DirectorySeparatorChar));
-            Assert.IsTrue(((string)row[14]).TrimEnd(Path.DirectorySeparatorChar) ==
+            Assert.IsTrue(((string)row.ReadValue(14)).TrimEnd(Path.DirectorySeparatorChar) ==
                           repoPath.TrimEnd(Path.DirectorySeparatorChar));
-            Assert.IsTrue(!(bool)row[15]);
-            Assert.IsTrue(!(bool)row[16]);
-            Assert.IsTrue(!(bool)row[17]);
-            Assert.IsTrue(!(bool)row[18]);
+            Assert.IsTrue(!(bool)row.ReadValue(15));
+            Assert.IsTrue(!(bool)row.ReadValue(16));
+            Assert.IsTrue(!(bool)row.ReadValue(17));
+            Assert.IsTrue(!(bool)row.ReadValue(18));
         }
     }
 
@@ -180,40 +180,40 @@ public class GitToSqlTests
 
 
         Assert.IsTrue(result.Any(row =>
-            (string)row[0] == "feature/feature_a" &&
-            (string)row[1] == "refs/heads/feature/feature_a" &&
-            !(bool)row[2] &&
-            !(bool)row[3] &&
-            !(bool)row[4] &&
-            row[5] == null &&
-            row[6] == null &&
-            row[7] == null &&
-            (string)row[8] == "3250d89501e0569115a5cda34807e15ba7de0aa6" &&
-            (string)row[9] == "modified library_1\n" &&
-            (string)row[10] == "modified library_1" &&
-            (string)row[11] == "anonymous" &&
-            (string)row[12] == "anonymous" &&
-            row[13] == null &&
-            row[14] == null
+            (string)row.ReadValue(0) == "feature/feature_a" &&
+            (string)row.ReadValue(1) == "refs/heads/feature/feature_a" &&
+            !(bool)row.ReadValue(2) &&
+            !(bool)row.ReadValue(3) &&
+            !(bool)row.ReadValue(4) &&
+            row.ReadValue(5) == null &&
+            row.ReadValue(6) == null &&
+            row.ReadValue(7) == null &&
+            (string)row.ReadValue(8) == "3250d89501e0569115a5cda34807e15ba7de0aa6" &&
+            (string)row.ReadValue(9) == "modified library_1\n" &&
+            (string)row.ReadValue(10) == "modified library_1" &&
+            (string)row.ReadValue(11) == "anonymous" &&
+            (string)row.ReadValue(12) == "anonymous" &&
+            row.ReadValue(13) == null &&
+            row.ReadValue(14) == null
         ), "First row should match feature/feature_a details");
 
 
         Assert.IsTrue(result.Any(row =>
-            (string)row[0] == "master" &&
-            (string)row[1] == "refs/heads/master" &&
-            !(bool)row[2] &&
-            !(bool)row[3] &&
-            (bool)row[4] &&
-            row[5] == null &&
-            row[6] == null &&
-            row[7] == null &&
-            (string)row[8] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
-            (string)row[9] == "add documentation index\n" &&
-            (string)row[10] == "add documentation index" &&
-            (string)row[11] == "anonymous" &&
-            (string)row[12] == "anonymous" &&
-            row[13] == null &&
-            row[14] == null
+            (string)row.ReadValue(0) == "master" &&
+            (string)row.ReadValue(1) == "refs/heads/master" &&
+            !(bool)row.ReadValue(2) &&
+            !(bool)row.ReadValue(3) &&
+            (bool)row.ReadValue(4) &&
+            row.ReadValue(5) == null &&
+            row.ReadValue(6) == null &&
+            row.ReadValue(7) == null &&
+            (string)row.ReadValue(8) == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
+            (string)row.ReadValue(9) == "add documentation index\n" &&
+            (string)row.ReadValue(10) == "add documentation index" &&
+            (string)row.ReadValue(11) == "anonymous" &&
+            (string)row.ReadValue(12) == "anonymous" &&
+            row.ReadValue(13) == null &&
+            row.ReadValue(14) == null
         ), "Second row should match master branch details");
     }
 
@@ -237,43 +237,43 @@ public class GitToSqlTests
         Assert.IsTrue(result.Count == 5, "Result should have 5 entries");
 
         Assert.IsTrue(result.Any(row =>
-            (string)row[0] == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
-            (string)row[1] == "add documentation index\n" &&
-            (string)row[2] == "add documentation index" &&
-            (string)row[3] == "anonymous" &&
-            (string)row[4] == "anonymous"
+            (string)row.ReadValue(0) == "bf8542548c686f98d3c562d2fc78259640d07cbb" &&
+            (string)row.ReadValue(1) == "add documentation index\n" &&
+            (string)row.ReadValue(2) == "add documentation index" &&
+            (string)row.ReadValue(3) == "anonymous" &&
+            (string)row.ReadValue(4) == "anonymous"
         ), "First row should match first commit details");
 
         Assert.IsTrue(result.Any(row =>
-            (string)row[0] == "3250d89501e0569115a5cda34807e15ba7de0aa6" &&
-            (string)row[1] == "modified library_1\n" &&
-            (string)row[2] == "modified library_1" &&
-            (string)row[3] == "anonymous" &&
-            (string)row[4] == "anonymous"
+            (string)row.ReadValue(0) == "3250d89501e0569115a5cda34807e15ba7de0aa6" &&
+            (string)row.ReadValue(1) == "modified library_1\n" &&
+            (string)row.ReadValue(2) == "modified library_1" &&
+            (string)row.ReadValue(3) == "anonymous" &&
+            (string)row.ReadValue(4) == "anonymous"
         ), "Second row should match second commit details");
 
         Assert.IsTrue(result.Any(row =>
-            (string)row[0] == "02c2e53d8712210a4254fc9bd6ee5548a0f1d211" &&
-            (string)row[1] == "add first library\n" &&
-            (string)row[2] == "add first library" &&
-            (string)row[3] == "anonymous" &&
-            (string)row[4] == "anonymous"
+            (string)row.ReadValue(0) == "02c2e53d8712210a4254fc9bd6ee5548a0f1d211" &&
+            (string)row.ReadValue(1) == "add first library\n" &&
+            (string)row.ReadValue(2) == "add first library" &&
+            (string)row.ReadValue(3) == "anonymous" &&
+            (string)row.ReadValue(4) == "anonymous"
         ), "Third row should match third commit details");
 
         Assert.IsTrue(result.Any(row =>
-            (string)row[0] == "595b3f0f51071f84909861e5abc15225a4ef4555" &&
-            (string)row[1] == "first commit\n" &&
-            (string)row[2] == "first commit" &&
-            (string)row[3] == "anonymous" &&
-            (string)row[4] == "anonymous"
+            (string)row.ReadValue(0) == "595b3f0f51071f84909861e5abc15225a4ef4555" &&
+            (string)row.ReadValue(1) == "first commit\n" &&
+            (string)row.ReadValue(2) == "first commit" &&
+            (string)row.ReadValue(3) == "anonymous" &&
+            (string)row.ReadValue(4) == "anonymous"
         ), "Fourth row should match fourth commit details");
 
         Assert.IsTrue(result.Any(row =>
-            (string)row[0] == "789f584ce162424f61b33e020e2138aad47e60ba" &&
-            (string)row[1] == "initial commit\n" &&
-            (string)row[2] == "initial commit" &&
-            (string)row[3] == "anonymous" &&
-            (string)row[4] == "anonymous"
+            (string)row.ReadValue(0) == "789f584ce162424f61b33e020e2138aad47e60ba" &&
+            (string)row.ReadValue(1) == "initial commit\n" &&
+            (string)row.ReadValue(2) == "initial commit" &&
+            (string)row.ReadValue(3) == "anonymous" &&
+            (string)row.ReadValue(4) == "anonymous"
         ), "Fifth row should match fifth commit details");
     }
 
@@ -298,10 +298,10 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string)row[0] == "v0.1");
-        Assert.IsTrue((string)row[1] == "refs/tags/v0.1");
-        Assert.IsNull((string)row[2]);
-        Assert.IsFalse((bool)row[3]);
+        Assert.IsTrue((string)row.ReadValue(0) == "v0.1");
+        Assert.IsTrue((string)row.ReadValue(1) == "refs/tags/v0.1");
+        Assert.IsNull((string)row.ReadValue(2));
+        Assert.IsFalse((bool)row.ReadValue(3));
 
         query = @"
             select
@@ -326,16 +326,16 @@ public class GitToSqlTests
 
         row = result[0];
 
-        Assert.IsTrue((string)row[0] == "v0.0");
-        Assert.IsTrue((string)row[1] == "refs/tags/v0.0");
-        Assert.IsTrue((string)row[2] == "Initial release of repository\n");
-        Assert.IsTrue((bool)row[3]);
-        Assert.IsTrue((string)row[4] == "Initial release of repository\n");
-        Assert.IsTrue((string)row[5] == "v0.0");
-        Assert.IsTrue((string)row[6] == "c834c069c0cbed7ba309bcd6bf530e36f3e77344");
-        Assert.IsTrue((string)row[7] == "anonymous");
-        Assert.IsTrue((string)row[8] == "anonymous@non-existing-domain.com");
-        Assert.IsTrue((DateTimeOffset)row[9] == new DateTimeOffset(2024, 11, 02, 9, 39, 40, TimeSpan.FromHours(1)));
+        Assert.IsTrue((string)row.ReadValue(0) == "v0.0");
+        Assert.IsTrue((string)row.ReadValue(1) == "refs/tags/v0.0");
+        Assert.IsTrue((string)row.ReadValue(2) == "Initial release of repository\n");
+        Assert.IsTrue((bool)row.ReadValue(3));
+        Assert.IsTrue((string)row.ReadValue(4) == "Initial release of repository\n");
+        Assert.IsTrue((string)row.ReadValue(5) == "v0.0");
+        Assert.IsTrue((string)row.ReadValue(6) == "c834c069c0cbed7ba309bcd6bf530e36f3e77344");
+        Assert.IsTrue((string)row.ReadValue(7) == "anonymous");
+        Assert.IsTrue((string)row.ReadValue(8) == "anonymous@non-existing-domain.com");
+        Assert.IsTrue((DateTimeOffset)row.ReadValue(9) == new DateTimeOffset(2024, 11, 02, 9, 39, 40, TimeSpan.FromHours(1)));
     }
 
     [TestMethod]
@@ -358,19 +358,19 @@ public class GitToSqlTests
 
         Assert.IsTrue(result.Count == 2);
 
-        var v01Row = result.FirstOrDefault(r => (string)r[0] == "v0.1");
+        var v01Row = result.FirstOrDefault(r => (string)r.ReadValue(0) == "v0.1");
         Assert.IsNotNull(v01Row);
-        Assert.IsTrue((string)v01Row[1] == "refs/tags/v0.1");
-        Assert.IsNull((string)v01Row[2]);
-        Assert.IsFalse((bool)v01Row[3]);
-        Assert.IsNotNull((string)v01Row[4]);
+        Assert.IsTrue((string)v01Row.ReadValue(1) == "refs/tags/v0.1");
+        Assert.IsNull((string)v01Row.ReadValue(2));
+        Assert.IsFalse((bool)v01Row.ReadValue(3));
+        Assert.IsNotNull((string)v01Row.ReadValue(4));
 
-        var v00Row = result.FirstOrDefault(r => (string)r[0] == "v0.0");
+        var v00Row = result.FirstOrDefault(r => (string)r.ReadValue(0) == "v0.0");
         Assert.IsNotNull(v00Row);
-        Assert.IsTrue((string)v00Row[1] == "refs/tags/v0.0");
-        Assert.IsTrue((string)v00Row[2] == "Initial release of repository\n");
-        Assert.IsTrue((bool)v00Row[3]);
-        Assert.IsNotNull((string)v00Row[4]);
+        Assert.IsTrue((string)v00Row.ReadValue(1) == "refs/tags/v0.0");
+        Assert.IsTrue((string)v00Row.ReadValue(2) == "Initial release of repository\n");
+        Assert.IsTrue((bool)v00Row.ReadValue(3));
+        Assert.IsNotNull((string)v00Row.ReadValue(4));
     }
 
     [TestMethod]
@@ -391,7 +391,7 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string)row[0] == "WIP on master: bf85425 add documentation index");
+        Assert.IsTrue((string)row.ReadValue(0) == "WIP on master: bf85425 add documentation index");
     }
 
     [TestMethod]
@@ -410,9 +410,9 @@ public class GitToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("stash@{0}", (string)result[0][0]);
-        Assert.IsFalse(string.IsNullOrWhiteSpace((string)result[0][1]));
-        Assert.AreEqual("WIP on master: bf85425 add documentation index", (string)result[0][2]);
+        Assert.AreEqual("stash@{0}", (string)result[0].ReadValue(0));
+        Assert.IsFalse(string.IsNullOrWhiteSpace((string)result[0].ReadValue(1)));
+        Assert.AreEqual("WIP on master: bf85425 add documentation index", (string)result[0].ReadValue(2));
     }
 
     [TestMethod]
@@ -439,13 +439,13 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string)row[0] == "documentation/index.md");
-        Assert.IsTrue((string)row[1] == "Deleted");
-        Assert.IsTrue((string)row[2] == "documentation/index.md");
-        Assert.IsTrue((string)row[3] == "NonExecutableFile");
-        Assert.IsTrue((string)row[4] == "Nonexistent");
-        Assert.IsTrue((string)row[5] == "0293f650617fe1ca2c99d4f6dad995b472120843");
-        Assert.IsTrue((string)row[6] == "0000000000000000000000000000000000000000");
+        Assert.IsTrue((string)row.ReadValue(0) == "documentation/index.md");
+        Assert.IsTrue((string)row.ReadValue(1) == "Deleted");
+        Assert.IsTrue((string)row.ReadValue(2) == "documentation/index.md");
+        Assert.IsTrue((string)row.ReadValue(3) == "NonExecutableFile");
+        Assert.IsTrue((string)row.ReadValue(4) == "Nonexistent");
+        Assert.IsTrue((string)row.ReadValue(5) == "0293f650617fe1ca2c99d4f6dad995b472120843");
+        Assert.IsTrue((string)row.ReadValue(6) == "0000000000000000000000000000000000000000");
     }
 
     [TestMethod]
@@ -472,13 +472,13 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string)row[0] == "documentation/index.md");
-        Assert.IsTrue((string)row[1] == "Deleted");
-        Assert.IsTrue((string)row[2] == "documentation/index.md");
-        Assert.IsTrue((string)row[3] == "NonExecutableFile");
-        Assert.IsTrue((string)row[4] == "Nonexistent");
-        Assert.IsTrue((string)row[5] == "0293f650617fe1ca2c99d4f6dad995b472120843");
-        Assert.IsTrue((string)row[6] == "0000000000000000000000000000000000000000");
+        Assert.IsTrue((string)row.ReadValue(0) == "documentation/index.md");
+        Assert.IsTrue((string)row.ReadValue(1) == "Deleted");
+        Assert.IsTrue((string)row.ReadValue(2) == "documentation/index.md");
+        Assert.IsTrue((string)row.ReadValue(3) == "NonExecutableFile");
+        Assert.IsTrue((string)row.ReadValue(4) == "Nonexistent");
+        Assert.IsTrue((string)row.ReadValue(5) == "0293f650617fe1ca2c99d4f6dad995b472120843");
+        Assert.IsTrue((string)row.ReadValue(6) == "0000000000000000000000000000000000000000");
     }
 
     [TestMethod]
@@ -619,8 +619,8 @@ public class GitToSqlTests
 
         var row = result[0];
 
-        Assert.IsTrue((string)row[0] == "789f584ce162424f61b33e020e2138aad47e60ba");
-        Assert.IsTrue((string)row[1] == "389642ba15392c4540e82628bdff9c99dc6f7923");
+        Assert.IsTrue((string)row.ReadValue(0) == "789f584ce162424f61b33e020e2138aad47e60ba");
+        Assert.IsTrue((string)row.ReadValue(1) == "389642ba15392c4540e82628bdff9c99dc6f7923");
     }
 
     [TestMethod]
@@ -642,9 +642,9 @@ public class GitToSqlTests
         Assert.IsTrue(result.Count > 0);
 
         var row = result[0];
-        Assert.IsNotNull((string)row[0]);
-        Assert.IsTrue((string)row[1] == "anonymous");
-        Assert.IsNotNull((string)row[2]);
+        Assert.IsNotNull((string)row.ReadValue(0));
+        Assert.IsTrue((string)row.ReadValue(1) == "anonymous");
+        Assert.IsNotNull((string)row.ReadValue(2));
     }
 
     [TestMethod]
@@ -664,9 +664,9 @@ public class GitToSqlTests
 
         Assert.IsTrue(result.Count > 0);
 
-        var masterBranch = result.FirstOrDefault(r => ((string)r[0])?.Contains("master") == true);
+        var masterBranch = result.FirstOrDefault(r => ((string)r.ReadValue(0))?.Contains("master") == true);
         Assert.IsNotNull(masterBranch);
-        Assert.IsNotNull((string)masterBranch[2]);
+        Assert.IsNotNull((string)masterBranch.ReadValue(2));
     }
 
     [TestMethod]
@@ -691,12 +691,12 @@ public class GitToSqlTests
         Assert.IsTrue(result.Count >= 0);
 
         var row = result[0];
-        Assert.IsNotNull(row[0]);
-        Assert.IsNotNull(row[1]);
-        Assert.IsNotNull(row[2]);
-        Assert.IsNotNull(row[3]);
-        Assert.IsNotNull(row[4]);
-        Assert.IsNotNull(row[5]);
+        Assert.IsNotNull(row.ReadValue(0));
+        Assert.IsNotNull(row.ReadValue(1));
+        Assert.IsNotNull(row.ReadValue(2));
+        Assert.IsNotNull(row.ReadValue(3));
+        Assert.IsNotNull(row.ReadValue(4));
+        Assert.IsNotNull(row.ReadValue(5));
     }
 
     [TestMethod]
@@ -718,7 +718,7 @@ public class GitToSqlTests
 
         foreach (var row in result)
         {
-            var filePath = row[1] as string;
+            var filePath = row.ReadValue(1) as string;
             Assert.IsTrue(filePath?.EndsWith("README.md", StringComparison.OrdinalIgnoreCase) ?? false);
         }
     }
@@ -823,8 +823,8 @@ public class GitToSqlTests
 
         Assert.AreEqual(1, result.Count, "Should return exactly 1 change");
 
-        var secondCommitSha = (string)allResults[1][0];
-        Assert.AreEqual(secondCommitSha, (string)result[0][0], "Should return the second commit");
+        var secondCommitSha = (string)allResults[1].ReadValue(0);
+        Assert.AreEqual(secondCommitSha, (string)result[0].ReadValue(0), "Should return the second commit");
     }
 
     [TestMethod]
@@ -842,7 +842,7 @@ public class GitToSqlTests
         var allResults = vmAll.Run();
 
         Assert.IsTrue(allResults.Count >= 1, "Should have at least 1 change");
-        var oldestCommitSha = (string)allResults[allResults.Count - 1][0];
+        var oldestCommitSha = (string)allResults[allResults.Count - 1].ReadValue(0);
 
         var queryOldest = @"
             select
@@ -856,7 +856,7 @@ public class GitToSqlTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Should return exactly 1 change (oldest)");
-        Assert.AreEqual(oldestCommitSha, (string)result[0][0], "Should return the oldest commit");
+        Assert.AreEqual(oldestCommitSha, (string)result[0].ReadValue(0), "Should return the oldest commit");
     }
 
     private static List<CommitRow> GetBranchSpecificCommitRows(

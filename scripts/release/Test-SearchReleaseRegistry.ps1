@@ -27,9 +27,9 @@ Assert-Condition ($searchPackages.Count -eq 1) "The release registry must resolv
 $search = $searchPackages[0]
 
 Assert-Condition ($search.Slug -eq "search") "Search must use the canonical release slug."
-Assert-Condition ($search.Version -eq "1.0.1-alpha.1") "Search must use its next patch 1.0.1-alpha.1 version."
+Assert-Condition ($search.Version -eq "1.0.2-alpha.1") "Search must use its next 1.0.2-alpha.1 version."
 Assert-Condition ($search.ProjectPath -eq "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj") "Search must resolve to the production project path."
-Assert-Condition (-not $search.PublishToNuGet) "Search must be configured as registry-only."
+Assert-Condition ($search.PublishToNuGet) "Search must be configured for NuGet publication."
 Assert-Condition (Test-ReleasePluginProject -ProjectPath $search.FullProjectPath) "The registered Search project must contain a production datasource schema."
 
 $excludedRegistryProjects = @($packages | Where-Object {
@@ -52,6 +52,7 @@ $searchTag = "$($search.Version)-$($search.PackageId)"
 $release = Resolve-DatasourceReleaseTag -Tag $searchTag
 Assert-Condition ($release.PackageId -eq "Musoq.DataSources.Search") "Search tag validation must resolve the Search package."
 Assert-Condition ($release.Version -eq $search.Version) "Search tag validation must preserve the registry version."
+Assert-Condition ($release.PublishToNuGet) "Search tag validation must preserve enabled NuGet publication."
 
 $batchJson = & (Join-Path $PSScriptRoot "Resolve-BatchRelease.ps1") -Selection "search" -Json
 if ($LASTEXITCODE -ne 0) {
@@ -60,6 +61,7 @@ if ($LASTEXITCODE -ne 0) {
 $batchRelease = @($batchJson | ConvertFrom-Json)
 Assert-Condition ($batchRelease.Count -eq 1) "Batch release selection must resolve exactly one Search package."
 Assert-Condition ($batchRelease[0].tag -eq $searchTag) "Batch release selection must produce Search's exact release tag."
+Assert-Condition ($batchRelease[0].publishToNuGet) "Batch release selection must preserve enabled NuGet publication for Search."
 
 [ordered]@{
     packageCount = $packages.Count

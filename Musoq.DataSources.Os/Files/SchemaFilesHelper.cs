@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -8,7 +8,6 @@ namespace Musoq.DataSources.Os.Files;
 internal static class SchemaFilesHelper
 {
     public static readonly IReadOnlyDictionary<string, int> FilesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<FileEntity, object?>> FilesIndexToMethodAccessMap;
     public static readonly ISchemaColumn[] FilesColumns;
 
     static SchemaFilesHelper()
@@ -30,25 +29,6 @@ internal static class SchemaFilesHelper
             { nameof(FileEntity.Exists), 12 },
             { nameof(FileEntity.IsReadOnly), 13 },
             { nameof(FileEntity.Length), 14 }
-        };
-
-        FilesIndexToMethodAccessMap = new Dictionary<int, Func<FileEntity, object?>>
-        {
-            { 0, entity => entity.Name },
-            { 1, entity => entity.FileName },
-            { 2, entity => entity.CreationTime },
-            { 3, entity => entity.CreationTimeUtc },
-            { 4, entity => entity.LastAccessTime },
-            { 5, entity => entity.LastAccessTimeUtc },
-            { 6, entity => entity.LastWriteTime },
-            { 7, entity => entity.LastWriteTimeUtc },
-            { 8, entity => entity.DirectoryName },
-            { 9, entity => entity.DirectoryPath },
-            { 10, entity => entity.Extension },
-            { 11, entity => entity.FullPath },
-            { 12, entity => entity.Exists },
-            { 13, entity => entity.IsReadOnly },
-            { 14, entity => entity.Length }
         };
 
         FilesColumns =

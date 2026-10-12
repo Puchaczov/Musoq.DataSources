@@ -7,9 +7,6 @@ internal static class ContainersSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> ContainersNameToIndexMap;
 
-    public static readonly IReadOnlyDictionary<int, Func<ContainerEntity, object?>>
-        ContainersIndexToMethodAccessMap;
-
     public static readonly ISchemaColumn[] ContainersColumns;
 
     static ContainersSourceHelper()
@@ -31,25 +28,6 @@ internal static class ContainersSourceHelper
             { nameof(ContainerEntity.NetworkSettings), 12 },
             { nameof(ContainerEntity.Mounts), 13 },
             { nameof(ContainerEntity.FlattenPorts), 14 }
-        };
-
-        ContainersIndexToMethodAccessMap = new Dictionary<int, Func<ContainerEntity, object?>>
-        {
-            { 0, info => info.ID },
-            { 1, info => info.Names },
-            { 2, info => info.Image },
-            { 3, info => info.ImageID },
-            { 4, info => info.Command },
-            { 5, info => info.Created },
-            { 6, info => info.Ports },
-            { 7, info => info.SizeRw },
-            { 8, info => info.SizeRootFs },
-            { 9, info => info.Labels },
-            { 10, info => info.State },
-            { 11, info => info.Status },
-            { 12, info => info.NetworkSettings },
-            { 13, info => info.Mounts },
-            { 14, info => info.FlattenPorts }
         };
 
         ContainersColumns =

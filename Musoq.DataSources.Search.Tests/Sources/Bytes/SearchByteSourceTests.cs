@@ -246,12 +246,12 @@ public sealed class SearchByteSourceTests
                 new[] { "Path", "MatchIndex", "ByteOffset", "ByteLength" },
                 result.Columns.Select(static column => column.ColumnName).ToArray());
             Assert.AreEqual(2, result.Count);
-            Assert.AreEqual("payload.bin", result[0][0]);
-            Assert.AreEqual(0L, result[0][1]);
-            Assert.AreEqual(1L, result[0][2]);
-            Assert.AreEqual(2L, result[0][3]);
-            Assert.AreEqual(1L, result[1][1]);
-            Assert.AreEqual(4L, result[1][2]);
+            Assert.AreEqual("payload.bin", result[0].ReadValue(0));
+            Assert.AreEqual(0L, result[0].ReadValue(1));
+            Assert.AreEqual(1L, result[0].ReadValue(2));
+            Assert.AreEqual(2L, result[0].ReadValue(3));
+            Assert.AreEqual(1L, result[1].ReadValue(1));
+            Assert.AreEqual(4L, result[1].ReadValue(2));
 
         }
         finally
@@ -307,14 +307,14 @@ public sealed class SearchByteSourceTests
                 new[] { "ByteOffset", "WindowStartByteOffset", "WindowByteLength", "WindowComplete" },
                 result.Columns.Select(static column => column.ColumnName).ToArray());
             Assert.AreEqual(2, result.Count);
-            Assert.AreEqual(1L, result[0][0]);
-            Assert.AreEqual(0L, result[0][1]);
-            Assert.AreEqual(5L, result[0][2]);
-            Assert.AreEqual(true, result[0][3]);
-            Assert.AreEqual(4L, result[1][0]);
-            Assert.AreEqual(3L, result[1][1]);
-            Assert.AreEqual(3L, result[1][2]);
-            Assert.AreEqual(false, result[1][3]);
+            Assert.AreEqual(1L, result[0].ReadValue(0));
+            Assert.AreEqual(0L, result[0].ReadValue(1));
+            Assert.AreEqual(5L, result[0].ReadValue(2));
+            Assert.AreEqual(true, result[0].ReadValue(3));
+            Assert.AreEqual(4L, result[1].ReadValue(0));
+            Assert.AreEqual(3L, result[1].ReadValue(1));
+            Assert.AreEqual(3L, result[1].ReadValue(2));
+            Assert.AreEqual(false, result[1].ReadValue(3));
         }
         finally
         {

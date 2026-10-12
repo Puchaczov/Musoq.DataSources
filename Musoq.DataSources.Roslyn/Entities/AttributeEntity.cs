@@ -38,6 +38,12 @@ public class AttributeEntity
     }
 
     /// <summary>
+    ///     Gets the fully qualified name of the resolved attribute type, including the Attribute suffix.
+    ///     Returns null when the attribute type cannot be resolved.
+    /// </summary>
+    public string? FullName => _attributeData.AttributeClass?.ToDisplayString();
+
+    /// <summary>
     ///     Gets the constructor arguments of the attribute as strings.
     /// </summary>
     [BindablePropertyAsTable]

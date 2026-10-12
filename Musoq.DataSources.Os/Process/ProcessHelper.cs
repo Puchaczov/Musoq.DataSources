@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Musoq.Schema;
@@ -9,9 +9,6 @@ namespace Musoq.DataSources.Os.Process;
 internal static class ProcessHelper
 {
     public static readonly IReadOnlyDictionary<string, int> ProcessNameToIndexMap;
-
-    public static readonly IReadOnlyDictionary<int, Func<System.Diagnostics.Process, object>>
-        ProcessIndexToMethodAccessMap;
 
     public static readonly ISchemaColumn[] ProcessColumns;
 
@@ -38,53 +35,6 @@ internal static class ProcessHelper
             { nameof(System.Diagnostics.Process.UserProcessorTime), 16 },
             { "Directory", 17 },
             { "FileName", 18 }
-        };
-
-        ProcessIndexToMethodAccessMap = new Dictionary<int, Func<System.Diagnostics.Process, object>>
-        {
-            { 0, info => info.BasePriority },
-            { 1, info => info.EnableRaisingEvents },
-            { 2, info => info.ExitCode },
-            { 3, info => info.ExitTime },
-            { 4, info => info.Handle },
-            { 5, info => info.HandleCount },
-            { 6, info => info.HasExited },
-            { 7, info => info.Id },
-            { 8, info => info.MachineName },
-            { 9, info => info.MainWindowTitle },
-            { 10, info => info.PagedMemorySize64 },
-            { 11, info => info.ProcessName },
-            { 12, info => info.ProcessorAffinity },
-            { 13, info => info.Responding },
-            { 14, info => info.StartTime },
-            { 15, info => info.TotalProcessorTime },
-            { 16, info => info.UserProcessorTime },
-            {
-                17, info =>
-                {
-                    try
-                    {
-                        return new FileInfo(info.MainModule.FileName).Directory.FullName;
-                    }
-                    catch (Exception)
-                    {
-                        return "None";
-                    }
-                }
-            },
-            {
-                18, info =>
-                {
-                    try
-                    {
-                        return new FileInfo(info.MainModule.FileName).Name;
-                    }
-                    catch (Exception)
-                    {
-                        return "None";
-                    }
-                }
-            }
         };
 
         ProcessColumns =

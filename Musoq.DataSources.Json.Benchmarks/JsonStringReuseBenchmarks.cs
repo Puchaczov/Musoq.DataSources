@@ -63,12 +63,21 @@ public class JsonStringReuseBenchmarks
     [Benchmark]
     public long Scan()
     {
-        var source = new JsonSource(_path, _context);
         long checksum = 0;
-        foreach (var chunk in source.Chunks)
-        foreach (var row in chunk)
-            foreach (var value in row)
-                checksum += value?.GetHashCode() ?? 0;
+        if (Cardinality == JsonStringReuseCardinality.Low)
+        {
+            var source = NativeJsonBenchmarkRows.Open<NativeJsonBenchmarkRows.FlatRow, NativeJsonBenchmarkRows.FlatMaterializer>(_path, _context);
+            foreach (var chunk in source.Chunks)
+            foreach (var row in chunk)
+                checksum += (row.Station?.GetHashCode() ?? 0) + row.Temperature.GetHashCode() + row.Sequence.GetHashCode();
+        }
+        else
+        {
+            var source = NativeJsonBenchmarkRows.Open<NativeJsonBenchmarkRows.TextRow, NativeJsonBenchmarkRows.TextMaterializer>(_path, _context);
+            foreach (var chunk in source.Chunks)
+            foreach (var row in chunk)
+                checksum += row.Value?.GetHashCode() ?? 0;
+        }
         return checksum;
     }
 

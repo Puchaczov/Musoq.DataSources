@@ -22,6 +22,7 @@ internal sealed class SearchAuditSource : RowSourceBase<SearchAudit>
 
     private readonly SearchRequest _request;
     private readonly SourceExecutionContext _executionContext;
+    private readonly Func<SearchAudit, bool>? _acceptedRow;
     private readonly Func<string, TextReader>? _readerFactory;
 
     internal SearchAuditSource(
@@ -31,6 +32,7 @@ internal sealed class SearchAuditSource : RowSourceBase<SearchAudit>
     {
         _request = request ?? throw new ArgumentNullException(nameof(request));
         _executionContext = executionContext ?? throw new ArgumentNullException(nameof(executionContext));
+        _acceptedRow = TypedPredicatePlan.Get<SearchAudit>(executionContext.Plan);
         _readerFactory = readerFactory;
     }
 
@@ -102,11 +104,8 @@ internal sealed class SearchAuditSource : RowSourceBase<SearchAudit>
             var acceptedWindow = SearchSliceWindow.Create(
                 _executionContext.Plan.AcceptedSkip,
                 _executionContext.Plan.AcceptedTake);
-            if (_executionContext.Plan.AcceptedPredicate is not null &&
-                !SearchPredicateEvaluator.Matches(
-                    _executionContext.Plan.AcceptedPredicate,
-                    row,
-                    SearchPredicateValues.GetAuditValue))
+            if (_acceptedRow is not null &&
+                !_acceptedRow!(row))
             {
                 return;
             }

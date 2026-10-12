@@ -1,4 +1,4 @@
-﻿using Musoq.Schema;
+using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Optimization;
@@ -33,7 +33,7 @@ public class OpenAiSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Models to use</virtual-param>
+    ///         <virtual-param name="model">Models to use</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -48,11 +48,11 @@ public class OpenAiSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>
+    ///         <virtual-param name="model">
     ///             Models to use: gpt-4, gpt-4-32k, gpt-4-vision-preview, gpt-4-turbo-preview, gpt-3.5-turbo,
     ///             gpt-3.5-turbo-1106, gpt-3.5-turbo-16k, gpt-3.5-turbo-instruct, babbage-002, davinci-002
     ///         </virtual-param>
-    ///         <virtual-param>Max tokens to generate</virtual-param>
+    ///         <virtual-param name="maxTokens">Max tokens to generate</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -67,12 +67,12 @@ public class OpenAiSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>
+    ///         <virtual-param name="model">
     ///             Models to use: gpt-4, gpt-4-32k, gpt-4-vision-preview, gpt-4-turbo-preview, gpt-3.5-turbo,
     ///             gpt-3.5-turbo-1106, gpt-3.5-turbo-16k, gpt-3.5-turbo-instruct, babbage-002, davinci-002
     ///         </virtual-param>
-    ///         <virtual-param>Max tokens to generate</virtual-param>
-    ///         <virtual-param>Temperature</virtual-param>
+    ///         <virtual-param name="maxTokens">Max tokens to generate</virtual-param>
+    ///         <virtual-param name="temperature">Temperature</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -87,13 +87,13 @@ public class OpenAiSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>
+    ///         <virtual-param name="model">
     ///             Models to use: gpt-4, gpt-4-32k, gpt-4-vision-preview, gpt-4-turbo-preview, gpt-3.5-turbo,
     ///             gpt-3.5-turbo-1106, gpt-3.5-turbo-16k, gpt-3.5-turbo-instruct, babbage-002, davinci-002
     ///         </virtual-param>
-    ///         <virtual-param>Max tokens to generate</virtual-param>
-    ///         <virtual-param>Temperature</virtual-param>
-    ///         <virtual-param>Frequency penalty</virtual-param>
+    ///         <virtual-param name="maxTokens">Max tokens to generate</virtual-param>
+    ///         <virtual-param name="temperature">Temperature</virtual-param>
+    ///         <virtual-param name="frequencyPenalty">Frequency penalty</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -108,14 +108,14 @@ public class OpenAiSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>
+    ///         <virtual-param name="model">
     ///             Models to use: gpt-4, gpt-4-32k, gpt-4-vision-preview, gpt-4-turbo-preview, gpt-3.5-turbo,
     ///             gpt-3.5-turbo-1106, gpt-3.5-turbo-16k, gpt-3.5-turbo-instruct, babbage-002, davinci-002
     ///         </virtual-param>
-    ///         <virtual-param>Max tokens to generate</virtual-param>
-    ///         <virtual-param>Temperature</virtual-param>
-    ///         <virtual-param>Frequency penalty</virtual-param>
-    ///         <virtual-param>Presence penalty</virtual-param>
+    ///         <virtual-param name="maxTokens">Max tokens to generate</virtual-param>
+    ///         <virtual-param name="temperature">Temperature</virtual-param>
+    ///         <virtual-param name="frequencyPenalty">Frequency penalty</virtual-param>
+    ///         <virtual-param name="presencePenalty">Presence penalty</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -158,22 +158,22 @@ public class OpenAiSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return EnsureSourceType<T, OpenAiEntity>(
             name,
             new OpenAiSingleRowSource(executionContext, new OpenAiRequestInfo
             {
-                Model = parameters.Length > 0
-                    ? Convert.ToString(parameters[0]) ?? Defaults.DefaultModel
+                Model = parameters.Count > 0
+                    ? parameters.GetValue<string>(0) ?? Defaults.DefaultModel
                     : Defaults.DefaultModel,
-                MaxTokens = parameters.Length > 1 ? Convert.ToInt32(parameters[1]) : 4000,
-                Temperature = parameters.Length > 2 ? Convert.ToSingle(parameters[2]) : 0,
-                FrequencyPenalty = parameters.Length > 3 ? Convert.ToSingle(parameters[3]) : 0,
-                PresencePenalty = parameters.Length > 4 ? Convert.ToSingle(parameters[4]) : 0
+                MaxTokens = parameters.Count > 1 ? parameters.GetValue<int>(1) : 4000,
+                Temperature = parameters.Count > 2 ? parameters.GetValue<float>(2) : 0,
+                FrequencyPenalty = parameters.Count > 3 ? parameters.GetValue<float>(3) : 0,
+                PresencePenalty = parameters.Count > 4 ? parameters.GetValue<float>(4) : 0
             }));
     }
 

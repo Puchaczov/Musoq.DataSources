@@ -16,11 +16,6 @@ public class BlameLineEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>
-    ///     A read-only dictionary mapping column indices to functions that access the corresponding properties.
-    /// </summary>
-    public static readonly IReadOnlyDictionary<int, Func<BlameLineEntity, object?>> IndexToObjectAccessMap;
-
-    /// <summary>
     ///     An array of schema columns representing the structure of the blame line entity.
     /// </summary>
     public static readonly ISchemaColumn[] Columns =
@@ -42,12 +37,6 @@ public class BlameLineEntity
             { nameof(Self), 2 }
         };
 
-        IndexToObjectAccessMap = new Dictionary<int, Func<BlameLineEntity, object?>>
-        {
-            { 0, entity => entity.LineNumber },
-            { 1, entity => entity.Content },
-            { 2, entity => entity.Self }
-        };
     }
 
     /// <summary>

@@ -31,17 +31,17 @@ public sealed class SearchInterpretationCompositionTests
             CollectionAssert.AreEqual(
                 new[]
                 {
-                    "candidates.Path", "candidates.Origin", "candidates.LineNumber", "candidates.OccurrenceCount",
-                    "log.Timestamp", "log.Level", "log.Message"
+                    "Path", "Origin", "LineNumber", "OccurrenceCount",
+                    "Timestamp", "Level", "Message"
                 },
                 actualColumns);
-            Assert.AreEqual("fixture.log", result[0][0]);
-            Assert.IsNull(result[0][1]);
-            Assert.AreEqual(2L, result[0][2]);
-            Assert.AreEqual(2L, result[0][3]);
-            Assert.AreEqual("2026-09-07", result[0][4]);
-            Assert.AreEqual("ERROR", result[0][5]);
-            Assert.AreEqual("first ERROR second", result[0][6]);
+            Assert.AreEqual("fixture.log", result[0].ReadValue(0));
+            Assert.IsNull(result[0].ReadValue(1));
+            Assert.AreEqual(2L, result[0].ReadValue(2));
+            Assert.AreEqual(2L, result[0].ReadValue(3));
+            Assert.AreEqual("2026-09-07", result[0].ReadValue(4));
+            Assert.AreEqual("ERROR", result[0].ReadValue(5));
+            Assert.AreEqual("first ERROR second", result[0].ReadValue(6));
         }
         finally
         {
@@ -81,12 +81,12 @@ public sealed class SearchInterpretationCompositionTests
             var result = compiled.Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("fixture.log", result[0][0]);
-            Assert.IsNull(result[0][1]);
-            Assert.AreEqual(1L, result[0][2]);
-            Assert.AreEqual(1L, result[0][3]);
-            Assert.IsNull(result[0][4]);
-            Assert.IsNull(result[0][5]);
+            Assert.AreEqual("fixture.log", result[0].ReadValue(0));
+            Assert.IsNull(result[0].ReadValue(1));
+            Assert.AreEqual(1L, result[0].ReadValue(2));
+            Assert.AreEqual(1L, result[0].ReadValue(3));
+            Assert.IsNull(result[0].ReadValue(4));
+            Assert.IsNull(result[0].ReadValue(5));
         }
         finally
         {
@@ -108,13 +108,13 @@ public sealed class SearchInterpretationCompositionTests
             var result = compiled.Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("fixture.log", result[0][0]);
-            Assert.IsNull(result[0][1]);
-            Assert.AreEqual(1L, result[0][2]);
-            Assert.AreEqual(1L, result[0][3]);
-            Assert.AreEqual("Level", result[0][4]);
-            StringAssert.Contains((string)result[0][5]!, "ISE");
-            Assert.IsTrue((int)result[0][6]! > 0);
+            Assert.AreEqual("fixture.log", result[0].ReadValue(0));
+            Assert.IsNull(result[0].ReadValue(1));
+            Assert.AreEqual(1L, result[0].ReadValue(2));
+            Assert.AreEqual(1L, result[0].ReadValue(3));
+            Assert.AreEqual("Level", result[0].ReadValue(4));
+            StringAssert.Contains((string)result[0].ReadValue(5)!, "ISE");
+            Assert.IsTrue((int)result[0].ReadValue(6)! > 0);
         }
         finally
         {

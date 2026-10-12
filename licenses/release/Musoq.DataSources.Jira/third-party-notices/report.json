@@ -16,7 +16,7 @@
   },
   {
     "PackageId": "Microsoft.Build.Tasks.Git",
-    "PackageVersion": "8.0.0",
+    "PackageVersion": "10.0.303",
     "License": "MIT"
   },
   {
@@ -30,43 +30,33 @@
     "License": "MIT"
   },
   {
-    "PackageId": "Microsoft.NETCore.Platforms",
-    "PackageVersion": "1.1.0",
-    "License": "MIT"
-  },
-  {
     "PackageId": "Microsoft.SourceLink.Common",
-    "PackageVersion": "8.0.0",
+    "PackageVersion": "10.0.303",
     "License": "MIT"
   },
   {
     "PackageId": "Microsoft.SourceLink.GitHub",
-    "PackageVersion": "8.0.0",
+    "PackageVersion": "10.0.303",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Parser",
-    "PackageVersion": "17.0.11-alpha.1",
+    "PackageVersion": "17.0.12-alpha.1",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Plugins",
-    "PackageVersion": "17.0.11-alpha.1",
+    "PackageVersion": "17.0.12-alpha.1",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Schema",
-    "PackageVersion": "17.0.11-alpha.1",
-    "License": "MIT"
-  },
-  {
-    "PackageId": "NETStandard.Library",
-    "PackageVersion": "1.6.1",
+    "PackageVersion": "17.0.12-alpha.1",
     "License": "MIT"
   },
   {
     "PackageId": "Newtonsoft.Json",
-    "PackageVersion": "10.0.3",
+    "PackageVersion": "13.0.4",
     "License": "MIT"
   },
   {
@@ -75,8 +65,13 @@
     "License": "Apache-2.0"
   },
   {
+    "PackageId": "System.IO.Hashing",
+    "PackageVersion": "10.0.11",
+    "License": "MIT"
+  },
+  {
     "PackageId": "Musoq.DataSources.Jira",
-    "PackageVersion": "2.0.4-alpha.1",
+    "PackageVersion": "2.0.5-alpha.1",
     "License": "MIT"
   }
 ]

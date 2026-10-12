@@ -5,12 +5,13 @@ using LibGit2Sharp;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
+using Musoq.DataSources.Common;
 
 namespace Musoq.DataSources.Git;
 
 internal sealed class RemotesRowsSource : GitDiagnosticRowsSourceBase<RemoteEntity>
 {
-    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly Func<RemoteEntity, bool>? _acceptedPredicate;
     private readonly Func<string, Repository> _createRepository;
     private readonly GitFilterParameters _filters;
     private readonly GitProjection _projection;
@@ -21,7 +22,7 @@ internal sealed class RemotesRowsSource : GitDiagnosticRowsSourceBase<RemoteEnti
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;
-        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _acceptedPredicate = TypedPredicatePlan.Get<RemoteEntity>(executionContext.Plan);
         _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
         _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
     }
@@ -37,7 +38,7 @@ internal sealed class RemotesRowsSource : GitDiagnosticRowsSourceBase<RemoteEnti
             if (!GitSourcePlanner.Matches(_filters, remote))
                 return true;
             var entity = GitEntitySnapshots.Remote(remote, _projection);
-            if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
+            if (_acceptedPredicate is not null && !_acceptedPredicate(entity))
                 return true;
 
             chunk.Add(entity);

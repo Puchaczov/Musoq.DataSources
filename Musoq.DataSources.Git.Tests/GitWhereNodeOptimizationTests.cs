@@ -51,7 +51,7 @@ public class GitWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(5, result.Count, "All 5 commits in Repository2 are by 'anonymous'");
-        Assert.IsTrue(result.All(r => (string)r[1] == "anonymous"),
+        Assert.IsTrue(result.All(r => (string)r.ReadValue(1) == "anonymous"),
             "Every returned commit should have Author = 'anonymous'");
     }
 
@@ -93,8 +93,8 @@ public class GitWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Exactly one commit should match the specific SHA");
-        Assert.AreEqual(targetSha, (string)result[0][0], "The returned SHA should match the queried SHA");
-        Assert.AreEqual("initial commit", (string)result[0][1], "The commit short message should match");
+        Assert.AreEqual(targetSha, (string)result[0].ReadValue(0), "The returned SHA should match the queried SHA");
+        Assert.AreEqual("initial commit", (string)result[0].ReadValue(1), "The commit short message should match");
     }
 
     [TestMethod]
@@ -114,8 +114,8 @@ public class GitWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Only one annotated tag (v0.0) should be returned");
-        Assert.AreEqual("v0.0", (string)result[0][0]);
-        Assert.IsTrue((bool)result[0][1]);
+        Assert.AreEqual("v0.0", (string)result[0].ReadValue(0));
+        Assert.IsTrue((bool)result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -135,8 +135,8 @@ public class GitWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Only one non-annotated tag (v0.1) should be returned");
-        Assert.AreEqual("v0.1", (string)result[0][0]);
-        Assert.IsFalse((bool)result[0][1]);
+        Assert.AreEqual("v0.1", (string)result[0].ReadValue(0));
+        Assert.IsFalse((bool)result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -156,8 +156,8 @@ public class GitWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Exactly one tag should match FriendlyName = 'v0.1'");
-        Assert.AreEqual("v0.1", (string)result[0][0]);
-        Assert.AreEqual("refs/tags/v0.1", (string)result[0][1]);
+        Assert.AreEqual("v0.1", (string)result[0].ReadValue(0));
+        Assert.AreEqual("refs/tags/v0.1", (string)result[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -177,8 +177,8 @@ public class GitWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(1, result.Count, "Exactly one branch named 'master' should be returned");
-        Assert.AreEqual("master", (string)result[0][0]);
-        Assert.IsTrue((bool)result[0][1], "'master' should be the current repository HEAD");
+        Assert.AreEqual("master", (string)result[0].ReadValue(0));
+        Assert.IsTrue((bool)result[0].ReadValue(1), "'master' should be the current repository HEAD");
     }
 
     [TestMethod]
@@ -198,10 +198,32 @@ public class GitWhereNodeOptimizationTests
         var result = vm.Run();
 
         Assert.AreEqual(2, result.Count, "Both branches in Repository2 are local");
-        Assert.IsTrue(result.All(r => !(bool)r[1]), "All returned branches should have IsRemote = false");
-        Assert.IsTrue(result.Any(r => (string)r[0] == "master"), "master branch should be in results");
-        Assert.IsTrue(result.Any(r => (string)r[0] == "feature/feature_a"),
+        Assert.IsTrue(result.All(r => !(bool)r.ReadValue(1)), "All returned branches should have IsRemote = false");
+        Assert.IsTrue(result.Any(r => (string)r.ReadValue(0) == "master"), "master branch should be in results");
+        Assert.IsTrue(result.Any(r => (string)r.ReadValue(0) == "feature/feature_a"),
             "feature/feature_a branch should be in results");
+    }
+
+    [TestMethod]
+    public async Task Query_WhenCommitDateAndAuthorPredicatesAreCombined_MatchesIndependentRepositoryRows()
+    {
+        using var unpacked = await UnpackGitRepositoryAsync(Repository2ZipPath);
+        using var repository = new LibGit2Sharp.Repository(unpacked.Path);
+        var cutoff = repository.Commits.Select(static commit => commit.Committer.When).OrderBy(static value => value).ElementAt(2);
+        var expected = repository.Commits.Where(commit => commit.Author.Name == "anonymous" && commit.Committer.When >= cutoff)
+            .Select(static commit => (commit.Sha, commit.Committer.When)).OrderBy(static row => row.Sha, StringComparer.Ordinal).ToArray();
+        var query = $"select Sha, CommittedWhen from git.commits('{unpacked.Path.Escape()}') where Author in ('anonymous','nobody') " +
+                    $"and CommittedWhen >= ToDateTimeOffset('{cutoff.ToString("O", CultureInfo.InvariantCulture)}') order by Sha";
+        using var compiled = CreateAndRunVirtualMachine(query);
+        for (var run = 0; run < 2; run++)
+        {
+            using var table = compiled.Run();
+            Assert.AreEqual(expected.Length, table.Count);
+            CollectionAssert.AreEqual(new[] { "Sha", "CommittedWhen" }, table.Columns.Select(static column => column.ColumnName).ToArray());
+            CollectionAssert.AreEqual(new[] { typeof(string), typeof(DateTimeOffset) }, table.Columns.Select(static column => column.ColumnType).ToArray());
+            CollectionAssert.AreEqual(expected.Select(static row => row.Sha).ToArray(), table.Select(static row => row.GetValue<string>(0)).ToArray());
+            CollectionAssert.AreEqual(expected.Select(static row => row.When).ToArray(), table.Select(static row => row.GetValue<DateTimeOffset>(1)).ToArray());
+        }
     }
 
     private Task<UnpackedRepository> UnpackGitRepositoryAsync(string zippedRepositoryPath,

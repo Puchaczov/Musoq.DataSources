@@ -39,7 +39,7 @@ public sealed class ArchivesNativeEnumRelationalTests
             Assert.AreEqual(typeof(int), enumColumn!.ColumnType, query);
             Assert.AreEqual(typeof(int), enumColumn.SourceReadType, query);
             Assert.IsTrue(table.Count > 0, query);
-            Assert.IsTrue(table.SelectMany(static row => row.Values).All(static value => value is not Enum), query);
+            Assert.IsTrue(table.SelectMany(static row => row.ReadValues()).All(static value => value is not Enum), query);
         }
     }
 

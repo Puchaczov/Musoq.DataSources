@@ -74,7 +74,7 @@ public class SeparatedValuesCompiledExecutionBenchmarks
         long checksum = table.Count;
 
         foreach (var row in table)
-            checksum = unchecked(checksum * 31 + row.Values.Count());
+            checksum = unchecked(checksum * 31 + row.Count);
 
         return checksum;
     }

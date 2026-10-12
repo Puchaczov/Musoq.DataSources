@@ -41,7 +41,7 @@ public sealed class SeparatedValuesQueryRowSourceTests
     }
 
     [TestMethod]
-    public void DescribeSource_WhenMetadataIsExact_RequiresQueryRowsAndKeepsNominalDeclaredRowType()
+    public void DescribeSource_WhenMetadataIsExact_RequiresQueryRowsAndNativeContractMarker()
     {
         WithCsv("Name,Age\nAda,36\n", path =>
         {
@@ -57,7 +57,7 @@ public sealed class SeparatedValuesQueryRowSourceTests
             Assert.AreEqual(
                 SourceTransferCapabilities.QueryScopedRows | SourceTransferCapabilities.LogicalScalarReads,
                 descriptor.TransferCapabilities);
-            Assert.AreEqual(typeof(object[]), descriptor.RowType);
+            Assert.AreEqual(typeof(QueryScopedRowContract), descriptor.RowType);
         });
     }
 
@@ -280,13 +280,7 @@ public sealed class SeparatedValuesQueryRowSourceTests
                 executionPlan: plan);
             var shape = new QueryRowShape(
                 [new QueryRowField(0, 0, "Name", typeof(string), true)]);
-            var source = ((IQueryScopedRowSourceSchema)schema)
-                .GetQueryScopedRowSource<string, OnlyCMaterializer>(
-                    "comma",
-                    new QueryScopedRowSourceRequest(context, shape),
-                    path,
-                    true,
-                    0);
+            var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Query(((IQueryScopedRowSourceSchema)schema), global::Musoq.Schema.SourceArguments.Create(path, global::Musoq.Schema.SourceArguments.Create(true, global::Musoq.Schema.SourceArguments.Create(0, global::Musoq.Schema.SourceArguments.Empty)))).Read<string, OnlyCMaterializer>("comma", new QueryScopedRowSourceRequest(context, shape));
 
             CollectionAssert.AreEqual(
                 new[] { "C" },
@@ -305,12 +299,7 @@ public sealed class SeparatedValuesQueryRowSourceTests
             executionPlan: SourceExecutionPlan.Empty(CreateIdentity()));
 
         var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
-            schema.GetRowSource<object?[]>(
-                "comma",
-                context,
-                Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.csv"),
-                true,
-                0));
+            global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create(Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.csv"), global::Musoq.Schema.SourceArguments.Create(true, global::Musoq.Schema.SourceArguments.Create(0, global::Musoq.Schema.SourceArguments.Empty)))).Read<object?[]>("comma", context));
 
         StringAssert.Contains(exception.Message, "separatedvalues.comma");
         StringAssert.Contains(exception.Message, "source:query-row-test");
@@ -358,10 +347,10 @@ public sealed class SeparatedValuesQueryRowSourceTests
             var table = compiled.Run();
 
             Assert.AreEqual(2, table.Count);
-            Assert.AreEqual(36L, table[0][0]);
-            Assert.AreEqual("Ada", table[0][1]);
-            Assert.AreEqual(41L, table[1][0]);
-            Assert.AreEqual("Grace", table[1][1]);
+            Assert.AreEqual(36L, table[0].ReadValue(0));
+            Assert.AreEqual("Ada", table[0].ReadValue(1));
+            Assert.AreEqual(41L, table[1].ReadValue(0));
+            Assert.AreEqual("Grace", table[1].ReadValue(1));
         });
     }
 
@@ -715,13 +704,7 @@ public sealed class SeparatedValuesQueryRowSourceTests
                 dataSourceProgressCallback: progress.Handler,
                 executionPlan: plan,
                 sourceDiagnostics: new SourceDiagnostics(diagnosticsSink));
-            var source = ((IQueryScopedRowSourceSchema)schema)
-                .GetQueryScopedRowSource<NameAgeRow, NameAgeMaterializer>(
-                    "comma",
-                    new QueryScopedRowSourceRequest(context, NameAgeShape()),
-                    path,
-                    true,
-                    0);
+            var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Query(((IQueryScopedRowSourceSchema)schema), global::Musoq.Schema.SourceArguments.Create(path, global::Musoq.Schema.SourceArguments.Create(true, global::Musoq.Schema.SourceArguments.Create(0, global::Musoq.Schema.SourceArguments.Empty)))).Read<NameAgeRow, NameAgeMaterializer>("comma", new QueryScopedRowSourceRequest(context, NameAgeShape()));
             File.Delete(path);
 
             Assert.AreEqual(0, source.Chunks.SelectMany(static chunk => chunk).Count());
@@ -748,13 +731,7 @@ public sealed class SeparatedValuesQueryRowSourceTests
                 dataSourceProgressCallback: progress.Handler,
                 executionPlan: plan,
                 sourceDiagnostics: new SourceDiagnostics(diagnosticsSink));
-            var source = ((IQueryScopedRowSourceSchema)schema)
-                .GetQueryScopedRowSource<NameAgeRow, NameAgeMaterializer>(
-                    "comma",
-                    new QueryScopedRowSourceRequest(context, NameAgeShape()),
-                    path,
-                    true,
-                    0);
+            var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Query(((IQueryScopedRowSourceSchema)schema), global::Musoq.Schema.SourceArguments.Create(path, global::Musoq.Schema.SourceArguments.Create(true, global::Musoq.Schema.SourceArguments.Create(0, global::Musoq.Schema.SourceArguments.Empty)))).Read<NameAgeRow, NameAgeMaterializer>("comma", new QueryScopedRowSourceRequest(context, NameAgeShape()));
             File.Delete(path);
 
             var exception = Assert.ThrowsExactly<FileNotFoundException>(() =>
@@ -848,13 +825,7 @@ public sealed class SeparatedValuesQueryRowSourceTests
             executionPlan: plan,
             sourceDiagnostics: sourceDiagnostics);
 
-        return ((IQueryScopedRowSourceSchema)schema)
-            .GetQueryScopedRowSource<TRow, TMaterializer>(
-                "comma",
-                new QueryScopedRowSourceRequest(executionContext, shape),
-                path,
-                hasHeader,
-                skipLines);
+        return global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Query(((IQueryScopedRowSourceSchema)schema), global::Musoq.Schema.SourceArguments.Create(path, global::Musoq.Schema.SourceArguments.Create(hasHeader, global::Musoq.Schema.SourceArguments.Create(skipLines, global::Musoq.Schema.SourceArguments.Empty)))).Read<TRow, TMaterializer>("comma", new QueryScopedRowSourceRequest(executionContext, shape));
     }
 
     private static SourceMetadataContext MetadataContext(

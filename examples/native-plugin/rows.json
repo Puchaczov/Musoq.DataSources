@@ -1,0 +1,5 @@
+[
+  {"Id": 1, "Amount": 1.25, "Meta": {"label": "first"}},
+  {"Id": 2, "Amount": null, "Meta": {"label": "second"}},
+  {"Id": 3, "Amount": 2.5, "Meta": null}
+]

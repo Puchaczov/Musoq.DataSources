@@ -83,6 +83,23 @@ try {
     New-ValidContractSnapshot
     Invoke-ContractValidation
 
+    $seedRoot = Join-Path $snapshotRoot 'seeds'
+    New-Item -ItemType Directory -Path $seedRoot | Out-Null
+    Copy-DatasourceVerifiedLicenseSeeds -RepositoryRoot $root -ExistingSnapshot $snapshotDirectory -Destination $seedRoot `
+        -PackageGraph @([pscustomobject]@{id='Synthetic.Dependency'; version='1.0.0'})
+    $seedPath = Join-Path $seedRoot 'Synthetic.Dependency.txt'
+    Assert-ContractTrue (Test-Path -LiteralPath $seedPath) 'Exact package/version notice should seed the offline cache.'
+    Assert-ContractTrue ((Get-FileHash -LiteralPath $seedPath).Hash -eq (Get-FileHash -LiteralPath (Join-Path $noticeDirectory 'license.txt')).Hash) 'Seed notice bytes must remain exact.'
+    Remove-Item -LiteralPath $seedPath
+    Copy-DatasourceVerifiedLicenseSeeds -RepositoryRoot $root -ExistingSnapshot $snapshotDirectory -Destination $seedRoot `
+        -PackageGraph @([pscustomobject]@{id='Synthetic.Dependency'; version='2.0.0'})
+    Assert-ContractTrue (!(Test-Path -LiteralPath $seedPath)) 'A different package version must never reuse a notice.'
+    Add-Content -LiteralPath (Join-Path $noticeDirectory 'license.txt') -Value 'tampered' -NoNewline
+    Assert-ContractThrows {
+        Copy-DatasourceVerifiedLicenseSeeds -RepositoryRoot $root -ExistingSnapshot $snapshotDirectory -Destination $seedRoot `
+            -PackageGraph @([pscustomobject]@{id='Synthetic.Dependency'; version='1.0.0'})
+    } 'A tampered notice must never seed the cache.'
+
     New-ValidContractSnapshot
     Remove-Item -LiteralPath (Join-Path $noticeDirectory 'license.txt') -Force
     Assert-ContractThrows { Invoke-ContractValidation } 'A snapshot with missing license text must fail closed.'

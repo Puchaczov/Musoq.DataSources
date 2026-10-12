@@ -46,7 +46,7 @@ public class OpenAISchemaDescribeTests
 
         Assert.AreEqual(5, table.Count, "Should have 5 rows (5 gpt overloads)");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.AreEqual(5, methodNames.Count(m => m == "gpt"), "Should contain 'gpt' method 5 times (5 overloads)");
     }
 
@@ -61,38 +61,38 @@ public class OpenAISchemaDescribeTests
         Assert.AreEqual(6, table.Columns.Count(), "Should have 6 columns (Name, Param 0-4)");
         Assert.AreEqual(5, table.Count, "Should have 5 rows for 5 overloads");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(methodNames.All(name => name == "gpt"), "All rows should be for gpt method");
 
         var overload1 = table.ElementAt(0);
-        Assert.AreEqual("gpt", (string)overload1[0]);
-        Assert.IsNull(overload1[1], "First overload should have no parameters");
+        Assert.AreEqual("gpt", (string)overload1.ReadValue(0));
+        Assert.IsNull(overload1.ReadValue(1), "First overload should have no parameters");
 
         var overload2 = table.ElementAt(1);
-        Assert.AreEqual("gpt", (string)overload2[0]);
-        Assert.AreEqual("model: System.String", (string)overload2[1]);
-        Assert.IsNull(overload2[2]);
+        Assert.AreEqual("gpt", (string)overload2.ReadValue(0));
+        Assert.AreEqual("model: System.String", (string)overload2.ReadValue(1));
+        Assert.IsNull(overload2.ReadValue(2));
 
         var overload3 = table.ElementAt(2);
-        Assert.AreEqual("gpt", (string)overload3[0]);
-        Assert.AreEqual("model: System.String", (string)overload3[1]);
-        Assert.AreEqual("maxTokens: System.Int32", (string)overload3[2]);
-        Assert.IsNull(overload3[3]);
+        Assert.AreEqual("gpt", (string)overload3.ReadValue(0));
+        Assert.AreEqual("model: System.String", (string)overload3.ReadValue(1));
+        Assert.AreEqual("maxTokens: System.Int32", (string)overload3.ReadValue(2));
+        Assert.IsNull(overload3.ReadValue(3));
 
         var overload4 = table.ElementAt(3);
-        Assert.AreEqual("gpt", (string)overload4[0]);
-        Assert.AreEqual("model: System.String", (string)overload4[1]);
-        Assert.AreEqual("maxTokens: System.Int32", (string)overload4[2]);
-        Assert.AreEqual("temperature: System.Single", (string)overload4[3]);
-        Assert.IsNull(overload4[4]);
+        Assert.AreEqual("gpt", (string)overload4.ReadValue(0));
+        Assert.AreEqual("model: System.String", (string)overload4.ReadValue(1));
+        Assert.AreEqual("maxTokens: System.Int32", (string)overload4.ReadValue(2));
+        Assert.AreEqual("temperature: System.Single", (string)overload4.ReadValue(3));
+        Assert.IsNull(overload4.ReadValue(4));
 
         var overload5 = table.ElementAt(4);
-        Assert.AreEqual("gpt", (string)overload5[0]);
-        Assert.AreEqual("model: System.String", (string)overload5[1]);
-        Assert.AreEqual("maxTokens: System.Int32", (string)overload5[2]);
-        Assert.AreEqual("temperature: System.Single", (string)overload5[3]);
-        Assert.AreEqual("frequencyPenalty: System.Single", (string)overload5[4]);
-        Assert.AreEqual("presencePenalty: System.Single", (string)overload5[5]);
+        Assert.AreEqual("gpt", (string)overload5.ReadValue(0));
+        Assert.AreEqual("model: System.String", (string)overload5.ReadValue(1));
+        Assert.AreEqual("maxTokens: System.Int32", (string)overload5.ReadValue(2));
+        Assert.AreEqual("temperature: System.Single", (string)overload5.ReadValue(3));
+        Assert.AreEqual("frequencyPenalty: System.Single", (string)overload5.ReadValue(4));
+        Assert.AreEqual("presencePenalty: System.Single", (string)overload5.ReadValue(5));
     }
 
     [TestMethod]
@@ -140,7 +140,7 @@ public class OpenAISchemaDescribeTests
         var tableNoArgs = vmNoArgs.Run();
 
         Assert.AreEqual(5, tableNoArgs.Count, "Should have 5 overloads");
-        var methodNames = tableNoArgs.Select(row => (string)row[0]).ToList();
+        var methodNames = tableNoArgs.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(methodNames.All(name => name == "gpt"));
     }
 }

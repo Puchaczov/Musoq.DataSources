@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -32,6 +32,8 @@ public class CANBusSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
+    ///         <virtual-param name="csvData" kind="path" relative-to="invocation-directory">Path to the separated-values CAN frames file</virtual-param>
+    ///         <virtual-param name="dbcData" kind="path" relative-to="invocation-directory">Path to the DBC definition file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -62,6 +64,7 @@ public class CANBusSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="dbc" kind="path" relative-to="invocation-directory">Path to the DBC definition file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -84,6 +87,7 @@ public class CANBusSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="dbc" kind="path" relative-to="invocation-directory">Path to the DBC definition file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -298,126 +302,38 @@ public class CANBusSchema : SchemaBase
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
     /// <exception cref="NotSupportedException">Thrown when data source is not supported.</exception>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return name.ToLowerInvariant() switch
         {
-            SeparatedValuesTable => CreateSeparatedValuesRowSource<T>(name, executionContext, parameters),
+            SeparatedValuesTable => CreateSeparatedValuesRowSource<T, TArguments>(name, executionContext, parameters),
             MessagesTable => EnsureSourceType<T, MessageEntity>(
                 name,
-                new MessagesSource(_createCanBusApi((string)parameters[0]), executionContext)),
+                new MessagesSource(_createCanBusApi(parameters.GetValue<string>(0)), executionContext)),
             SignalsTable => EnsureSourceType<T, SignalEntity>(
                 name,
-                new SignalsSource(_createCanBusApi((string)parameters[0]), executionContext)),
-            _ => base.GetRowSource<T>(name, executionContext, parameters)
+                new SignalsSource(_createCanBusApi(parameters.GetValue<string>(0)), executionContext)),
+            _ => base.GetRowSource<T, TArguments>(name, executionContext, parameters)
         };
     }
 
-    private RowSource<T> CreateSeparatedValuesRowSource<T>(
+    private RowSource<T> CreateSeparatedValuesRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        object[] parameters)
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         var source = new SeparatedValuesFromFileCanFramesSource(
-            (string)parameters[0],
-            _createCanBusApi((string)parameters[1]),
+            parameters.GetValue<string>(0),
+            _createCanBusApi(parameters.GetValue<string>(1)),
             executionContext,
-            parameters.Length > 2 ? (string)parameters[2] : "dec",
-            parameters.Length > 3 ? (string)parameters[3] : "little");
+            parameters.Count > 2 ? parameters.GetValue<string>(2) : "dec",
+            parameters.Count > 3 ? parameters.GetValue<string>(3) : "little");
 
-        return typeof(T) == typeof(object)
-            ? EnsureSourceType<T, object>(name, new MessageFrameObjectRowSource(source, executionContext))
-            : EnsureSourceType<T, MessageFrameEntity>(name, source);
-    }
-
-    private sealed class MessageFrameObjectRowSource(
-        RowSource<MessageFrameEntity> source,
-        SourceExecutionContext executionContext) : RowSourceBase<object>
-    {
-        protected override void CollectChunks(IChunkWriter<object> writer)
-        {
-            foreach (var chunk in source.Chunks)
-            {
-                writer.CancellationToken.ThrowIfCancellationRequested();
-
-                var objects = new List<object>(chunk.Count);
-                foreach (var item in chunk)
-                    objects.Add(ToDictionary(item));
-
-                writer.Write(objects);
-            }
-        }
-
-        private Dictionary<string, object?> ToDictionary(MessageFrameEntity entity)
-        {
-            var nameToIndexMap = entity.CreateMessageNameToIndexMap();
-            var accessMap = entity.CreateMessageIndexToMethodAccessMap();
-            var values = new Dictionary<string, object?>();
-            var columns = GetProjectedColumns(executionContext, out var projectionAccepted);
-
-            if (columns.Length == 0 && !projectionAccepted)
-            {
-                foreach (var (name, index) in nameToIndexMap)
-                    values[name] = accessMap[index](entity);
-
-                return values;
-            }
-
-            foreach (var column in columns)
-            {
-                values[column.ColumnName] = nameToIndexMap.TryGetValue(column.ColumnName, out var index)
-                    ? accessMap[index](entity)
-                    : null;
-            }
-
-            return values;
-        }
-
-        private static ISchemaColumn[] GetProjectedColumns(
-            SourceExecutionContext context,
-            out bool projectionAccepted)
-        {
-            var acceptedColumns = context.Plan.AcceptedColumns;
-            projectionAccepted = acceptedColumns.Count > 0;
-
-            if (!projectionAccepted)
-                return [.. context.AllColumns];
-
-            var acceptedNames = CreateAcceptedColumnNameSet(acceptedColumns, context.AllColumns);
-
-            return context.AllColumns
-                .Where(column => acceptedNames.Contains(column.ColumnName))
-                .ToArray();
-        }
-
-        private static HashSet<string> CreateAcceptedColumnNameSet(
-            IReadOnlyCollection<SourceColumnRef> acceptedColumns,
-            IReadOnlyCollection<ISchemaColumn> allColumns)
-        {
-            var allNames = allColumns
-                .Select(column => column.ColumnName)
-                .ToHashSet(StringComparer.Ordinal);
-            var acceptedNames = new HashSet<string>(StringComparer.Ordinal);
-
-            foreach (var acceptedColumn in acceptedColumns)
-            {
-                AddIfKnown(acceptedColumn.Name);
-
-                foreach (var part in acceptedColumn.Name.Split('.'))
-                    AddIfKnown(part);
-            }
-
-            return acceptedNames;
-
-            void AddIfKnown(string name)
-            {
-                if (allNames.Count == 0 || allNames.Contains(name))
-                    acceptedNames.Add(name);
-            }
-        }
+        return EnsureSourceType<T, MessageFrameEntity>(name, source);
     }
 
     private static SourcePlanResult PlanSeparatedValuesProjection(SourcePlanRequest request)

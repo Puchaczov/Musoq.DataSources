@@ -96,8 +96,8 @@ public sealed class GitStarContractTests
         var blameResult = Compile(blameQuery).Run();
 
         Assert.AreEqual(4, blameResult.Count);
-        Assert.AreEqual(1, blameResult[0][0]);
-        Assert.IsInstanceOfType(blameResult[0][1], typeof(string));
+        Assert.AreEqual(1, blameResult[0].ReadValue(0));
+        Assert.IsInstanceOfType(blameResult[0].ReadValue(1), typeof(string));
 
         using var differenceRepository = Unpack("Repository4.zip");
         var escapedDifferencePath = differenceRepository.Path.Escape();
@@ -110,7 +110,7 @@ public sealed class GitStarContractTests
         Assert.IsTrue(oldBytes.Count > 0, "OldContentBytes should expose bytes for a deleted blob.");
         Assert.IsTrue(newBytes.Count > 0, "NewContentBytes should expose bytes for an added blob.");
         foreach (var row in oldBytes.Concat(newBytes))
-            Assert.IsInstanceOfType(row[0], typeof(byte));
+            Assert.IsInstanceOfType(row.ReadValue(0), typeof(byte));
     }
 
     private static StarContractCase[] CreateCases(

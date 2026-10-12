@@ -159,6 +159,8 @@ $BuildScriptBlock = {
                 throw "Entry point DLL '$EntryPointDll' not found in publish directory: $PublishDir"
             }
 
+            Assert-MusoqPluginDirectAssemblyReferences -EntryPointPath $EntryPointPath
+
             $EntryPointXml = "${ProjectBaseName}.xml"
             $EntryPointXmlPath = Join-Path $PublishDir $EntryPointXml
             if (-not (Test-Path $EntryPointXmlPath)) {

@@ -36,7 +36,6 @@
 - `FlatFileEntity` + `FlatFileHelper` define the public column set. If you add or rename columns, update:
 	- entity properties,
 	- `FlatFileHelper.FlatNameToIndexMap`,
-	- `FlatFileHelper.FlatIndexToMethodAccessMap`,
 	- `FlatFileHelper.FlatColumns`,
 	- `FlatFileTable`,
 	- schema XML docs,

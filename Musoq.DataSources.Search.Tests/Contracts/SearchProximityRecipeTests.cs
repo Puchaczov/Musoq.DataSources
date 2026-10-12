@@ -200,13 +200,13 @@ public sealed class SearchProximityRecipeTests
 
         return result.Rows
             .Select(row => new ProximityOccurrence(
-                NormalizePath((string)row[0]),
-                (string)row[1],
-                (long)row[2],
-                (long)row[3],
-                (long)row[4],
-                (long)row[5],
-                (string?)row[6]))
+                NormalizePath((string)row.ReadValue(0)),
+                (string)row.ReadValue(1),
+                (long)row.ReadValue(2),
+                (long)row.ReadValue(3),
+                (long)row.ReadValue(4),
+                (long)row.ReadValue(5),
+                (string?)row.ReadValue(6)))
             .ToArray();
     }
 

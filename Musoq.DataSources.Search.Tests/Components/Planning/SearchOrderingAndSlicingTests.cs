@@ -87,6 +87,10 @@ public sealed class SearchOrderingAndSlicingTests
             {
                 Identity = Identity(),
                 AcceptedPredicate = predicate,
+                Properties = new Dictionary<string, object?>
+                {
+                    [Musoq.DataSources.Common.TypedPredicatePlan.PropertyName] = Musoq.DataSources.Search.Components.Planning.SearchSourcePlanner.BindPredicate("matches", predicate)
+                },
                 AcceptedSkip = 1,
                 AcceptedTake = 1
             };
@@ -153,7 +157,7 @@ public sealed class SearchOrderingAndSlicingTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(2L, result.Rows[0][0]);
+            Assert.AreEqual(2L, result.Rows[0].ReadValue(0));
         }
         finally
         {
@@ -179,7 +183,7 @@ public sealed class SearchOrderingAndSlicingTests
 
             CollectionAssert.AreEqual(
                 new[] { "beta.txt:0", "alpha.txt:1", "alpha.txt:0" },
-                result.Rows.Select(row => $"{row[0]}:{row[1]}").ToArray());
+                result.Rows.Select(row => $"{row.ReadValue(0)}:{row.ReadValue(1)}").ToArray());
         }
         finally
         {
@@ -215,7 +219,7 @@ public sealed class SearchOrderingAndSlicingTests
                         "order by m.Path, m.MatchIndex")
                     .Run();
                 var actual = result.Rows
-                    .Select(row => $"{row[0]}:{row[1]}")
+                    .Select(row => $"{row.ReadValue(0)}:{row.ReadValue(1)}")
                     .ToArray();
 
                 CollectionAssert.AreEqual(expected.ToArray(), actual);
@@ -247,8 +251,8 @@ public sealed class SearchOrderingAndSlicingTests
             Assert.AreEqual(2, result.Count);
             CollectionAssert.AreEqual(
                 new long[] { 0, 1 },
-                result.Rows.Select(row => (long)row[0]).ToArray());
-            Assert.IsTrue(result.Rows.All(row => (long)row[1] == 1));
+                result.Rows.Select(row => (long)row.ReadValue(0)).ToArray());
+            Assert.IsTrue(result.Rows.All(row => (long)row.ReadValue(1) == 1));
         }
         finally
         {
@@ -309,8 +313,8 @@ public sealed class SearchOrderingAndSlicingTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(sourceOrder[1], result.Rows[0][0]);
-            Assert.AreEqual(sourceOrder[1], result.Rows[0][1]);
+            Assert.AreEqual(sourceOrder[1], result.Rows[0].ReadValue(0));
+            Assert.AreEqual(sourceOrder[1], result.Rows[0].ReadValue(1));
         }
         finally
         {

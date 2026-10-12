@@ -12,7 +12,6 @@ public sealed class RemoteTagEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>Maps row indexes to property accessors.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<RemoteTagEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a remote-tag row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -42,13 +41,7 @@ public sealed class RemoteTagEntity
             { nameof(CanonicalName), 3 }, { nameof(ObjectSha), 4 }, { nameof(PeeledSha), 5 },
             { nameof(IsAnnotated), 6 }
         };
-        IndexToObjectAccessMap = new Dictionary<int, Func<RemoteTagEntity, object?>>
-        {
-            { 0, entity => entity.RemoteName }, { 1, entity => entity.RemoteUrl },
-            { 2, entity => entity.FriendlyName }, { 3, entity => entity.CanonicalName },
-            { 4, entity => entity.ObjectSha }, { 5, entity => entity.PeeledSha },
-            { 6, entity => entity.IsAnnotated }
-        };
+
     }
 
     internal RemoteTagEntity(

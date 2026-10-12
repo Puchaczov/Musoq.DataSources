@@ -58,8 +58,5 @@ internal sealed class SearchLinesSource : SearchTextSourceBase<SearchLine>
             resourceBudget);
     }
 
-    protected override object? GetPredicateValue(SearchLine row, string columnName)
-    {
-        return SearchPredicateValues.GetLineValue(row, columnName);
-    }
+
 }

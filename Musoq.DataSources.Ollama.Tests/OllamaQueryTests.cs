@@ -27,7 +27,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(true, table[0][0]);
+        Assert.AreEqual(true, table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -39,7 +39,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(false, table[0][0]);
+        Assert.AreEqual(false, table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -51,7 +51,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("POSITIVE", table[0][0]);
+        Assert.AreEqual("POSITIVE", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -63,7 +63,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("NEGATIVE", table[0][0]);
+        Assert.AreEqual("NEGATIVE", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -75,7 +75,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("NEUTRAL", table[0][0]);
+        Assert.AreEqual("NEUTRAL", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -87,7 +87,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("UNKNOWN", table[0][0]);
+        Assert.AreEqual("UNKNOWN", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -99,7 +99,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("summarized", table[0][0]);
+        Assert.AreEqual("summarized", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -111,7 +111,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("translated", table[0][0]);
+        Assert.AreEqual("translated", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -122,7 +122,7 @@ public class OllamaQueryTests
         var vm = CreateAndRunVirtualMachineWithResponse(script, "{ entities: ['a', 'b', 'c'] }");
         var table = vm.Run();
 
-        CollectionAssert.AreEquivalent(new[] { "a", "b", "c" }, table.Select(row => row[0]).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "a", "b", "c" }, table.Select(row => row.ReadValue(0)).ToArray());
     }
 
     [TestMethod]
@@ -135,7 +135,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("me@you.com", table[0][0]);
+        Assert.AreEqual("me@you.com", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -147,7 +147,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("image description", table[0][0]);
+        Assert.AreEqual("image description", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -160,7 +160,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("dirty blue", table[0][0]);
+        Assert.AreEqual("dirty blue", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -173,7 +173,7 @@ public class OllamaQueryTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(true, table[0][0]);
+        Assert.AreEqual(true, table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -186,7 +186,7 @@ public class OllamaQueryTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(3, table[0][0]);
+        Assert.AreEqual(3, table[0].ReadValue(0));
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, string response)

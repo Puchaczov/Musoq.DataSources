@@ -5,12 +5,13 @@ using LibGit2Sharp;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
+using Musoq.DataSources.Common;
 
 namespace Musoq.DataSources.Git;
 
 internal sealed class TagsRowsSource : GitDiagnosticRowsSourceBase<TagEntity>
 {
-    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly Func<TagEntity, bool>? _acceptedPredicate;
     private readonly Func<string, Repository> _createRepository;
     private readonly GitFilterParameters _filters;
     private readonly GitProjection _projection;
@@ -23,7 +24,7 @@ internal sealed class TagsRowsSource : GitDiagnosticRowsSourceBase<TagEntity>
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;
-        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _acceptedPredicate = TypedPredicatePlan.Get<TagEntity>(executionContext.Plan);
         _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
         _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
         _readerProjection = _projection;
@@ -69,7 +70,7 @@ internal sealed class TagsRowsSource : GitDiagnosticRowsSourceBase<TagEntity>
                     tag,
                     _projection,
                     () => TagEntity.LoadRichSnapshot(_repositoryPath, tag.CanonicalName, tag.FriendlyName, includeMessage: false));
-                if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
+                if (_acceptedPredicate is not null && !_acceptedPredicate(entity))
                 {
                     rowsFiltered++;
                     return true;

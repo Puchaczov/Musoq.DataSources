@@ -2,6 +2,11 @@ using BenchmarkDotNet.Attributes;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Schema;
+using Musoq.Evaluator.Tables;
+using Musoq.Schema.Optimization;
+using Musoq.Converter;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Musoq.DataSources.Json.Benchmarks;
 
@@ -17,18 +22,43 @@ public enum JsonQueryShape
 }
 
 [MemoryDiagnoser]
-[ShortRunJob]
+[InProcess]
 public class JsonCompiledExecutionBenchmarks
 {
     private CompiledQuery _query = null!;
+    private string _queryText = string.Empty;
+
+    public double CompilationMilliseconds { get; private set; }
+    public long CompilationAllocatedBytes { get; private set; }
 
     [Params(100_000)]
     public int RowCount { get; set; }
 
+    [ParamsSource(nameof(TypedSourceModes))]
+    public bool TypedSource { get; set; } = true;
+
+    public IEnumerable<bool> TypedSourceModes
+    {
+        get
+        {
+            var selected = Environment.GetEnvironmentVariable("MUSOQ_JSON_BENCHMARK_TYPED_SOURCE");
+            return string.IsNullOrWhiteSpace(selected) ? [true] : [bool.Parse(selected)];
+        }
+    }
+
     [ParamsSource(nameof(QueryShapes))]
     public JsonQueryShape QueryShape { get; set; }
 
-    public IEnumerable<JsonQueryShape> QueryShapes => Enum.GetValues<JsonQueryShape>();
+    public IEnumerable<JsonQueryShape> QueryShapes
+    {
+        get
+        {
+            var selected = Environment.GetEnvironmentVariable("MUSOQ_JSON_BENCHMARK_SHAPES");
+            return string.IsNullOrWhiteSpace(selected)
+                ? Enum.GetValues<JsonQueryShape>()
+                : selected.Split(',').Select(Enum.Parse<JsonQueryShape>);
+        }
+    }
 
     [GlobalSetup]
     public void Setup()
@@ -50,23 +80,32 @@ public class JsonCompiledExecutionBenchmarks
             _ => throw new ArgumentOutOfRangeException()
         };
 
+        _queryText = queryText;
+        var beforeCompilation = GC.GetTotalAllocatedBytes(true);
+        var compilationTimer = System.Diagnostics.Stopwatch.StartNew();
         _query = InstanceCreatorHelpers.CompileForExecution(
             queryText,
             $"JsonBenchmark_{QueryShape}_{Guid.NewGuid():N}",
-            new JsonBenchmarkSchemaProvider(),
+            new JsonBenchmarkSchemaProvider(TypedSource),
             EnvironmentVariablesHelpers.CreateMockedEnvironmentVariables());
 
+        CompilationMilliseconds = compilationTimer.Elapsed.TotalMilliseconds;
+        CompilationAllocatedBytes = GC.GetTotalAllocatedBytes(true) - beforeCompilation;
         _ = RunCompiledQuery();
     }
 
     [Benchmark]
     public long RunCompiledQuery()
     {
-        var table = _query.Run();
+        using var table = _query.Run();
         long checksum = table.Count;
 
         foreach (var row in table)
-            checksum = unchecked(checksum * 31 + row.Values.Count());
+        {
+            var visitor = new ConsumptionVisitor();
+            row.VisitColumns(ref visitor);
+            checksum = unchecked(checksum * 31 + visitor.Count);
+        }
 
         return checksum;
     }
@@ -76,11 +115,37 @@ public class JsonCompiledExecutionBenchmarks
         return Path.GetFullPath(path).Replace('\\', '/').Replace("'", "''", StringComparison.Ordinal);
     }
 
-    private sealed class JsonBenchmarkSchemaProvider : ISchemaProvider
+    public string InspectGeneratedExecution() => InstanceCreator.CompileForInspection(_queryText,
+        $"JsonBenchmarkInspection_{Guid.NewGuid():N}", new JsonBenchmarkSchemaProvider(TypedSource),
+        new NullLoggerResolver(), new CompilationOptions(ParallelizationMode.Full, usePrimitiveTypeValidation: true))
+        .GeneratedCSharpCode;
+
+    public static string InspectNativeQuery(string query) => InstanceCreator.CompileForInspection(query,
+        $"JsonNativeInspection_{Guid.NewGuid():N}", new JsonBenchmarkSchemaProvider(true),
+        new NullLoggerResolver(), new CompilationOptions(ParallelizationMode.Full, usePrimitiveTypeValidation: true))
+        .GeneratedCSharpCode;
+
+    private sealed class NullLoggerResolver : ILoggerResolver
+    {
+        public ILogger ResolveLogger() => NullLogger.Instance;
+        public ILogger<T> ResolveLogger<T>() => NullLogger<T>.Instance;
+    }
+
+    private struct ConsumptionVisitor : IColumnValueVisitor
+    {
+        public int Count;
+
+        public void Visit<T>(int columnIndex, in T value) => Count++;
+    }
+
+    private sealed class JsonBenchmarkSchemaProvider(bool typedSource) : ISchemaProvider
     {
         public ISchema GetSchema(string schema)
         {
+            if (!typedSource)
+                throw new NotSupportedException("Legacy JSON transfer is removed; benchmark the native source.");
             return new JsonSchema();
         }
     }
+
 }

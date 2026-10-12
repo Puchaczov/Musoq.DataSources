@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Converter;
+using Musoq.Converter.Exceptions;
+using Musoq.Parser.Diagnostics;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
 using Musoq.Schema.Exceptions;
@@ -33,42 +35,44 @@ public sealed class SearchDiagnosticRepairCatalogTests
     [TestMethod]
     public void UnknownSourceName_ShouldUseMetadataInsteadOfInventingARepairMethod()
     {
-        var schema = new SearchSchema();
-        var exception = Assert.ThrowsException<SourceNotFoundException>(() =>
-            schema.GetRowSource<SearchMatch>(
-                "matchz",
-                RuntimeV2TestContexts.CreateExecutionContext(),
-                "fixture",
-                "TODO"));
-
-        Assert.IsNotNull(exception);
-        var repaired = schema.GetRowSource<SearchMatch>(
-            "matches",
-            RuntimeV2TestContexts.CreateExecutionContext(),
-            "fixture",
-            "TODO");
-        Assert.IsInstanceOfType<SearchMatchesTypedSource>(repaired);
+        var exception = Assert.ThrowsException<MusoqQueryException>(() =>
+            Compile("select Path from search.matchz('fixture', 'TODO')"));
+        Assert.AreEqual(DiagnosticCode.MQ3085_UnknownSource, exception.PrimaryEnvelope.Code);
+        Assert.AreEqual(DiagnosticPhase.Bind, exception.PrimaryEnvelope.Phase);
+        AssertRepairedMatches();
     }
 
     [TestMethod]
     public void MissingArgument_ShouldRepairToTheReflectedConstructorWithoutChangingResultUnit()
     {
-        var schema = new SearchSchema();
-        var exception = Assert.ThrowsException<SearchRequestException>(() =>
-            schema.GetRowSource<SearchMatch>(
-                "matches",
-                RuntimeV2TestContexts.CreateExecutionContext(),
-                "fixture"));
+        var exception = Assert.ThrowsException<MusoqQueryException>(() =>
+            Compile("select Path from search.matches('fixture')"));
+        Assert.AreEqual(DiagnosticCode.MQ3088_NoMatchingCallableOverload, exception.PrimaryEnvelope.Code);
+        Assert.AreEqual(DiagnosticPhase.Bind, exception.PrimaryEnvelope.Phase);
+        AssertRepairedMatches();
+    }
 
-        Assert.AreEqual(SearchDiagnosticCodes.InvalidArgument, exception.Diagnostic.Code);
-        Assert.AreEqual("arguments", exception.Diagnostic.Location?.ArgumentName);
-
-        var repaired = schema.GetRowSource<SearchMatch>(
-            "matches",
-            RuntimeV2TestContexts.CreateExecutionContext(),
-            "fixture",
-            "TODO");
-        Assert.IsInstanceOfType<SearchMatchesTypedSource>(repaired);
+    private static void AssertRepairedMatches()
+    {
+        var root = CreateTemporaryRoot();
+        Directory.CreateDirectory(root);
+        File.WriteAllText(Path.Combine(root, "source.txt"), "TODO\n");
+        try
+        {
+            using var query = Compile($"select Path, MatchText from search.matches('{EscapeSql(root)}', 'TODO') order by Path");
+            using var table = query.Run();
+            var columns = table.Columns.ToArray();
+            Assert.AreEqual("Path", columns[0].ColumnName);
+            Assert.AreEqual(typeof(string), columns[0].ColumnType);
+            Assert.AreEqual("MatchText", columns[1].ColumnName);
+            Assert.AreEqual(typeof(string), columns[1].ColumnType);
+            Assert.AreEqual(2, columns.Length);
+            var rows = table.ToArray();
+            Assert.AreEqual(1, rows.Length);
+            Assert.AreEqual("source.txt", rows[0].GetValue<string>(0));
+            Assert.AreEqual("TODO", rows[0].GetValue<string>(1));
+        }
+        finally { DeleteTemporaryRoot(root); }
     }
 
     [TestMethod]
@@ -81,7 +85,7 @@ public sealed class SearchDiagnosticRepairCatalogTests
             Directory.CreateDirectory(root);
             File.WriteAllText(Path.Combine(root, "source.txt"), "TODO\n");
             var escapedRoot = EscapeSql(root);
-            Assert.ThrowsException<InvalidOperationException>(() =>
+            var exception = Assert.ThrowsException<MusoqQueryException>(() =>
                 InstanceCreator.CompileForInspection(
                     $"select m.Path from search.paths('{escapedRoot}') p",
                     $"SearchDiagnosticRepairAlias_{Guid.NewGuid():N}",
@@ -90,12 +94,15 @@ public sealed class SearchDiagnosticRepairCatalogTests
                     new CompilationOptions(
                         ParallelizationMode.Full,
                         usePrimitiveTypeValidation: true)));
+            Assert.AreEqual(DiagnosticCode.MQ3015_UnknownAlias, exception.PrimaryEnvelope.Code);
+            Assert.AreEqual(DiagnosticPhase.Bind, exception.PrimaryEnvelope.Phase);
+            StringAssert.Contains(exception.Message, "m");
 
             var repairedRows = Compile(
                     $"select p.Path from search.paths('{escapedRoot}') p order by p.Path")
                 .Run()
                 .Rows
-                .Select(static row => (string)row[0])
+                .Select(static row => (string)row.ReadValue(0))
                 .ToArray();
             CollectionAssert.AreEqual(new[] { "source.txt" }, repairedRows);
         }
@@ -142,14 +149,14 @@ public sealed class SearchDiagnosticRepairCatalogTests
                     "where p.Path like '*.cs' order by p.Path")
                 .Run()
                 .Rows
-                .Select(static row => (string)row[0])
+                .Select(static row => (string)row.ReadValue(0))
                 .ToArray();
             var repairedRows = Compile(
                     $"select p.Path from search.paths('{escapedRoot}') p " +
                     "where p.Path like '%.cs' order by p.Path")
                 .Run()
                 .Rows
-                .Select(static row => (string)row[0])
+                .Select(static row => (string)row.ReadValue(0))
                 .ToArray();
 
             CollectionAssert.AreEqual(Array.Empty<string>(), globRows);

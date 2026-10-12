@@ -5,13 +5,14 @@ using LibGit2Sharp;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
+using Musoq.DataSources.Common;
 
 namespace Musoq.DataSources.Git;
 
 internal sealed class RemoteTagsRowsSource : GitDiagnosticRowsSourceBase<RemoteTagEntity>
 {
     private const int ChunkSize = 128;
-    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly Func<RemoteTagEntity, bool>? _acceptedPredicate;
     private readonly Func<string, Repository> _createRepository;
     private readonly GitFilterParameters _filters;
     private readonly GitProjection _projection;
@@ -32,7 +33,7 @@ internal sealed class RemoteTagsRowsSource : GitDiagnosticRowsSourceBase<RemoteT
         _repositoryPath = repositoryPath;
         _remoteName = remoteName;
         _createRepository = createRepository;
-        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _acceptedPredicate = TypedPredicatePlan.Get<RemoteTagEntity>(executionContext.Plan);
         _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
         _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
         _options = GitReferenceBackendOptions.From(executionContext.SourceRuntimeSettings);
@@ -83,7 +84,7 @@ internal sealed class RemoteTagsRowsSource : GitDiagnosticRowsSourceBase<RemoteT
                 }
 
                 var entity = GitEntitySnapshots.RemoteTag(tag, _projection);
-                if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
+                if (_acceptedPredicate is not null && !_acceptedPredicate(entity))
                 {
                     rowsFiltered++;
                     return true;

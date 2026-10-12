@@ -42,10 +42,10 @@ public sealed class OsNativeEnumTests
         {
             var expected = expectedDirectories[index];
             var row = table[index];
-            Assert.AreEqual(expected.Name, row[0]);
-            Assert.AreEqual(expected.FullName, row[1]);
-            Assert.AreEqual((int)expected.Attributes, row[2]);
-            Assert.AreEqual(Enum.GetName(typeof(FileAttributes), expected.Attributes), row[3]);
+            Assert.AreEqual(expected.Name, row.ReadValue(0));
+            Assert.AreEqual(expected.FullName, row.ReadValue(1));
+            Assert.AreEqual((int)expected.Attributes, row.ReadValue(2));
+            Assert.AreEqual(Enum.GetName(typeof(FileAttributes), expected.Attributes), row.ReadValue(3));
         }
     }
 
@@ -66,9 +66,9 @@ public sealed class OsNativeEnumTests
             typeof(FileAttributes),
             EnumUnderlyingKind.Int32,
             isFlags: true);
-        Assert.IsTrue(table.All(row => (bool)row[2]));
-        Assert.IsTrue(table.All(row => (bool)row[3]));
-        Assert.IsFalse(table.SelectMany(static row => row.Values).Any(static value => value is Enum));
+        Assert.IsTrue(table.All(row => (bool)row.ReadValue(2)));
+        Assert.IsTrue(table.All(row => (bool)row.ReadValue(3)));
+        Assert.IsFalse(table.SelectMany(static row => row.ReadValues()).Any(static value => value is Enum));
     }
 
     [TestMethod]
@@ -111,13 +111,13 @@ public sealed class OsNativeEnumTests
         Assert.IsFalse(table.Columns.Any(column =>
             column.ColumnName is "SourceFile" or "DestinationFile" or "SourceRoot" or "DestinationRoot"));
 
-        Assert.IsTrue(table.Any(row => (int)row[0] == (int)State.Removed &&
-                                       (string)row[1] == nameof(State.Removed) &&
-                                       ((string?)row[2])?.EndsWith("TextFile1.txt", StringComparison.Ordinal) == true &&
-                                       row[3] is null));
-        Assert.IsTrue(table.Count(row => (int)row[0] == (int)State.Added) >= 2);
-        Assert.IsTrue(table.Where(row => (int)row[0] == (int)State.Added)
-            .All(row => (string)row[1] == nameof(State.Added) && row[2] is null && row[3] is string));
+        Assert.IsTrue(table.Any(row => (int)row.ReadValue(0) == (int)State.Removed &&
+                                       (string)row.ReadValue(1) == nameof(State.Removed) &&
+                                       ((string?)row.ReadValue(2))?.EndsWith("TextFile1.txt", StringComparison.Ordinal) == true &&
+                                       row.ReadValue(3) is null));
+        Assert.IsTrue(table.Count(row => (int)row.ReadValue(0) == (int)State.Added) >= 2);
+        Assert.IsTrue(table.Where(row => (int)row.ReadValue(0) == (int)State.Added)
+            .All(row => (string)row.ReadValue(1) == nameof(State.Added) && row.ReadValue(2) is null && row.ReadValue(3) is string));
     }
 
     [TestMethod]
@@ -138,7 +138,7 @@ public sealed class OsNativeEnumTests
             ["TheSame"]);
         PortableEnumAssertions.AssertNoClrEnumValues(table);
         Assert.IsTrue(table.Count > 0);
-        Assert.IsTrue(table.All(row => (int)row[0] == (int)State.TheSame));
+        Assert.IsTrue(table.All(row => (int)row.ReadValue(0) == (int)State.TheSame));
     }
 
     [TestMethod]
@@ -178,8 +178,8 @@ public sealed class OsNativeEnumTests
         PortableEnumAssertions.AssertNoClrEnumValues(equality);
         PortableEnumAssertions.AssertNoClrEnumValues(flags);
 
-        CollectionAssert.AreEqual(expected, equality.Select(row => (string)row[0]).ToArray());
-        Assert.IsTrue(flags.All(row => ((int)row[1] & (int)FileAttributes.Directory) != 0));
+        CollectionAssert.AreEqual(expected, equality.Select(row => (string)row.ReadValue(0)).ToArray());
+        Assert.IsTrue(flags.All(row => ((int)row.ReadValue(1) & (int)FileAttributes.Directory) != 0));
     }
 
     [TestMethod]
@@ -207,12 +207,12 @@ public sealed class OsNativeEnumTests
         }
 
         Assert.AreEqual(2, added.Count);
-        Assert.IsTrue(added.All(row => (int)row[0] == (int)State.Added && (string)row[1] == nameof(State.Added)));
+        Assert.IsTrue(added.All(row => (int)row.ReadValue(0) == (int)State.Added && (string)row.ReadValue(1) == nameof(State.Added)));
         Assert.AreEqual(1, notAdded.Count);
-        Assert.AreEqual((int)State.Removed, notAdded[0][0]);
+        Assert.AreEqual((int)State.Removed, notAdded[0].ReadValue(0));
         Assert.AreEqual(3, membership.Count);
         Assert.AreEqual(1, notMembership.Count);
-        Assert.AreEqual((int)State.Removed, notMembership[0][0]);
+        Assert.AreEqual((int)State.Removed, notMembership[0].ReadValue(0));
         Assert.AreEqual(0, isNull.Count);
         Assert.AreEqual(3, isNotNull.Count);
     }

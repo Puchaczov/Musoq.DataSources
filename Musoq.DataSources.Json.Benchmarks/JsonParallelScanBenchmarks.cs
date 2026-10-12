@@ -46,11 +46,11 @@ public class JsonParallelScanBenchmarks
     [Benchmark]
     public long Scan()
     {
-        var source = new JsonSource(_path, _context);
+        var source = NativeJsonBenchmarkRows.Open<NativeJsonBenchmarkRows.SequenceRow, NativeJsonBenchmarkRows.SequenceMaterializer>(_path, _context);
         long rows = 0;
         foreach (var chunk in source.Chunks)
         foreach (var row in chunk)
-            rows += row.Length;
+            rows += row.Value >= 0 ? 1 : throw new InvalidOperationException("Unexpected sequence value.");
         return rows;
     }
 }

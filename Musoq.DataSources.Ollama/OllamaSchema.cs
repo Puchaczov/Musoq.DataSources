@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -22,7 +22,7 @@ public class OllamaSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Model to use: llama2, mistral, llava etc</virtual-param>
+    ///         <virtual-param name="model">Model to use: llama2, mistral, llava etc</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -40,9 +40,8 @@ public class OllamaSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Model to use: llama2, mistral, llava etc</virtual-param>
-    ///         <virtual-param>Max tokens to generate</virtual-param>
-    ///         <virtual-param>Temperature</virtual-param>
+    ///         <virtual-param name="model">Model to use: llama2, mistral, llava etc</virtual-param>
+    ///         <virtual-param name="temperature">Temperature</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -92,10 +91,10 @@ public class OllamaSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         executionContext.SourceRuntimeSettings.TryGetValue("OLLAMA_BASE_URL", out var ollamaBaseUrl);
 
@@ -105,10 +104,10 @@ public class OllamaSchema : SchemaBase
             name,
             new OllamaSingleRowSource(executionContext, new OllamaRequestInfo
             {
-                Model = parameters.Length > 0
-                    ? Convert.ToString(parameters[0]) ?? throw new Exception("Model name cannot be null.")
+                Model = parameters.Count > 0
+                    ? parameters.GetValue<string>(0) ?? throw new Exception("Model name cannot be null.")
                     : throw new Exception("Model name is required."),
-                Temperature = parameters.Length > 1 ? MapParameter(parameters[1]) : 0,
+                Temperature = parameters.Count > 1 ? (float)parameters.GetValue<decimal>(1) : 0,
                 OllamaBaseUrl = ollamaBaseUrl
             }, _serviceProvider.GetRequiredService<IHttpClientFactory>()));
     }
@@ -223,17 +222,4 @@ public class OllamaSchema : SchemaBase
         return new MethodsAggregator(methodsManager);
     }
 
-    private static float MapParameter(object parameter)
-    {
-        if (parameter is float f)
-            return f;
-
-        if (parameter is double d)
-            return (float)d;
-
-        if (parameter is decimal dec)
-            return Convert.ToSingle(dec);
-
-        throw new Exception("Temperature parameter must be float, double or decimal number.");
-    }
 }

@@ -22,17 +22,17 @@ internal class TestsOllamaSchema : OllamaSchema
         ];
     }
 
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return EnsureSourceType<T, OllamaEntity>(
             name,
             new TestsOllamaSingleRowSource(_ollamaApi, new OllamaRequestInfo
             {
-                Model = parameters.Length > 0 ? Convert.ToString(parameters[0]) ?? "test-model" : "test-model",
-                Temperature = parameters.Length > 1 ? Convert.ToSingle(parameters[1]) : 0
+                Model = parameters.Count > 0 ? parameters.GetValue<string>(0) ?? "test-model" : "test-model",
+                Temperature = parameters.Count > 1 ? (float)parameters.GetValue<decimal>(1) : 0
             }));
     }
 }

@@ -28,7 +28,7 @@ public class TimeTests
 
         Assert.AreEqual(30, table.Count);
 
-        for (var i = 1; i <= 30; i++) Assert.AreEqual(i, table[i - 1][0]);
+        for (var i = 1; i <= 30; i++) Assert.AreEqual(i, table[i - 1].ReadValue(0));
     }
 
     [TestMethod]

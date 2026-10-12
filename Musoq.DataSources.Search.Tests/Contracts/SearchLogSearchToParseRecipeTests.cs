@@ -73,11 +73,11 @@ public sealed class SearchLogSearchToParseRecipeTests
                 .Run();
 
             Assert.AreEqual(2, result.Count);
-            Assert.AreEqual(1L, result.Rows[0][2]);
-            Assert.AreEqual(17L, result.Rows[0][3]);
-            Assert.AreEqual(5L, result.Rows[0][4]);
-            Assert.AreEqual(32L, result.Rows[1][3]);
-            Assert.AreEqual("ERROR", result.Rows[1][5]);
+            Assert.AreEqual(1L, result.Rows[0].ReadValue(2));
+            Assert.AreEqual(17L, result.Rows[0].ReadValue(3));
+            Assert.AreEqual(5L, result.Rows[0].ReadValue(4));
+            Assert.AreEqual(32L, result.Rows[1].ReadValue(3));
+            Assert.AreEqual("ERROR", result.Rows[1].ReadValue(5));
         }
         finally
         {
@@ -114,14 +114,14 @@ public sealed class SearchLogSearchToParseRecipeTests
         var result = Compile(query).Run();
         return result.Rows
             .Select(row => new ParsedLogRow(
-                (string)row[0],
-                (long)row[1],
-                (long)row[2],
-                (string?)row[3],
-                (string?)row[4],
-                (string?)row[5],
-                (string?)row[6],
-                (string?)row[7]))
+                (string)row.ReadValue(0),
+                (long)row.ReadValue(1),
+                (long)row.ReadValue(2),
+                (string?)row.ReadValue(3),
+                (string?)row.ReadValue(4),
+                (string?)row.ReadValue(5),
+                (string?)row.ReadValue(6),
+                (string?)row.ReadValue(7)))
             .ToArray();
     }
 

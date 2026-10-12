@@ -7,14 +7,35 @@ internal static class Program
 {
     public static int Main(string[] args)
     {
+        if (args is ["measure-native", var output])
+            return NativeExecutionMeasurements.Run(output);
+
         if (JsonBenchmarkDataCommand.TryRun(args, out var exitCode))
             return exitCode;
+
+        if (args is ["inspect-typed-execution", var directory])
+        {
+            Directory.CreateDirectory(directory);
+            foreach (var typed in new[] { true })
+            foreach (var shape in Enum.GetValues<JsonQueryShape>())
+            {
+                var benchmark = new JsonCompiledExecutionBenchmarks { RowCount = 100_000, QueryShape = shape, TypedSource = typed };
+                benchmark.Setup();
+                File.WriteAllText(Path.Combine(directory, $"{shape}-{typed}.cs"), benchmark.InspectGeneratedExecution());
+            }
+            var structuredPath = Path.GetFullPath(Path.Combine(directory, "structured-nullable.json"));
+            File.WriteAllText(structuredPath, "[{\"Id\":1,\"Values\":[1,2]},{\"Id\":2,\"Values\":null},{\"Id\":3}]");
+            var sourcePath = structuredPath.Replace('\\', '/').Replace("'", "''", StringComparison.Ordinal);
+            var structuredQuery = $"select Id, JsonText(Values) as Json, Length(Values) as Size, MakeFlat(Values) as Flat from json.file('{sourcePath}') order by Id";
+            File.WriteAllText(Path.Combine(directory, "StructuredNullable-True.cs"), JsonCompiledExecutionBenchmarks.InspectNativeQuery(structuredQuery));
+            return 0;
+        }
 
         if (args is ["profile-source"])
         {
             var benchmark = new JsonLegacySourceBenchmarks { RowCount = 100_000 };
             benchmark.Setup();
-            return RunProfile("json-source", benchmark.LegacyDataSource);
+            return RunProfile("json-source", benchmark.NativeDataSource);
         }
 
         if (args is ["profile-compiled"])

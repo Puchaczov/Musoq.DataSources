@@ -31,6 +31,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
 
     private readonly SearchManyRequest _request;
     private readonly SourceExecutionContext _executionContext;
+    private readonly Func<SearchMatch, bool>? _acceptedRow;
     private readonly Func<string, TextReader>? _readerFactory;
     private readonly SearchScopeCounters? _scopeCounters;
     private readonly SearchFileParallelOptions _parallelOptions;
@@ -48,6 +49,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
 
         _request = request ?? throw new ArgumentNullException(nameof(request));
         _executionContext = executionContext ?? throw new ArgumentNullException(nameof(executionContext));
+        _acceptedRow = TypedPredicatePlan.Get<SearchMatch>(executionContext.Plan);
         _readerFactory = readerFactory;
         _scopeCounters = scopeCounters;
         _compiledPlan = SearchManyMixedScan.Compile(request);
@@ -166,6 +168,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                         _scopeCounters?.IncrementContentOpenAttempts();
                         var isBinary = smallInput is not null
                             ? SearchBinaryPolicy.IsBinaryBytes(
+                                file,
                                 smallInput.Array,
                                 smallInput.Length,
                                 _request.Options.EncodingMode,
@@ -235,11 +238,8 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                                         ? span.Context
                                         : null);
 
-                                if (acceptedPredicate is not null &&
-                                    !SearchPredicateEvaluator.Matches(
-                                        acceptedPredicate,
-                                        row,
-                                        SearchPredicateValues.GetMatchValue))
+                                if (_acceptedRow is not null &&
+                                    !_acceptedRow!(row))
                                 {
                                     continue;
                                 }

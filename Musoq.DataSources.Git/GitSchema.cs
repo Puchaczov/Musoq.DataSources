@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security;
@@ -37,6 +37,7 @@ public class GitSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -60,6 +61,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -80,6 +82,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -99,6 +102,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -119,6 +123,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -141,6 +146,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -167,6 +173,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -225,6 +232,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -242,6 +250,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -258,6 +267,7 @@ public class GitSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
+    ///         <virtual-param name="repositoryPath" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -779,12 +789,12 @@ public class GitSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
-        var path = (string)parameters[0];
+        var path = parameters.GetValue<string>(0);
 
         if (!DirectoryOrFile(path)) throw new InvalidOperationException($"The path '{path}' is not a directory");
 
@@ -798,55 +808,55 @@ public class GitSchema : SchemaBase
             case RepositoryTable:
                 return EnsureSourceType<T, RepositoryEntity>(
                     name,
-                    new RepositoryRowsSource((string)parameters[0], _createRepository, executionContext));
+                    new RepositoryRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
             case TagsTable:
                 return EnsureSourceType<T, TagEntity>(
                     name,
-                    new TagsRowsSource((string)parameters[0], _createRepository, executionContext));
+                    new TagsRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
             case StashesTable:
                 return EnsureSourceType<T, StashEntity>(
                     name,
-                    new StashesRowsSource((string)parameters[0], _createRepository, executionContext));
+                    new StashesRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
             case RemoteTagsTable:
                 return EnsureSourceType<T, RemoteTagEntity>(
                     name,
-                    new RemoteTagsRowsSource((string)parameters[0], (string)parameters[1], _createRepository,
+                    new RemoteTagsRowsSource(parameters.GetValue<string>(0), parameters.GetValue<string>(1), _createRepository,
                         executionContext));
             case CommitsTable:
                 return EnsureSourceType<T, CommitEntity>(
                     name,
-                    new CommitsRowsSource((string)parameters[0], _createRepository, executionContext));
+                    new CommitsRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
             case BranchesTable:
                 return EnsureSourceType<T, BranchEntity>(
                     name,
-                    new BranchesRowsSource((string)parameters[0], _createRepository, executionContext));
+                    new BranchesRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
             case FileHistoryTable:
-                var skip = parameters.Length > 3 ? (int)parameters[2] : 0;
-                var take = parameters.Length > 3 ? (int)parameters[3] :
-                    parameters.Length > 2 ? (int)parameters[2] : int.MaxValue;
+                var skip = parameters.Count > 3 ? parameters.GetValue<int>(2) : 0;
+                var take = parameters.Count > 3 ? parameters.GetValue<int>(3) :
+                    parameters.Count > 2 ? parameters.GetValue<int>(2) : int.MaxValue;
                 return EnsureSourceType<T, FileHistoryEntity>(
                     name,
-                    new FileHistoryRowsSource((string)parameters[0], (string)parameters[1], skip, take,
+                    new FileHistoryRowsSource(parameters.GetValue<string>(0), parameters.GetValue<string>(1), skip, take,
                         _createRepository, executionContext));
             case StatusTable:
                 return EnsureSourceType<T, StatusEntity>(
                     name,
-                    new StatusRowsSource((string)parameters[0], _createRepository, executionContext));
+                    new StatusRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
             case RemotesTable:
                 return EnsureSourceType<T, RemoteEntity>(
                     name,
-                    new RemotesRowsSource((string)parameters[0], _createRepository, executionContext));
+                    new RemotesRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
             case BlameTable:
-                var repositoryPath = (string)parameters[0];
-                var filePath = (string)parameters[1];
-                var revision = parameters.Length > 2 ? (string)parameters[2] : "HEAD";
+                var repositoryPath = parameters.GetValue<string>(0);
+                var filePath = parameters.GetValue<string>(1);
+                var revision = parameters.Count > 2 ? parameters.GetValue<string>(2) : "HEAD";
                 return EnsureSourceType<T, BlameHunkEntity>(
                     name,
                     new BlameRowsSource(repositoryPath, filePath, revision, _createRepository,
                         executionContext));
         }
 
-        return base.GetRowSource<T>(name, executionContext, parameters);
+        return base.GetRowSource<T, TArguments>(name, executionContext, parameters);
     }
 
     /// <summary>Describes a Git table, including its columns and row type.</summary>

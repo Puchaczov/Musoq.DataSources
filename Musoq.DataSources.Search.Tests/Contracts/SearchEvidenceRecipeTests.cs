@@ -45,16 +45,16 @@ public sealed class SearchEvidenceRecipeTests
                 .Run();
 
             Assert.AreEqual(2, result.Count);
-            Assert.AreEqual("fixture.txt", result.Rows[0][0]);
-            Assert.AreEqual(0L, result.Rows[0][1]);
-            Assert.AreEqual(7L, result.Rows[0][2]);
-            Assert.AreEqual(4L, result.Rows[0][3]);
-            Assert.AreEqual(2L, result.Rows[0][4]);
-            Assert.AreEqual(17L, result.Rows[1][2]);
-            Assert.AreEqual(1L, result.Rows[1][1]);
-            Assert.AreEqual(2L, result.Rows[1][4]);
-            Assert.AreEqual(4L, result.Rows[1][3]);
-            Assert.AreEqual(4L, result.Rows[1][6]);
+            Assert.AreEqual("fixture.txt", result.Rows[0].ReadValue(0));
+            Assert.AreEqual(0L, result.Rows[0].ReadValue(1));
+            Assert.AreEqual(7L, result.Rows[0].ReadValue(2));
+            Assert.AreEqual(4L, result.Rows[0].ReadValue(3));
+            Assert.AreEqual(2L, result.Rows[0].ReadValue(4));
+            Assert.AreEqual(17L, result.Rows[1].ReadValue(2));
+            Assert.AreEqual(1L, result.Rows[1].ReadValue(1));
+            Assert.AreEqual(2L, result.Rows[1].ReadValue(4));
+            Assert.AreEqual(4L, result.Rows[1].ReadValue(3));
+            Assert.AreEqual(4L, result.Rows[1].ReadValue(6));
         }
         finally
         {
@@ -78,10 +78,10 @@ public sealed class SearchEvidenceRecipeTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("fixture.txt", result.Rows[0][0]);
-            Assert.AreEqual(1L, result.Rows[0][1]);
-            Assert.AreEqual(7L, result.Rows[0][2]);
-            Assert.AreEqual("TODO", result.Rows[0][3]);
+            Assert.AreEqual("fixture.txt", result.Rows[0].ReadValue(0));
+            Assert.AreEqual(1L, result.Rows[0].ReadValue(1));
+            Assert.AreEqual(7L, result.Rows[0].ReadValue(2));
+            Assert.AreEqual("TODO", result.Rows[0].ReadValue(3));
         }
         finally
         {
@@ -208,8 +208,8 @@ public sealed class SearchEvidenceRecipeTests
             Assert.AreEqual(0, matchRows.Length);
             Assert.AreEqual(2, countRows.Length);
             Assert.AreEqual(2, report.Count);
-            Assert.IsTrue(report.Rows.All(static row => (bool)row[4]!));
-            Assert.IsTrue(report.Rows.All(static row => (long)row[1]! == 0));
+            Assert.IsTrue(report.Rows.All(static row => (bool)row.ReadValue(4)!));
+            Assert.IsTrue(report.Rows.All(static row => (long)row.ReadValue(1)! == 0));
             Assert.IsTrue(countRows.All(static row => row.Complete));
             Assert.IsTrue(countRows.All(static row => row.OccurrenceCount == 0));
             Assert.IsTrue(countRows.All(static row => row.MatchingLineCount == 0));

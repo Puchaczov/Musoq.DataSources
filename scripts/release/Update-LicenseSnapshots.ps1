@@ -150,6 +150,13 @@ foreach ($definition in $selectedDefinitions) {
     Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $downloadedLicenses "$($definition.packageId).txt") -Force
     New-DatasourceOwnPackageFile -Definition $definition -Path $ownPackagePath -RepositoryRoot $root
 
+    # Reuse validated notices only for exactly the same resolved package/version.
+    # Current dependency inputs, graph and the complete output are still regenerated and validated.
+    Copy-DatasourceVerifiedLicenseSeeds -RepositoryRoot $root `
+        -ExistingSnapshot (Join-Path $snapshotRoot $definition.packageId) `
+        -Destination $downloadedLicenses `
+        -PackageGraph @(Get-DatasourcePackageGraph -RepositoryRoot $root -EntryProject $definition.projectPath)
+
     $gatherArguments = @(
         'retrieve',
         '--solution-or-cs-project-file-path', $definition.fullProjectPath,

@@ -7,6 +7,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using Musoq.DataSources.Structured;
+using Musoq.Schema.Diagnostics;
 
 namespace Musoq.DataSources.SeparatedValues.Components.Parsing;
 
@@ -466,7 +467,11 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
             if (_endOfFile)
             {
                 if (_state is ScanState.Quoted or ScanState.EscapedQuoted)
-                    throw InvalidData("The final quoted field is not terminated.");
+                {
+                    throw new DataSourceInputException(
+                        DataSourceInputFailureReason.UnterminatedQuotedField,
+                        new DataSourceInputLocation(byteOffset: _bufferStartOffset + _scanOffset));
+                }
 
                 if (_recordStart == _bufferedLength)
                 {
@@ -855,7 +860,7 @@ internal readonly ref struct SeparatedValuesUtf8Record
 
     public SeparatedValuesUtf8FieldEnumerator GetEnumerator()
     {
-        return new SeparatedValuesUtf8FieldEnumerator(_bytes, _dialect);
+        return new SeparatedValuesUtf8FieldEnumerator(_bytes, _dialect, StartOffset);
     }
 
     public ReadOnlySpan<byte> Bytes => _bytes;
@@ -866,14 +871,24 @@ internal ref struct SeparatedValuesUtf8FieldEnumerator
     private readonly ReadOnlySpan<byte> _record;
     private readonly SeparatedValuesDialect _dialect;
     private readonly byte _separator;
+    private readonly long _recordStartOffset;
     private int _nextOffset;
     private bool _finished;
 
     public SeparatedValuesUtf8FieldEnumerator(ReadOnlySpan<byte> record, SeparatedValuesDialect dialect)
+        : this(record, dialect, 0)
+    {
+    }
+
+    public SeparatedValuesUtf8FieldEnumerator(
+        ReadOnlySpan<byte> record,
+        SeparatedValuesDialect dialect,
+        long recordStartOffset)
     {
         _record = record;
         _dialect = dialect;
         _separator = dialect.Separator;
+        _recordStartOffset = recordStartOffset;
         _nextOffset = 0;
         _finished = false;
         Current = default;
@@ -938,7 +953,9 @@ internal ref struct SeparatedValuesUtf8FieldEnumerator
                 return true;
             }
 
-            throw new InvalidDataException("The quoted field is not terminated.");
+            throw new DataSourceInputException(
+                DataSourceInputFailureReason.UnterminatedQuotedField,
+                new DataSourceInputLocation(byteOffset: _recordStartOffset + _record.Length));
         }
 
         var end = trimmedStart;
@@ -965,6 +982,13 @@ internal ref struct SeparatedValuesUtf8FieldEnumerator
             _dialect.Quote);
         SetNextOffset(end);
         return true;
+    }
+
+    public void ValidateAllFields()
+    {
+        while (MoveNext())
+        {
+        }
     }
 
     private void SetNextOffset(int endOffset)

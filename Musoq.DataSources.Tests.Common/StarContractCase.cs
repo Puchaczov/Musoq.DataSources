@@ -106,7 +106,7 @@ public static class StarContractAssertions
             {
                 foreach (var index in enumIndexes)
                 {
-                    if (row[index] is Enum)
+                    if (row.ReadValue(index) is Enum)
                     {
                         throw new InvalidOperationException(
                             $"{contract.Signature} returned System.Enum in result column {index}.");

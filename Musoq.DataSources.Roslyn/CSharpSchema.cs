@@ -43,6 +43,7 @@ public class CSharpSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the solution file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>
@@ -119,6 +120,15 @@ public class CSharpSchema : SchemaBase
     ///             <column name="StartColumn" type="int">Start column</column>
     ///             <column name="EndLine" type="int">End line</column>
     ///             <column name="EndColumn" type="int">End column</column>
+    ///         </columns>
+    ///     </additional-table>
+    ///     <additional-table>
+    ///         <description>Represent an attribute applied to a source entity</description>
+    ///         <columns type="AttributeEntity">
+    ///             <column name="Name" type="string">Short attribute name without the Attribute suffix</column>
+    ///             <column name="FullName" type="string">Fully qualified resolved attribute type name including the Attribute suffix</column>
+    ///             <column name="ConstructorArguments" type="string[]">Constructor arguments</column>
+    ///             <column name="NamedArguments" type="KeyValuePair&lt;string,string&gt;[]">Named arguments</column>
     ///         </columns>
     ///     </additional-table>
     ///     <additional-table>
@@ -209,6 +219,7 @@ public class CSharpSchema : SchemaBase
     ///             <column name="Parameters" type="ParameterEntity[]">Parameters</column>
     ///             <column name="Modifiers" type="string[]">Modifiers</column>
     ///             <column name="Text" type="string">Text</column>
+    ///             <column name="BodyFingerprint" type="string">Versioned SHA-256 fingerprint of significant method-body syntax (null when unavailable)</column>
     ///             <column name="Attributes" type="AttributeEntity[]">Attributes</column>
     ///             <column name="CyclomaticComplexity" type="int">Cyclomatic complexity</column>
     ///             <column name="LinesOfCode" type="int">Lines of code</column>
@@ -228,6 +239,10 @@ public class CSharpSchema : SchemaBase
     ///             <column name="IsExplicitInterfaceImplementation" type="bool">Whether the method is an explicit interface implementation</column>
     ///             <column name="IsPartial" type="bool">Whether the method is partial</column>
     ///             <column name="MethodKind" type="string">Kind of method (Ordinary, PropertyGet, etc.)</column>
+    ///             <column name="Callees" type="CalledMethodInfo[]">Methods called by this method (resolved calls only)</column>
+    ///             <column name="CalleeCount" type="int">Number of resolved method calls</column>
+    ///             <column name="UnresolvedInvocationCount" type="int?">Number of invocations without a unique resolved method (null if semantic analysis is unavailable)</column>
+    ///             <column name="IsRecursive" type="bool">Whether the method directly calls itself</column>
     ///             <column name="Callers" type="CalledMethodInfo[]">Methods that call this method</column>
     ///             <column name="CallerCount" type="int">Number of callers</column>
     ///             <column name="DataFlow" type="DataFlowInfo">Data flow analysis for the method body</column>
@@ -606,10 +621,10 @@ public class CSharpSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         string? externalNugetPropertiesResolveEndpoint = null;
 
@@ -653,7 +668,7 @@ public class CSharpSchema : SchemaBase
         {
             case "solution":
             {
-                if (Solutions.TryGetValue((string)parameters[0], out var solution))
+                if (Solutions.TryGetValue(parameters.GetValue<string>(0), out var solution))
                 {
                     var solutionEntity = new SolutionEntity(
                         solution,
@@ -696,7 +711,7 @@ public class CSharpSchema : SchemaBase
                 return EnsureSourceType<T, SolutionEntity>(
                     name,
                     new CSharpImmediateLoadSolutionRowsSource(
-                        (string)parameters[0],
+                        parameters.GetValue<string>(0),
                         httpClient,
                         FileSystem,
                         externalNugetPropertiesResolveEndpoint,
@@ -707,7 +722,7 @@ public class CSharpSchema : SchemaBase
             }
         }
 
-        return base.GetRowSource<T>(name, executionContext, parameters);
+        return base.GetRowSource<T, TArguments>(name, executionContext, parameters);
     }
 
     private static IReadOnlyDictionary<string, DomainRateLimitingHandler.DomainRateLimitConfig> GetDomains(

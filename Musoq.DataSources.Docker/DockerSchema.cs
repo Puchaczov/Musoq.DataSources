@@ -1,4 +1,4 @@
-﻿using Docker.DotNet;
+using Docker.DotNet;
 using Musoq.DataSources.Docker.Containers;
 using Musoq.DataSources.Docker.Images;
 using Musoq.DataSources.Docker.Networks;
@@ -185,10 +185,10 @@ public class DockerSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return name.ToLowerInvariant() switch
         {

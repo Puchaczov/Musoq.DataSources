@@ -39,22 +39,22 @@ public class SystemSchema : SchemaBase
         };
     }
 
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return name.ToLowerInvariant() switch
         {
             Dual => EnsureSourceType<T, DualEntity>(name, new DualRowSource(executionContext)),
-            Range when parameters.Length == 1 => EnsureSourceType<T, RangeItemEntity>(
+            Range when parameters.Count == 1 => EnsureSourceType<T, RangeItemEntity>(
                 name,
-                new RangeSource(0, Convert.ToInt64(parameters[0]), executionContext)),
-            Range when parameters.Length == 2 => EnsureSourceType<T, RangeItemEntity>(
+                new RangeSource(0, parameters.GetValue<long>(0), executionContext)),
+            Range when parameters.Count == 2 => EnsureSourceType<T, RangeItemEntity>(
                 name,
                 new RangeSource(
-                    Convert.ToInt64(parameters[0]),
-                    Convert.ToInt64(parameters[1]),
+                    parameters.GetValue<long>(0),
+                    parameters.GetValue<long>(1),
                     executionContext)),
             _ => throw new NotSupportedException(name)
         };

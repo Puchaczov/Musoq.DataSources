@@ -66,7 +66,7 @@ internal sealed class SeparatedValuesTable : ISchemaTable
 
     public ISchemaColumn[] Columns => _columns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(object[]));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(QueryScopedRowContract)) { TypeOrigin = TableSchemaTypeOrigin.TableDefined };
 
     public ISchemaColumn? GetColumnByName(string name)
     {

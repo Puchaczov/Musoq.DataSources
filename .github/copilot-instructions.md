@@ -7,9 +7,12 @@
 - The engine itself is outside this repo. Stay focused on plugin-side schema, row shaping, SQL-callable helpers, and integration code.
 
 ## Repository-wide conventions
-- Dynamic plugins commonly override `GetTableByName()` / `GetRowSource()` and may combine exact source discovery with query-side type metadata.
+- Dynamic plugins commonly override metadata `GetTableByName()` / native `GetRowSource<TRow, TArguments>()` and may combine exact source discovery with query-side type metadata.
 - Static table classes are intentionally thin: expose `Entity.Columns` and `SchemaTableMetadata(typeof(EntityType))`.
-- SQL-callable helpers live in `LibraryBase` subclasses and use `[BindableClass]` / `[BindableMethod]`; injected source entities often use `[InjectSpecificSource(typeof(...))]`.
+- Query-scoped sources declare authoritative concrete shapes and decode through `IQueryRowMaterializer<TRow>`; no object/dictionary row transfer or boxed per-row predicate/sort getters. Metadata object arrays are permitted only during binding.
+- Custom functions and sources default to serial; explicit source/function execution permissions are intersected by the planner.
+- Native results use exact `GetValue<T>` or concrete column visitation, without object-valued cell indexers.
+- SQL-callable helpers live in `LibraryBase` subclasses and use scalar `[BindableMethod]` or aggregate/window declaration attributes with typed kernels; injected source entities often use `[InjectSpecificSource(typeof(...))]`.
 - Streaming sources often inherit `AsyncRowsSourceBase<T>` and should preserve chunking plus `RuntimeContext.ReportDataSourceBegin/End(...)` behavior.
 
 ## Build and test workflow

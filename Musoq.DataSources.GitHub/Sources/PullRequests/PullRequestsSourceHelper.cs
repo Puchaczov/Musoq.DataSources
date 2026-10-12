@@ -8,9 +8,6 @@ internal static class PullRequestsSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> PullRequestsNameToIndexMap;
 
-    public static readonly IReadOnlyDictionary<int, Func<PullRequestEntity, object?>>
-        PullRequestsIndexToMethodAccessMap;
-
     public static readonly ISchemaColumn[] PullRequestsColumns;
 
     static PullRequestsSourceHelper()
@@ -54,47 +51,6 @@ internal static class PullRequestsSourceHelper
             { nameof(PullRequestEntity.MergedAt), 34 },
             { nameof(PullRequestEntity.Locked), 35 },
             { nameof(PullRequestEntity.ActiveLockReason), 36 }
-        };
-
-        PullRequestsIndexToMethodAccessMap = new Dictionary<int, Func<PullRequestEntity, object?>>
-        {
-            { 0, pr => pr.Id },
-            { 1, pr => pr.Number },
-            { 2, pr => pr.Title },
-            { 3, pr => pr.Body },
-            { 4, pr => pr.State },
-            { 5, pr => pr.Url },
-            { 6, pr => pr.AuthorLogin },
-            { 7, pr => pr.AuthorId },
-            { 8, pr => pr.AssigneeLogin },
-            { 9, pr => pr.Assignees },
-            { 10, pr => pr.Labels },
-            { 11, pr => pr.LabelNames },
-            { 12, pr => pr.MilestoneTitle },
-            { 13, pr => pr.MilestoneNumber },
-            { 14, pr => pr.HeadRef },
-            { 15, pr => pr.HeadSha },
-            { 16, pr => pr.HeadRepository },
-            { 17, pr => pr.BaseRef },
-            { 18, pr => pr.BaseSha },
-            { 19, pr => pr.BaseRepository },
-            { 20, pr => pr.Merged },
-            { 21, pr => pr.Mergeable },
-            { 22, pr => pr.MergeableState },
-            { 23, pr => pr.MergedByLogin },
-            { 24, pr => pr.MergeCommitSha },
-            { 25, pr => pr.Comments },
-            { 26, pr => pr.Commits },
-            { 27, pr => pr.Additions },
-            { 28, pr => pr.Deletions },
-            { 29, pr => pr.ChangedFiles },
-            { 30, pr => pr.Draft },
-            { 31, pr => pr.CreatedAt },
-            { 32, pr => pr.UpdatedAt },
-            { 33, pr => pr.ClosedAt },
-            { 34, pr => pr.MergedAt },
-            { 35, pr => pr.Locked },
-            { 36, pr => pr.ActiveLockReason }
         };
 
         PullRequestsColumns =

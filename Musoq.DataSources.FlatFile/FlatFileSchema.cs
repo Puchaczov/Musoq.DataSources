@@ -23,7 +23,7 @@ public class FlatFileSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path of the given file</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path of the given file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>flat.file(string path)</from>
@@ -67,16 +67,16 @@ public class FlatFileSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return name.ToLowerInvariant() switch
         {
             FileTable => EnsureSourceType<T, FlatFileEntity>(
                 name,
-                new FlatFileSource((string)parameters[0], executionContext)),
+                new FlatFileSource(parameters.GetValue<string>(0), executionContext)),
             _ => throw new SourceNotFoundException(nameof(name))
         };
     }

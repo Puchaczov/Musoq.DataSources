@@ -7,7 +7,7 @@ namespace Musoq.DataSources.GitHub.Sources.Releases;
 internal static class ReleasesSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> ReleasesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<ReleaseEntity, object?>> ReleasesIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] ReleasesColumns;
 
     static ReleasesSourceHelper()
@@ -29,25 +29,6 @@ internal static class ReleasesSourceHelper
             { nameof(ReleaseEntity.AssetsCount), 12 },
             { nameof(ReleaseEntity.TarballUrl), 13 },
             { nameof(ReleaseEntity.ZipballUrl), 14 }
-        };
-
-        ReleasesIndexToMethodAccessMap = new Dictionary<int, Func<ReleaseEntity, object?>>
-        {
-            { 0, release => release.Id },
-            { 1, release => release.TagName },
-            { 2, release => release.Name },
-            { 3, release => release.Body },
-            { 4, release => release.Url },
-            { 5, release => release.TargetCommitish },
-            { 6, release => release.Draft },
-            { 7, release => release.Prerelease },
-            { 8, release => release.AuthorLogin },
-            { 9, release => release.AuthorId },
-            { 10, release => release.CreatedAt },
-            { 11, release => release.PublishedAt },
-            { 12, release => release.AssetsCount },
-            { 13, release => release.TarballUrl },
-            { 14, release => release.ZipballUrl }
         };
 
         ReleasesColumns =

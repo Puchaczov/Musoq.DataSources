@@ -93,14 +93,11 @@ public class GitReferenceSourceBenchmarks
     private long ConsumeTags(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = new GitSchema().GetRowSource<TagEntity>(
-            "tags",
-            RuntimeV2TestContexts.CreateExecutionContext(
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Empty)).Read<TagEntity>("tags", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: TagEntity.Columns,
                 sourceRuntimeSettings: RuntimeSettings,
                 executionPlan: plan,
-                sourceDiagnostics: new SourceDiagnostics(diagnostics)),
-            _corpus.RepositoryPath);
+                sourceDiagnostics: new SourceDiagnostics(diagnostics)));
         long checksum = 17;
         foreach (var chunk in source.Chunks)
         foreach (var tag in chunk)
@@ -113,14 +110,11 @@ public class GitReferenceSourceBenchmarks
     private long CountTags(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = new GitSchema().GetRowSource<TagEntity>(
-            "tags",
-            RuntimeV2TestContexts.CreateExecutionContext(
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Empty)).Read<TagEntity>("tags", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: TagEntity.Columns,
                 sourceRuntimeSettings: RuntimeSettings,
                 executionPlan: plan,
-                sourceDiagnostics: new SourceDiagnostics(diagnostics)),
-            _corpus.RepositoryPath);
+                sourceDiagnostics: new SourceDiagnostics(diagnostics)));
         long count = 0;
         foreach (var chunk in source.Chunks)
             count += chunk.Count;
@@ -131,14 +125,11 @@ public class GitReferenceSourceBenchmarks
     private long ConsumeStashes(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = new GitSchema().GetRowSource<StashEntity>(
-            "stashes",
-            RuntimeV2TestContexts.CreateExecutionContext(
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Empty)).Read<StashEntity>("stashes", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: StashEntity.Columns,
                 sourceRuntimeSettings: RuntimeSettings,
                 executionPlan: plan,
-                sourceDiagnostics: new SourceDiagnostics(diagnostics)),
-            _corpus.RepositoryPath);
+                sourceDiagnostics: new SourceDiagnostics(diagnostics)));
         long checksum = 17;
         foreach (var chunk in source.Chunks)
         foreach (var stash in chunk)
@@ -151,14 +142,11 @@ public class GitReferenceSourceBenchmarks
     private long CountStashes(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = new GitSchema().GetRowSource<StashEntity>(
-            "stashes",
-            RuntimeV2TestContexts.CreateExecutionContext(
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Empty)).Read<StashEntity>("stashes", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: StashEntity.Columns,
                 sourceRuntimeSettings: RuntimeSettings,
                 executionPlan: plan,
-                sourceDiagnostics: new SourceDiagnostics(diagnostics)),
-            _corpus.RepositoryPath);
+                sourceDiagnostics: new SourceDiagnostics(diagnostics)));
         long count = 0;
         foreach (var chunk in source.Chunks)
             count += chunk.Count;
@@ -263,18 +251,14 @@ public class GitRemoteTagSourceBenchmarks
     private long Consume(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = new GitSchema().GetRowSource<RemoteTagEntity>(
-            "remotetags",
-            RuntimeV2TestContexts.CreateExecutionContext(
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.ClientPath, global::Musoq.Schema.SourceArguments.Create("origin", global::Musoq.Schema.SourceArguments.Empty))).Read<RemoteTagEntity>("remotetags", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: RemoteTagEntity.Columns,
                 sourceRuntimeSettings: new Dictionary<string, string>
                 {
                     [GitReferenceBackendOptions.BackendSettingName] = "git-cli"
                 },
                 executionPlan: plan,
-                sourceDiagnostics: new SourceDiagnostics(diagnostics)),
-            _corpus.ClientPath,
-            "origin");
+                sourceDiagnostics: new SourceDiagnostics(diagnostics)));
         long checksum = 17;
         foreach (var chunk in source.Chunks)
         foreach (var tag in chunk)
@@ -287,18 +271,14 @@ public class GitRemoteTagSourceBenchmarks
     private long Count(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = new GitSchema().GetRowSource<RemoteTagEntity>(
-            "remotetags",
-            RuntimeV2TestContexts.CreateExecutionContext(
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.ClientPath, global::Musoq.Schema.SourceArguments.Create("origin", global::Musoq.Schema.SourceArguments.Empty))).Read<RemoteTagEntity>("remotetags", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: RemoteTagEntity.Columns,
                 sourceRuntimeSettings: new Dictionary<string, string>
                 {
                     [GitReferenceBackendOptions.BackendSettingName] = "git-cli"
                 },
                 executionPlan: plan,
-                sourceDiagnostics: new SourceDiagnostics(diagnostics)),
-            _corpus.ClientPath,
-            "origin");
+                sourceDiagnostics: new SourceDiagnostics(diagnostics)));
         long count = 0;
         foreach (var chunk in source.Chunks)
             count += chunk.Count;

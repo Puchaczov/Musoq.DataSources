@@ -5,13 +5,14 @@ using LibGit2Sharp;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
+using Musoq.DataSources.Common;
 
 namespace Musoq.DataSources.Git;
 
 internal sealed class StashesRowsSource : GitDiagnosticRowsSourceBase<StashEntity>
 {
     private const int ChunkSize = 128;
-    private readonly SourcePredicateExpression? _acceptedPredicate;
+    private readonly Func<StashEntity, bool>? _acceptedPredicate;
     private readonly Func<string, Repository> _createRepository;
     private readonly GitFilterParameters _filters;
     private readonly GitProjection _projection;
@@ -26,7 +27,7 @@ internal sealed class StashesRowsSource : GitDiagnosticRowsSourceBase<StashEntit
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;
-        _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
+        _acceptedPredicate = TypedPredicatePlan.Get<StashEntity>(executionContext.Plan);
         _filters = GitSourcePlanner.GetFilters(executionContext.Plan);
         _projection = GitSourcePlanner.GetProjection(executionContext.Plan);
         _options = GitReferenceBackendOptions.From(executionContext.SourceRuntimeSettings);
@@ -65,7 +66,7 @@ internal sealed class StashesRowsSource : GitDiagnosticRowsSourceBase<StashEntit
                 }
 
                 var entity = GitEntitySnapshots.Stash(stash, _projection);
-                if (!GitSourcePlanner.Matches(_acceptedPredicate, entity))
+                if (_acceptedPredicate is not null && !_acceptedPredicate(entity))
                 {
                     rowsFiltered++;
                     return true;

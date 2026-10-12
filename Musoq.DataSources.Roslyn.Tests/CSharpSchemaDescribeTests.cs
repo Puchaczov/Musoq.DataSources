@@ -39,11 +39,11 @@ public class CSharpSchemaDescribeTests
 
         Assert.AreEqual(1, table.Count, "Should have 1 row (solution method)");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.AreEqual(1, methodNames.Count(m => m == "solution"), "Should contain 'solution' method once");
 
-        var solutionRow = table.First(row => (string)row[0] == "solution");
-        Assert.AreEqual("path: System.String", (string)solutionRow[1]);
+        var solutionRow = table.First(row => (string)row.ReadValue(0) == "solution");
+        Assert.AreEqual("path: System.String", (string)solutionRow.ReadValue(1));
     }
 
     [TestMethod]
@@ -61,8 +61,8 @@ public class CSharpSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("solution", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
+        Assert.AreEqual("solution", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
     }
 
     [TestMethod]
@@ -110,7 +110,7 @@ public class CSharpSchemaDescribeTests
         var tableNoArgs = vmNoArgs.Run();
 
         Assert.AreEqual(1, tableNoArgs.Count);
-        Assert.AreEqual("solution", (string)tableNoArgs.First()[0]);
-        Assert.AreEqual("path: System.String", (string)tableNoArgs.First()[1]);
+        Assert.AreEqual("solution", (string)tableNoArgs.First().ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)tableNoArgs.First().ReadValue(1));
     }
 }

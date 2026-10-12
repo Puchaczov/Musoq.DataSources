@@ -90,7 +90,7 @@ public sealed class SearchManyTableInputTests
                     ("alpha.txt", "todo", 1L),
                     ("beta.txt", "todo", 0L)
                 },
-                result.Rows.Select(row => ((string)row[0], (string)row[1], (long)row[2])).ToArray());
+                result.Rows.Select(row => ((string)row.ReadValue(0), (string)row.ReadValue(1), (long)row.ReadValue(2))).ToArray());
         }
         finally
         {
@@ -134,7 +134,7 @@ public sealed class SearchManyTableInputTests
                     ("beta.txt", "beta.txt", "todo", 0L)
                 },
                 result.Rows.Select(row =>
-                    ((string)row[0], (string)row[1], (string)row[2], (long)row[3])).ToArray());
+                    ((string)row.ReadValue(0), (string)row.ReadValue(1), (string)row.ReadValue(2), (long)row.ReadValue(3))).ToArray());
         }
         finally
         {
@@ -158,8 +158,8 @@ public sealed class SearchManyTableInputTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("alpha.txt", result.Rows[0][0]);
-            Assert.AreEqual("todo", result.Rows[0][1]);
+            Assert.AreEqual("alpha.txt", result.Rows[0].ReadValue(0));
+            Assert.AreEqual("todo", result.Rows[0].ReadValue(1));
         }
         finally
         {

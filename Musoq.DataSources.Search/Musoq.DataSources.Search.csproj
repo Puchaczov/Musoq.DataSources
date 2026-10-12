@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.1-alpha.1</Version>
+        <Version>1.0.2-alpha.1</Version>
         <Authors>Jakub Puchaa</Authors>
         <Product>Musoq</Product>
         <Description>Provides deterministic literal and raw-byte search with bounded windows plus eligible path rows for files and directories.</Description>
@@ -28,13 +28,17 @@
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.303" PrivateAssets="All" />
         <PackageReference Include="Musoq.Plugins" Version="$(MusoqPluginsVersion)" ExcludeAssets="runtime" />
         <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" ExcludeAssets="runtime" />
     </ItemGroup>
 
     <ItemGroup>
         <Compile Include="..\Shared\DataSourceProgressReporter.cs" Link="Shared\DataSourceProgressReporter.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\Shared\TypedPredicatePlan.cs" Link="Shared\TypedPredicatePlan.cs" />
     </ItemGroup>
 
 </Project>

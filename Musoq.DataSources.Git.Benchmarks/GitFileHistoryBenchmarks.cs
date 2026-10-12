@@ -61,12 +61,7 @@ public sealed class GitFileHistoryBenchmarks
     {
         using var measurement = GitCliProcessMetrics.BeginMeasurement();
         var schema = new GitSchema();
-        var source = schema.GetRowSource<FileHistoryEntity>(
-            "filehistory",
-            _context,
-            _corpus.RepositoryPath,
-            "*.cs",
-            Take);
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Create("*.cs", global::Musoq.Schema.SourceArguments.Create(Take, global::Musoq.Schema.SourceArguments.Empty)))).Read<FileHistoryEntity>("filehistory", _context);
         long checksum = 17;
         var rows = new List<FileHistoryEntity>(Take);
 
@@ -84,6 +79,8 @@ public sealed class GitFileHistoryBenchmarks
         LastCombinedPeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64 + GitCliProcessMetrics.PeakWorkingSet;
         return checksum;
     }
+
+    internal static long FoldOne(long checksum, string? value) => unchecked(checksum * 31 + StableOrdinalHash(value));
 
     internal static long Fold(long checksum, params string?[] values)
     {

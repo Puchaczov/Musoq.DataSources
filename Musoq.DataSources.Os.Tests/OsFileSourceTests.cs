@@ -27,9 +27,9 @@ public class OsFileSourceTests
             "select f.Name, f.Extension, f.Length from os.file('./Files/File1.txt') f").Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("File1.txt", table[0][0]);
-        Assert.AreEqual(".txt", table[0][1]);
-        Assert.AreEqual(new FileInfo("./Files/File1.txt").Length, table[0][2]);
+        Assert.AreEqual("File1.txt", table[0].ReadValue(0));
+        Assert.AreEqual(".txt", table[0].ReadValue(1));
+        Assert.AreEqual(new FileInfo("./Files/File1.txt").Length, table[0].ReadValue(2));
     }
 
     [TestMethod]
@@ -39,7 +39,7 @@ public class OsFileSourceTests
             "select f.GetFileContent() from os.file('./Files/File1.txt') f").Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("Example file 1.", table[0][0]);
+        Assert.AreEqual("Example file 1.", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -49,8 +49,8 @@ public class OsFileSourceTests
             "select ToHex(f.Head(2), '|'), f.Base64File() from os.file('./Files/File1.txt') f").Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("EF|BB", table[0][0]);
-        Assert.AreEqual("77u/RXhhbXBsZSBmaWxlIDEu", table[0][1]);
+        Assert.AreEqual("EF|BB", table[0].ReadValue(0));
+        Assert.AreEqual("77u/RXhhbXBsZSBmaWxlIDEu", table[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -60,7 +60,7 @@ public class OsFileSourceTests
             "select f.Name from os.file('./Files/File1.txt') f where f.Name = 'File1.txt'").Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("File1.txt", table[0][0]);
+        Assert.AreEqual("File1.txt", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -81,7 +81,7 @@ public class OsFileSourceTests
             "select f.Name from os.file('./Files/File1.txt') f where f.Extension = '.bin'").Run();
 
         Assert.AreEqual(1, matching.Count);
-        Assert.AreEqual("File1.txt", matching[0][0]);
+        Assert.AreEqual("File1.txt", matching[0].ReadValue(0));
         Assert.AreEqual(0, nonMatching.Count);
     }
 
@@ -92,7 +92,7 @@ public class OsFileSourceTests
             "select f.Name from os.file('./Files/File1.txt') f where f.FileName = 'File1.txt'").Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("File1.txt", table[0][0]);
+        Assert.AreEqual("File1.txt", table[0].ReadValue(0));
     }
 
     [TestMethod]

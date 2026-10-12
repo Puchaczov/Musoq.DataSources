@@ -12,7 +12,7 @@ namespace Musoq.DataSources.Search.Helpers;
 internal static class SearchPathsHelper
 {
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<SearchPath, object?>> IndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] Columns;
 
     static SearchPathsHelper()
@@ -22,13 +22,6 @@ internal static class SearchPathsHelper
             { nameof(SearchPath.Path), 0 },
             { nameof(SearchPath.Origin), 1 },
             { nameof(SearchPath.EntryKind), 2 }
-        };
-
-        IndexToMethodAccessMap = new Dictionary<int, Func<SearchPath, object?>>
-        {
-            { 0, path => path.Path },
-            { 1, path => path.Origin },
-            { 2, path => path.EntryKind }
         };
 
         Columns =

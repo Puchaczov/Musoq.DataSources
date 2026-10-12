@@ -12,31 +12,36 @@ namespace Musoq.DataSources.Json;
 /// <summary>
 ///     Streams rows from a strict UTF-8 JSON file.
 /// </summary>
-public sealed class JsonSource : RowSourceBase<object[]>
+internal sealed class JsonScanPipeline<TRow, TProcessor, TFactory>
+    where TProcessor : struct, IJsonRecordProcessor
+    where TFactory : struct, IJsonRowProcessorFactory<TRow, TProcessor>
 {
     private const int ZeroColumnInputBufferSize = 256 * 1024;
     private const string JsonSourceName = "json";
     private readonly SourceExecutionContext _executionContext;
     private readonly string _path;
+    private readonly Musoq.Schema.QueryRowShape _shape;
 
     /// <summary>
     ///     Initializes a JSON file source.
     /// </summary>
     /// <param name="path">Path to strict UTF-8 JSON content.</param>
     /// <param name="executionContext">Source execution context.</param>
-    public JsonSource(string path, SourceExecutionContext executionContext)
+    /// <param name="shape">Concrete query row shape.</param>
+    public JsonScanPipeline(string path, SourceExecutionContext executionContext, Musoq.Schema.QueryRowShape shape)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(executionContext);
         _path = Path.GetFullPath(path);
         _executionContext = executionContext;
+        _shape = shape;
     }
 
     /// <summary>
     ///     Streams bounded chunks to the current Musoq row contract.
     /// </summary>
     /// <param name="writer">Chunk writer.</param>
-    protected override void CollectChunks(IChunkWriter<object[]> writer)
+    public void Execute(IChunkWriter<TRow> writer)
     {
         var progress = new DataSourceProgressReporter(_executionContext, JsonSourceName);
         progress.Begin();
@@ -111,7 +116,7 @@ public sealed class JsonSource : RowSourceBase<object[]>
 
     private static long ProcessZeroColumnScan(
         StructuredSchemaSnapshot snapshot,
-        IChunkWriter<object[]> writer,
+        IChunkWriter<TRow> writer,
         DataSourceProgressReporter progress,
         CancellationToken cancellationToken)
     {
@@ -172,23 +177,23 @@ public sealed class JsonSource : RowSourceBase<object[]>
         }
     }
 
-    private static void WriteRepeatedRows(IChunkWriter<object[]> writer, long rowCount)
+    private static void WriteRepeatedRows(IChunkWriter<TRow> writer, long rowCount)
     {
         while (rowCount > 0)
         {
             var count = (int)Math.Min(RowChunking.DefaultChunkSize, rowCount);
-            writer.Write(new RepeatedValueChunk<object[]>(Array.Empty<object>(), count));
+            writer.Write(new RepeatedValueChunk<TRow>(TFactory.EmptyRow, count));
             rowCount -= count;
         }
     }
 
     private long ProcessSequential(
         StructuredSchemaSnapshot snapshot,
-        IChunkWriter<object[]> writer,
+        IChunkWriter<TRow> writer,
         DataSourceProgressReporter progress,
         CancellationToken cancellationToken)
     {
-        var processor = new JsonRowProcessor(snapshot, _executionContext, writer, progress, cancellationToken);
+        var processor = TFactory.Create(snapshot, _executionContext, _shape, writer, progress, cancellationToken);
         JsonRecordFramer.Read(_path, processor, cancellationToken);
         processor.Complete();
         return processor.RowsRead;
@@ -197,10 +202,10 @@ public sealed class JsonSource : RowSourceBase<object[]>
     private void ProcessPartition(
         StructuredSchemaSnapshot snapshot,
         StructuredPartition partition,
-        IChunkWriter<object[]> writer,
+        IChunkWriter<TRow> writer,
         CancellationToken cancellationToken)
     {
-        var processor = new JsonRowProcessor(snapshot, _executionContext, writer, null, cancellationToken);
+        var processor = TFactory.Create(snapshot, _executionContext, _shape, writer, null, cancellationToken);
         JsonRecordFramer.ReadPartition(_path, partition, processor, cancellationToken);
         processor.Complete();
         if (processor.RowsRead != partition.RowCount)

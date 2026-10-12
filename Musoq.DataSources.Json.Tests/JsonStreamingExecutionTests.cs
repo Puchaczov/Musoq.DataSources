@@ -9,6 +9,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.Structured;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Converter;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
@@ -19,13 +22,71 @@ namespace Musoq.DataSources.Json.Tests;
 public class JsonStreamingExecutionTests
 {
     [TestMethod]
+    public void Query_WhenTypedNullableValuesFeedBoundedWindows_ShouldRetainExactTypesAndEmptyFrameResults()
+    {
+        WithJson("[{\"Id\":1,\"Amount\":1.25},{\"Id\":2,\"Amount\":null},{\"Id\":3,\"Amount\":2.5}]", path =>
+        {
+            var query = $"select Id, Sum(Amount) over (order by Id rows between 1 preceding and current row) as Total, " +
+                        $"Count(Amount) over (order by Id rows between 1 following and 1 following) as Following " +
+                        $"from json.file('{QueryPath(path)}') order by Id";
+            using var compiled = Compile(query);
+            var table = compiled.Run();
+            var rows = table.ToArray();
+            var columns = table.Columns.ToArray();
+            CollectionAssert.AreEqual(new[] { "Id", "Total", "Following" }, columns.Select(column => column.ColumnName).ToArray());
+            CollectionAssert.AreEqual(new[] { typeof(long), typeof(decimal?), typeof(long) }, columns.Select(column => column.ColumnType).ToArray());
+            Assert.AreEqual(3, rows.Length);
+            CollectionAssert.AreEqual(new long[] { 1, 2, 3 }, rows.Select(row => row.GetValue<long>(0)).ToArray());
+            CollectionAssert.AreEqual(new decimal?[] { 1.25m, 1.25m, 2.5m }, rows.Select(row => row.GetValue<decimal?>(1)).ToArray());
+            CollectionAssert.AreEqual(new long[] { 0, 1, 0 }, rows.Select(row => row.GetValue<long>(2)).ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Query_WhenConcreteNumericRowsFeedGroupedFunctions_UsesTypedSourceTransfer()
+    {
+        WithJson("[{\"Team\":\"A\",\"Amount\":1.25},{\"Team\":\"A\",\"Amount\":2.5},{\"Team\":\"B\",\"Amount\":null}]", path =>
+        {
+            var query = $"select Team, Sum(Amount) as Total, Count(Amount) as Present " +
+                        $"from json.file('{QueryPath(path)}') group by Team order by Team";
+            using var compiled = Compile(query);
+            var table = compiled.Run();
+            Assert.AreEqual(2, table.Count);
+            CollectionAssert.AreEqual(new[] { "Team", "Total", "Present" },
+                table.Columns.Select(column => column.ColumnName).ToArray());
+            var columns = table.Columns.ToArray();
+            Assert.AreEqual(typeof(decimal?), columns[1].ColumnType);
+            Assert.AreEqual(typeof(long), columns[2].ColumnType);
+            Assert.AreEqual("A", table[0].GetValue<string>(0));
+            Assert.AreEqual(3.75m, table[0].GetValue<decimal?>(1));
+            Assert.AreEqual(2L, table[0].GetValue<long>(2));
+            Assert.AreEqual("B", table[1].GetValue<string>(0));
+            Assert.IsNull(table[1].GetValue<decimal?>(1));
+            Assert.AreEqual(0L, table[1].GetValue<long>(2));
+
+            var inspected = InstanceCreator.CompileForInspection(query, $"JsonTyped_{Guid.NewGuid():N}",
+                new JsonSchemaProvider(), new TypedNullLoggerResolver(),
+                new CompilationOptions(ParallelizationMode.Full, usePrimitiveTypeValidation: true));
+            StringAssert.Contains(inspected.GeneratedCSharpCode, "QuerySourceInvocation<");
+            StringAssert.Contains(inspected.GeneratedCSharpCode, "Read<decimal?>");
+            Assert.IsFalse(inspected.GeneratedCSharpCode.Contains("GetRowSource<object", StringComparison.Ordinal));
+        });
+    }
+
+    private sealed class TypedNullLoggerResolver : ILoggerResolver
+    {
+        public ILogger ResolveLogger() => NullLogger.Instance;
+        public ILogger<T> ResolveLogger<T>() => NullLogger<T>.Instance;
+    }
+
+    [TestMethod]
     public void Query_WhenNumericPredicateIsAccepted_FiltersInsideSource()
     {
         WithJson("[{\"Id\":1},{\"Id\":2},{\"Id\":3},{\"Id\":4}]", path =>
         {
             var table = Compile($"select Id from json.file('{QueryPath(path)}') where Id >= 3").Run();
 
-            CollectionAssert.AreEqual(new object[] { 3L, 4L }, table.Select(row => row[0]).ToArray());
+            CollectionAssert.AreEqual(new object[] { 3L, 4L }, table.Select(row => row.ReadValue(0)).ToArray());
         });
     }
 
@@ -37,7 +98,7 @@ public class JsonStreamingExecutionTests
             var table = Compile($"select Name from json.file('{QueryPath(path)}') where Name = 'Ada'").Run();
 
             Assert.AreEqual(1, table.Count);
-            Assert.AreEqual("Ada", table[0][0]);
+            Assert.AreEqual("Ada", table[0].ReadValue(0));
         });
     }
 
@@ -48,7 +109,7 @@ public class JsonStreamingExecutionTests
         {
             var table = Compile($"select Name from json.file('{QueryPath(path)}')").Run();
 
-            Assert.AreEqual("Ada } \"Lovelace\"", table[0][0]);
+            Assert.AreEqual("Ada } \"Lovelace\"", table[0].ReadValue(0));
         });
     }
 
@@ -61,7 +122,7 @@ public class JsonStreamingExecutionTests
             var table = Compile($"select Id from json.file('{QueryPath(path)}')").Run();
 
             Assert.AreEqual(1, table.Count);
-            Assert.AreEqual(7L, table[0][0]);
+            Assert.AreEqual(7L, table[0].ReadValue(0));
         });
     }
 
@@ -86,7 +147,7 @@ public class JsonStreamingExecutionTests
 
             Assert.AreEqual(expected.Length, table.Count);
             for (var index = 0; index < expected.Length; index++)
-                CollectionAssert.AreEqual(expected[index], table[index].Values.ToArray());
+                CollectionAssert.AreEqual(expected[index], table[index].ReadValues().ToArray());
         });
     }
 
@@ -105,7 +166,7 @@ public class JsonStreamingExecutionTests
                 executionPlan: plan,
                 dataSourceProgressCallback: capture.Handler);
 
-            var rows = new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
+            var rows = new NativeJsonFixtureSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
 
             Assert.AreEqual(2, rows.Length);
             Assert.AreEqual(2L, capture.For("json", DataSourcePhase.RowsRead).Single().RowsProcessed);
@@ -132,15 +193,16 @@ public class JsonStreamingExecutionTests
                 CancellationToken.None,
                 executionPlan: plan);
 
-            var chunks = new JsonSource(path, context).Chunks.ToArray();
+            var chunks = new NativeJsonFixtureSource(path, context).Chunks.ToArray();
             var rows = chunks.SelectMany(chunk => chunk).ToArray();
 
             Assert.IsTrue(chunks.Length > 0);
             Assert.IsTrue(chunks.All(chunk =>
-                chunk is RowChunk<object[]> { Source: RepeatedValueChunk<object[]> }));
+                chunk is NativeQueryRowFixtures.FixtureChunk observed &&
+                observed.StorageType.GetGenericTypeDefinition() == typeof(RepeatedValueChunk<>)));
             Assert.AreEqual(3, rows.Length);
             Assert.IsTrue(rows.All(row => row.Length == 0));
-            Assert.IsTrue(rows.All(row => ReferenceEquals(row, Array.Empty<object>())));
+            Assert.IsTrue(rows.All(row => ReferenceEquals(row, rows[0])));
         });
     }
 
@@ -156,7 +218,7 @@ public class JsonStreamingExecutionTests
                 CancellationToken.None,
                 [new SchemaColumn("Name", 0, typeof(string))],
                 executionPlan: plan);
-            var rows = new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
+            var rows = new NativeJsonFixtureSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
 
             Assert.AreEqual(2, rows.Length);
             Assert.AreSame(rows[0][0], rows[1][0]);
@@ -178,10 +240,10 @@ public class JsonStreamingExecutionTests
                 CancellationToken.None,
                 [],
                 executionPlan: plan);
-            var rows = new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
+            var rows = new NativeJsonFixtureSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
 
             Assert.AreEqual(2, rows.Length);
-            Assert.IsTrue(rows.All(row => ReferenceEquals(row, Array.Empty<object>())));
+            Assert.IsTrue(rows.All(row => ReferenceEquals(row, rows[0])));
         });
     }
 
@@ -200,7 +262,7 @@ public class JsonStreamingExecutionTests
                 CancellationToken.None,
                 [new SchemaColumn("Value", 0, typeof(decimal))],
                 executionPlan: plan);
-            var source = new JsonSource(path, context);
+            var source = new NativeJsonFixtureSource(path, context);
 
             var exception = Assert.ThrowsExactly<FormatException>(() =>
                 source.Chunks.SelectMany(chunk => chunk).ToArray());
@@ -221,16 +283,17 @@ public class JsonStreamingExecutionTests
                 CancellationToken.None,
                 [new SchemaColumn("Payload", 0, typeof(object))],
                 executionPlan: plan);
-            var rows = new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
-            var payload = (Dictionary<string, object>)rows[0][0];
+            var rows = new NativeJsonFixtureSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
+            var payload = rows[0].GetValue<JsonElement>(0);
 
-            Assert.AreEqual("Ada", payload["Name"]);
-            CollectionAssert.AreEqual(new object[] { 1L, 2L, 3L }, (List<object>)payload["Values"]);
+            Assert.AreEqual("Ada", payload.GetProperty("Name").GetString());
+            CollectionAssert.AreEqual(new long[] { 1L, 2L, 3L },
+                payload.GetProperty("Values").EnumerateArray().Select(static value => value.GetInt64()).ToArray());
         });
     }
 
     [TestMethod]
-    public void Query_WhenColumnKindsConflict_MaterializesEachNaturalScalarAsObject()
+    public void Query_WhenColumnKindsConflict_MaterializesEachScalarAsConcreteJsonElement()
     {
         WithJson("[{\"Value\":1},{\"Value\":\"one\"},{\"Value\":true}]", path =>
         {
@@ -241,9 +304,12 @@ public class JsonStreamingExecutionTests
                 CancellationToken.None,
                 [new SchemaColumn("Value", 0, typeof(object))],
                 executionPlan: plan);
-            var rows = new JsonSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
+            var rows = new NativeJsonFixtureSource(path, context).Chunks.SelectMany(chunk => chunk).ToArray();
 
-            CollectionAssert.AreEqual(new object[] { 1L, "one", true }, rows.Select(row => row[0]).ToArray());
+            Assert.AreEqual(3, rows.Length);
+            Assert.AreEqual(1L, rows[0].GetValue<JsonElement>(0).GetInt64());
+            Assert.AreEqual("one", rows[1].GetValue<JsonElement>(0).GetString());
+            Assert.IsTrue(rows[2].GetValue<JsonElement>(0).GetBoolean());
         });
     }
 
@@ -256,9 +322,9 @@ public class JsonStreamingExecutionTests
                     $"select Integer, Fraction, Exponent from json.file('{QueryPath(path)}')")
                 .Run();
 
-            Assert.IsInstanceOfType<long>(table[0][0]);
-            Assert.IsInstanceOfType<decimal>(table[0][1]);
-            Assert.IsInstanceOfType<double>(table[0][2]);
+            Assert.IsInstanceOfType<long>(table[0].ReadValue(0));
+            Assert.IsInstanceOfType<decimal>(table[0].ReadValue(1));
+            Assert.IsInstanceOfType<double>(table[0].ReadValue(2));
         });
     }
 

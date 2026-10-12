@@ -45,6 +45,9 @@ public partial class OsLibrary
 
 public static class AggregateFilesKernel
 {
+    /// <summary>Initializes independently owned kernel state.</summary>
+    public static void Reset(ref State state) => state = default;
+
     public struct State
     {
         public List<FileEntity>? Files;
@@ -73,6 +76,9 @@ public static class AggregateFilesKernel
 
 public static class AggregateDirectoriesKernel
 {
+    /// <summary>Initializes independently owned kernel state.</summary>
+    public static void Reset(ref State state) => state = default;
+
     public struct State
     {
         public List<DirectoryInfo>? Directories;
@@ -101,6 +107,9 @@ public static class AggregateDirectoriesKernel
 
 public static class AggregateDirectoryEntitiesKernel
 {
+    /// <summary>Initializes independently owned kernel state.</summary>
+    public static void Reset(ref State state) => state = default;
+
     public struct State
     {
         public List<DirectoryInfo>? Directories;

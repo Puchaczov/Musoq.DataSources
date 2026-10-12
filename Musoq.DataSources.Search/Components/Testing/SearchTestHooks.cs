@@ -37,6 +37,16 @@ internal static class SearchTestHooks
         Current.Value?.Checkpoint?.Invoke();
     }
 
+    public static void TaskExceptionObserved(Exception exception)
+    {
+        Current.Value?.TaskExceptionObserved?.Invoke(exception);
+    }
+
+    public static void BeforeParallelWait()
+    {
+        Current.Value?.BeforeParallelWait?.Invoke();
+    }
+
     private sealed class RestoreScope(SearchTestHooksState? previous) : IDisposable
     {
         private bool _disposed;
@@ -59,4 +69,8 @@ internal sealed class SearchTestHooksState
     public Action<string>? AfterObservation { get; init; }
 
     public Action? Checkpoint { get; init; }
+
+    public Action<Exception>? TaskExceptionObserved { get; init; }
+
+    public Action? BeforeParallelWait { get; init; }
 }

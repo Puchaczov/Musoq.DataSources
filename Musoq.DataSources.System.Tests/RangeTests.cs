@@ -19,11 +19,11 @@ public class RangeTests
 
         Assert.IsTrue(table.Count == 5, "Table should contain exactly 5 records");
 
-        Assert.IsTrue(table.Any(r => (long)r[0] == 0L), "Missing record with value 0");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 1L), "Missing record with value 1");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 2L), "Missing record with value 2");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 3L), "Missing record with value 3");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 4L), "Missing record with value 4");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 0L), "Missing record with value 0");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 1L), "Missing record with value 1");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 2L), "Missing record with value 2");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 3L), "Missing record with value 3");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 4L), "Missing record with value 4");
     }
 
     [TestMethod]
@@ -36,10 +36,10 @@ public class RangeTests
 
         Assert.IsTrue(table.Count == 4, "Table should contain exactly 4 records");
 
-        Assert.IsTrue(table.Any(r => (long)r[0] == 1L), "Missing record with value 1");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 2L), "Missing record with value 2");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 3L), "Missing record with value 3");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 4L), "Missing record with value 4");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 1L), "Missing record with value 1");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 2L), "Missing record with value 2");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 3L), "Missing record with value 3");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 4L), "Missing record with value 4");
     }
 
 
@@ -53,9 +53,9 @@ public class RangeTests
 
         Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
 
-        Assert.IsTrue(table.Any(r => (long)r[0] == -1L), "Missing record with value -1");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 0L), "Missing record with value 0");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 1L), "Missing record with value 1");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == -1L), "Missing record with value -1");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 0L), "Missing record with value 0");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 1L), "Missing record with value 1");
     }
 
 
@@ -70,8 +70,8 @@ public class RangeTests
 
         Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
 
-        Assert.IsTrue(table.Any(r => (long)r[0] == 1L), "Missing record with value 1");
-        Assert.IsTrue(table.Any(r => (long)r[0] == 3L), "Missing record with value 3");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 1L), "Missing record with value 1");
+        Assert.IsTrue(table.Any(r => (long)r.ReadValue(0) == 3L), "Missing record with value 3");
     }
 
     private CompiledQuery CreateAndRunVirtualMachine(string script)

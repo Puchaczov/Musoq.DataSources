@@ -35,17 +35,17 @@ public class TimeSchema : SchemaBase
         };
     }
 
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         return name.ToLowerInvariant() switch
         {
             Interval => EnsureSourceType<T, TimeEntity>(name, new TimeSource(
-                DateTimeOffset.Parse((string)parameters[0]),
-                DateTimeOffset.Parse((string)parameters[1]),
-                (string)parameters[2],
+                DateTimeOffset.Parse(parameters.GetValue<string>(0)),
+                DateTimeOffset.Parse(parameters.GetValue<string>(1)),
+                parameters.GetValue<string>(2),
                 executionContext)),
             _ => throw new NotSupportedException($"Table {name} not found.")
         };

@@ -120,9 +120,11 @@ function Test-PluginPackage {
         Expand-Archive -LiteralPath $pluginZipFile -DestinationPath $pluginDirectory -Force
         Assert-MusoqPluginLicenseNotices -PluginDirectory $pluginDirectory -Context $PackagePath | Out-Null
 
-        if (-not (Test-Path -LiteralPath (Join-Path $pluginDirectory $entryPoint))) {
+        $entryPointPath = Join-Path $pluginDirectory $entryPoint
+        if (-not (Test-Path -LiteralPath $entryPointPath)) {
             throw "Plugin.zip is missing entry point DLL '$entryPoint': $PackagePath"
         }
+        Assert-MusoqPluginDirectAssemblyReferences -EntryPointPath $entryPointPath
 
         $xmlDocumentation = [System.IO.Path]::ChangeExtension($entryPoint, ".xml")
         if (-not (Test-Path -LiteralPath (Join-Path $pluginDirectory $xmlDocumentation))) {
@@ -169,8 +171,8 @@ function Test-PluginPackage {
         $compatibility = Read-MusoqPluginCompatibilityManifest -Path $compatibilityPath
         $schemaRange = $compatibility.hostPackages.'Musoq.Schema'
         $pluginsRange = $compatibility.hostPackages.'Musoq.Plugins'
-        if ($schemaRange.minimumVersionInclusive -ne "17.0.11-alpha.1" -or
-            $pluginsRange.minimumVersionInclusive -ne "17.0.11-alpha.1" -or
+        if ($schemaRange.minimumVersionInclusive -ne "17.0.12-alpha.1" -or
+            $pluginsRange.minimumVersionInclusive -ne "17.0.12-alpha.1" -or
             $schemaRange.maximumVersionExclusive -ne "18.0.0" -or
             $pluginsRange.maximumVersionExclusive -ne "18.0.0") {
             throw "Plugin compatibility manifest does not match the supported runtime-v2 ABI: $PackagePath"

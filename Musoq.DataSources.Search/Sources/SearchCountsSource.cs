@@ -57,8 +57,5 @@ internal sealed class SearchCountsSource : SearchTextSourceBase<SearchCount>
             resourceBudget);
     }
 
-    protected override object? GetPredicateValue(SearchCount row, string columnName)
-    {
-        return SearchPredicateValues.GetCountValue(row, columnName);
-    }
+
 }

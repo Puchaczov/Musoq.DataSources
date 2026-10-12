@@ -55,10 +55,10 @@ internal sealed class FrozenByteNativeLegacySchema
             };
         }
 
-        public override RowSource<T> GetRowSource<T>(
+        public override RowSource<T> GetRowSource<T, TArguments>(
             string name,
             SourceExecutionContext executionContext,
-            params object?[] parameters)
+            TArguments parameters)
         {
             var sourceParameters = ParseParameters(name, parameters);
             if (typeof(T) != typeof(object[]))
@@ -75,27 +75,22 @@ internal sealed class FrozenByteNativeLegacySchema
                 executionContext);
         }
 
-        private static FrozenSourceParameters ParseParameters(string name, object?[] parameters)
+        private static FrozenSourceParameters ParseParameters<TArguments>(string name, TArguments parameters)
+            where TArguments : struct, ISourceArguments
         {
-            if (string.Equals(name, "delimited", StringComparison.OrdinalIgnoreCase))
+            var delimited = string.Equals(name, "delimited", StringComparison.OrdinalIgnoreCase);
+            if (parameters.Count != (delimited ? 4 : 3))
+                throw new ArgumentException("Frozen source arguments do not match its declared constructor.");
+            var separator = delimited ? parameters.GetValue<string>(1) : name.ToLowerInvariant() switch
             {
-                if (parameters is not [string path, string delimiter, bool hasHeader, int skipLines])
-                    throw new ArgumentException("The delimited source requires (path, delimiter, hasHeader, skipLines).");
-                return new FrozenSourceParameters(path, delimiter, hasHeader, skipLines);
-            }
-
-            if (parameters is not [string sourcePath, bool sourceHasHeader, int sourceSkipLines])
-                throw new ArgumentException("The separated-values source requires (path, hasHeader, skipLines).");
-
-            var separator = name.ToLowerInvariant() switch
-            {
-                "comma" => ",",
-                "tab" => "\t",
-                "semicolon" => ";",
+                "comma" => ",", "tab" => "\t", "semicolon" => ";",
                 _ => throw new NotSupportedException($"Frozen separated-values source '{name}' is not supported.")
             };
-            return new FrozenSourceParameters(sourcePath, separator, sourceHasHeader, sourceSkipLines);
+            var offset = delimited ? 1 : 0;
+            return new FrozenSourceParameters(parameters.GetValue<string>(0), separator,
+                parameters.GetValue<bool>(1 + offset), parameters.GetValue<int>(2 + offset));
         }
+
     }
 
     private readonly record struct FrozenSourceParameters(

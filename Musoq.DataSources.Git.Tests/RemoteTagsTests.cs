@@ -24,23 +24,23 @@ public sealed class RemoteTagsTests
         var result = Compile(query).Run();
 
         Assert.AreEqual(2, result.Count);
-        var lightweight = result.Single(row => (string)row[2] == "offline-lightweight");
-        var annotated = result.Single(row => (string)row[2] == "offline-annotated");
-        Assert.AreEqual("origin", (string)lightweight[0]);
-        Assert.AreEqual(fixture.RemotePath, (string)lightweight[1]);
-        Assert.AreEqual("refs/tags/offline-lightweight", (string)lightweight[3]);
-        Assert.IsFalse((bool)lightweight[6]);
-        Assert.IsNull(lightweight[5]);
-        Assert.IsTrue((bool)annotated[6]);
-        Assert.IsFalse(string.IsNullOrWhiteSpace((string)annotated[4]));
-        Assert.IsFalse(string.IsNullOrWhiteSpace((string)annotated[5]));
-        Assert.AreNotEqual((string)annotated[4], (string)annotated[5]);
+        var lightweight = result.Single(row => (string)row.ReadValue(2) == "offline-lightweight");
+        var annotated = result.Single(row => (string)row.ReadValue(2) == "offline-annotated");
+        Assert.AreEqual("origin", (string)lightweight.ReadValue(0));
+        Assert.AreEqual(fixture.RemotePath, (string)lightweight.ReadValue(1));
+        Assert.AreEqual("refs/tags/offline-lightweight", (string)lightweight.ReadValue(3));
+        Assert.IsFalse((bool)lightweight.ReadValue(6));
+        Assert.IsNull(lightweight.ReadValue(5));
+        Assert.IsTrue((bool)annotated.ReadValue(6));
+        Assert.IsFalse(string.IsNullOrWhiteSpace((string)annotated.ReadValue(4)));
+        Assert.IsFalse(string.IsNullOrWhiteSpace((string)annotated.ReadValue(5)));
+        Assert.AreNotEqual((string)annotated.ReadValue(4), (string)annotated.ReadValue(5));
 
         var annotatedPeelQuery = $"select t.PeeledSha from git.remotetags('{fixture.ClientPath.Escape()}', 'origin') t " +
                                  "where t.FriendlyName = 'offline-annotated' and t.IsAnnotated = true";
         var annotatedPeel = Compile(annotatedPeelQuery).Run();
         Assert.AreEqual(1, annotatedPeel.Count);
-        Assert.IsFalse(string.IsNullOrWhiteSpace((string)annotatedPeel[0][0]));
+        Assert.IsFalse(string.IsNullOrWhiteSpace((string)annotatedPeel[0].ReadValue(0)));
 
         var afterRefs = OfflineGitFixture.RunGit(fixture.ClientPath, "for-each-ref", "--format=%(refname)");
         var afterObjects = OfflineGitFixture.RunGit(fixture.ClientPath, "count-objects", "-v");
@@ -60,19 +60,19 @@ public sealed class RemoteTagsTests
                     "where t.CanonicalName > 'refs/tags/a'";
         var result = Compile(query).Run();
 
-        CollectionAssert.AreEquivalent(new[] { "b", "c" }, result.Select(row => (string)row[0]).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "b", "c" }, result.Select(row => (string)row.ReadValue(0)).ToArray());
 
         var exactQuery = $"select t.FriendlyName from git.remotetags('{fixture.ClientPath.Escape()}', 'origin') t " +
                          "where t.FriendlyName = 'b'";
         var exact = Compile(exactQuery).Run();
         Assert.AreEqual(1, exact.Count);
-        Assert.AreEqual("b", (string)exact[0][0]);
+        Assert.AreEqual("b", (string)exact[0].ReadValue(0));
 
         var peelQuery = $"select t.PeeledSha from git.remotetags('{fixture.ClientPath.Escape()}', 'origin') t " +
                         "where t.FriendlyName = 'b' and t.IsAnnotated = false";
         var peel = Compile(peelQuery).Run();
         Assert.AreEqual(1, peel.Count);
-        Assert.IsNull(peel[0][0]);
+        Assert.IsNull(peel[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -87,7 +87,7 @@ public sealed class RemoteTagsTests
                     "where t.FriendlyName in ('a', 'c')";
         var result = Compile(query).Run();
 
-        CollectionAssert.AreEquivalent(new[] { "a", "c" }, result.Select(row => (string)row[0]).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "a", "c" }, result.Select(row => (string)row.ReadValue(0)).ToArray());
     }
 
     [TestMethod]
@@ -118,9 +118,9 @@ public sealed class RemoteTagsTests
         var query = $"select t.RemoteName, t.RemoteUrl, t.FriendlyName from git.remotetags('{fixture.ClientPath.Escape()}', 'backup') t";
         var result = Compile(query).Run();
 
-        var tag = result.Single(row => (string)row[2] == "backup-tag");
-        Assert.AreEqual("backup", (string)tag[0]);
-        Assert.AreEqual(fixture.BackupRemotePath, (string)tag[1]);
+        var tag = result.Single(row => (string)row.ReadValue(2) == "backup-tag");
+        Assert.AreEqual("backup", (string)tag.ReadValue(0));
+        Assert.AreEqual(fixture.BackupRemotePath, (string)tag.ReadValue(1));
     }
 
     [TestMethod]
@@ -135,7 +135,7 @@ public sealed class RemoteTagsTests
         var query = $"select t.FriendlyName from git.remotetags('{fixture.ClientPath.Escape()}', 'origin') t";
         var result = Compile(query).Run();
 
-        Assert.AreEqual("file-uri-tag", (string)result.Single()[0]);
+        Assert.AreEqual("file-uri-tag", (string)result.Single().ReadValue(0));
         Assert.AreEqual(beforeRefs, OfflineGitFixture.RunGit(fixture.ClientPath, "for-each-ref", "--format=%(refname)"));
         Assert.AreEqual(beforeObjects, OfflineGitFixture.RunGit(fixture.ClientPath, "count-objects", "-v"));
     }

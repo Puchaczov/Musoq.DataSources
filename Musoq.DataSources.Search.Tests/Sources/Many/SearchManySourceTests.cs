@@ -105,7 +105,7 @@ public sealed class SearchManySourceTests
                     ("beta.txt", "todo", 0L),
                     ("delta.txt", "fixme", 0L)
                 },
-                result.Rows.Select(row => ((string)row[0], (string)row[1], (long)row[2])).ToArray());
+                result.Rows.Select(row => ((string)row.ReadValue(0), (string)row.ReadValue(1), (long)row.ReadValue(2))).ToArray());
         }
         finally
         {
@@ -147,13 +147,13 @@ public sealed class SearchManySourceTests
                     ("beta.txt", "todo", 1L),
                     ("delta.txt", "fixme", 1L)
                 },
-                result.Rows.Select(row => ((string)row[0], (string)row[1], (long)row[2])).ToArray());
+                result.Rows.Select(row => ((string)row.ReadValue(0), (string)row.ReadValue(1), (long)row.ReadValue(2))).ToArray());
             CollectionAssert.AreEqual(
                 new[] { "Path", "AnyHit" },
                 any.Columns.Select(column => column.ColumnName).ToArray());
             CollectionAssert.AreEqual(
                 new[] { ("alpha.txt", true), ("beta.txt", true), ("delta.txt", true) },
-                any.Rows.Select(row => ((string)row[0], (bool)row[1])).ToArray());
+                any.Rows.Select(row => ((string)row.ReadValue(0), (bool)row.ReadValue(1))).ToArray());
         }
         finally
         {
@@ -185,11 +185,11 @@ public sealed class SearchManySourceTests
                 .Run();
 
             Assert.AreEqual(1, all.Count);
-            Assert.AreEqual("alpha.txt", all[0][0]);
-            Assert.AreEqual(2L, all[0][1]);
+            Assert.AreEqual("alpha.txt", all[0].ReadValue(0));
+            Assert.AreEqual(2L, all[0].ReadValue(1));
             Assert.AreEqual(1, atLeastTwo.Count);
-            Assert.AreEqual("alpha.txt", atLeastTwo[0][0]);
-            Assert.AreEqual(2L, atLeastTwo[0][1]);
+            Assert.AreEqual("alpha.txt", atLeastTwo[0].ReadValue(0));
+            Assert.AreEqual(2L, atLeastTwo[0].ReadValue(1));
         }
         finally
         {
@@ -220,7 +220,7 @@ public sealed class SearchManySourceTests
                 .Run();
 
             Assert.AreEqual(1, none.Count);
-            Assert.AreEqual("gamma.txt", none[0][0]);
+            Assert.AreEqual("gamma.txt", none[0].ReadValue(0));
             Assert.AreEqual(0, allWithMissing.Count);
         }
         finally

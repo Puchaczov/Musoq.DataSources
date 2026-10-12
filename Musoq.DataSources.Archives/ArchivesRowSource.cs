@@ -20,7 +20,7 @@ internal class ArchivesRowSource(string path, SourceExecutionContext executionCo
         try
         {
             using var stream = File.OpenRead(path);
-            using var reader = ReaderFactory.Open(stream, new ReaderOptions
+            using var reader = ReaderFactory.OpenReader(stream, new ReaderOptions
             {
                 LeaveStreamOpen = true
             });

@@ -7,7 +7,7 @@ namespace Musoq.DataSources.GitHub.Sources.Branches;
 internal static class BranchesSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> BranchesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<BranchEntity, object?>> BranchesIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] BranchesColumns;
 
     static BranchesSourceHelper()
@@ -20,16 +20,6 @@ internal static class BranchesSourceHelper
             { nameof(BranchEntity.Protected), 3 },
             { nameof(BranchEntity.RepositoryOwner), 4 },
             { nameof(BranchEntity.RepositoryName), 5 }
-        };
-
-        BranchesIndexToMethodAccessMap = new Dictionary<int, Func<BranchEntity, object?>>
-        {
-            { 0, branch => branch.Name },
-            { 1, branch => branch.CommitSha },
-            { 2, branch => branch.CommitUrl },
-            { 3, branch => branch.Protected },
-            { 4, branch => branch.RepositoryOwner },
-            { 5, branch => branch.RepositoryName }
         };
 
         BranchesColumns =

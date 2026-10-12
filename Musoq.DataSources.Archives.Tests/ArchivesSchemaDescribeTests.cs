@@ -38,8 +38,8 @@ public class ArchivesSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have 1 row (file method)");
 
         var row = table.First();
-        Assert.AreEqual("file", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
+        Assert.AreEqual("file", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
     }
 
     [TestMethod]
@@ -57,8 +57,8 @@ public class ArchivesSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("file", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
+        Assert.AreEqual("file", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
     }
 
     [TestMethod]
@@ -72,7 +72,7 @@ public class ArchivesSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0, "Should have rows describing the table columns");
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(EntryWrapper.CompressionType),
@@ -151,10 +151,10 @@ public class ArchivesSchemaDescribeTests
             "Method signature vs table schema should have different row counts");
 
         Assert.AreEqual(1, tableNoArgs.Count);
-        Assert.AreEqual("file", (string)tableNoArgs.First()[0]);
+        Assert.AreEqual("file", (string)tableNoArgs.First().ReadValue(0));
 
         Assert.IsTrue(tableWithArgs.Count > 1);
-        var columnNames = tableWithArgs.Select(row => (string)row[0]).ToList();
+        var columnNames = tableWithArgs.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(columnNames.Contains(nameof(EntryWrapper.Key)));
         Assert.IsTrue(columnNames.Contains(nameof(EntryWrapper.Size)));
     }

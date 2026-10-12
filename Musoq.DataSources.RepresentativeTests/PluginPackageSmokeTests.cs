@@ -1,4 +1,6 @@
 using System.IO.Compression;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -19,6 +21,37 @@ public class PluginPackageSmokeTests
         "Musoq.Evaluator.dll",
         "Musoq.CommandLine.dll"
     ];
+
+    private static readonly string[] ForbiddenDirectHostReferences =
+    [
+        "Musoq.Parser",
+        "Musoq.Converter",
+        "Musoq.Evaluator",
+        "Musoq.CommandLine"
+    ];
+
+    [TestMethod]
+    public void DirectReferenceGuard_ShouldDetectForbiddenHostReferenceWithoutBundledDll()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "musoq-reference-smoke", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            var entryPointPath = Path.Combine(tempDirectory, "Fixture.dll");
+            File.Copy(typeof(PluginPackageSmokeTests).Assembly.Location, entryPointPath);
+            Assert.IsFalse(File.Exists(Path.Combine(tempDirectory, "Musoq.Converter.dll")));
+
+            var forbidden = GetForbiddenDirectHostReferences(entryPointPath);
+
+            CollectionAssert.Contains(forbidden, "Musoq.Converter");
+            CollectionAssert.Contains(forbidden, "Musoq.Evaluator");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+                Directory.Delete(tempDirectory, true);
+        }
+    }
 
     [TestMethod]
     public void PluginPackages_WhenArtifactsExist_ShouldMatchRuntimeV2PackageContract()
@@ -48,10 +81,10 @@ public class PluginPackageSmokeTests
         {
             ZipFile.ExtractToDirectory(packagePath, outerDirectory);
 
-            var entryPointPath = Path.Combine(outerDirectory, "EntryPoint.txt");
-            Assert.IsTrue(File.Exists(entryPointPath), $"Package is missing EntryPoint.txt: {packagePath}");
+            var entryPointFilePath = Path.Combine(outerDirectory, "EntryPoint.txt");
+            Assert.IsTrue(File.Exists(entryPointFilePath), $"Package is missing EntryPoint.txt: {packagePath}");
 
-            var entryPointDll = File.ReadAllText(entryPointPath).Trim();
+            var entryPointDll = File.ReadAllText(entryPointFilePath).Trim();
             Assert.IsFalse(string.IsNullOrWhiteSpace(entryPointDll), $"EntryPoint.txt is empty: {packagePath}");
 
             var libraryNamePath = Path.Combine(outerDirectory, "LibraryName.txt");
@@ -86,6 +119,13 @@ public class PluginPackageSmokeTests
             Assert.IsTrue(
                 File.Exists(Path.Combine(pluginDirectory, entryPointDll)),
                 $"Plugin.zip is missing entry point DLL '{entryPointDll}': {packagePath}");
+
+            var entryPointPath = Path.Combine(pluginDirectory, entryPointDll);
+            var forbiddenReferences = GetForbiddenDirectHostReferences(entryPointPath);
+            Assert.AreEqual(
+                0,
+                forbiddenReferences.Length,
+                $"Plugin entry point directly references forbidden Musoq host assembly(s) {string.Join(", ", forbiddenReferences)}: {packagePath}");
 
             var xmlDocumentationFile = Path.ChangeExtension(entryPointDll, ".xml");
             Assert.IsTrue(
@@ -170,11 +210,27 @@ public class PluginPackageSmokeTests
         ValidateHostPackage(hostPackages, "Musoq.Plugins", packagePath);
     }
 
+    private static string[] GetForbiddenDirectHostReferences(string assemblyPath)
+    {
+        using var stream = File.OpenRead(assemblyPath);
+        using var peReader = new PEReader(stream);
+        Assert.IsTrue(peReader.HasMetadata, $"Plugin entry point is not a managed assembly: {assemblyPath}");
+
+        var metadataReader = peReader.GetMetadataReader();
+        return metadataReader.AssemblyReferences
+            .Select(handle => metadataReader.GetString(metadataReader.GetAssemblyReference(handle).Name))
+            .Where(name => ForbiddenDirectHostReferences.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+                           name.StartsWith("Musoq.Targets.", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+    }
+
     private static void ValidateHostPackage(JsonElement hostPackages, string packageName, string packagePath)
     {
         var package = hostPackages.GetProperty(packageName);
         Assert.AreEqual(
-            "17.0.11-alpha.1",
+            "17.0.12-alpha.1",
             package.GetProperty("minimumVersionInclusive").GetString(),
             $"Unexpected {packageName} minimum: {packagePath}");
         Assert.AreEqual(

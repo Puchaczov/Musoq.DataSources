@@ -267,9 +267,9 @@ public class SeparatedValuesQueryScopedCompiledExecutionBenchmarks
             var orderHash = 0UL;
             foreach (var row in table)
             {
-                var rowChecksum = 0L;
-                for (var index = 0; index < row.Count; index++)
-                    rowChecksum = unchecked(rowChecksum * 397 + ValueChecksum(row[index]));
+                var visitor = new NativeChecksumVisitor();
+                row.VisitColumns(ref visitor);
+                var rowChecksum = visitor.Value;
                 checksum = unchecked(checksum + rowChecksum);
                 orderHash = unchecked((orderHash ^ (ulong)rowChecksum) * 1099511628211UL);
             }
@@ -277,18 +277,25 @@ public class SeparatedValuesQueryScopedCompiledExecutionBenchmarks
             return new CompiledOutcome(table.Count, checksum, orderHash);
         }
 
-        private static long ValueChecksum(object? value)
+        private struct NativeChecksumVisitor : IColumnValueVisitor
         {
-            return value switch
+            public long Value;
+            public void Visit<T>(int columnIndex, in T value)
             {
-                null => 0,
-                int number => number,
-                long number => number,
-                string text => StringChecksum(text),
-                IFormattable formattable => StringChecksum(
-                    formattable.ToString(null, CultureInfo.InvariantCulture) ?? string.Empty),
-                _ => StringChecksum(value.ToString() ?? string.Empty)
-            };
+                var copy = value;
+                long checksum;
+                if (typeof(T) == typeof(int)) checksum = System.Runtime.CompilerServices.Unsafe.As<T, int>(ref copy);
+                else if (typeof(T) == typeof(int?)) checksum = System.Runtime.CompilerServices.Unsafe.As<T, int?>(ref copy).GetValueOrDefault();
+                else if (typeof(T) == typeof(long)) checksum = System.Runtime.CompilerServices.Unsafe.As<T, long>(ref copy);
+                else if (typeof(T) == typeof(long?)) checksum = System.Runtime.CompilerServices.Unsafe.As<T, long?>(ref copy).GetValueOrDefault();
+                else if (typeof(T) == typeof(string))
+                {
+                    var text = System.Runtime.CompilerServices.Unsafe.As<T, string>(ref copy);
+                    checksum = text is null ? 0 : StringChecksum(text);
+                }
+                else throw new InvalidOperationException($"Unexpected benchmark column type {typeof(T)}.");
+                Value = unchecked(Value * 397 + checksum);
+            }
         }
 
         private static long StringChecksum(string value)

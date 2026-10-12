@@ -18,7 +18,7 @@ internal static class JsonSourcePlanner
         var requiredColumns = request.RequiredColumns ?? [];
         var (acceptedPredicate, residualPredicate) = SplitPredicate(
             request.Predicate,
-            expression => IsSupportedPredicate(snapshot, expression));
+            expression => HasCompatibleDeclaredTypes(snapshot, requiredColumns) && IsSupportedPredicate(snapshot, expression));
         var residualOrderBy = request.OrderBy ?? [];
         var acceptsSlice = residualPredicate is null && residualOrderBy.Count == 0;
         var layout = StructuredExecutionLayout.Bind(
@@ -121,6 +121,22 @@ internal static class JsonSourcePlanner
         return true;
     }
 
+    private static bool HasCompatibleDeclaredTypes(StructuredSchemaSnapshot snapshot, IReadOnlyList<SourceColumnRef> columns)
+    {
+        foreach (var column in columns)
+        {
+            if (column.ValueTypeName is null)
+                continue;
+            if (!snapshot.TryGetColumn(column.Name, out var discovered))
+                return false;
+            var declared = Type.GetType(column.ValueTypeName, throwOnError: false);
+            if (declared is null || (Nullable.GetUnderlyingType(declared) ?? declared) !=
+                (Nullable.GetUnderlyingType(discovered.ClrType) ?? discovered.ClrType))
+                return false;
+        }
+        return true;
+    }
+
     private static bool IsSupportedPredicate(
         StructuredSchemaSnapshot snapshot,
         SourcePredicateExpression expression)
@@ -133,11 +149,23 @@ internal static class JsonSourcePlanner
 
         return column.TypeState.Kind switch
         {
-            StructuredValueKind.Long => IsNumericOperator(op) && CanConvert<long>(literal.Value),
+            StructuredValueKind.Long => IsNumericOperator(op) && IsExactIntegralLiteral(literal.Value),
             StructuredValueKind.Decimal => IsNumericOperator(op) && CanConvert<decimal>(literal.Value),
             StructuredValueKind.Double => IsNumericOperator(op) && CanConvert<double>(literal.Value),
             StructuredValueKind.Boolean => IsEqualityOperator(op) && literal.Value is bool,
             StructuredValueKind.String => IsEqualityOperator(op) && literal.Value is string,
+            _ => false
+        };
+    }
+
+    private static bool IsExactIntegralLiteral(object value)
+    {
+        return value switch
+        {
+            sbyte or byte or short or ushort or int or uint or long => true,
+            ulong unsigned => unsigned <= long.MaxValue,
+            decimal number => number >= long.MinValue && number <= long.MaxValue && decimal.Truncate(number) == number,
+            // Floating conversion can alter integral boundaries; keep these comparisons residual.
             _ => false
         };
     }

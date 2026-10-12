@@ -53,28 +53,28 @@ public class GitSchemaDescribeTests
         Assert.AreEqual(13, table.Count,
             "Should have 13 rows (repository, tags, stashes, remotetags, commits, branches, filehistory x3, status, remotes, blame x2)");
 
-        var repositoryRow = table.FirstOrDefault(r => (string)r[0] == "repository");
+        var repositoryRow = table.FirstOrDefault(r => (string)r.ReadValue(0) == "repository");
         Assert.IsNotNull(repositoryRow);
 
-        var tagsRow = table.FirstOrDefault(r => (string)r[0] == "tags");
+        var tagsRow = table.FirstOrDefault(r => (string)r.ReadValue(0) == "tags");
         Assert.IsNotNull(tagsRow);
 
-        var stashesRow = table.FirstOrDefault(r => (string)r[0] == "stashes");
+        var stashesRow = table.FirstOrDefault(r => (string)r.ReadValue(0) == "stashes");
         Assert.IsNotNull(stashesRow);
 
-        var remoteTagsRow = table.FirstOrDefault(r => (string)r[0] == "remotetags");
+        var remoteTagsRow = table.FirstOrDefault(r => (string)r.ReadValue(0) == "remotetags");
         Assert.IsNotNull(remoteTagsRow);
 
-        var commitsRow = table.FirstOrDefault(r => (string)r[0] == "commits");
+        var commitsRow = table.FirstOrDefault(r => (string)r.ReadValue(0) == "commits");
         Assert.IsNotNull(commitsRow);
 
-        var branchesRow = table.FirstOrDefault(r => (string)r[0] == "branches");
+        var branchesRow = table.FirstOrDefault(r => (string)r.ReadValue(0) == "branches");
         Assert.IsNotNull(branchesRow);
 
-        var remotesRow = table.FirstOrDefault(r => (string)r[0] == "remotes");
+        var remotesRow = table.FirstOrDefault(r => (string)r.ReadValue(0) == "remotes");
         Assert.IsNotNull(remotesRow);
 
-        var blameRows = table.Where(r => ((string)r[0]).StartsWith("blame")).ToList();
+        var blameRows = table.Where(r => ((string)r.ReadValue(0)).StartsWith("blame")).ToList();
         Assert.AreEqual(2, blameRows.Count, "Should have 2 blame method signatures");
     }
 
@@ -93,8 +93,8 @@ public class GitSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("repository", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
+        Assert.AreEqual("repository", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
     }
 
     [TestMethod]
@@ -112,7 +112,7 @@ public class GitSchemaDescribeTests
             Assert.AreEqual(3, table.Columns.Count());
             Assert.IsTrue(table.Count > 0, "Should have rows describing the table columns");
 
-            var columnNames = table.Select(row => (string)row[0]).ToList();
+            var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
             var expectedColumns = new[]
             {
                 nameof(RepositoryEntity.Path),
@@ -193,10 +193,10 @@ public class GitSchemaDescribeTests
                 "Method signature vs table schema should have different row counts");
 
             Assert.AreEqual(1, tableNoArgs.Count);
-            Assert.AreEqual("repository", (string)tableNoArgs.First()[0]);
+            Assert.AreEqual("repository", (string)tableNoArgs.First().ReadValue(0));
 
             Assert.IsTrue(tableWithArgs.Count > 1);
-            var columnNames = tableWithArgs.Select(row => (string)row[0]).ToList();
+            var columnNames = tableWithArgs.Select(row => (string)row.ReadValue(0)).ToList();
             Assert.IsTrue(columnNames.Contains(nameof(RepositoryEntity.Path)));
             Assert.IsTrue(columnNames.Contains(nameof(RepositoryEntity.WorkingDirectory)));
         }

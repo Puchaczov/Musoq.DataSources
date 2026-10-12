@@ -7,6 +7,18 @@
     "PackageId": "Newtonsoft.Json",
     "Url": "https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md"
   },
+  "Microsoft.Build.Tasks.Git": {
+    "PackageId": "Microsoft.Build.Tasks.Git",
+    "Url": "https://raw.githubusercontent.com/spdx/license-list-data/main/text/MIT.txt"
+  },
+  "Microsoft.SourceLink.Common": {
+    "PackageId": "Microsoft.SourceLink.Common",
+    "Url": "https://raw.githubusercontent.com/spdx/license-list-data/main/text/MIT.txt"
+  },
+  "Microsoft.SourceLink.GitHub": {
+    "PackageId": "Microsoft.SourceLink.GitHub",
+    "Url": "https://raw.githubusercontent.com/spdx/license-list-data/main/text/MIT.txt"
+  },
   "Docker.DotNet": {
     "PackageId": "Docker.DotNet",
     "Url": "https://raw.githubusercontent.com/dotnet/Docker.DotNet/master/LICENSE"

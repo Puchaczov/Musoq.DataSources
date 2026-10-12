@@ -46,7 +46,7 @@ public class JsonRuntimeV2ProjectionTests
             CancellationToken.None,
             columns,
             executionPlan: CreateExecutionPlan([new SourceColumnRef("Age")]));
-        var source = new JsonSource("./JsonTestFile_First.json", executionContext);
+        var source = new NativeJsonFixtureSource("./JsonTestFile_First.json", executionContext);
 
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 

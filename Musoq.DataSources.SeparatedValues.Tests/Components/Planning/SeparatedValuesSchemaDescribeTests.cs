@@ -45,16 +45,16 @@ public class SeparatedValuesSchemaDescribeTests
 
         Assert.AreEqual(3, table.Count, "Should have 3 rows for comma, tab, semicolon methods");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
 
         Assert.AreEqual(1, methodNames.Count(m => m == "comma"), "Should contain 'comma' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "tab"), "Should contain 'tab' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "semicolon"), "Should contain 'semicolon' method once");
 
-        var commaRow = table.First(row => (string)row[0] == "comma");
-        Assert.AreEqual("path: System.String", (string)commaRow[1]);
-        Assert.AreEqual("hasHeader: System.Boolean", (string)commaRow[2]);
-        Assert.AreEqual("skipLines: System.Int32", (string)commaRow[3]);
+        var commaRow = table.First(row => (string)row.ReadValue(0) == "comma");
+        Assert.AreEqual("path: System.String", (string)commaRow.ReadValue(1));
+        Assert.AreEqual("hasHeader: System.Boolean", (string)commaRow.ReadValue(2));
+        Assert.AreEqual("skipLines: System.Int32", (string)commaRow.ReadValue(3));
     }
 
     [TestMethod]
@@ -69,10 +69,10 @@ public class SeparatedValuesSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("comma", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
-        Assert.AreEqual("hasHeader: System.Boolean", (string)row[2]);
-        Assert.AreEqual("skipLines: System.Int32", (string)row[3]);
+        Assert.AreEqual("comma", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
+        Assert.AreEqual("hasHeader: System.Boolean", (string)row.ReadValue(2));
+        Assert.AreEqual("skipLines: System.Int32", (string)row.ReadValue(3));
     }
 
     [TestMethod]
@@ -87,10 +87,10 @@ public class SeparatedValuesSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("tab", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
-        Assert.AreEqual("hasHeader: System.Boolean", (string)row[2]);
-        Assert.AreEqual("skipLines: System.Int32", (string)row[3]);
+        Assert.AreEqual("tab", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
+        Assert.AreEqual("hasHeader: System.Boolean", (string)row.ReadValue(2));
+        Assert.AreEqual("skipLines: System.Int32", (string)row.ReadValue(3));
     }
 
     [TestMethod]
@@ -105,10 +105,10 @@ public class SeparatedValuesSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("semicolon", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
-        Assert.AreEqual("hasHeader: System.Boolean", (string)row[2]);
-        Assert.AreEqual("skipLines: System.Int32", (string)row[3]);
+        Assert.AreEqual("semicolon", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
+        Assert.AreEqual("hasHeader: System.Boolean", (string)row.ReadValue(2));
+        Assert.AreEqual("skipLines: System.Int32", (string)row.ReadValue(3));
     }
 
     [TestMethod]

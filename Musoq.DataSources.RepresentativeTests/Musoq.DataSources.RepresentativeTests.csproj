@@ -42,6 +42,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\examples\native-plugin\Plugin.cs" Link="Documentation\Plugin.cs" />
+        <Content Include="..\examples\native-plugin\Plugin.cs" Link="Documentation\Plugin.cs" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="..\MusoqPluginsDevelopment.md;..\MusoqAutonomousPluginDevelopment.md" Link="Documentation\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="..\examples\native-plugin\*.sql" Link="Documentation\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="..\examples\native-plugin\rows.json" Link="Documentation\rows.json" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="Files\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

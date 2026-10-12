@@ -136,18 +136,18 @@ public class JsonLegacySourceBenchmarks
     }
 
     [Benchmark]
-    public long LegacyDataSource()
+    public long NativeDataSource()
     {
-        var source = new JsonSource(_path, _executionContext);
+        var source = NativeJsonBenchmarkRows.Open<NativeJsonBenchmarkRows.FlatRow, NativeJsonBenchmarkRows.FlatMaterializer>(_path, _executionContext);
         long checksum = 0;
 
         foreach (var chunk in source.Chunks)
         foreach (var row in chunk)
         {
-            checksum += row.Length;
-            checksum += row[0]?.GetHashCode() ?? 0;
-            checksum += row[1]?.GetHashCode() ?? 0;
-            checksum += row[2]?.GetHashCode() ?? 0;
+            checksum += 3;
+            checksum += row.Station?.GetHashCode() ?? 0;
+            checksum += row.Temperature.GetHashCode();
+            checksum += row.Sequence.GetHashCode();
         }
 
         return checksum;
@@ -156,7 +156,7 @@ public class JsonLegacySourceBenchmarks
     [Benchmark]
     public long ZeroColumnDataSource()
     {
-        var source = new JsonSource(_path, _zeroColumnContext);
+        var source = NativeJsonBenchmarkRows.Open<NativeJsonBenchmarkRows.EmptyRow, NativeJsonBenchmarkRows.EmptyMaterializer>(_path, _zeroColumnContext);
         long rows = 0;
         foreach (var chunk in source.Chunks)
             rows += chunk.Count;
@@ -166,18 +166,18 @@ public class JsonLegacySourceBenchmarks
     [Benchmark]
     public long OneColumnDataSource()
     {
-        var source = new JsonSource(_path, _oneColumnContext);
+        var source = NativeJsonBenchmarkRows.Open<NativeJsonBenchmarkRows.TextRow, NativeJsonBenchmarkRows.TextMaterializer>(_path, _oneColumnContext);
         long checksum = 0;
         foreach (var chunk in source.Chunks)
         foreach (var row in chunk)
-            checksum += row[0]?.GetHashCode() ?? 0;
+            checksum += row.Value?.GetHashCode() ?? 0;
         return checksum;
     }
 
     [Benchmark]
     public long RejectedPredicateDataSource()
     {
-        var source = new JsonSource(_path, _rejectedPredicateContext);
+        var source = NativeJsonBenchmarkRows.Open<NativeJsonBenchmarkRows.TextRow, NativeJsonBenchmarkRows.TextMaterializer>(_path, _rejectedPredicateContext);
         long rows = 0;
         foreach (var chunk in source.Chunks)
             rows += chunk.Count;

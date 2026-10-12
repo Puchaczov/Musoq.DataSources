@@ -15,7 +15,6 @@ public class RemoteEntity
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
     /// <summary>Maps row indexes to property accessors used by the Musoq runtime.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<RemoteEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a remote row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -38,12 +37,6 @@ public class RemoteEntity
             { nameof(PushUrl), 2 }
         };
 
-        IndexToObjectAccessMap = new Dictionary<int, Func<RemoteEntity, object?>>
-        {
-            { 0, entity => entity.Name },
-            { 1, entity => entity.Url },
-            { 2, entity => entity.PushUrl }
-        };
     }
 
     /// <summary>Creates a detached remote snapshot from a LibGit2Sharp remote.</summary>

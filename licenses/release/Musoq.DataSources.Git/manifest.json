@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Git",
   "slug": "git",
-  "version": "3.0.1-alpha.1",
+  "version": "3.0.2-alpha.1",
   "projectPath": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
   "entryProject": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
   "ownPackageId": "Musoq.DataSources.Git",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "bec58cd23dbe1c53ae53e34f89fbaaaa2be41c2c9b5fa17c869c89dbb9a43c63"
+      "sha256": "397fdac0f43fdd244a5ee95273faf064a5f5c1a099261a9f3548fd6f0b175826"
     },
     {
       "path": "global.json",
@@ -53,19 +53,23 @@
     },
     {
       "path": "LinksManual.json",
-      "sha256": "9b88b408e00b8e4ad7f69c59a9390af41c72a6d169d1fc0d8ce22a3acc68875b"
+      "sha256": "77ccb72c11ffc8a193d56c82270089becf27791267ba9f342bcbe33be04ca41f"
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "14d1674e524500401eb296585559318b73e8d3cee08002d9806888c975d21b8e"
+      "sha256": "ae33a406d42c5ca325de1a24d951151f9c09dab169411a0940c5594db62f648d"
     },
     {
       "path": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
-      "sha256": "bf331af047cbbcafaaf59bb01c4dfc10d0efe88e22de1945b013be4709abbacd"
+      "sha256": "959e6084cfc4c1853214cda0aabf79595b6d9ddbb5fd9854392cf7b8919befe4"
+    },
+    {
+      "path": "NuGet.config",
+      "sha256": "806d7891959d57673a3d4b5e99e5390bf0dad91cc6f618d9229b6cc3ceafe702"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "86077796bc391a0bf32bcdf4f763ec675c7b2c09b828a6ddfab66d0e52108769"
+      "sha256": "ebe2a052bee52ac3addac86d2d0edfe513753c68d6a02381a576ebad566493d2"
     }
   ],
   "packageGraph": [
@@ -101,17 +105,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.11-alpha.1",
+      "version": "17.0.12-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.11-alpha.1",
+      "version": "17.0.12-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.11-alpha.1",
+      "version": "17.0.12-alpha.1",
       "direct": true
     }
   ],
@@ -169,7 +173,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1109,
-      "sha256": "89b54f1862a7ecb021a0ac799afdb4037b213a4c6e9e52c209806dfd924a63ed"
+      "sha256": "723e8aecc003ba9e6fac5f266348070a38e3a563e78ed0a4c51e325ee7c493ed"
     }
   ]
 }

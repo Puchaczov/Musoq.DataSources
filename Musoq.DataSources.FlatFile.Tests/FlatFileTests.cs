@@ -35,33 +35,33 @@ public class FlatFileTests
         Assert.IsTrue(table.Count == 6, "Table should have 6 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (int)row.Values[0] == 1 &&
-            (string)row.Values[1] == string.Empty
+            (int)row.ReadValues()[0] == 1 &&
+            (string)row.ReadValues()[1] == string.Empty
         ), "First entry should be 1 with empty string");
 
         Assert.IsTrue(table.Any(row =>
-            (int)row.Values[0] == 2 &&
-            (string)row.Values[1] == "line 2"
+            (int)row.ReadValues()[0] == 2 &&
+            (string)row.ReadValues()[1] == "line 2"
         ), "Second entry should be 2 with 'line 2'");
 
         Assert.IsTrue(table.Any(row =>
-            (int)row.Values[0] == 3 &&
-            (string)row.Values[1] == "line3"
+            (int)row.ReadValues()[0] == 3 &&
+            (string)row.ReadValues()[1] == "line3"
         ), "Third entry should be 3 with 'line3'");
 
         Assert.IsTrue(table.Any(row =>
-            (int)row.Values[0] == 4 &&
-            (string)row.Values[1] == "line"
+            (int)row.ReadValues()[0] == 4 &&
+            (string)row.ReadValues()[1] == "line"
         ), "Fourth entry should be 4 with 'line'");
 
         Assert.IsTrue(table.Any(row =>
-            (int)row.Values[0] == 5 &&
-            (string)row.Values[1] == string.Empty
+            (int)row.ReadValues()[0] == 5 &&
+            (string)row.ReadValues()[1] == string.Empty
         ), "Fifth entry should be 5 with empty string");
 
         Assert.IsTrue(table.Any(row =>
-            (int)row.Values[0] == 6 &&
-            (string)row.Values[1] == "linexx"
+            (int)row.ReadValues()[0] == 6 &&
+            (string)row.ReadValues()[1] == "linexx"
         ), "Sixth entry should be 6 with 'linexx'");
     }
 

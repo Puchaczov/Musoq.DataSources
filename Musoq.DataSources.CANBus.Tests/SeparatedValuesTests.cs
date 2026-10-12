@@ -32,15 +32,15 @@ where Engine is not null";
         Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
 
         Assert.IsTrue(table.Any(r =>
-                (ulong)r.Values[0] == 0ul &&
-                Convert.ToBoolean(r.Values[1]) &&
-                Math.Abs((double)r.Values[2] - 90d) < 0.0001),
+                (ulong)r.ReadValues()[0] == 0ul &&
+                Convert.ToBoolean(r.ReadValues()[1]) &&
+                Math.Abs((double)r.ReadValues()[2] - 90d) < 0.0001),
             "Missing first sensor record");
 
         Assert.IsTrue(table.Any(r =>
-                (ulong)r.Values[0] == 1ul &&
-                !Convert.ToBoolean(r.Values[1]) &&
-                Math.Abs((double)r.Values[2] - 95d) < 0.0001),
+                (ulong)r.ReadValues()[0] == 1ul &&
+                !Convert.ToBoolean(r.ReadValues()[1]) &&
+                Math.Abs((double)r.ReadValues()[2] - 95d) < 0.0001),
             "Missing second sensor record");
     }
 
@@ -60,11 +60,11 @@ where Engine is not null";
         Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (ulong)row.Values[0] == 361ul
+            (ulong)row.ReadValues()[0] == 361ul
         ), "First entry should be 361");
 
         Assert.IsTrue(table.Any(row =>
-            (ulong)row.Values[0] == 380ul
+            (ulong)row.ReadValues()[0] == 380ul
         ), "Second entry should be 380");
     }
 
@@ -84,8 +84,8 @@ where Exhaust_System is not null";
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(2ul, table[0].Values[0]);
-        Assert.AreEqual(124d, table[0].Values[1]);
+        Assert.AreEqual(2ul, table[0].ReadValues()[0]);
+        Assert.AreEqual(124d, table[0].ReadValues()[1]);
     }
 
     [TestMethod]
@@ -104,8 +104,8 @@ where IsWellKnown = false";
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(3ul, table[0].Values[0]);
-        Assert.AreEqual(72057594037927936ul, table[0].Values[1]);
+        Assert.AreEqual(3ul, table[0].ReadValues()[0]);
+        Assert.AreEqual(72057594037927936ul, table[0].ReadValues()[1]);
     }
 
     [TestMethod]
@@ -123,7 +123,7 @@ where IsWellKnown = false";
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(false, table[0].Values[0]);
+        Assert.AreEqual(false, table[0].ReadValues()[0]);
     }
 
     [TestMethod]
@@ -143,27 +143,27 @@ from can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc') s";
         Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (uint)row.Values[0] == 292u &&
-            (ulong)row.Values[1] == 0ul &&
-            (bool)row.Values[2]
+            (uint)row.ReadValues()[0] == 292u &&
+            (ulong)row.ReadValues()[1] == 0ul &&
+            (bool)row.ReadValues()[2]
         ), "First entry should match 292, 0, non-null, true");
 
         Assert.IsTrue(table.Any(row =>
-            (uint)row.Values[0] == 292u &&
-            (ulong)row.Values[1] == 1ul &&
-            (bool)row.Values[2]
+            (uint)row.ReadValues()[0] == 292u &&
+            (ulong)row.ReadValues()[1] == 1ul &&
+            (bool)row.ReadValues()[2]
         ), "Second entry should match 292, 1, non-null, true");
 
         Assert.IsTrue(table.Any(row =>
-            (uint)row.Values[0] == 293u &&
-            (ulong)row.Values[1] == 2ul &&
-            (bool)row.Values[2]
+            (uint)row.ReadValues()[0] == 293u &&
+            (ulong)row.ReadValues()[1] == 2ul &&
+            (bool)row.ReadValues()[2]
         ), "Third entry should match 293, 2, non-null, true");
 
         Assert.IsTrue(table.Any(row =>
-            (uint)row.Values[0] == 115u &&
-            (ulong)row.Values[1] == 3ul &&
-            !(bool)row.Values[2]
+            (uint)row.ReadValues()[0] == 115u &&
+            (ulong)row.ReadValues()[1] == 3ul &&
+            !(bool)row.ReadValues()[2]
         ), "Fourth entry should match 115, 3, null, false");
     }
 
@@ -182,11 +182,11 @@ where FromTimestamp(Timestamp, 's') >= ToDateTimeOffset('2023-10-08T18:19:00','e
         Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (uint)row.Values[0] == 293u
+            (uint)row.ReadValues()[0] == 293u
         ), "First entry should be 293");
 
         Assert.IsTrue(table.Any(row =>
-            (uint)row.Values[0] == 115u
+            (uint)row.ReadValues()[0] == 115u
         ), "Second entry should be 115");
     }
 
@@ -205,7 +205,7 @@ where FromTimestamp(Timestamp, 's') < ToDateTimeOffset('2023-10-08T18:19:00', 'e
         Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (uint)row.Values[0] == 292u
+            (uint)row.ReadValues()[0] == 292u
         ), "Both entries should be 292");
     }
 
@@ -224,7 +224,7 @@ from can.separatedvalues('./Data/6/6.csv', './Data/6/6.dbc')";
         Assert.IsTrue(table.Count == 4, "Table should have 4 entries");
 
         Assert.IsTrue(table.All(row =>
-            (int)row.Values[0] == 1
+            (int)row.ReadValues()[0] == 1
         ), "All entries should be 1");
     }
 
@@ -246,15 +246,15 @@ where Engine is not null";
         Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (ulong)row.Values[0] == 0ul &&
-            Convert.ToBoolean(row.Values[1]) &&
-            Math.Abs((double)row.Values[2] - 90d) < 0.0001
+            (ulong)row.ReadValues()[0] == 0ul &&
+            Convert.ToBoolean(row.ReadValues()[1]) &&
+            Math.Abs((double)row.ReadValues()[2] - 90d) < 0.0001
         ), "First entry should match 0, non-null, true, 90");
 
         Assert.IsTrue(table.Any(row =>
-            (ulong)row.Values[0] == 1ul &&
-            !Convert.ToBoolean(row.Values[1]) &&
-            Math.Abs((double)row.Values[2] - 95d) < 0.0001
+            (ulong)row.ReadValues()[0] == 1ul &&
+            !Convert.ToBoolean(row.ReadValues()[1]) &&
+            Math.Abs((double)row.ReadValues()[2] - 95d) < 0.0001
         ), "Second entry should match 1, non-null, false, 95");
     }
 
@@ -272,7 +272,7 @@ from can.separatedvalues('./Data/8/8.csv', './Data/8/8.dbc', 'dec')";
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(25d, table[0].Values[0]);
+        Assert.AreEqual(25d, table[0].ReadValues()[0]);
     }
 
     [TestMethod]
@@ -290,8 +290,8 @@ from can.separatedvalues('./Data/9/9.csv', './Data/9/9.dbc', 'dec', 'big')";
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(444u, table[0].Values[0]);
-        Assert.AreEqual(65.53d, table[0].Values[1]);
+        Assert.AreEqual(444u, table[0].ReadValues()[0]);
+        Assert.AreEqual(65.53d, table[0].ReadValues()[1]);
     }
 
     [TestMethod]
@@ -310,11 +310,11 @@ inner join can.messages('./Data/10/10.dbc') m on s.ID = m.Id";
         Assert.IsTrue(table.Count == 2, "Table should have 2 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (double)row.Values[0] == 0d
+            (double)row.ReadValues()[0] == 0d
         ), "First entry should be 0");
 
         Assert.IsTrue(table.Any(row =>
-            Math.Abs((double)row.Values[0] - 1d) < 0.0001
+            Math.Abs((double)row.ReadValues()[0] - 1d) < 0.0001
         ), "Second entry should be 1");
     }
 
@@ -338,7 +338,27 @@ inner join can.messages('./Data/11/11.dbc') m on s.ID = m.Id";
         Array.Reverse(bytes);
         hexValue = BitConverter.ToUInt64(bytes, 0);
 
-        Assert.AreEqual(hexValue, table[0].Values[0]);
+        Assert.AreEqual(hexValue, table[0].ReadValues()[0]);
+    }
+
+    [TestMethod]
+    public void NativeFrameProjection_ShouldExposeNullableSignalsAndExactColumnTypes()
+    {
+        const string query = "select Timestamp as Timestamp, Engine.Oil_Temperature as Temperature " +
+            "from can.separatedvalues('./Data/1/1.csv', './Data/1/1.dbc', 'dec', 'big') order by Timestamp";
+        using var compiled = CreateAndRunVirtualMachine(query);
+        using var table = compiled.Run();
+        var columns = table.Columns.ToArray();
+        Assert.AreEqual(2, columns.Length);
+        Assert.AreEqual("Timestamp", columns[0].ColumnName);
+        Assert.AreEqual(typeof(ulong), columns[0].ColumnType);
+        Assert.AreEqual("Temperature", columns[1].ColumnName);
+        Assert.AreEqual(typeof(double?), columns[1].ColumnType);
+        var rows = table.ToArray();
+        Assert.AreEqual(4, rows.Length);
+        CollectionAssert.AreEqual(new ulong[] { 0, 1, 2, 3 }, rows.Select(row => row.GetValue<ulong>(0)).ToArray());
+        CollectionAssert.AreEqual(new double?[] { 90d, 95d, null, null },
+            rows.Select(row => row.GetValue<double?>(1)).ToArray());
     }
 
     private static CompiledQuery CreateAndRunVirtualMachine(string script)

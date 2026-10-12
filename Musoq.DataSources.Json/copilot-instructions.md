@@ -5,11 +5,13 @@
 
 ## Read first
 - `JsonSchema.cs`
-- `JsonSource.cs`
+- `JsonQueryRowSource.cs`
 - `JsonTable.cs`
 - `JsonSchemaDiscovery.cs`
 - `JsonRecordFramer.cs`
-- `JsonRowProcessor.cs`
+- `JsonQueryRowProcessor.cs`
+- `JsonRowLayout.cs`
+- `JsonPredicateEvaluator.cs`
 - `JsonLibrary.cs`
 
 ## Patterns to preserve
@@ -34,3 +36,9 @@
 - `Musoq.DataSources.Json.Tests/JsonSchemaDescribeTests.cs`
 - `Musoq.DataSources.Json.Tests/JsonSchemaDiscoveryTests.cs`
 - `Musoq.DataSources.Json.Tests/JsonStreamingExecutionTests.cs`
+
+## Native row contract
+
+- File execution requires query-scoped concrete rows and a typed materializer; ordinary erased transfer is rejected.
+- Structured and mixed inferred fields use `JsonElement`; SQL outputs remain scalar. `JsonText`, `Length` and `MakeFlat` consume that concrete type.
+- Bind numeric predicates to closed typed operations. Fractional literals on integral source fields remain residual; rounding the literal during pushdown is forbidden.

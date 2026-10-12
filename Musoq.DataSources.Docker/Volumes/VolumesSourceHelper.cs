@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Docker.Volumes;
 internal static class VolumesSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> VolumesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<VolumeEntity, object?>> VolumesIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] VolumesColumns;
 
     static VolumesSourceHelper()
@@ -22,19 +22,6 @@ internal static class VolumesSourceHelper
             { nameof(VolumeEntity.Scope), 6 },
             { nameof(VolumeEntity.Status), 7 },
             { nameof(VolumeEntity.UsageData), 8 }
-        };
-
-        VolumesIndexToMethodAccessMap = new Dictionary<int, Func<VolumeEntity, object?>>
-        {
-            { 0, info => info.CreatedAt },
-            { 1, info => info.Driver },
-            { 2, info => info.Labels },
-            { 3, info => info.Mountpoint },
-            { 4, info => info.Name },
-            { 5, info => info.Options },
-            { 6, info => info.Scope },
-            { 7, info => info.Status },
-            { 8, info => info.UsageData }
         };
 
         VolumesColumns =

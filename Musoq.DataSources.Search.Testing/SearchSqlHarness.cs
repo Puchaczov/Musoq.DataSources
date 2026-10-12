@@ -28,7 +28,7 @@ public sealed class SearchSqlHarness
 
             var result = compiled.Run();
             var rows = result.Rows
-                .Select(row => (IReadOnlyList<object?>)row.Values.Cast<object?>().ToArray())
+                .Select(row => (IReadOnlyList<object?>)row.ReadValues().Cast<object?>().ToArray())
                 .ToArray();
 
             return new SearchQueryResult(rows);

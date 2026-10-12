@@ -26,15 +26,15 @@ public class MessagesOrSignalsTests
         Assert.IsTrue(table.Count == 3, "Table should have 3 entries");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Exhaust_Gas_Temperature"
+            (string)row.ReadValues()[0] == "Exhaust_Gas_Temperature"
         ), "First entry should be Exhaust_Gas_Temperature");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Oil_Temperature"
+            (string)row.ReadValues()[0] == "Oil_Temperature"
         ), "Second entry should be Oil_Temperature");
 
         Assert.IsTrue(table.Any(row =>
-            (string)row.Values[0] == "Is_Turned_On"
+            (string)row.ReadValues()[0] == "Is_Turned_On"
         ), "Third entry should be Is_Turned_On");
     }
 
@@ -50,15 +50,15 @@ public class MessagesOrSignalsTests
         Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
 
         Assert.IsTrue(table.Any(r =>
-                (int)r.Values[0] == 0 && (string)r.Values[1] == "Exhaust_Gas_Temperature"),
+                (int)r.ReadValues()[0] == 0 && (string)r.ReadValues()[1] == "Exhaust_Gas_Temperature"),
             "Missing Exhaust Gas Temperature sensor record with index 0");
 
         Assert.IsTrue(table.Any(r =>
-                (int)r.Values[0] == 0 && (string)r.Values[1] == "Oil_Temperature"),
+                (int)r.ReadValues()[0] == 0 && (string)r.ReadValues()[1] == "Oil_Temperature"),
             "Missing Oil Temperature sensor record with index 0");
 
         Assert.IsTrue(table.Any(r =>
-                (int)r.Values[0] == 1 && (string)r.Values[1] == "Is_Turned_On"),
+                (int)r.ReadValues()[0] == 1 && (string)r.ReadValues()[1] == "Is_Turned_On"),
             "Missing Is Turned On sensor record with index 1");
     }
 
@@ -73,8 +73,8 @@ public class MessagesOrSignalsTests
 
         Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
 
-        Assert.IsTrue(table.Any(r => (string)r.Values[0] == "Exhaust_System"), "Missing Exhaust_System record");
-        Assert.IsTrue(table.Any(r => (string)r.Values[0] == "Engine"), "Missing Engine record");
+        Assert.IsTrue(table.Any(r => (string)r.ReadValues()[0] == "Exhaust_System"), "Missing Exhaust_System record");
+        Assert.IsTrue(table.Any(r => (string)r.ReadValues()[0] == "Engine"), "Missing Engine record");
     }
 
     [TestMethod]
@@ -88,47 +88,47 @@ public class MessagesOrSignalsTests
 
         Assert.IsTrue(table.Count > 7);
 
-        var row = table.SingleOrDefault(f => f.Values[0].ToString() == "Id");
+        var row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Id");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(0, row.Values[1]);
-        Assert.AreEqual("System.UInt32", row.Values[2]);
+        Assert.AreEqual(0, row.ReadValues()[1]);
+        Assert.AreEqual("System.UInt32", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "IsExtId");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "IsExtId");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(1, row.Values[1]);
-        Assert.AreEqual("System.Boolean", row.Values[2]);
+        Assert.AreEqual(1, row.ReadValues()[1]);
+        Assert.AreEqual("System.Boolean", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Name");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Name");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(2, row.Values[1]);
-        Assert.AreEqual("System.String", row.Values[2]);
+        Assert.AreEqual(2, row.ReadValues()[1]);
+        Assert.AreEqual("System.String", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "DLC");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "DLC");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(3, row.Values[1]);
-        Assert.AreEqual("System.UInt16", row.Values[2]);
+        Assert.AreEqual(3, row.ReadValues()[1]);
+        Assert.AreEqual("System.UInt16", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Transmitter");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Transmitter");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(4, row.Values[1]);
-        Assert.AreEqual("System.String", row.Values[2]);
+        Assert.AreEqual(4, row.ReadValues()[1]);
+        Assert.AreEqual("System.String", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Comment");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Comment");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(5, row.Values[1]);
-        Assert.AreEqual("System.String", row.Values[2]);
+        Assert.AreEqual(5, row.ReadValues()[1]);
+        Assert.AreEqual("System.String", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "CycleTime");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "CycleTime");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(6, row.Values[1]);
-        Assert.AreEqual("System.Int32", row.Values[2]);
+        Assert.AreEqual(6, row.ReadValues()[1]);
+        Assert.AreEqual("System.Int32", row.ReadValues()[2]);
     }
 
     [TestMethod]
@@ -142,101 +142,101 @@ public class MessagesOrSignalsTests
 
         Assert.IsTrue(table.Count > 15);
 
-        var row = table.SingleOrDefault(f => f.Values[0].ToString() == "Id");
+        var row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Id");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(0, row.Values[1]);
-        Assert.AreEqual("System.UInt32", row.Values[2]);
+        Assert.AreEqual(0, row.ReadValues()[1]);
+        Assert.AreEqual("System.UInt32", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Name");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Name");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(1, row.Values[1]);
-        Assert.AreEqual("System.String", row.Values[2]);
+        Assert.AreEqual(1, row.ReadValues()[1]);
+        Assert.AreEqual("System.String", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "StartBit");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "StartBit");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(2, row.Values[1]);
-        Assert.AreEqual("System.UInt16", row.Values[2]);
+        Assert.AreEqual(2, row.ReadValues()[1]);
+        Assert.AreEqual("System.UInt16", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Length");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Length");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(3, row.Values[1]);
-        Assert.AreEqual("System.UInt16", row.Values[2]);
+        Assert.AreEqual(3, row.ReadValues()[1]);
+        Assert.AreEqual("System.UInt16", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "ByteOrder");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "ByteOrder");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(4, row.Values[1]);
-        Assert.AreEqual("System.Byte", row.Values[2]);
+        Assert.AreEqual(4, row.ReadValues()[1]);
+        Assert.AreEqual("System.Byte", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "InitialValue");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "InitialValue");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(5, row.Values[1]);
-        Assert.AreEqual("System.Double", row.Values[2]);
+        Assert.AreEqual(5, row.ReadValues()[1]);
+        Assert.AreEqual("System.Double", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Factor");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Factor");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(6, row.Values[1]);
-        Assert.AreEqual("System.Double", row.Values[2]);
+        Assert.AreEqual(6, row.ReadValues()[1]);
+        Assert.AreEqual("System.Double", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "IsInteger");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "IsInteger");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(7, row.Values[1]);
-        Assert.AreEqual("System.Boolean", row.Values[2]);
+        Assert.AreEqual(7, row.ReadValues()[1]);
+        Assert.AreEqual("System.Boolean", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Offset");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Offset");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(8, row.Values[1]);
-        Assert.AreEqual("System.Double", row.Values[2]);
+        Assert.AreEqual(8, row.ReadValues()[1]);
+        Assert.AreEqual("System.Double", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Minimum");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Minimum");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(9, row.Values[1]);
-        Assert.AreEqual("System.Double", row.Values[2]);
+        Assert.AreEqual(9, row.ReadValues()[1]);
+        Assert.AreEqual("System.Double", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Maximum");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Maximum");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(10, row.Values[1]);
-        Assert.AreEqual("System.Double", row.Values[2]);
+        Assert.AreEqual(10, row.ReadValues()[1]);
+        Assert.AreEqual("System.Double", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Unit");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Unit");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(11, row.Values[1]);
-        Assert.AreEqual("System.String", row.Values[2]);
+        Assert.AreEqual(11, row.ReadValues()[1]);
+        Assert.AreEqual("System.String", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Receiver");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Receiver");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(12, row.Values[1]);
-        Assert.AreEqual("System.String[]", row.Values[2]);
+        Assert.AreEqual(12, row.ReadValues()[1]);
+        Assert.AreEqual("System.String[]", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Comment");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Comment");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(13, row.Values[1]);
-        Assert.AreEqual("System.String", row.Values[2]);
+        Assert.AreEqual(13, row.ReadValues()[1]);
+        Assert.AreEqual("System.String", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "Multiplexing");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "Multiplexing");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(14, row.Values[1]);
-        Assert.AreEqual("System.String", row.Values[2]);
+        Assert.AreEqual(14, row.ReadValues()[1]);
+        Assert.AreEqual("System.String", row.ReadValues()[2]);
 
-        row = table.SingleOrDefault(f => f.Values[0].ToString() == "MessageName");
+        row = table.SingleOrDefault(f => f.ReadValues()[0].ToString() == "MessageName");
         Assert.IsNotNull(row);
 
-        Assert.AreEqual(15, row.Values[1]);
-        Assert.AreEqual("System.String", row.Values[2]);
+        Assert.AreEqual(15, row.ReadValues()[1]);
+        Assert.AreEqual("System.String", row.ReadValues()[2]);
     }
 
     [TestMethod]
@@ -292,8 +292,8 @@ where
         Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Oil_Temperature" &&
-                (string)r.Values[1] == "Is_Turned_On"),
+                (string)r.ReadValues()[0] == "Oil_Temperature" &&
+                (string)r.ReadValues()[1] == "Is_Turned_On"),
             "Missing record with Oil_Temperature and Is_Turned_On values");
     }
 
@@ -311,14 +311,14 @@ from can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_Syst
 
         var queryDecode = $@"
 select 
-    messages.DecodeMessage('Exhaust_Gas_Temperature', {(ulong)table[0].Values[0]})
+    messages.DecodeMessage('Exhaust_Gas_Temperature', {(ulong)table[0].ReadValues()[0]})
 from can.messages('./Data/1/1.dbc') messages where messages.Name = 'Exhaust_System'";
 
         vm = CreateAndRunVirtualMachine(queryDecode);
 
         table = vm.Run();
 
-        var decodedValue = (double)table[0].Values[0];
+        var decodedValue = (double)table[0].ReadValues()[0];
 
         Assert.AreEqual(124d, decodedValue);
     }
@@ -344,13 +344,13 @@ where Id = 293";
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(293u, table[0].Values[0]);
-        Assert.AreEqual(false, table[0].Values[1]);
-        Assert.AreEqual("Exhaust_System", table[0].Values[2]);
-        Assert.AreEqual((ushort)1, table[0].Values[3]);
-        Assert.AreEqual("Vector__XXX", table[0].Values[4]);
-        Assert.AreEqual(null, table[0].Values[5]);
-        Assert.AreEqual(0, table[0].Values[6]);
+        Assert.AreEqual(293u, table[0].ReadValues()[0]);
+        Assert.AreEqual(false, table[0].ReadValues()[1]);
+        Assert.AreEqual("Exhaust_System", table[0].ReadValues()[2]);
+        Assert.AreEqual((ushort)1, table[0].ReadValues()[3]);
+        Assert.AreEqual("Vector__XXX", table[0].ReadValues()[4]);
+        Assert.AreEqual(null, table[0].ReadValues()[5]);
+        Assert.AreEqual(0, table[0].ReadValues()[6]);
     }
 
     [TestMethod]
@@ -382,21 +382,21 @@ where Name = 'Oil_Temperature'";
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual(292u, table[0].Values[0]);
-        Assert.AreEqual("Oil_Temperature", table[0].Values[1]);
-        Assert.AreEqual((ushort)2, table[0].Values[2]);
-        Assert.AreEqual((ushort)8, table[0].Values[3]);
-        Assert.AreEqual((byte)1, table[0].Values[4]);
-        Assert.AreEqual(0d, table[0].Values[5]);
-        Assert.AreEqual(1d, table[0].Values[6]);
-        Assert.AreEqual(true, table[0].Values[7]);
-        Assert.AreEqual(0d, table[0].Values[8]);
-        Assert.AreEqual(-50d, table[0].Values[9]);
-        Assert.AreEqual(100d, table[0].Values[10]);
-        Assert.AreEqual("CelciusDegree", table[0].Values[11]);
-        Assert.AreEqual(null, table[0].Values[12]);
-        Assert.AreEqual(string.Empty, table[0].Values[13]);
-        Assert.AreEqual("Engine", table[0].Values[14]);
+        Assert.AreEqual(292u, table[0].ReadValues()[0]);
+        Assert.AreEqual("Oil_Temperature", table[0].ReadValues()[1]);
+        Assert.AreEqual((ushort)2, table[0].ReadValues()[2]);
+        Assert.AreEqual((ushort)8, table[0].ReadValues()[3]);
+        Assert.AreEqual((byte)1, table[0].ReadValues()[4]);
+        Assert.AreEqual(0d, table[0].ReadValues()[5]);
+        Assert.AreEqual(1d, table[0].ReadValues()[6]);
+        Assert.AreEqual(true, table[0].ReadValues()[7]);
+        Assert.AreEqual(0d, table[0].ReadValues()[8]);
+        Assert.AreEqual(-50d, table[0].ReadValues()[9]);
+        Assert.AreEqual(100d, table[0].ReadValues()[10]);
+        Assert.AreEqual("CelciusDegree", table[0].ReadValues()[11]);
+        Assert.AreEqual(null, table[0].ReadValues()[12]);
+        Assert.AreEqual(string.Empty, table[0].ReadValues()[13]);
+        Assert.AreEqual("Engine", table[0].ReadValues()[14]);
 
         const string receiverQuery = @"
 select
@@ -408,7 +408,7 @@ where s.Name = 'Oil_Temperature'";
         var receiverTable = CreateAndRunVirtualMachine(receiverQuery).Run();
 
         Assert.AreEqual(1, receiverTable.Count);
-        Assert.AreEqual("Vector__XXX", receiverTable[0].Values[0]);
+        Assert.AreEqual("Vector__XXX", receiverTable[0].ReadValues()[0]);
     }
 
     [TestMethod]
@@ -423,18 +423,18 @@ where s.Name = 'Oil_Temperature'";
         Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Exhaust_System" &&
-                (string)r.Values[1] == "Exhaust_Gas_Temperature"),
+                (string)r.ReadValues()[0] == "Exhaust_System" &&
+                (string)r.ReadValues()[1] == "Exhaust_Gas_Temperature"),
             "Missing Exhaust_System with Exhaust_Gas_Temperature record");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Engine" &&
-                (string)r.Values[1] == "Oil_Temperature"),
+                (string)r.ReadValues()[0] == "Engine" &&
+                (string)r.ReadValues()[1] == "Oil_Temperature"),
             "Missing Engine with Oil_Temperature record");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r.Values[0] == "Engine" &&
-                (string)r.Values[1] == "Is_Turned_On"),
+                (string)r.ReadValues()[0] == "Engine" &&
+                (string)r.ReadValues()[1] == "Is_Turned_On"),
             "Missing Engine with Is_Turned_On record");
     }
 

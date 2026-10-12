@@ -8,6 +8,9 @@ internal static class Program
 {
     public static int Main(string[] args)
     {
+        if (args is ["measure-native-predicates", var output])
+            return NativePredicateMeasurement.Run(output);
+
         if (args is ["smoke"])
             return Verify(GitBenchmarkProfile.Smoke, includeWithoutCommitGraph: false);
 

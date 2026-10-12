@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using Musoq.Schema.Optimization;
+using Musoq.DataSources.Common;
+using Musoq.DataSources.Search.Entities;
 
 namespace Musoq.DataSources.Search.Components.Planning;
 
@@ -109,7 +111,8 @@ internal static class SearchSourcePlanner
                 AcceptedTake = acceptsSlice ? request.Take : null,
                 Properties = new Dictionary<string, object?>(StringComparer.Ordinal)
                 {
-                    [SearchPlanInspection.PropertyName] = inspection.ToProperties()
+                    [SearchPlanInspection.PropertyName] = inspection.ToProperties(),
+                    [TypedPredicatePlan.PropertyName] = BindPredicate(name, partition.Accepted)
                 }
             },
             AcceptedColumns = acceptedColumns,
@@ -135,6 +138,22 @@ internal static class SearchSourcePlanner
                 malformedColumns,
                 supported: true)
         };
+    }
+
+    internal static TypedPredicatePlan BindPredicate(string name, SourcePredicateExpression? predicate)
+    {
+        var bindings = new TypedPredicatePlan();
+        switch (name)
+        {
+            case "matches": case "many": bindings.Bind<SearchMatch>(predicate); break;
+            case "bytes": bindings.Bind<SearchByteMatch>(predicate); break;
+            case "lines": bindings.Bind<SearchLine>(predicate); break;
+            case "files": bindings.Bind<SearchFile>(predicate); break;
+            case "counts": bindings.Bind<SearchCount>(predicate); break;
+            case "paths": bindings.Bind<SearchPath>(predicate); break;
+            case "audit": bindings.Bind<SearchAudit>(predicate); break;
+        }
+        return bindings;
     }
 
     private static bool IsNonNegativeWindow(long? skip, long? take)

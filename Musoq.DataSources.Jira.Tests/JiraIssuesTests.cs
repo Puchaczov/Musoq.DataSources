@@ -35,8 +35,8 @@ public class JiraIssuesTests
         var table = vm.Run();
 
         Assert.AreEqual(2, table.Count);
-        Assert.IsTrue(table.Any(row => (string)row[0] == "TEST-1"));
-        Assert.IsTrue(table.Any(row => (string)row[0] == "TEST-2"));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "TEST-1"));
+        Assert.IsTrue(table.Any(row => (string)row.ReadValue(0) == "TEST-2"));
     }
 
     [TestMethod]
@@ -57,8 +57,8 @@ public class JiraIssuesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("TEST-1", table[0][0]);
-        Assert.AreEqual("Open", table[0][2]);
+        Assert.AreEqual("TEST-1", table[0].ReadValue(0));
+        Assert.AreEqual("Open", table[0].ReadValue(2));
     }
 
     [TestMethod]
@@ -79,7 +79,7 @@ public class JiraIssuesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("john.doe", table[0][1]);
+        Assert.AreEqual("john.doe", table[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -100,7 +100,7 @@ public class JiraIssuesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("Bug", table[0][1]);
+        Assert.AreEqual("Bug", table[0].ReadValue(1));
     }
 
     [TestMethod]
@@ -122,7 +122,7 @@ public class JiraIssuesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("TEST-1", table[0][0]);
+        Assert.AreEqual("TEST-1", table[0].ReadValue(0));
 
         api.Verify(
             f => f.GetIssuesAsync(
@@ -185,18 +185,18 @@ public class JiraIssuesTests
 
         Assert.AreEqual(1, table.Count);
         var row = table[0];
-        Assert.AreEqual("TEST-123", row[0]);
-        Assert.AreEqual("10001", row[1]);
-        Assert.AreEqual("Test summary", row[2]);
-        Assert.AreEqual("Test description", row[3]);
-        Assert.AreEqual("Story", row[4]);
-        Assert.AreEqual("In Progress", row[5]);
-        Assert.AreEqual("High", row[6]);
-        Assert.AreEqual("developer", row[7]);
-        Assert.AreEqual("product.owner", row[8]);
-        Assert.AreEqual("TEST", row[9]);
-        Assert.AreEqual("label1, label2", row[10]);
-        Assert.AreEqual("Backend, API", row[11]);
+        Assert.AreEqual("TEST-123", row.ReadValue(0));
+        Assert.AreEqual("10001", row.ReadValue(1));
+        Assert.AreEqual("Test summary", row.ReadValue(2));
+        Assert.AreEqual("Test description", row.ReadValue(3));
+        Assert.AreEqual("Story", row.ReadValue(4));
+        Assert.AreEqual("In Progress", row.ReadValue(5));
+        Assert.AreEqual("High", row.ReadValue(6));
+        Assert.AreEqual("developer", row.ReadValue(7));
+        Assert.AreEqual("product.owner", row.ReadValue(8));
+        Assert.AreEqual("TEST", row.ReadValue(9));
+        Assert.AreEqual("label1, label2", row.ReadValue(10));
+        Assert.AreEqual("Backend, API", row.ReadValue(11));
     }
 
     [TestMethod]

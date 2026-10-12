@@ -6,7 +6,8 @@ This project contains data sources for Musoq engine. Musoq data sources are plug
 
 Want to create a custom plugin for Musoq? We've got you covered! Check out our comprehensive plugin development resources:
 
-- **[📖 Plugin Development Guide](PLUGIN_DEVELOPMENT.md)** - Complete guide with quick start, architecture, patterns, and best practices
+- **[📖 Plugin Development Guide](MusoqPluginsDevelopment.md)** - Complete guide with quick start, architecture, patterns, and best practices
+- **[Autonomous Plugin Development Guide](MusoqAutonomousPluginDevelopment.md)** - Automation-oriented authoring guide
 
 
 Whether you're integrating APIs, databases, files, or any other data source, this guide will help you build powerful, SQL-queryable plugins for Musoq in minutes.
@@ -25,6 +26,6 @@ Whether you're integrating APIs, databases, files, or any other data source, thi
 - Time (allows to treat time as table)
 - Roslyn (allows to query C# code)
 
-JSON discovers an exact schema from strict UTF-8 input. SeparatedValues uses authoritative typed `TABLE` contracts or bounded dynamic sampling, then streams selected rows through the current Musoq row contract. See the [structured-source guide](docs/structured-sources.md), [breaking changes](docs/structured-sources-breaking-changes.md), and [performance evidence](docs/performance/structured-sources.md).
+JSON discovers an exact schema from strict UTF-8 input. SeparatedValues uses authoritative typed `TABLE` contracts or bounded dynamic sampling, then streams selected rows through the current Musoq row contract. The plugin guides above include runnable examples and provider-authoring details.
 
 ### To look at the engine itself go to [Musoq](https://github.com/Puchaczov/Musoq) repository.

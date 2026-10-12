@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.DataSources.CANBus.Messages;
+using Musoq.DataSources.CANBus.Components;
 using Musoq.DataSources.CANBus.Signals;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Schema;
@@ -121,45 +122,36 @@ public class CANBusRuntimeV2ProjectionTests
     }
 
     [TestMethod]
-    public void MessageFrameObjectRows_WhenProjectionIsAccepted_OutputsOnlyAcceptedColumns()
+    public void MessageFrameRows_WhenProjectionIsAccepted_PreserveNativeFrameIdentity()
     {
         var columns = new ISchemaColumn[]
         {
             new SchemaColumn("ID", 0, typeof(uint)),
             new SchemaColumn("Data", 4, typeof(ulong)),
-            new SchemaColumn("Engine", 7, typeof(object))
+            new SchemaColumn("Engine", 7, typeof(SignalFrameEntity))
         };
         var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
             CancellationToken.None,
             columns,
             executionPlan: CreateExecutionPlan([new SourceColumnRef("ID")]));
         var schema = new CANBusSchema();
-        var source = schema.GetRowSource<object>(
-            "separatedvalues",
-            executionContext,
-            "./Data/1/1.csv",
-            "./Data/1/1.dbc",
-            "dec",
-            "big");
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create("./Data/1/1.csv", global::Musoq.Schema.SourceArguments.Create("./Data/1/1.dbc", global::Musoq.Schema.SourceArguments.Create("dec", global::Musoq.Schema.SourceArguments.Create("big", global::Musoq.Schema.SourceArguments.Empty))))).Read<MessageFrameEntity>("separatedvalues", executionContext);
 
-        var rows = source.Chunks.SelectMany(chunk => chunk).Cast<Dictionary<string, object?>>().ToArray();
+        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
         Assert.AreEqual(4, rows.Length);
-        Assert.IsTrue(rows.All(row => row.Count == 1));
-        Assert.IsTrue(rows.All(row => row.ContainsKey("ID")));
-        Assert.IsTrue(rows.Any(row => (uint)row["ID"]! == 292u));
-        Assert.IsTrue(rows.All(row => !row.ContainsKey("Data")));
-        Assert.IsTrue(rows.All(row => !row.ContainsKey("Engine")));
+        CollectionAssert.AreEqual(new uint[] { 292, 292, 293, 115 }, rows.Select(row => row.ID).ToArray());
+        Assert.IsInstanceOfType<MessageFrameEntity>(rows[0]);
     }
 
     [TestMethod]
-    public void MessageFrameObjectRows_WhenPredicateIsAccepted_EmitsFilteredRows()
+    public void MessageFrameRows_WhenPredicateIsAccepted_EmitsFilteredNativeRows()
     {
         var columns = new ISchemaColumn[]
         {
             new SchemaColumn("ID", 0, typeof(uint)),
             new SchemaColumn("Data", 4, typeof(ulong)),
-            new SchemaColumn("Engine", 7, typeof(object))
+            new SchemaColumn("Engine", 7, typeof(SignalFrameEntity))
         };
         var predicate = Equal("ID", 292u);
         var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
@@ -167,18 +159,12 @@ public class CANBusRuntimeV2ProjectionTests
             columns,
             executionPlan: CreateExecutionPlan([], predicate));
         var schema = new CANBusSchema();
-        var source = schema.GetRowSource<object>(
-            "separatedvalues",
-            executionContext,
-            "./Data/1/1.csv",
-            "./Data/1/1.dbc",
-            "dec",
-            "big");
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create("./Data/1/1.csv", global::Musoq.Schema.SourceArguments.Create("./Data/1/1.dbc", global::Musoq.Schema.SourceArguments.Create("dec", global::Musoq.Schema.SourceArguments.Create("big", global::Musoq.Schema.SourceArguments.Empty))))).Read<MessageFrameEntity>("separatedvalues", executionContext);
 
-        var rows = source.Chunks.SelectMany(chunk => chunk).Cast<Dictionary<string, object?>>().ToArray();
+        var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
         Assert.AreEqual(2, rows.Length);
-        Assert.IsTrue(rows.All(row => (uint)row["ID"]! == 292u));
+        Assert.IsTrue(rows.All(row => row.ID == 292u));
     }
 
     [TestMethod]
@@ -187,10 +173,7 @@ public class CANBusRuntimeV2ProjectionTests
         var predicate = Equal("Name", "Engine");
         var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
             executionPlan: CreateExecutionPlan([], predicate));
-        var source = new CANBusSchema().GetRowSource<MessageEntity>(
-            "messages",
-            executionContext,
-            "./Data/1/1.dbc");
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new CANBusSchema(), global::Musoq.Schema.SourceArguments.Create("./Data/1/1.dbc", global::Musoq.Schema.SourceArguments.Empty)).Read<MessageEntity>("messages", executionContext);
 
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
@@ -204,10 +187,7 @@ public class CANBusRuntimeV2ProjectionTests
         var predicate = Equal("MessageName", "Engine");
         var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
             executionPlan: CreateExecutionPlan([], predicate));
-        var source = new CANBusSchema().GetRowSource<SignalEntity>(
-            "signals",
-            executionContext,
-            "./Data/1/1.dbc");
+        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new CANBusSchema(), global::Musoq.Schema.SourceArguments.Create("./Data/1/1.dbc", global::Musoq.Schema.SourceArguments.Empty)).Read<SignalEntity>("signals", executionContext);
 
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 

@@ -214,14 +214,14 @@ public sealed class SearchProjectionTests
                 withText.Rows
                     .Select(row => string.Join(
                         '|',
-                        Enumerable.Range(0, 7).Select(index => row[index])))
+                        Enumerable.Range(0, 7).Select(index => row.ReadValue(index))))
                     .ToArray(),
                 compact.Rows
                     .Select(row => string.Join(
                         '|',
-                        Enumerable.Range(0, 7).Select(index => row[index])))
+                        Enumerable.Range(0, 7).Select(index => row.ReadValue(index))))
                     .ToArray());
-            Assert.IsTrue(withText.Rows.All(row => (string)row[7]! == "TODO"));
+            Assert.IsTrue(withText.Rows.All(row => (string)row.ReadValue(7)! == "TODO"));
         }
         finally
         {
@@ -248,7 +248,7 @@ public sealed class SearchProjectionTests
             Assert.AreEqual(2, result.Count);
             CollectionAssert.AreEqual(
                 new[] { "fixture.txt", "fixture.txt" },
-                result.Rows.Select(static row => (string)row[0]!).ToArray());
+                result.Rows.Select(static row => (string)row.ReadValue(0)!).ToArray());
         }
         finally
         {
@@ -318,7 +318,7 @@ public sealed class SearchProjectionTests
                 .Run();
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("TODO", result.Rows[0][8]);
+            Assert.AreEqual("TODO", result.Rows[0].ReadValue(8));
         }
         finally
         {
@@ -345,7 +345,7 @@ public sealed class SearchProjectionTests
             Assert.AreEqual(2, result.Count);
             CollectionAssert.AreEqual(
                 new[] { "fixture.txt", "fixture.txt" },
-                result.Rows.Select(static row => (string)row[0]!).ToArray());
+                result.Rows.Select(static row => (string)row.ReadValue(0)!).ToArray());
         }
         finally
         {

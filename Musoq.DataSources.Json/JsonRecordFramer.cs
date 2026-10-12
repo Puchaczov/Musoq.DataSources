@@ -14,31 +14,34 @@ internal static class JsonRecordFramer
     private static readonly SearchValues<byte> RecordStructuralBytes = SearchValues.Create("\"{}[]"u8);
     private static readonly SearchValues<byte> StringStructuralBytes = SearchValues.Create("\"\\"u8);
 
-    public static void Read(
+    public static void Read<TProcessor>(
         string path,
-        JsonRowProcessor processor,
+        TProcessor processor,
         CancellationToken cancellationToken)
+        where TProcessor : struct, IJsonRecordProcessor
     {
         using var stream = OpenAfterOptionalBom(path);
         ReadCore(stream, null, false, processor, cancellationToken);
     }
 
-    public static void ReadPartition(
+    public static void ReadPartition<TProcessor>(
         string path,
         StructuredPartition partition,
-        JsonRowProcessor processor,
+        TProcessor processor,
         CancellationToken cancellationToken)
+        where TProcessor : struct, IJsonRecordProcessor
     {
         using var stream = OpenRange(path, partition.StartOffset, partition.EndOffset);
         ReadCore(stream, partition.Length, true, processor, cancellationToken);
     }
 
-    private static void ReadCore(
+    private static void ReadCore<TProcessor>(
         FileStream stream,
         long? rangeLength,
         bool partitionMode,
-        JsonRowProcessor processor,
+        TProcessor processor,
         CancellationToken cancellationToken)
+        where TProcessor : struct, IJsonRecordProcessor
     {
         var input = ArrayPool<byte>.Shared.Rent(InputBufferSize);
         byte[]? record = null;

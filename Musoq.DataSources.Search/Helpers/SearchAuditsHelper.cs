@@ -13,7 +13,7 @@ namespace Musoq.DataSources.Search.Helpers;
 internal static class SearchAuditsHelper
 {
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<SearchAudit, object?>> IndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] Columns;
 
     static SearchAuditsHelper()
@@ -44,34 +44,6 @@ internal static class SearchAuditsHelper
             { nameof(SearchAudit.ObservedRows), 21 },
             { nameof(SearchAudit.FailureCode), 22 },
             { nameof(SearchAudit.FailurePath), 23 }
-        };
-
-        IndexToMethodAccessMap = new Dictionary<int, Func<SearchAudit, object?>>
-        {
-            { 0, audit => audit.Root },
-            { 1, audit => audit.ScanId },
-            { 2, audit => audit.ScopeFingerprint },
-            { 3, audit => audit.Outcome },
-            { 4, audit => audit.TerminalReason },
-            { 5, audit => audit.Complete },
-            { 6, audit => audit.ScopeExhausted },
-            { 7, audit => audit.QuerySatisfied },
-            { 8, audit => audit.CountsExact },
-            { 9, audit => audit.ScopeResolved },
-            { 10, audit => audit.VisitedFiles },
-            { 11, audit => audit.EligibleFiles },
-            { 12, audit => audit.FilesOpened },
-            { 13, audit => audit.FilesRead },
-            { 14, audit => audit.FilesCompleted },
-            { 15, audit => audit.FilesFailed },
-            { 16, audit => audit.BinaryFilesSkipped },
-            { 17, audit => audit.BytesScanned },
-            { 18, audit => audit.FilesMatched },
-            { 19, audit => audit.MatchingLines },
-            { 20, audit => audit.Occurrences },
-            { 21, audit => audit.ObservedRows },
-            { 22, audit => audit.FailureCode },
-            { 23, audit => audit.FailurePath }
         };
 
         Columns =

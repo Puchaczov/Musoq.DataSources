@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Musoq.DataSources.System;
@@ -6,7 +6,6 @@ namespace Musoq.DataSources.System;
 internal static class SystemSchemaHelper
 {
     public static readonly IReadOnlyDictionary<string, int> FlatNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<DualEntity, object>> FlatIndexToMethodAccessMap;
 
     static SystemSchemaHelper()
     {
@@ -15,9 +14,5 @@ internal static class SystemSchemaHelper
             { nameof(DualEntity.Dummy), 0 }
         };
 
-        FlatIndexToMethodAccessMap = new Dictionary<int, Func<DualEntity, object>>
-        {
-            { 0, info => info.Dummy }
-        };
     }
 }

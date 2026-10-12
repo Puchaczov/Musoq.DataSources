@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -77,8 +77,8 @@ public class OsSchema : SchemaBase
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
-    ///         <virtual-param>First directory</virtual-param>
-    ///         <virtual-param>Second directory</virtual-param>
+    ///         <virtual-param name="sourceDirectory" kind="path" relative-to="invocation-directory">First directory</virtual-param>
+    ///         <virtual-param name="destinationDirectory" kind="path" relative-to="invocation-directory">Second directory</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>os.dirscompare(string sourceDirectory, string destinationDirectory)</from>
@@ -96,8 +96,8 @@ public class OsSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Directory path</virtual-param>
-    ///         <virtual-param>Move through subfolders</virtual-param>
+    ///         <virtual-param name="directory" kind="path" relative-to="invocation-directory">Directory path</virtual-param>
+    ///         <virtual-param name="useSubdirectories">Move through subfolders</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>os.directories(string directory, bool useSubdirectories)</from>
@@ -134,7 +134,7 @@ public class OsSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to dll</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to dll</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>os.dlls(string path)</from>
@@ -148,7 +148,7 @@ public class OsSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to dll</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to dll</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>os.dlls(string path)</from>
@@ -162,7 +162,7 @@ public class OsSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to file</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>os.file(string path)</from>
@@ -188,8 +188,8 @@ public class OsSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to directory</virtual-param>
-    ///         <virtual-param>Move through subfolders</virtual-param>
+    ///         <virtual-param name="directory" kind="path" relative-to="invocation-directory">Path to directory</virtual-param>
+    ///         <virtual-param name="useSubdirectories">Move through subfolders</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>os.files(string directory, bool useSubdirectories)</from>
@@ -265,7 +265,7 @@ public class OsSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to zip file</virtual-param>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to zip file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>os.zip(string path)</from>
@@ -289,7 +289,7 @@ public class OsSchema : SchemaBase
     ///         </examples>
     ///     </virtual-constructor>
     ///     <virtual-constructor>
-    ///         <virtual-param>Path to file</virtual-param>
+    ///         <virtual-param name="directoryOrFile" kind="path" relative-to="invocation-directory">Path to file</virtual-param>
     ///         <examples>
     ///             <example>
     ///                 <from>os.metadata(string directoryOrFile)</from>
@@ -301,8 +301,13 @@ public class OsSchema : SchemaBase
     ///                     <column name="Description" type="string">Gets the description</column>
     ///                 </columns>
     ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param name="pathDirectoryOrFile" kind="path" relative-to="invocation-directory">Path to file</virtual-param>
+    ///         <examples>
     ///             <example>
-    ///                 <from>os.metadata(string directory, bool throwOnMetadataReadError)</from>
+    ///                 <from>os.metadata(string pathDirectoryOrFile, bool throwOnMetadataReadError)</from>
     ///                 <description>Gets the metadata for files within directories</description>
     ///                 <columns>
     ///                     <column name="FullName" type="string">Gets the full path of the file</column>
@@ -311,8 +316,13 @@ public class OsSchema : SchemaBase
     ///                     <column name="Description" type="string">Gets the description</column>
     ///                 </columns>
     ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param name="directory" kind="path" relative-to="invocation-directory">Path to file</virtual-param>
+    ///         <examples>
     ///             <example>
-    ///                 <from>os.metadata(string directory, bool useSubdirectories, bool throwOnMetadataReadError)</from>
+    ///                 <from>os.metadata(string directory, bool useSubDirectories, bool throwOnMetadataReadError)</from>
     ///                 <description>Gets the metadata for files within directories</description>
     ///                 <columns>
     ///                     <column name="FullName" type="string">Gets the full path of the file</column>
@@ -361,6 +371,11 @@ public class OsSchema : SchemaBase
     ///                 <from>os.environmentvariables()</from>
     ///                 <description>Lists environment variable names without values</description>
     ///             </example>
+    ///         </examples>
+    ///     </virtual-constructor>
+    ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to a file or directory</virtual-param>
+    ///         <examples>
     ///             <example>
     ///                 <from>os.pathinfo(string path)</from>
     ///                 <description>Shows safe metadata for one path</description>
@@ -434,29 +449,29 @@ public class OsSchema : SchemaBase
     /// <param name="executionContext">Execution context</param>
     /// <param name="parameters">Parameters to pass data to data source</param>
     /// <returns>Data source</returns>
-    public override RowSource<T> GetRowSource<T>(
+    public override RowSource<T> GetRowSource<T, TArguments>(
         string name,
         SourceExecutionContext executionContext,
-        params object[] parameters)
+        TArguments parameters)
     {
         switch (name.ToLowerInvariant())
         {
             case FileTable:
                 return EnsureSourceType<T, FileEntity>(
                     name,
-                    new FileSource((string)parameters[0], executionContext));
+                    new FileSource(parameters.GetValue<string>(0), executionContext));
             case FilesTable:
                 return EnsureSourceType<T, FileEntity>(
                     name,
-                    new FilesSource((string)parameters[0], (bool)parameters[1], executionContext));
+                    new FilesSource(parameters.GetValue<string>(0), parameters.GetValue<bool>(1), executionContext));
             case DirectoriesTable:
                 return EnsureSourceType<T, DirectoryEntity>(
                     name,
-                    new DirectoryEntitiesSource((string)parameters[0], (bool)parameters[1], executionContext));
+                    new DirectoryEntitiesSource(parameters.GetValue<string>(0), parameters.GetValue<bool>(1), executionContext));
             case ZipTable:
                 return EnsureSourceType<T, ZipEntryEntity>(
                     name,
-                    new ZipSource((string)parameters[0], executionContext));
+                    new ZipSource(parameters.GetValue<string>(0), executionContext));
             case ProcessesName:
                 return EnsureSourceType<T, ProcessEntity>(
                     name,
@@ -464,11 +479,11 @@ public class OsSchema : SchemaBase
             case DllsTable:
                 return EnsureSourceType<T, DllInfo>(
                     name,
-                    new DllSource((string)parameters[0], (bool)parameters[1], executionContext));
+                    new DllSource(parameters.GetValue<string>(0), parameters.GetValue<bool>(1), executionContext));
             case DirsCompare:
                 return EnsureSourceType<T, CompareDirectoriesResult>(
                     name,
-                    new CompareDirectoriesSource((string)parameters[0], (string)parameters[1], executionContext));
+                    new CompareDirectoriesSource(parameters.GetValue<string>(0), parameters.GetValue<string>(1), executionContext));
             case Cultures:
                 return EnsureSourceType<T, CultureEntity>(
                     name,
@@ -508,66 +523,9 @@ public class OsSchema : SchemaBase
             case PathInfo:
                 return EnsureSourceType<T, PathInfoEntity>(
                     name,
-                    new PathInfoSource((string)parameters[0], executionContext));
+                    new PathInfoSource(parameters.GetValue<string>(0), executionContext));
             case Metadata:
-            {
-                {
-                    if (parameters is [string pathDirectory, bool useSubDirectories, bool throwOnMetadataReadError])
-                        return EnsureSourceType<T, MetadataEntity>(
-                            name,
-                            new MetadataSource(
-                                pathDirectory,
-                                null,
-                                useSubDirectories,
-                                MetadataSource.PathType.MustBeDirectory,
-                                throwOnMetadataReadError,
-                                executionContext));
-                }
-
-                {
-                    if (parameters is [string pathDirectoryOrFile, bool throwOnMetadataReadError])
-                    {
-                        var isDirectory = Directory.Exists(pathDirectoryOrFile);
-                        var directoryPath = isDirectory
-                            ? pathDirectoryOrFile
-                            : Path.GetDirectoryName(pathDirectoryOrFile) ??
-                              throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
-                        var fileName = isDirectory ? null : Path.GetFileName(pathDirectoryOrFile);
-                        return EnsureSourceType<T, MetadataEntity>(
-                            name,
-                            new MetadataSource(
-                                directoryPath,
-                                fileName,
-                                false,
-                                MetadataSource.PathType.DirectoryOrFile,
-                                throwOnMetadataReadError,
-                                executionContext));
-                    }
-                }
-
-                {
-                    if (parameters is [string pathDirectoryOrFile])
-                    {
-                        var isDirectory = Directory.Exists(pathDirectoryOrFile);
-                        var directoryPath = isDirectory
-                            ? pathDirectoryOrFile
-                            : Path.GetDirectoryName(pathDirectoryOrFile) ??
-                              throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
-                        var fileName = isDirectory ? null : Path.GetFileName(pathDirectoryOrFile);
-                        return EnsureSourceType<T, MetadataEntity>(
-                            name,
-                            new MetadataSource(
-                                directoryPath,
-                                fileName,
-                                false,
-                                MetadataSource.PathType.DirectoryOrFile,
-                                true,
-                                executionContext));
-                    }
-                }
-
-                throw new NotSupportedException($"Unsupported parameters for metadata source {name}");
-            }
+                return EnsureSourceType<T, MetadataEntity>(name, CreateMetadataSource(executionContext, parameters));
         }
 
         throw new NotSupportedException($"Unsupported row source {name}");
@@ -579,6 +537,24 @@ public class OsSchema : SchemaBase
     /// <param name="methodName">The name of the method</param>
     /// <param name="metadataContext">Metadata context</param>
     /// <returns>Array of SchemaMethodInfo objects describing the method signatures</returns>
+    private static MetadataSource CreateMetadataSource<TArguments>(SourceExecutionContext context, TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
+        if (parameters.Count is < 1 or > 3)
+            throw new NotSupportedException($"Unsupported parameters for metadata source {Metadata}");
+        var path = parameters.GetValue<string>(0);
+        if (parameters.Count == 3)
+            return new MetadataSource(path, null, parameters.GetValue<bool>(1),
+                MetadataSource.PathType.MustBeDirectory, parameters.GetValue<bool>(2), context);
+        var isDirectory = Directory.Exists(path);
+        var directoryPath = isDirectory ? path : Path.GetDirectoryName(path) ??
+            throw new NotSupportedException($"Unsupported parameters for metadata source {Metadata}");
+        var fileName = isDirectory ? null : Path.GetFileName(path);
+        var throwOnReadError = parameters.Count == 1 || parameters.GetValue<bool>(1);
+        return new MetadataSource(directoryPath, fileName, false, MetadataSource.PathType.DirectoryOrFile,
+            throwOnReadError, context);
+    }
+
     public override SchemaMethodInfo[] GetRawConstructors(
         string methodName,
         SourceMetadataContext metadataContext)

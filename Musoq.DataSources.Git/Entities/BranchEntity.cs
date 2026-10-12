@@ -15,8 +15,6 @@ public class BranchEntity
 {
     /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
-    /// <summary>Maps row indexes to the corresponding property accessors used by the Musoq runtime.</summary>
-    public static readonly IReadOnlyDictionary<int, Func<BranchEntity, object?>> IndexToObjectAccessMap;
 
     /// <summary>Describes the columns exposed by a branch row.</summary>
     public static readonly ISchemaColumn[] Columns =
@@ -64,15 +62,6 @@ public class BranchEntity
             { nameof(Self), 12 }
         };
 
-        IndexToObjectAccessMap = new Dictionary<int, Func<BranchEntity, object?>>
-        {
-            { 0, entity => entity.FriendlyName }, { 1, entity => entity.CanonicalName },
-            { 2, entity => entity.IsRemote }, { 3, entity => entity.IsTracking },
-            { 4, entity => entity.IsCurrentRepositoryHead }, { 5, entity => entity.TrackedBranch },
-            { 6, entity => entity.BranchTrackingDetails }, { 7, entity => entity.Tip },
-            { 8, entity => entity.Commits }, { 9, entity => entity.UpstreamBranchCanonicalName },
-            { 10, entity => entity.RemoteName }, { 11, entity => entity.ParentBranch }, { 12, entity => entity.Self }
-        };
     }
 
     /// <summary>Creates a snapshot from a LibGit2Sharp branch without retaining it or its repository.</summary>

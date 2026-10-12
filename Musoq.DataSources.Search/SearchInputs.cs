@@ -27,7 +27,10 @@ public readonly struct SearchPatternInput
 
 /// <summary>
 ///     Text options for single-pattern sources. Omitted values mean literal,
-///     sensitive, automatic encoding, and unrestricted word matching.
+///     sensitive, loss-tolerant automatic encoding, and unrestricted word
+///     matching. Automatic decoding recognizes UTF-8 and UTF-16 BOMs; use an
+///     explicit encoding such as <c>windows-1250</c>, <c>windows-1252</c>, or
+///     <c>iso-8859-2</c> when the source encoding is known.
 /// </summary>
 public readonly struct SearchTextInput
 {
@@ -54,7 +57,11 @@ public readonly struct SearchTextInput
     /// </summary>
     public string CaseMode { get; }
 
-    /// <summary>Gets the decoding policy, normally <c>auto</c>.</summary>
+    /// <summary>
+    ///     Gets the decoding policy, normally loss-tolerant <c>auto</c>.
+    ///     Explicit values include <c>utf8</c>, the UTF-16 BOM modes,
+    ///     <c>windows-1250</c>, <c>windows-1252</c>, and <c>iso-8859-2</c>.
+    /// </summary>
     public string Encoding { get; }
 
     /// <summary>Gets whether matches must have word boundaries.</summary>
@@ -85,7 +92,11 @@ public readonly struct SearchManyTextInput
     /// </summary>
     public string CaseMode { get; }
 
-    /// <summary>Gets the decoding policy, normally <c>auto</c>.</summary>
+    /// <summary>
+    ///     Gets the decoding policy, normally loss-tolerant <c>auto</c>.
+    ///     Explicit values include <c>utf8</c>, the UTF-16 BOM modes,
+    ///     <c>windows-1250</c>, <c>windows-1252</c>, and <c>iso-8859-2</c>.
+    /// </summary>
     public string Encoding { get; }
 
     /// <summary>Gets whether every pattern must have word boundaries.</summary>
@@ -95,26 +106,34 @@ public readonly struct SearchManyTextInput
 /// <summary>Physical-line or bounded-multiline record options for regex scans.</summary>
 public readonly struct SearchRecordsInput
 {
+    internal const string DefaultMode = "physical-line";
+    internal const long DefaultMaxBytes = 1_048_576;
+
+    private readonly bool _initialized;
+    private readonly string? _mode;
+    private readonly long _maxBytes;
+
     /// <summary>Creates record framing options.</summary>
     public SearchRecordsInput(
-        string mode = "physical-line",
-        long maxBytes = 1_048_576,
+        string mode = DefaultMode,
+        long maxBytes = DefaultMaxBytes,
         string? startDelimiter = null,
         string? endDelimiter = null,
         bool allowUnterminatedEof = false)
     {
-        Mode = mode;
-        MaxBytes = maxBytes;
+        _initialized = true;
+        _mode = mode;
+        _maxBytes = maxBytes;
         StartDelimiter = startDelimiter;
         EndDelimiter = endDelimiter;
         AllowUnterminatedEof = allowUnterminatedEof;
     }
 
     /// <summary>Gets <c>physical-line</c> or <c>bounded-multiline</c>.</summary>
-    public string Mode { get; }
+    public string Mode => _initialized ? _mode! : DefaultMode;
 
     /// <summary>Gets the maximum decoded record size, up to 1 MiB.</summary>
-    public long MaxBytes { get; }
+    public long MaxBytes => _initialized ? _maxBytes : DefaultMaxBytes;
 
     /// <summary>Gets the bounded-multiline start delimiter.</summary>
     public string? StartDelimiter { get; }

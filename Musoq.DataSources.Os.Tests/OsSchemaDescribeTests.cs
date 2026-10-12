@@ -36,7 +36,7 @@ public class OsSchemaDescribeTests
 
         Assert.AreEqual(20, table.Count, "Should have 20 rows (17 single-overload methods + 3 metadata overloads)");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
 
         Assert.AreEqual(1, methodNames.Count(m => m == "file"), "Should contain 'file' method once");
         Assert.AreEqual(1, methodNames.Count(m => m == "files"), "Should contain 'files' method once");
@@ -58,36 +58,36 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(3, methodNames.Count(m => m == "metadata"),
             "Should contain 'metadata' method 3 times (3 overloads)");
 
-        var fileRow = table.First(row => (string)row[0] == "file");
-        Assert.AreEqual("path: System.String", (string)fileRow[1]);
-        Assert.IsNull(fileRow[2], "Second parameter should be null for file method");
-        Assert.IsNull(fileRow[3], "Third parameter should be null for file method");
+        var fileRow = table.First(row => (string)row.ReadValue(0) == "file");
+        Assert.AreEqual("path: System.String", (string)fileRow.ReadValue(1));
+        Assert.IsNull(fileRow.ReadValue(2), "Second parameter should be null for file method");
+        Assert.IsNull(fileRow.ReadValue(3), "Third parameter should be null for file method");
 
-        var filesRow = table.First(row => (string)row[0] == "files");
-        Assert.AreEqual("directory: System.String", (string)filesRow[1]);
-        Assert.AreEqual("useSubdirectories: System.Boolean", (string)filesRow[2]);
-        Assert.IsNull(filesRow[3], "Third parameter should be null for files method");
+        var filesRow = table.First(row => (string)row.ReadValue(0) == "files");
+        Assert.AreEqual("directory: System.String", (string)filesRow.ReadValue(1));
+        Assert.AreEqual("useSubdirectories: System.Boolean", (string)filesRow.ReadValue(2));
+        Assert.IsNull(filesRow.ReadValue(3), "Third parameter should be null for files method");
 
-        var processesRow = table.First(row => (string)row[0] == "processes");
-        Assert.AreEqual("processes", (string)processesRow[0]);
-        Assert.IsNull(processesRow[1], "processes() should have no parameters");
-        Assert.IsNull(processesRow[2]);
-        Assert.IsNull(processesRow[3]);
+        var processesRow = table.First(row => (string)row.ReadValue(0) == "processes");
+        Assert.AreEqual("processes", (string)processesRow.ReadValue(0));
+        Assert.IsNull(processesRow.ReadValue(1), "processes() should have no parameters");
+        Assert.IsNull(processesRow.ReadValue(2));
+        Assert.IsNull(processesRow.ReadValue(3));
 
-        var dirsCompareRow = table.First(row => (string)row[0] == "dirscompare");
-        Assert.AreEqual("sourceDirectory: System.String", (string)dirsCompareRow[1]);
-        Assert.AreEqual("destinationDirectory: System.String", (string)dirsCompareRow[2]);
-        Assert.IsNull(dirsCompareRow[3]);
+        var dirsCompareRow = table.First(row => (string)row.ReadValue(0) == "dirscompare");
+        Assert.AreEqual("sourceDirectory: System.String", (string)dirsCompareRow.ReadValue(1));
+        Assert.AreEqual("destinationDirectory: System.String", (string)dirsCompareRow.ReadValue(2));
+        Assert.IsNull(dirsCompareRow.ReadValue(3));
 
-        var culturesRow = table.First(row => (string)row[0] == "cultures");
-        Assert.IsNull(culturesRow[1]);
-        Assert.IsNull(culturesRow[2]);
-        Assert.IsNull(culturesRow[3]);
+        var culturesRow = table.First(row => (string)row.ReadValue(0) == "cultures");
+        Assert.IsNull(culturesRow.ReadValue(1));
+        Assert.IsNull(culturesRow.ReadValue(2));
+        Assert.IsNull(culturesRow.ReadValue(3));
 
-        var pathInfoRow = table.First(row => (string)row[0] == "pathinfo");
-        Assert.AreEqual("path: System.String", (string)pathInfoRow[1]);
-        Assert.IsNull(pathInfoRow[2]);
-        Assert.IsNull(pathInfoRow[3]);
+        var pathInfoRow = table.First(row => (string)row.ReadValue(0) == "pathinfo");
+        Assert.AreEqual("path: System.String", (string)pathInfoRow.ReadValue(1));
+        Assert.IsNull(pathInfoRow.ReadValue(2));
+        Assert.IsNull(pathInfoRow.ReadValue(3));
     }
 
     [TestMethod]
@@ -106,9 +106,9 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("files", (string)row[0]);
-        Assert.AreEqual("directory: System.String", (string)row[1]);
-        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row[2]);
+        Assert.AreEqual("files", (string)row.ReadValue(0));
+        Assert.AreEqual("directory: System.String", (string)row.ReadValue(1));
+        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row.ReadValue(2));
     }
 
     [TestMethod]
@@ -126,8 +126,8 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("file", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
+        Assert.AreEqual("file", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
     }
 
     [TestMethod]
@@ -142,9 +142,9 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("directories", (string)row[0]);
-        Assert.AreEqual("directory: System.String", (string)row[1]);
-        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row[2],
+        Assert.AreEqual("directories", (string)row.ReadValue(0));
+        Assert.AreEqual("directory: System.String", (string)row.ReadValue(1));
+        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row.ReadValue(2),
             "Parameter name should match actual constructor parameter");
     }
 
@@ -160,8 +160,8 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("zip", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1],
+        Assert.AreEqual("zip", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1),
             "Parameter name should match actual constructor parameter");
     }
 
@@ -177,7 +177,7 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("processes", (string)row[0]);
+        Assert.AreEqual("processes", (string)row.ReadValue(0));
     }
 
     [TestMethod]
@@ -192,9 +192,9 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("dlls", (string)row[0]);
-        Assert.AreEqual("path: System.String", (string)row[1]);
-        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row[2]);
+        Assert.AreEqual("dlls", (string)row.ReadValue(0));
+        Assert.AreEqual("path: System.String", (string)row.ReadValue(1));
+        Assert.AreEqual("useSubdirectories: System.Boolean", (string)row.ReadValue(2));
     }
 
     [TestMethod]
@@ -209,10 +209,10 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(1, table.Count);
 
         var row = table.First();
-        Assert.AreEqual("dirscompare", (string)row[0]);
-        Assert.AreEqual("sourceDirectory: System.String", (string)row[1],
+        Assert.AreEqual("dirscompare", (string)row.ReadValue(0));
+        Assert.AreEqual("sourceDirectory: System.String", (string)row.ReadValue(1),
             "First parameter name should match actual constructor parameter");
-        Assert.AreEqual("destinationDirectory: System.String", (string)row[2],
+        Assert.AreEqual("destinationDirectory: System.String", (string)row.ReadValue(2),
             "Second parameter name should match actual constructor parameter");
     }
 
@@ -227,26 +227,26 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(4, table.Columns.Count(), "Should have 4 columns (Name, Param 0, Param 1, Param 2)");
         Assert.AreEqual(3, table.Count, "Should have 3 rows for 3 overloads");
 
-        var methodNames = table.Select(row => (string)row[0]).ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(methodNames.All(name => name == "metadata"), "All rows should be for metadata method");
 
         var overload1 = table.ElementAt(0);
-        Assert.AreEqual("metadata", (string)overload1[0]);
-        Assert.AreEqual("directoryOrFile: System.String", (string)overload1[1]);
-        Assert.IsNull(overload1[2]);
-        Assert.IsNull(overload1[3]);
+        Assert.AreEqual("metadata", (string)overload1.ReadValue(0));
+        Assert.AreEqual("directoryOrFile: System.String", (string)overload1.ReadValue(1));
+        Assert.IsNull(overload1.ReadValue(2));
+        Assert.IsNull(overload1.ReadValue(3));
 
         var overload2 = table.ElementAt(1);
-        Assert.AreEqual("metadata", (string)overload2[0]);
-        Assert.AreEqual("pathDirectoryOrFile: System.String", (string)overload2[1]);
-        Assert.AreEqual("throwOnMetadataReadError: System.Boolean", (string)overload2[2]);
-        Assert.IsNull(overload2[3]);
+        Assert.AreEqual("metadata", (string)overload2.ReadValue(0));
+        Assert.AreEqual("pathDirectoryOrFile: System.String", (string)overload2.ReadValue(1));
+        Assert.AreEqual("throwOnMetadataReadError: System.Boolean", (string)overload2.ReadValue(2));
+        Assert.IsNull(overload2.ReadValue(3));
 
         var overload3 = table.ElementAt(2);
-        Assert.AreEqual("metadata", (string)overload3[0]);
-        Assert.AreEqual("directory: System.String", (string)overload3[1]);
-        Assert.AreEqual("useSubDirectories: System.Boolean", (string)overload3[2]);
-        Assert.AreEqual("throwOnMetadataReadError: System.Boolean", (string)overload3[3]);
+        Assert.AreEqual("metadata", (string)overload3.ReadValue(0));
+        Assert.AreEqual("directory: System.String", (string)overload3.ReadValue(1));
+        Assert.AreEqual("useSubDirectories: System.Boolean", (string)overload3.ReadValue(2));
+        Assert.AreEqual("throwOnMetadataReadError: System.Boolean", (string)overload3.ReadValue(3));
     }
 
     [TestMethod]
@@ -307,7 +307,7 @@ public class OsSchemaDescribeTests
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
-        var allParams = table.SelectMany(row => new[] { row[1], row[2], row[3] })
+        var allParams = table.SelectMany(row => new[] { row.ReadValue(1), row.ReadValue(2), row.ReadValue(3) })
             .Where(p => p != null)
             .Select(p => (string)p)
             .ToList();
@@ -326,8 +326,8 @@ public class OsSchemaDescribeTests
 
         var row = table.First();
 
-        var param1 = (string)row[1];
-        var param2 = (string)row[2];
+        var param1 = (string)row.ReadValue(1);
+        var param2 = (string)row.ReadValue(2);
 
         Assert.IsTrue(param1.Contains("sourceDirectory") && param1.Contains("System.String"),
             $"First parameter should be sourceDirectory: System.String, got: {param1}");
@@ -343,7 +343,7 @@ public class OsSchemaDescribeTests
         var vm = CreateAndRunVirtualMachine(query);
         var table = vm.Run();
 
-        var methodNames = table.Select(row => (string)row[0]).Distinct().ToList();
+        var methodNames = table.Select(row => (string)row.ReadValue(0)).Distinct().ToList();
 
         Assert.AreEqual(18, methodNames.Count, "Should have 18 distinct method names");
         Assert.IsTrue(methodNames.Contains("file"));
@@ -378,7 +378,7 @@ public class OsSchemaDescribeTests
 
         Assert.IsTrue(table.Count > 0, "Should have rows describing the table columns");
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(FileEntity.Name),
@@ -417,9 +417,9 @@ public class OsSchemaDescribeTests
 
         for (var i = 0; i < filesTable.Count; i++)
         {
-            Assert.AreEqual(filesTable[i][0], fileTable[i][0]);
-            Assert.AreEqual(filesTable[i][1], fileTable[i][1]);
-            Assert.AreEqual(filesTable[i][2], fileTable[i][2]);
+            Assert.AreEqual(filesTable[i].ReadValue(0), fileTable[i].ReadValue(0));
+            Assert.AreEqual(filesTable[i].ReadValue(1), fileTable[i].ReadValue(1));
+            Assert.AreEqual(filesTable[i].ReadValue(2), fileTable[i].ReadValue(2));
         }
     }
 
@@ -434,7 +434,7 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(DirectoryInfo.FullName),
@@ -469,7 +469,7 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(System.Diagnostics.Process.BasePriority),
@@ -509,7 +509,7 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(CompareDirectoriesResult.SourceFile),
@@ -537,7 +537,7 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(MetadataEntity.FullName),
@@ -562,7 +562,7 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(ZipArchiveEntry.Name),
@@ -590,7 +590,7 @@ public class OsSchemaDescribeTests
         Assert.AreEqual(3, table.Columns.Count());
         Assert.IsTrue(table.Count > 0);
 
-        var columnNames = table.Select(row => (string)row[0]).ToList();
+        var columnNames = table.Select(row => (string)row.ReadValue(0)).ToList();
         var expectedColumns = new[]
         {
             nameof(DllInfo.FileInfo),
@@ -618,10 +618,10 @@ public class OsSchemaDescribeTests
             "Method signature vs table schema should have different row counts");
 
         Assert.AreEqual(1, tableNoArgs.Count);
-        Assert.AreEqual("files", (string)tableNoArgs.First()[0]);
+        Assert.AreEqual("files", (string)tableNoArgs.First().ReadValue(0));
 
         Assert.IsTrue(tableWithArgs.Count > 1);
-        var columnNames = tableWithArgs.Select(row => (string)row[0]).ToList();
+        var columnNames = tableWithArgs.Select(row => (string)row.ReadValue(0)).ToList();
         Assert.IsTrue(columnNames.Contains(nameof(FileEntity.Name)));
         Assert.IsTrue(columnNames.Contains(nameof(FileEntity.FullPath)));
     }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Musoq.Schema.DataSources;
 
+using Musoq.DataSources.Search.Components.Testing;
 using Musoq.DataSources.Search.Components.Traversal;
 
 namespace Musoq.DataSources.Search.Tests.Components.Traversal;
@@ -278,6 +279,43 @@ public sealed class SearchFileParallelCoordinatorTests
 
         Assert.AreEqual("worker failure", failure.Message);
         Assert.AreEqual(0, Volatile.Read(ref activeWorkers));
+    }
+
+    [TestMethod]
+    public void CompletionOrderFailure_ShouldObserveFaultedChannelWaiters()
+    {
+        var observedException = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var releaseFailure = new ManualResetEventSlim();
+        using var hooks = SearchTestHooks.Install(new SearchTestHooksState
+        {
+            TaskExceptionObserved = _ => observedException.TrySetResult(true),
+            BeforeParallelWait = releaseFailure.Set
+        });
+
+        var exception = Assert.ThrowsException<InvalidOperationException>(() =>
+            SearchFileParallelCoordinator.Run(
+                _ => new[] { "file-0", "file-1" },
+                new RecordingChunkWriter<int>(),
+                (file, fileWriter, cancellationToken) =>
+                {
+                    releaseFailure.Wait(cancellationToken);
+                    if (file == "file-0")
+                        throw new InvalidOperationException("completion-order failure");
+
+                    fileWriter.Write([1]);
+                },
+                acceptedWindow: null,
+                reportRowsRead: null,
+                cancellationToken: default,
+                options: new SearchFileParallelOptions(
+                    workerCount: 2,
+                    maxInFlightFiles: 2,
+                    bufferedChunksPerFile: 1,
+                    outputOrder: SearchFileOutputOrder.CompletionOrder)));
+
+        Assert.AreEqual("completion-order failure", exception.Message);
+        _ = observedException.Task.GetAwaiter().GetResult();
     }
 
     [TestMethod]

@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using System.Text.Json;
 using Musoq.DataSources.Structured;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -37,6 +38,8 @@ internal sealed class JsonTable : ISchemaTable
             var columnType = binding.ClrType;
             if (explicitTypes.TryGetValue(binding.Name, out var explicitType) && explicitType != typeof(object))
                 columnType = explicitType;
+            if (columnType == typeof(object))
+                columnType = binding.TypeState.IsNullable ? typeof(JsonElement?) : typeof(JsonElement);
 
             _columns[binding.OutputOrdinal] = new SchemaColumn(
                 binding.Name,
@@ -47,7 +50,7 @@ internal sealed class JsonTable : ISchemaTable
 
     public ISchemaColumn[] Columns => _columns;
 
-    public SchemaTableMetadata Metadata { get; } = new(typeof(object[]));
+    public SchemaTableMetadata Metadata { get; } = new(typeof(QueryScopedRowContract)) { TypeOrigin = TableSchemaTypeOrigin.TableDefined };
 
     public ISchemaColumn? GetColumnByName(string name)
     {

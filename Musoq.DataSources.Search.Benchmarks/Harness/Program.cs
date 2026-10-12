@@ -17,6 +17,8 @@ internal static class Program
     {
         try
         {
+            if (args is ["measure-native-predicates", var output])
+                return NativePredicateMeasurement.Run(output);
             return args.FirstOrDefault()?.ToLowerInvariant() switch
             {
                 "measure-decoding" => MeasureDecoding(),

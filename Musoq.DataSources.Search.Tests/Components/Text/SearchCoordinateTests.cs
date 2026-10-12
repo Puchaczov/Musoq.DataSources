@@ -116,6 +116,48 @@ public sealed class SearchCoordinateTests
     }
 
     [TestMethod]
+    public void LossyAutoCoordinates_ShouldResumeAfterReplacementBytes()
+    {
+        var root = CreateTemporaryRoot();
+        var path = Path.Combine(root, "lossy.txt");
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllBytes(path, [
+                (byte)'A',
+                0x80,
+                (byte)' ',
+                (byte)'T', (byte)'O', (byte)'D', (byte)'O',
+                (byte)'\n'
+            ]);
+
+            var request = SearchRequest.Create(root, "TODO");
+            var matches = ReadMatches(request);
+            var lines = ReadLines(request);
+
+            Assert.AreEqual(1, matches.Length);
+            Assert.AreEqual(1L, matches[0].LineNumber);
+            Assert.AreEqual(3L, matches[0].Utf16Column);
+            Assert.AreEqual(3L, matches[0].ByteOffset);
+            Assert.AreEqual(4L, matches[0].ByteLength);
+
+            Assert.AreEqual(1, lines.Length);
+            Assert.AreEqual("A\ufffd TODO\n", lines[0].LineText);
+            Assert.AreEqual(0L, lines[0].ByteOffset);
+
+            var replacementMatches = ReadMatches(SearchRequest.Create(root, "\ufffd"));
+            Assert.AreEqual(1, replacementMatches.Length);
+            Assert.IsNull(replacementMatches[0].ByteOffset);
+            Assert.IsNull(replacementMatches[0].ByteLength);
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
+    [TestMethod]
     public void CrLfSplitAcrossReaderBlocks_ShouldKeepLineAndMatchOffsets()
     {
         var root = CreateTemporaryRoot();

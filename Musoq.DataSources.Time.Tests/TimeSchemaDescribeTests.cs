@@ -46,10 +46,10 @@ public class TimeSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have 1 row for interval method");
 
         var row = table.First();
-        Assert.AreEqual("interval", (string)row[0]);
-        Assert.AreEqual("startDateTime: System.String", (string)row[1]);
-        Assert.AreEqual("stopDateTime: System.String", (string)row[2]);
-        Assert.AreEqual("interval: System.String", (string)row[3]);
+        Assert.AreEqual("interval", (string)row.ReadValue(0));
+        Assert.AreEqual("startDateTime: System.String", (string)row.ReadValue(1));
+        Assert.AreEqual("stopDateTime: System.String", (string)row.ReadValue(2));
+        Assert.AreEqual("interval: System.String", (string)row.ReadValue(3));
     }
 
     [TestMethod]
@@ -69,10 +69,10 @@ public class TimeSchemaDescribeTests
         Assert.AreEqual(1, table.Count, "Should have exactly 1 row");
 
         var row = table.First();
-        Assert.AreEqual("interval", (string)row[0]);
-        Assert.AreEqual("startDateTime: System.String", (string)row[1]);
-        Assert.AreEqual("stopDateTime: System.String", (string)row[2]);
-        Assert.AreEqual("interval: System.String", (string)row[3]);
+        Assert.AreEqual("interval", (string)row.ReadValue(0));
+        Assert.AreEqual("startDateTime: System.String", (string)row.ReadValue(1));
+        Assert.AreEqual("stopDateTime: System.String", (string)row.ReadValue(2));
+        Assert.AreEqual("interval: System.String", (string)row.ReadValue(3));
     }
 
     [TestMethod]
@@ -124,7 +124,7 @@ public class TimeSchemaDescribeTests
         var tableWithArgs = vmWithArgs.Run();
 
         Assert.AreEqual(1, tableNoArgs.Count);
-        Assert.AreEqual("interval", (string)tableNoArgs.First()[0]);
+        Assert.AreEqual("interval", (string)tableNoArgs.First().ReadValue(0));
 
         Assert.IsTrue(tableWithArgs.Count > 1, "Should have rows describing the table columns");
         Assert.AreNotEqual(tableNoArgs.Count, tableWithArgs.Count,

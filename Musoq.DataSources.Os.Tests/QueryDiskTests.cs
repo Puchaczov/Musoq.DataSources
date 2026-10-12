@@ -46,8 +46,8 @@ public class QueryDiskTests
         Assert.AreEqual(typeof(string), table.Columns.ElementAt(0).ColumnType);
 
         Assert.AreEqual(2, table.Count);
-        Assert.AreEqual("Directories", table[0].Values[0]);
-        Assert.AreEqual("Directories", table[1].Values[0]);
+        Assert.AreEqual("Directories", table[0].ReadValues()[0]);
+        Assert.AreEqual("Directories", table[1].ReadValues()[0]);
     }
 
     [TestMethod]
@@ -61,27 +61,27 @@ public class QueryDiskTests
         Assert.AreEqual(3, table.Columns.Count());
 
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.Name) && (string)row[2] == typeof(string).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.Name) && (string)row.ReadValue(2) == typeof(string).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.FileName) && (string)row[2] == typeof(string).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.FileName) && (string)row.ReadValue(2) == typeof(string).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.CreationTime) && (string)row[2] == typeof(DateTimeOffset).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.CreationTime) && (string)row.ReadValue(2) == typeof(DateTimeOffset).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.CreationTimeUtc) && (string)row[2] == typeof(DateTimeOffset).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.CreationTimeUtc) && (string)row.ReadValue(2) == typeof(DateTimeOffset).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.DirectoryPath) && (string)row[2] == typeof(string).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.DirectoryPath) && (string)row.ReadValue(2) == typeof(string).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.DirectoryName) && (string)row[2] == typeof(string).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.DirectoryName) && (string)row.ReadValue(2) == typeof(string).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.Extension) && (string)row[2] == typeof(string).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.Extension) && (string)row.ReadValue(2) == typeof(string).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.FullPath) && (string)row[2] == typeof(string).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.FullPath) && (string)row.ReadValue(2) == typeof(string).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.Exists) && (string)row[2] == typeof(bool).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.Exists) && (string)row.ReadValue(2) == typeof(bool).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.IsReadOnly) && (string)row[2] == typeof(bool).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.IsReadOnly) && (string)row.ReadValue(2) == typeof(bool).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(FileEntity.Length) && (string)row[2] == typeof(long).FullName));
+            (string)row.ReadValue(0) == nameof(FileEntity.Length) && (string)row.ReadValue(2) == typeof(long).FullName));
     }
 
     [TestMethod]
@@ -95,11 +95,11 @@ public class QueryDiskTests
         Assert.AreEqual(3, table.Columns.Count());
 
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(DllInfo.FileInfo) && (string)row[2] == typeof(FileInfo).FullName));
+            (string)row.ReadValue(0) == nameof(DllInfo.FileInfo) && (string)row.ReadValue(2) == typeof(FileInfo).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(DllInfo.Assembly) && (string)row[2] == typeof(Assembly).FullName));
+            (string)row.ReadValue(0) == nameof(DllInfo.Assembly) && (string)row.ReadValue(2) == typeof(Assembly).FullName));
         Assert.IsTrue(table.Any(row =>
-            (string)row[0] == nameof(DllInfo.Version) && (string)row[2] == typeof(FileVersionInfo).FullName));
+            (string)row.ReadValue(0) == nameof(DllInfo.Version) && (string)row.ReadValue(2) == typeof(FileVersionInfo).FullName));
     }
 
     [TestMethod]
@@ -238,7 +238,7 @@ public class QueryDiskTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual("EF|BB", table[0][0]);
+        Assert.AreEqual("EF|BB", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -252,7 +252,7 @@ public class QueryDiskTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual("BF|45|78|61|6D", table[0][0]);
+        Assert.AreEqual("BF|45|78|61|6D", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -266,7 +266,7 @@ public class QueryDiskTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual("BF|45|78|61|6D", table[0][0]);
+        Assert.AreEqual("BF|45|78|61|6D", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -279,7 +279,7 @@ public class QueryDiskTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual("EF|BB", table[0][0]);
+        Assert.AreEqual("EF|BB", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -292,7 +292,7 @@ public class QueryDiskTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual("31|2E", table[0][0]);
+        Assert.AreEqual("31|2E", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -305,7 +305,7 @@ public class QueryDiskTests
 
         Assert.AreEqual(1, table.Count);
 
-        Assert.AreEqual("77u/RXhhbXBsZSBmaWxlIDEu", table[0][0]);
+        Assert.AreEqual("77u/RXhhbXBsZSBmaWxlIDEu", table[0].ReadValue(0));
     }
 
     [TestMethod]
@@ -423,13 +423,13 @@ select * from IntersectedFiles";
         Assert.IsTrue(table.Count == 2, "Table should contain exactly 2 records");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r[0] == "File1.txt" &&
-                r[1].Equals(r[2])),
+                (string)r.ReadValue(0) == "File1.txt" &&
+                r.ReadValue(1).Equals(r.ReadValue(2))),
             "Missing File1.txt record or content mismatch");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r[0] == "File2.txt" &&
-                r[1].Equals(r[2])),
+                (string)r.ReadValue(0) == "File2.txt" &&
+                r.ReadValue(1).Equals(r.ReadValue(2))),
             "Missing File2.txt record or content mismatch");
     }
 
@@ -460,18 +460,18 @@ select RelativeName, 'added' as state from ThoseInRight";
         Assert.IsTrue(table.Count == 3, "Table should contain exactly 3 records");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r[0] == "\\File1.txt" &&
-                (string)r[1] == "modified"),
+                (string)r.ReadValue(0) == "\\File1.txt" &&
+                (string)r.ReadValue(1) == "modified"),
             "Missing modified File1.txt record");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r[0] == "\\File2.txt" &&
-                (string)r[1] == "removed"),
+                (string)r.ReadValue(0) == "\\File2.txt" &&
+                (string)r.ReadValue(1) == "removed"),
             "Missing removed File2.txt record");
 
         Assert.IsTrue(table.Any(r =>
-                (string)r[0] == "\\File3.txt" &&
-                (string)r[1] == "added"),
+                (string)r.ReadValue(0) == "\\File3.txt" &&
+                (string)r.ReadValue(1) == "added"),
             "Missing added File3.txt record");
     }
 

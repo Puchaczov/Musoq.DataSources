@@ -270,3 +270,16 @@ You can add multiple registries. The configuration is persisted by the local age
 # Add a registry
 musoq registry add custom https://your-registry.example.com/registry.json
 ```
+## Native host execution boundary
+
+Python authors retain the v.2 DataPlugin contract above: declare schemas/arguments and yield dictionaries from execute(). The dictionary is the external Python protocol, not an object-valued .NET row adapter. Authors do not implement .NET kernels, row carriers or materializers.
+
+The host resolves declared columns before compilation and validates the runtime schema against the requested source shape. It decodes requested dictionary fields directly through a concrete reader into compiler-selected native rows. Do not infer a new type from each yielded value, change schemas during a query or use heterogeneous values to bypass the declaration. Missing/wrong-typed values and incompatible shape changes are failures; preserve disposal, environment settings and cancellation.
+
+The supported scalar vocabulary is int (CLR Int32), str (String), float (Double), bool (Boolean) and datetime (DateTime). Discovery and execution agree on these identities. datetime accepts Python datetime objects and ISO text with a T or space separator, required date/time fields, optional fractional seconds and optional Z or numeric +HH:mm/-HH:mm offset. Python objects retain microsecond precision; text accepts up to seven fractional digits. Naive values retain Unspecified kind; offset-aware values normalize to UTC with Utc kind. Parsing is invariant and independent of the machine timezone. Malformed/incompatible/out-of-range values fail through MQ7011 with the column identified in the underlying provider exception.
+
+Nullability remains authoritative: None/missing keys fail for non-nullable fields; native nullable reads admit null and outer joins null-extend results. A TABLE declaration cannot override a conflicting authoritative Python schema type. This correction adds no nullable Python schema vocabulary and leaves unknown-type policy unchanged. Unknown type names are not an extension mechanism.
+
+Compilation and schema discovery may use reflection/metadata. Native .NET scans, function calls and result consumption must not restore boxed cells or object-row projection. Concurrency requires explicit host/source permissions; the Python generator contract alone does not grant concurrent access. Numeric grouped/window semantics come from the library declarations: counts are long, numeric sums preserve nullable input kind, integral averages return decimal? and empty non-count inputs return null.
+
+Package layout, module-level plugin registration and requirements.txt remain unchanged. Use the intended local host and isolated fixture directories for qualification; do not replace live plugins or publish packages as part of this documentation migration.

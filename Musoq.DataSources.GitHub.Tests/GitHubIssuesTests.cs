@@ -42,13 +42,13 @@ public class GitHubIssuesTests
         Assert.AreEqual(2, table.Count);
 
 
-        Assert.IsTrue(table.Any(row => (long)row[0] == 1L && (int)row[1] == 101));
-        Assert.IsTrue(table.Any(row => (long)row[0] == 2L && (int)row[1] == 102));
+        Assert.IsTrue(table.Any(row => (long)row.ReadValue(0) == 1L && (int)row.ReadValue(1) == 101));
+        Assert.IsTrue(table.Any(row => (long)row.ReadValue(0) == 2L && (int)row.ReadValue(1) == 102));
 
-        var issue1 = table.First(row => (long)row[0] == 1L);
-        Assert.AreEqual(101, issue1[1]);
-        Assert.AreEqual("Bug: Something is broken", issue1[2]);
-        Assert.AreEqual("open", issue1[3]);
+        var issue1 = table.First(row => (long)row.ReadValue(0) == 1L);
+        Assert.AreEqual(101, issue1.ReadValue(1));
+        Assert.AreEqual("Bug: Something is broken", issue1.ReadValue(2));
+        Assert.AreEqual("open", issue1.ReadValue(3));
 
         api.Verify(
             f => f.GetIssuesAsync("testowner", "testrepo", It.IsAny<RepositoryIssueRequest>(), It.IsAny<int?>(),
@@ -75,8 +75,8 @@ public class GitHubIssuesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual(101, table[0][0]);
-        Assert.AreEqual("Open issue", table[0][1]);
+        Assert.AreEqual(101, table[0].ReadValue(0));
+        Assert.AreEqual("Open issue", table[0].ReadValue(1));
 
         api.Verify(
             f => f.GetIssuesAsync(
@@ -109,7 +109,7 @@ public class GitHubIssuesTests
         var table = vm.Run();
 
         Assert.AreEqual(1, table.Count);
-        Assert.AreEqual("user1", table[0][2]);
+        Assert.AreEqual("user1", table[0].ReadValue(2));
     }
 
     private static CompiledQuery CreateAndRunVirtualMachineWithResponse(string script, IGitHubApi api)

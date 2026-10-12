@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Dynamic;
 using System.Text;
+using System.Text.Json;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
 
@@ -11,68 +10,37 @@ namespace Musoq.DataSources.Json;
 /// </summary>
 public class JsonLibrary : LibraryBase
 {
-    /// <summary>
-    ///     Gets the length of the array
-    /// </summary>
-    /// <param name="array">Json array</param>
-    /// <returns>Length of json</returns>
+    /// <summary>Returns the JSON text of a concretely typed JSON value.</summary>
+    public string JsonText(JsonElement value) => value.GetRawText();
+
+    /// <summary>Returns JSON text, preserving null or missing structured values.</summary>
     [BindableMethod]
-    public int Length(List<ExpandoObject> array)
-    {
-        return array.Count;
-    }
+    public string JsonText(JsonElement? value) => value.HasValue ? value.Value.GetRawText() : null;
 
-    /// <summary>
-    ///     Gets the length of the array
-    /// </summary>
-    /// <param name="array">Json array</param>
-    /// <returns>Length of json</returns>
+    /// <summary>Returns the number of elements in a concretely typed JSON array.</summary>
+    public int Length(JsonElement array) => array.GetArrayLength();
+
+    /// <summary>Returns an array length, preserving null or missing structured values.</summary>
     [BindableMethod]
-    public int Length(List<object> array)
+    public int? Length(JsonElement? array) => array.HasValue ? array.Value.GetArrayLength() : null;
+
+    /// <summary>Flattens a concretely typed JSON array into comma-separated values.</summary>
+    public string MakeFlat(JsonElement array)
     {
-        return array.Count;
-    }
-
-    /// <summary>
-    ///     Flattening the array
-    /// </summary>
-    /// <param name="array">The array</param>
-    /// <returns>Flattened array</returns>
-    [BindableMethod]
-    public string MakeFlat(List<ExpandoObject> array)
-    {
-        return MakeFlatAny(array);
-    }
-
-    /// <summary>
-    ///     Flattening the array
-    /// </summary>
-    /// <param name="array">The array</param>
-    /// <returns>Flattened array</returns>
-    [BindableMethod]
-    public string MakeFlat(List<object> array)
-    {
-        return MakeFlatAny(array);
-    }
-
-    private static string MakeFlatAny<T>(List<T> array)
-    {
-        var cnt = array.Count;
-
-        if (cnt == 0)
-            return string.Empty;
-
-        var flattedArray = new StringBuilder();
-
-        for (var i = 0; i < cnt - 1; i++)
+        var result = new StringBuilder();
+        var first = true;
+        foreach (var value in array.EnumerateArray())
         {
-            flattedArray.Append(array[i]);
-            flattedArray.Append(", ");
+            if (!first)
+                result.Append(", ");
+            result.Append(value.ToString());
+            first = false;
         }
-
-        var last = array.Count - 1;
-        flattedArray.Append(array[last]);
-
-        return flattedArray.ToString();
+        return result.ToString();
     }
+
+    /// <summary>Flattens an array, preserving null or missing structured values.</summary>
+    [BindableMethod]
+    public string MakeFlat(JsonElement? array) => array.HasValue ? MakeFlat(array.Value) : null;
+
 }

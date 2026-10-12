@@ -196,11 +196,8 @@ public sealed class SeparatedValuesQueryRowArchitectureTests
 
                 var allowedNominalMetadata = relativePath == "SeparatedValuesSchema.cs" &&
                                              (line.Contains("params object?[]", StringComparison.Ordinal) ||
-                                              line.Contains("object?[] parameters", StringComparison.Ordinal) ||
-                                              line.Contains("RowType = typeof(object[])", StringComparison.Ordinal));
-                var allowedTableMetadata = relativePath == Path.Combine("Tables", "SeparatedValuesTable.cs") &&
-                                           line.Contains("new(typeof(object[]))", StringComparison.Ordinal);
-                if (!allowedNominalMetadata && !allowedTableMetadata)
+                                              line.Contains("object?[] parameters", StringComparison.Ordinal));
+                if (!allowedNominalMetadata)
                     violations.Add($"{relativePath}:{index + 1}: production object-array reference");
             }
         }

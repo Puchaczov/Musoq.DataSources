@@ -6,7 +6,7 @@ namespace Musoq.DataSources.Docker.Images;
 internal static class ImagesSourceHelper
 {
     public static readonly IReadOnlyDictionary<string, int> ImagesNameToIndexMap;
-    public static readonly IReadOnlyDictionary<int, Func<ImageEntity, object?>> ImagesIndexToMethodAccessMap;
+
     public static readonly ISchemaColumn[] ImagesColumns;
 
     static ImagesSourceHelper()
@@ -23,20 +23,6 @@ internal static class ImagesSourceHelper
             { nameof(ImageEntity.SharedSize), 7 },
             { nameof(ImageEntity.Size), 8 },
             { nameof(ImageEntity.VirtualSize), 9 }
-        };
-
-        ImagesIndexToMethodAccessMap = new Dictionary<int, Func<ImageEntity, object?>>
-        {
-            { 0, info => info.Containers },
-            { 1, info => info.Created },
-            { 2, info => info.ID },
-            { 3, info => info.Labels },
-            { 4, info => info.ParentID },
-            { 5, info => info.RepoDigests },
-            { 6, info => info.RepoTags },
-            { 7, info => info.SharedSize },
-            { 8, info => info.Size },
-            { 9, info => info.VirtualSize }
         };
 
         ImagesColumns =
