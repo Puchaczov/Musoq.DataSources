@@ -29,6 +29,7 @@ $definition = @(Get-DatasourcePackageDefinitions -RepositoryRoot $root | Where-O
 if ($null -eq $definition) { throw 'The synthetic snapshot contract requires Musoq.DataSources.Json in packages.json.' }
 $workingRoot = Join-Path $root '.builds/license-snapshot-contracts'
 $snapshotRoot = Join-Path $workingRoot ([guid]::NewGuid().ToString('N'))
+$nugetConfigRoot = Join-Path $workingRoot ('nuget-config-' + [guid]::NewGuid().ToString('N'))
 $snapshotDirectory = Join-Path $snapshotRoot $definition.packageId
 $noticeDirectory = Join-Path $snapshotDirectory 'third-party-notices/Synthetic.Dependency'
 $assertScript = Join-Path $PSScriptRoot 'Assert-LicenseSnapshots.ps1'
@@ -80,6 +81,21 @@ function Invoke-ContractValidation {
 }
 
 try {
+    New-Item -ItemType Directory -Path $nugetConfigRoot -Force | Out-Null
+    [IO.File]::WriteAllText((Join-Path $nugetConfigRoot 'Test.csproj'), '<Project />', [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllText((Join-Path $nugetConfigRoot '.gitignore'), "/NuGet.config`n", [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllText((Join-Path $nugetConfigRoot 'NuGet.config'), '<configuration />', [Text.UTF8Encoding]::new($false))
+    & git -C $nugetConfigRoot init --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Could not initialize synthetic Git repository for NuGet config contract.' }
+    & git -C $nugetConfigRoot add -- .gitignore Test.csproj
+    if ($LASTEXITCODE -ne 0) { throw 'Could not stage synthetic project and ignore rule.' }
+    $ignoredConfigInputs = @(Get-DatasourceDependencyInputFiles -RepositoryRoot $nugetConfigRoot -EntryProject 'Test.csproj')
+    Assert-ContractTrue (@($ignoredConfigInputs | Where-Object { [IO.Path]::GetFileName($_) -ieq 'NuGet.config' }).Count -eq 0) 'Ignored local NuGet config must not become a committed snapshot input.'
+    & git -C $nugetConfigRoot add -f -- NuGet.config
+    if ($LASTEXITCODE -ne 0) { throw 'Could not stage synthetic tracked NuGet config.' }
+    $trackedConfigInputs = @(Get-DatasourceDependencyInputFiles -RepositoryRoot $nugetConfigRoot -EntryProject 'Test.csproj')
+    Assert-ContractTrue (@($trackedConfigInputs | Where-Object { [IO.Path]::GetFileName($_) -ieq 'NuGet.config' }).Count -eq 1) 'Tracked NuGet config must remain a snapshot input.'
+
     New-ValidContractSnapshot
     Invoke-ContractValidation
 
@@ -129,5 +145,8 @@ try {
 finally {
     if (Test-Path -LiteralPath $snapshotRoot) {
         Remove-Item -LiteralPath $snapshotRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    if (Test-Path -LiteralPath $nugetConfigRoot) {
+        Remove-Item -LiteralPath $nugetConfigRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }

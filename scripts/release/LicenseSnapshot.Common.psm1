@@ -181,7 +181,17 @@ function Get-DatasourceDependencyInputFiles {
 
     foreach ($name in @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config', 'global.json', '.gitattributes')) {
         $candidate = Join-Path $root $name
-        if ([IO.File]::Exists($candidate)) { [void]$inputs.Add((ConvertTo-DatasourceFullPath $candidate)) }
+        if ([IO.File]::Exists($candidate)) {
+            if ($name -eq 'NuGet.config') {
+                # Local feed/auth configuration is often ignored and must not make
+                # committed license snapshots differ from a clean CI checkout.
+                & git -C $root check-ignore --quiet -- $name 2>$null
+                $ignoreExitCode = $LASTEXITCODE
+                if ($ignoreExitCode -eq 0) { continue }
+                if ($ignoreExitCode -gt 1) { throw "Could not determine whether '$name' is ignored by Git." }
+            }
+            [void]$inputs.Add((ConvertTo-DatasourceFullPath $candidate))
+        }
     }
 
     foreach ($relativePath in @($AdditionalPath)) {

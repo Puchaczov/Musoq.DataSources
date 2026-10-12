@@ -60,10 +60,6 @@
       "sha256": "b78e23e11f601a6ec325c333e653756d92de0064d027b20193655007f6f541f5"
     },
     {
-      "path": "NuGet.config",
-      "sha256": "806d7891959d57673a3d4b5e99e5390bf0dad91cc6f618d9229b6cc3ceafe702"
-    },
-    {
       "path": "scripts/release/packages.json",
       "sha256": "ebe2a052bee52ac3addac86d2d0edfe513753c68d6a02381a576ebad566493d2"
     }
