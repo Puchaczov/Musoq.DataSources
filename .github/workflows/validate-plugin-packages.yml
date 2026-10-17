@@ -66,3 +66,4 @@ jobs:
           name: plugin-package-validation-artifacts
           path: artifacts/*.zip
           if-no-files-found: error
+          retention-days: 1

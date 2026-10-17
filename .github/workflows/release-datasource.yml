@@ -135,6 +135,7 @@ jobs:
           name: datasource-release-artifacts
           path: artifacts/release/**
           if-no-files-found: error
+          retention-days: 1
 
   publish:
     name: Publish release and plugin registry
