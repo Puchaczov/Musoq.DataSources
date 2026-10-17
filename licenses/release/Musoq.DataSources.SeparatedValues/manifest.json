@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.SeparatedValues",
   "slug": "separatedvalues",
-  "version": "11.0.2-alpha.1",
+  "version": "11.0.3-alpha.1",
   "projectPath": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
   "entryProject": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
   "ownPackageId": "Musoq.DataSources.SeparatedValues",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "397fdac0f43fdd244a5ee95273faf064a5f5c1a099261a9f3548fd6f0b175826"
+      "sha256": "0b1fe948494eccf01ff1ff27a6e36be4b7969f0f85877d87a0f0aa72bd522832"
     },
     {
       "path": "global.json",
@@ -57,11 +57,11 @@
     },
     {
       "path": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
-      "sha256": "fd7f73d96c112dab448150a43dc591ad1b8a478c00f4cd99144d477b94dc41b7"
+      "sha256": "5a92ea1cf84da7e044c36421b6241bc6c98e5fc71db87bff658e8d5c94b15421"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "ebe2a052bee52ac3addac86d2d0edfe513753c68d6a02381a576ebad566493d2"
+      "sha256": "f818106f147f07dc4d03b49538a03de8a38701c5791194b3015e62079f96b338"
     }
   ],
   "packageGraph": [
@@ -102,17 +102,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.12-alpha.1",
+      "version": "17.0.13-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.12-alpha.1",
+      "version": "17.0.13-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.12-alpha.1",
+      "version": "17.0.13-alpha.1",
       "direct": true
     },
     {
@@ -180,7 +180,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1327,
-      "sha256": "9c15f2c3a98376414962de528e9419c88e93e0405a651da72b2b653aa7651157"
+      "sha256": "257543651fc67933b43b3735178c28ccf6890d693c9df141e1a63529759099ad"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

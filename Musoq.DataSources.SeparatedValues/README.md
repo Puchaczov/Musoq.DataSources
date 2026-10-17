@@ -1,9 +1,9 @@
 # Musoq.DataSources.SeparatedValues
 
 The SeparatedValues plugin streams UTF-8 delimited files through a bounded,
-byte-native pipeline. This version requires the compatible Musoq 17.0.12
+byte-native pipeline. This version requires the compatible Musoq 17.0.13
 runtime-v2 package set: `Converter`, `Evaluator`, `Parser`, `Plugins`, and
-`Schema` at `17.0.12-alpha.1`.
+`Schema` at `17.0.13-alpha.1`.
 
 Use the strict convenience sources for existing CSV/TSV files:
 

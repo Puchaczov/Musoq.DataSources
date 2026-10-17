@@ -31,7 +31,7 @@ public sealed class MusoqDependencyBoundaryTests
     {
         var root = FindSolutionRoot();
         var properties = XDocument.Load(Path.Combine(root, "Directory.Build.props"));
-        Assert.AreEqual("17.0.12-alpha.1",
+        Assert.AreEqual("17.0.13-alpha.1",
             properties.Descendants("MusoqTypedCoreVersion").Single().Value, "Musoq runtime package versions must remain aligned.");
 
         foreach (var (propertyName, expectedVersion) in ExpectedVersions)

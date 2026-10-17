@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.CANBus",
   "slug": "canbus",
-  "version": "4.0.5-alpha.1",
+  "version": "4.0.6-alpha.1",
   "projectPath": "Musoq.DataSources.CANBus/Musoq.DataSources.CANBus.csproj",
   "entryProject": "Musoq.DataSources.CANBus/Musoq.DataSources.CANBus.csproj",
   "ownPackageId": "Musoq.DataSources.CANBus",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "397fdac0f43fdd244a5ee95273faf064a5f5c1a099261a9f3548fd6f0b175826"
+      "sha256": "0b1fe948494eccf01ff1ff27a6e36be4b7969f0f85877d87a0f0aa72bd522832"
     },
     {
       "path": "global.json",
@@ -57,15 +57,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "ae33a406d42c5ca325de1a24d951151f9c09dab169411a0940c5594db62f648d"
+      "sha256": "473e7645f4e5115cd0f2d37f942fbadf6c59f30a241787dec3e192399c6fd858"
     },
     {
       "path": "Musoq.DataSources.CANBus/Musoq.DataSources.CANBus.csproj",
-      "sha256": "7e87f452ba0056e69a5537084ac842c4cf35cef0631d564845515d3c664da341"
+      "sha256": "a965616b5e112178601e3f288ccd2c1930e35be66cc571f2df8aeb358769be4f"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "ebe2a052bee52ac3addac86d2d0edfe513753c68d6a02381a576ebad566493d2"
+      "sha256": "f818106f147f07dc4d03b49538a03de8a38701c5791194b3015e62079f96b338"
     }
   ],
   "packageGraph": [
@@ -131,17 +131,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.12-alpha.1",
+      "version": "17.0.13-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.12-alpha.1",
+      "version": "17.0.13-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.12-alpha.1",
+      "version": "17.0.13-alpha.1",
       "direct": true
     },
     {
@@ -274,7 +274,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 2523,
-      "sha256": "3eabfa09b25ca909044e3e20bb936eea9788545c4a1fcf86a55be2e677886bcf"
+      "sha256": "e02bcf61b6d4ff8c622c2262cc0940a81f18ea8fff884a386a6dcbdd1d1e4d5a"
     },
     {
       "path": "third-party-notices/System.CodeDom/license.txt",
