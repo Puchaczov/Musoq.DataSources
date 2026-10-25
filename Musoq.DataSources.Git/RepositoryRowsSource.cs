@@ -28,6 +28,7 @@ internal sealed class RepositoryRowsSource : GitDiagnosticRowsSourceBase<Reposit
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var repository = _createRepository(_repositoryPath);
+        if (_projection.NativePatterns?.Matches(repository, GitNativePatterns.Repositories) == false) return 0;
         var rows = new List<RepositoryEntity>
         {
             GitEntitySnapshots.Repository(repository, _projection, _options)

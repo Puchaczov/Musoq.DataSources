@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 using Octokit;
@@ -26,6 +27,18 @@ internal class IssuesSource : AsyncRowsSourceBase<IssueEntity>
 
     protected override async Task CollectChunksAsync(IChunkWriter<IssueEntity> writer, CancellationToken cancellationToken)
     {
+        if (PatternSourcePlan.HasPatterns(_executionContext))
+        {
+            var filtered = GitHubPatternApi.Read(_executionContext, _api, "issues", inner => new IssuesSource(_api, inner, _owner, _repo));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
+        var api = GitHubPatternApi.Bind(_api, _executionContext, cancellationToken);
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
@@ -40,11 +53,12 @@ internal class IssuesSource : AsyncRowsSourceBase<IssueEntity>
             long skipped = 0;
             long emitted = 0;
 
+            if (_executionContext.Plan.AcceptedTake == 0) return;
             while (!cancellationToken.IsCancellationRequested)
             {
-                var issues = await _api.GetIssuesAsync(_owner, _repo, request, perPage, page);
+                var issues = await api.GetIssuesAsync(_owner, _repo, request, perPage, page);
 
-                if (issues.Count == 0)
+                if (PatternPage.RawCount(issues) == 0)
                     break;
 
                 var plannedIssues = GitHubSourcePlanner.ApplyAcceptedPlan(issues, plan, ref skipped, ref emitted);
@@ -57,7 +71,7 @@ internal class IssuesSource : AsyncRowsSourceBase<IssueEntity>
                     _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
                 }
 
-                if (issues.Count < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
+                if (PatternPage.RawCount(issues) < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
 
                 page++;

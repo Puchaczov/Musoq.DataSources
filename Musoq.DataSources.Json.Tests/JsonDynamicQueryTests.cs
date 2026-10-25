@@ -111,7 +111,7 @@ public class JsonDynamicQueryTests
         var context = RuntimeV2TestContexts.CreateExecutionContext();
 
         Assert.ThrowsExactly<ArgumentException>(() =>
-            global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new JsonSchema(), global::Musoq.Schema.SourceArguments.Create(stream, global::Musoq.Schema.SourceArguments.Empty)).Read<object[]>("file", context));
+            NativeSourceCalls.Source(new JsonSchema(), Schema.SourceArguments.Create(stream, Schema.SourceArguments.Empty)).Read<object[]>("file", context));
     }
 
     [TestMethod]
@@ -155,7 +155,7 @@ public class JsonDynamicQueryTests
         {
             var context = RuntimeV2TestContexts.CreateExecutionContext();
             var exception = Assert.ThrowsExactly<NotSupportedException>(() =>
-                NativeSourceCalls.Source(new JsonSchema(), Musoq.Schema.SourceArguments.Create(path, Musoq.Schema.SourceArguments.Empty))
+                NativeSourceCalls.Source(new JsonSchema(), Schema.SourceArguments.Create(path, Schema.SourceArguments.Empty))
                     .Read<object[]>("file", context));
             StringAssert.Contains(exception.Message, "query-scoped concrete rows");
         });

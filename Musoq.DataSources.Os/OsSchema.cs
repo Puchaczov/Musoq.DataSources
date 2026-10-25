@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Os.Compare.Directories;
 using Musoq.DataSources.Os.Directories;
 using Musoq.DataSources.Os.Dlls;
@@ -453,6 +454,13 @@ public class OsSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), OsNativePatterns.Columns(name));
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         switch (name.ToLowerInvariant())
         {
@@ -588,6 +596,7 @@ public class OsSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = OsPatternColumns.Get(name)?.Capabilities(table.Columns) ?? SourcePredicateCapabilities.None,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -603,6 +612,9 @@ public class OsSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+        => PatternSourcePlan.Plan(request, OsPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+
+    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
         return OsSourcePlanner.Plan(name, request);
     }

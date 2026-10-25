@@ -1,4 +1,5 @@
 using System;
+using Musoq.DataSources.Common;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -21,13 +22,13 @@ internal sealed class JsonPredicateEvaluator
     public static JsonPredicateEvaluator Create(
         StructuredSchemaSnapshot snapshot,
         SourcePredicateExpression predicate,
-        JsonRowLayout layout)
+        JsonRowLayout layout, JsonStringReuse? reuse = null)
     {
         if (predicate is null)
             return Empty;
 
         var terms = new List<JsonPredicateTerm>();
-        AddTerms(snapshot, predicate, layout, terms);
+        AddTerms(snapshot, predicate, layout, terms, reuse);
         return terms.Count == 0 ? Empty : new JsonPredicateEvaluator(terms.ToArray());
     }
 
@@ -78,7 +79,7 @@ internal sealed class JsonPredicateEvaluator
         }
 
         for (var index = 0; index < _terms.Length; index++)
-            if (!seen[index] || !matched[index])
+            if (seen[index] ? !matched[index] : !_terms[index].MatchesMissing)
                 return false;
         return true;
     }
@@ -87,13 +88,17 @@ internal sealed class JsonPredicateEvaluator
         StructuredSchemaSnapshot snapshot,
         SourcePredicateExpression predicate,
         JsonRowLayout layout,
-        List<JsonPredicateTerm> terms)
+        List<JsonPredicateTerm> terms, JsonStringReuse? reuse)
     {
         switch (predicate)
         {
             case SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical:
-                AddTerms(snapshot, logical.Left, layout, terms);
-                AddTerms(snapshot, logical.Right, layout, terms);
+                AddTerms(snapshot, logical.Left, layout, terms, reuse);
+                AddTerms(snapshot, logical.Right, layout, terms, reuse);
+                return;
+            case SourcePredicatePatternMatch pattern:
+                _ = layout.GetSlot(pattern.Column.Name);
+                terms.Add(new JsonPatternPredicateTerm(pattern, reuse));
                 return;
             case SourcePredicateComparison comparison when
                 JsonSourcePlanner.TryGetComparisonParts(comparison, out var name, out var literal, out var op):
@@ -144,6 +149,8 @@ internal abstract class JsonPredicateTerm
         => propertyReader.ValueIsEscaped
             ? propertyReader.ValueTextEquals(_nameUtf8)
             : unescapedHash == _nameHash && propertyReader.ValueSpan.SequenceEqual(_nameUtf8);
+
+    public virtual bool MatchesMissing => false;
 
     public abstract bool Evaluate(ref Utf8JsonReader reader);
 
@@ -205,5 +212,35 @@ internal abstract class JsonPredicateTerm
             => reader.TokenType == JsonTokenType.String && (Operator == SourcePredicateComparisonOperator.Equal
                 ? reader.ValueTextEquals(_literalUtf8)
                 : !reader.ValueTextEquals(_literalUtf8));
+    }
+}
+
+internal sealed class JsonPatternPredicateTerm : JsonPredicateTerm
+{
+    private readonly ProviderRegex.Matcher _regex;
+    private readonly bool _negated;
+    private readonly RecordStringCache? _reuse;
+    private readonly int _reuseSlot;
+    internal JsonPatternPredicateTerm(SourcePredicatePatternMatch match, JsonStringReuse? reuse)
+        : base(match.Column.Name, SourcePredicateComparisonOperator.Equal)
+    {
+        _reuse = reuse?.Strings;
+        _reuseSlot = reuse?.PredicateSlot(match.Column.Name) ?? -1;
+        _regex = ProviderRegex.Prepare(match);
+        _negated = match.IsNegated;
+    }
+    public override bool MatchesMissing => _negated;
+    public override bool Evaluate(ref Utf8JsonReader reader)
+    {
+        string? value = null;
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            if (_reuse is null || !_reuse.TryRead(_reuseSlot, reader.TokenStartIndex, out value))
+            {
+                value = reader.GetString();
+                if (_reuseSlot >= 0) _reuse!.StoreDecoded(_reuseSlot, reader.TokenStartIndex, value!);
+            }
+        }
+        return ProviderRegex.Evaluate(_regex, _negated, value) == true;
     }
 }

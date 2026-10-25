@@ -13,6 +13,13 @@ internal class FlatFileSource(string filePath, SourceExecutionContext executionC
 
     protected override void CollectChunks(IChunkWriter<FlatFileEntity> writer)
     {
+        if (PatternSourcePlan.HasPatterns(executionContext))
+        {
+            var filtered = PatternSourcePlan.Read(executionContext, inner => new FlatFileSource(filePath, inner));
+            foreach (var chunk in filtered.Chunks) { writer.CancellationToken.ThrowIfCancellationRequested(); writer.Write(chunk); }
+            return;
+        }
+
         var progress = new DataSourceProgressReporter(executionContext, FlatFileSourceName);
         progress.Begin();
         long totalRowsProcessed = 0;

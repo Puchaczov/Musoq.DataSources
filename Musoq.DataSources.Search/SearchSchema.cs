@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Musoq.DataSources.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Exceptions;
@@ -341,6 +342,7 @@ public sealed class SearchSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = SearchPatternColumns.Get(name)?.Capabilities(table.Columns) ?? SourcePredicateCapabilities.None,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []

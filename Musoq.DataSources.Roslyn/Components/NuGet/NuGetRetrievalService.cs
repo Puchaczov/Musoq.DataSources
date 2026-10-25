@@ -171,27 +171,27 @@ internal sealed class NuGetRetrievalService(
         return new Dictionary<string, Func<string, CancellationToken, Task<Func<Task<string?>>>>>
         {
             [nameof(NuGetResource.ProjectUrl)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.Title)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.Authors)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.Owners)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.RequireLicenseAcceptance)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.Description)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.Summary)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.ReleaseNotes)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.Copyright)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.Language)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             [nameof(NuGetResource.Tags)] = (_, _) =>
-                Task.FromResult<Func<Task<string?>>>(() => Task.FromResult<string?>(null)),
+                Task.FromResult(() => Task.FromResult<string?>(null)),
             ["LicensesNames"] = async (url, token) =>
                 await NugetHelpers.DiscoverLicensesNamesAsync(url, commonResources, capturedClient,
                     nuGetPropertiesResolver, token),

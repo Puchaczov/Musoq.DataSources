@@ -165,6 +165,7 @@ internal abstract class SearchTextRowSink<TRow> : ISearchTextScanSink, IDisposab
 
     protected void Emit(TRow row)
     {
+        _resourceBudget.Patterns?.Constructed();
         if (_acceptedRow is not null && !_acceptedRow(row))
             return;
 

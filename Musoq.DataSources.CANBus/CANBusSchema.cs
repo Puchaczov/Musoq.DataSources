@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.DataSources.CANBus.Messages;
 using Musoq.DataSources.CANBus.SeparatedValuesFromFile;
@@ -175,6 +176,7 @@ public class CANBusSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = CANBusPatternColumns.Get(name)?.Capabilities(table.Columns) ?? SourcePredicateCapabilities.None,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -190,6 +192,9 @@ public class CANBusSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+        => PatternSourcePlan.Plan(request, CANBusPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+
+    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
         return name.ToLowerInvariant() switch
         {
@@ -306,6 +311,13 @@ public class CANBusSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         return name.ToLowerInvariant() switch
         {

@@ -117,7 +117,7 @@ public sealed class SearchPlanInspectionTests
     }
 
     [TestMethod]
-    public void Planner_ShouldLeaveManySourceDetailsResidualWithoutFalseColumnWarnings()
+    public void Planner_ShouldDescribeManySourceWithoutFalseColumnWarnings()
     {
         var result = new SearchSchema().TryPlanSource(
             "many",
@@ -128,8 +128,8 @@ public sealed class SearchPlanInspectionTests
             });
 
         var inspection = GetInspection(result);
-        Assert.AreEqual("unplanned-source-residual", inspection["strategy"]);
-        StringAssert.Contains((string)inspection["effectiveScope"]!, "static planner metadata is unavailable");
+        Assert.AreEqual("filesystem-text-occurrence-scan", inspection["strategy"]);
+        Assert.AreEqual("Path", result.AcceptedColumns.Single().Name);
         Assert.IsFalse(result.ContractDiagnostics.Any(item =>
             item.Code == "UnsupportedRequiredColumn"));
         Assert.IsTrue(result.Diagnostics.Any(item =>

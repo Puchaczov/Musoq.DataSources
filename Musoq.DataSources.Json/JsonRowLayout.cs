@@ -108,6 +108,12 @@ internal sealed class JsonRowLayout
                 AddPredicateColumns(columns, snapshot, logical.Left);
                 AddPredicateColumns(columns, snapshot, logical.Right);
                 return;
+            case SourcePredicatePatternMatch match:
+            {
+                var columnName = ResolveName(snapshot, match.Column.Name);
+                AddOrUpdate(columns, snapshot, columnName, -1, GetSnapshotColumn(snapshot, columnName).ClrType);
+                return;
+            }
             case SourcePredicateComparison comparison when
                 JsonSourcePlanner.TryGetComparisonParts(comparison, out var name, out _, out _):
                 name = ResolveName(snapshot, name);

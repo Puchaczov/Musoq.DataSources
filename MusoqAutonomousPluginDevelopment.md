@@ -606,3 +606,79 @@ This historical authoring section now uses the native contracts in [typed execut
 ### D.7 Migration From Runtime V1 Predicate Helpers
 
 This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
+
+## Core 17.0.14-alpha.2 integration
+
+Upgrade Converter, Evaluator, Parser, Plugins and Schema together. Predicate capability
+contract version 2 uses `SourcePredicatePatternMatch` as the common base for LIKE and
+RLIKE; inspect the concrete predicate before reading match-specific fields.
+
+For constant RLIKE/NOT RLIKE pushdown, declare `SourceRegexMatchCapability` on eligible
+string columns and record each accepted direct AND conjunct with
+`SourcePredicateApplication.ForRowFiltering` in the execution plan. Apply it to the
+actual decoded row value before paging. Unsupported columns and expressions stay
+residual. RLIKE uses a case-sensitive .NET regex unless inline flags change it; Core
+tries NonBacktracking and falls back to Compiled for unsupported constructs. Match the
+execution culture and the finite timeout supplied in `SourcePredicateRegexMatch`.
+Core treats a null input as a false RLIKE result, then applies NOT; negated RLIKE
+therefore includes null and missing string values.
+
+The repository shares this evaluator in `Shared/ProviderRegex.cs`. Compiled matchers
+are bounded by plan lifetime, and culture changes replace one immutable cache entry.
+Providers keep the public `RegexMatchTimeoutException` and supplied budget. Core
+17.0.14-alpha.2's datasource lifecycle recognizes the public exception as MQ7017
+and retains its typed cause and actual budget. Custom compilation regex budgets
+are propagated into negotiated RLIKE predicates. Do not add an Evaluator reference
+or construct internal exceptions in production providers.
+
+Computed source arguments must still permit static metadata resolution for dynamic
+schemas. PARAM/PARAMS and LET paging use `$name`. The range source accepts lossless
+integral widening to Int64. OpenAI and Ollama expose `CountTokens(content)` for the
+default tokenizer and `CountModelTokens(content)` for the provider model tokenizer (Ollama retains its GPT-3.5 approximation), avoiding
+ambiguous injected/non-injected SQL signatures; the existing C# overloads remain.
+
+
+### Complete LIKE and RLIKE row filtering
+
+Declare `SourceStringMatchCapability` (all four classified shapes, with negation)
+and `SourceRegexMatchCapability` from the **same reviewed typed string bindings**
+used by planning and execution. `Shared/ProviderRegex.cs` supplies
+`PatternColumnBindings<TRow>`, `PatternSourcePlan` and the shared matcher. Do not
+infer regex eligibility from a comparison whitelist or discover arbitrary getters
+through reflection. Exclude secret fields, side-effecting getters and getters that
+would issue another remote request. Keep nested APPLY members residual.
+
+For LIKE, read `Kind`, `Needle` and `Comparison` only after matching
+`SourcePredicateStringMatch`. The needle must be wildcard-free. Core 17.0.14
+transfers only ASCII exact/prefix/suffix/contains literals; other shapes and Unicode
+patterns remain residual. Match Unicode **row values**, current culture, newlines,
+empty strings and null-before-negation exactly like Core. A LIKE predicate has no
+supplied timeout; the shared matcher uses the pinned Core default of two seconds.
+For RLIKE, preserve the finite timeout in `SourcePredicateRegexMatch`, inline flags
+and Core regex options. Weak plan ownership and one immutable culture cache entry
+bound matcher lifetime without retaining query rows.
+
+Retain fields used only by accepted predicates before pruning native projections.
+Filter actual decoded/materialized row values before accepted SKIP/TAKE, and record
+each accepted conjunct with its matching `RowFiltering` application. Residual
+filtering or ordering blocks early paging. Treat literal structured-file column
+names as exact schema names, including dots, before considering alias normalization.
+Filesystem enumeration patterns cannot implement row-value pattern semantics.
+
+Search uses the typed bindings in its native predicate plan and retains MatchText
+or LineText required only by patterns. Count/audit predicates apply to completed
+rows; even TAKE 0 must preserve terminal scan accounting. Roslyn solution-row
+patterns must not become project-collection filters.
+
+Qualification requires actual execution for **every advertised entry**, including
+positive/negative LIKE shapes and RLIKE, predicate-only fields, and a disabled
+pushdown oracle. Planner acceptance alone is insufficient. Include capability and
+application identity assertions, unsupported/residual cases, culture and timeout
+causes, cancellation/disposal and repeated/overlapping execution. The complete
+repository matrix is [PatternPushdownCoverage.md](PatternPushdownCoverage.md).
+
+Core 17.0.14-alpha.2 fixes residual `NOT LIKE '%'`, configured provider regex
+budgets, public regex-timeout diagnostics, and JSON self-correlation binding/carrier
+failures. Keep enabled, disabled and provider-rejected regression paths passing.
+Earlier alpha.1 qualification is retained in [PatternPushdownValidation.md](PatternPushdownValidation.md);
+current release qualification is in [CoreAlpha2ReleaseValidation.md](CoreAlpha2ReleaseValidation.md).

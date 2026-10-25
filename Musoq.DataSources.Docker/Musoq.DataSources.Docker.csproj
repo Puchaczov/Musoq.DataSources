@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>5.0.6-alpha.1</Version>
+        <Version>5.0.7-alpha.1</Version>
         <Authors>Jakub Puchała</Authors>
         <Product>Musoq</Product>
         <Description>Lets you query containers, images, networks, and other Docker resources with SQL-style queries for quick operational insights.</Description>
@@ -43,4 +43,7 @@
         </Compile>
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\Shared\ProviderRegex.cs" Link="Shared\ProviderRegex.cs" />
+    </ItemGroup>
 </Project>

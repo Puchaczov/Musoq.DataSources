@@ -27,6 +27,8 @@ internal sealed class JsonQueryRowProcessor<TRow, TMaterializer> : IJsonRecordPr
     private readonly IChunkWriter<TRow> _writer;
     private readonly JsonPropertyLookup _lookup;
     private readonly JsonPredicateEvaluator _predicate;
+    private readonly JsonStringReuse? _reuse;
+    private readonly Musoq.Schema.Diagnostics.SourceDiagnostics _diagnostics;
     private readonly DataSourceProgressReporter? _progress;
     private readonly CancellationToken _cancellationToken;
     private readonly FieldSlice[] _fields;
@@ -48,6 +50,8 @@ internal sealed class JsonQueryRowProcessor<TRow, TMaterializer> : IJsonRecordPr
         CancellationToken cancellationToken)
     {
         _writer = writer;
+        _diagnostics = context.Diagnostics;
+        _reuse = JsonStringReuse.Create(shape, context.Plan.AcceptedPredicate);
         _progress = progress;
         _cancellationToken = cancellationToken;
         _skipRemaining = context.Plan.AcceptedSkip ?? 0;
@@ -68,12 +72,28 @@ internal sealed class JsonQueryRowProcessor<TRow, TMaterializer> : IJsonRecordPr
         }
 
         _predicate = JsonPredicateEvaluator.Create(snapshot, context.Plan.AcceptedPredicate,
-            JsonRowLayout.Create(snapshot, context));
+            JsonRowLayout.Create(snapshot, context), _reuse);
     }
 
+    internal int ReuseSlots => _reuse?.Strings.Slots ?? 0;
+    internal int RetainedDecodedStrings => _reuse?.Strings.Retained ?? 0;
     public long RowsRead { get; private set; }
 
     public bool Process(ReadOnlySpan<byte> record)
+    {
+        if (_reuse is null) return ProcessRecord(record);
+        try { return ProcessRecord(record); }
+        finally { _reuse.Strings.Clear(); }
+    }
+
+    public void Dispose()
+    {
+        _reuse?.Strings.Clear();
+        _reuse?.Strings.Report(_diagnostics);
+        _chunk = null;
+    }
+
+    private bool ProcessRecord(ReadOnlySpan<byte> record)
     {
         _cancellationToken.ThrowIfCancellationRequested();
         RowsRead++;
@@ -153,6 +173,12 @@ internal sealed class JsonQueryRowProcessor<TRow, TMaterializer> : IJsonRecordPr
             var json = _record.Slice(field.Start, field.Length);
             if (json.SequenceEqual("null"u8))
                 return ReadNull<T>(slot);
+            if (typeof(T) == typeof(string) && json[0] == (byte)'"' && _owner._reuse is { } reuse &&
+                reuse.TryReadOutput(slot, field.Start, out var decoded))
+            {
+                var value = field.Escaped ? decoded : _owner._stringPool.GetOrAddUtf8(_owner._sourceOrdinals[slot], json[1..^1], decoded);
+                return Unsafe.As<string, T>(ref value);
+            }
             if (typeof(T) == typeof(string) && json[0] == (byte)'"' && !field.Escaped)
             {
                 var value = _owner._stringPool.GetOrAddUtf8(_owner._sourceOrdinals[slot], json[1..^1]);

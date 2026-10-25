@@ -83,6 +83,7 @@ internal sealed class RemoteTagsRowsSource : GitDiagnosticRowsSourceBase<RemoteT
                     return true;
                 }
 
+                if (_projection.NativePatterns?.Matches(tag, GitNativePatterns.RemoteTags) == false) return true;
                 var entity = GitEntitySnapshots.RemoteTag(tag, _projection);
                 if (_acceptedPredicate is not null && !_acceptedPredicate(entity))
                 {

@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using Musoq.Schema.Optimization;
 using Musoq.DataSources.Search.Entities;
 
@@ -43,6 +44,8 @@ internal readonly record struct SearchProjectionRequirements(
                 RetainMatchedBytes: true,
                 RetainWindowBytes: true);
 
+        // Accepted predicate fields may be absent from Core's output projection.
+        columnNames = columnNames.Concat(PatternColumns(executionContext.Plan.AcceptedPredicate)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         var retainMatchText = false;
         var retainLineText = false;
         var retainCaptures = false;
@@ -72,5 +75,15 @@ internal readonly record struct SearchProjectionRequirements(
             retainContext,
             retainMatchedBytes,
             retainWindowBytes);
+    }
+
+    private static IEnumerable<string> PatternColumns(SourcePredicateExpression? expression)
+    {
+        if (expression is SourcePredicatePatternMatch pattern) yield return pattern.Column.Name;
+        if (expression is SourcePredicateLogical logical)
+        {
+            foreach (var name in PatternColumns(logical.Left)) yield return name;
+            foreach (var name in PatternColumns(logical.Right)) yield return name;
+        }
     }
 }

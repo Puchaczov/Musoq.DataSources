@@ -310,7 +310,7 @@ public sealed class SearchPredicatePlanningTests
             AcceptedPredicate = predicate,
             Properties = new Dictionary<string, object?>
             {
-                [Musoq.DataSources.Common.TypedPredicatePlan.PropertyName] = SearchSourcePlanner.BindPredicate(name, predicate)
+                [Common.TypedPredicatePlan.PropertyName] = SearchSourcePlanner.BindPredicate(name, predicate)
             }
         };
     }

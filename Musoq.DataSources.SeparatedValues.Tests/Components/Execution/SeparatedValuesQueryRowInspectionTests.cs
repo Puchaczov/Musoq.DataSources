@@ -65,8 +65,8 @@ public sealed class SeparatedValuesQueryRowInspectionTests
 
     private static void AssertNativeTransferDiagnostic(Action compile)
     {
-        var exception = Assert.Throws<Musoq.Converter.Exceptions.MusoqQueryException>(compile);
-        Assert.AreEqual(Musoq.Parser.Diagnostics.DiagnosticCode.MQ3071_SourceContractError, exception.PrimaryEnvelope.Code);
+        var exception = Assert.Throws<Converter.Exceptions.MusoqQueryException>(compile);
+        Assert.AreEqual(Parser.Diagnostics.DiagnosticCode.MQ3071_SourceContractError, exception.PrimaryEnvelope.Code);
         StringAssert.Contains(exception.Message, "native QueryScopedRows transfer");
         StringAssert.Contains(exception.Message, "QueryScopedContractMissingTransfer");
     }

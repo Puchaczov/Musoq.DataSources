@@ -9,6 +9,7 @@ namespace Musoq.DataSources.Archives;
 
 internal class ArchivesRowSource(string path, SourceExecutionContext executionContext) : RowSourceBase<EntryWrapper>
 {
+    private static readonly PatternColumnBindings<SharpCompress.Common.IEntry> NativeBindings = new(("Key", row => row.Key), ("LinkTarget", row => row.LinkTarget));
     private const string ArchivesSourceName = "archives";
 
     protected override void CollectChunks(IChunkWriter<EntryWrapper> writer)
@@ -19,6 +20,7 @@ internal class ArchivesRowSource(string path, SourceExecutionContext executionCo
 
         try
         {
+            NativePatternExecution.Get(executionContext)?.ContentOpened();
             using var stream = File.OpenRead(path);
             using var reader = ReaderFactory.OpenReader(stream, new ReaderOptions
             {
@@ -32,8 +34,13 @@ internal class ArchivesRowSource(string path, SourceExecutionContext executionCo
             while (reader.MoveToNextEntry())
             {
                 writer.CancellationToken.ThrowIfCancellationRequested();
+                executionContext.EndWorkToken.ThrowIfCancellationRequested();
                 progress.RowRead();
-                var entry = new EntryWrapper(reader.Entry, path, index++);
+                var entryIndex = index++;
+                var native = NativePatternExecution.Get(executionContext);
+                if (native?.Matches(reader.Entry, NativeBindings) == false) continue;
+                var entry = new EntryWrapper(reader.Entry, path, entryIndex);
+                native?.Constructed();
 
                 if (!ArchivesSourcePlanner.Matches(acceptedPredicate, entry))
                     continue;

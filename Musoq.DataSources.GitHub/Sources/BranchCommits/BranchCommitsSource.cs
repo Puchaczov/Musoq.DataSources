@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -35,17 +36,31 @@ internal class BranchCommitsSource : AsyncRowsSourceBase<CommitEntity>
 
     protected override async Task CollectChunksAsync(IChunkWriter<CommitEntity> writer, CancellationToken cancellationToken)
     {
+        if (PatternSourcePlan.HasPatterns(_executionContext))
+        {
+            var filtered = GitHubPatternApi.Read(_executionContext, _api, "branchcommits", inner => new BranchCommitsSource(_api, inner, _owner, _repo, _base, _head));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
+        var api = GitHubPatternApi.Bind(_api, _executionContext, cancellationToken);
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
         try
         {
-            var commits = await _api.GetBranchSpecificCommitsAsync(_owner, _repo, _base, _head);
+            if (_executionContext.Plan.AcceptedTake == 0) return;
+            var commits = await api.GetBranchSpecificCommitsAsync(_owner, _repo, _base, _head);
 
             cancellationToken.ThrowIfCancellationRequested();
-            writer.Write(commits);
-
-            totalRowsProcessed = commits.Count;
+            long skipped = 0, emitted = 0;
+            var planned = GitHubSourcePlanner.ApplyAcceptedPlan(commits, _executionContext.Plan, ref skipped, ref emitted);
+            if (planned.Count > 0) writer.Write(planned);
+            totalRowsProcessed = planned.Count;
             _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
         }
         catch (Exception ex)

@@ -58,7 +58,7 @@ public class ArchivesRuntimeV2PushdownTests
             AcceptedPredicate = predicate,
             AcceptedOrderBy = []
         };
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new ArchivesSchema(), global::Musoq.Schema.SourceArguments.Create("./Files/Example1/archives.zip", global::Musoq.Schema.SourceArguments.Empty)).Read<EntryWrapper>("file", RuntimeV2TestContexts.CreateExecutionContext(
+        var source = NativeSourceCalls.Source(new ArchivesSchema(), SourceArguments.Create("./Files/Example1/archives.zip", SourceArguments.Empty)).Read<EntryWrapper>("file", RuntimeV2TestContexts.CreateExecutionContext(
                 dataSourceProgressCallback: capture.Handler,
                 executionPlan: executionPlan));
 

@@ -1,4 +1,5 @@
 using System;
+using Musoq.DataSources.Common;
 using System.Collections.Generic;
 using System.Globalization;
 using Musoq.DataSources.Structured;
@@ -25,7 +26,7 @@ internal static class SeparatedValuesSourcePlanner
         var acceptsSlice = residualPredicate is null && residualOrderBy.Count == 0;
         var layout = StructuredExecutionLayout.Bind(
             snapshot,
-            GetColumnNames(requiredColumns),
+            GetColumnNames(snapshot, requiredColumns),
             IncludesCompleteSchema(snapshot, request.RequiredColumns));
         var readPlan = new SeparatedValuesReadPlan
         {
@@ -44,6 +45,7 @@ internal static class SeparatedValuesSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = requiredColumns,
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
@@ -146,10 +148,13 @@ internal static class SeparatedValuesSourcePlanner
         return dotIndex >= 0 ? name[(dotIndex + 1)..] : name;
     }
 
-    private static IEnumerable<string> GetColumnNames(IReadOnlyList<SourceColumnRef> columns)
+    private static string ResolveColumnName(StructuredSchemaSnapshot snapshot, string name)
+        => snapshot.TryGetColumn(name, out _) ? name : NormalizeColumnName(name);
+
+    private static IEnumerable<string> GetColumnNames(StructuredSchemaSnapshot snapshot, IReadOnlyList<SourceColumnRef> columns)
     {
         foreach (var column in columns)
-            yield return NormalizeColumnName(column.Name);
+            yield return ResolveColumnName(snapshot, column.Name);
     }
 
     private static bool IncludesCompleteSchema(
@@ -164,7 +169,7 @@ internal static class SeparatedValuesSourcePlanner
         for (var index = 0; index < requiredColumns.Count; index++)
         {
             if (!string.Equals(
-                    NormalizeColumnName(requiredColumns[index].Name),
+                    ResolveColumnName(snapshot, requiredColumns[index].Name),
                     snapshot.Columns[index].Name,
                     StringComparison.Ordinal))
                 return false;
@@ -173,11 +178,25 @@ internal static class SeparatedValuesSourcePlanner
         return true;
     }
 
-    private static bool IsSupportedPredicate(
+    internal static bool IsPatternColumn(SeparatedValuesSourceContract contract, string name)
+    {
+        if (!contract.Snapshot.TryGetColumn(name, out var column) || column.EnumType is not null)
+            return false;
+        if (contract.Mode == SeparatedValuesSchemaResolutionMode.Declared && contract.ColumnContracts.Length > column.SourceOrdinal)
+        {
+            var declared = contract.ColumnContracts[column.SourceOrdinal];
+            return declared.EnumType is null && declared.ClrType == typeof(string);
+        }
+        return column.TypeState.Kind == StructuredValueKind.String;
+    }
+
+    internal static bool IsSupportedPredicate(
         SeparatedValuesSourceContract contract,
         SourcePredicateExpression expression)
     {
         var snapshot = contract.Snapshot;
+        if (expression is SourcePredicatePatternMatch pattern)
+            return ProviderRegex.IsSupportedPattern(pattern) && IsPatternColumn(contract, pattern.Column.Name);
         if (expression is SourcePredicateComparison comparison)
         {
             if (TryGetEnumComparisonParts(comparison, out var enumName, out var enumLiteral, out var enumOp))

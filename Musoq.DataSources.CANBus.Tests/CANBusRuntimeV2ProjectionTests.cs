@@ -135,7 +135,7 @@ public class CANBusRuntimeV2ProjectionTests
             columns,
             executionPlan: CreateExecutionPlan([new SourceColumnRef("ID")]));
         var schema = new CANBusSchema();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create("./Data/1/1.csv", global::Musoq.Schema.SourceArguments.Create("./Data/1/1.dbc", global::Musoq.Schema.SourceArguments.Create("dec", global::Musoq.Schema.SourceArguments.Create("big", global::Musoq.Schema.SourceArguments.Empty))))).Read<MessageFrameEntity>("separatedvalues", executionContext);
+        var source = NativeSourceCalls.Source(schema, SourceArguments.Create("./Data/1/1.csv", SourceArguments.Create("./Data/1/1.dbc", SourceArguments.Create("dec", SourceArguments.Create("big", SourceArguments.Empty))))).Read<MessageFrameEntity>("separatedvalues", executionContext);
 
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
@@ -159,7 +159,7 @@ public class CANBusRuntimeV2ProjectionTests
             columns,
             executionPlan: CreateExecutionPlan([], predicate));
         var schema = new CANBusSchema();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create("./Data/1/1.csv", global::Musoq.Schema.SourceArguments.Create("./Data/1/1.dbc", global::Musoq.Schema.SourceArguments.Create("dec", global::Musoq.Schema.SourceArguments.Create("big", global::Musoq.Schema.SourceArguments.Empty))))).Read<MessageFrameEntity>("separatedvalues", executionContext);
+        var source = NativeSourceCalls.Source(schema, SourceArguments.Create("./Data/1/1.csv", SourceArguments.Create("./Data/1/1.dbc", SourceArguments.Create("dec", SourceArguments.Create("big", SourceArguments.Empty))))).Read<MessageFrameEntity>("separatedvalues", executionContext);
 
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
@@ -173,7 +173,7 @@ public class CANBusRuntimeV2ProjectionTests
         var predicate = Equal("Name", "Engine");
         var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
             executionPlan: CreateExecutionPlan([], predicate));
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new CANBusSchema(), global::Musoq.Schema.SourceArguments.Create("./Data/1/1.dbc", global::Musoq.Schema.SourceArguments.Empty)).Read<MessageEntity>("messages", executionContext);
+        var source = NativeSourceCalls.Source(new CANBusSchema(), SourceArguments.Create("./Data/1/1.dbc", SourceArguments.Empty)).Read<MessageEntity>("messages", executionContext);
 
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 
@@ -187,7 +187,7 @@ public class CANBusRuntimeV2ProjectionTests
         var predicate = Equal("MessageName", "Engine");
         var executionContext = RuntimeV2TestContexts.CreateExecutionContext(
             executionPlan: CreateExecutionPlan([], predicate));
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new CANBusSchema(), global::Musoq.Schema.SourceArguments.Create("./Data/1/1.dbc", global::Musoq.Schema.SourceArguments.Empty)).Read<SignalEntity>("signals", executionContext);
+        var source = NativeSourceCalls.Source(new CANBusSchema(), SourceArguments.Create("./Data/1/1.dbc", SourceArguments.Empty)).Read<SignalEntity>("signals", executionContext);
 
         var rows = source.Chunks.SelectMany(chunk => chunk).ToArray();
 

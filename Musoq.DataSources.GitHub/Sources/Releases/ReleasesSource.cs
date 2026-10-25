@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.GitHub.Entities;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -12,6 +13,19 @@ internal class ReleasesSource(IGitHubApi api, SourceExecutionContext executionCo
 
     protected override void CollectChunks(IChunkWriter<ReleaseEntity> writer)
     {
+        if (PatternSourcePlan.HasPatterns(executionContext))
+        {
+            var filtered = GitHubPatternApi.Read(executionContext, api, "releases", inner => new ReleasesSource(api, inner, owner, repo));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(writer.CancellationToken, executionContext.EndWorkToken);
+        var boundApi = GitHubPatternApi.Bind(api, executionContext, linked.Token);
         executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
@@ -19,20 +33,23 @@ internal class ReleasesSource(IGitHubApi api, SourceExecutionContext executionCo
         {
             var page = 1;
             var perPage = 100;
+            long skipped = 0, emitted = 0;
+            var plan = executionContext.Plan;
 
-            while (!writer.CancellationToken.IsCancellationRequested)
+            if (plan.AcceptedTake == 0) return;
+            while (!linked.IsCancellationRequested)
             {
-                var releases = api.GetReleasesAsync(owner, repo, perPage, page).Result;
+                var releases = boundApi.GetReleasesAsync(owner, repo, perPage, page).Result;
 
-                if (releases.Count == 0)
+                if (PatternPage.RawCount(releases) == 0)
                     break;
 
-                writer.Write(releases);
-
-                totalRowsProcessed += releases.Count;
+                var planned = GitHubSourcePlanner.ApplyAcceptedPlan(releases, plan, ref skipped, ref emitted);
+                if (planned.Count > 0) writer.Write(planned);
+                totalRowsProcessed += planned.Count;
                 executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
 
-                if (releases.Count < perPage)
+                if (PatternPage.RawCount(releases) < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
 
                 page++;

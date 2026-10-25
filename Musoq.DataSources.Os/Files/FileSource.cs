@@ -21,6 +21,14 @@ internal sealed class FileSource(string path, SourceExecutionContext executionCo
         {
             writer.CancellationToken.ThrowIfCancellationRequested();
 
+            var native = NativePatternExecution.Get(executionContext);
+            if (native?.HasPredicates == true)
+            {
+                string fullPath;
+                try { fullPath = Path.GetFullPath(path); }
+                catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException or UnauthorizedAccessException) { return; }
+                if (!native.Matches(fullPath, OsNativePatterns.Files)) return;
+            }
             var file = TryCreateFileInfo(path);
             if (file is null || !file.Exists)
             {
@@ -36,6 +44,7 @@ internal sealed class FileSource(string path, SourceExecutionContext executionCo
 
             var rootDirectory = file.DirectoryName ?? Path.GetPathRoot(file.FullName) ?? string.Empty;
             var entity = new FileEntity(file, rootDirectory);
+            native?.Constructed();
 
             writer.Write(new List<FileEntity> { entity });
             totalRowsProcessed = 1;

@@ -108,6 +108,8 @@ internal sealed class SeparatedValuesQueryProjectionPlan
             enumPlans);
     }
 
+    public bool HasStringProjectionAt(int sourceOrdinal) => Array.Exists(_slotBindings, binding => binding.PhysicalSourceOrdinal == sourceOrdinal && binding.Conversion == SeparatedValuesConversion.String);
+
     public bool HasProjectionAt(int sourceOrdinal)
     {
         return Array.BinarySearch(SourceOrdinals, sourceOrdinal) >= 0;
@@ -177,7 +179,9 @@ internal readonly struct SeparatedValuesQueryRowProjector<TRow, TMaterializer>
     {
         _fields.RecordMaterializedRow();
         var reader = new SeparatedValuesFieldReader(record.Bytes, _fields, _projection, rowNumber);
-        return TMaterializer.Materialize<SeparatedValuesFieldReader>(ref reader);
+        if (_fields.DecodedStrings is null) return TMaterializer.Materialize<SeparatedValuesFieldReader>(ref reader);
+        try { return TMaterializer.Materialize<SeparatedValuesFieldReader>(ref reader); }
+        finally { _fields.DecodedStrings.Clear(); }
     }
 
     private ref struct SeparatedValuesFieldReader : IQuerySourceFieldReader
@@ -225,11 +229,13 @@ internal readonly struct SeparatedValuesQueryRowProjector<TRow, TMaterializer>
             {
                 if (slotBinding.Conversion == SeparatedValuesConversion.String)
                 {
-                    var value = location.NeedsUnescaping
-                        ? location.CreateField(_recordBytes).Decode()
-                        : _fields.StringPool.GetOrAddUtf8(
-                            slotBinding.PhysicalSourceOrdinal,
-                            location.GetEncodedValue(_recordBytes));
+                    string value;
+                    if (_fields.TryReadDecoded(slotBinding.PhysicalSourceOrdinal, out var decoded))
+                        value = location.NeedsUnescaping ? decoded : _fields.StringPool.GetOrAddUtf8(slotBinding.PhysicalSourceOrdinal, location.GetEncodedValue(_recordBytes), decoded);
+                    else
+                        value = location.NeedsUnescaping
+                            ? location.CreateField(_recordBytes).Decode()
+                            : _fields.StringPool.GetOrAddUtf8(slotBinding.PhysicalSourceOrdinal, location.GetEncodedValue(_recordBytes));
                     return Unsafe.As<string, T>(ref value);
                 }
 

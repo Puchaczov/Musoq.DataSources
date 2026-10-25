@@ -244,7 +244,7 @@ internal static class SearchFileTraversal
             var isSpecial =
                 !isReparsePoint &&
                 attributes.HasFlag(FileAttributes.Device);
-            var fileName = System.IO.Path.GetFileName(path);
+            var fileName = Path.GetFileName(path);
             var isHidden =
                 attributes.HasFlag(FileAttributes.Hidden) ||
                 (fileName.Length > 0 && fileName[0] == '.');

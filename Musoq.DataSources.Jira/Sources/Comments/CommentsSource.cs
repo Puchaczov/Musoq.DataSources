@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Jira.Entities;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -45,6 +46,18 @@ internal class CommentsSource : AsyncRowsSourceBase<IJiraComment>
         IChunkWriter<IJiraComment> writer,
         CancellationToken cancellationToken)
     {
+        if (PatternSourcePlan.HasPatterns(_executionContext))
+        {
+            var filtered = JiraPatternApi.Read(_executionContext, _api, "comments", inner => new CommentsSource(_api, inner, _issueKey, _projectKey));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
+        var api = JiraPatternApi.Bind(_api, _executionContext, cancellationToken);
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
@@ -54,11 +67,11 @@ internal class CommentsSource : AsyncRowsSourceBase<IJiraComment>
 
             if (!string.IsNullOrEmpty(_issueKey))
             {
-                comments = await _api.GetCommentsAsync(_issueKey);
+                comments = await api.GetCommentsAsync(_issueKey);
             }
             else if (!string.IsNullOrEmpty(_projectKey))
             {
-                comments = await _api.GetCommentsForIssuesAsync($"project = {_projectKey}");
+                comments = await api.GetCommentsForIssuesAsync($"project = {_projectKey}");
             }
             else
             {

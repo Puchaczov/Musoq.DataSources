@@ -60,6 +60,8 @@ internal static class GitOperationReaders
 
 internal sealed class GitCliCommitReader : IGitCommitReader
 {
+    private readonly IGitCliProcessFactory _factory;
+    internal GitCliCommitReader(IGitCliProcessFactory? factory = null) => _factory = factory ?? GitCliProcessFactory.Default;
     public string Backend => "git-cli";
 
     public void Read(
@@ -76,13 +78,14 @@ internal sealed class GitCliCommitReader : IGitCommitReader
         cancellationToken.ThrowIfCancellationRequested();
 
         var metadata = GitCommitMetadataPlan.Create(projection);
+        var native = projection.NativePatterns is null ? null : new GitCommitPatternReader(projection);
         var arguments = new List<string>
         {
             "log",
             "--topo-order",
             "--no-ext-diff",
             "-z",
-            "--format=" + metadata.GitFormat
+            "--format=" + (native?.Format ?? metadata.GitFormat)
         };
 
         if (!string.IsNullOrWhiteSpace(directSha))
@@ -93,8 +96,10 @@ internal sealed class GitCliCommitReader : IGitCommitReader
             arguments.Add(directSha);
         }
 
-        using var process = GitCliProcess.Start(repositoryPath, GitHistoryBackendOptions.Default, arguments, cancellationToken);
+        using var process = _factory.Start(new GitCliProcessRequest(repositoryPath, GitHistoryBackendOptions.Default.Executable,
+            GitHistoryBackendOptions.BackendSettingName, arguments, GitCliProcessEnvironment.Default), cancellationToken);
         using var reader = new GitNulDelimitedUtf8Reader(process.StandardOutput);
+        using var decoding = new GitDecodeAccounting(reader, projection.NativePatterns);
         var completedNaturally = true;
 
         while (true)
@@ -109,7 +114,10 @@ internal sealed class GitCliCommitReader : IGitCommitReader
             if (!header.StartsWith('\u001e'))
                 throw new InvalidDataException("Git commit protocol lost its record delimiter.");
 
-            if (!onCommit(metadata.Read(repositoryPath, header, reader)))
+            GitCommitRecord record = default;
+            if (native is not null && !native.Read(repositoryPath, header, reader, cancellationToken, out record)) continue;
+            if (native is null) record = metadata.Read(repositoryPath, header, reader);
+            if (!onCommit(record))
             {
                 completedNaturally = false;
                 process.Stop();
@@ -143,6 +151,7 @@ internal sealed class LibGit2CommitReader : IGitCommitReader
         ArgumentNullException.ThrowIfNull(onCommit);
         using var repository = createRepository(repositoryPath);
         var metadata = GitCommitMetadataPlan.Create(projection);
+        var native = projection.NativePatterns is null ? null : new GitCommitPatternReader(projection);
         var commits = string.IsNullOrWhiteSpace(directSha)
             ? repository.Commits.QueryBy(new CommitFilter { SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time })
             : new[] { repository.Lookup<Commit>(directSha) }.Where(static commit => commit is not null)!;
@@ -150,7 +159,10 @@ internal sealed class LibGit2CommitReader : IGitCommitReader
         foreach (var commit in commits)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!onCommit(metadata.Create(repository.Info.Path, commit!)))
+            GitCommitRecord record = default;
+            if (native is not null && !native.Read(repository.Info.Path, commit!, out record)) continue;
+            if (native is null) record = metadata.Create(repository.Info.Path, commit!);
+            if (!onCommit(record))
                 break;
         }
     }

@@ -53,19 +53,22 @@ internal sealed class StructuredStringPool
     }
 
     public string GetOrAddUtf8(int sourceOrdinal, ReadOnlySpan<byte> utf8)
+        => GetOrAddUtf8(sourceOrdinal, utf8, null);
+
+    internal string GetOrAddUtf8(int sourceOrdinal, ReadOnlySpan<byte> utf8, string? decodedValue)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(sourceOrdinal);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(sourceOrdinal, _columns.Length);
 
         if (IsDisabled)
-            return Encoding.UTF8.GetString(utf8);
+            return decodedValue ?? Encoding.UTF8.GetString(utf8);
 
         var hash = StructuredUtf8Hash.Hash(utf8);
         var existingColumn = Volatile.Read(ref _columns[sourceOrdinal]);
         if (existingColumn?.TryGet(hash, utf8, out var existing) == true)
             return existing;
 
-        var decoded = Encoding.UTF8.GetString(utf8);
+        var decoded = decodedValue ?? Encoding.UTF8.GetString(utf8);
         var retainedSize = EstimateRetainedSize(utf8.Length, decoded.Length);
 
         lock (_sync)

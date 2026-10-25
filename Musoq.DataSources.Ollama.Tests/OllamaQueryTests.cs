@@ -176,10 +176,12 @@ public class OllamaQueryTests
         Assert.AreEqual(true, table[0].ReadValue(0));
     }
 
-    [TestMethod]
-    public void WhenCountingTokens_ShouldReturnTokenCount()
+    [DataTestMethod]
+    [DataRow("CountTokens")]
+    [DataRow("CountModelTokens")]
+    public void WhenCountingTokens_ShouldReturnTokenCount(string function)
     {
-        const string script = "select CountTokens('Hello world!') from ollama.llm()";
+        var script = $"select {function}('Hello world!') from ollama.llm()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, string.Empty);
         var table = vm.Run();

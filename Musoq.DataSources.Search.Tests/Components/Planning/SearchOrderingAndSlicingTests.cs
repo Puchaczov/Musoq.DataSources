@@ -89,7 +89,7 @@ public sealed class SearchOrderingAndSlicingTests
                 AcceptedPredicate = predicate,
                 Properties = new Dictionary<string, object?>
                 {
-                    [Musoq.DataSources.Common.TypedPredicatePlan.PropertyName] = Musoq.DataSources.Search.Components.Planning.SearchSourcePlanner.BindPredicate("matches", predicate)
+                    [Common.TypedPredicatePlan.PropertyName] = Search.Components.Planning.SearchSourcePlanner.BindPredicate("matches", predicate)
                 },
                 AcceptedSkip = 1,
                 AcceptedTake = 1

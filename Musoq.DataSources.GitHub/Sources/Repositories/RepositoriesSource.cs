@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 using Octokit;
@@ -26,6 +27,17 @@ internal class RepositoriesSource : AsyncRowsSourceBase<RepositoryEntity>
         IChunkWriter<RepositoryEntity> writer,
         CancellationToken cancellationToken)
     {
+        if (PatternSourcePlan.HasPatterns(_executionContext))
+        {
+            var filtered = PatternSourcePlan.Read(_executionContext, inner => new RepositoriesSource(_api, inner, _owner));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
@@ -38,6 +50,7 @@ internal class RepositoriesSource : AsyncRowsSourceBase<RepositoryEntity>
             long skipped = 0;
             long emitted = 0;
 
+            if (_executionContext.Plan.AcceptedTake == 0) return;
             while (!cancellationToken.IsCancellationRequested)
             {
                 IReadOnlyList<RepositoryEntity> repos;

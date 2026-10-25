@@ -57,12 +57,12 @@ public sealed class ArchivesNativeEnumRelationalTests
             typeof(int),
             typeof(int),
             typeof(SharpCompress.Common.CompressionType),
-            Musoq.Schema.EnumUnderlyingKind.Int32,
+            Schema.EnumUnderlyingKind.Int32,
             isFlags: false);
         PortableEnumAssertions.AssertNoClrEnumValues(table);
     }
 
-    private static Musoq.Evaluator.Tables.Table Run(string query)
+    private static Evaluator.Tables.Table Run(string query)
     {
         var compiled = InstanceCreatorHelpers.CompileForExecution(
             query,

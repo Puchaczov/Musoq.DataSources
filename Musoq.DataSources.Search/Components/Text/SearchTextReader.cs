@@ -249,7 +249,7 @@ internal static class SearchTextReader
         DecodedEncoding Encoding,
         int DataOffset,
         bool Tolerant,
-        System.Text.Encoding? LegacyEncoding = null);
+        Encoding? LegacyEncoding = null);
 
     private readonly record struct RawByte(byte Value, long Offset);
 
@@ -258,7 +258,7 @@ internal static class SearchTextReader
         DecodedEncoding encoding,
         long initialByteOffset,
         bool tolerant,
-        System.Text.Encoding? legacyEncoding)
+        Encoding? legacyEncoding)
         : TextReader, ISearchTextCoordinateReader
     {
         private const int RawBufferLength = SearchCharBuffer.RequestedLength;
@@ -270,7 +270,7 @@ internal static class SearchTextReader
             ArrayPool<SearchCharCoordinate>.Shared.Rent(SearchCharBuffer.RequestedLength);
         private readonly DecodedEncoding _encoding = encoding;
         private readonly bool _tolerant = tolerant;
-        private readonly System.Text.Encoding? _legacyEncoding = legacyEncoding;
+        private readonly Encoding? _legacyEncoding = legacyEncoding;
         private readonly RawByte[] _pendingBytes = new RawByte[8];
         private int _pendingByteCount;
         private int _rawIndex;

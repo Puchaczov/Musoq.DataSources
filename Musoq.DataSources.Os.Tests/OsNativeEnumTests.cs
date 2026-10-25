@@ -217,7 +217,7 @@ public sealed class OsNativeEnumTests
         Assert.AreEqual(3, isNotNull.Count);
     }
 
-    private static Musoq.Evaluator.Tables.Table Run(string query)
+    private static Evaluator.Tables.Table Run(string query)
     {
         var compiled = InstanceCreatorHelpers.CompileForExecution(
             query,

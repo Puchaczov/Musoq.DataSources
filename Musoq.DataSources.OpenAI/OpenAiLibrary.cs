@@ -287,13 +287,20 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
     /// <param name="entity">Entity</param>
     /// <param name="content">Content</param>
     /// <returns>Number of tokens</returns>
-    [BindableMethod]
     public int CountTokens([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content)
     {
         var encoding = GptEncoding.GetEncodingForModel(entity.Model);
 
         return encoding.CountTokens(content);
     }
+
+    /// <summary>Counts tokens using the current source model.</summary>
+    /// <param name="entity">The current source entity.</param>
+    /// <param name="content">The content to tokenize.</param>
+    /// <returns>The model-specific token count.</returns>
+    [BindableMethod]
+    public int CountModelTokens([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content)
+        => CountTokens(entity, content);
 
     /// <summary>
     ///     Counts the number of tokens in the provided content using the specified model.

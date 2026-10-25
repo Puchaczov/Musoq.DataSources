@@ -21,37 +21,37 @@ public class CommitEntity
     /// <summary>
     ///     Gets the commit SHA.
     /// </summary>
-    public string Sha => _commit.Sha;
+    public string Sha => ReadSha(_commit);
 
     /// <summary>
     ///     Gets the short SHA (first 7 characters).
     /// </summary>
-    public string ShortSha => _commit.Sha.Length >= 7 ? _commit.Sha[..7] : _commit.Sha;
+    public string ShortSha => ReadShortSha(_commit);
 
     /// <summary>
     ///     Gets the commit message.
     /// </summary>
-    public string Message => _commit.Commit?.Message ?? string.Empty;
+    public string Message => ReadMessage(_commit);
 
     /// <summary>
     ///     Gets the commit URL.
     /// </summary>
-    public string Url => _commit.HtmlUrl;
+    public string Url => ReadUrl(_commit);
 
     /// <summary>
     ///     Gets the author's name.
     /// </summary>
-    public string? AuthorName => _commit.Commit?.Author?.Name;
+    public string? AuthorName => ReadAuthorName(_commit);
 
     /// <summary>
     ///     Gets the author's email.
     /// </summary>
-    public string? AuthorEmail => _commit.Commit?.Author?.Email;
+    public string? AuthorEmail => ReadAuthorEmail(_commit);
 
     /// <summary>
     ///     Gets the author's login (GitHub user).
     /// </summary>
-    public string? AuthorLogin => _commit.Author?.Login;
+    public string? AuthorLogin => ReadAuthorLogin(_commit);
 
     /// <summary>
     ///     Gets the author's ID.
@@ -66,17 +66,17 @@ public class CommitEntity
     /// <summary>
     ///     Gets the committer's name.
     /// </summary>
-    public string? CommitterName => _commit.Commit?.Committer?.Name;
+    public string? CommitterName => ReadCommitterName(_commit);
 
     /// <summary>
     ///     Gets the committer's email.
     /// </summary>
-    public string? CommitterEmail => _commit.Commit?.Committer?.Email;
+    public string? CommitterEmail => ReadCommitterEmail(_commit);
 
     /// <summary>
     ///     Gets the committer's login (GitHub user).
     /// </summary>
-    public string? CommitterLogin => _commit.Committer?.Login;
+    public string? CommitterLogin => ReadCommitterLogin(_commit);
 
     /// <summary>
     ///     Gets the committer's ID.
@@ -106,7 +106,7 @@ public class CommitEntity
     /// <summary>
     ///     Gets the parent SHA(s).
     /// </summary>
-    public string ParentShas => string.Join(", ", _commit.Parents?.Select(p => p.Sha) ?? []);
+    public string ParentShas => ReadParentShas(_commit);
 
     /// <summary>
     ///     Gets the number of parent commits.
@@ -126,10 +126,23 @@ public class CommitEntity
     /// <summary>
     ///     Gets the verification reason.
     /// </summary>
-    public string? VerificationReason => _commit.Commit?.Verification?.Reason.StringValue;
+    public string? VerificationReason => ReadVerificationReason(_commit);
 
     /// <summary>
     ///     Gets the files changed in this commit.
     /// </summary>
     public int FilesChanged => _commit.Files?.Count ?? 0;
+
+    internal static string ReadSha(GitHubCommit value) => value.Sha;
+    internal static string ReadShortSha(GitHubCommit value) => value.Sha.Length >= 7 ? value.Sha[..7] : value.Sha;
+    internal static string ReadMessage(GitHubCommit value) => value.Commit?.Message ?? string.Empty;
+    internal static string ReadUrl(GitHubCommit value) => value.HtmlUrl;
+    internal static string? ReadAuthorName(GitHubCommit value) => value.Commit?.Author?.Name;
+    internal static string? ReadAuthorEmail(GitHubCommit value) => value.Commit?.Author?.Email;
+    internal static string? ReadAuthorLogin(GitHubCommit value) => value.Author?.Login;
+    internal static string? ReadCommitterName(GitHubCommit value) => value.Commit?.Committer?.Name;
+    internal static string? ReadCommitterEmail(GitHubCommit value) => value.Commit?.Committer?.Email;
+    internal static string? ReadCommitterLogin(GitHubCommit value) => value.Committer?.Login;
+    internal static string ReadParentShas(GitHubCommit value) => string.Join(", ", value.Parents?.Select(p => p.Sha) ?? []);
+    internal static string? ReadVerificationReason(GitHubCommit value) => value.Commit?.Verification?.Reason.StringValue;
 }

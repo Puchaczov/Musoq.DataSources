@@ -289,13 +289,25 @@ internal static class SearchPlanInspection
                     "global=no; per-file=no; line completion requires scanning the eligible file",
                     true,
                     false),
-                "matches" => new SourceProfile(
+                "matches" or "many" => new SourceProfile(
                     "filesystem-text-occurrence-scan",
                     "opens and decodes eligible files to emit one row per non-overlapping occurrence; optional fields are retained only when required",
                     "auto (BOM-aware UTF-8/UTF-16) resolved per opened file; binary classification may probe content first",
                     "global=no; per-file=no; TAKE is an output window, not a scan budget",
                     true,
                     true),
+                "audit" => new SourceProfile(
+                    "filesystem-text-terminal-audit-scan",
+                    "completes the count scan before filtering the terminal audit row",
+                    "auto (BOM-aware UTF-8/UTF-16) resolved per opened file",
+                    "global=no; terminal accounting requires the full eligible scope",
+                    true, false),
+                "bytes" => new SourceProfile(
+                    "filesystem-byte-occurrence-scan",
+                    "scans eligible files for raw-byte occurrences; decoded text columns remain null",
+                    "none; byte matching does not decode text",
+                    "TAKE is an output window, not a scan budget",
+                    true, false),
                 _ => new SourceProfile(
                     "unplanned-source-residual",
                     "source operation remains residual; execution details are not claimed by the Search planner",

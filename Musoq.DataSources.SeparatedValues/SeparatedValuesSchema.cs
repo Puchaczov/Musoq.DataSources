@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.SeparatedValues.Components.Contracts;
 using Musoq.DataSources.SeparatedValues.Components.Execution;
 using Musoq.DataSources.SeparatedValues.Components.Parsing;
@@ -217,6 +218,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = ProviderRegex.PatternCapabilities(table.Columns, column => SeparatedValuesSourcePlanner.IsPatternColumn(contract, column)),
             RowType = typeof(QueryScopedRowContract),
             Diagnostics = contract.Diagnostics,
             ContractDiagnostics = [],
@@ -416,7 +418,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         SeparatedValuesDialect dialect,
         IReadOnlyCollection<ISchemaColumn> declaredColumns,
         IReadOnlyDictionary<string, string> runtimeSettings,
-        System.Threading.CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         return _modules.SchemaResolver.Resolve(new SeparatedValuesSchemaResolutionRequest(
             parameters.Path,

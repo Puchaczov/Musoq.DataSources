@@ -5230,7 +5230,7 @@ public partial class RoslynToSqlTests
                 { "EXTERNAL_NUGET_PROPERTIES_RESOLVE_ENDPOINT", "https://localhost/external/this-doesnt-exists" }
             });
 
-        return global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create(Solution1SolutionPath, global::Musoq.Schema.SourceArguments.Empty)).Read<SolutionEntity>("solution", context)
+        return NativeSourceCalls.Source(schema, Schema.SourceArguments.Create(Solution1SolutionPath, Schema.SourceArguments.Empty)).Read<SolutionEntity>("solution", context)
             .Chunks
             .SelectMany(chunk => chunk)
             .Single();

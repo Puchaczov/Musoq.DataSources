@@ -172,7 +172,7 @@ public sealed class DockerStarContractTests
 
     private static CompiledQuery Compile(string query, IDockerApi api)
     {
-        var provider = new Moq.Mock<ISchemaProvider>();
+        var provider = new Mock<ISchemaProvider>();
         provider.Setup(value => value.GetSchema(It.IsAny<string>())).Returns(new DockerSchema(api));
 
         return InstanceCreatorHelpers.CompileForExecution(

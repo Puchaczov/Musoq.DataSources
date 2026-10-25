@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security;
 using LibGit2Sharp;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -793,6 +794,13 @@ public class GitSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), name.ToLowerInvariant() == "filehistory" ? ["CommitSha", "FilePath", "ChangeType", "OldPath"] : GitPatternColumns.Get(name)?.Names);
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         var path = parameters.GetValue<string>(0);
 
@@ -876,6 +884,7 @@ public class GitSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = GitPatternColumns.Get(name)?.Capabilities(table.Columns) ?? SourcePredicateCapabilities.None,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -928,6 +937,9 @@ public class GitSchema : SchemaBase
     /// <returns>A source plan that records accepted work and leaves unsupported work as residual operations.</returns>
     /// <remarks>Projection pruning and predicate/window acceptance are source-specific; residual expressions remain in Musoq.</remarks>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+        => PatternSourcePlan.Plan(request, GitPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+
+    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
         return GitSourcePlanner.Plan(name, request);
     }

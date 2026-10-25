@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Jira.Entities;
 using Musoq.DataSources.Jira.Helpers;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -44,6 +45,18 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
 
     protected override async Task CollectChunksAsync(IChunkWriter<IJiraIssue> writer, CancellationToken cancellationToken)
     {
+        if (PatternSourcePlan.HasPatterns(_executionContext))
+        {
+            var filtered = JiraPatternApi.Read(_executionContext, _api, "issues", inner => new IssuesSource(_api, inner, _projectKey, _jql));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
+        var api = JiraPatternApi.Bind(_api, _executionContext, cancellationToken);
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
@@ -65,11 +78,12 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
             long skipped = 0;
             long emitted = 0;
 
+            if (plan.AcceptedTake == 0) return;
             while (!cancellationToken.IsCancellationRequested)
             {
-                var issues = await _api.GetIssuesAsync(finalJql, maxResults, startAt);
+                var issues = await api.GetIssuesAsync(finalJql, maxResults, startAt);
 
-                if (issues.Count == 0)
+                if (PatternPage.RawCount(issues) == 0)
                     break;
 
                 var plannedIssues = JiraSourcePlanner.ApplyAcceptedPlan(issues, plan, ref skipped, ref emitted);
@@ -82,9 +96,9 @@ internal class IssuesSource : AsyncRowsSourceBase<IJiraIssue>
                     _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
                 }
 
-                startAt += issues.Count;
+                startAt += PatternPage.RawCount(issues);
 
-                if (issues.Count < maxResults || JiraSourcePlanner.IsTakeSatisfied(plan, emitted))
+                if (PatternPage.RawCount(issues) < maxResults || JiraSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
             }
         }

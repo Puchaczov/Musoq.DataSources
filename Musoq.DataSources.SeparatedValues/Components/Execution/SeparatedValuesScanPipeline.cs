@@ -211,7 +211,7 @@ internal sealed class SeparatedValuesScanPipeline : ISeparatedValuesQueryScanPip
             var count = (int)Math.Min(ZeroFieldChunkRows, remaining);
             var chunk = new List<TRow>(count);
             for (var index = 0; index < count; index++)
-                chunk.Add(TMaterializer.Materialize<EmptyQueryFieldReader>(ref reader));
+                chunk.Add(TMaterializer.Materialize(ref reader));
             writer.Write(chunk);
             remaining -= count;
         }
@@ -309,7 +309,7 @@ internal sealed class SeparatedValuesScanPipeline : ISeparatedValuesQueryScanPip
             contract,
             request.ExecutionContext,
             mapping);
-        var recordExecutor = recordProgram.CreateExecutor();
+        using var recordExecutor = recordProgram.CreateExecutor(request.ExecutionContext.Diagnostics);
         var rowNumberOffset = 0L;
         long? skipOverride = null;
         var consumeHeader = request.HasHeader;

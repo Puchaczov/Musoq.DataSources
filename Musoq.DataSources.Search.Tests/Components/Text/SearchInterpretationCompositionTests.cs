@@ -59,7 +59,7 @@ public sealed class SearchInterpretationCompositionTests
             WriteFixture(root, "2026-09-07 ERROR missing-separator");
             using var compiled = Compile(BuildQuery(root, "Parse<LogEntry>(candidates.LineText) log"));
 
-            Assert.ThrowsException<Musoq.Schema.Interpreters.ParseException>(() => _ = compiled.Run().Count);
+            Assert.ThrowsException<Schema.Interpreters.ParseException>(() => _ = compiled.Run().Count);
         }
         finally
         {

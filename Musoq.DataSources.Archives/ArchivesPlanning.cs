@@ -1,4 +1,5 @@
 #nullable enable
+using Musoq.DataSources.Common;
 
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ internal static class ArchivesSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
                 Properties = new Dictionary<string, object?>()
             },
@@ -45,13 +47,17 @@ internal static class ArchivesSourcePlanner
             null => true,
             SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
                 Matches(logical.Left, entity) && Matches(logical.Right, entity),
+            SourcePredicateRegexMatch regex => ProviderRegex.Match(regex, entity.Key) == true,
             SourcePredicateComparison comparison => EvaluateComparison(comparison, entity),
             _ => true
         };
     }
 
-    private static bool IsSupportedPredicate(SourcePredicateExpression expression)
+    internal static bool IsSupportedPredicate(SourcePredicateExpression expression)
     {
+        if (expression is SourcePredicateRegexMatch regex)
+            return ProviderRegex.Supports(regex, IsSupportedPredicate);
+
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
             return false;

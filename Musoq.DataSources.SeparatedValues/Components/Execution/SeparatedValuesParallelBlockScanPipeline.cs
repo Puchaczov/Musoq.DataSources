@@ -69,7 +69,7 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
             SeparatedValuesQueryOutputMemoryEstimator.Create<TRow>(shape));
         try
         {
-            return RunAsync<TRow, QueryParallelMaterialization<TRow, TMaterializer>>(
+            return RunAsync(
                     request,
                     contract,
                     writer,
@@ -136,7 +136,7 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
         var workers = new Task[workerCount];
         for (var index = 0; index < workers.Length; index++)
         {
-            workers[index] = Task.Run(() => WorkerAsync<TRow, TMaterialization>(
+            workers[index] = Task.Run(() => WorkerAsync(
                 request,
                 contract,
                 work.Reader,
@@ -664,7 +664,7 @@ internal sealed class SeparatedValuesParallelBlockScanPipeline : ISeparatedValue
         CancellationTokenSource stop)
         where TMaterialization : struct, IParallelMaterialization<TRow>
     {
-        var recordExecutor = materialization.RecordProgram.CreateExecutor();
+        using var recordExecutor = materialization.RecordProgram.CreateExecutor(request.ExecutionContext.Diagnostics);
         try
         {
             await foreach (var item in work.ReadAllAsync(stop.Token).ConfigureAwait(false))

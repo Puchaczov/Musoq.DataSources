@@ -177,10 +177,12 @@ public class OpenAiQueryTests
         Assert.AreEqual(true, table[0].ReadValue(0));
     }
 
-    [TestMethod]
-    public void WhenCountingTokens_ShouldReturnTokenCount()
+    [DataTestMethod]
+    [DataRow("CountTokens")]
+    [DataRow("CountModelTokens")]
+    public void WhenCountingTokens_ShouldReturnTokenCount(string function)
     {
-        const string script = "select CountTokens('Hello world!') from openai.gpt()";
+        var script = $"select {function}('Hello world!') from openai.gpt()";
 
         var vm = CreateAndRunVirtualMachineWithResponse(script, string.Empty);
         var table = vm.Run();

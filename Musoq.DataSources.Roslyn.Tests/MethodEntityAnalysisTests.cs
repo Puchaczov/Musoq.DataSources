@@ -45,7 +45,7 @@ public sealed class MethodEntityAnalysisTests
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Single();
-        var symbol = semanticModel!.GetDeclaredSymbol(declaration) as Microsoft.CodeAnalysis.IMethodSymbol;
+        var symbol = semanticModel!.GetDeclaredSymbol(declaration) as IMethodSymbol;
         Assert.IsNotNull(symbol);
 
         var entity = new MethodEntity(
@@ -96,7 +96,7 @@ public sealed class MethodEntityAnalysisTests
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Single();
-        var symbol = semanticModel!.GetDeclaredSymbol(declaration) as Microsoft.CodeAnalysis.IMethodSymbol;
+        var symbol = semanticModel!.GetDeclaredSymbol(declaration) as IMethodSymbol;
         Assert.IsNotNull(symbol);
 
         var entity = new MethodEntity(symbol!, declaration);

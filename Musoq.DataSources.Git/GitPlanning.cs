@@ -97,13 +97,16 @@ internal sealed class GitProjection
         bool isAccepted,
         IEnumerable<string> columns,
         IEnumerable<string>? predicateDependencies = null,
-        bool requiresNestedReferenceCapabilities = false)
+        bool requiresNestedReferenceCapabilities = false,
+        NativePatternExecution? nativePatterns = null)
     {
+        NativePatterns = nativePatterns;
         IsAccepted = isAccepted;
         Columns = columns.Concat(predicateDependencies ?? []).ToFrozenSet(StringComparer.OrdinalIgnoreCase);
         RequiresNestedReferenceCapabilities = requiresNestedReferenceCapabilities;
     }
 
+    internal NativePatternExecution? NativePatterns { get; }
     public bool IsAccepted { get; }
 
     public IReadOnlySet<string> Columns { get; }
@@ -235,6 +238,7 @@ internal static class GitSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = acceptedColumns,
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = acceptedOrderBy,
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
@@ -263,9 +267,11 @@ internal static class GitSourcePlanner
 
     public static GitProjection GetProjection(SourceExecutionPlan plan)
     {
-        return plan.Properties.TryGetValue(ProjectionPropertyName, out var value) && value is GitProjection projection
-            ? projection
-            : GitProjection.NotAccepted;
+        var projection = plan.Properties.TryGetValue(ProjectionPropertyName, out var value) && value is GitProjection stored ? stored : GitProjection.NotAccepted;
+        var native = NativePatternExecution.Get(plan);
+        return native?.HasPredicates == true
+            ? new GitProjection(projection.IsAccepted, projection.Columns, requiresNestedReferenceCapabilities: projection.RequiresNestedReferenceCapabilities, nativePatterns: native)
+            : projection;
     }
 
     public static IReadOnlyList<string>? OrderedExactValues(IReadOnlySet<string> values) =>
@@ -497,6 +503,7 @@ internal static class GitSourcePlanner
 
         return predicate switch
         {
+            SourcePredicatePatternMatch match => [NormalizeColumnName(match.Column.Name)],
             SourcePredicateColumn column => [NormalizeColumnName(column.Column.Name)],
             SourcePredicateComparison comparison => GetPredicateColumns(comparison.Left)
                 .Concat(GetPredicateColumns(comparison.Right)),
@@ -525,12 +532,13 @@ internal static class GitSourcePlanner
         return canEvaluate(predicate) ? (predicate, null) : (null, predicate);
     }
 
-    private static bool CanEvaluatePredicate(string tableName, SourcePredicateExpression predicate)
+    internal static bool CanEvaluatePredicate(string tableName, SourcePredicateExpression predicate)
     {
         return predicate switch
         {
             SourcePredicateLogical logical =>
                 CanEvaluatePredicate(tableName, logical.Left) && CanEvaluatePredicate(tableName, logical.Right),
+            SourcePredicateRegexMatch regex => ProviderRegex.Supports(regex, comparison => CanEvaluatePredicate(tableName, comparison)),
             SourcePredicateComparison comparison => IsSupportedComparison(tableName, comparison),
             SourcePredicateIn inPredicate => IsSupportedIn(tableName, inPredicate),
             SourcePredicateNullCheck nullCheck =>

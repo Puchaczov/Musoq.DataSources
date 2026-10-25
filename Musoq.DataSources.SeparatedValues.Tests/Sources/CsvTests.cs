@@ -184,7 +184,7 @@ public class CsvTests
         var context = RuntimeV2TestContexts.CreateExecutionContext(CancellationToken.None);
 
         var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
-            global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create(new TestReadOnlyTable([["./TestData/Files/BankingTransactionsWithSkippedLines.csv", true, 2]]), global::Musoq.Schema.SourceArguments.Create(true, global::Musoq.Schema.SourceArguments.Create(0, global::Musoq.Schema.SourceArguments.Empty)))).Read<object[]>("comma", context));
+            NativeSourceCalls.Source(schema, SourceArguments.Create(new TestReadOnlyTable([["./TestData/Files/BankingTransactionsWithSkippedLines.csv", true, 2]]), SourceArguments.Create(true, SourceArguments.Create(0, SourceArguments.Empty)))).Read<object[]>("comma", context));
 
         StringAssert.Contains(exception.Message, "unsupported legacy row transfer");
     }

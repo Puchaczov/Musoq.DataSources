@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -10,13 +11,27 @@ internal class ContainersSource(IDockerApi api, SourceExecutionContext execution
 
     protected override void CollectChunks(IChunkWriter<ContainerEntity> writer)
     {
+        if (PatternSourcePlan.HasPatterns(executionContext))
+        {
+            var filtered = PatternSourcePlan.Read(executionContext, inner => new ContainersSource(api, inner), DockerNativePatterns.Container.Names);
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
         executionContext.ReportDataSourceBegin(ContainersSourceName);
 
         try
         {
+            var native = NativePatternExecution.Get(executionContext);
+            native?.PageRead();
             var containers = api.ListContainersAsync().Result;
             var rows = containers
-                .Select(container => new ContainerEntity(container))
+                .Where(value => { writer.CancellationToken.ThrowIfCancellationRequested(); executionContext.EndWorkToken.ThrowIfCancellationRequested(); return native?.Matches(value, DockerNativePatterns.Container) != false; })
+                .Select(value => { var row = new ContainerEntity(value); native?.Constructed(); return row; })
                 .Where(entity => DockerSourcePlanner.Matches(executionContext.Plan.AcceptedPredicate, entity))
                 .ToList();
 

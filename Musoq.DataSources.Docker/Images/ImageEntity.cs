@@ -13,7 +13,7 @@ public class ImageEntity(ImagesListResponse response)
     public DateTime Created => response.Created;
 
     [EntityProperty]
-    public string? ID => response.ID;
+    public string? ID => ReadID(response);
 
     [EntityProperty]
     [BindablePropertyAsTable]
@@ -22,7 +22,7 @@ public class ImageEntity(ImagesListResponse response)
         pair => pair.Value) ?? new Dictionary<string, string>();
 
     [EntityProperty]
-    public string? ParentID => response.ParentID;
+    public string? ParentID => ReadParentID(response);
 
     [EntityProperty]
     [BindablePropertyAsTable]
@@ -40,4 +40,7 @@ public class ImageEntity(ImagesListResponse response)
 
     [EntityProperty]
     public long VirtualSize => response.VirtualSize;
+
+    internal static string? ReadID(ImagesListResponse value) => value.ID;
+    internal static string? ReadParentID(ImagesListResponse value) => value.ParentID;
 }

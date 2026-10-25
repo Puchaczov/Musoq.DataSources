@@ -50,6 +50,7 @@ internal static class TypedPredicateCompiler
             SourcePredicateLogical logical => logical.Operator == SourcePredicateLogicalOperator.And
                 ? Expression.AndAlso(Build(logical.Left, field), Build(logical.Right, field))
                 : Expression.OrElse(Build(logical.Left, field), Build(logical.Right, field)),
+            SourcePredicatePatternMatch pattern => PatternMatch(pattern, field),
             SourcePredicateComparison comparison => Compare(Scalar(comparison.Left, field), Scalar(comparison.Right, field), comparison.Operator),
             SourcePredicateIn values => In(values, field),
             SourcePredicateNullCheck check => Expression.Convert(check.IsNegated
@@ -58,6 +59,13 @@ internal static class TypedPredicateCompiler
             SourcePredicateLiteral { Value: null } => Unknown,
             _ => throw new InvalidOperationException("The provider predicate has no typed operation.")
         };
+    }
+
+    private static Expression PatternMatch(SourcePredicatePatternMatch match, Func<string, Expression> field)
+    {
+        var regex = ProviderRegex.Prepare(match);
+        Func<string?, bool?> evaluate = value => ProviderRegex.Evaluate(regex, match.IsNegated, value);
+        return Expression.Invoke(Expression.Constant(evaluate), field(Normalize(match.Column.Name)));
     }
 
     private static Expression Scalar(SourcePredicateExpression scalar, Func<string, Expression> field)

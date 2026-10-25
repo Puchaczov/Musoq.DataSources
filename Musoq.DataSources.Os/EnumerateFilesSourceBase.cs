@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Enumeration;
 using System.Threading;
 using System.Threading.Tasks;
 using Musoq.DataSources.AsyncRowsSource;
@@ -24,6 +25,10 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
     [
         new(new DirectoryInfo(path).FullName, useSubDirectories)
     ];
+
+    protected NativePatternExecution? NativePatterns { get; } = NativePatternExecution.Get(executionContext);
+    protected virtual PatternColumnBindings<string> NativeBindings => OsNativePatterns.Files;
+    protected bool AdmitPath(string fullPath) => NativePatterns?.Matches(fullPath, NativeBindings) != false;
 
     protected virtual string DataSourceName => "files";
 
@@ -76,7 +81,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
             IEnumerator<FileInfo> files;
             try
             {
-                files = GetFiles(dir).GetEnumerator();
+                files = GetFiles(dir, cancellationToken).GetEnumerator();
             }
             catch (UnauthorizedAccessException)
             {
@@ -169,6 +174,28 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
             yield return chunk;
     }
 
+    protected virtual IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo, CancellationToken cancellationToken)
+    {
+        var searchPattern = _fileFilters.GetSearchPattern();
+        if (NativePatterns?.HasPredicates == true)
+        {
+            var expression = searchPattern is null ? null : FileSystemName.TranslateWin32Expression(searchPattern);
+            return new FileSystemEnumerable<FileInfo>(directoryInfo.FullName,
+                static (ref FileSystemEntry entry) => (FileInfo)entry.ToFileSystemInfo(),
+                new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false })
+            {
+                ShouldIncludePredicate = (ref FileSystemEntry entry) =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return !entry.IsDirectory &&
+                        (expression is null || FileSystemName.MatchesWin32Expression(expression, entry.FileName, OperatingSystem.IsWindows())) &&
+                        AdmitPath(entry.ToFullPath());
+                }
+            };
+        }
+        return GetFiles(directoryInfo);
+    }
+
     protected virtual IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
     {
         var searchPattern = _fileFilters.GetSearchPattern();
@@ -183,7 +210,10 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
         var entity = CreateBasedOnFile(file, source.Path);
 
         if (entity != null)
+        {
+            NativePatterns?.Constructed();
             dirFiles.Add(entity);
+        }
     }
 
     protected virtual TEntity? CreateBasedOnFile(FileInfo file, string rootDirectory)

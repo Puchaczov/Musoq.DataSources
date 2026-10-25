@@ -138,7 +138,7 @@ public class SeparatedValuesModuleConformanceTests
             Calls++;
             LastRequest = request;
             var reader = new CapturingFieldReader();
-            writer.Write([TMaterializer.Materialize<CapturingFieldReader>(ref reader)]);
+            writer.Write([TMaterializer.Materialize(ref reader)]);
         }
 
         private struct CapturingFieldReader : IQuerySourceFieldReader

@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using Musoq.DataSources.Common;
 using System.Collections.Generic;
 using Musoq.Schema.Optimization;
 using Musoq.DataSources.Search.Entities;
@@ -146,9 +147,11 @@ internal static class SearchPredicatePlanning
                 nameof(SearchAudit.FailurePath))
         };
 
+    private static string NormalizeSource(string name) => name.Equals("many", StringComparison.OrdinalIgnoreCase) ? "matches" : name;
+
     public static bool IsSupportedSource(string name)
     {
-        return name is not null && AcceptedColumns.ContainsKey(name);
+        return name is not null && AcceptedColumns.ContainsKey(NormalizeSource(name));
     }
 
     public static SearchPredicatePartition Split(
@@ -183,10 +186,12 @@ internal static class SearchPredicatePlanning
 
         return predicate switch
         {
+            SourcePredicatePatternMatch pattern => SearchPatternColumns.Get(name)?.Supports(pattern) == true,
             SourcePredicateComparison comparison =>
                 CanEvaluateScalar(name, comparison.Left) &&
                 CanEvaluateScalar(name, comparison.Right),
             SourcePredicateLogical logical =>
+                (logical.Operator == SourcePredicateLogicalOperator.And || !PatternSourcePlan.ContainsPattern(logical)) &&
                 CanEvaluatePredicate(name, logical.Left) &&
                 CanEvaluatePredicate(name, logical.Right),
             SourcePredicateIn inPredicate =>
@@ -200,9 +205,12 @@ internal static class SearchPredicatePlanning
         };
     }
 
+    internal static bool IsRegexColumn(string name, string columnName) =>
+        IsAcceptedColumn(name, columnName) && NormalizeColumnName(columnName) is "Path" or "Origin" or "PatternId" or "EntryKind";
+
     public static bool IsAcceptedColumn(string name, string columnName)
     {
-        return AcceptedColumns.TryGetValue(name, out var columns) &&
+        return AcceptedColumns.TryGetValue(NormalizeSource(name), out var columns) &&
                columns.Contains(NormalizeColumnName(columnName));
     }
 
@@ -212,7 +220,7 @@ internal static class SearchPredicatePlanning
     {
         ArgumentNullException.ThrowIfNull(requestedColumns);
 
-        if (!ProjectionColumns.TryGetValue(name, out var columns) || requestedColumns.Count == 0)
+        if (!ProjectionColumns.TryGetValue(NormalizeSource(name), out var columns) || requestedColumns.Count == 0)
             return [];
 
         var accepted = new List<SourceColumnRef>(requestedColumns.Count);

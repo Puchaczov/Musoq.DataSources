@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Roslyn.CliCommands;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.DataSources.Roslyn.Components.NuGet;
@@ -33,6 +34,8 @@ public class CSharpSchema : SchemaBase
     private const string SchemaName = "Csharp";
 
     private static readonly IFileSystem? FileSystem = new DefaultFileSystem();
+
+    private static readonly PatternColumnBindings<SolutionEntity> PatternColumns = new((nameof(SolutionEntity.Id), static row => row.Id));
 
     private readonly Func<string, IHttpClient?, INuGetPropertiesResolver> _createNugetPropertiesResolver;
 
@@ -625,6 +628,10 @@ public class CSharpSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(string name, SourceExecutionContext executionContext, TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         string? externalNugetPropertiesResolveEndpoint = null;
 
@@ -834,6 +841,7 @@ public class CSharpSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = PatternColumns.Capabilities(table.Columns),
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -883,7 +891,7 @@ public class CSharpSchema : SchemaBase
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
         return name.Equals("solution", StringComparison.OrdinalIgnoreCase)
-            ? RoslynSourcePlanner.Plan(request)
+            ? PatternSourcePlan.Plan(request, PatternColumns, RoslynSourcePlanner.Plan)
             : SourcePlanResult.RejectAll(request);
     }
 

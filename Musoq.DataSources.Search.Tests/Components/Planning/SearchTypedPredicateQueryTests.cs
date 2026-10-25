@@ -14,14 +14,14 @@ public sealed class SearchTypedPredicateQueryTests
     [TestMethod]
     public void BoundNumericPredicate_WhenRepeatedlyInvoked_AllocatesZeroBytes()
     {
-        var plan = new Musoq.DataSources.Common.TypedPredicatePlan();
-        var predicate = new Musoq.Schema.Optimization.SourcePredicateComparison(
-            Musoq.Schema.Optimization.SourcePredicateComparisonOperator.GreaterThan,
-            new Musoq.Schema.Optimization.SourcePredicateColumn(new Musoq.Schema.Optimization.SourceColumnRef("LineNumber")),
-            new Musoq.Schema.Optimization.SourcePredicateLiteral(1.5m));
-        plan.Bind<Musoq.DataSources.Search.Entities.SearchLine>(predicate);
-        var evaluate = plan.Get<Musoq.DataSources.Search.Entities.SearchLine>()!;
-        var row = new Musoq.DataSources.Search.Entities.SearchLine("a.txt", null, null, 3, null, null, 1);
+        var plan = new Common.TypedPredicatePlan();
+        var predicate = new Schema.Optimization.SourcePredicateComparison(
+            Schema.Optimization.SourcePredicateComparisonOperator.GreaterThan,
+            new Schema.Optimization.SourcePredicateColumn(new Schema.Optimization.SourceColumnRef("LineNumber")),
+            new Schema.Optimization.SourcePredicateLiteral(1.5m));
+        plan.Bind<Entities.SearchLine>(predicate);
+        var evaluate = plan.Get<Entities.SearchLine>()!;
+        var row = new Entities.SearchLine("a.txt", null, null, 3, null, null, 1);
         long allocated = -1;
         var matches = 0;
         Exception? failure = null;

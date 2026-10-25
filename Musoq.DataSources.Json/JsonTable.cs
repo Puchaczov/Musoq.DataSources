@@ -13,12 +13,14 @@ namespace Musoq.DataSources.Json;
 internal sealed class JsonTable : ISchemaTable
 {
     private readonly ISchemaColumn[] _columns;
+    internal StructuredSchemaSnapshot Snapshot { get; }
 
     public JsonTable(
         StructuredSchemaSnapshot snapshot,
         SourceMetadataContext metadataContext)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
+        Snapshot = snapshot;
         ArgumentNullException.ThrowIfNull(metadataContext);
 
         var requestedColumns = metadataContext.AllColumns;

@@ -72,9 +72,12 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
         var cancellationToken = writer.CancellationToken;
         var scopeCounters = _scopeCounters ?? new SearchScopeCounters();
         var resourceBudget = new SearchResourceBudget(_request.Limits);
+        var pathPatterns = new SearchPathPatterns(_executionContext, typeof(TRow) != typeof(Musoq.DataSources.Search.Entities.SearchCount));
+        resourceBudget.Patterns = pathPatterns.Execution;
+        var opensBefore = scopeCounters.ContentOpenAttempts;
         var accounting = new SearchExecutionAccounting(
             Guid.NewGuid().ToString("N"),
-            SearchScopeFingerprint.Create(_request.Root, _request.Scope));
+            pathPatterns.Fingerprint(SearchScopeFingerprint.Create(_request.Root, _request.Scope)));
         Exception? terminalException = null;
 
         try
@@ -133,7 +136,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                         file,
                         fileCancellationToken);
                     SearchTestHooks.AfterObservation(file);
-                    var fileBudget = resourceBudget.BeginFile(file);
+                    var fileBudget = resourceBudget.BeginFile(file, pathPatterns.Enabled);
                     fileBudget.ReserveBytes(sourceObservation.Length);
                     using var buffer = SearchCharBuffer.Rent();
                     using var smallInput = _classifyBinaryFiles &&
@@ -303,7 +306,8 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                     ReportRowsRead,
                     cancellationToken,
                     _parallelOptions,
-                    estimateChunkBytes: SearchRowSizeEstimator.EstimateChunk<TRow>);
+                    estimateChunkBytes: SearchRowSizeEstimator.EstimateChunk,
+                    completeScan: typeof(TRow) == typeof(Musoq.DataSources.Search.Entities.SearchCount));
 
                 IEnumerable<string> EnumerateEligibleFiles(
                     string searchRoot,
@@ -315,6 +319,12 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                                  token,
                                  scopeCounters))
                     {
+                        accounting.RecordCandidate();
+                        if (pathPatterns.Enabled)
+                        {
+                            resourceBudget.ObserveCandidate();
+                            if (!pathPatterns.Matches(SearchTextPath.GetRelativePath(relativeRoot, file))) continue;
+                        }
                         accounting.RecordEligibleFile();
                         yield return file;
                     }
@@ -346,6 +356,11 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
         }
         finally
         {
+            pathPatterns.Execution.ContentOpened(scopeCounters.ContentOpenAttempts - opensBefore);
+            pathPatterns.Execution.Report(_executionContext);
+            _executionContext.Diagnostics.AddMetric("Search.VisitedCandidates", accounting.VisitedCandidates);
+            _executionContext.Diagnostics.AddMetric("Search.EligibleFiles", accounting.EligibleFiles);
+            _executionContext.Diagnostics.AddMetric("Search.PathRejectedFiles", pathPatterns.Execution.Rejected);
             linkedCancellation?.Dispose();
             progress.End(totalRowsProcessed);
 
@@ -360,7 +375,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
             }
 
             var outcome = terminalException is null
-                ? IsQuerySatisfied(_executionContext, accounting)
+                ? typeof(TRow) != typeof(Musoq.DataSources.Search.Entities.SearchCount) && IsQuerySatisfied(_executionContext, accounting)
                     ? SearchOutcome.QuerySatisfied
                     : SearchOutcome.ScopeExhausted
                 : CanRetainPartialPrefix(terminalException, accounting)
@@ -378,7 +393,11 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                 terminalReason,
                 scopeCounters.FilesConsidered,
                 terminalFailure.Code,
-                terminalFailure.Path);
+                terminalFailure.Path) with
+            {
+                PathRejectedFiles = pathPatterns.Execution.Rejected,
+                VisitedCandidates = accounting.VisitedCandidates
+            };
         }
     }
 

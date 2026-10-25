@@ -16,7 +16,7 @@ public class JsonLegacySourceBenchmarks
     private readonly byte[] _fileBuffer = new byte[1024 * 1024];
     private byte[] _bytes = null!;
     private string _path = null!;
-    private Musoq.Schema.Optimization.SourceExecutionContext _executionContext = null!;
+    private SourceExecutionContext _executionContext = null!;
     private SourceExecutionContext _oneColumnContext = null!;
     private SourceExecutionContext _rejectedPredicateContext = null!;
     private SourceExecutionContext _zeroColumnContext = null!;

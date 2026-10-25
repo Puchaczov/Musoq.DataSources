@@ -287,13 +287,20 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
     /// <param name="entity">Entity</param>
     /// <param name="content">Content</param>
     /// <returns>Number of tokens</returns>
-    [BindableMethod]
     public int CountTokens([InjectSpecificSource(typeof(OllamaEntity))] OllamaEntity entity, string content)
     {
         var encoding = GptEncoding.GetEncodingForModel("gpt-3.5-turbo");
 
         return encoding.CountTokens(content);
     }
+
+    /// <summary>Estimates model tokens using the existing GPT-3.5 tokenizer approximation.</summary>
+    /// <param name="entity">The current source entity.</param>
+    /// <param name="content">The content to tokenize.</param>
+    /// <returns>The approximate model token count.</returns>
+    [BindableMethod]
+    public int CountModelTokens([InjectSpecificSource(typeof(OllamaEntity))] OllamaEntity entity, string content)
+        => CountTokens(entity, content);
 
     /// <summary>
     ///     Counts the number of tokens in the provided content using the specified model.

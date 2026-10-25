@@ -93,7 +93,7 @@ public class GitReferenceSourceBenchmarks
     private long ConsumeTags(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Empty)).Read<TagEntity>("tags", RuntimeV2TestContexts.CreateExecutionContext(
+        var source = NativeSourceCalls.Source(new GitSchema(), Schema.SourceArguments.Create(_corpus.RepositoryPath, Schema.SourceArguments.Empty)).Read<TagEntity>("tags", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: TagEntity.Columns,
                 sourceRuntimeSettings: RuntimeSettings,
                 executionPlan: plan,
@@ -110,7 +110,7 @@ public class GitReferenceSourceBenchmarks
     private long CountTags(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Empty)).Read<TagEntity>("tags", RuntimeV2TestContexts.CreateExecutionContext(
+        var source = NativeSourceCalls.Source(new GitSchema(), Schema.SourceArguments.Create(_corpus.RepositoryPath, Schema.SourceArguments.Empty)).Read<TagEntity>("tags", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: TagEntity.Columns,
                 sourceRuntimeSettings: RuntimeSettings,
                 executionPlan: plan,
@@ -125,7 +125,7 @@ public class GitReferenceSourceBenchmarks
     private long ConsumeStashes(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Empty)).Read<StashEntity>("stashes", RuntimeV2TestContexts.CreateExecutionContext(
+        var source = NativeSourceCalls.Source(new GitSchema(), Schema.SourceArguments.Create(_corpus.RepositoryPath, Schema.SourceArguments.Empty)).Read<StashEntity>("stashes", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: StashEntity.Columns,
                 sourceRuntimeSettings: RuntimeSettings,
                 executionPlan: plan,
@@ -142,7 +142,7 @@ public class GitReferenceSourceBenchmarks
     private long CountStashes(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Empty)).Read<StashEntity>("stashes", RuntimeV2TestContexts.CreateExecutionContext(
+        var source = NativeSourceCalls.Source(new GitSchema(), Schema.SourceArguments.Create(_corpus.RepositoryPath, Schema.SourceArguments.Empty)).Read<StashEntity>("stashes", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: StashEntity.Columns,
                 sourceRuntimeSettings: RuntimeSettings,
                 executionPlan: plan,
@@ -251,7 +251,7 @@ public class GitRemoteTagSourceBenchmarks
     private long Consume(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.ClientPath, global::Musoq.Schema.SourceArguments.Create("origin", global::Musoq.Schema.SourceArguments.Empty))).Read<RemoteTagEntity>("remotetags", RuntimeV2TestContexts.CreateExecutionContext(
+        var source = NativeSourceCalls.Source(new GitSchema(), Schema.SourceArguments.Create(_corpus.ClientPath, Schema.SourceArguments.Create("origin", Schema.SourceArguments.Empty))).Read<RemoteTagEntity>("remotetags", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: RemoteTagEntity.Columns,
                 sourceRuntimeSettings: new Dictionary<string, string>
                 {
@@ -271,7 +271,7 @@ public class GitRemoteTagSourceBenchmarks
     private long Count(SourceExecutionPlan plan)
     {
         var diagnostics = new ReferenceBenchmarkDiagnostics();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new GitSchema(), global::Musoq.Schema.SourceArguments.Create(_corpus.ClientPath, global::Musoq.Schema.SourceArguments.Create("origin", global::Musoq.Schema.SourceArguments.Empty))).Read<RemoteTagEntity>("remotetags", RuntimeV2TestContexts.CreateExecutionContext(
+        var source = NativeSourceCalls.Source(new GitSchema(), Schema.SourceArguments.Create(_corpus.ClientPath, Schema.SourceArguments.Create("origin", Schema.SourceArguments.Empty))).Read<RemoteTagEntity>("remotetags", RuntimeV2TestContexts.CreateExecutionContext(
                 allColumns: RemoteTagEntity.Columns,
                 sourceRuntimeSettings: new Dictionary<string, string>
                 {

@@ -67,11 +67,14 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
                         StringComparison.Ordinal))
                     continue;
 
+                var native = NativePatternExecution.Get(_executionContext);
+                if (native?.Matches(dir, OsNativePatterns.Directories) == false) continue;
                 var directoryInfo = new DirectoryInfo(dir);
 
                 if (!OsSourcePlanner.MatchesDirectoryPredicate(_acceptedPredicate, directoryInfo))
                     continue;
 
+                native?.Constructed();
                 chunk.Add(directoryInfo);
 
                 if (chunk.Count < ChunkSize)

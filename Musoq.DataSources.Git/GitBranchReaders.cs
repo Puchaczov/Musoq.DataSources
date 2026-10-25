@@ -36,6 +36,7 @@ internal readonly record struct GitBranchRecord(
         // Runtime-v2 may report only a downstream nested leaf (Tip.Sha), not the intermediate branch property.
         // Preserve these compact identities until the engine exposes that dependency explicitly.
         var needsTracking = true;
+        projection.NativePatterns?.RichFieldLoaded();
         var tracking = needsTracking ? branch.TrackingDetails : null;
         return new(
         repositoryPath,
@@ -68,6 +69,7 @@ internal sealed class LibGit2BranchReader : IGitBranchReader
         foreach (var branch in repository.Branches)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (projection.NativePatterns?.Matches(branch, GitNativePatterns.Branches) == false) continue;
             if (!onBranch(GitBranchRecord.Create(repository.Info.Path, branch, projection)))
                 break;
         }
@@ -92,12 +94,15 @@ internal sealed class GitCliBranchReader : IGitBranchReader
         var arguments = new[]
         {
             "for-each-ref",
-            "--format=%1e%(refname)%00%(refname:short)%00%(objectname)%00%(upstream)%00%(ahead-behind:HEAD)%00%(HEAD)%00",
+            projection.NativePatterns is null
+                ? "--format=%1e%(refname)%00%(refname:short)%00%(objectname)%00%(upstream)%00%(ahead-behind:HEAD)%00%(HEAD)%00"
+                : "--format=%1e%(refname)%00%(refname:short)%00%(upstream)%00%(objectname)%00%(ahead-behind:HEAD)%00%(HEAD)%00",
             "refs/heads",
             "refs/remotes"
         };
         using var process = GitCliProcess.Start(repositoryPath, GitHistoryBackendOptions.Default, arguments, cancellationToken);
         using var reader = new GitNulDelimitedUtf8Reader(process.StandardOutput);
+        using var decoding = new GitDecodeAccounting(reader, projection.NativePatterns);
         var completedNaturally = true;
 
         while (true)
@@ -114,8 +119,30 @@ internal sealed class GitCliBranchReader : IGitBranchReader
 
             var canonicalName = header[1..];
             var friendlyName = ReadRequired(reader, "branch friendly name");
-            var tipSha = ReadRequired(reader, "branch target");
-            var upstream = ReadRequired(reader, "branch upstream");
+            string tipSha, upstream;
+            var native = projection.NativePatterns;
+            if (native is not null)
+            {
+                var needsUpstream = native.Requires("UpstreamBranchCanonicalName") || native.Requires("RemoteName");
+                upstream = needsUpstream ? ReadRequired(reader, "branch upstream") : string.Empty;
+                var partial = new GitBranchRecord(repositoryPath, friendlyName, canonicalName, false, false, false, null, null, null, null,
+                    string.IsNullOrWhiteSpace(upstream) ? null : upstream,
+                    native.Requires("RemoteName") ? RemoteName(canonicalName, upstream, canonicalName.StartsWith("refs/remotes/", StringComparison.Ordinal)) : null);
+
+
+                if (!native.Matches(partial, GitNativePatterns.BranchRecords))
+                {
+                    reader.SkipTokens(needsUpstream ? 3 : 4, cancellationToken);
+                    continue;
+                }
+                if (!needsUpstream) upstream = ReadRequired(reader, "branch upstream");
+                tipSha = ReadRequired(reader, "branch target");
+            }
+            else
+            {
+                tipSha = ReadRequired(reader, "branch target");
+                upstream = ReadRequired(reader, "branch upstream");
+            }
             var tracking = ReadRequired(reader, "branch ahead/behind state");
             var head = ReadRequired(reader, "HEAD marker");
             var isRemote = canonicalName.StartsWith("refs/remotes/", StringComparison.Ordinal);

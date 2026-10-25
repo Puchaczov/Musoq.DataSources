@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using Musoq.DataSources.Common;
 using System.Collections.Generic;
 using Musoq.DataSources.CANBus.Components;
 using Musoq.DataSources.CANBus.Messages;
@@ -46,6 +47,7 @@ internal static class CANBusSourcePlanner
             null => true,
             SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
                 MatchesMessage(logical.Left, entity) && MatchesMessage(logical.Right, entity),
+            SourcePredicateRegexMatch regex => ProviderRegex.Match(regex, ProviderRegex.ColumnName(regex.Column.Name) switch { "Name" => entity.Name, "Transmitter" => entity.Transmitter, _ => null }) == true,
             SourcePredicateComparison comparison => EvaluateMessageComparison(comparison, entity),
             _ => true
         };
@@ -58,6 +60,7 @@ internal static class CANBusSourcePlanner
             null => true,
             SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
                 MatchesSignal(logical.Left, entity) && MatchesSignal(logical.Right, entity),
+            SourcePredicateRegexMatch regex => ProviderRegex.Match(regex, ProviderRegex.ColumnName(regex.Column.Name) switch { "Name" => entity.Name, "MessageName" => entity.MessageName, _ => null }) == true,
             SourcePredicateComparison comparison => EvaluateSignalComparison(comparison, entity),
             _ => true
         };
@@ -83,6 +86,7 @@ internal static class CANBusSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
                 Properties = new Dictionary<string, object?>()
             },
@@ -115,8 +119,11 @@ internal static class CANBusSourcePlanner
         };
     }
 
-    private static bool IsSupportedMessagePredicate(SourcePredicateExpression expression)
+    internal static bool IsSupportedMessagePredicate(SourcePredicateExpression expression)
     {
+        if (expression is SourcePredicateRegexMatch regex)
+            return ProviderRegex.Supports(regex, IsSupportedMessagePredicate);
+
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
             return false;
@@ -132,8 +139,11 @@ internal static class CANBusSourcePlanner
         };
     }
 
-    private static bool IsSupportedSignalPredicate(SourcePredicateExpression expression)
+    internal static bool IsSupportedSignalPredicate(SourcePredicateExpression expression)
     {
+        if (expression is SourcePredicateRegexMatch regex)
+            return ProviderRegex.Supports(regex, IsSupportedSignalPredicate);
+
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
             return false;

@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using Musoq.DataSources.GitHub.Sources.BranchCommits;
 using Musoq.DataSources.GitHub.Sources.Branches;
 using Musoq.DataSources.GitHub.Sources.Commits;
@@ -371,6 +372,13 @@ public class GitHubSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+         => GitHubPatternApi.Read(executionContext, _api, name, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         var api = _api ?? new GitHubApi(executionContext.SourceRuntimeSettings["GITHUB_TOKEN"]);
 
@@ -441,6 +449,7 @@ public class GitHubSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = GitHubPatternColumns.Get(name)?.Capabilities(table.Columns) ?? SourcePredicateCapabilities.None,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -466,6 +475,9 @@ public class GitHubSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+        => PatternSourcePlan.Plan(request, GitHubPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+
+    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
         return GitHubSourcePlanner.Plan(name, request);
     }

@@ -280,10 +280,10 @@ public sealed class ContractCorpusFixture : IDisposable
 
     public string PathFor(string relativePath)
     {
-        var path = System.IO.Path.GetFullPath(System.IO.Path.Combine(
+        var path = Path.GetFullPath(Path.Combine(
             Root,
-            relativePath.Replace('/', System.IO.Path.DirectorySeparatorChar)));
-        var normalizedRoot = System.IO.Path.GetFullPath(Root).TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
+            relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var normalizedRoot = Path.GetFullPath(Root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         if (!path.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Path '{relativePath}' escapes the corpus root.");
 

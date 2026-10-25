@@ -21,45 +21,55 @@ public class ProjectEntity : IJiraProject
     /// <summary>
     ///     Gets the project ID.
     /// </summary>
-    public string Id => _project.Id ?? string.Empty;
+    public string Id => ReadId(_project);
 
     /// <summary>
     ///     Gets the project key.
     /// </summary>
-    public string Key => _project.Key ?? string.Empty;
+    public string Key => ReadKey(_project);
 
     /// <summary>
     ///     Gets the project name.
     /// </summary>
-    public string Name => _project.Name ?? string.Empty;
+    public string Name => ReadName(_project);
 
     /// <summary>
     ///     Gets the project description.
     /// </summary>
-    public string? Description => null; // Description not available in Project class
+    public string? Description => ReadDescription(_project); // Description not available in Project class
 
     /// <summary>
     ///     Gets the project lead username.
     /// </summary>
-    public string? Lead => _project.Lead;
+    public string? Lead => ReadLead(_project);
 
     /// <summary>
     ///     Gets the project URL.
     /// </summary>
-    public string? Url => _project.Url;
+    public string? Url => ReadUrl(_project);
 
     /// <summary>
     ///     Gets the project category name.
     /// </summary>
-    public string? Category => null; // ProjectCategory not available in Project class
+    public string? Category => ReadCategory(_project); // ProjectCategory not available in Project class
 
     /// <summary>
     ///     Gets the project category description.
     /// </summary>
-    public string? CategoryDescription => null; // ProjectCategory not available in Project class
+    public string? CategoryDescription => ReadCategoryDescription(_project); // ProjectCategory not available in Project class
 
     /// <summary>
     ///     Gets the avatar URL.
     /// </summary>
-    public string? AvatarUrl => _project.AvatarUrls?.Large;
+    public string? AvatarUrl => ReadAvatarUrl(_project);
+
+    internal static string ReadId(Project value) => value.Id ?? string.Empty;
+    internal static string ReadKey(Project value) => value.Key ?? string.Empty;
+    internal static string ReadName(Project value) => value.Name ?? string.Empty;
+    internal static string? ReadDescription(Project value) => null;
+    internal static string? ReadLead(Project value) => value.Lead;
+    internal static string? ReadUrl(Project value) => value.Url;
+    internal static string? ReadCategory(Project value) => null;
+    internal static string? ReadCategoryDescription(Project value) => null;
+    internal static string? ReadAvatarUrl(Project value) => value.AvatarUrls?.Large;
 }

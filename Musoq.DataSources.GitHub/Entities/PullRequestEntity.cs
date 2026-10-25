@@ -32,27 +32,27 @@ public class PullRequestEntity
     /// <summary>
     ///     Gets the pull request title.
     /// </summary>
-    public string Title => _pullRequest.Title;
+    public string Title => ReadTitle(_pullRequest);
 
     /// <summary>
     ///     Gets the pull request body/description.
     /// </summary>
-    public string? Body => _pullRequest.Body;
+    public string? Body => ReadBody(_pullRequest);
 
     /// <summary>
     ///     Gets the pull request state (open/closed).
     /// </summary>
-    public string State => _pullRequest.State.StringValue;
+    public string State => ReadState(_pullRequest);
 
     /// <summary>
     ///     Gets the pull request URL.
     /// </summary>
-    public string Url => _pullRequest.HtmlUrl;
+    public string Url => ReadUrl(_pullRequest);
 
     /// <summary>
     ///     Gets the author's login name.
     /// </summary>
-    public string AuthorLogin => _pullRequest.User?.Login ?? string.Empty;
+    public string AuthorLogin => ReadAuthorLogin(_pullRequest);
 
     /// <summary>
     ///     Gets the author's ID.
@@ -62,17 +62,17 @@ public class PullRequestEntity
     /// <summary>
     ///     Gets the assignee's login name.
     /// </summary>
-    public string? AssigneeLogin => _pullRequest.Assignee?.Login;
+    public string? AssigneeLogin => ReadAssigneeLogin(_pullRequest);
 
     /// <summary>
     ///     Gets all assignees' login names as comma-separated string.
     /// </summary>
-    public string Assignees => string.Join(", ", _pullRequest.Assignees?.Select(a => a.Login) ?? []);
+    public string Assignees => ReadAssignees(_pullRequest);
 
     /// <summary>
     ///     Gets the labels as comma-separated string.
     /// </summary>
-    public string Labels => string.Join(", ", _pullRequest.Labels?.Select(l => l.Name) ?? []);
+    public string Labels => ReadLabels(_pullRequest);
 
     /// <summary>
     ///     Gets the label names.
@@ -83,7 +83,7 @@ public class PullRequestEntity
     /// <summary>
     ///     Gets the milestone title.
     /// </summary>
-    public string? MilestoneTitle => _pullRequest.Milestone?.Title;
+    public string? MilestoneTitle => ReadMilestoneTitle(_pullRequest);
 
     /// <summary>
     ///     Gets the milestone number.
@@ -93,32 +93,32 @@ public class PullRequestEntity
     /// <summary>
     ///     Gets the source branch name.
     /// </summary>
-    public string HeadRef => _pullRequest.Head?.Ref ?? string.Empty;
+    public string HeadRef => ReadHeadRef(_pullRequest);
 
     /// <summary>
     ///     Gets the source branch SHA.
     /// </summary>
-    public string HeadSha => _pullRequest.Head?.Sha ?? string.Empty;
+    public string HeadSha => ReadHeadSha(_pullRequest);
 
     /// <summary>
     ///     Gets the source repository full name.
     /// </summary>
-    public string? HeadRepository => _pullRequest.Head?.Repository?.FullName;
+    public string? HeadRepository => ReadHeadRepository(_pullRequest);
 
     /// <summary>
     ///     Gets the target branch name.
     /// </summary>
-    public string BaseRef => _pullRequest.Base?.Ref ?? string.Empty;
+    public string BaseRef => ReadBaseRef(_pullRequest);
 
     /// <summary>
     ///     Gets the target branch SHA.
     /// </summary>
-    public string BaseSha => _pullRequest.Base?.Sha ?? string.Empty;
+    public string BaseSha => ReadBaseSha(_pullRequest);
 
     /// <summary>
     ///     Gets the target repository full name.
     /// </summary>
-    public string? BaseRepository => _pullRequest.Base?.Repository?.FullName;
+    public string? BaseRepository => ReadBaseRepository(_pullRequest);
 
     /// <summary>
     ///     Gets whether the pull request is merged.
@@ -133,17 +133,17 @@ public class PullRequestEntity
     /// <summary>
     ///     Gets the mergeable state.
     /// </summary>
-    public string? MergeableState => _pullRequest.MergeableState?.StringValue;
+    public string? MergeableState => ReadMergeableState(_pullRequest);
 
     /// <summary>
     ///     Gets the user who merged the pull request.
     /// </summary>
-    public string? MergedByLogin => _pullRequest.MergedBy?.Login;
+    public string? MergedByLogin => ReadMergedByLogin(_pullRequest);
 
     /// <summary>
     ///     Gets the merge commit SHA.
     /// </summary>
-    public string? MergeCommitSha => _pullRequest.MergeCommitSha;
+    public string? MergeCommitSha => ReadMergeCommitSha(_pullRequest);
 
     /// <summary>
     ///     Gets the number of comments.
@@ -203,5 +203,25 @@ public class PullRequestEntity
     /// <summary>
     ///     Gets the lock reason.
     /// </summary>
-    public string? ActiveLockReason => _pullRequest.ActiveLockReason?.StringValue;
+    public string? ActiveLockReason => ReadActiveLockReason(_pullRequest);
+
+    internal static string ReadTitle(PullRequest value) => value.Title;
+    internal static string? ReadBody(PullRequest value) => value.Body;
+    internal static string ReadState(PullRequest value) => value.State.StringValue;
+    internal static string ReadUrl(PullRequest value) => value.HtmlUrl;
+    internal static string ReadAuthorLogin(PullRequest value) => value.User?.Login ?? string.Empty;
+    internal static string? ReadAssigneeLogin(PullRequest value) => value.Assignee?.Login;
+    internal static string ReadAssignees(PullRequest value) => string.Join(", ", value.Assignees?.Select(a => a.Login) ?? []);
+    internal static string ReadLabels(PullRequest value) => string.Join(", ", value.Labels?.Select(l => l.Name) ?? []);
+    internal static string? ReadMilestoneTitle(PullRequest value) => value.Milestone?.Title;
+    internal static string ReadHeadRef(PullRequest value) => value.Head?.Ref ?? string.Empty;
+    internal static string ReadHeadSha(PullRequest value) => value.Head?.Sha ?? string.Empty;
+    internal static string? ReadHeadRepository(PullRequest value) => value.Head?.Repository?.FullName;
+    internal static string ReadBaseRef(PullRequest value) => value.Base?.Ref ?? string.Empty;
+    internal static string ReadBaseSha(PullRequest value) => value.Base?.Sha ?? string.Empty;
+    internal static string? ReadBaseRepository(PullRequest value) => value.Base?.Repository?.FullName;
+    internal static string? ReadMergeableState(PullRequest value) => value.MergeableState?.StringValue;
+    internal static string? ReadMergedByLogin(PullRequest value) => value.MergedBy?.Login;
+    internal static string? ReadMergeCommitSha(PullRequest value) => value.MergeCommitSha;
+    internal static string? ReadActiveLockReason(PullRequest value) => value.ActiveLockReason?.StringValue;
 }

@@ -83,7 +83,7 @@ public sealed class OsNativeEnumRelationalTests
         }));
     }
 
-    private static Musoq.Evaluator.Tables.Table Run(string query)
+    private static Evaluator.Tables.Table Run(string query)
     {
         var compiled = InstanceCreatorHelpers.CompileForExecution(
             query,

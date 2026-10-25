@@ -106,6 +106,7 @@ internal static class SearchSourcePlanner
                 AcceptedColumns = acceptedColumns,
                 Replayability = request.Replayability,
                 AcceptedPredicate = partition.Accepted,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(partition.Accepted),
                 AcceptedOrderBy = [],
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
@@ -143,15 +144,17 @@ internal static class SearchSourcePlanner
     internal static TypedPredicatePlan BindPredicate(string name, SourcePredicateExpression? predicate)
     {
         var bindings = new TypedPredicatePlan();
+        var remaining = SearchPathPatterns.Remaining(name, predicate);
+        if (predicate is not null) predicate = remaining ?? new SourcePredicateLiteral(true);
         switch (name)
         {
-            case "matches": case "many": bindings.Bind<SearchMatch>(predicate); break;
-            case "bytes": bindings.Bind<SearchByteMatch>(predicate); break;
-            case "lines": bindings.Bind<SearchLine>(predicate); break;
-            case "files": bindings.Bind<SearchFile>(predicate); break;
-            case "counts": bindings.Bind<SearchCount>(predicate); break;
-            case "paths": bindings.Bind<SearchPath>(predicate); break;
-            case "audit": bindings.Bind<SearchAudit>(predicate); break;
+            case "matches": case "many": SearchPatternColumns.Bind(bindings, SearchPatternColumns.SearchMatch, predicate); break;
+            case "bytes": SearchPatternColumns.Bind(bindings, SearchPatternColumns.SearchByteMatch, predicate); break;
+            case "lines": SearchPatternColumns.Bind(bindings, SearchPatternColumns.SearchLine, predicate); break;
+            case "files": SearchPatternColumns.Bind(bindings, SearchPatternColumns.SearchFile, predicate); break;
+            case "counts": SearchPatternColumns.Bind(bindings, SearchPatternColumns.SearchCount, predicate); break;
+            case "paths": SearchPatternColumns.Bind(bindings, SearchPatternColumns.SearchPath, predicate); break;
+            case "audit": SearchPatternColumns.Bind(bindings, SearchPatternColumns.SearchAudit, predicate); break;
         }
         return bindings;
     }

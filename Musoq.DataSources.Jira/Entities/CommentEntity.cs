@@ -23,7 +23,7 @@ public class CommentEntity : IJiraComment
     /// <summary>
     ///     Gets the comment ID.
     /// </summary>
-    public string Id => _comment.Id ?? string.Empty;
+    public string Id => ReadId(_comment);
 
     /// <summary>
     ///     Gets the parent issue key.
@@ -33,27 +33,27 @@ public class CommentEntity : IJiraComment
     /// <summary>
     ///     Gets the comment body.
     /// </summary>
-    public string Body => _comment.Body ?? string.Empty;
+    public string Body => ReadBody(_comment);
 
     /// <summary>
     ///     Gets the author username.
     /// </summary>
-    public string Author => _comment.Author ?? string.Empty;
+    public string Author => ReadAuthor(_comment);
 
     /// <summary>
     ///     Gets the author display name.
     /// </summary>
-    public string? AuthorDisplayName => _comment.AuthorUser?.DisplayName;
+    public string? AuthorDisplayName => ReadAuthorDisplayName(_comment);
 
     /// <summary>
     ///     Gets the update author username.
     /// </summary>
-    public string? UpdateAuthor => _comment.UpdateAuthor;
+    public string? UpdateAuthor => ReadUpdateAuthor(_comment);
 
     /// <summary>
     ///     Gets the update author display name.
     /// </summary>
-    public string? UpdateAuthorDisplayName => _comment.UpdateAuthorUser?.DisplayName;
+    public string? UpdateAuthorDisplayName => ReadUpdateAuthorDisplayName(_comment);
 
     /// <summary>
     ///     Gets the creation date.
@@ -68,10 +68,19 @@ public class CommentEntity : IJiraComment
     /// <summary>
     ///     Gets the visibility group name (if restricted).
     /// </summary>
-    public string? VisibilityGroup => _comment.GroupLevel;
+    public string? VisibilityGroup => ReadVisibilityGroup(_comment);
 
     /// <summary>
     ///     Gets the visibility role name (if restricted).
     /// </summary>
-    public string? VisibilityRole => _comment.RoleLevel;
+    public string? VisibilityRole => ReadVisibilityRole(_comment);
+
+    internal static string ReadId(Comment value) => value.Id ?? string.Empty;
+    internal static string ReadBody(Comment value) => value.Body ?? string.Empty;
+    internal static string ReadAuthor(Comment value) => value.Author ?? string.Empty;
+    internal static string? ReadAuthorDisplayName(Comment value) => value.AuthorUser?.DisplayName;
+    internal static string? ReadUpdateAuthor(Comment value) => value.UpdateAuthor;
+    internal static string? ReadUpdateAuthorDisplayName(Comment value) => value.UpdateAuthorUser?.DisplayName;
+    internal static string? ReadVisibilityGroup(Comment value) => value.GroupLevel;
+    internal static string? ReadVisibilityRole(Comment value) => value.RoleLevel;
 }

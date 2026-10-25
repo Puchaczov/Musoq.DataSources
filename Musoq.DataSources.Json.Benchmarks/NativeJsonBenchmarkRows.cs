@@ -39,7 +39,7 @@ internal static class NativeJsonBenchmarkRows
         where TMaterializer : struct, IQueryRowMaterializer<TRow>
     {
         var shape = JsonRowLayout.Create(JsonSchemaDiscovery.GetSnapshot(path), context).CreateNativeShape();
-        return Musoq.DataSources.Tests.Common.NativeSourceCalls.Query(new JsonSchema(),
+        return Tests.Common.NativeSourceCalls.Query(new JsonSchema(),
             SourceArguments.Create(path, SourceArguments.Empty)).Read<TRow, TMaterializer>(
             "file", new QueryScopedRowSourceRequest(context, shape));
     }

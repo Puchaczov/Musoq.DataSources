@@ -66,6 +66,8 @@ internal sealed class BlameRowsSource : GitDiagnosticRowsSourceBase<BlameHunkEnt
         foreach (var hunk in blameHunks)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (_projection.NativePatterns?.Matches(new GitNativePatterns.BlameInput(hunk, _filePath), GitNativePatterns.Blame) == false) continue;
+            _projection.NativePatterns?.Constructed();
             chunk.Add(new BlameHunkEntity(hunk, _repositoryPath, _filePath, _projection));
             if (chunk.Count == 128)
                 rowsRead += WriteChunk(writer, chunk, rowsRead);

@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using Musoq.DataSources.Common;
 using System.Collections.Generic;
 using Musoq.DataSources.Structured;
 using Musoq.Schema.Optimization;
@@ -33,6 +34,7 @@ internal static class JsonSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = requiredColumns,
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
@@ -137,10 +139,15 @@ internal static class JsonSourcePlanner
         return true;
     }
 
+    internal static bool IsPatternColumn(StructuredSchemaSnapshot snapshot, string name)
+        => snapshot.TryGetColumn(name, out var column) && column.TypeState.Kind == StructuredValueKind.String;
+
     private static bool IsSupportedPredicate(
         StructuredSchemaSnapshot snapshot,
         SourcePredicateExpression expression)
     {
+        if (expression is SourcePredicatePatternMatch pattern)
+            return ProviderRegex.IsSupportedPattern(pattern) && IsPatternColumn(snapshot, pattern.Column.Name);
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var name, out var literal, out var op) ||
             literal.Value is null ||

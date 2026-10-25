@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Musoq.DataSources.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -82,6 +83,13 @@ public class ArchivesSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), ["Key", "LinkTarget"]);
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         return name.ToLowerInvariant() switch
         {
@@ -103,6 +111,7 @@ public class ArchivesSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = ArchivesPatternColumns.Get(name)?.Capabilities(table.Columns) ?? SourcePredicateCapabilities.None,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -118,6 +127,9 @@ public class ArchivesSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+        => PatternSourcePlan.Plan(request, ArchivesPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+
+    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
         return ArchivesSourcePlanner.Plan(name, request);
     }

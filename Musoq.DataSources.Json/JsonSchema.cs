@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Musoq.DataSources.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -92,6 +93,7 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = ProviderRegex.PatternCapabilities(table.Columns, column => JsonSourcePlanner.IsPatternColumn(((JsonTable)table).Snapshot, column)),
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = [],

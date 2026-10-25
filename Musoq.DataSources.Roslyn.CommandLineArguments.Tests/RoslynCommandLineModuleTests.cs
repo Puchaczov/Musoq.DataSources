@@ -428,13 +428,13 @@ public sealed class RoslynCommandLineModuleTests
             .Children.Single(command => command.Name == "set");
 
         Assert.AreEqual(
-            Musoq.CommandLine.Completion.CompletionDirective.FileCompletion,
+            CommandLine.Completion.CompletionDirective.FileCompletion,
             load.Symbols.Single(symbol => symbol.Name == "path").CompletionDirective);
         CollectionAssert.AreEqual(
             new[] { "bucket", "path" },
             load.Symbols.Where(symbol => symbol.Kind == SymbolKind.Argument).Select(symbol => symbol.Name).ToArray());
         Assert.AreEqual(
-            Musoq.CommandLine.Completion.CompletionDirective.DirectoryCompletion,
+            CommandLine.Completion.CompletionDirective.DirectoryCompletion,
             load.Symbols.Single(symbol => symbol.Name == "--cache-directory-path").CompletionDirective);
         Assert.AreEqual(1, strategy.Symbols.Single(symbol => symbol.Name == "--value").CompletionProviders.Count);
     }

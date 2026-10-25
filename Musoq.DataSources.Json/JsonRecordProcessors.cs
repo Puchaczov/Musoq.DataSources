@@ -11,6 +11,7 @@ internal readonly struct TypedJsonRecordProcessor<TRow, TMaterializer>(
     public long RowsRead => processor.RowsRead;
 
     public void Complete() => processor.Complete();
+    public void Dispose() => processor.Dispose();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Process(ReadOnlySpan<byte> record) => processor.Process(record);

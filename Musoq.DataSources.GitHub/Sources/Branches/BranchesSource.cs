@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -25,6 +26,18 @@ internal class BranchesSource : AsyncRowsSourceBase<BranchEntity>
 
     protected override async Task CollectChunksAsync(IChunkWriter<BranchEntity> writer, CancellationToken cancellationToken)
     {
+        if (PatternSourcePlan.HasPatterns(_executionContext))
+        {
+            var filtered = GitHubPatternApi.Read(_executionContext, _api, "branches", inner => new BranchesSource(_api, inner, _owner, _repo));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
+        var api = GitHubPatternApi.Bind(_api, _executionContext, cancellationToken);
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
@@ -32,20 +45,23 @@ internal class BranchesSource : AsyncRowsSourceBase<BranchEntity>
         {
             var page = 1;
             var perPage = 100;
+            long skipped = 0, emitted = 0;
+            var plan = _executionContext.Plan;
 
+            if (_executionContext.Plan.AcceptedTake == 0) return;
             while (!cancellationToken.IsCancellationRequested)
             {
-                var branches = await _api.GetBranchesAsync(_owner, _repo, perPage, page);
+                var branches = await api.GetBranchesAsync(_owner, _repo, perPage, page);
 
-                if (branches.Count == 0)
+                if (PatternPage.RawCount(branches) == 0)
                     break;
 
-                writer.Write(branches);
-
-                totalRowsProcessed += branches.Count;
+                var planned = GitHubSourcePlanner.ApplyAcceptedPlan(branches, plan, ref skipped, ref emitted);
+                if (planned.Count > 0) writer.Write(planned);
+                totalRowsProcessed += planned.Count;
                 _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
 
-                if (branches.Count < perPage)
+                if (PatternPage.RawCount(branches) < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
 
                 page++;

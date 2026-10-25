@@ -314,3 +314,119 @@ order by Id
 ```
 
 The filtered result has two rows: Id long 2/3, Amount decimal? null/2.5, Metadata string containing the second JSON object/null, and Total decimal? null/2.5. JsonText preserves the input object's JSON text, including whitespace. Structured values are decoded into concrete JsonElement/JsonElement? storage before the helper runs. Projection, filtering and window execution do not use object-row transfer. The rows.json, dynamic.sql and production JsonQueryRowSource/JsonQueryRowProcessor provide the complete executable reference.
+
+## Core 17.0.14-alpha.2 integration
+
+Upgrade Converter, Evaluator, Parser, Plugins and Schema together. Predicate capability
+contract version 2 uses `SourcePredicatePatternMatch` as the common base for LIKE and
+RLIKE; inspect the concrete predicate before reading match-specific fields.
+
+For constant RLIKE/NOT RLIKE pushdown, declare `SourceRegexMatchCapability` on eligible
+string columns and record each accepted direct AND conjunct with
+`SourcePredicateApplication.ForRowFiltering` in the execution plan. Apply it to the
+actual decoded row value before paging. Unsupported columns and expressions stay
+residual. RLIKE uses a case-sensitive .NET regex unless inline flags change it; Core
+tries NonBacktracking and falls back to Compiled for unsupported constructs. Match the
+execution culture and the finite timeout supplied in `SourcePredicateRegexMatch`.
+Core treats a null input as a false RLIKE result, then applies NOT; negated RLIKE
+therefore includes null and missing string values.
+
+The repository shares this evaluator in `Shared/ProviderRegex.cs`. Compiled matchers
+are bounded by plan lifetime, and culture changes replace one immutable cache entry.
+Providers keep the public `RegexMatchTimeoutException` and supplied budget. Core
+17.0.14-alpha.2's datasource lifecycle recognizes the public exception as MQ7017
+and retains its typed cause and actual budget. Custom compilation regex budgets
+are propagated into negotiated RLIKE predicates. Do not add an Evaluator reference
+or construct internal exceptions in production providers.
+
+Computed source arguments must still permit static metadata resolution for dynamic
+schemas. PARAM/PARAMS and LET paging use `$name`. The range source accepts lossless
+integral widening to Int64. OpenAI and Ollama expose `CountTokens(content)` for the
+default tokenizer and `CountModelTokens(content)` for the provider model tokenizer (Ollama retains its GPT-3.5 approximation), avoiding
+ambiguous injected/non-injected SQL signatures; the existing C# overloads remain.
+
+
+### Complete LIKE and RLIKE row filtering
+
+Declare `SourceStringMatchCapability` (all four classified shapes, with negation)
+and `SourceRegexMatchCapability` from the **same reviewed typed string bindings**
+used by planning and execution. `Shared/ProviderRegex.cs` supplies
+`PatternColumnBindings<TRow>`, `PatternSourcePlan` and the shared matcher. Do not
+infer regex eligibility from a comparison whitelist or discover arbitrary getters
+through reflection. Exclude secret fields, side-effecting getters and getters that
+would issue another remote request. Keep nested APPLY members residual.
+
+For LIKE, read `Kind`, `Needle` and `Comparison` only after matching
+`SourcePredicateStringMatch`. The needle must be wildcard-free. Core 17.0.14
+transfers only ASCII exact/prefix/suffix/contains literals; other shapes and Unicode
+patterns remain residual. Match Unicode **row values**, current culture, newlines,
+empty strings and null-before-negation exactly like Core. A LIKE predicate has no
+supplied timeout; the shared matcher uses the pinned Core default of two seconds.
+For RLIKE, preserve the finite timeout in `SourcePredicateRegexMatch`, inline flags
+and Core regex options. Weak plan ownership and one immutable culture cache entry
+bound matcher lifetime without retaining query rows.
+
+Retain fields used only by accepted predicates before pruning native projections.
+Filter actual decoded/materialized row values before accepted SKIP/TAKE, and record
+each accepted conjunct with its matching `RowFiltering` application. Residual
+filtering or ordering blocks early paging. Treat literal structured-file column
+names as exact schema names, including dots, before considering alias normalization.
+Filesystem enumeration patterns cannot implement row-value pattern semantics.
+
+Search uses the typed bindings in its native predicate plan and retains MatchText
+or LineText required only by patterns. Count/audit predicates apply to completed
+rows; even TAKE 0 must preserve terminal scan accounting. Roslyn solution-row
+patterns must not become project-collection filters.
+
+Qualification requires actual execution for **every advertised entry**, including
+positive/negative LIKE shapes and RLIKE, predicate-only fields, and a disabled
+pushdown oracle. Planner acceptance alone is insufficient. Include capability and
+application identity assertions, unsupported/residual cases, culture and timeout
+causes, cancellation/disposal and repeated/overlapping execution. The complete
+repository matrix is [PatternPushdownCoverage.md](PatternPushdownCoverage.md).
+
+Core 17.0.14-alpha.2 fixes residual `NOT LIKE '%'`, configured provider regex
+budgets, public regex-timeout diagnostics, and JSON self-correlation binding/carrier
+failures. Keep enabled, disabled and provider-rejected regression paths passing.
+Earlier alpha.1 qualification is retained in [PatternPushdownValidation.md](PatternPushdownValidation.md);
+current release qualification is in [CoreAlpha2ReleaseValidation.md](CoreAlpha2ReleaseValidation.md).
+
+
+### Native filtering before expensive work
+
+Use `PatternSourcePlan.Read` with an explicit list of reviewed native columns only
+when the reader evaluates those exact SQL-visible values. The execution-local
+`NativePatternExecution` owns those conjuncts; the remaining row matcher must not
+run them again. Keep the original predicate/application identities and advertised
+capabilities. Native scalar accessors and public row getters should share value
+extraction, including nulls, formatting and contextual names.
+
+Filter directory entries before FileInfo/entity construction, and content sources
+before opening or decoding when their accepted path predicates permit it. Keep
+traversal, recursion, security and candidate-count limits independent of output
+row rejection. Excluded content files consume no content bytes and cause no
+content-read errors; admitted files retain the original error policy. Count/audit
+sources must drain their complete scope even for TAKE 0. Never translate patterns
+into globs, Git grep, JQL or remote search syntax.
+
+For APIs, make native filtering an optional internal adapter. Preserve existing
+interfaces as row-stage fallbacks. Carry raw page cardinality separately from
+filtered rows: an empty filtered page is not the end of pagination. Transfer
+window ownership only to readers that apply all accepted filtering before paging;
+otherwise keep the shared row window. Retain required detail requests and preserve
+SDK request shapes.
+
+For structured text, reuse decoded values only in the intersection of pattern and
+output string fields. Keep slots execution-local and record-local, clear them on
+every exit, and preserve the existing pool rules. Rejected records must still run
+their original validation. Avoid another full-record parse and retain the no-overlap
+fast path. `RecordStringCache` and the JSON/CSV integration show these ownership
+boundaries.
+
+Qualify work avoidance using deterministic counters (opens, wrappers, rich fields,
+decodes, pages), both the prior row stage and disabled-pushdown result oracles,
+then isolated Release measurements at 1%, 50% and 100% selectivity. Report allocation
+and elapsed-time tradeoffs; never use timing assertions or imply fewer source
+requests when the adapter only avoids local materialization. The stage matrix and
+local qualification evidence are in [PatternPushdownCoverage.md](PatternPushdownCoverage.md)
+and [PatternPushdownValidation.md](PatternPushdownValidation.md).

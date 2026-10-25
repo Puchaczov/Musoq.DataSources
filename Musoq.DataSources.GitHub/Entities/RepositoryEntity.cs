@@ -27,37 +27,37 @@ public class RepositoryEntity
     /// <summary>
     ///     Gets the repository name.
     /// </summary>
-    public string Name => _repository.Name;
+    public string Name => ReadName(_repository);
 
     /// <summary>
     ///     Gets the full name of the repository (owner/name).
     /// </summary>
-    public string FullName => _repository.FullName;
+    public string FullName => ReadFullName(_repository);
 
     /// <summary>
     ///     Gets the repository description.
     /// </summary>
-    public string? Description => _repository.Description;
+    public string? Description => ReadDescription(_repository);
 
     /// <summary>
     ///     Gets the repository URL.
     /// </summary>
-    public string Url => _repository.HtmlUrl;
+    public string Url => ReadUrl(_repository);
 
     /// <summary>
     ///     Gets the clone URL.
     /// </summary>
-    public string CloneUrl => _repository.CloneUrl;
+    public string CloneUrl => ReadCloneUrl(_repository);
 
     /// <summary>
     ///     Gets the SSH URL.
     /// </summary>
-    public string SshUrl => _repository.SshUrl;
+    public string SshUrl => ReadSshUrl(_repository);
 
     /// <summary>
     ///     Gets the default branch name.
     /// </summary>
-    public string? DefaultBranch => _repository.DefaultBranch;
+    public string? DefaultBranch => ReadDefaultBranch(_repository);
 
     /// <summary>
     ///     Gets whether the repository is private.
@@ -77,7 +77,7 @@ public class RepositoryEntity
     /// <summary>
     ///     Gets the primary language of the repository.
     /// </summary>
-    public string? Language => _repository.Language;
+    public string? Language => ReadLanguage(_repository);
 
     /// <summary>
     ///     Gets the number of forks.
@@ -122,12 +122,12 @@ public class RepositoryEntity
     /// <summary>
     ///     Gets the owner's login name.
     /// </summary>
-    public string OwnerLogin => _repository.Owner?.Login ?? string.Empty;
+    public string OwnerLogin => ReadOwnerLogin(_repository);
 
     /// <summary>
     ///     Gets the license name.
     /// </summary>
-    public string? License => _repository.License?.Name;
+    public string? License => ReadLicense(_repository);
 
     /// <summary>
     ///     Gets the topics/tags associated with the repository.
@@ -153,5 +153,17 @@ public class RepositoryEntity
     /// <summary>
     ///     Gets the visibility of the repository.
     /// </summary>
-    public string? Visibility => _repository.Visibility?.ToString()?.ToLowerInvariant();
+    public string? Visibility => ReadVisibility(_repository);
+
+    internal static string ReadName(Repository value) => value.Name;
+    internal static string ReadFullName(Repository value) => value.FullName;
+    internal static string? ReadDescription(Repository value) => value.Description;
+    internal static string ReadUrl(Repository value) => value.HtmlUrl;
+    internal static string ReadCloneUrl(Repository value) => value.CloneUrl;
+    internal static string ReadSshUrl(Repository value) => value.SshUrl;
+    internal static string? ReadDefaultBranch(Repository value) => value.DefaultBranch;
+    internal static string? ReadLanguage(Repository value) => value.Language;
+    internal static string ReadOwnerLogin(Repository value) => value.Owner?.Login ?? string.Empty;
+    internal static string? ReadLicense(Repository value) => value.License?.Name;
+    internal static string? ReadVisibility(Repository value) => value.Visibility?.ToString()?.ToLowerInvariant();
 }

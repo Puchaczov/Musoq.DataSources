@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using System;
 using System.Collections.Generic;
 using Musoq.Schema;
@@ -20,6 +21,8 @@ public class FlatFileSchema : SchemaBase
 {
     private const string SchemaName = "Flat";
     private const string FileTable = "file";
+
+    private static readonly PatternColumnBindings<FlatFileEntity> PatternColumns = new((nameof(FlatFileEntity.Line), static row => row.Line));
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
@@ -71,6 +74,13 @@ public class FlatFileSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         return name.ToLowerInvariant() switch
         {
@@ -92,6 +102,7 @@ public class FlatFileSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = PatternColumns.Capabilities(table.Columns),
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -108,7 +119,7 @@ public class FlatFileSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
-        return FlatFileSourcePlanner.Plan(name, request);
+        return PatternSourcePlan.Plan(request, name.Equals(FileTable, StringComparison.OrdinalIgnoreCase) ? PatternColumns : null, inner => FlatFileSourcePlanner.Plan(name, inner));
     }
 
     /// <summary>

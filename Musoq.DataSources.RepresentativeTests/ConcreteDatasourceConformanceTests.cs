@@ -221,7 +221,7 @@ public sealed class ConcreteDatasourceConformanceTests
                     !IsApplyEligibleCollection(property.PropertyType))
                     continue;
 
-                if (property.GetCustomAttribute<Musoq.Plugins.Attributes.BindablePropertyAsTableAttribute>(true) is null)
+                if (property.GetCustomAttribute<Plugins.Attributes.BindablePropertyAsTableAttribute>(true) is null)
                     failures.Add($"{table.Metadata.TableEntityType.FullName}.{property.Name}");
             }
         }
@@ -347,7 +347,7 @@ public sealed class ConcreteDatasourceConformanceTests
             ["roslyn"] = new CSharpSchema(),
             ["separatedvalues"] = new SeparatedValuesSchema(),
             ["search"] = new SearchSchema(),
-            ["system"] = new Musoq.DataSources.System.SystemSchema(),
+            ["system"] = new System.SystemSchema(),
             ["time"] = new TimeSchema()
         };
     }

@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace Musoq.DataSources.Git;
 
@@ -25,6 +26,8 @@ internal sealed class GitNulDelimitedUtf8Reader : IDisposable
         _stream = stream;
     }
 
+    internal long DecodedTokens { get; private set; }
+
     public string? ReadToken()
     {
         _tokenLength = 0;
@@ -44,6 +47,7 @@ internal sealed class GitNulDelimitedUtf8Reader : IDisposable
                 var count = delimiterOffset - _offset;
                 if (_tokenLength == 0)
                 {
+                    DecodedTokens++;
                     var token = Utf8.GetString(_buffer, _offset, count);
                     _offset = delimiterOffset + 1;
                     return token;
@@ -55,6 +59,74 @@ internal sealed class GitNulDelimitedUtf8Reader : IDisposable
             }
 
             Append(_buffer, _offset, _length - _offset);
+            _offset = _length;
+        }
+    }
+
+    internal byte[]? ReadRawToken(CancellationToken token)
+    {
+        _tokenLength = 0;
+        while (true)
+        {
+            token.ThrowIfCancellationRequested();
+            if (_offset == _length)
+            {
+                _length = _stream.Read(_buffer, 0, _buffer.Length);
+                _offset = 0;
+                if (_length == 0)
+                {
+                    if (_tokenLength == 0) return null;
+                    return CopyRawToken();
+                }
+            }
+            var delimiter = Array.IndexOf(_buffer, (byte)0, _offset, _length - _offset);
+            if (delimiter >= 0)
+            {
+                var count = delimiter - _offset;
+                if (_tokenLength == 0)
+                {
+                    var result = _buffer.AsSpan(_offset, count).ToArray();
+                    _offset = delimiter + 1;
+                    return result;
+                }
+                Append(_buffer, _offset, count);
+                _offset = delimiter + 1;
+                return CopyRawToken();
+            }
+            Append(_buffer, _offset, _length - _offset);
+            _offset = _length;
+        }
+    }
+    private byte[] CopyRawToken()
+    {
+        var result = _tokenBuffer!.AsSpan(0, _tokenLength).ToArray();
+        ArrayPool<byte>.Shared.Return(_tokenBuffer);
+        _tokenBuffer = null;
+        _tokenLength = 0;
+        return result;
+    }
+
+    internal void SkipTokens(int count, CancellationToken token)
+    {
+        for (var i = 0; i < count; i++)
+            if (!SkipToken(token)) throw new InvalidDataException("Git output ended inside a rejected record.");
+    }
+
+    internal bool SkipToken(CancellationToken token = default)
+    {
+        var any = false;
+        while (true)
+        {
+            token.ThrowIfCancellationRequested();
+            if (_offset == _length)
+            {
+                _length = _stream.Read(_buffer, 0, _buffer.Length);
+                _offset = 0;
+                if (_length == 0) return any;
+            }
+            var delimiter = Array.IndexOf(_buffer, (byte)0, _offset, _length - _offset);
+            if (delimiter >= 0) { _offset = delimiter + 1; return true; }
+            any |= _length > _offset;
             _offset = _length;
         }
     }
@@ -96,10 +168,16 @@ internal sealed class GitNulDelimitedUtf8Reader : IDisposable
     private string DecodeBufferedToken()
     {
         var buffer = _tokenBuffer!;
+        DecodedTokens++;
         var token = Utf8.GetString(buffer, 0, _tokenLength);
         ArrayPool<byte>.Shared.Return(buffer);
         _tokenBuffer = null;
         _tokenLength = 0;
         return token;
     }
+}
+
+internal sealed class GitDecodeAccounting(GitNulDelimitedUtf8Reader reader, Musoq.DataSources.Common.NativePatternExecution? native) : IDisposable
+{
+    public void Dispose() => native?.Decoded(reader.DecodedTokens);
 }

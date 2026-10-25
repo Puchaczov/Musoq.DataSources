@@ -25,17 +25,17 @@ public class BranchEntity
     /// <summary>
     ///     Gets the branch name.
     /// </summary>
-    public string Name => _branch.Name;
+    public string Name => ReadName(_branch);
 
     /// <summary>
     ///     Gets the commit SHA.
     /// </summary>
-    public string CommitSha => _branch.Commit?.Sha ?? string.Empty;
+    public string CommitSha => ReadCommitSha(_branch);
 
     /// <summary>
     ///     Gets the commit URL.
     /// </summary>
-    public string CommitUrl => _branch.Commit?.Url ?? string.Empty;
+    public string CommitUrl => ReadCommitUrl(_branch);
 
     /// <summary>
     ///     Gets whether the branch is protected.
@@ -51,4 +51,8 @@ public class BranchEntity
     ///     Gets the repository name.
     /// </summary>
     public string RepositoryName { get; }
+
+    internal static string ReadName(Branch value) => value.Name;
+    internal static string ReadCommitSha(Branch value) => value.Commit?.Sha ?? string.Empty;
+    internal static string ReadCommitUrl(Branch value) => value.Commit?.Url ?? string.Empty;
 }

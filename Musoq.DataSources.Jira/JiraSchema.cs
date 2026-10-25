@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Jira.Sources.Comments;
 using Musoq.DataSources.Jira.Entities;
 using Musoq.DataSources.Jira.Sources.Issues;
@@ -207,6 +208,13 @@ public class JiraSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => JiraPatternApi.Read(executionContext, _api, name, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         var api = _api ?? CreateApi(executionContext);
 
@@ -245,6 +253,7 @@ public class JiraSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = JiraPatternColumns.Get(name)?.Capabilities(table.Columns) ?? SourcePredicateCapabilities.None,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -282,6 +291,9 @@ public class JiraSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+        => PatternSourcePlan.Plan(request, JiraPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+
+    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
         return JiraSourcePlanner.Plan(name, request);
     }

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
+using Musoq.DataSources.Common;
 
 namespace Musoq.DataSources.Git;
 
@@ -99,7 +100,7 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
                 {
                     outerSkipped++;
                 }
-                else
+                else if (_projection.NativePatterns?.Matches(new PatternInput(metadata, change), PatternBindings) != false)
                 {
                     chunk.Add(GitEntitySnapshots.FileHistory(
                         metadata.Sha,
@@ -205,6 +206,7 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
 
         using var process = GitCliProcess.Start(_repositoryPath, _options, arguments, cancellationToken);
         using var reader = new GitNulDelimitedUtf8Reader(process.StandardOutput);
+        using var decoding = new GitDecodeAccounting(reader, _projection.NativePatterns);
         string? pendingHeader = null;
         var completedNaturally = true;
         var changes = new List<RawFileChange>(ChunkSize);
@@ -222,7 +224,7 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
             if (!header.StartsWith('\u001e'))
                 throw new InvalidDataException("Git raw log protocol lost its commit record delimiter.");
 
-            var metadata = metadataPlan.Read(header, reader);
+            var metadata = metadataPlan.Read(header, reader, _projection.NativePatterns, cancellationToken);
             changes.Clear();
 
             while (true)
@@ -281,7 +283,10 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
             changes.Clear();
             foreach (var change in repository.Diff.Compare<TreeChanges>(parent?.Tree, commit.Tree))
                 changes.Add(new RawFileChange(change.Path, change.OldPath, change.Status.ToString()));
-            var metadata = metadataPlan.Create(commit);
+            var metadata = _projection.NativePatterns is { } native
+                ? new CommitMetadata(metadataPlan.IncludesSha ? commit.Sha : string.Empty, string.Empty, string.Empty, default,
+                    new DeferredMetadata(commit, metadataPlan, native))
+                : metadataPlan.Create(commit);
 
             if (!processCommit(metadata, changes))
                 break;
@@ -352,7 +357,57 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
             ? changes
             : new List<RawFileChange>(ChunkSize);
 
-    private readonly record struct CommitMetadata(string Sha, string Author, string AuthorEmail, DateTimeOffset CommittedWhen);
+    private readonly record struct PatternInput(CommitMetadata Commit, RawFileChange Change);
+    private static readonly Musoq.DataSources.Common.PatternColumnBindings<PatternInput> PatternBindings = new(
+        ("CommitSha", row => row.Commit.Sha), ("Author", row => row.Commit.Author), ("AuthorEmail", row => row.Commit.AuthorEmail),
+        ("FilePath", row => row.Change.FilePath), ("ChangeType", row => row.Change.ChangeType), ("OldPath", row => row.Change.OldPath));
+
+    private readonly record struct CommitMetadata(string Sha, string AuthorValue, string AuthorEmailValue, DateTimeOffset CommittedWhenValue, DeferredMetadata? Deferred = null)
+    {
+        internal string Author => Deferred?.Author ?? AuthorValue;
+        internal string AuthorEmail => Deferred?.AuthorEmail ?? AuthorEmailValue;
+        internal DateTimeOffset CommittedWhen => Deferred?.CommittedWhen ?? CommittedWhenValue;
+    }
+
+    private sealed class DeferredMetadata
+    {
+        private readonly Commit? _commit;
+        private readonly FileHistoryMetadataPlan _plan;
+        private readonly NativePatternExecution _native;
+        private byte[]? _authorBytes, _emailBytes, _whenBytes;
+        private string? _author, _email;
+        private DateTimeOffset? _when;
+        internal DeferredMetadata(Commit commit, FileHistoryMetadataPlan plan, NativePatternExecution native)
+        { _commit = commit; _plan = plan; _native = native; }
+        internal DeferredMetadata(byte[]? author, byte[]? email, byte[]? when, NativePatternExecution native)
+        { _authorBytes = author; _emailBytes = email; _whenBytes = when; _native = native; }
+        internal string Author => _author ??= Read(ref _authorBytes, _plan.IncludesAuthor ? 0 : -1);
+        internal string AuthorEmail => _email ??= Read(ref _emailBytes, _plan.IncludesAuthorEmail ? 1 : -1);
+        internal DateTimeOffset CommittedWhen
+        {
+            get
+            {
+                if (_when.HasValue) return _when.Value;
+                if (_whenBytes is not null)
+                {
+                    var text = Read(ref _whenBytes, -1);
+                    _when = DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when)
+                        ? when : throw new InvalidDataException("Git emitted an invalid commit timestamp.");
+                }
+                else if (_commit is not null && _plan.IncludesCommittedWhen)
+                { _native.RichFieldLoaded(); _when = _commit.Committer.When; }
+                else _when = default(DateTimeOffset);
+                return _when.Value;
+            }
+        }
+        private string Read(ref byte[]? bytes, int field)
+        {
+            if (bytes is not null)
+            { _native.Decoded(); _native.RichFieldLoaded(); var value = Encoding.UTF8.GetString(bytes); bytes = null; return value; }
+            if (_commit is null || field < 0) return string.Empty;
+            _native.RichFieldLoaded(); return field == 0 ? _commit.Author.Name : _commit.Author.Email;
+        }
+    }
 
     private readonly record struct RawFileChange(string FilePath, string? OldPath, string ChangeType);
 
@@ -398,8 +453,14 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
             projection.Includes(nameof(FileHistoryEntity.AuthorEmail)),
             projection.Includes(nameof(FileHistoryEntity.CommittedWhen)));
 
-        public CommitMetadata Read(string header, GitNulDelimitedUtf8Reader reader)
+        public CommitMetadata Read(string header, GitNulDelimitedUtf8Reader reader, NativePatternExecution? native, CancellationToken token)
         {
+            if (native is not null)
+            {
+                byte[]? Read(bool included) => included ? reader.ReadRawToken(token) ?? throw new InvalidDataException("Git raw log ended inside commit metadata.") : null;
+                return new CommitMetadata(IncludesSha ? header[1..] : string.Empty, string.Empty, string.Empty, default,
+                    new DeferredMetadata(Read(IncludesAuthor), Read(IncludesAuthorEmail), Read(IncludesCommittedWhen), native));
+            }
             var sha = IncludesSha ? header[1..] : string.Empty;
             var author = IncludesAuthor ? ReadRequired(reader, "author") : string.Empty;
             var authorEmail = IncludesAuthorEmail ? ReadRequired(reader, "author email") : string.Empty;

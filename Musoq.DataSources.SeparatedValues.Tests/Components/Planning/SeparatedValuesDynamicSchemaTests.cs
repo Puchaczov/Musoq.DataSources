@@ -112,7 +112,7 @@ public class SeparatedValuesDynamicSchemaTests
         var context = RuntimeV2TestContexts.CreateExecutionContext();
 
         var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
-            global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(new SeparatedValuesSchema(), global::Musoq.Schema.SourceArguments.Create(stream, global::Musoq.Schema.SourceArguments.Create(true, global::Musoq.Schema.SourceArguments.Create(0, global::Musoq.Schema.SourceArguments.Empty)))).Read<object[]>("comma", context));
+            NativeSourceCalls.Source(new SeparatedValuesSchema(), Schema.SourceArguments.Create(stream, Schema.SourceArguments.Create(true, Schema.SourceArguments.Create(0, Schema.SourceArguments.Empty)))).Read<object[]>("comma", context));
 
         StringAssert.Contains(exception.Message, "unsupported legacy row transfer");
     }

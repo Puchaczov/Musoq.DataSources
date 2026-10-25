@@ -37,6 +37,7 @@ internal sealed class StatusRowsSource : GitDiagnosticRowsSourceBase<StatusEntit
         {
             if (!GitSourcePlanner.Matches(_filters, entry))
                 return true;
+            if (_projection.NativePatterns?.Matches(entry, GitNativePatterns.Status) == false) return true;
             var entity = GitEntitySnapshots.Status(entry, _projection);
             if (_acceptedPredicate is not null && !_acceptedPredicate(entity))
                 return true;

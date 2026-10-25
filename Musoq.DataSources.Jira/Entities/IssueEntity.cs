@@ -24,67 +24,67 @@ public class IssueEntity : IJiraIssue
     /// <summary>
     ///     Gets the issue key (e.g., PROJ-123).
     /// </summary>
-    public string Key => UnderlyingIssue.Key?.Value ?? string.Empty;
+    public string Key => ReadKey(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the issue ID (internal Jira ID).
     /// </summary>
-    public string Id => UnderlyingIssue.JiraIdentifier ?? string.Empty;
+    public string Id => ReadId(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the issue summary/title.
     /// </summary>
-    public string Summary => UnderlyingIssue.Summary ?? string.Empty;
+    public string Summary => ReadSummary(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the issue description.
     /// </summary>
-    public string? Description => UnderlyingIssue.Description;
+    public string? Description => ReadDescription(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the issue type name (e.g., Bug, Story, Task).
     /// </summary>
-    public string Type => UnderlyingIssue.Type?.Name ?? string.Empty;
+    public string Type => ReadType(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the issue status name.
     /// </summary>
-    public string Status => UnderlyingIssue.Status?.Name ?? string.Empty;
+    public string Status => ReadStatus(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the issue priority name.
     /// </summary>
-    public string? Priority => UnderlyingIssue.Priority?.Name;
+    public string? Priority => ReadPriority(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the issue resolution name.
     /// </summary>
-    public string? Resolution => UnderlyingIssue.Resolution?.Name;
+    public string? Resolution => ReadResolution(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the assignee's username.
     /// </summary>
-    public string? Assignee => UnderlyingIssue.Assignee;
+    public string? Assignee => ReadAssignee(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the assignee's display name.
     /// </summary>
-    public string? AssigneeDisplayName => UnderlyingIssue.AssigneeUser?.DisplayName;
+    public string? AssigneeDisplayName => ReadAssigneeDisplayName(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the reporter's username.
     /// </summary>
-    public string? Reporter => UnderlyingIssue.Reporter;
+    public string? Reporter => ReadReporter(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the reporter's display name.
     /// </summary>
-    public string? ReporterDisplayName => UnderlyingIssue.ReporterUser?.DisplayName;
+    public string? ReporterDisplayName => ReadReporterDisplayName(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the project key.
     /// </summary>
-    public string ProjectKey => UnderlyingIssue.Project ?? string.Empty;
+    public string ProjectKey => ReadProjectKey(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the creation date.
@@ -109,22 +109,22 @@ public class IssueEntity : IJiraIssue
     /// <summary>
     ///     Gets the labels as comma-separated string.
     /// </summary>
-    public string Labels => UnderlyingIssue.Labels != null ? string.Join(", ", UnderlyingIssue.Labels) : string.Empty;
+    public string Labels => ReadLabels(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the components as comma-separated string.
     /// </summary>
-    public string Components => string.Join(", ", UnderlyingIssue.Components?.Select(c => c.Name) ?? []);
+    public string Components => ReadComponents(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the fix versions as comma-separated string.
     /// </summary>
-    public string FixVersions => string.Join(", ", UnderlyingIssue.FixVersions?.Select(v => v.Name) ?? []);
+    public string FixVersions => ReadFixVersions(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the affected versions as comma-separated string.
     /// </summary>
-    public string AffectsVersions => string.Join(", ", UnderlyingIssue.AffectsVersions?.Select(v => v.Name) ?? []);
+    public string AffectsVersions => ReadAffectsVersions(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the original time estimate in seconds.
@@ -144,27 +144,27 @@ public class IssueEntity : IJiraIssue
     /// <summary>
     ///     Gets the original time estimate as formatted string.
     /// </summary>
-    public string? OriginalEstimate => UnderlyingIssue.TimeTrackingData?.OriginalEstimate;
+    public string? OriginalEstimate => ReadOriginalEstimate(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the remaining time estimate as formatted string.
     /// </summary>
-    public string? RemainingEstimate => UnderlyingIssue.TimeTrackingData?.RemainingEstimate;
+    public string? RemainingEstimate => ReadRemainingEstimate(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the time spent as formatted string.
     /// </summary>
-    public string? TimeSpent => UnderlyingIssue.TimeTrackingData?.TimeSpent;
+    public string? TimeSpent => ReadTimeSpent(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the parent issue key (for subtasks).
     /// </summary>
-    public string? ParentKey => UnderlyingIssue.ParentIssueKey;
+    public string? ParentKey => ReadParentKey(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the environment description.
     /// </summary>
-    public string? Environment => UnderlyingIssue.Environment;
+    public string? Environment => ReadEnvironment(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the number of votes.
@@ -174,12 +174,37 @@ public class IssueEntity : IJiraIssue
     /// <summary>
     ///     Gets the security level name.
     /// </summary>
-    public string? SecurityLevel => UnderlyingIssue.SecurityLevel?.Name;
+    public string? SecurityLevel => ReadSecurityLevel(UnderlyingIssue);
 
     /// <summary>
     ///     Gets the issue URL.
     /// </summary>
-    public string Url => UnderlyingIssue.JiraIdentifier != null
-        ? $"{UnderlyingIssue.Jira?.Url}/browse/{UnderlyingIssue.Key?.Value}"
+    public string Url => ReadUrl(UnderlyingIssue);
+
+    internal static string ReadKey(Issue value) => value.Key?.Value ?? string.Empty;
+    internal static string ReadId(Issue value) => value.JiraIdentifier ?? string.Empty;
+    internal static string ReadSummary(Issue value) => value.Summary ?? string.Empty;
+    internal static string? ReadDescription(Issue value) => value.Description;
+    internal static string ReadType(Issue value) => value.Type?.Name ?? string.Empty;
+    internal static string ReadStatus(Issue value) => value.Status?.Name ?? string.Empty;
+    internal static string? ReadPriority(Issue value) => value.Priority?.Name;
+    internal static string? ReadResolution(Issue value) => value.Resolution?.Name;
+    internal static string? ReadAssignee(Issue value) => value.Assignee;
+    internal static string? ReadAssigneeDisplayName(Issue value) => value.AssigneeUser?.DisplayName;
+    internal static string? ReadReporter(Issue value) => value.Reporter;
+    internal static string? ReadReporterDisplayName(Issue value) => value.ReporterUser?.DisplayName;
+    internal static string ReadProjectKey(Issue value) => value.Project ?? string.Empty;
+    internal static string ReadLabels(Issue value) => value.Labels != null ? string.Join(", ", value.Labels) : string.Empty;
+    internal static string ReadComponents(Issue value) => string.Join(", ", value.Components?.Select(c => c.Name) ?? []);
+    internal static string ReadFixVersions(Issue value) => string.Join(", ", value.FixVersions?.Select(v => v.Name) ?? []);
+    internal static string ReadAffectsVersions(Issue value) => string.Join(", ", value.AffectsVersions?.Select(v => v.Name) ?? []);
+    internal static string? ReadOriginalEstimate(Issue value) => value.TimeTrackingData?.OriginalEstimate;
+    internal static string? ReadRemainingEstimate(Issue value) => value.TimeTrackingData?.RemainingEstimate;
+    internal static string? ReadTimeSpent(Issue value) => value.TimeTrackingData?.TimeSpent;
+    internal static string? ReadParentKey(Issue value) => value.ParentIssueKey;
+    internal static string? ReadEnvironment(Issue value) => value.Environment;
+    internal static string? ReadSecurityLevel(Issue value) => value.SecurityLevel?.Name;
+    internal static string ReadUrl(Issue value) => value.JiraIdentifier != null
+        ? $"{value.Jira?.Url}/browse/{value.Key?.Value}"
         : string.Empty;
 }

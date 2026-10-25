@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -49,15 +50,43 @@ public class SystemSchema : SchemaBase
             Dual => EnsureSourceType<T, DualEntity>(name, new DualRowSource(executionContext)),
             Range when parameters.Count == 1 => EnsureSourceType<T, RangeItemEntity>(
                 name,
-                new RangeSource(0, parameters.GetValue<long>(0), executionContext)),
+                new RangeSource(0, ReadRangeArgument(parameters, 0), executionContext)),
             Range when parameters.Count == 2 => EnsureSourceType<T, RangeItemEntity>(
                 name,
                 new RangeSource(
-                    parameters.GetValue<long>(0),
-                    parameters.GetValue<long>(1),
+                    ReadRangeArgument(parameters, 0),
+                    ReadRangeArgument(parameters, 1),
                     executionContext)),
             _ => throw new NotSupportedException(name)
         };
+    }
+
+    private static long ReadRangeArgument<TArguments>(TArguments arguments, int index)
+        where TArguments : struct, ISourceArguments
+    {
+        var reader = new RangeArgumentReader(index);
+        arguments.Visit(ref reader);
+        return reader.Value;
+    }
+
+    // Match the lossless integral widening accepted by Core's long overload.
+    private struct RangeArgumentReader(int index) : IColumnValueVisitor
+    {
+        internal long Value;
+        public void Visit<TValue>(int ordinal, in TValue value)
+        {
+            if (ordinal != index) return;
+            ref var item = ref Unsafe.AsRef(in value);
+            if (typeof(TValue) == typeof(long)) Value = Unsafe.As<TValue, long>(ref item);
+            else if (typeof(TValue) == typeof(int)) Value = Unsafe.As<TValue, int>(ref item);
+            else if (typeof(TValue) == typeof(uint)) Value = Unsafe.As<TValue, uint>(ref item);
+            else if (typeof(TValue) == typeof(short)) Value = Unsafe.As<TValue, short>(ref item);
+            else if (typeof(TValue) == typeof(ushort)) Value = Unsafe.As<TValue, ushort>(ref item);
+            else if (typeof(TValue) == typeof(byte)) Value = Unsafe.As<TValue, byte>(ref item);
+            else if (typeof(TValue) == typeof(sbyte)) Value = Unsafe.As<TValue, sbyte>(ref item);
+            else if (typeof(TValue) == typeof(char)) Value = Unsafe.As<TValue, char>(ref item);
+            else throw new InvalidOperationException("A range argument requires a lossless integral conversion to Int64.");
+        }
     }
 
     public override SourceDescriptor DescribeSource(

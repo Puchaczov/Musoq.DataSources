@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Os.Files;
 using Musoq.Schema.Optimization;
 
@@ -119,6 +120,7 @@ internal static class OsSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
                 Properties = properties
             },
@@ -170,8 +172,11 @@ internal static class OsSourcePlanner
         };
     }
 
-    private static bool IsSupported(string tableName, SourcePredicateExpression expression)
+    internal static bool IsSupported(string tableName, SourcePredicateExpression expression)
     {
+        if (expression is SourcePredicateRegexMatch regex)
+            return ProviderRegex.Supports(regex, comparison => IsSupported(tableName, comparison));
+
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var columnPath, out var literal, out var op) ||
             op != SourcePredicateComparisonOperator.Equal ||
@@ -271,6 +276,7 @@ internal static class OsSourcePlanner
             SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.Or } logical =>
                 MatchesPredicate(logical.Left, getColumnValue) ||
                 MatchesPredicate(logical.Right, getColumnValue),
+            SourcePredicateRegexMatch regex => ProviderRegex.Match(regex, getColumnValue(regex.Column.Name)) == true,
             SourcePredicateComparison comparison => EvaluateComparison(comparison, getColumnValue),
             _ => false
         };

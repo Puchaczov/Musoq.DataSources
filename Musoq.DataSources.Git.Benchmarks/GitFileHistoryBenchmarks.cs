@@ -61,7 +61,7 @@ public sealed class GitFileHistoryBenchmarks
     {
         using var measurement = GitCliProcessMetrics.BeginMeasurement();
         var schema = new GitSchema();
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Source(schema, global::Musoq.Schema.SourceArguments.Create(_corpus.RepositoryPath, global::Musoq.Schema.SourceArguments.Create("*.cs", global::Musoq.Schema.SourceArguments.Create(Take, global::Musoq.Schema.SourceArguments.Empty)))).Read<FileHistoryEntity>("filehistory", _context);
+        var source = NativeSourceCalls.Source(schema, Schema.SourceArguments.Create(_corpus.RepositoryPath, Schema.SourceArguments.Create("*.cs", Schema.SourceArguments.Create(Take, Schema.SourceArguments.Empty)))).Read<FileHistoryEntity>("filehistory", _context);
         long checksum = 17;
         var rows = new List<FileHistoryEntity>(Take);
 

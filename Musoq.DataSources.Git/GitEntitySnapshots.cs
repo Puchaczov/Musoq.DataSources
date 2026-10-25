@@ -11,8 +11,13 @@ namespace Musoq.DataSources.Git;
 /// </summary>
 internal static class GitEntitySnapshots
 {
+    internal static string IndexStatus(FileStatus state) =>
+        (state & (FileStatus.NewInIndex | FileStatus.ModifiedInIndex | FileStatus.DeletedFromIndex | FileStatus.RenamedInIndex | FileStatus.TypeChangeInIndex)) != 0 ? "Staged" : "NotStaged";
+    internal static string WorkDirStatus(FileStatus state) =>
+        (state & (FileStatus.NewInWorkdir | FileStatus.ModifiedInWorkdir | FileStatus.DeletedFromWorkdir | FileStatus.RenamedInWorkdir | FileStatus.TypeChangeInWorkdir)) != 0 ? "Modified" : "Unmodified";
     public static CommitEntity Commit(Commit commit, Repository repository, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         var all = projection.Includes(nameof(CommitEntity.Self));
         // SHA plus repository identity are the compact capability token for public nested APIs and library methods.
         // The runtime does not always expose injected/nested dependencies in RequiredColumns.
@@ -33,6 +38,7 @@ internal static class GitEntitySnapshots
 
     public static CommitEntity Commit(GitCommitRecord commit, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         var all = projection.Includes(nameof(CommitEntity.Self));
         return new CommitEntity(
             commit.RepositoryPath,
@@ -48,6 +54,7 @@ internal static class GitEntitySnapshots
 
     public static BranchEntity Branch(Branch branch, Repository repository, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         var all = projection.Includes(nameof(BranchEntity.Self));
         // Keep the small branch identity needed by nested and library calls even when the compiler only reports the
         // downstream leaf (for example Tip.Sha) rather than the intermediate BranchEntity column.
@@ -72,6 +79,7 @@ internal static class GitEntitySnapshots
 
     public static BranchEntity Branch(GitBranchRecord branch, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         var all = projection.Includes(nameof(BranchEntity.Self));
         return new BranchEntity(
             branch.RepositoryPath,
@@ -90,6 +98,7 @@ internal static class GitEntitySnapshots
 
     public static TagEntity Tag(Tag tag, Repository repository, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         var all = false;
         // A tag's target and annotation are compact references and may be required through an unreported nested leaf.
         var needsAnnotation = true;
@@ -114,6 +123,7 @@ internal static class GitEntitySnapshots
         GitProjection projection,
         Func<TagEntity.TagRichSnapshot>? richLoader = null)
     {
+        projection.NativePatterns?.Constructed();
         return new TagEntity(
             tag.RepositoryPath,
             projection.Includes(nameof(TagEntity.FriendlyName)) ? tag.FriendlyName : null,
@@ -132,6 +142,7 @@ internal static class GitEntitySnapshots
 
     public static StashEntity Stash(GitStashRecord stash, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         return new StashEntity(
             stash.RepositoryPath,
             projection.Includes(nameof(StashEntity.Selector)) ? stash.Selector : string.Empty,
@@ -144,6 +155,7 @@ internal static class GitEntitySnapshots
 
     public static RemoteEntity Remote(Remote remote, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         return new RemoteEntity(
             projection.Includes(nameof(RemoteEntity.Name)) ? remote.Name : string.Empty,
             projection.Includes(nameof(RemoteEntity.Url)) ? remote.Url : string.Empty,
@@ -152,6 +164,7 @@ internal static class GitEntitySnapshots
 
     public static RemoteEntity Remote(GitRemoteRecord remote, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         return new RemoteEntity(
             projection.Includes(nameof(RemoteEntity.Name)) ? remote.Name : string.Empty,
             projection.Includes(nameof(RemoteEntity.Url)) ? remote.Url : string.Empty,
@@ -160,6 +173,7 @@ internal static class GitEntitySnapshots
 
     public static RemoteTagEntity RemoteTag(GitRemoteTagRecord tag, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         return new RemoteTagEntity(
             projection.Includes(nameof(RemoteTagEntity.RemoteName)) ? tag.RemoteName : string.Empty,
             projection.Includes(nameof(RemoteTagEntity.RemoteUrl)) ? tag.RemoteUrl : string.Empty,
@@ -172,6 +186,7 @@ internal static class GitEntitySnapshots
 
     public static StatusEntity Status(StatusEntry entry, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         var state = projection.Includes(nameof(StatusEntity.State)) || projection.Includes(nameof(StatusEntity.IndexStatus)) ||
                     projection.Includes(nameof(StatusEntity.WorkDirStatus));
         if (!state)
@@ -184,16 +199,13 @@ internal static class GitEntitySnapshots
         return new StatusEntity(
             projection.Includes(nameof(StatusEntity.FilePath)) ? entry.FilePath : string.Empty,
             entry.State.ToString(),
-            entry.State.HasFlag(FileStatus.NewInIndex) || entry.State.HasFlag(FileStatus.ModifiedInIndex) ||
-            entry.State.HasFlag(FileStatus.DeletedFromIndex) || entry.State.HasFlag(FileStatus.RenamedInIndex) ||
-            entry.State.HasFlag(FileStatus.TypeChangeInIndex) ? "Staged" : "NotStaged",
-            entry.State.HasFlag(FileStatus.NewInWorkdir) || entry.State.HasFlag(FileStatus.ModifiedInWorkdir) ||
-            entry.State.HasFlag(FileStatus.DeletedFromWorkdir) || entry.State.HasFlag(FileStatus.RenamedInWorkdir) ||
-            entry.State.HasFlag(FileStatus.TypeChangeInWorkdir) ? "Modified" : "Unmodified");
+            IndexStatus(entry.State),
+            WorkDirStatus(entry.State));
     }
 
     public static StatusEntity Status(GitStatusRecord entry, GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         var state = projection.Includes(nameof(StatusEntity.State)) || projection.Includes(nameof(StatusEntity.IndexStatus)) ||
                     projection.Includes(nameof(StatusEntity.WorkDirStatus));
         if (!state)
@@ -206,12 +218,8 @@ internal static class GitEntitySnapshots
         return new StatusEntity(
             projection.Includes(nameof(StatusEntity.FilePath)) ? entry.FilePath : string.Empty,
             entry.State.ToString(),
-            entry.State.HasFlag(FileStatus.NewInIndex) || entry.State.HasFlag(FileStatus.ModifiedInIndex) ||
-            entry.State.HasFlag(FileStatus.DeletedFromIndex) || entry.State.HasFlag(FileStatus.RenamedInIndex) ||
-            entry.State.HasFlag(FileStatus.TypeChangeInIndex) ? "Staged" : "NotStaged",
-            entry.State.HasFlag(FileStatus.NewInWorkdir) || entry.State.HasFlag(FileStatus.ModifiedInWorkdir) ||
-            entry.State.HasFlag(FileStatus.DeletedFromWorkdir) || entry.State.HasFlag(FileStatus.RenamedInWorkdir) ||
-            entry.State.HasFlag(FileStatus.TypeChangeInWorkdir) ? "Modified" : "Unmodified");
+            IndexStatus(entry.State),
+            WorkDirStatus(entry.State));
     }
 
     public static RepositoryEntity Repository(
@@ -219,6 +227,7 @@ internal static class GitEntitySnapshots
         GitProjection projection,
         GitReferenceBackendOptions? referenceOptions = null)
     {
+        projection.NativePatterns?.Constructed();
         // Repository rows are also injected into library methods; always preserve their compact identity and info
         // snapshot while keeping the potentially large nested enumerables lazy.
         var needsPath = true;
@@ -240,6 +249,7 @@ internal static class GitEntitySnapshots
         string? oldPath,
         GitProjection projection)
     {
+        projection.NativePatterns?.Constructed();
         return new FileHistoryEntity(
             projection.Includes(nameof(FileHistoryEntity.CommitSha)) ? commitSha : null!,
             projection.Includes(nameof(FileHistoryEntity.Author)) ? author : null!,

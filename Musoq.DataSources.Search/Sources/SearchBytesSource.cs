@@ -85,9 +85,12 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
         var cancellationToken = writer.CancellationToken;
         var scopeCounters = _scopeCounters ?? new SearchScopeCounters();
         var resourceBudget = new SearchResourceBudget(_limits);
+        var pathPatterns = new SearchPathPatterns(_executionContext, true);
+        resourceBudget.Patterns = pathPatterns.Execution;
+        var opensBefore = scopeCounters.ContentOpenAttempts;
         var accounting = new SearchExecutionAccounting(
             Guid.NewGuid().ToString("N"),
-            SearchScopeFingerprint.Create(_root, _scope));
+            pathPatterns.Fingerprint(SearchScopeFingerprint.Create(_root, _scope)));
         Exception? terminalException = null;
 
         try
@@ -173,7 +176,7 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                         file,
                         fileCancellationToken);
                     SearchTestHooks.AfterObservation(file);
-                    var fileBudget = resourceBudget.BeginFile(file);
+                    var fileBudget = resourceBudget.BeginFile(file, pathPatterns.Enabled);
                     fileBudget.ReserveBytes(sourceObservation.Length);
                     scopeCounters.IncrementContentOpenAttempts();
                     accounting.RecordFileOpened();
@@ -189,6 +192,7 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                         (byteOffset, matchedBytes, window) =>
                         {
                             resourceBudget.ObserveMatch();
+                            pathPatterns.Execution.Constructed();
                             var row = new SearchByteMatch(
                                 relativePath,
                                 matchIndex,
@@ -261,7 +265,7 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                     ReportRowsRead,
                     cancellationToken,
                     _parallelOptions,
-                    estimateChunkBytes: SearchRowSizeEstimator.EstimateChunk<SearchByteMatch>);
+                    estimateChunkBytes: SearchRowSizeEstimator.EstimateChunk);
 
                 IEnumerable<string> EnumerateEligibleFiles(
                     string searchRoot,
@@ -273,6 +277,12 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                                  token,
                                  scopeCounters))
                     {
+                        accounting.RecordCandidate();
+                        if (pathPatterns.Enabled)
+                        {
+                            resourceBudget.ObserveCandidate();
+                            if (!pathPatterns.Matches(SearchTextPath.GetRelativePath(relativeRoot, file))) continue;
+                        }
                         accounting.RecordEligibleFile();
                         yield return file;
                     }
@@ -304,6 +314,11 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
         }
         finally
         {
+            pathPatterns.Execution.ContentOpened(scopeCounters.ContentOpenAttempts - opensBefore);
+            pathPatterns.Execution.Report(_executionContext);
+            _executionContext.Diagnostics.AddMetric("Search.VisitedCandidates", accounting.VisitedCandidates);
+            _executionContext.Diagnostics.AddMetric("Search.EligibleFiles", accounting.EligibleFiles);
+            _executionContext.Diagnostics.AddMetric("Search.PathRejectedFiles", pathPatterns.Execution.Rejected);
             linkedCancellation?.Dispose();
             progress.End(totalRowsProcessed);
 
@@ -334,7 +349,11 @@ internal sealed class SearchBytesSource : RowSourceBase<SearchByteMatch>
                 terminalReason,
                 scopeCounters.FilesConsidered,
                 terminalFailure.Code,
-                terminalFailure.Path);
+                terminalFailure.Path) with
+            {
+                PathRejectedFiles = pathPatterns.Execution.Rejected,
+                VisitedCandidates = accounting.VisitedCandidates
+            };
         }
     }
 

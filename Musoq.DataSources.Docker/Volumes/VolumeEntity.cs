@@ -7,10 +7,10 @@ namespace Musoq.DataSources.Docker.Volumes;
 public class VolumeEntity(VolumeResponse response)
 {
     [EntityProperty]
-    public string? CreatedAt => response.CreatedAt;
+    public string? CreatedAt => ReadCreatedAt(response);
 
     [EntityProperty]
-    public string? Driver => response.Driver;
+    public string? Driver => ReadDriver(response);
 
     [EntityProperty]
     [BindablePropertyAsTable]
@@ -19,10 +19,10 @@ public class VolumeEntity(VolumeResponse response)
         pair => pair.Value) ?? new Dictionary<string, string>();
 
     [EntityProperty]
-    public string? Mountpoint => response.Mountpoint;
+    public string? Mountpoint => ReadMountpoint(response);
 
     [EntityProperty]
-    public string? Name => response.Name;
+    public string? Name => ReadName(response);
 
     [EntityProperty]
     [BindablePropertyAsTable]
@@ -31,7 +31,7 @@ public class VolumeEntity(VolumeResponse response)
         pair => pair.Value) ?? new Dictionary<string, string>();
 
     [EntityProperty]
-    public string? Scope => response.Scope;
+    public string? Scope => ReadScope(response);
 
     [EntityProperty]
     [BindablePropertyAsTable]
@@ -40,7 +40,14 @@ public class VolumeEntity(VolumeResponse response)
         pair => pair.Value?.ToString() ?? string.Empty) ?? new Dictionary<string, string>();
 
     [EntityProperty]
-    public string UsageData => response.UsageData is null
+    public string UsageData => ReadUsageData(response);
+
+    internal static string? ReadCreatedAt(VolumeResponse value) => value.CreatedAt;
+    internal static string? ReadDriver(VolumeResponse value) => value.Driver;
+    internal static string? ReadMountpoint(VolumeResponse value) => value.Mountpoint;
+    internal static string? ReadName(VolumeResponse value) => value.Name;
+    internal static string? ReadScope(VolumeResponse value) => value.Scope;
+    internal static string ReadUsageData(VolumeResponse value) => value.UsageData is null
         ? string.Empty
-        : $"{response.UsageData.Size}:{response.UsageData.RefCount}";
+        : $"{value.UsageData.Size}:{value.UsageData.RefCount}";
 }

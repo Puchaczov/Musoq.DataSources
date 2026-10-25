@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.Schema.Optimization;
 
@@ -76,6 +77,7 @@ internal static class RoslynSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
                 Properties = properties
             },
@@ -127,7 +129,7 @@ internal static class RoslynSourcePlanner
         };
     }
 
-    private static bool IsSupported(SourcePredicateExpression expression)
+    internal static bool IsSupported(SourcePredicateExpression expression)
     {
         return expression is SourcePredicateComparison comparison &&
                TryGetComparisonParts(comparison, out var columnName, out var originalColumnName, out var literal, out var op) &&

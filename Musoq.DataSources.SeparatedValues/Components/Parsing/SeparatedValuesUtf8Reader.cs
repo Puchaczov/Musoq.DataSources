@@ -576,7 +576,7 @@ internal sealed class SeparatedValuesUtf8Reader : IDisposable
                     _buffer[terminatorOffset + 1] == (byte)'\n')
                     terminatorOffset++;
 
-                SeparatedValuesUtf8Reader.ValidateUtf8(
+                ValidateUtf8(
                     _buffer.AsSpan(_recordStart, contentEnd - _recordStart));
                 _scanOffset = terminatorOffset + 1;
                 _recordStart = _scanOffset;

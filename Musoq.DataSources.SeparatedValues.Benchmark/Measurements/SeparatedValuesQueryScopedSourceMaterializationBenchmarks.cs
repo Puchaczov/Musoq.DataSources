@@ -291,7 +291,7 @@ public class SeparatedValuesQueryScopedSourceMaterializationBenchmarks
         for (var row = 0; row < Rows; row++)
         {
             var reader = new BenchmarkStringFieldReader(values);
-            checksum += TMaterializer.Materialize<BenchmarkStringFieldReader>(ref reader).Checksum;
+            checksum += TMaterializer.Materialize(ref reader).Checksum;
         }
 
         return checksum;
@@ -306,7 +306,7 @@ public class SeparatedValuesQueryScopedSourceMaterializationBenchmarks
         for (var row = 0; row < Rows; row++)
         {
             var reader = new BenchmarkNumericFieldReader(values);
-            checksum += TMaterializer.Materialize<BenchmarkNumericFieldReader>(ref reader).Checksum;
+            checksum += TMaterializer.Materialize(ref reader).Checksum;
         }
 
         return checksum;
@@ -320,7 +320,7 @@ public class SeparatedValuesQueryScopedSourceMaterializationBenchmarks
         where TMaterializer : struct, IQueryRowMaterializer<TRow>
     {
         var request = new QueryScopedRowSourceRequest(context, shape);
-        var source = global::Musoq.DataSources.Tests.Common.NativeSourceCalls.Query(_queryScopedSchema, global::Musoq.Schema.SourceArguments.Create(path ?? _path, global::Musoq.Schema.SourceArguments.Create(true, global::Musoq.Schema.SourceArguments.Create(0, global::Musoq.Schema.SourceArguments.Empty)))).Read<TRow, TMaterializer>("comma", request);
+        var source = NativeSourceCalls.Query(_queryScopedSchema, SourceArguments.Create(path ?? _path, SourceArguments.Create(true, SourceArguments.Create(0, SourceArguments.Empty)))).Read<TRow, TMaterializer>("comma", request);
         var outcome = new BenchmarkOutcomeBuilder();
         foreach (var chunk in source.Chunks)
         {
@@ -844,35 +844,35 @@ public class SeparatedValuesQueryScopedSourceMaterializationBenchmarks
     {
         public static BenchmarkNumericClassRow1 Materialize<TReader>(scoped ref TReader reader)
             where TReader : IQuerySourceFieldReader, allows ref struct =>
-            new(BenchmarkNumericMaterializer1.Materialize<TReader>(ref reader));
+            new(BenchmarkNumericMaterializer1.Materialize(ref reader));
     }
 
     private readonly struct BenchmarkNumericClassMaterializer2 : IQueryRowMaterializer<BenchmarkNumericClassRow2>
     {
         public static BenchmarkNumericClassRow2 Materialize<TReader>(scoped ref TReader reader)
             where TReader : IQuerySourceFieldReader, allows ref struct =>
-            new(BenchmarkNumericMaterializer2.Materialize<TReader>(ref reader));
+            new(BenchmarkNumericMaterializer2.Materialize(ref reader));
     }
 
     private readonly struct BenchmarkNumericClassMaterializer8 : IQueryRowMaterializer<BenchmarkNumericClassRow8>
     {
         public static BenchmarkNumericClassRow8 Materialize<TReader>(scoped ref TReader reader)
             where TReader : IQuerySourceFieldReader, allows ref struct =>
-            new(BenchmarkNumericMaterializer8.Materialize<TReader>(ref reader));
+            new(BenchmarkNumericMaterializer8.Materialize(ref reader));
     }
 
     private readonly struct BenchmarkNumericClassMaterializer32 : IQueryRowMaterializer<BenchmarkNumericClassRow32>
     {
         public static BenchmarkNumericClassRow32 Materialize<TReader>(scoped ref TReader reader)
             where TReader : IQuerySourceFieldReader, allows ref struct =>
-            new(BenchmarkNumericMaterializer32.Materialize<TReader>(ref reader));
+            new(BenchmarkNumericMaterializer32.Materialize(ref reader));
     }
 
     private readonly struct BenchmarkNumericClassMaterializer64 : IQueryRowMaterializer<BenchmarkNumericClassRow64>
     {
         public static BenchmarkNumericClassRow64 Materialize<TReader>(scoped ref TReader reader)
             where TReader : IQuerySourceFieldReader, allows ref struct =>
-            new(BenchmarkNumericMaterializer64.Materialize<TReader>(ref reader));
+            new(BenchmarkNumericMaterializer64.Materialize(ref reader));
     }
 
     [InlineArray(2)]

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.GitHub.Entities;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 using Octokit;
@@ -33,6 +34,18 @@ internal class CommitsSource : AsyncRowsSourceBase<CommitEntity>
 
     protected override async Task CollectChunksAsync(IChunkWriter<CommitEntity> writer, CancellationToken cancellationToken)
     {
+        if (PatternSourcePlan.HasPatterns(_executionContext))
+        {
+            var filtered = GitHubPatternApi.Read(_executionContext, _api, "commits", inner => new CommitsSource(_api, inner, _owner, _repo, _branchOrSha));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
+        var api = GitHubPatternApi.Bind(_api, _executionContext, cancellationToken);
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
@@ -51,11 +64,12 @@ internal class CommitsSource : AsyncRowsSourceBase<CommitEntity>
             long skipped = 0;
             long emitted = 0;
 
+            if (_executionContext.Plan.AcceptedTake == 0) return;
             while (!cancellationToken.IsCancellationRequested)
             {
-                var commits = await _api.GetCommitsAsync(_owner, _repo, request, perPage, page);
+                var commits = await api.GetCommitsAsync(_owner, _repo, request, perPage, page);
 
-                if (commits.Count == 0)
+                if (PatternPage.RawCount(commits) == 0)
                     break;
 
                 var plannedCommits = GitHubSourcePlanner.ApplyAcceptedPlan(commits, plan, ref skipped, ref emitted);
@@ -68,7 +82,7 @@ internal class CommitsSource : AsyncRowsSourceBase<CommitEntity>
                     _executionContext.ReportDataSourceRowsRead(SourceName, totalRowsProcessed);
                 }
 
-                if (commits.Count < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
+                if (PatternPage.RawCount(commits) < perPage || GitHubSourcePlanner.IsTakeSatisfied(plan, emitted))
                     break;
 
                 page++;

@@ -88,6 +88,7 @@ internal sealed class LibGit2TagReader : IGitTagReader
                     continue;
                 }
             }
+            if (projection.NativePatterns?.Matches(tag, GitNativePatterns.Tags) == false) continue;
             var needsAnnotation = !projection.IsAccepted ||
                                   projection.Includes(nameof(TagEntity.Message)) ||
                                   projection.Includes(nameof(TagEntity.Annotation));
@@ -96,6 +97,7 @@ internal sealed class LibGit2TagReader : IGitTagReader
                               projection.Includes(nameof(TagEntity.Commit));
             var target = tag.PeeledTarget ?? tag.Target as GitObject;
             var targetSha = needsTarget ? target?.Sha : null;
+            if (needsAnnotation) projection.NativePatterns?.RichFieldLoaded();
             var annotation = needsAnnotation && tag.Annotation is { } value ? new AnnotationEntity(value, repository) : null;
             var record = new GitTagRecord(
                 repository.Info.Path,
@@ -236,6 +238,7 @@ internal sealed class GitCliTagReader : IGitTagReader
                 GitCliProcessEnvironment.Default),
             cancellationToken);
         using var reader = new GitNulDelimitedUtf8Reader(process.StandardOutput);
+        using var decoding = new GitDecodeAccounting(reader, projection.NativePatterns);
         var completedNaturally = false;
         try
         {
@@ -253,6 +256,23 @@ internal sealed class GitCliTagReader : IGitTagReader
 
                 var canonicalName = header[1..];
                 var friendlyName = ReadRequired(reader, "tag friendly name");
+                var native = projection.NativePatterns;
+                var remainingFields = mode switch { TagProtocolMode.Identity => 1, TagProtocolMode.Type => 2, TagProtocolMode.Target => 4, _ => 8 };
+                if (query.CanonicalNameAfter is not null && native is not null)
+                {
+                    var comparison = string.Compare(canonicalName, query.CanonicalNameAfter, StringComparison.Ordinal);
+                    if (comparison < 0 || comparison == 0 && !query.CanonicalNameAfterInclusive)
+                    {
+                        reader.SkipTokens(remainingFields, cancellationToken);
+                        query.OnCursorSkipped?.Invoke();
+                        continue;
+                    }
+                }
+                var needsNativeTarget = native?.Requires("TargetSha") == true;
+                var needsNativeMessage = native?.Requires("Message") == true;
+                if (native is not null && !needsNativeTarget && !needsNativeMessage &&
+                    !native.Matches(new GitTagRecord(repositoryPath, friendlyName, canonicalName, null, false, null, null, null), GitNativePatterns.TagRecords))
+                { reader.SkipTokens(remainingFields, cancellationToken); continue; }
                 var objectType = mode == TagProtocolMode.Identity ? null : ReadRequired(reader, "tag object type");
                 var objectSha = ReadRequired(reader, "tag object id");
                 var peeledObjectType = mode is TagProtocolMode.Target or TagProtocolMode.Metadata
@@ -261,7 +281,16 @@ internal sealed class GitCliTagReader : IGitTagReader
                 var peeledObjectSha = mode is TagProtocolMode.Target or TagProtocolMode.Metadata
                     ? ReadRequired(reader, "peeled tag object id")
                     : null;
+                var nativeTarget = mode is TagProtocolMode.Target or TagProtocolMode.Metadata
+                    ? string.IsNullOrWhiteSpace(peeledObjectSha) ? objectSha : peeledObjectSha : null;
+                if (native is not null && needsNativeTarget && !needsNativeMessage &&
+                    !native.Matches(new GitTagRecord(repositoryPath, friendlyName, canonicalName, null, false, null, nativeTarget, null), GitNativePatterns.TagRecords))
+                { reader.SkipTokens(mode == TagProtocolMode.Metadata ? 4 : 0, cancellationToken); continue; }
                 var message = mode == TagProtocolMode.Metadata ? ReadRequired(reader, "tag message") : null;
+                if (native is not null && needsNativeMessage &&
+                    !native.Matches(new GitTagRecord(repositoryPath, friendlyName, canonicalName,
+                        string.Equals(objectType, "tag", StringComparison.Ordinal) ? message : null, false, null, nativeTarget, null), GitNativePatterns.TagRecords))
+                { reader.SkipTokens(3, cancellationToken); continue; }
                 var taggerName = mode == TagProtocolMode.Metadata ? ReadRequired(reader, "tagger name") : null;
                 var taggerEmail = mode == TagProtocolMode.Metadata ? ReadRequired(reader, "tagger email") : null;
                 var taggerWhen = mode == TagProtocolMode.Metadata ? ReadRequired(reader, "tagger date") : null;
@@ -394,6 +423,7 @@ internal sealed class LibGit2RemoteReader : IGitRemoteReader
         foreach (var remote in repository.Network.Remotes)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (projection.NativePatterns?.Matches(remote, GitNativePatterns.Remotes) == false) continue;
             if (!onRemote(new GitRemoteRecord(remote.Name, remote.Url, remote.PushUrl)))
                 break;
         }
@@ -414,6 +444,7 @@ internal sealed class GitCliRemoteReader : IGitRemoteReader
             ["config", "--null", "--local", "--list"],
             cancellationToken);
         using var reader = new GitNulDelimitedUtf8Reader(process.StandardOutput);
+        using var decoding = new GitDecodeAccounting(reader, projection.NativePatterns);
         var remotes = new Dictionary<string, (string? Url, string? PushUrl)>(StringComparer.Ordinal);
         while (reader.ReadToken() is { } item)
         {
@@ -444,7 +475,9 @@ internal sealed class GitCliRemoteReader : IGitRemoteReader
         foreach (var (name, remote) in remotes.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (remote.Url is not null && !onRemote(new GitRemoteRecord(name, remote.Url, remote.PushUrl)))
+            var record = new GitRemoteRecord(name, remote.Url!, remote.PushUrl);
+            if (remote.Url is not null && projection.NativePatterns?.Matches(record, GitNativePatterns.RemoteRecords) == false) continue;
+            if (remote.Url is not null && !onRemote(record))
                 break;
         }
     }
@@ -774,11 +807,18 @@ internal sealed class LibGit2StashReader : IGitStashReader
         {
             cancellationToken.ThrowIfCancellationRequested();
             var workTreeSha = stash.WorkTree?.Sha;
+            var selector = $"stash@{{{index++}}}";
+            var native = projection.NativePatterns;
+            var message = native?.Requires("Message") == true ? stash.Message : string.Empty;
+            var partial = new GitStashRecord(repository.Info.Path, selector, workTreeSha ?? string.Empty, message, null, null, null);
+            if (!GitStashReadQueryMatcher.Matches(query, partial)) continue;
+            if (native?.Matches(partial, GitNativePatterns.Stashes) == false) continue;
+            if (needsParents) native?.RichFieldLoaded();
             var record = new GitStashRecord(
                 repository.Info.Path,
-                $"stash@{{{index++}}}",
+                selector,
                 workTreeSha ?? string.Empty,
-                needsMessage ? stash.Message : string.Empty,
+                needsMessage ? native?.Requires("Message") == true ? message : stash.Message : string.Empty,
                 needsParents ? stash.Index?.Sha : null,
                 needsParents ? workTreeSha : null,
                 needsParents ? stash.Untracked?.Sha : null);
@@ -851,7 +891,9 @@ internal sealed class GitCliStashReader : IGitStashReader
                            projection.Includes(nameof(StashEntity.Index)) ||
                            projection.Includes(nameof(StashEntity.WorkTree)) ||
                            projection.Includes(nameof(StashEntity.UntrackedFiles));
-        var format = FormatFor(needsMessage, needsParents);
+        var native = projection.NativePatterns;
+        var format = native is null ? FormatFor(needsMessage, needsParents)
+            : "%gd%x00%H%x00" + (needsMessage ? "%gs%x00" : "") + (needsParents ? "%P%x00" : "");
         var arguments = new List<string> { "log", "-g" };
         if (query.IsDirectSelectorLookup)
             arguments.Add("-1");
@@ -869,6 +911,7 @@ internal sealed class GitCliStashReader : IGitStashReader
                 GitCliProcessEnvironment.Default),
             cancellationToken);
         using var reader = new GitNulDelimitedUtf8Reader(process.StandardOutput);
+        using var decoding = new GitDecodeAccounting(reader, projection.NativePatterns);
         var completedNaturally = false;
         var foundShas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         try
@@ -885,6 +928,25 @@ internal sealed class GitCliStashReader : IGitStashReader
                     continue;
 
                 var sha = ReadRequired(reader, "stash SHA");
+                if (native is not null)
+                {
+                    var messageFirst = native.Requires("Message");
+                    var nativeMessage = messageFirst ? ReadRequired(reader, "stash message") : string.Empty;
+                    var prefix = new GitStashRecord(repositoryPath, selector, sha, nativeMessage, null, sha, null);
+                    var queryMatches = GitStashReadQueryMatcher.Matches(query, prefix);
+                    var admitted = queryMatches && native.Matches(prefix, GitNativePatterns.Stashes);
+                    if (queryMatches && query.HasShaFilter) foundShas.Add(sha);
+                    if (!admitted)
+                        reader.SkipTokens((needsMessage && !messageFirst ? 1 : 0) + (needsParents ? 1 : 0), cancellationToken);
+                    else
+                    {
+                        if (needsMessage && !messageFirst) { nativeMessage = ReadRequired(reader, "stash message"); }
+                        var nativeParents = needsParents ? ReadRequired(reader, "stash parents").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) : [];
+                        yield return prefix with { Message = nativeMessage, IndexSha = nativeParents.Length > 1 ? nativeParents[1] : null, UntrackedFilesSha = nativeParents.Length > 2 ? nativeParents[2] : null };
+                    }
+                    if (queryMatches && GitStashReadQueryMatcher.ShouldStopAfterMatch(query, prefix, foundShas)) break;
+                    continue;
+                }
                 var parents = needsParents
                     ? ReadRequired(reader, "stash parents")
                         .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

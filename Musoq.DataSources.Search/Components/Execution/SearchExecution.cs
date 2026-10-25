@@ -98,6 +98,10 @@ internal sealed record SearchTerminalSummary
 
     public long EligibleFiles { get; }
 
+    public long VisitedCandidates { get; init; }
+
+    public long PathRejectedFiles { get; init; }
+
     public long FilesOpened { get; }
 
     public long FilesRead { get; }
@@ -140,6 +144,7 @@ internal sealed record SearchTerminalSummary
 internal sealed class SearchExecutionAccounting
 {
     private long _eligibleFiles;
+    private long _visitedCandidates;
     private long _filesOpened;
     private long _filesRead;
     private long _filesCompleted;
@@ -165,6 +170,8 @@ internal sealed class SearchExecutionAccounting
     public string ScopeFingerprint { get; }
 
     public long EligibleFiles => Interlocked.Read(ref _eligibleFiles);
+    public long VisitedCandidates => Interlocked.Read(ref _visitedCandidates);
+    public void RecordCandidate() => Interlocked.Increment(ref _visitedCandidates);
 
     public long BinaryFilesSkipped => Interlocked.Read(ref _binaryFilesSkipped);
 

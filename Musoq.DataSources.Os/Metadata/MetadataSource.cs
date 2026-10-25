@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using MetadataExtractor;
 using MetadataExtractor.Util;
 using Musoq.DataSources.Os.Exceptions;
 using Musoq.Schema.Optimization;
+using Musoq.DataSources.Common;
 
 namespace Musoq.DataSources.Os.Metadata;
 
@@ -36,16 +38,28 @@ internal class MetadataSource : EnumerateFilesSourceBase<MetadataEntity>
         _throwOnMetadataReadError = throwOnMetadataReadError;
     }
 
+    protected override PatternColumnBindings<string> NativeBindings => OsNativePatterns.Metadata;
+
+    protected override IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return _fileName is not null ? GetFiles(directoryInfo) : base.GetFiles(directoryInfo, cancellationToken);
+    }
+
     protected override IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
     {
         if (_fileName is not null)
-            return [new FileInfo(Path.Combine(directoryInfo.FullName, _fileName))];
+        {
+            var fullPath = Path.Combine(directoryInfo.FullName, _fileName);
+            return AdmitPath(fullPath) ? [new FileInfo(fullPath)] : [];
+        }
 
         return base.GetFiles(directoryInfo);
     }
 
     protected override void ProcessFile(FileInfo file, DirectorySourceSearchOptions source, List<MetadataEntity> dirFiles)
     {
+        NativePatterns?.ContentOpened();
         using var stream = file.OpenRead();
 
         if (FileTypeDetector.DetectFileType(stream) == FileType.Unknown)
@@ -53,11 +67,13 @@ internal class MetadataSource : EnumerateFilesSourceBase<MetadataEntity>
 
         try
         {
+            var countBefore = dirFiles.Count;
             dirFiles.AddRange(
                 ImageMetadataReader.ReadMetadata(stream)
                     .SelectMany(directory => directory.Tags,
                         (directory, tag) =>
                             new MetadataEntity(file.FullName, directory.Name, tag.Name, tag.Description)));
+            NativePatterns?.Constructed(dirFiles.Count - countBefore);
         }
         catch (Exception exc)
         {

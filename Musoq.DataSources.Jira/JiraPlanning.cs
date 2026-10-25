@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using Musoq.DataSources.Jira.Entities;
 using Musoq.DataSources.Jira.Helpers;
 using Musoq.Schema.Optimization;
@@ -26,6 +27,7 @@ internal static class JiraSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = acceptedOrderBy,
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
@@ -172,8 +174,11 @@ internal static class JiraSourcePlanner
         };
     }
 
-    private static bool IsSupported(SourcePredicateExpression expression)
+    internal static bool IsSupported(SourcePredicateExpression expression)
     {
+        if (expression is SourcePredicateRegexMatch regex)
+            return ProviderRegex.Supports(regex, IsSupported);
+
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
             return false;
@@ -306,6 +311,7 @@ internal static class JiraSourcePlanner
             null => true,
             SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
                 Matches(logical.Left, issue) && Matches(logical.Right, issue),
+            SourcePredicateRegexMatch regex => ProviderRegex.Match(regex, GetColumnValue(issue, ProviderRegex.ColumnName(regex.Column.Name)) as string) == true,
             SourcePredicateComparison comparison => EvaluateComparison(comparison, issue),
             _ => true
         };

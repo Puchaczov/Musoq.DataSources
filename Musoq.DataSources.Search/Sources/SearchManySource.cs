@@ -60,6 +60,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
     }
 
     private string Root { get; }
+    internal string? EffectiveScopeFingerprint { get; private set; }
 
     protected override void CollectChunks(IChunkWriter<SearchMatch> writer)
     {
@@ -69,6 +70,11 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
         CancellationTokenSource? linkedCancellation = null;
         var cancellationToken = writer.CancellationToken;
         var resourceBudget = new SearchResourceBudget(_request.Options.Limits);
+        var pathPatterns = new SearchPathPatterns(_executionContext);
+        var scopeCounters = _scopeCounters ?? new SearchScopeCounters();
+        var opensBefore = scopeCounters.ContentOpenAttempts;
+        long visitedCandidates = 0, eligibleFiles = 0;
+        EffectiveScopeFingerprint = pathPatterns.Fingerprint(SearchScopeFingerprint.Create(Root, _request.Options.Scope));
         var outputBudget = resourceBudget.OutputBudget;
         var projection = SearchProjectionRequirements.From(_executionContext);
         var acceptedPredicate = _executionContext.Plan.AcceptedPredicate;
@@ -107,6 +113,22 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                     exception);
             }
 
+            var relativeRoot = File.Exists(rootPath) ? Path.GetDirectoryName(rootPath) ?? rootPath : rootPath;
+            IEnumerable<string> EnumerateFiles(CancellationToken token)
+            {
+                foreach (var file in SearchScopeTraversal.Enumerate(rootPath, _request.Options.Scope, token, scopeCounters))
+                {
+                    visitedCandidates++;
+                    if (pathPatterns.Enabled)
+                    {
+                        resourceBudget.ObserveCandidate();
+                        if (!pathPatterns.Matches(SearchTextPath.GetRelativePath(relativeRoot, file))) continue;
+                    }
+                    eligibleFiles++;
+                    yield return file;
+                }
+            }
+
             void ProcessFile(
                 string file,
                 IChunkWriter<SearchMatch> fileWriter,
@@ -121,7 +143,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                     file,
                     fileCancellationToken);
                 SearchTestHooks.AfterObservation(file);
-                var fileBudget = resourceBudget.BeginFile(file);
+                var fileBudget = resourceBudget.BeginFile(file, pathPatterns.Enabled);
                 fileBudget.ReserveBytes(sourceObservation.Length);
                 using var smallInput = classifyBinaryFiles &&
                                        sourceObservation.Length <= 4L * 1024 * 1024
@@ -165,7 +187,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                 {
                     if (classifyBinaryFiles)
                     {
-                        _scopeCounters?.IncrementContentOpenAttempts();
+                        scopeCounters?.IncrementContentOpenAttempts();
                         var isBinary = smallInput is not null
                             ? SearchBinaryPolicy.IsBinaryBytes(
                                 file,
@@ -181,14 +203,14 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                                 fileCancellationToken);
                         if (isBinary)
                         {
-                            _scopeCounters?.IncrementBinaryFilesSkipped();
+                            scopeCounters?.IncrementBinaryFilesSkipped();
                             sourceObservation.EnsureCurrent(fileCancellationToken);
                             return;
                         }
                     }
 
                     if (smallInput is null)
-                        _scopeCounters?.IncrementContentOpenAttempts();
+                        scopeCounters?.IncrementContentOpenAttempts();
                     var scanReaderFactory = readerFactory;
                     if (smallInput is not null)
                     {
@@ -197,9 +219,6 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                             smallInput.Length,
                             _request.Options.EncodingMode);
                     }
-                    var relativeRoot = File.Exists(rootPath)
-                        ? Path.GetDirectoryName(rootPath) ?? rootPath
-                        : rootPath;
                     var relativePath = SearchTextPath.GetRelativePath(relativeRoot, file);
                     SearchManyMixedScan.ScanFile(
                         file,
@@ -223,6 +242,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                                 matchIndexes.TryGetValue(patternId, out var matchIndex);
                                 matchIndexes[patternId] = checked(matchIndex + 1);
 
+                                pathPatterns.Execution.Constructed();
                                 var row = new SearchMatch(
                                     relativePath,
                                     matchIndex,
@@ -273,11 +293,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
             }
 
             SearchFileParallelCoordinator.Run(
-                token => SearchScopeTraversal.Enumerate(
-                    rootPath,
-                    _request.Options.Scope,
-                    token,
-                    _scopeCounters),
+                token => EnumerateFiles(token),
                 writer,
                 ProcessFile,
                 acceptedWindow,
@@ -288,7 +304,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                 },
                 cancellationToken,
                 _parallelOptions,
-                estimateChunkBytes: SearchRowSizeEstimator.EstimateChunk<SearchMatch>);
+                estimateChunkBytes: SearchRowSizeEstimator.EstimateChunk);
         }
         catch (OperationCanceledException)
         {
@@ -310,6 +326,11 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
         }
         finally
         {
+            pathPatterns.Execution.ContentOpened(scopeCounters.ContentOpenAttempts - opensBefore);
+            pathPatterns.Execution.Report(_executionContext);
+            _executionContext.Diagnostics.AddMetric("Search.VisitedCandidates", visitedCandidates);
+            _executionContext.Diagnostics.AddMetric("Search.EligibleFiles", eligibleFiles);
+            _executionContext.Diagnostics.AddMetric("Search.PathRejectedFiles", pathPatterns.Execution.Rejected);
             workerBuffers.Dispose();
             linkedCancellation?.Dispose();
             progress.End(totalRowsProcessed);

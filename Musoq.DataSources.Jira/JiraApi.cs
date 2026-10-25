@@ -1,14 +1,20 @@
 using Musoq.DataSources.Jira.Entities;
+using Musoq.DataSources.Common;
 
 namespace Musoq.DataSources.Jira;
 
 /// <summary>
 ///     Jira API implementation using Atlassian.SDK.
 /// </summary>
-internal class JiraApi : IJiraApi
+internal class JiraApi : IJiraApi, IFilteredJiraApi
 {
     private const int DefaultMaxResults = 50;
     private readonly Atlassian.Jira.Jira _jira;
+    private readonly NativePatternExecution? _patterns;
+    private readonly CancellationToken _cancellation;
+    private JiraApi(Atlassian.Jira.Jira jira, NativePatternExecution patterns, CancellationToken cancellationToken)
+    { _jira = jira; _patterns = patterns; _cancellation = cancellationToken; }
+    public IJiraApi WithPatterns(NativePatternExecution patterns, CancellationToken cancellationToken) => new JiraApi(_jira, patterns, cancellationToken);
 
     /// <summary>
     ///     Initializes a new instance of the JiraApi class.
@@ -36,7 +42,7 @@ internal class JiraApi : IJiraApi
         int startAt = 0)
     {
         var issues = await _jira.Issues.GetIssuesFromJqlAsync(jql, maxResults, startAt);
-        return issues.Select(i => (IJiraIssue)new IssueEntity(i)).ToList();
+        return PatternPage.Map(issues, _patterns, JiraNativePatterns.Issue, static value => (IJiraIssue)new IssueEntity(value), _cancellation);
     }
 
     /// <inheritdoc />
@@ -57,7 +63,7 @@ internal class JiraApi : IJiraApi
     public async Task<IReadOnlyList<IJiraProject>> GetProjectsAsync()
     {
         var projects = await _jira.Projects.GetProjectsAsync();
-        return projects.Select(p => (IJiraProject)new ProjectEntity(p)).ToList();
+        return PatternPage.Map(projects, _patterns, JiraNativePatterns.Project, static value => (IJiraProject)new ProjectEntity(value), _cancellation);
     }
 
     /// <inheritdoc />
@@ -79,7 +85,7 @@ internal class JiraApi : IJiraApi
     {
         var issue = await _jira.Issues.GetIssueAsync(issueKey);
         var comments = await issue.GetCommentsAsync();
-        return comments.Select(c => (IJiraComment)new CommentEntity(c, issueKey)).ToList();
+        return MapComments(comments, issueKey);
     }
 
     /// <inheritdoc />
@@ -91,7 +97,7 @@ internal class JiraApi : IJiraApi
         foreach (var issue in issues)
         {
             var comments = await issue.GetCommentsAsync();
-            allComments.AddRange(comments.Select(c => (IJiraComment)new CommentEntity(c, issue.Key.Value)));
+            allComments.AddRange(MapComments(comments, issue.Key.Value));
         }
 
         return allComments;
@@ -103,4 +109,7 @@ internal class JiraApi : IJiraApi
         var result = await _jira.Issues.GetIssuesFromJqlAsync(jql, 0);
         return result.TotalItems;
     }
+    internal IReadOnlyList<IJiraComment> MapComments(IEnumerable<Atlassian.Jira.Comment> comments, string issueKey)
+        => PatternPage.Map(comments.Select(value => new JiraNativePatterns.CommentInput(value, issueKey)), _patterns,
+            JiraNativePatterns.Comment, static value => (IJiraComment)new CommentEntity(value.Value, value.IssueKey), _cancellation);
 }

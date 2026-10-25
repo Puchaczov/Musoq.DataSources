@@ -20,7 +20,7 @@ internal sealed class JsonScanPipeline<TRow, TProcessor, TFactory>
     private const string JsonSourceName = "json";
     private readonly SourceExecutionContext _executionContext;
     private readonly string _path;
-    private readonly Musoq.Schema.QueryRowShape _shape;
+    private readonly Schema.QueryRowShape _shape;
 
     /// <summary>
     ///     Initializes a JSON file source.
@@ -28,7 +28,7 @@ internal sealed class JsonScanPipeline<TRow, TProcessor, TFactory>
     /// <param name="path">Path to strict UTF-8 JSON content.</param>
     /// <param name="executionContext">Source execution context.</param>
     /// <param name="shape">Concrete query row shape.</param>
-    public JsonScanPipeline(string path, SourceExecutionContext executionContext, Musoq.Schema.QueryRowShape shape)
+    public JsonScanPipeline(string path, SourceExecutionContext executionContext, Schema.QueryRowShape shape)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(executionContext);
@@ -193,7 +193,7 @@ internal sealed class JsonScanPipeline<TRow, TProcessor, TFactory>
         DataSourceProgressReporter progress,
         CancellationToken cancellationToken)
     {
-        var processor = TFactory.Create(snapshot, _executionContext, _shape, writer, progress, cancellationToken);
+        using var processor = TFactory.Create(snapshot, _executionContext, _shape, writer, progress, cancellationToken);
         JsonRecordFramer.Read(_path, processor, cancellationToken);
         processor.Complete();
         return processor.RowsRead;
@@ -205,7 +205,7 @@ internal sealed class JsonScanPipeline<TRow, TProcessor, TFactory>
         IChunkWriter<TRow> writer,
         CancellationToken cancellationToken)
     {
-        var processor = TFactory.Create(snapshot, _executionContext, _shape, writer, null, cancellationToken);
+        using var processor = TFactory.Create(snapshot, _executionContext, _shape, writer, null, cancellationToken);
         JsonRecordFramer.ReadPartition(_path, partition, processor, cancellationToken);
         processor.Complete();
         if (processor.RowsRead != partition.RowCount)

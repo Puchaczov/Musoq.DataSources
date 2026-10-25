@@ -2,6 +2,7 @@
 
 using System;
 using System.Text;
+using Musoq.DataSources.Common;
 using System.Threading;
 
 using Musoq.DataSources.Search.Entities;
@@ -217,13 +218,20 @@ internal sealed class SearchResourceBudget
             : new SearchOutputStagingBudget(_limits.MaxInFlightOutputBytes);
     }
 
+    internal NativePatternExecution? Patterns { get; set; }
     public SearchResourceLimits Limits => _limits;
 
     public SearchOutputStagingBudget? OutputBudget => _outputBudget;
 
-    public SearchFileBudget BeginFile(string path)
+    public SearchFileBudget BeginFile(string path, bool candidateReserved = false)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
+        if (!candidateReserved) ObserveCandidate();
+        return new SearchFileBudget(this, path);
+    }
+
+    internal void ObserveCandidate()
+    {
         if (_limits.MaxFiles != SearchResourceLimits.Unlimited)
         {
             Reserve(
@@ -233,7 +241,6 @@ internal sealed class SearchResourceBudget
                 "files",
                 "file-count");
         }
-        return new SearchFileBudget(this, path);
     }
 
     public void ObserveMatch()

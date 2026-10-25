@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using Musoq.DataSources.GitHub.Entities;
 using Musoq.Schema.Optimization;
 using Octokit;
@@ -111,6 +112,7 @@ internal static class GitHubSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
                 AcceptedSkip = acceptsSlice ? request.Skip : null,
                 AcceptedTake = acceptsSlice ? request.Take : null,
@@ -280,8 +282,11 @@ internal static class GitHubSourcePlanner
         };
     }
 
-    private static bool IsSupported(string tableName, SourcePredicateExpression expression)
+    internal static bool IsSupported(string tableName, SourcePredicateExpression expression)
     {
+        if (expression is SourcePredicateRegexMatch regex)
+            return ProviderRegex.Supports(regex, comparison => IsSupported(tableName, comparison));
+
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
             return false;
@@ -498,6 +503,7 @@ internal static class GitHubSourcePlanner
             null => true,
             SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
                 Matches(logical.Left, entity) && Matches(logical.Right, entity),
+            SourcePredicateRegexMatch regex => ProviderRegex.Match(regex, GetColumnValue(entity, ProviderRegex.ColumnName(regex.Column.Name)) as string) == true,
             SourcePredicateComparison comparison => EvaluateComparison(comparison, entity),
             _ => true
         };

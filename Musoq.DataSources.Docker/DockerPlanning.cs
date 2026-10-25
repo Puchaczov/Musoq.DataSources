@@ -1,4 +1,5 @@
 #nullable enable
+using Musoq.DataSources.Common;
 
 using Musoq.DataSources.Docker.Containers;
 using Musoq.DataSources.Docker.Images;
@@ -24,6 +25,7 @@ internal static class DockerSourcePlanner
                 Identity = request.Identity,
                 AcceptedColumns = [],
                 AcceptedPredicate = acceptedPredicate,
+                PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
                 Properties = new Dictionary<string, object?>()
             },
@@ -47,6 +49,7 @@ internal static class DockerSourcePlanner
             null => true,
             SourcePredicateLogical { Operator: SourcePredicateLogicalOperator.And } logical =>
                 Matches(logical.Left, entity) && Matches(logical.Right, entity),
+            SourcePredicateRegexMatch regex => ProviderRegex.Match(regex, GetColumnValue(entity, ProviderRegex.ColumnName(regex.Column.Name)) as string) == true,
             SourcePredicateComparison comparison => EvaluateComparison(comparison, entity),
             _ => true
         };
@@ -87,8 +90,11 @@ internal static class DockerSourcePlanner
         };
     }
 
-    private static bool IsSupported(string tableName, SourcePredicateExpression expression)
+    internal static bool IsSupported(string tableName, SourcePredicateExpression expression)
     {
+        if (expression is SourcePredicateRegexMatch regex)
+            return ProviderRegex.Supports(regex, comparison => IsSupported(tableName, comparison));
+
         if (expression is not SourcePredicateComparison comparison ||
             !TryGetComparisonParts(comparison, out var columnName, out var literal, out var op))
             return false;

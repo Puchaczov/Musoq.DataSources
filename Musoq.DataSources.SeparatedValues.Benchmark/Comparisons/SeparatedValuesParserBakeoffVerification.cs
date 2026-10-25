@@ -172,7 +172,7 @@ internal static class SeparatedValuesParserBakeoffVerification
 
     private static List<string[]> ReadSep(string path)
     {
-        using var reader = nietras.SeparatedValues.Sep.New(Separator)
+        using var reader = Sep.New(Separator)
             .Reader(options => options with
             {
                 HasHeader = false,

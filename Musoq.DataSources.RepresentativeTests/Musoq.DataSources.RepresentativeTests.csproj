@@ -60,4 +60,7 @@
         <Content Remove="TestsSolutions\**\.idea\**"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\Shared\ProviderRegex.cs" Link="Shared\ProviderRegex.cs" />
+    </ItemGroup>
 </Project>

@@ -15,6 +15,7 @@ using Musoq.DataSources.SeparatedValues.Components.Parsing;
 using Musoq.DataSources.SeparatedValues.Components.Planning;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
+using Musoq.Schema.Diagnostics;
 using Musoq.Schema.Helpers;
 using Musoq.Schema.Optimization;
 
@@ -93,7 +94,14 @@ internal sealed class SeparatedValuesProjectedRowProcessor<TRow, TProjector>
         return ProcessCore(record, true, separator);
     }
 
-    private bool ProcessCore(
+    private bool ProcessCore(SeparatedValuesUtf8Record record, bool unquoted, byte separator)
+    {
+        if (!_kernel.HasDecodedReuse) return ProcessRecord(record, unquoted, separator);
+        try { return ProcessRecord(record, unquoted, separator); }
+        finally { _kernel.ClearRecord(); }
+    }
+
+    private bool ProcessRecord(
         SeparatedValuesUtf8Record record,
         bool unquoted,
         byte separator)
@@ -167,6 +175,7 @@ internal sealed class SeparatedValuesRecordProgram
 {
     private readonly SeparatedValuesFieldAction[] _actions;
     private readonly int[] _captureSourceOrdinals;
+    private readonly int[] _reuseSourceOrdinals;
     private readonly IFormatProvider _culture;
     private readonly SeparatedValuesPredicateEvaluator _predicate;
     private readonly SeparatedValuesQueryProjectionPlan _queryProjection;
@@ -184,6 +193,7 @@ internal sealed class SeparatedValuesRecordProgram
     {
         _actions = actions;
         _captureSourceOrdinals = captureSourceOrdinals;
+        _reuseSourceOrdinals = actions.Select((action, ordinal) => (action, ordinal)).Where(pair => pair.action.ReuseSlot >= 0).Select(pair => pair.ordinal).ToArray();
         _stringPool = stringPool;
         _culture = culture;
         _queryProjection = queryProjection;
@@ -205,6 +215,7 @@ internal sealed class SeparatedValuesRecordProgram
             executionContext.Plan.AcceptedPredicate);
         var validator = SeparatedValuesSchemaValidator.Create(contract);
         var actions = new SeparatedValuesFieldAction[contract.Snapshot.Columns.Length];
+        var reuseSlots = 0;
         for (var sourceOrdinal = 0; sourceOrdinal < actions.Length; sourceOrdinal++)
         {
             var validatesSampledType = validator.TryGetValidationConversion(sourceOrdinal, out var validationConversion);
@@ -224,7 +235,8 @@ internal sealed class SeparatedValuesRecordProgram
                 parsesEnum ? enumPlan : null,
                 validatesSampledType,
                 predicate.HasTermsAt(sourceOrdinal),
-                projection.HasProjectionAt(sourceOrdinal));
+                projection.HasProjectionAt(sourceOrdinal),
+                predicate.HasPatternAt(sourceOrdinal) && projection.HasStringProjectionAt(sourceOrdinal) ? reuseSlots++ : -1);
         }
 
         return new SeparatedValuesRecordProgram(
@@ -237,17 +249,19 @@ internal sealed class SeparatedValuesRecordProgram
             validator);
     }
 
-    public SeparatedValuesRecordKernel CreateExecutor()
+    public SeparatedValuesRecordKernel CreateExecutor(SourceDiagnostics? diagnostics = null)
     {
         return new SeparatedValuesRecordKernel(
             _actions,
             new SeparatedValuesPhysicalFieldTraversal(
                 _captureSourceOrdinals,
                 _stringPool,
-                _culture),
+                _culture,
+                _reuseSourceOrdinals),
             _queryProjection,
             _predicate,
-            _schemaValidator);
+            _schemaValidator,
+            diagnostics);
     }
 }
 
@@ -256,10 +270,12 @@ internal readonly record struct SeparatedValuesFieldAction(
     SeparatedValuesEnumPlan? EnumPlan,
     bool ValidatesSampledType,
     bool HasPredicate,
-    bool HasProjection);
+    bool HasProjection,
+    int ReuseSlot = -1);
 
-internal sealed class SeparatedValuesRecordKernel
+internal sealed class SeparatedValuesRecordKernel : IDisposable
 {
+    private readonly SourceDiagnostics? _diagnostics;
     private readonly SeparatedValuesFieldAction[] _actions;
     private readonly SeparatedValuesPhysicalFieldTraversal _fields;
     private readonly SeparatedValuesPredicateEvaluator _predicate;
@@ -271,8 +287,9 @@ internal sealed class SeparatedValuesRecordKernel
         SeparatedValuesPhysicalFieldTraversal fields,
         SeparatedValuesQueryProjectionPlan queryProjection,
         SeparatedValuesPredicateEvaluator predicate,
-        SeparatedValuesSchemaValidator schemaValidator)
+        SeparatedValuesSchemaValidator schemaValidator, SourceDiagnostics? diagnostics = null)
     {
+        _diagnostics = diagnostics;
         _actions = actions;
         _fields = fields;
         _queryProjection = queryProjection;
@@ -280,6 +297,15 @@ internal sealed class SeparatedValuesRecordKernel
         _schemaValidator = schemaValidator;
     }
 
+    public bool HasDecodedReuse => _fields.DecodedStrings is not null;
+    public int ReuseSlots => _fields.DecodedStrings?.Slots ?? 0;
+    public int RetainedDecodedStrings => _fields.DecodedStrings?.Retained ?? 0;
+    public void ClearRecord() => _fields.DecodedStrings?.Clear();
+    public void Dispose()
+    {
+        ClearRecord();
+        _fields.DecodedStrings?.Report(_diagnostics);
+    }
     public bool HasOutputColumns => _queryProjection.HasOutputColumns;
 
     public long MaterializedRowCount => _fields.MaterializedRowCount;
@@ -294,7 +320,20 @@ internal sealed class SeparatedValuesRecordKernel
         return new SeparatedValuesQueryRowProjector<TRow, TMaterializer>(_fields, _queryProjection);
     }
 
-    public bool Prepare(SeparatedValuesUtf8Record record, long rowNumber)
+    public bool Prepare(SeparatedValuesUtf8Record record, long rowNumber) => PrepareRecord(record, rowNumber, false, default);
+    public bool PrepareUnquoted(SeparatedValuesUtf8Record record, byte separator, long rowNumber) => PrepareRecord(record, rowNumber, true, separator);
+    private bool PrepareRecord(SeparatedValuesUtf8Record record, long rowNumber, bool unquoted, byte separator)
+    {
+        if (!HasDecodedReuse) return unquoted ? PrepareUnquotedCore(record, separator, rowNumber) : PrepareCore(record, rowNumber);
+        try
+        {
+            var accepted = unquoted ? PrepareUnquotedCore(record, separator, rowNumber) : PrepareCore(record, rowNumber);
+            if (!accepted) ClearRecord();
+            return accepted;
+        }
+        catch { ClearRecord(); throw; }
+    }
+    private bool PrepareCore(SeparatedValuesUtf8Record record, long rowNumber)
     {
         _fields.BeginRecord();
         var predicateTermIndex = 0;
@@ -317,7 +356,7 @@ internal sealed class SeparatedValuesRecordKernel
         return predicateMatched && _predicate.IsComplete(predicateTermIndex);
     }
 
-    public bool PrepareUnquoted(
+    private bool PrepareUnquotedCore(
         SeparatedValuesUtf8Record record,
         byte separator,
         long rowNumber)
@@ -403,7 +442,9 @@ internal sealed class SeparatedValuesRecordKernel
                 field,
                 parsed,
                 rowNumber,
-                ref predicateTermIndex);
+                ref predicateTermIndex,
+                _fields.DecodedStrings,
+                action.ReuseSlot);
         }
 
         if ((predicateMatched || !_predicate.HasTerms) && action.HasProjection)
@@ -509,12 +550,16 @@ internal sealed class SeparatedValuesPhysicalFieldTraversal
 {
     private readonly int[] _sourceOrdinals;
     private readonly SeparatedValuesFieldLocation[] _locations;
+    private readonly int[] _reuseOrdinals;
+    internal RecordStringCache? DecodedStrings { get; }
 
     public SeparatedValuesPhysicalFieldTraversal(
         int[] sourceOrdinals,
         StructuredStringPool stringPool,
-        IFormatProvider culture)
+        IFormatProvider culture, int[]? reuseOrdinals = null)
     {
+        _reuseOrdinals = reuseOrdinals ?? [];
+        DecodedStrings = _reuseOrdinals.Length == 0 ? null : new RecordStringCache(_reuseOrdinals.Length);
         _sourceOrdinals = sourceOrdinals ?? throw new ArgumentNullException(nameof(sourceOrdinals));
         _locations = new SeparatedValuesFieldLocation[sourceOrdinals.Length];
         StringPool = stringPool ?? throw new ArgumentNullException(nameof(stringPool));
@@ -532,6 +577,7 @@ internal sealed class SeparatedValuesPhysicalFieldTraversal
     public void BeginRecord()
     {
         Array.Clear(_locations);
+        DecodedStrings?.Clear();
     }
 
     public void CaptureField(
@@ -553,6 +599,12 @@ internal sealed class SeparatedValuesPhysicalFieldTraversal
     public ref readonly SeparatedValuesFieldLocation GetLocation(int bindingIndex)
     {
         return ref _locations[bindingIndex];
+    }
+
+    internal bool TryReadDecoded(int sourceOrdinal, out string value)
+    {
+        value = null!;
+        return DecodedStrings is not null && DecodedStrings.TryRead(Array.BinarySearch(_reuseOrdinals, sourceOrdinal), 0, out value);
     }
 
     public void RecordMaterializedRow()
@@ -648,6 +700,8 @@ internal sealed class SeparatedValuesPredicateEvaluator
 
     public bool HasTerms => _terms.Length > 0;
 
+    public bool HasPatternAt(int sourceOrdinal) => Array.Exists(_terms, term => term.SourceOrdinal == sourceOrdinal && term.IsPattern);
+
     public bool HasTermsAt(int sourceOrdinal)
     {
         return Array.Exists(_terms, term => term.SourceOrdinal == sourceOrdinal);
@@ -698,7 +752,7 @@ internal sealed class SeparatedValuesPredicateEvaluator
         SeparatedValuesUtf8Field field,
         SeparatedValuesParsedValue parsed,
         long rowNumber,
-        ref int termIndex)
+        ref int termIndex, RecordStringCache? reuse = null, int reuseSlot = -1)
     {
         if (termIndex == _terms.Length)
             return true;
@@ -710,7 +764,7 @@ internal sealed class SeparatedValuesPredicateEvaluator
 
         while (termIndex < _terms.Length && _terms[termIndex].SourceOrdinal == fieldIndex)
         {
-            if (!_terms[termIndex].Evaluate(field, parsed, rowNumber, _path, _culture))
+            if (!_terms[termIndex].Evaluate(field, parsed, rowNumber, _path, _culture, reuse, reuseSlot))
                 return false;
             termIndex++;
         }
@@ -720,7 +774,11 @@ internal sealed class SeparatedValuesPredicateEvaluator
 
     public bool IsComplete(int termIndex)
     {
-        return termIndex == _terms.Length;
+        // A ragged record has trailing missing fields. Core materializes those
+        // strings as null, so negated patterns must still accept them.
+        while (termIndex < _terms.Length)
+            if (!_terms[termIndex++].MatchesMissing) return false;
+        return true;
     }
 
     private static void AddTerms(
@@ -734,6 +792,14 @@ internal sealed class SeparatedValuesPredicateEvaluator
                 AddTerms(contract, logical.Left, terms);
                 AddTerms(contract, logical.Right, terms);
                 return;
+            case SourcePredicatePatternMatch pattern:
+            {
+                var name = pattern.Column.Name;
+                if (!contract.Snapshot.TryGetColumn(name, out var column))
+                    throw new StructuredUnknownColumnException(name, contract.Snapshot.Identity.CanonicalPath);
+                terms.Add(PredicateTerm.CreatePattern(column, pattern));
+                return;
+            }
             case SourcePredicateComparison comparison when
                 SeparatedValuesSourcePlanner.TryGetEnumComparisonParts(
                     comparison,
@@ -863,6 +929,8 @@ internal sealed class SeparatedValuesPredicateEvaluator
             EnumFlags
         }
 
+        private ProviderRegex.Matcher? _regex;
+        private bool _regexNegated;
         private readonly bool _boolean;
         private readonly decimal _decimal;
         private readonly double _double;
@@ -918,9 +986,19 @@ internal sealed class SeparatedValuesPredicateEvaluator
             _flagsMatchMode = flagsMatchMode;
         }
 
+        public bool MatchesMissing => _regex is not null && _regexNegated;
+
         public int SourceOrdinal { get; }
 
         public SeparatedValuesConversion Conversion => _conversion;
+
+        public static PredicateTerm CreatePattern(StructuredColumnSnapshot column, SourcePredicatePatternMatch pattern)
+        {
+            var term = Create(column, string.Empty, SourcePredicateComparisonOperator.Equal, typeof(string));
+            term._regex = ProviderRegex.Prepare(pattern);
+            term._regexNegated = pattern.IsNegated;
+            return term;
+        }
 
         public static PredicateTerm Create(
             StructuredColumnSnapshot column,
@@ -1126,12 +1204,13 @@ internal sealed class SeparatedValuesPredicateEvaluator
                 flagsMatchMode: matchMode);
         }
 
+        public bool IsPattern => _regex is not null;
         public bool Evaluate(
             SeparatedValuesUtf8Field field,
             SeparatedValuesParsedValue parsed,
             long rowNumber,
             string path,
-            IFormatProvider culture)
+            IFormatProvider culture, RecordStringCache? reuse = null, int reuseSlot = -1)
         {
             if (_kind is PredicateTermKind.EnumComparison or
                 PredicateTermKind.EnumMembership or
@@ -1140,7 +1219,17 @@ internal sealed class SeparatedValuesPredicateEvaluator
                 return EvaluateEnum(field, parsed, rowNumber, path);
 
             if (SeparatedValuesValueConverter.IsNull(field))
-                return false;
+                return _regex is not null && _regexNegated;
+
+            if (_regex is not null)
+            {
+                if (reuse is null || !reuse.TryRead(reuseSlot, 0, out var value))
+                {
+                    value = field.Decode();
+                    if (reuseSlot >= 0) reuse!.StoreDecoded(reuseSlot, 0, value);
+                }
+                return ProviderRegex.Evaluate(_regex, _regexNegated, value) == true;
+            }
 
             if (parsed.CanCompare(_conversion))
             {
@@ -1326,7 +1415,7 @@ internal sealed class SeparatedValuesPredicateEvaluator
             SeparatedValuesUtf8Field field,
             long rowNumber,
             string path,
-            IFormatProvider culture)
+            IFormatProvider culture, RecordStringCache? reuse = null, int reuseSlot = -1)
         {
             if (!SeparatedValuesValueConverter.TryParse(field, out decimal value, culture))
                 throw InvalidPredicateValue(field, rowNumber, path);

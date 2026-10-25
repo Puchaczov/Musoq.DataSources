@@ -159,7 +159,8 @@ internal static class SearchFileParallelCoordinator
         Action<long>? reportRowsRead,
         CancellationToken cancellationToken,
         SearchFileParallelOptions? options = null,
-        Func<IReadOnlyList<T>, long>? estimateChunkBytes = null)
+        Func<IReadOnlyList<T>, long>? estimateChunkBytes = null,
+        bool completeScan = false)
     {
         ArgumentNullException.ThrowIfNull(enumerateFiles);
         ArgumentNullException.ThrowIfNull(destination);
@@ -168,7 +169,7 @@ internal static class SearchFileParallelCoordinator
         options ??= SearchFileParallelOptions.Default;
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (acceptedWindow?.IsSatisfied == true)
+        if (!completeScan && acceptedWindow?.IsSatisfied == true)
             return 0;
 
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -222,7 +223,7 @@ internal static class SearchFileParallelCoordinator
                         options.OutputOrder,
                         stop.Token));
 
-                    if (acceptedWindow?.IsSatisfied == true)
+                    if (!completeScan && acceptedWindow?.IsSatisfied == true)
                     {
                         FinishQuerySatisfied(stop, work, active, workers, progress);
                         progress?.Flush();
@@ -251,7 +252,7 @@ internal static class SearchFileParallelCoordinator
                     options.OutputOrder,
                     stop.Token));
 
-                if (acceptedWindow?.IsSatisfied == true)
+                if (!completeScan && acceptedWindow?.IsSatisfied == true)
                 {
                     FinishQuerySatisfied(stop, work, active, workers, progress);
                     progress?.Flush();

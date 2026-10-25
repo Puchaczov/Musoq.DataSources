@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Musoq.DataSources.AsyncRowsSource;
 using Musoq.DataSources.Jira.Entities;
+using Musoq.DataSources.Common;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
 
@@ -24,12 +25,24 @@ internal class ProjectsSource : AsyncRowsSourceBase<IJiraProject>
 
     protected override async Task CollectChunksAsync(IChunkWriter<IJiraProject> writer, CancellationToken cancellationToken)
     {
+        if (PatternSourcePlan.HasPatterns(_executionContext))
+        {
+            var filtered = JiraPatternApi.Read(_executionContext, _api, "projects", inner => new ProjectsSource(_api, inner));
+            foreach (var chunk in filtered.Chunks)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                writer.Write(chunk);
+            }
+            return;
+        }
+
+        var api = JiraPatternApi.Bind(_api, _executionContext, cancellationToken);
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
         try
         {
-            var projects = await _api.GetProjectsAsync();
+            var projects = await api.GetProjectsAsync();
 
             cancellationToken.ThrowIfCancellationRequested();
 

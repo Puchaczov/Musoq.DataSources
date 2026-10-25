@@ -1,15 +1,21 @@
 using Musoq.DataSources.GitHub.Entities;
 using Octokit;
+using Musoq.DataSources.Common;
 
 namespace Musoq.DataSources.GitHub;
 
 /// <summary>
 ///     Implementation of IGitHubApi using Octokit.
 /// </summary>
-internal class GitHubApi : IGitHubApi
+internal class GitHubApi : IGitHubApi, IFilteredGitHubApi
 {
     private const int DefaultPerPage = 100;
     private readonly GitHubClient _client;
+    private readonly NativePatternExecution? _patterns;
+    private readonly CancellationToken _cancellation;
+    private GitHubApi(GitHubClient client, NativePatternExecution patterns, CancellationToken cancellationToken)
+    { _client = client; _patterns = patterns; _cancellation = cancellationToken; }
+    public IGitHubApi WithPatterns(NativePatternExecution patterns, CancellationToken cancellationToken) => new GitHubApi(_client, patterns, cancellationToken);
 
     public GitHubApi(string token)
     {
@@ -33,7 +39,7 @@ internal class GitHubApi : IGitHubApi
         };
 
         var repos = await _client.Repository.GetAllForCurrent(request ?? new RepositoryRequest(), options);
-        return repos.Select(r => new RepositoryEntity(r)).ToList();
+        return PatternPage.Map(repos, _patterns, GitHubNativePatterns.Repository, static value => new RepositoryEntity(value), _cancellation);
     }
 
     public async Task<IReadOnlyList<RepositoryEntity>> GetRepositoriesForOwnerAsync(string owner, int? perPage = null,
@@ -49,12 +55,12 @@ internal class GitHubApi : IGitHubApi
         try
         {
             var repos = await _client.Repository.GetAllForOrg(owner, options);
-            return repos.Select(r => new RepositoryEntity(r)).ToList();
+            return PatternPage.Map(repos, _patterns, GitHubNativePatterns.Repository, static value => new RepositoryEntity(value), _cancellation);
         }
         catch (NotFoundException)
         {
             var repos = await _client.Repository.GetAllForUser(owner, options);
-            return repos.Select(r => new RepositoryEntity(r)).ToList();
+            return PatternPage.Map(repos, _patterns, GitHubNativePatterns.Repository, static value => new RepositoryEntity(value), _cancellation);
         }
     }
 
@@ -71,7 +77,7 @@ internal class GitHubApi : IGitHubApi
         request.Page = page ?? 1;
 
         var result = await _client.Search.SearchRepo(request);
-        return result.Items.Select(r => new RepositoryEntity(r)).ToList();
+        return PatternPage.Map(result.Items, _patterns, GitHubNativePatterns.Repository, static value => new RepositoryEntity(value), _cancellation);
     }
 
     public async Task<IReadOnlyList<IssueEntity>> GetIssuesAsync(string owner, string repo,
@@ -86,7 +92,7 @@ internal class GitHubApi : IGitHubApi
 
         var issues =
             await _client.Issue.GetAllForRepository(owner, repo, request ?? new RepositoryIssueRequest(), options);
-        return issues.Select(i => new IssueEntity(i)).ToList();
+        return PatternPage.Map(issues, _patterns, GitHubNativePatterns.Issue, static value => new IssueEntity(value), _cancellation);
     }
 
     public async Task<IReadOnlyList<IssueEntity>> SearchIssuesAsync(SearchIssuesRequest request, int? perPage = null,
@@ -96,7 +102,7 @@ internal class GitHubApi : IGitHubApi
         request.Page = page ?? 1;
 
         var result = await _client.Search.SearchIssues(request);
-        return result.Items.Select(i => new IssueEntity(i)).ToList();
+        return PatternPage.Map(result.Items, _patterns, GitHubNativePatterns.Issue, static value => new IssueEntity(value), _cancellation);
     }
 
     public async Task<IReadOnlyList<PullRequestEntity>> GetPullRequestsAsync(string owner, string repo,
@@ -114,18 +120,19 @@ internal class GitHubApi : IGitHubApi
 
 
         var fullPrs = new List<PullRequestEntity>();
+        _patterns?.PageRead();
         foreach (var pr in prs)
-            try
-            {
-                var fullPr = await _client.PullRequest.Get(owner, repo, pr.Number);
-                fullPrs.Add(new PullRequestEntity(fullPr));
-            }
-            catch
-            {
-                fullPrs.Add(new PullRequestEntity(pr));
-            }
-
-        return fullPrs;
+        {
+            _cancellation.ThrowIfCancellationRequested();
+            PullRequest value;
+            try { value = await _client.PullRequest.Get(owner, repo, pr.Number); }
+            catch { value = pr; }
+            _cancellation.ThrowIfCancellationRequested();
+            if (_patterns?.Matches(value, GitHubNativePatterns.PullRequest) == false) continue;
+            fullPrs.Add(new PullRequestEntity(value));
+            _patterns?.Constructed();
+        }
+        return _patterns is null ? fullPrs : new PatternPage<PullRequestEntity>(fullPrs, prs.Count);
     }
 
     public async Task<PullRequestEntity> GetPullRequestAsync(string owner, string repo, int number)
@@ -145,14 +152,14 @@ internal class GitHubApi : IGitHubApi
         };
 
         var commits = await _client.Repository.Commit.GetAll(owner, repo, request ?? new CommitRequest(), options);
-        return commits.Select(c => new CommitEntity(c)).ToList();
+        return PatternPage.Map(commits, _patterns, GitHubNativePatterns.Commit, static value => new CommitEntity(value), _cancellation);
     }
 
     public async Task<IReadOnlyList<CommitEntity>> GetBranchSpecificCommitsAsync(string owner, string repo,
         string @base, string head)
     {
         var comparison = await _client.Repository.Commit.Compare(owner, repo, @base, head);
-        return comparison.Commits.Select(c => new CommitEntity(c)).ToList();
+        return PatternPage.Map(comparison.Commits, _patterns, GitHubNativePatterns.Commit, static value => new CommitEntity(value), _cancellation);
     }
 
     public async Task<IReadOnlyList<BranchEntity>> GetBranchesAsync(string owner, string repo, int? perPage = null,
@@ -166,7 +173,8 @@ internal class GitHubApi : IGitHubApi
         };
 
         var branches = await _client.Repository.Branch.GetAll(owner, repo, options);
-        return branches.Select(b => new BranchEntity(b, owner, repo)).ToList();
+        return PatternPage.Map(branches.Select(value => new GitHubNativePatterns.BranchInput(value, owner, repo)), _patterns,
+            GitHubNativePatterns.Branch, static value => new BranchEntity(value.Value, value.Owner, value.Repository), _cancellation);
     }
 
     public async Task<IReadOnlyList<ReleaseEntity>> GetReleasesAsync(string owner, string repo, int? perPage = null,
@@ -180,6 +188,6 @@ internal class GitHubApi : IGitHubApi
         };
 
         var releases = await _client.Repository.Release.GetAll(owner, repo, options);
-        return releases.Select(r => new ReleaseEntity(r)).ToList();
+        return PatternPage.Map(releases, _patterns, GitHubNativePatterns.Release, static value => new ReleaseEntity(value), _cancellation);
     }
 }

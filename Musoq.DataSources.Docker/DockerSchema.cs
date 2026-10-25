@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using Docker.DotNet;
 using Musoq.DataSources.Docker.Containers;
 using Musoq.DataSources.Docker.Images;
@@ -189,6 +190,13 @@ public class DockerSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), DockerPatternColumns.Get(name)?.Names);
+
+    private RowSource<T> ReadWithoutPatterns<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         return name.ToLowerInvariant() switch
         {
@@ -219,6 +227,7 @@ public class DockerSchema : SchemaBase
         {
             Identity = context.Identity,
             Columns = table.Columns,
+            PredicateCapabilities = DockerPatternColumns.Get(name)?.Capabilities(table.Columns) ?? SourcePredicateCapabilities.None,
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = []
@@ -234,6 +243,9 @@ public class DockerSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+        => PatternSourcePlan.Plan(request, DockerPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+
+    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
         return DockerSourcePlanner.Plan(name, request);
     }
