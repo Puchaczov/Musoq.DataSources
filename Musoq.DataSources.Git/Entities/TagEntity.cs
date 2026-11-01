@@ -9,6 +9,7 @@ namespace Musoq.DataSources.Git.Entities;
 /// <summary>Represents a detached Git tag snapshot.</summary>
 public class TagEntity
 {
+    internal GitRepositoryContext? ReadContext { get; set; }
     internal readonly record struct TagRichSnapshot(
         string? TargetSha,
         string? Message,
@@ -127,6 +128,7 @@ public class TagEntity
     {
         get => _commit.GetOrCreate(() =>
         {
+            if (ReadContext?.RequiresCli == true) return ReadContext.CommitFrom(_commitSha);
             using var repository = new Repository(_repositoryPath);
             var commitSha = _commitSha ?? LoadRichSnapshot()?.CommitSha;
             if (string.IsNullOrWhiteSpace(commitSha))

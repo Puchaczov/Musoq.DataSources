@@ -16,7 +16,7 @@ internal sealed class RepositoryRowsSource : GitDiagnosticRowsSourceBase<Reposit
     private readonly GitReferenceBackendOptions _options;
 
     public RepositoryRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
-        : base(executionContext, "git.repository")
+        : base(executionContext, "git.repository", repositoryPath)
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;

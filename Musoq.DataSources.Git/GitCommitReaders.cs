@@ -35,7 +35,8 @@ internal readonly record struct GitCommitRecord(
     string? AuthorEmail,
     string? Committer,
     string? CommitterEmail,
-    DateTimeOffset CommittedWhen);
+    DateTimeOffset CommittedWhen,
+    string[]? ParentShas = null);
 
 /// <summary>Backend selection is deliberately per operation so reference readers can remain streaming and independently testable.</summary>
 internal static class GitOperationReaders
@@ -61,7 +62,12 @@ internal static class GitOperationReaders
 internal sealed class GitCliCommitReader : IGitCommitReader
 {
     private readonly IGitCliProcessFactory _factory;
-    internal GitCliCommitReader(IGitCliProcessFactory? factory = null) => _factory = factory ?? GitCliProcessFactory.Default;
+    private readonly GitHistoryBackendOptions _options;
+    internal GitCliCommitReader(IGitCliProcessFactory? factory = null, GitHistoryBackendOptions? options = null)
+    {
+        _factory = factory ?? GitCliProcessFactory.Default;
+        _options = options ?? GitHistoryBackendOptions.Default;
+    }
     public string Backend => "git-cli";
 
     public void Read(
@@ -82,7 +88,8 @@ internal sealed class GitCliCommitReader : IGitCommitReader
         var arguments = new List<string>
         {
             "log",
-            "--topo-order",
+            "--encoding=UTF-8",
+            "--date-order",
             "--no-ext-diff",
             "-z",
             "--format=" + (native?.Format ?? metadata.GitFormat)
@@ -96,7 +103,7 @@ internal sealed class GitCliCommitReader : IGitCommitReader
             arguments.Add(directSha);
         }
 
-        using var process = _factory.Start(new GitCliProcessRequest(repositoryPath, GitHistoryBackendOptions.Default.Executable,
+        using var process = _factory.Start(new GitCliProcessRequest(repositoryPath, _options.Executable,
             GitHistoryBackendOptions.BackendSettingName, arguments, GitCliProcessEnvironment.Default), cancellationToken);
         using var reader = new GitNulDelimitedUtf8Reader(process.StandardOutput);
         using var decoding = new GitDecodeAccounting(reader, projection.NativePatterns);
@@ -162,6 +169,8 @@ internal sealed class LibGit2CommitReader : IGitCommitReader
             GitCommitRecord record = default;
             if (native is not null && !native.Read(repository.Info.Path, commit!, out record)) continue;
             if (native is null) record = metadata.Create(repository.Info.Path, commit!);
+            if (metadata.IncludesParents)
+                record = record with { ParentShas = commit!.Parents.Select(parent => parent.Sha).ToArray() };
             if (!onCommit(record))
                 break;
         }
@@ -176,7 +185,8 @@ internal readonly record struct GitCommitMetadataPlan(
     bool IncludesAuthorEmail,
     bool IncludesCommitter,
     bool IncludesCommitterEmail,
-    bool IncludesCommittedWhen)
+    bool IncludesCommittedWhen,
+    bool IncludesParents)
 {
     public string GitFormat
     {
@@ -197,18 +207,22 @@ internal readonly record struct GitCommitMetadataPlan(
                 format.Append("%ce%x00");
             if (IncludesCommittedWhen)
                 format.Append("%cI%x00");
+            if (IncludesParents)
+                format.Append("%P%x00");
             return format.ToString();
         }
     }
 
-    public static GitCommitMetadataPlan Create(GitProjection projection) => new(
+    public static GitCommitMetadataPlan Create(GitProjection projection) => projection.Includes("Self")
+        ? new(true, true, true, true, true, true, true, true) : new(
         projection.Includes("Message"),
         projection.Includes("MessageShort"),
         projection.Includes("Author"),
         projection.Includes("AuthorEmail"),
         projection.Includes("Committer"),
         projection.Includes("CommitterEmail"),
-        projection.Includes("CommittedWhen"));
+        projection.Includes("CommittedWhen"),
+        projection.Includes("Parents"));
 
     public GitCommitRecord Read(string repositoryPath, string header, GitNulDelimitedUtf8Reader reader) => new(
         repositoryPath,
@@ -219,7 +233,8 @@ internal readonly record struct GitCommitMetadataPlan(
         IncludesAuthorEmail ? ReadRequired(reader, "author email") : null,
         IncludesCommitter ? ReadRequired(reader, "committer") : null,
         IncludesCommitterEmail ? ReadRequired(reader, "committer email") : null,
-        IncludesCommittedWhen ? ReadCommittedWhen(ReadRequired(reader, "commit timestamp")) : default);
+        IncludesCommittedWhen ? ReadCommittedWhen(ReadRequired(reader, "commit timestamp")) : default,
+        IncludesParents ? ReadRequired(reader, "commit parents").Split(' ', System.StringSplitOptions.RemoveEmptyEntries) : null);
 
     public GitCommitRecord Create(string repositoryPath, Commit commit) => new(
         repositoryPath,

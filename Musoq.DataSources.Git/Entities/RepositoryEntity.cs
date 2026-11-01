@@ -13,6 +13,9 @@ namespace Musoq.DataSources.Git.Entities;
 /// <summary>Represents a detached repository snapshot with lazy, short-lived nested scopes.</summary>
 public class RepositoryEntity
 {
+    internal GitRepositoryContext? ReadContext { get; set; }
+    private readonly GitNestedSnapshot<IEnumerable<CommitEntity>> _commitSequence = new();
+    private readonly GitNestedSnapshot<IEnumerable<BranchEntity>> _branchSequence = new();
     /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
@@ -37,10 +40,7 @@ public class RepositoryEntity
     private readonly string _workingDirectory;
     private readonly RepositoryInformationEntity _information;
     private readonly GitReferenceBackendOptions _referenceOptions;
-    private readonly GitNestedSnapshot<IReadOnlyList<BranchEntity>> _branches = new();
-    private readonly GitNestedSnapshot<IReadOnlyList<CommitEntity>> _commits = new();
     private readonly GitNestedSnapshot<BranchEntity> _head = new();
-    private readonly GitNestedSnapshot<IReadOnlyList<ConfigurationEntityKeyValue>> _configuration = new();
 
     static RepositoryEntity()
     {
@@ -88,41 +88,32 @@ public class RepositoryEntity
 
     /// <summary>Gets branches as detached snapshots, loading them lazily in a short-lived repository scope.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<BranchEntity> Branches => _branches.GetOrCreate(() => Read(repository =>
-        (IReadOnlyList<BranchEntity>)repository.Branches.Select(branch => new BranchEntity(branch, repository)).ToArray()))
-        ?? Array.Empty<BranchEntity>();
+    public IEnumerable<BranchEntity> Branches => _branchSequence.GetOrCreate(() =>
+        new GitLiveSequence<BranchEntity>(() => (ReadContext ??= GitRepositoryContext.FromPath(_path)).Branches()))!;
 
     /// <summary>Gets tags as detached snapshots from a bounded streaming reference enumeration.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<TagEntity> Tags => ReadTags();
+    public IEnumerable<TagEntity> Tags => ReadContext?.RequiresCli == true ? ReadContext.Tags() : ReadTags();
 
     /// <summary>Gets commits as detached snapshots, loading them lazily in a short-lived repository scope.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<CommitEntity> Commits => _commits.GetOrCreate(() => Read(repository =>
-        (IReadOnlyList<CommitEntity>)repository.Commits.Select(commit => new CommitEntity(commit, repository)).ToArray()))
-        ?? Array.Empty<CommitEntity>();
+    public IEnumerable<CommitEntity> Commits => _commitSequence.GetOrCreate(() =>
+        new GitLiveSequence<CommitEntity>(() => (ReadContext ??= GitRepositoryContext.FromPath(_path)).Commits()))!;
 
     /// <summary>Gets the current head branch, or <see langword="null"/> for a detached or unborn head.</summary>
     /// <remarks>The value is resolved lazily using a short-lived repository scope.</remarks>
-    public BranchEntity? Head => _head.GetOrCreate(() => Read(repository =>
-    {
-        var branch = repository.Head;
-        return branch is null ? null : new BranchEntity(branch, repository);
-    }));
+    public BranchEntity? Head => _head.GetOrCreate(() => (ReadContext ??= GitRepositoryContext.FromPath(_path)).Head());
 
     /// <summary>Gets configuration entries as detached snapshots, loading them lazily.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ConfigurationEntityKeyValue> Configuration => _configuration.GetOrCreate(() => Read(repository =>
-        (IReadOnlyList<ConfigurationEntityKeyValue>)repository.Config
-            .Select(entry => new ConfigurationEntityKeyValue(entry, repository)).ToArray()))
-        ?? Array.Empty<ConfigurationEntityKeyValue>();
+    public IEnumerable<ConfigurationEntityKeyValue> Configuration => (ReadContext ??= GitRepositoryContext.FromPath(_path)).Configuration();
 
     /// <summary>Gets immutable repository information captured when this row was created.</summary>
     public RepositoryInformationEntity Information => _information;
 
     /// <summary>Gets stash entries as detached snapshots from a bounded streaming reference enumeration.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<StashEntity> Stashes => ReadStashes();
+    public IEnumerable<StashEntity> Stashes => ReadContext?.RequiresCli == true ? ReadContext.Stashes() : ReadStashes();
 
     /// <summary>Gets this repository row.</summary>
     public RepositoryEntity Self => this;
@@ -131,7 +122,7 @@ public class RepositoryEntity
 
     internal T Read<T>(Func<Repository, T> action)
     {
-        using var repository = new Repository(_path);
+        using var repository = ReadContext?.OpenNative() ?? new Repository(_path);
         return action(repository);
     }
 

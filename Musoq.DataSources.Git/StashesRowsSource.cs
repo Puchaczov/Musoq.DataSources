@@ -23,7 +23,7 @@ internal sealed class StashesRowsSource : GitDiagnosticRowsSourceBase<StashEntit
         string repositoryPath,
         Func<string, Repository> createRepository,
         SourceExecutionContext executionContext)
-        : base(executionContext, "git.stashes")
+        : base(executionContext, "git.stashes", repositoryPath)
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;

@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace Musoq.DataSources.Git.Entities;
 
@@ -13,10 +14,17 @@ internal sealed class GitNestedSnapshot<T>
     private bool _resolved;
     private T? _value;
 
+    public bool TryGet(out T? value)
+    {
+        var resolved = Volatile.Read(ref _resolved);
+        value = resolved ? _value : null;
+        return resolved;
+    }
+
     public T? GetOrCreate(Func<T?> factory)
     {
         ArgumentNullException.ThrowIfNull(factory);
-        if (_resolved)
+        if (Volatile.Read(ref _resolved))
             return _value;
 
         lock (_gate)
@@ -27,7 +35,7 @@ internal sealed class GitNestedSnapshot<T>
             // Do not set _resolved before factory succeeds: a transient/repository failure remains actionable on
             // a later access instead of being silently converted into a cached null.
             _value = factory();
-            _resolved = true;
+            Volatile.Write(ref _resolved, true);
             return _value;
         }
     }
@@ -37,7 +45,7 @@ internal sealed class GitNestedSnapshot<T>
         lock (_gate)
         {
             _value = value;
-            _resolved = true;
+            Volatile.Write(ref _resolved, true);
         }
     }
 }

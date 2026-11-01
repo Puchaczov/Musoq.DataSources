@@ -31,7 +31,7 @@
     {
       "slug": "git",
       "packageId": "Musoq.DataSources.Git",
-      "version": "3.0.4-alpha.1",
+      "version": "4.0.0-alpha.1",
       "projectPath": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
       "publishToNuGet": true
     },

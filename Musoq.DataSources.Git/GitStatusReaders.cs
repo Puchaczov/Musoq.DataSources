@@ -69,7 +69,7 @@ internal sealed class GitCliStatusReader : IGitStatusReader
             process.Complete();
     }
 
-    private static FileStatus ToFileStatus(char index, char workTree)
+    internal static FileStatus ToFileStatus(char index, char workTree)
     {
         if (index == '?' && workTree == '?')
             return FileStatus.NewInWorkdir;

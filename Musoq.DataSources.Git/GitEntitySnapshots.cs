@@ -49,7 +49,8 @@ internal static class GitEntitySnapshots
             Includes(projection, all, nameof(CommitEntity.AuthorEmail)) ? commit.AuthorEmail : null,
             Includes(projection, all, nameof(CommitEntity.Committer)) ? commit.Committer : null,
             Includes(projection, all, nameof(CommitEntity.CommitterEmail)) ? commit.CommitterEmail : null,
-            Includes(projection, all, nameof(CommitEntity.CommittedWhen)) ? commit.CommittedWhen : default);
+            Includes(projection, all, nameof(CommitEntity.CommittedWhen)) ? commit.CommittedWhen : default)
+        { ParentShas = commit.ParentShas };
     }
 
     public static BranchEntity Branch(Branch branch, Repository repository, GitProjection projection)
@@ -93,7 +94,8 @@ internal static class GitEntitySnapshots
             branch.BehindBy,
             branch.TipSha,
             Includes(projection, all, nameof(BranchEntity.UpstreamBranchCanonicalName)) ? branch.UpstreamBranchCanonicalName : null,
-            Includes(projection, all, nameof(BranchEntity.RemoteName)) ? branch.RemoteName : null);
+            Includes(projection, all, nameof(BranchEntity.RemoteName)) ? branch.RemoteName : null,
+            branch.TrackingLoaded);
     }
 
     public static TagEntity Tag(Tag tag, Repository repository, GitProjection projection)

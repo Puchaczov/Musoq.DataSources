@@ -125,6 +125,11 @@ public sealed class GitStarContractTests
         return
         [
             new(
+                "worktrees", [typeof(string)], [repositoryPath], $"select * from git.worktrees('{path}')",
+                [Column("Path", typeof(string)), Column("HeadSha", typeof(string)), Column("Branch", typeof(string)),
+                    Column("IsBare", typeof(bool)), Column("IsDetached", typeof(bool)), Column("IsLocked", typeof(bool)),
+                    Column("LockReason", typeof(string)), Column("IsPrunable", typeof(bool)), Column("PruneReason", typeof(string))], []),
+            new(
                 "repository",
                 [typeof(string)],
                 [repositoryPath],

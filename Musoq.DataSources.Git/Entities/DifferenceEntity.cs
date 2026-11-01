@@ -7,6 +7,7 @@ namespace Musoq.DataSources.Git.Entities;
 /// <summary>Represents a detached tree difference. Blob content is loaded on demand in a short-lived scope.</summary>
 public class DifferenceEntity
 {
+    internal GitRepositoryContext? ReadContext { get; set; }
     private readonly string _repositoryPath;
     private readonly string _path;
     private readonly bool _exists;
@@ -90,7 +91,7 @@ public class DifferenceEntity
 
     /// <summary>Gets older blob content as text, loading it lazily from a short-lived repository scope.</summary>
     /// <remarks>The value is <see langword="null"/> when the older blob is unavailable.</remarks>
-    public string? OldContent => _oldContent.GetOrCreate(() => ReadText(_oldSha));
+    public string? OldContent => _oldContent.GetOrCreate(() => ReadText(_oldSha, _oldContentBytes));
 
     /// <summary>Gets older blob content as bytes, loading it lazily from a short-lived repository scope.</summary>
     /// <remarks>The value is <see langword="null"/> when the older blob is unavailable.</remarks>
@@ -99,19 +100,28 @@ public class DifferenceEntity
 
     /// <summary>Gets newer blob content as text, loading it lazily from a short-lived repository scope.</summary>
     /// <remarks>Deleted entries have no newer content and return <see langword="null"/>.</remarks>
-    public string? NewContent => _newContent.GetOrCreate(() => _isDeleted ? null : ReadText(_newSha));
+    public string? NewContent => _newContent.GetOrCreate(() => _isDeleted ? null : ReadText(_newSha, _newContentBytes));
 
     /// <summary>Gets newer blob content as bytes, loading it lazily from a short-lived repository scope.</summary>
     /// <remarks>Deleted entries have no newer content and return <see langword="null"/>.</remarks>
     [BindablePropertyAsTable]
     public byte[]? NewContentBytes => _newContentBytes.GetOrCreate(() => _isDeleted ? null : ReadBytes(_newSha));
 
-    private string? ReadText(string? sha)
+    private string? ReadText(string? sha, GitNestedSnapshot<byte[]> bytesCache)
     {
         if (string.IsNullOrWhiteSpace(sha))
             return null;
+        if (ReadContext?.RequiresCli == true || bytesCache.TryGet(out _))
+        {
+            var bytes = bytesCache.GetOrCreate(() => ReadBytes(sha));
+            if (bytes is null) return null;
+            using var content = new MemoryStream(bytes, writable: false);
+            using var reader = new StreamReader(content);
+            return reader.ReadToEnd();
+        }
 
-        using var repository = new Repository(_repositoryPath);
+        ReadContext?.Diagnostics.AddMetric("Git.BlobReads", 1);
+        using var repository = ReadContext?.OpenNative() ?? new Repository(_repositoryPath);
         return repository.Lookup<Blob>(sha)?.GetContentText();
     }
 
@@ -119,8 +129,11 @@ public class DifferenceEntity
     {
         if (string.IsNullOrWhiteSpace(sha))
             return null;
+        if (ReadContext?.RequiresCli == true)
+            return sha.Trim('0').Length == 0 ? null : ReadContext.Bytes("cat-file", "blob", sha);
 
-        using var repository = new Repository(_repositoryPath);
+        ReadContext?.Diagnostics.AddMetric("Git.BlobReads", 1);
+        using var repository = ReadContext?.OpenNative() ?? new Repository(_repositoryPath);
         var blob = repository.Lookup<Blob>(sha);
         if (blob is null)
             return null;

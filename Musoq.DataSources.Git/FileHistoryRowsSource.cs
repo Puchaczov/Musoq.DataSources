@@ -38,7 +38,7 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
         int take,
         Func<string, Repository> createRepository,
         SourceExecutionContext executionContext)
-        : base(executionContext, "git.filehistory")
+        : base(executionContext, "git.filehistory", repositoryPath)
     {
         if (skip < 0)
             throw new ArgumentOutOfRangeException(nameof(skip), skip, "File history skip must be zero or greater.");
@@ -60,7 +60,7 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
             return 0;
         }
 
-        var matcher = new FileHistoryMatcher(_filePattern, _repositoryPath);
+        var matcher = new FileHistoryMatcher(_filePattern, ReadContext?.Location.WorktreeRoot ?? _repositoryPath);
         var fromOldest = _take < 0;
         var actualTake = _take < 0 ? -(long)_take : _take;
         var metadataPlan = FileHistoryMetadataPlan.Create(_projection);
@@ -148,6 +148,10 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
                     throw new InvalidOperationException($"Unsupported Git history backend '{_options.Backend}'.");
             }
         }
+        catch (InvalidOperationException exception) when (rowsEmitted == 0 && ReadContext?.IsUnbornError(exception, "HEAD") == true)
+        {
+            // Git's empty-HEAD diagnostic is verified against the symbolic reference; other failures stay errors.
+        }
         finally
         {
             if (chunk.Count > 0)
@@ -179,6 +183,7 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
         var arguments = new List<string>
         {
             "log",
+            "--encoding=UTF-8",
             "--topo-order",
             "--no-merges",
             "--root",
@@ -204,7 +209,8 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
             arguments.Add(matcher.ExactFullPath);
         }
 
-        using var process = GitCliProcess.Start(_repositoryPath, _options, arguments, cancellationToken);
+        using var process = GitCliProcess.Start(new GitCliProcessRequest(_repositoryPath, _options.Executable,
+            GitHistoryBackendOptions.BackendSettingName, arguments, Location: ReadContext?.Location), cancellationToken);
         using var reader = new GitNulDelimitedUtf8Reader(process.StandardOutput);
         using var decoding = new GitDecodeAccounting(reader, _projection.NativePatterns);
         string? pendingHeader = null;
@@ -537,9 +543,9 @@ internal sealed class FileHistoryRowsSource : GitDiagnosticRowsSourceBase<FileHi
             var normalizedRepositoryPath = Path.GetFullPath(repositoryPath)
                 .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var normalizedPattern = Path.GetFullPath(pattern);
-            if (normalizedPattern.StartsWith(normalizedRepositoryPath, StringComparison.OrdinalIgnoreCase))
-                return normalizedPattern[normalizedRepositoryPath.Length..]
-                    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var prefix = normalizedRepositoryPath + Path.DirectorySeparatorChar;
+            if (normalizedPattern.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return normalizedPattern[prefix.Length..];
 
             return pattern;
         }

@@ -13,6 +13,9 @@ namespace Musoq.DataSources.Git.Entities;
 /// </summary>
 public class BranchEntity
 {
+    internal GitRepositoryContext? ReadContext { get; set; }
+    private readonly GitNestedSnapshot<BranchTrackingDetailsEntity> _tracking = new();
+    private readonly GitNestedSnapshot<IEnumerable<CommitEntity>> _commitSequence = new();
     /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
@@ -41,6 +44,7 @@ public class BranchEntity
     private readonly bool _isTracking;
     private readonly bool _isCurrentRepositoryHead;
     private readonly string? _trackedBranchCanonicalName;
+    private readonly bool _trackingLoaded;
     private readonly int? _aheadBy;
     private readonly int? _behindBy;
     private readonly string? _tipSha;
@@ -49,7 +53,6 @@ public class BranchEntity
     private readonly GitNestedSnapshot<BranchEntity> _parentBranch = new();
     private readonly GitNestedSnapshot<BranchEntity> _trackedBranch = new();
     private readonly GitNestedSnapshot<CommitEntity> _tip = new();
-    private readonly GitNestedSnapshot<IReadOnlyList<CommitEntity>> _commits = new();
 
     static BranchEntity()
     {
@@ -74,11 +77,12 @@ public class BranchEntity
             branch.IsTracking,
             branch.IsCurrentRepositoryHead,
             branch.TrackedBranch?.CanonicalName,
-            branch.TrackingDetails?.AheadBy,
-            branch.TrackingDetails?.BehindBy,
+            null,
+            null,
             branch.Tip?.Sha,
             branch.UpstreamBranchCanonicalName,
-            branch.RemoteName)
+            branch.RemoteName,
+            trackingLoaded: false)
     {
     }
 
@@ -94,7 +98,8 @@ public class BranchEntity
         int? behindBy,
         string? tipSha,
         string? upstreamBranchCanonicalName,
-        string? remoteName)
+        string? remoteName,
+        bool trackingLoaded = true)
     {
         _repositoryPath = repositoryPath;
         _friendlyName = friendlyName;
@@ -108,6 +113,7 @@ public class BranchEntity
         _tipSha = tipSha;
         _upstreamBranchCanonicalName = upstreamBranchCanonicalName;
         _remoteName = remoteName;
+        _trackingLoaded = trackingLoaded;
     }
 
     /// <summary>Gets the display name of the branch.</summary>
@@ -125,23 +131,17 @@ public class BranchEntity
     public BranchEntity? TrackedBranch => _trackedBranch.GetOrCreate(() => ResolveBranch(_trackedBranchCanonicalName));
 
     /// <summary>Gets the ahead/behind counts for the branch's upstream tracking relationship.</summary>
-    public BranchTrackingDetailsEntity BranchTrackingDetails => new(_aheadBy, _behindBy);
+    public BranchTrackingDetailsEntity BranchTrackingDetails => _trackingLoaded ? new(_aheadBy, _behindBy)
+        : _tracking.GetOrCreate(() => (ReadContext ??= GitRepositoryContext.FromPath(_repositoryPath)).Tracking(this))!;
 
     /// <summary>Gets the tip commit, resolving and caching a detached snapshot on first access.</summary>
     public CommitEntity? Tip => _tip.GetOrCreate(() => ResolveCommit(_tipSha));
 
     /// <summary>Gets the commits reachable from this branch, materializing detached snapshots lazily.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<CommitEntity> Commits
-    {
-        get => _commits.GetOrCreate(() =>
-        {
-            using var repository = new Repository(_repositoryPath);
-            return repository.Branches[_canonicalName]?.Commits
-                .Select(commit => new CommitEntity(commit, repository))
-                .ToArray() ?? Array.Empty<CommitEntity>();
-        }) ?? Array.Empty<CommitEntity>();
-    }
+    public IEnumerable<CommitEntity> Commits => _commitSequence.GetOrCreate(() => new GitLiveSequence<CommitEntity>(() =>
+        (ReadContext ??= GitRepositoryContext.FromPath(_repositoryPath))
+        .Commits(_canonicalName == "(no branch)" ? _tipSha ?? "HEAD" : _canonicalName)))!;
 
     /// <summary>Gets the canonical name of the configured upstream branch, if any.</summary>
     public string? UpstreamBranchCanonicalName => _upstreamBranchCanonicalName;
@@ -156,6 +156,7 @@ public class BranchEntity
 
     private BranchEntity? ResolveBranch(string? canonicalName)
     {
+        if (ReadContext?.RequiresCli == true) return ReadContext.BranchFrom(canonicalName);
         if (string.IsNullOrWhiteSpace(canonicalName))
             return null;
 
@@ -166,6 +167,7 @@ public class BranchEntity
 
     private CommitEntity? ResolveCommit(string? sha)
     {
+        if (ReadContext?.RequiresCli == true) return ReadContext.CommitFrom(sha);
         if (string.IsNullOrWhiteSpace(sha))
             return null;
 
@@ -176,6 +178,7 @@ public class BranchEntity
 
     private BranchEntity? ResolveParentBranch()
     {
+        if (ReadContext?.RequiresCli == true) return ReadContext.ParentBranch(this);
         try
         {
             using var repository = new Repository(_repositoryPath);

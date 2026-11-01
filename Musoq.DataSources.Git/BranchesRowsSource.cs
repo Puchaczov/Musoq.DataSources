@@ -18,7 +18,7 @@ internal sealed class BranchesRowsSource : GitDiagnosticRowsSourceBase<BranchEnt
     private readonly string _repositoryPath;
 
     public BranchesRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
-        : base(executionContext, "git.branches")
+        : base(executionContext, "git.branches", repositoryPath)
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;

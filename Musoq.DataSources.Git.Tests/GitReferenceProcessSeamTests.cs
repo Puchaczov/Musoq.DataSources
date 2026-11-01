@@ -33,7 +33,8 @@ public sealed class GitReferenceProcessSeamTests
                 ["GIT_OPTIONAL_LOCKS"] = "0",
                 ["GIT_LFS_SKIP_SMUDGE"] = "1",
                 ["GIT_PAGER"] = "cat",
-                ["GIT_TERMINAL_PROMPT"] = "0"
+                ["GIT_TERMINAL_PROMPT"] = "0",
+                ["LC_ALL"] = "C"
             }.ToArray(),
             tagRequest.EnvironmentVariables!.ToArray());
         CollectionAssert.AreEqual(
@@ -69,7 +70,7 @@ public sealed class GitReferenceProcessSeamTests
             _ => true);
 
         CollectionAssert.AreEqual(
-            new[] { "log", "-g", "--no-decorate", "--format=%gd%x00%H%x00", "refs/stash" },
+            new[] { "log", "-g", "--glob=refs/stas[h]", "--encoding=UTF-8", "--no-decorate", "--format=%gd%x00%H%x00" },
             stashFactory.Requests.Single().OperationArguments.ToArray());
     }
 
@@ -113,7 +114,7 @@ public sealed class GitReferenceProcessSeamTests
 
         Assert.HasCount(1, selectorRecords);
         CollectionAssert.AreEqual(
-            new[] { "log", "-g", "-1", "--no-decorate", "--format=%gd%x00%H%x00", "stash@{0}" },
+            new[] { "log", "-g", "-1", "--encoding=UTF-8", "--no-decorate", "--format=%gd%x00%H%x00", "stash@{0}" },
             selectorFactory.Requests.Single().OperationArguments.ToArray());
 
         var shaFactory = new RecordingProcessFactory(

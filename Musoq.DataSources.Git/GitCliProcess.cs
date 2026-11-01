@@ -15,7 +15,9 @@ internal readonly record struct GitCliProcessRequest(
     string Executable,
     string BackendSettingName,
     IReadOnlyList<string> OperationArguments,
-    IReadOnlyDictionary<string, string>? EnvironmentVariables = null);
+    IReadOnlyDictionary<string, string>? EnvironmentVariables = null,
+    GitRepositoryLocation? Location = null,
+    string? StandardInput = null);
 
 internal static class GitCliProcessEnvironment
 {
@@ -24,12 +26,14 @@ internal static class GitCliProcessEnvironment
         ["GIT_OPTIONAL_LOCKS"] = "0",
         ["GIT_LFS_SKIP_SMUDGE"] = "1",
         ["GIT_PAGER"] = "cat",
-        ["GIT_TERMINAL_PROMPT"] = "0"
+        ["GIT_TERMINAL_PROMPT"] = "0",
+        ["LC_ALL"] = "C"
     };
 }
 
 internal interface IGitCliProcess : IDisposable
 {
+    int? ExitCode => null;
     Stream StandardOutput { get; }
 
     void Complete();
@@ -64,19 +68,29 @@ internal sealed class GitCliProcess : IGitCliProcess
     private readonly Timer? _metricsSampler;
     private readonly Process _process;
     private readonly Task<string> _standardError;
+    private readonly CancellationToken _token;
+    private readonly CancellationTokenSource? _inputCancellation;
+    private readonly Task? _standardInput;
     private bool _completed;
     private bool _stopRecorded;
     private bool _disposed;
 
-    private GitCliProcess(Process process, CancellationToken cancellationToken)
+    private GitCliProcess(Process process, CancellationToken cancellationToken, string? standardInput)
     {
         _process = process;
+        _token = cancellationToken;
         _standardError = ReadStandardErrorAsync(process.StandardError);
+        if (standardInput is not null)
+        {
+            _inputCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _standardInput = WriteStandardInputAsync(process.StandardInput, standardInput, _inputCancellation.Token);
+        }
         _metricsSampler = GitCliProcessMetrics.StartSampling(process);
         _cancellationRegistration = cancellationToken.Register(static state => ((GitCliProcess)state!).Stop(), this);
     }
 
     public Stream StandardOutput => _process.StandardOutput.BaseStream;
+    public int? ExitCode => _process.HasExited ? _process.ExitCode : null;
 
     public static GitCliProcess Start(
         string repositoryPath,
@@ -116,7 +130,9 @@ internal sealed class GitCliProcess : IGitCliProcess
             request.BackendSettingName,
             request.OperationArguments,
             cancellationToken,
-            request.EnvironmentVariables);
+            request.EnvironmentVariables,
+            request.Location,
+            request.StandardInput);
     }
 
     private static GitCliProcess StartCore(
@@ -125,7 +141,9 @@ internal sealed class GitCliProcess : IGitCliProcess
         string backendSettingName,
         IEnumerable<string> operationArguments,
         CancellationToken cancellationToken,
-        IReadOnlyDictionary<string, string>? environmentVariables = null)
+        IReadOnlyDictionary<string, string>? environmentVariables = null,
+        GitRepositoryLocation? location = null,
+        string? standardInput = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(executable);
@@ -134,10 +152,11 @@ internal sealed class GitCliProcess : IGitCliProcess
 
         var startInfo = new ProcessStartInfo(executable)
         {
-            WorkingDirectory = repositoryPath,
+            WorkingDirectory = (location ?? GitRepositoryLocation.Resolve(repositoryPath)).ExecutionRoot,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            RedirectStandardInput = standardInput is not null,
             CreateNoWindow = true
         };
 
@@ -156,6 +175,8 @@ internal sealed class GitCliProcess : IGitCliProcess
         startInfo.ArgumentList.Add("filter.lfs.required=false");
         foreach (var (name, value) in GitCliProcessEnvironment.Default)
             startInfo.Environment[name] = value;
+        foreach (var name in new[] { "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE" })
+            startInfo.Environment.Remove(name);
         if (environmentVariables is not null)
         {
             foreach (var (name, value) in environmentVariables)
@@ -170,13 +191,16 @@ internal sealed class GitCliProcess : IGitCliProcess
             var process = Process.Start(startInfo) ??
                           throw new GitCliUnavailableException($"Unable to start Git executable '{executable}'.");
             GitCliProcessMetrics.RecordStarted();
-            return new GitCliProcess(process, cancellationToken);
+            return new GitCliProcess(process, cancellationToken, standardInput);
         }
         catch (Win32Exception exception)
         {
+            if (!Directory.Exists(startInfo.WorkingDirectory))
+                throw new DirectoryNotFoundException($"Git working directory '{startInfo.WorkingDirectory}' is unavailable.", exception);
             throw new GitCliUnavailableException(
                 $"Git executable '{executable}' could not be started. Set '{GitHistoryBackendOptions.ExecutableSettingName}' " +
-                $"to an executable Git CLI path, or select the compatibility backend with {backendSettingName}=libgit2.",
+                "to an executable Git CLI path." + (string.IsNullOrEmpty(backendSettingName) ? string.Empty :
+                    $" Alternatively select the compatibility backend with {backendSettingName}=libgit2."),
                 exception);
         }
     }
@@ -186,7 +210,9 @@ internal sealed class GitCliProcess : IGitCliProcess
         if (_completed)
             return;
 
+        _token.ThrowIfCancellationRequested();
         _process.WaitForExit();
+        _token.ThrowIfCancellationRequested();
         GitCliProcessMetrics.Observe(_process);
         _metricsSampler?.Dispose();
         var standardError = _standardError.GetAwaiter().GetResult();
@@ -200,10 +226,12 @@ internal sealed class GitCliProcess : IGitCliProcess
                 : standardError.Trim();
             throw new InvalidOperationException($"Git exited with code {_process.ExitCode}: {detail}");
         }
+        _standardInput?.GetAwaiter().GetResult();
     }
 
     public void Stop()
     {
+        _inputCancellation?.Cancel();
         try
         {
             if (!_process.HasExited)
@@ -241,6 +269,18 @@ internal sealed class GitCliProcess : IGitCliProcess
             GitCliProcessMetrics.Observe(_process);
         }
         _process.Dispose();
+        if (_standardInput is not null)
+        {
+            try { _standardInput.GetAwaiter().GetResult(); }
+            catch (Exception exception) when (exception is OperationCanceledException or IOException or ObjectDisposedException) { }
+        }
+        _inputCancellation?.Dispose();
+    }
+
+    private static async Task WriteStandardInputAsync(StreamWriter writer, string input, CancellationToken token)
+    {
+        try { await writer.WriteAsync(input.AsMemory(), token).ConfigureAwait(false); }
+        finally { writer.Close(); }
     }
 
     private static async Task<string> ReadStandardErrorAsync(StreamReader reader)

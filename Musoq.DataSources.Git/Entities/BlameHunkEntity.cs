@@ -15,6 +15,8 @@ namespace Musoq.DataSources.Git.Entities;
 /// </summary>
 public class BlameHunkEntity
 {
+    internal GitRepositoryContext? ReadContext { get; set; }
+    private readonly GitBlameFileContent? _fileContent;
     /// <summary>Maps SQL-visible column names to their zero-based row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
@@ -79,8 +81,10 @@ public class BlameHunkEntity
     {
     }
 
-    internal BlameHunkEntity(BlameHunk hunk, string repositoryPath, string filePath, GitProjection projection)
+    internal BlameHunkEntity(BlameHunk hunk, string repositoryPath, string filePath, GitProjection projection, string? requestedCommitSha = null,
+        GitBlameFileContent? fileContent = null)
     {
+        _fileContent = fileContent;
         ArgumentNullException.ThrowIfNull(hunk);
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
@@ -99,7 +103,7 @@ public class BlameHunkEntity
 
         _repositoryPath = needsLines ? repositoryPath : string.Empty;
         _filePath = needsLines ? filePath : string.Empty;
-        _contentCommitSha = needsLines ? commit!.Sha : string.Empty;
+        _contentCommitSha = needsLines ? requestedCommitSha ?? commit!.Sha : string.Empty;
         _finalStartLineNumber = finalStart;
         _lineCount = needsGeometry ? hunk.LineCount : 0;
         _commitSha = projection.Includes(nameof(CommitSha)) || all ? commit!.Sha : string.Empty;
@@ -117,6 +121,21 @@ public class BlameHunkEntity
         _originalFilePath = (projection.Includes(nameof(OriginalFilePath)) || all) && hunk.InitialPath != filePath
             ? hunk.InitialPath
             : null;
+    }
+
+    internal BlameHunkEntity(GitRepositoryContext context, string filePath, string requestedCommit,
+        string commitSha, int start, int count, string author, string email, DateTimeOffset authorDate,
+        string committer, string committerEmail, DateTimeOffset committerDate, string summary,
+        int? originalStart, string? originalPath, GitBlameFileContent fileContent)
+    {
+        ArgumentNullException.ThrowIfNull(fileContent);
+        _fileContent = fileContent;
+        ReadContext = context; _repositoryPath = context.Location.ExecutionRoot; _filePath = filePath;
+        _contentCommitSha = requestedCommit; _commitSha = commitSha;
+        _finalStartLineNumber = start; _lineCount = count; _author = author; _authorEmail = email;
+        _authorDate = authorDate; _committer = committer; _committerEmail = committerEmail;
+        _committerDate = committerDate; _summary = summary; _originalStartLineNumber = originalStart;
+        _originalFilePath = originalPath;
     }
 
     /// <summary>Gets the one-based first line in the blamed file covered by this hunk.</summary>
@@ -148,7 +167,8 @@ public class BlameHunkEntity
 
     /// <summary>Gets the blamed lines, loading and caching file content only on first access; binary files return no lines.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<BlameLineEntity> Lines => _lines.GetOrCreate(ReadLines) ?? Array.Empty<BlameLineEntity>();
+    public IEnumerable<BlameLineEntity> Lines => _fileContent?.Lines(_finalStartLineNumber, _lineCount)
+        ?? _lines.GetOrCreate(ReadLines) ?? Array.Empty<BlameLineEntity>();
 
     /// <summary>Gets this row instance.</summary>
     public BlameHunkEntity Self => this;
@@ -166,7 +186,11 @@ public class BlameHunkEntity
         var blob = (Blob)treeEntry.Target;
         using var stream = blob.GetContentStream();
         using var reader = new StreamReader(stream);
-        var content = reader.ReadToEnd();
+        return CreateLines(reader.ReadToEnd());
+    }
+
+    private IReadOnlyList<BlameLineEntity> CreateLines(string content)
+    {
         var allLines = content.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
         var endIndex = Math.Min(_finalStartLineNumber + _lineCount, allLines.Length);
         var lines = new List<BlameLineEntity>(Math.Max(0, endIndex - _finalStartLineNumber));

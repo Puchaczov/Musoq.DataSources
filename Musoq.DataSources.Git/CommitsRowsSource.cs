@@ -18,7 +18,7 @@ internal sealed class CommitsRowsSource : GitDiagnosticRowsSourceBase<CommitEnti
     private readonly string _repositoryPath;
 
     public CommitsRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
-        : base(executionContext, "git.commits")
+        : base(executionContext, "git.commits", repositoryPath)
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;

@@ -18,7 +18,7 @@ internal sealed class StatusRowsSource : GitDiagnosticRowsSourceBase<StatusEntit
     private readonly string _repositoryPath;
 
     public StatusRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
-        : base(executionContext, "git.status")
+        : base(executionContext, "git.status", repositoryPath)
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;

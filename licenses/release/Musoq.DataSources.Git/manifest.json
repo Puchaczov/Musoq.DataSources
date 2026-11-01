@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Git",
   "slug": "git",
-  "version": "3.0.4-alpha.1",
+  "version": "4.0.0-alpha.1",
   "projectPath": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
   "entryProject": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
   "ownPackageId": "Musoq.DataSources.Git",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Git/Musoq.DataSources.Git.csproj",
-      "sha256": "21342ce52a3c831752ccc920db71377e097426d37074d4a53f7d720d89acdd98"
+      "sha256": "92e27c5720b358a14799cef10d50ecc41eb90994f0264257c112e077732287d3"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "68545627c01c4cfd3dc6aafe5310d48dec9705d53237845c3bf2ebe234437bba"
+      "sha256": "9cfd23e05244c6d070dea5050cdb78aec986d6ce4f7a904dfd3d323ec848541a"
     }
   ],
   "packageGraph": [
@@ -169,7 +169,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1109,
-      "sha256": "f16d279e270fe5a6345d3325bed60af7dea3ca21e3436e459c86bc35ab6991eb"
+      "sha256": "7981e8eaf0ea711c53e07331583372113c9c27f86a978d2e48f6683399dd8134"
     }
   ]
 }

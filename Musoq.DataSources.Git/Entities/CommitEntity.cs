@@ -13,6 +13,11 @@ namespace Musoq.DataSources.Git.Entities;
 /// </summary>
 public class CommitEntity
 {
+    internal GitRepositoryContext? ReadContext { get; set; }
+    internal string[]? ParentShas { get; set; }
+    internal Func<CommitEntity?>? DetailsLoader { get; init; }
+    private GitNestedSnapshot<CommitEntity>? _details;
+    private CommitEntity? Details => (_details ??= new()).GetOrCreate(DetailsLoader!);
     /// <summary>
     ///     A read-only dictionary mapping column names to their respective indices.
     /// </summary>
@@ -44,7 +49,8 @@ public class CommitEntity
     private readonly string? _committer;
     private readonly string? _committerEmail;
     private readonly DateTimeOffset _committedWhen;
-    private readonly GitNestedSnapshot<IReadOnlyList<CommitEntity>> _parents = new();
+    private GitNestedSnapshot<IReadOnlyList<CommitEntity>>? _parents;
+    private GitNestedSnapshot<IReadOnlyList<CommitEntity>> ParentsSnapshot => _parents ??= new();
 
     /// <summary>
     ///     Static constructor to initialize the static read-only dictionaries.
@@ -115,37 +121,37 @@ public class CommitEntity
     /// <summary>
     ///     Gets the full commit message.
     /// </summary>
-    public string? Message => _message;
+    public string? Message => DetailsLoader is null ? _message : Details?.Message;
 
     /// <summary>
     ///     Gets the short commit message.
     /// </summary>
-    public string? MessageShort => _messageShort;
+    public string? MessageShort => DetailsLoader is null ? _messageShort : Details?.MessageShort;
 
     /// <summary>
     ///     Gets the name of the author of the commit.
     /// </summary>
-    public string? Author => _author;
+    public string? Author => DetailsLoader is null ? _author : Details?.Author;
 
     /// <summary>
     ///     Gets the email of the author of the commit.
     /// </summary>
-    public string? AuthorEmail => _authorEmail;
+    public string? AuthorEmail => DetailsLoader is null ? _authorEmail : Details?.AuthorEmail;
 
     /// <summary>
     ///     Gets the name of the committer of the commit.
     /// </summary>
-    public string? Committer => _committer;
+    public string? Committer => DetailsLoader is null ? _committer : Details?.Committer;
 
     /// <summary>
     ///     Gets the email of the committer.
     /// </summary>
-    public string? CommitterEmail => _committerEmail;
+    public string? CommitterEmail => DetailsLoader is null ? _committerEmail : Details?.CommitterEmail;
 
     /// <summary>
     ///     Gets the date and time when the commit was made.
     /// </summary>
-    public DateTimeOffset CommittedWhen => _committedWhen;
+    public DateTimeOffset CommittedWhen => DetailsLoader is null ? _committedWhen : Details?.CommittedWhen ?? default;
 
     /// <summary>
     ///     Gets the parent commits of this commit.
@@ -155,7 +161,12 @@ public class CommitEntity
     {
         get
         {
-            return _parents.GetOrCreate(() =>
+            if (ParentShas is not null && ReadContext is not null)
+                return ParentsSnapshot.GetOrCreate(() => ParentShas.Select(ReadContext.CommitIdentity).ToArray())!;
+            if (DetailsLoader is not null) return Details?.Parents ?? [];
+            if (ReadContext?.RequiresCli == true)
+                return Array.Empty<CommitEntity>();
+            return ParentsSnapshot.GetOrCreate(() =>
             {
                 if (string.IsNullOrWhiteSpace(_repositoryPath) || string.IsNullOrWhiteSpace(_sha))
                     return Array.Empty<CommitEntity>();

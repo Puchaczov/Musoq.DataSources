@@ -131,6 +131,7 @@ internal static class GitSourcePlanner
     private static readonly IReadOnlyDictionary<string, HashSet<string>> FilterColumnsByTable =
         new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
         {
+            ["worktrees"] = new(WorktreeEntity.NameToIndexMap.Keys, StringComparer.OrdinalIgnoreCase),
             ["commits"] =
             [
                 nameof(CommitEntity.Author),
@@ -182,6 +183,7 @@ internal static class GitSourcePlanner
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.OrdinalIgnoreCase)
         {
             ["repository"] = Names(RepositoryEntity.NameToIndexMap.Keys),
+            ["worktrees"] = Names(WorktreeEntity.NameToIndexMap.Keys),
             ["commits"] = Names(CommitEntity.NameToIndexMap.Keys),
             ["branches"] = Names(BranchEntity.NameToIndexMap.Keys),
             ["tags"] = Names(TagEntity.NameToIndexMap.Keys),
@@ -470,6 +472,7 @@ internal static class GitSourcePlanner
     }
 
     private static bool SupportsNaturalWindow(string tableName) =>
+        tableName.Equals("worktrees", StringComparison.OrdinalIgnoreCase) ||
         tableName.Equals("commits", StringComparison.OrdinalIgnoreCase) ||
         tableName.Equals("filehistory", StringComparison.OrdinalIgnoreCase) ||
         tableName.Equals("tags", StringComparison.OrdinalIgnoreCase) ||
@@ -591,6 +594,9 @@ internal static class GitSourcePlanner
 
     private static bool IsLiteralTypeSupported(string tableName, string columnName, object? value)
     {
+        if (tableName.Equals("worktrees", StringComparison.OrdinalIgnoreCase))
+            return columnName is nameof(WorktreeEntity.IsBare) or nameof(WorktreeEntity.IsDetached) or
+                nameof(WorktreeEntity.IsLocked) or nameof(WorktreeEntity.IsPrunable) ? value is bool : value is string;
         if (tableName.Equals("commits", StringComparison.OrdinalIgnoreCase) &&
             columnName.Equals(nameof(CommitEntity.CommittedWhen), StringComparison.OrdinalIgnoreCase))
             return TryGetDateTimeOffset(value, out _);
@@ -622,6 +628,10 @@ internal static class GitSourcePlanner
     {
         switch (tableName)
         {
+            case "worktrees":
+                BindNative<WorktreeEntity>(predicate, filters.TypedPredicates,
+                    WorktreeEntity.NameToIndexMap.Keys.ToDictionary(name => name, name => name, StringComparer.OrdinalIgnoreCase));
+                break;
             case "commits":
                 BindNative<Commit>(predicate, filters.TypedPredicates, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {

@@ -25,7 +25,7 @@ internal sealed class RemoteTagsRowsSource : GitDiagnosticRowsSourceBase<RemoteT
         string remoteName,
         Func<string, Repository> createRepository,
         SourceExecutionContext executionContext)
-        : base(executionContext, "git.remotetags")
+        : base(executionContext, "git.remotetags", repositoryPath)
     {
         if (string.IsNullOrWhiteSpace(remoteName))
             throw new ArgumentException("A remote name is required.", nameof(remoteName));

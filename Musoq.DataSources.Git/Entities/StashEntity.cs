@@ -9,6 +9,7 @@ namespace Musoq.DataSources.Git.Entities;
 /// <summary>Represents a detached Git stash snapshot.</summary>
 public class StashEntity
 {
+    internal GitRepositoryContext? ReadContext { get; set; }
     /// <summary>Maps SQL-visible column names to row indexes.</summary>
     public static readonly IReadOnlyDictionary<string, int> NameToIndexMap;
 
@@ -107,6 +108,7 @@ public class StashEntity
 
     private CommitEntity? ResolveCommit(string? sha)
     {
+        if (ReadContext?.RequiresCli == true) return ReadContext.CommitFrom(sha);
         if (string.IsNullOrWhiteSpace(sha))
             return null;
 

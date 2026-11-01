@@ -1,7 +1,7 @@
 # Git plugin guide
 
 ## Purpose
-- Exposes local repositories as Musoq sources for `repository`, `commits`, `branches`, `tags`, `stashes`, `remotetags`, `filehistory`, `status`, `remotes`, and `blame`.
+- Exposes local repositories as Musoq sources for `repository`, `commits`, `branches`, `tags`, `stashes`, `remotetags`, `filehistory`, `status`, `remotes`, `blame`, and `worktrees`.
 
 ## Read first
 - `GitSchema.cs`
@@ -31,7 +31,7 @@
 
 ## Where lazy or nested entities matter
 - `RepositoryEntity` and `BranchEntity` deliberately expose nested enumerable properties with `[BindablePropertyAsTable]`. If you change those shapes, validate `cross apply` scenarios, not just direct `git.*(...)` queries.
-- `BlameHunkEntity.Lines` is the most important lazy property: it reads blob content on demand, caches the expanded `BlameLineEntity` list, and powers `cross apply h.Lines` queries.
+- `BlameHunkEntity.Lines` shares one lazy requested-blob string and line index across the operation's hunks, and powers `cross apply h.Lines` queries.
 - `CommitEntity.Parents` is another nested traversal point that should stay cheap and null-safe.
 - `TagEntity.Commit` is optional because lightweight tags do not always resolve the same way as annotated tags.
 - `BranchEntity.ParentBranch` is intentionally defensive and relatively expensive: it computes merge-base candidates and falls back to `main` / `master` on failure. Treat changes there as behavior-sensitive.
@@ -51,7 +51,9 @@
 - `filehistory`, `repository`, and `blame` do not currently use simple predicate pushdown.
 
 ## Common pitfalls
-- Path validation happens before source creation: queries must point at a repository root directory or a `.git` directory. Non-existent paths and non-repositories should keep failing early in `GitSchema`.
+- `GitRepositoryLocation` separates private metadata, common metadata and the selected checkout. Roots, gitfiles, metadata directories and bare repositories are accepted. The actual backend validates repository contents; CLI execution uses the selected checkout where available.
+- Native execution remains the ordinary default. `extensions.relativeWorktrees` uses CLI compatibility readers throughout nested and library operations. Backend settings retain their scopes: history selection controls `filehistory`; reference selection controls tags and stashes. Worktree discovery requires CLI and declares only `GIT_EXECUTABLE`.
+- Version 4 large nested histories are fresh disposable reads on each enumeration. Small immutable parent identities and scalar snapshots can remain cached. Nested time order and direct topology/time order differ; include skewed clocks and equal timestamps in ordering tests.
 - Test and query paths often need `.Escape()` because Windows paths are passed into Musoq scripts as string literals.
 - `filehistory` normalizes absolute paths back to repository-relative paths and matches either file names or full relative paths against every historical raw change, including both rename sides. Preserve that before touching wildcard logic.
 - Negative `take` in `filehistory` means “oldest N changes”. It uses Git's reverse history traversal, which remains a full-history-costed operation without a persistent index; keep the diagnostic metric and tests in sync if you optimize that path.

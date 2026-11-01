@@ -25,6 +25,7 @@ public class GitSchema : SchemaBase
 {
     private const string SchemaName = "Git";
     private const string RepositoryTable = "repository";
+    private const string WorktreesTable = "worktrees";
     private const string TagsTable = "tags";
     private const string StashesTable = "stashes";
     private const string RemoteTagsTable = "remotetags";
@@ -37,6 +38,22 @@ public class GitSchema : SchemaBase
     private readonly Func<string, Repository> _createRepository;
 
     /// <virtual-constructors>
+    ///     <virtual-constructor>
+    ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Git repository or worktree path</virtual-param>
+    ///         <examples><example><from>git.worktrees(string path)</from>
+    ///         <description>Lists worktree registrations, including bare, locked and prunable entries. Requires Git CLI.</description>
+    ///         <columns>
+    ///         <column name="Path" type="string">Registered checkout or bare repository path</column>
+    ///         <column name="HeadSha" type="string?">Checked-out commit, when present</column>
+    ///         <column name="Branch" type="string?">Full branch reference</column>
+    ///         <column name="IsBare" type="bool">Bare repository entry</column>
+    ///         <column name="IsDetached" type="bool">Detached HEAD</column>
+    ///         <column name="IsLocked" type="bool">Locked registration</column>
+    ///         <column name="LockReason" type="string?">Optional lock explanation</column>
+    ///         <column name="IsPrunable" type="bool">Prunable registration</column>
+    ///         <column name="PruneReason" type="string?">Optional prune explanation</column>
+    ///         </columns></example></examples>
+    ///     </virtual-constructor>
     ///     <virtual-constructor>
     ///         <virtual-param name="path" kind="path" relative-to="invocation-directory">Path to the Git repository</virtual-param>
     ///         <examples>
@@ -530,16 +547,18 @@ public class GitSchema : SchemaBase
     /// <param name="metadataContext">Metadata context</param>
     /// <param name="parameters">Parameters to pass to data source</param>
     /// <returns>Requested table metadata</returns>
-    /// <remarks>Supported tables are repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, and blame.</remarks>
+    /// <remarks>Supported tables are repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, blame, and worktrees.</remarks>
     public override ISchemaTable GetTableByName(
         string name,
         SourceMetadataContext metadataContext,
-        params object[] parameters)
+        params object?[] parameters)
     {
         switch (name.ToLowerInvariant())
         {
             case RepositoryTable:
                 return new RepositoryTable();
+            case WorktreesTable:
+                return new WorktreesTable();
             case TagsTable:
                 return new TagsTable();
             case StashesTable:
@@ -575,6 +594,7 @@ public class GitSchema : SchemaBase
         return methodName.ToLowerInvariant() switch
         {
             RepositoryTable => [CreateRepositoryMethodInfo()],
+            WorktreesTable => [CreateWorktreesMethodInfo()],
             TagsTable => [CreateTagsMethodInfo()],
             StashesTable => [CreateStashesMethodInfo()],
             RemoteTagsTable => [CreateRemoteTagsMethodInfo()],
@@ -592,12 +612,13 @@ public class GitSchema : SchemaBase
 
     /// <summary>Gets constructor metadata for every Git table.</summary>
     /// <param name="metadataContext">The metadata context supplied by Musoq.</param>
-    /// <returns>Constructor overloads for repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, and blame.</returns>
+    /// <returns>Constructor overloads for repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, blame, and worktrees.</returns>
     public override SchemaMethodInfo[] GetRawConstructors(SourceMetadataContext metadataContext)
     {
         return
         [
             CreateRepositoryMethodInfo(),
+            CreateWorktreesMethodInfo(),
             CreateTagsMethodInfo(),
             CreateStashesMethodInfo(),
             CreateRemoteTagsMethodInfo(),
@@ -622,6 +643,9 @@ public class GitSchema : SchemaBase
 
         return new SchemaMethodInfo(RepositoryTable, constructorInfo);
     }
+
+    private static SchemaMethodInfo CreateWorktreesMethodInfo() => new(WorktreesTable,
+        new ConstructorInfo(null!, false, [("path", typeof(string))]));
 
     private static SchemaMethodInfo CreateTagsMethodInfo()
     {
@@ -804,63 +828,51 @@ public class GitSchema : SchemaBase
     {
         var path = parameters.GetValue<string>(0);
 
-        if (!DirectoryOrFile(path)) throw new InvalidOperationException($"The path '{path}' is not a directory");
+        var location = GitRepositoryLocation.Resolve(path);
+        Repository OpenSelectedRepository(string _)
+        {
+            executionContext.Diagnostics.AddMetric("Git.RepositoryOpens", 1);
+            return _createRepository(location.ExecutionRoot);
+        }
 
-        var directoryInfo = new DirectoryInfo(path);
-
-        if (!DirectoryContainsGitFolder(path) && directoryInfo.Name != ".git")
-            throw new InvalidOperationException($"The path '{path}' does not contain a Git repository");
+        RowSource<T> Source<TItem>(GitDiagnosticRowsSourceBase<TItem> source)
+        {
+            source.RepositoryLocation = location;
+            return EnsureSourceType<T, TItem>(name, source);
+        }
 
         switch (name.ToLowerInvariant())
         {
+            case WorktreesTable:
+                return Source(new WorktreesRowsSource(path, executionContext));
             case RepositoryTable:
-                return EnsureSourceType<T, RepositoryEntity>(
-                    name,
-                    new RepositoryRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
+                return Source(new RepositoryRowsSource(path, OpenSelectedRepository, executionContext));
             case TagsTable:
-                return EnsureSourceType<T, TagEntity>(
-                    name,
-                    new TagsRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
+                return Source(new TagsRowsSource(path, OpenSelectedRepository, executionContext));
             case StashesTable:
-                return EnsureSourceType<T, StashEntity>(
-                    name,
-                    new StashesRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
+                return Source(new StashesRowsSource(path, OpenSelectedRepository, executionContext));
             case RemoteTagsTable:
-                return EnsureSourceType<T, RemoteTagEntity>(
-                    name,
-                    new RemoteTagsRowsSource(parameters.GetValue<string>(0), parameters.GetValue<string>(1), _createRepository,
+                return Source(new RemoteTagsRowsSource(path, parameters.GetValue<string>(1), OpenSelectedRepository,
                         executionContext));
             case CommitsTable:
-                return EnsureSourceType<T, CommitEntity>(
-                    name,
-                    new CommitsRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
+                return Source(new CommitsRowsSource(path, OpenSelectedRepository, executionContext));
             case BranchesTable:
-                return EnsureSourceType<T, BranchEntity>(
-                    name,
-                    new BranchesRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
+                return Source(new BranchesRowsSource(path, OpenSelectedRepository, executionContext));
             case FileHistoryTable:
                 var skip = parameters.Count > 3 ? parameters.GetValue<int>(2) : 0;
                 var take = parameters.Count > 3 ? parameters.GetValue<int>(3) :
                     parameters.Count > 2 ? parameters.GetValue<int>(2) : int.MaxValue;
-                return EnsureSourceType<T, FileHistoryEntity>(
-                    name,
-                    new FileHistoryRowsSource(parameters.GetValue<string>(0), parameters.GetValue<string>(1), skip, take,
-                        _createRepository, executionContext));
+                return Source(new FileHistoryRowsSource(parameters.GetValue<string>(0), parameters.GetValue<string>(1), skip, take,
+                        OpenSelectedRepository, executionContext));
             case StatusTable:
-                return EnsureSourceType<T, StatusEntity>(
-                    name,
-                    new StatusRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
+                return Source(new StatusRowsSource(path, OpenSelectedRepository, executionContext));
             case RemotesTable:
-                return EnsureSourceType<T, RemoteEntity>(
-                    name,
-                    new RemotesRowsSource(parameters.GetValue<string>(0), _createRepository, executionContext));
+                return Source(new RemotesRowsSource(path, OpenSelectedRepository, executionContext));
             case BlameTable:
                 var repositoryPath = parameters.GetValue<string>(0);
                 var filePath = parameters.GetValue<string>(1);
                 var revision = parameters.Count > 2 ? parameters.GetValue<string>(2) : "HEAD";
-                return EnsureSourceType<T, BlameHunkEntity>(
-                    name,
-                    new BlameRowsSource(repositoryPath, filePath, revision, _createRepository,
+                return Source(new BlameRowsSource(repositoryPath, filePath, revision, OpenSelectedRepository,
                         executionContext));
         }
 
@@ -876,7 +888,7 @@ public class GitSchema : SchemaBase
     public override SourceDescriptor DescribeSource(
         string name,
         SourceDescribeContext context,
-        params object[] parameters)
+        params object?[] parameters)
     {
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
@@ -905,8 +917,11 @@ public class GitSchema : SchemaBase
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
         string name,
         SourceRuntimeSettingsDescribeContext context,
-        params object[] parameters)
+        params object?[] parameters)
     {
+        if (name.Equals(WorktreesTable, StringComparison.OrdinalIgnoreCase))
+            return [new SourceRuntimeSettingRequirement(GitHistoryBackendOptions.ExecutableSettingName,
+                false, false, SourceRuntimeSettingPhase.Execution, "Git executable path. Worktree discovery requires Git CLI.")];
         return
         [
             new SourceRuntimeSettingRequirement(
@@ -936,21 +951,22 @@ public class GitSchema : SchemaBase
     /// <param name="parameters">Constructor parameters for the table.</param>
     /// <returns>A source plan that records accepted work and leaves unsupported work as residual operations.</returns>
     /// <remarks>Projection pruning and predicate/window acceptance are source-specific; residual expressions remain in Musoq.</remarks>
-    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
+    public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
         => PatternSourcePlan.Plan(request, GitPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
 
-    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
+    private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object?[] parameters)
     {
         return GitSourcePlanner.Plan(name, request);
     }
 
     /// <summary>Gets all virtual constructors exposed by the Git schema.</summary>
-    /// <returns>Constructor metadata for repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, and blame.</returns>
+    /// <returns>Constructor metadata for repository, tags, stashes, remotetags, commits, branches, filehistory, status, remotes, blame, and worktrees.</returns>
     public override SchemaMethodInfo[] GetConstructors()
     {
         return
         [
             CreateRepositoryMethodInfo(),
+            CreateWorktreesMethodInfo(),
             CreateTagsMethodInfo(),
             CreateStashesMethodInfo(),
             CreateRemoteTagsMethodInfo(),
@@ -973,33 +989,4 @@ public class GitSchema : SchemaBase
         return new MethodsAggregator(methodsManager);
     }
 
-    private static bool DirectoryOrFile(string path)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(path)) return false;
-
-            var attr = File.GetAttributes(path);
-
-            return (attr & FileAttributes.Directory) == FileAttributes.Directory;
-        }
-        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException or DirectoryNotFoundException
-                                       or FileNotFoundException)
-        {
-            return false;
-        }
-    }
-
-    private static bool DirectoryContainsGitFolder(string path)
-    {
-        try
-        {
-            return Directory.Exists(Path.Combine(path, ".git"));
-        }
-        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException or DirectoryNotFoundException
-                                       or FileNotFoundException)
-        {
-            return false;
-        }
-    }
 }

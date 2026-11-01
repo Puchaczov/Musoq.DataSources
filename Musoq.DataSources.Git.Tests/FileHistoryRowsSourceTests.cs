@@ -104,7 +104,7 @@ public class FileHistoryRowsSourceTests
     }
 
     [TestMethod]
-    public void NestedSnapshots_AreCachedAfterTheirShortLivedRepositoryScopesClose()
+    public void NestedScalarSnapshotsAndMaterializedResultsSurviveTheirRepositoryScopes()
     {
         using var fixture = GitFixture.Create();
         fixture.Commit("first.cs", "class First { }", "first");

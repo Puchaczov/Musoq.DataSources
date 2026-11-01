@@ -100,7 +100,7 @@ internal sealed class GitNulDelimitedUtf8Reader : IDisposable
     private byte[] CopyRawToken()
     {
         var result = _tokenBuffer!.AsSpan(0, _tokenLength).ToArray();
-        ArrayPool<byte>.Shared.Return(_tokenBuffer);
+        ArrayPool<byte>.Shared.Return(_tokenBuffer!);
         _tokenBuffer = null;
         _tokenLength = 0;
         return result;

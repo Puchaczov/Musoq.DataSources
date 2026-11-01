@@ -18,7 +18,7 @@ internal sealed class RemotesRowsSource : GitDiagnosticRowsSourceBase<RemoteEnti
     private readonly string _repositoryPath;
 
     public RemotesRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
-        : base(executionContext, "git.remotes")
+        : base(executionContext, "git.remotes", repositoryPath)
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;

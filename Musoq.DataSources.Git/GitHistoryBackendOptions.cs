@@ -32,6 +32,10 @@ internal sealed class GitHistoryBackendOptions
     /// <summary>Read-only CLI defaults used by internal operation readers that have no public backend setting.</summary>
     public static GitHistoryBackendOptions Default { get; } = new(GitHistoryBackend.Auto, "git");
 
+    public static GitHistoryBackendOptions FromExecutable(IReadOnlyDictionary<string, string> settings) =>
+        new(GitHistoryBackend.Auto, settings.TryGetValue(ExecutableSettingName, out var executable) &&
+            !string.IsNullOrWhiteSpace(executable) ? executable.Trim() : "git");
+
     public static GitHistoryBackendOptions From(IReadOnlyDictionary<string, string> settings)
     {
         ArgumentNullException.ThrowIfNull(settings);

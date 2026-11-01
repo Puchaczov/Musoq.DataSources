@@ -897,11 +897,14 @@ internal sealed class GitCliStashReader : IGitStashReader
         var arguments = new List<string> { "log", "-g" };
         if (query.IsDirectSelectorLookup)
             arguments.Add("-1");
+        else
+            // The literal character class keeps this an exact ref glob; a missing ref yields no revisions.
+            arguments.Add("--glob=refs/stas[h]");
+        arguments.Add("--encoding=UTF-8");
         arguments.Add("--no-decorate");
         arguments.Add("--format=" + format);
-        arguments.Add(query.IsDirectSelectorLookup
-            ? GitStashReadQueryMatcher.NormalizeSelectorForGit(query.ExactSelector!)
-            : "refs/stash");
+        if (query.IsDirectSelectorLookup)
+            arguments.Add(GitStashReadQueryMatcher.NormalizeSelectorForGit(query.ExactSelector!));
         using var process = _processFactory.Start(
             new GitCliProcessRequest(
                 repositoryPath,

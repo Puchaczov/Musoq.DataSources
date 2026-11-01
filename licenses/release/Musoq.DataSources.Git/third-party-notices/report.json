@@ -46,7 +46,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.Git",
-    "PackageVersion": "3.0.4-alpha.1",
+    "PackageVersion": "4.0.0-alpha.1",
     "License": "MIT"
   }
 ]

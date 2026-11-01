@@ -24,7 +24,7 @@ internal sealed class BlameRowsSource : GitDiagnosticRowsSourceBase<BlameHunkEnt
         string revision,
         Func<string, Repository> createRepository,
         SourceExecutionContext executionContext)
-        : base(executionContext, "git.blame")
+        : base(executionContext, "git.blame", repositoryPath)
     {
         _repositoryPath = repositoryPath;
         _filePath = filePath;
@@ -35,7 +35,20 @@ internal sealed class BlameRowsSource : GitDiagnosticRowsSourceBase<BlameHunkEnt
 
     protected override long CollectRows(DiagnosticChunkWriter<BlameHunkEntity> writer, CancellationToken cancellationToken)
     {
-        if (!Directory.Exists(_repositoryPath))
+        if (ReadContext?.RequiresCli == true)
+        {
+            var rows = new List<BlameHunkEntity>(128);
+            long written = 0;
+            foreach (var hunk in ReadContext.Blame(_filePath, _revision))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (_projection.NativePatterns?.Matches(hunk, GitPatternColumns.BlameHunkEntity) == false) continue;
+                rows.Add(hunk);
+                if (rows.Count == 128) written += WriteChunk(writer, rows, written);
+            }
+            return written + WriteChunk(writer, rows, written);
+        }
+        if (!Directory.Exists(ReadContext?.Location.ExecutionRoot ?? _repositoryPath))
             throw new DirectoryNotFoundException($"Repository path '{_repositoryPath}' does not exist.");
 
         using var repository = _createRepository(_repositoryPath);
@@ -62,13 +75,22 @@ internal sealed class BlameRowsSource : GitDiagnosticRowsSourceBase<BlameHunkEnt
         }
 
         var chunk = new List<BlameHunkEntity>(128);
+        var blobSha = treeEntry.Target.Sha;
+        var fileContent = new GitBlameFileContent(() =>
+        {
+            using var contentRepository = _createRepository(_repositoryPath);
+            var blob = contentRepository.Lookup<Blob>(blobSha) ?? throw new FileNotFoundException("Blamed blob is no longer available.");
+            using var content = blob.GetContentStream();
+            using var text = new StreamReader(content);
+            return text.ReadToEnd();
+        }, Context.EndWorkToken, Context.Diagnostics);
         long rowsRead = 0;
         foreach (var hunk in blameHunks)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (_projection.NativePatterns?.Matches(new GitNativePatterns.BlameInput(hunk, _filePath), GitNativePatterns.Blame) == false) continue;
             _projection.NativePatterns?.Constructed();
-            chunk.Add(new BlameHunkEntity(hunk, _repositoryPath, _filePath, _projection));
+            chunk.Add(new BlameHunkEntity(hunk, _repositoryPath, _filePath, _projection, commit.Sha, fileContent));
             if (chunk.Count == 128)
                 rowsRead += WriteChunk(writer, chunk, rowsRead);
         }

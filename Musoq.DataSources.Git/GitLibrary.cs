@@ -27,6 +27,8 @@ public class GitLibrary : LibraryBase
         CommitEntity first,
         CommitEntity second)
     {
+        if (repository.ReadContext?.RequiresCli == true)
+            return repository.ReadContext.Differences(first.Sha, second.Sha);
         return repository.Read(libGitRepository =>
         {
             var firstCommit = LookupCommit(libGitRepository, first);
@@ -34,7 +36,7 @@ public class GitLibrary : LibraryBase
             return firstCommit is null || secondCommit is null
                 ? []
                 : libGitRepository.Diff.Compare<TreeChanges>(firstCommit.Tree, secondCommit.Tree)
-                    .Select(change => new DifferenceEntity(change, libGitRepository)).ToArray();
+                    .Select(change => new DifferenceEntity(change, libGitRepository) { ReadContext = repository.ReadContext }).ToArray();
         });
     }
 
@@ -49,6 +51,8 @@ public class GitLibrary : LibraryBase
         BranchEntity first,
         BranchEntity second)
     {
+        if (repository.ReadContext?.RequiresCli == true)
+            return repository.ReadContext.Differences(first.TipSha, second.TipSha);
         return repository.Read(libGitRepository =>
         {
             var firstCommit = LookupBranchTip(libGitRepository, first);
@@ -56,7 +60,7 @@ public class GitLibrary : LibraryBase
             return firstCommit is null || secondCommit is null
                 ? []
                 : libGitRepository.Diff.Compare<TreeChanges>(firstCommit.Tree, secondCommit.Tree)
-                    .Select(change => new DifferenceEntity(change, libGitRepository)).ToArray();
+                    .Select(change => new DifferenceEntity(change, libGitRepository) { ReadContext = repository.ReadContext }).ToArray();
         });
     }
 
@@ -69,6 +73,8 @@ public class GitLibrary : LibraryBase
         [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         BranchEntity branch)
     {
+        if (repository.ReadContext?.RequiresCli == true)
+            return repository.ReadContext.Differences("HEAD", branch.TipSha);
         return repository.Read(libGitRepository =>
         {
             var current = libGitRepository.Head?.Tip;
@@ -76,7 +82,7 @@ public class GitLibrary : LibraryBase
             return current is null || target is null
                 ? []
                 : libGitRepository.Diff.Compare<TreeChanges>(current.Tree, target.Tree)
-                    .Select(change => new DifferenceEntity(change, libGitRepository)).ToArray();
+                    .Select(change => new DifferenceEntity(change, libGitRepository) { ReadContext = repository.ReadContext }).ToArray();
         });
     }
 
@@ -115,7 +121,9 @@ public class GitLibrary : LibraryBase
     [BindableMethod]
     public CommitEntity CommitFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository, string sha)
     {
-        return repository.Read(libGitRepository => new CommitEntity(libGitRepository.Lookup<Commit>(sha), libGitRepository));
+        if (repository.ReadContext?.RequiresCli == true)
+            return repository.ReadContext.CommitFrom(sha)!;
+        return repository.Read(libGitRepository => new CommitEntity(libGitRepository.Lookup<Commit>(sha), libGitRepository) { ReadContext = repository.ReadContext });
     }
 
     /// <summary>Looks up a branch by canonical name and returns a detached branch snapshot.</summary>
@@ -125,7 +133,9 @@ public class GitLibrary : LibraryBase
     [BindableMethod]
     public BranchEntity BranchFrom([InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository, string canonicalName)
     {
-        return repository.Read(libGitRepository => new BranchEntity(libGitRepository.Branches[canonicalName], libGitRepository));
+        if (repository.ReadContext?.RequiresCli == true)
+            return repository.ReadContext.BranchFrom(canonicalName)!;
+        return repository.Read(libGitRepository => new BranchEntity(libGitRepository.Branches[canonicalName], libGitRepository) { ReadContext = repository.ReadContext });
     }
 
     /// <summary>Returns a lazily materialized patch between two commits.</summary>
@@ -142,6 +152,8 @@ public class GitLibrary : LibraryBase
     {
         if (string.IsNullOrWhiteSpace(first.Sha) || string.IsNullOrWhiteSpace(second.Sha))
             return [];
+        if (repository.ReadContext?.RequiresCli == true)
+            return [new PatchEntity(repository.ReadContext, first.Sha, second.Sha)];
 
         // The returned row keeps only identifiers. The potentially large textual patch is resolved in a short-lived
         // repository scope if a projected patch property is actually accessed.
@@ -157,6 +169,8 @@ public class GitLibrary : LibraryBase
         [InjectSpecificSource(typeof(RepositoryEntity))] RepositoryEntity repository,
         string searchPatternRegex)
     {
+        if (repository.ReadContext?.RequiresCli == true)
+            return repository.ReadContext.Branches().Where(b => Regex.IsMatch(b.FriendlyName, searchPatternRegex));
         return repository.Read(libGitRepository => libGitRepository.Branches
             .Where(branch => Regex.IsMatch(branch.FriendlyName, searchPatternRegex))
             .Select(branch => new BranchEntity(branch, libGitRepository)).ToArray());
@@ -173,16 +187,21 @@ public class GitLibrary : LibraryBase
         BranchEntity branch,
         bool excludeMergeBase = true)
     {
+        if (repository.ReadContext?.RequiresCli == true)
+            return repository.ReadContext.BranchSpecificCommits(branch, excludeMergeBase);
         var mergeBase = FindMergeBase(repository, branch);
         if (mergeBase is null || string.IsNullOrWhiteSpace(mergeBase.MergeBaseCommit.Sha))
             return [];
 
-        return repository.Read(libGitRepository =>
+        return ReadCommits();
+
+        IEnumerable<CommitEntity> ReadCommits()
         {
+            using var libGitRepository = repository.ReadContext?.OpenNative() ?? new Repository(repository.RepositoryPath);
             var target = libGitRepository.Branches[branch.CanonicalName]?.Tip;
             var mergeBaseCommit = libGitRepository.Lookup<Commit>(mergeBase.MergeBaseCommit.Sha);
             if (target is null || mergeBaseCommit is null)
-                return [];
+                yield break;
 
             var filter = new CommitFilter
             {
@@ -190,9 +209,12 @@ public class GitLibrary : LibraryBase
                 ExcludeReachableFrom = excludeMergeBase ? mergeBaseCommit : mergeBaseCommit.Parents.FirstOrDefault(),
                 SortBy = CommitSortStrategies.Topological | CommitSortStrategies.Time
             };
-            return libGitRepository.Commits.QueryBy(filter)
-                .Select(commit => new CommitEntity(commit, libGitRepository)).ToArray();
-        });
+            foreach (var commit in libGitRepository.Commits.QueryBy(filter))
+            {
+                repository.ReadContext?.Token.ThrowIfCancellationRequested();
+                yield return new CommitEntity(commit, libGitRepository) { ReadContext = repository.ReadContext };
+            }
+        }
     }
 
     /// <summary>Finds the merge base between a branch and its parent branch.</summary>
@@ -204,6 +226,8 @@ public class GitLibrary : LibraryBase
     {
         if (repository is null || branch is null)
             return null;
+        if (repository.ReadContext?.RequiresCli == true)
+            return repository.ReadContext.MergeBase(branch);
 
         var parent = branch.ParentBranch;
         if (parent is null)
@@ -260,6 +284,9 @@ public class GitLibrary : LibraryBase
         BranchEntity branch,
         bool reverse)
     {
+        if (repository.ReadContext?.RequiresCli == true)
+            return reverse ? repository.ReadContext.Differences(branch.TipSha, commit.Sha)
+                : repository.ReadContext.Differences(commit.Sha, branch.TipSha);
         return repository.Read(libGitRepository =>
         {
             var first = LookupCommit(libGitRepository, commit);
@@ -270,7 +297,7 @@ public class GitLibrary : LibraryBase
             var diff = reverse
                 ? libGitRepository.Diff.Compare<TreeChanges>(second.Tree, first.Tree)
                 : libGitRepository.Diff.Compare<TreeChanges>(first.Tree, second.Tree);
-            return diff.Select(change => new DifferenceEntity(change, libGitRepository)).ToArray();
+            return diff.Select(change => new DifferenceEntity(change, libGitRepository) { ReadContext = repository.ReadContext }).ToArray();
         });
     }
 

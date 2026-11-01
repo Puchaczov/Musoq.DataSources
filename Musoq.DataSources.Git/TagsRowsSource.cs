@@ -20,7 +20,7 @@ internal sealed class TagsRowsSource : GitDiagnosticRowsSourceBase<TagEntity>
     private readonly string _repositoryPath;
 
     public TagsRowsSource(string repositoryPath, Func<string, Repository> createRepository, SourceExecutionContext executionContext)
-        : base(executionContext, "git.tags")
+        : base(executionContext, "git.tags", repositoryPath)
     {
         _repositoryPath = repositoryPath;
         _createRepository = createRepository;
