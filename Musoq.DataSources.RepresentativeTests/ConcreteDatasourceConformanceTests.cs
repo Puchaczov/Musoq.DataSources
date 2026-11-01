@@ -43,6 +43,7 @@ public sealed class ConcreteDatasourceConformanceTests
         Concrete("flatfile", "file", ["./Files/example.txt"], typeof(string)),
 
         Concrete("git", "repository", ["./Repositories/Repository5"], typeof(string)),
+        Concrete("git", "worktrees", ["./Repositories/Repository5"], typeof(string)),
         Concrete("git", "tags", ["./Repositories/Repository5"], typeof(string)),
         Concrete("git", "stashes", ["./Repositories/Repository5"], typeof(string)),
         Concrete("git", "remotetags", ["./Repositories/Repository5", "origin"], typeof(string), typeof(string)),
@@ -148,9 +149,9 @@ public sealed class ConcreteDatasourceConformanceTests
     ];
 
     [TestMethod]
-    public void RegisteredConstructors_HaveExactly74ConcreteAnd15DynamicCases()
+    public void RegisteredConstructors_HaveExactly75ConcreteAnd15DynamicCases()
     {
-        Assert.AreEqual(74, ConcreteCases.Length);
+        Assert.AreEqual(75, ConcreteCases.Length);
         Assert.AreEqual(15, DynamicCases.Length);
         Assert.IsTrue(ConcreteCases.All(item =>
             item.Query.StartsWith("select * from ", StringComparison.OrdinalIgnoreCase)));
@@ -193,7 +194,7 @@ public sealed class ConcreteDatasourceConformanceTests
 
         var actualConcrete = actual.Where(signature => expectedConcrete.Contains(signature, StringComparer.Ordinal)).ToArray();
         var actualDynamic = actual.Where(signature => expectedDynamic.Contains(signature, StringComparer.Ordinal)).ToArray();
-        Assert.AreEqual(74, actualConcrete.Length);
+        Assert.AreEqual(75, actualConcrete.Length);
         Assert.AreEqual(15, actualDynamic.Length);
     }
 

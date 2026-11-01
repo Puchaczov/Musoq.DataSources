@@ -315,6 +315,12 @@ order by Id
 
 The filtered result has two rows: Id long 2/3, Amount decimal? null/2.5, Metadata string containing the second JSON object/null, and Total decimal? null/2.5. JsonText preserves the input object's JSON text, including whitespace. Structured values are decoded into concrete JsonElement/JsonElement? storage before the helper runs. Projection, filtering and window execution do not use object-row transfer. The rows.json, dynamic.sql and production JsonQueryRowSource/JsonQueryRowProcessor provide the complete executable reference.
 
+## Current runtime dependency baseline
+
+The datasource release targets Musoq Core 17.0.15-alpha.1. Upgrade Converter,
+Evaluator, Parser, Plugins and Schema together. The integration notes below
+describe behavior introduced in earlier compatible Core releases.
+
 ## Core 17.0.14-alpha.2 integration
 
 Upgrade Converter, Evaluator, Parser, Plugins and Schema together. Predicate capability

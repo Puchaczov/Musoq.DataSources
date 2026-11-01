@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.CANBus",
   "slug": "canbus",
-  "version": "4.0.7-alpha.1",
+  "version": "4.0.8-alpha.1",
   "projectPath": "Musoq.DataSources.CANBus/Musoq.DataSources.CANBus.csproj",
   "entryProject": "Musoq.DataSources.CANBus/Musoq.DataSources.CANBus.csproj",
   "ownPackageId": "Musoq.DataSources.CANBus",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "8090b18b0519251fc99817d6af217b919e5f41e047d78f4bb352ed659cb826ea"
+      "sha256": "7b33f045869e6404226d21af4e4644a2cf78e49c4ef17aac206cf6328b1320c0"
     },
     {
       "path": "global.json",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.CANBus/Musoq.DataSources.CANBus.csproj",
-      "sha256": "950668d9fc9f3be38f2267316ecbce1fb546c74e64f49a05d23e13cc5da9123b"
+      "sha256": "76942a249c565659a258a94e9d8cb187196bccbe8b00d9157b8d76154cb078ee"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "68545627c01c4cfd3dc6aafe5310d48dec9705d53237845c3bf2ebe234437bba"
+      "sha256": "f0adf6348c003ffe2a4a98028983096c1e069a0da42779f7cde04dbff8b6330b"
     }
   ],
   "packageGraph": [
@@ -131,17 +131,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.14-alpha.2",
+      "version": "17.0.15-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.14-alpha.2",
+      "version": "17.0.15-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.14-alpha.2",
+      "version": "17.0.15-alpha.1",
       "direct": true
     },
     {
@@ -274,7 +274,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 2523,
-      "sha256": "b5d00514881d3ab03225cf700f8b6877c91fe10ad871b9b2afb6779aa6a4b3b5"
+      "sha256": "fa03872fe07ef0be7451f0dfb4b49dd3c07f7e70e7d667450eeb6f57a31ff1a9"
     },
     {
       "path": "third-party-notices/System.CodeDom/license.txt",

@@ -36,17 +36,17 @@
   },
   {
     "PackageId": "Musoq.Parser",
-    "PackageVersion": "17.0.14-alpha.2",
+    "PackageVersion": "17.0.15-alpha.1",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Plugins",
-    "PackageVersion": "17.0.14-alpha.2",
+    "PackageVersion": "17.0.15-alpha.1",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Schema",
-    "PackageVersion": "17.0.14-alpha.2",
+    "PackageVersion": "17.0.15-alpha.1",
     "License": "MIT"
   },
   {
@@ -76,7 +76,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.OpenAI",
-    "PackageVersion": "6.0.7-alpha.1",
+    "PackageVersion": "6.0.8-alpha.1",
     "License": "MIT"
   }
 ]
