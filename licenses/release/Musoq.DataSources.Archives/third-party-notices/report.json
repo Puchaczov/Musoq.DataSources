@@ -61,7 +61,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.Archives",
-    "PackageVersion": "6.0.8-alpha.1",
+    "PackageVersion": "6.0.9-alpha.1",
     "License": "MIT"
   }
 ]

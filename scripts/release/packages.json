@@ -3,7 +3,7 @@
     {
       "slug": "archives",
       "packageId": "Musoq.DataSources.Archives",
-      "version": "6.0.8-alpha.1",
+      "version": "6.0.9-alpha.1",
       "projectPath": "Musoq.DataSources.Archives/Musoq.DataSources.Archives.csproj",
       "publishToNuGet": true
     },

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using LibGit2Sharp;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Schema.Diagnostics;
@@ -86,12 +87,12 @@ public sealed class SharedBlameContentTests
 
     private sealed class Metrics : ISourceDiagnosticsSink
     {
-        private readonly Dictionary<string, long> _values = new();
+        private readonly ConcurrentDictionary<string, long> _values = new();
         public long Get(string key) => _values.GetValueOrDefault(key);
         public IDisposable Measure(string name, SourceDiagnosticOperation operation) => new EmptyScope();
         public void AddRowsProduced(long count) { }
         public void AddBytesRead(long count) { }
-        public void AddMetric(string name, long value) => _values[name] = Get(name) + value;
+        public void AddMetric(string name, long value) => _values.AddOrUpdate(name, value, (_, current) => current + value);
         private sealed class EmptyScope : IDisposable { public void Dispose() { } }
     }
 }

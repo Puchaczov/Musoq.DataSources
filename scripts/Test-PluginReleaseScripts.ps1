@@ -529,7 +529,7 @@ function Test-RuntimeV2ReleaseTrain {
     Assert-Equal 16 $packages.Count "Runtime-v2 release train should contain all 16 datasource packages."
 
     $expectedVersions = @{
-        'Musoq.DataSources.Archives' = '6.0.8-alpha.1'
+        'Musoq.DataSources.Archives' = '6.0.9-alpha.1'
         'Musoq.DataSources.CANBus' = '4.0.8-alpha.1'
         'Musoq.DataSources.Docker' = '5.0.8-alpha.1'
         'Musoq.DataSources.FlatFile' = '8.0.8-alpha.1'
@@ -930,3 +930,5 @@ Test-RepositoryLicenseSnapshots
 Test-ReleaseLicenseArchiveContracts
 
 Write-Host "Plugin release script tests passed." -ForegroundColor Green
+# Expected failing child commands must not leak their exit code into GitHub Actions' PowerShell wrapper.
+exit 0
