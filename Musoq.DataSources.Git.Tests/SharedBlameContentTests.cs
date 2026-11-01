@@ -11,28 +11,29 @@ public sealed class SharedBlameContentTests
     public void NativeHunksShareOneDeferredBlobReadAndSurviveProducerDisposal()
     {
         using var fixture = OfflineGitFixture.Create();
-        File.WriteAllText(Path.Combine(fixture.SeedPath, "lines.txt"), "first original line\nsecond preserved line\nthird original line\nfourth preserved line\n");
-        OfflineGitFixture.RunGit(fixture.SeedPath, "add", ".");
-        CommitAt("lines", 1800000000);
-        File.WriteAllText(Path.Combine(fixture.SeedPath, "lines.txt"), "first changed line\nsecond preserved line\nthird changed line\nfourth preserved line\n");
-        OfflineGitFixture.RunGit(fixture.SeedPath, "add", ".");
-        CommitAt("several hunks", 1800003600);
+        var file = Path.Combine(fixture.SeedPath, "lines.txt");
+        File.WriteAllText(file, "first preserved line\nsecond preserved line\nthird preserved line\nfourth preserved line\n");
+        var originalCommit = CommitAt("lines", 1800000000);
+        // Appending keeps the original block intact and gives this sharing test two unambiguous hunks.
+        File.AppendAllText(file, "appended line\n");
+        var appendedCommit = CommitAt("append a second hunk", 1800003600);
         var sink = new Metrics();
         var source = new BlameRowsSource(fixture.SeedPath, "lines.txt", "HEAD", static p => new Repository(p),
             RuntimeV2TestContexts.CreateExecutionContext(sourceDiagnostics: new SourceDiagnostics(sink)));
         var hunks = source.Chunks.SelectMany(c => c).ToArray();
-        Assert.IsTrue(hunks.Length > 1);
+        CollectionAssert.AreEqual(new[] { originalCommit, appendedCommit }, hunks.Select(h => h.CommitSha).ToArray());
         Assert.AreEqual(0L, sink.Get("Git.Blame.BlobReads"));
-        var expected = new[] { "first changed line", "second preserved line", "third changed line", "fourth preserved line" };
+        var expected = new[] { "first preserved line", "second preserved line", "third preserved line", "fourth preserved line", "appended line" };
         for (var repeat = 0; repeat < 2; repeat++)
             CollectionAssert.AreEqual(expected, hunks.SelectMany(h => h.Lines).Select(l => l.Content).ToArray());
         Assert.AreEqual(1L, sink.Get("Git.Blame.BlobReads"));
 
-        void CommitAt(string message, long timestamp)
+        string CommitAt(string message, long timestamp)
         {
             using var repository = new Repository(fixture.SeedPath);
+            Commands.Stage(repository, "lines.txt");
             var signature = new Signature("Blame Fixture", "blame@example.invalid", DateTimeOffset.FromUnixTimeSeconds(timestamp));
-            repository.Commit(message, signature, signature);
+            return repository.Commit(message, signature, signature).Sha;
         }
     }
 
