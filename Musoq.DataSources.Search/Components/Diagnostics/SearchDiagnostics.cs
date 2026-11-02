@@ -239,6 +239,17 @@ internal static class SearchDiagnosticCodes
 
 internal static class SearchDiagnosticCatalog
 {
+    public static SearchDiagnostic InvalidPath(ArgumentException exception, string message)
+    {
+        return new SearchDiagnostic(
+            SearchDiagnosticCodes.InvalidArgument,
+            SearchDiagnosticPhase.Argument,
+            message,
+            "A filesystem path contains a control character or a character invalid on the current operating system.",
+            "Provide a filesystem path without invalid characters.",
+            SearchDiagnosticLocation.ForArgument(exception.ParamName!));
+    }
+
     public static SearchDiagnostic InvalidArgument(string argumentName)
     {
         return new SearchDiagnostic(

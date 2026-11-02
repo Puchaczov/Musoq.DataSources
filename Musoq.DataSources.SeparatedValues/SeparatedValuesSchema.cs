@@ -18,6 +18,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.SeparatedValues;
 
 /// <description>
+///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Streams strict UTF-8 comma-, tab-, and semicolon-separated files with bounded schema resolution.
 /// </description>
 /// <short-description>
@@ -26,6 +27,15 @@ namespace Musoq.DataSources.SeparatedValues;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
 {
+    private static readonly FileSystemPathValidator PathValidator = new(
+        new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["comma"] = [new(0, "path")],
+            ["tab"] = [new(0, "path")],
+            ["semicolon"] = [new(0, "path")],
+            ["delimited"] = [new(0, "path")]
+        });
+
     private const string SchemaName = "SeparatedValues";
     private const string CommaTable = "comma";
     private const string TabTable = "tab";
@@ -108,6 +118,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         SourceMetadataContext metadataContext,
         params object?[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         var sourceParameters = ParseParameters(name, parameters);
 
         return name.ToLowerInvariant() switch
@@ -132,6 +143,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         SourceExecutionContext executionContext,
         TArguments parameters)
     {
+        PathValidator.Validate(name, parameters);
         ArgumentNullException.ThrowIfNull(executionContext);
 
         return name.ToLowerInvariant() switch
@@ -154,6 +166,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         where TMaterializer : struct, IQueryRowMaterializer<TRow>
         where TArguments : struct, ISourceArguments
     {
+        PathValidator.Validate(name, parameters);
         ArgumentNullException.ThrowIfNull(request);
         var identity = request.ExecutionContext.Plan.Identity;
         var sourceParameters = ParseParameters(name, parameters);
@@ -185,6 +198,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         SourceDescribeContext context,
         params object?[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         var sourceParameters = ParseParameters(name, parameters);
         if (!SeparatedValuesQueryMetadata.TryValidateDeclaredColumns(
                 context.MetadataContext.AllColumns,
@@ -338,6 +352,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
     /// </summary>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         var sourceParameters = ParseParameters(name, parameters);
         var dialect = _modules.DialectResolver.Resolve(sourceParameters.Separator, request.SourceRuntimeSettings);
         var contract = ConsumePendingContract(sourceParameters, dialect) ??

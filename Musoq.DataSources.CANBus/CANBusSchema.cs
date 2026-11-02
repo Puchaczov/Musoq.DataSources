@@ -16,6 +16,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.CANBus;
 
 /// <description>
+///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with CAN bus data.
 /// </description>
 /// <short-description>
@@ -24,6 +25,14 @@ namespace Musoq.DataSources.CANBus;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class CANBusSchema : SchemaBase
 {
+    private static readonly FileSystemPathValidator PathValidator = new(
+        new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["separatedvalues"] = [new(0, "csvData"), new(1, "dbcData")],
+            ["messages"] = [new(0, "dbc")],
+            ["signals"] = [new(0, "dbc")]
+        });
+
     private const string SchemaName = "can";
     private const string SeparatedValuesTable = "separatedvalues";
     private const string MessagesTable = "messages";
@@ -154,6 +163,7 @@ public class CANBusSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         return name.ToLowerInvariant() switch
         {
             SeparatedValuesTable => new SeparatedValuesFromFileCanFramesTable(
@@ -192,7 +202,10 @@ public class CANBusSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
-        => PatternSourcePlan.Plan(request, CANBusPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Plan(request, CANBusPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+    }
 
     private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
@@ -311,7 +324,10 @@ public class CANBusSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
-        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+    }
 
     private RowSource<T> ReadWithoutPatterns<T, TArguments>(
         string name,

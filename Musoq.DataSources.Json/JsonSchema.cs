@@ -10,6 +10,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Json;
 
 /// <description>
+///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Streams strict UTF-8 JSON files after exact source-driven schema discovery.
 /// </description>
 /// <short-description>
@@ -18,6 +19,12 @@ namespace Musoq.DataSources.Json;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
 {
+    private static readonly FileSystemPathValidator PathValidator = new(
+        new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["file"] = [new(0, "jsonFilePath")]
+        });
+
     private const string FileTable = "file";
     private const string SchemaName = "json";
 
@@ -50,6 +57,7 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
         SourceMetadataContext metadataContext,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         if (parameters is not [string path])
             throw new ArgumentException("json.file requires exactly one string path parameter.", nameof(parameters));
 
@@ -73,6 +81,7 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
         SourceExecutionContext executionContext,
         TArguments parameters)
     {
+        PathValidator.Validate(name, parameters);
         if (!string.Equals(name, FileTable, StringComparison.OrdinalIgnoreCase))
             throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.");
         _ = ReadPath(parameters);
@@ -112,6 +121,7 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
         where TMaterializer : struct, IQueryRowMaterializer<TRow>
         where TArguments : struct, ISourceArguments
     {
+        PathValidator.Validate(name, parameters);
         ArgumentNullException.ThrowIfNull(request);
         if (!string.Equals(name, FileTable, StringComparison.OrdinalIgnoreCase))
             throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.");
@@ -160,6 +170,7 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
     /// </summary>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         return name.ToLowerInvariant() switch
         {
             FileTable when parameters is [string path] => JsonSourcePlanner.Plan(

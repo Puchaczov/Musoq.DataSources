@@ -11,6 +11,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.FlatFile;
 
 /// <description>
+///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with flat files
 /// </description>
 /// <short-description>
@@ -19,6 +20,12 @@ namespace Musoq.DataSources.FlatFile;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class FlatFileSchema : SchemaBase
 {
+    private static readonly FileSystemPathValidator PathValidator = new(
+        new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["file"] = [new(0, "path")]
+        });
+
     private const string SchemaName = "Flat";
     private const string FileTable = "file";
 
@@ -56,6 +63,7 @@ public class FlatFileSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         return name.ToLowerInvariant() switch
         {
             FileTable => new FlatFileTable(),
@@ -74,7 +82,10 @@ public class FlatFileSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
-        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+    }
 
     private RowSource<T> ReadWithoutPatterns<T, TArguments>(
         string name,
@@ -119,6 +130,7 @@ public class FlatFileSchema : SchemaBase
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         return PatternSourcePlan.Plan(request, name.Equals(FileTable, StringComparison.OrdinalIgnoreCase) ? PatternColumns : null, inner => FlatFileSourcePlanner.Plan(name, inner));
     }
 

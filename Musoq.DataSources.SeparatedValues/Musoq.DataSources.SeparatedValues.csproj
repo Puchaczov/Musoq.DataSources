@@ -53,4 +53,7 @@
     <ItemGroup>
         <Compile Include="..\Shared\ProviderRegex.cs" Link="Shared\ProviderRegex.cs" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\Shared\FileSystemPathValidator.cs" Link="Shared\FileSystemPathValidator.cs" />
+    </ItemGroup>
 </Project>

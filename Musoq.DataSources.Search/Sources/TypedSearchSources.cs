@@ -40,6 +40,7 @@ public sealed class SearchMatchesTypedSource : RowSource<SearchMatch>
         SearchMatchOptionsInput? options,
         SourceExecutionContext context)
     {
+        SearchSchema.ValidateRoot(root);
         _inner = new SearchMatchesSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
@@ -83,6 +84,7 @@ public sealed class SearchLinesTypedSource : RowSource<SearchLine>
         SearchScanOptionsInput? options,
         SourceExecutionContext context)
     {
+        SearchSchema.ValidateRoot(root);
         _inner = new SearchLinesSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
@@ -126,6 +128,7 @@ public sealed class SearchFilesTypedSource : RowSource<SearchFile>
         SearchScanOptionsInput? options,
         SourceExecutionContext context)
     {
+        SearchSchema.ValidateRoot(root);
         _inner = new SearchFilesSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
@@ -169,6 +172,7 @@ public sealed class SearchCountsTypedSource : RowSource<SearchCount>
         SearchScanOptionsInput? options,
         SourceExecutionContext context)
     {
+        SearchSchema.ValidateRoot(root);
         _inner = new SearchCountsSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
@@ -212,6 +216,7 @@ public sealed class SearchAuditTypedSource : RowSource<SearchAudit>
         SearchScanOptionsInput? options,
         SourceExecutionContext context)
     {
+        SearchSchema.ValidateRoot(root);
         _inner = new SearchAuditSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
@@ -258,6 +263,7 @@ public sealed class SearchManyTypedSource : RowSource<SearchMatch>
         SearchManyOptionsInput? options,
         SourceExecutionContext context)
     {
+        SearchSchema.ValidateRoot(root);
         _inner = new SearchManySource(
             root,
             SearchTypedInputNormalizer.CreateMany(root, patterns, options),
@@ -298,6 +304,7 @@ public sealed class SearchBytesTypedSource : RowSource<SearchByteMatch>
         SearchBytesOptionsInput? options,
         SourceExecutionContext context)
     {
+        SearchSchema.ValidateRoot(root);
         _inner = new SearchBytesSource(
             root,
             SearchTypedInputNormalizer.CreateBytes(patternHex, options),
@@ -336,6 +343,7 @@ public sealed class SearchPathsTypedSource : RowSource<SearchPath>
         SearchPathsOptionsInput? options,
         SourceExecutionContext context)
     {
+        SearchSchema.ValidateRoot(root);
         var effectiveOptions = options ?? new SearchPathsOptionsInput(
             scope: null,
             maxFiles: long.MaxValue);

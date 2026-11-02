@@ -21,6 +21,7 @@ using Musoq.DataSources.Search.Tables;
 namespace Musoq.DataSources.Search;
 
 /// <description>
+///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides deterministic literal, regular-expression and raw-byte search over files below a requested root.
 /// </description>
 /// <short-description>
@@ -55,6 +56,20 @@ namespace Musoq.DataSources.Search;
 /// </remarks>
 public sealed class SearchSchema : SchemaBase
 {
+    private static readonly FileSystemPathValidator PathValidator = new(
+        new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["matches"] = [new(0, "root")],
+            ["lines"] = [new(0, "root")],
+            ["files"] = [new(0, "root")],
+            ["counts"] = [new(0, "root")],
+            ["paths"] = [new(0, "root")],
+            ["many"] = [new(0, "root")],
+            ["bytes"] = [new(0, "root")],
+            ["audit"] = [new(0, "root")]
+        },
+        static (message, exception) => new SearchRequestException(SearchDiagnosticCatalog.InvalidPath(exception, message), exception));
+
     private const string SchemaName = "search";
     private const string MatchesTable = "matches";
     private const string LinesTable = "lines";
@@ -64,6 +79,12 @@ public sealed class SearchSchema : SchemaBase
     private const string ManyTable = "many";
     private const string BytesTable = "bytes";
     private const string AuditTable = "audit";
+
+    // Compiled queries can invoke registered typed constructors directly.
+    internal static void ValidateRoot(string root)
+    {
+        PathValidator.Validate(PathsTable, SourceArguments.Create(root, SourceArguments.Empty));
+    }
 
     /// <virtual-constructors>
     ///     <virtual-constructor>
@@ -280,6 +301,7 @@ public sealed class SearchSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object?[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         return name.ToLowerInvariant() switch
         {
             MatchesTable or ManyTable => new SearchMatchesTable(),
@@ -306,6 +328,7 @@ public sealed class SearchSchema : SchemaBase
         SourceExecutionContext executionContext,
         TArguments parameters)
     {
+        PathValidator.Validate(name, parameters);
         if (!IsKnownSource(name))
         {
             throw new SourceNotFoundException(
@@ -390,6 +413,7 @@ public sealed class SearchSchema : SchemaBase
     /// <returns>Source plan with accepted scalar predicates and residual work.</returns>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         return SearchSourcePlanner.Plan(name, request);
     }
 

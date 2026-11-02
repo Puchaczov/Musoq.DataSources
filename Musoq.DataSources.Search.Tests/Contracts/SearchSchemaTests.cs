@@ -524,12 +524,29 @@ public sealed class SearchSchemaTests
         var descriptor = new SearchSchema().DescribeSource(
             "matches",
             new SourceDescribeContext(
-                new SourceIdentity("search", "matches", "search-tests", "invalid-root"),
+                new SourceIdentity("search", "matches", "search-tests", "missing-root"),
                 CreateMetadataContext()),
-            "\0",
+            Path.Combine(Path.GetTempPath(), "musoq-missing-root-" + Guid.NewGuid().ToString("N")),
             string.Empty);
 
         Assert.AreEqual(typeof(SearchMatch), descriptor.RowType);
+    }
+
+    [TestMethod]
+    public void DescribeSource_WhenRootContainsInvalidCharacter_ReportsArgumentDiagnostic()
+    {
+        var exception = Assert.ThrowsException<SearchRequestException>(() => new SearchSchema().DescribeSource(
+            "matches",
+            new SourceDescribeContext(
+                new SourceIdentity("search", "matches", "search-tests", "invalid-root"),
+                CreateMetadataContext()),
+            "\0", "text"));
+
+        Assert.AreEqual(SearchDiagnosticCodes.InvalidArgument, exception.Diagnostic.Code);
+        Assert.AreEqual(SearchDiagnosticPhase.Argument, exception.Diagnostic.Phase);
+        Assert.AreEqual("root", exception.Diagnostic.Location?.ArgumentName);
+        StringAssert.Contains(exception.Message, "U+0000");
+        StringAssert.Contains(exception.Message, "position 0 (zero-based)");
     }
 
     [TestMethod]

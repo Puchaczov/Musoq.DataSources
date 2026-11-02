@@ -14,6 +14,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Git;
 
 /// <description>
+///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with Git repositories.
 /// </description>
 /// <summary>Provides Musoq tables and planning metadata for Git repositories.</summary>
@@ -23,6 +24,22 @@ namespace Musoq.DataSources.Git;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class GitSchema : SchemaBase
 {
+    private static readonly FileSystemPathValidator PathValidator = new(
+        new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["repository"] = [new(0, "path")],
+            ["worktrees"] = [new(0, "path")],
+            ["tags"] = [new(0, "path")],
+            ["stashes"] = [new(0, "path")],
+            ["remotetags"] = [new(0, "path")],
+            ["commits"] = [new(0, "path")],
+            ["branches"] = [new(0, "path")],
+            ["status"] = [new(0, "path")],
+            ["remotes"] = [new(0, "path")],
+            ["filehistory"] = [new(0, "path")],
+            ["blame"] = [new(0, "repositoryPath")]
+        });
+
     private const string SchemaName = "Git";
     private const string RepositoryTable = "repository";
     private const string WorktreesTable = "worktrees";
@@ -553,6 +570,7 @@ public class GitSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object?[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         switch (name.ToLowerInvariant())
         {
             case RepositoryTable:
@@ -818,7 +836,10 @@ public class GitSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
-        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), name.ToLowerInvariant() == "filehistory" ? ["CommitSha", "FilePath", "ChangeType", "OldPath"] : GitPatternColumns.Get(name)?.Names);
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), name.ToLowerInvariant() == "filehistory" ? ["CommitSha", "FilePath", "ChangeType", "OldPath"] : GitPatternColumns.Get(name)?.Names);
+    }
 
     private RowSource<T> ReadWithoutPatterns<T, TArguments>(
         string name,
@@ -952,7 +973,10 @@ public class GitSchema : SchemaBase
     /// <returns>A source plan that records accepted work and leaves unsupported work as residual operations.</returns>
     /// <remarks>Projection pruning and predicate/window acceptance are source-specific; residual expressions remain in Musoq.</remarks>
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
-        => PatternSourcePlan.Plan(request, GitPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Plan(request, GitPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+    }
 
     private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object?[] parameters)
     {

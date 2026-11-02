@@ -20,6 +20,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Os;
 
 /// <description>
+///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with operating system abstractions
 /// </description>
 /// <short-description>
@@ -28,6 +29,19 @@ namespace Musoq.DataSources.Os;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class OsSchema : SchemaBase
 {
+    private static readonly FileSystemPathValidator PathValidator = new(
+        new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["file"] = [new(0, "path")],
+            ["files"] = [new(0, "directory")],
+            ["directories"] = [new(0, "directory")],
+            ["zip"] = [new(0, "path")],
+            ["dlls"] = [new(0, "path")],
+            ["dirscompare"] = [new(0, "sourceDirectory"), new(1, "destinationDirectory")],
+            ["pathinfo"] = [new(0, "path")],
+            ["metadata"] = [new(0, "directoryOrFile", 1), new(0, "pathDirectoryOrFile", 2), new(0, "directory", 3)]
+        });
+
     private const string SchemaName = "os";
     private const string DirectoriesTable = "directories";
     private const string FileTable = "file";
@@ -401,6 +415,7 @@ public class OsSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         switch (name.ToLowerInvariant())
         {
             case FileTable:
@@ -454,7 +469,10 @@ public class OsSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
-        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), OsNativePatterns.Columns(name));
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), OsNativePatterns.Columns(name));
+    }
 
     private RowSource<T> ReadWithoutPatterns<T, TArguments>(
         string name,
@@ -612,7 +630,10 @@ public class OsSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
-        => PatternSourcePlan.Plan(request, OsPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Plan(request, OsPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+    }
 
     private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {

@@ -10,6 +10,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Archives;
 
 /// <description>
+///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with archives files
 /// </description>
 /// <short-description>
@@ -18,6 +19,12 @@ namespace Musoq.DataSources.Archives;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class ArchivesSchema : SchemaBase
 {
+    private static readonly FileSystemPathValidator PathValidator = new(
+        new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["file"] = [new(0, "path")]
+        });
+
     private const string SchemaName = "Archives";
     private const string FileTable = "file";
 
@@ -69,6 +76,7 @@ public class ArchivesSchema : SchemaBase
         SourceMetadataContext metadataContext,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
         return new ArchivesTable();
     }
 
@@ -83,7 +91,10 @@ public class ArchivesSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
-        => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), ["Key", "LinkTarget"]);
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), ["Key", "LinkTarget"]);
+    }
 
     private RowSource<T> ReadWithoutPatterns<T, TArguments>(
         string name,
@@ -127,7 +138,10 @@ public class ArchivesSchema : SchemaBase
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
-        => PatternSourcePlan.Plan(request, ArchivesPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+    {
+        PathValidator.Validate(name, parameters);
+        return PatternSourcePlan.Plan(request, ArchivesPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
+    }
 
     private SourcePlanResult PlanWithoutPatterns(string name, SourcePlanRequest request, params object[] parameters)
     {
