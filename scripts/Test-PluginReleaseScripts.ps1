@@ -249,7 +249,7 @@ function Test-LocalDatasourcePublisherContract {
     Assert-True ($selectedIds -contains "Musoq.DataSources.Git") "Multiple selections should resolve the Git datasource."
     Assert-True ($selectedIds -contains "Musoq.DataSources.Json") "Multiple selections should resolve the JSON datasource."
 
-    $tagSelection = & (Join-Path $PSScriptRoot "release/Resolve-BatchRelease.ps1") -Selection "10.0.8-alpha.1-Musoq.DataSources.Json" -Json | ConvertFrom-Json
+    $tagSelection = & (Join-Path $PSScriptRoot "release/Resolve-BatchRelease.ps1") -Selection "10.0.9-alpha.1-Musoq.DataSources.Json" -Json | ConvertFrom-Json
     Assert-Equal "Musoq.DataSources.Json" $tagSelection[0].packageId "Exact current release tags should resolve to the datasource package."
 }
 
@@ -529,22 +529,22 @@ function Test-RuntimeV2ReleaseTrain {
     Assert-Equal 16 $packages.Count "Runtime-v2 release train should contain all 16 datasource packages."
 
     $expectedVersions = @{
-        'Musoq.DataSources.Archives' = '6.0.9-alpha.1'
-        'Musoq.DataSources.CANBus' = '4.0.8-alpha.1'
-        'Musoq.DataSources.Docker' = '5.0.8-alpha.1'
-        'Musoq.DataSources.FlatFile' = '8.0.8-alpha.1'
-        'Musoq.DataSources.Git' = '4.0.1-alpha.1'
-        'Musoq.DataSources.GitHub' = '2.0.8-alpha.1'
-        'Musoq.DataSources.Jira' = '2.0.8-alpha.1'
-        'Musoq.DataSources.Json' = '10.0.8-alpha.1'
-        'Musoq.DataSources.Ollama' = '5.0.8-alpha.1'
-        'Musoq.DataSources.OpenAI' = '6.0.8-alpha.1'
-        'Musoq.DataSources.Os' = '9.0.8-alpha.1'
-        'Musoq.DataSources.Roslyn' = '3.0.9-alpha.1'
-        'Musoq.DataSources.Search' = '1.0.5-alpha.1'
-        'Musoq.DataSources.SeparatedValues' = '11.0.5-alpha.1'
-        'Musoq.DataSources.System' = '8.0.8-alpha.1'
-        'Musoq.DataSources.Time' = '8.0.8-alpha.1'
+        'Musoq.DataSources.Archives' = '6.0.10-alpha.1'
+        'Musoq.DataSources.CANBus' = '4.0.9-alpha.1'
+        'Musoq.DataSources.Docker' = '5.0.9-alpha.1'
+        'Musoq.DataSources.FlatFile' = '8.0.9-alpha.1'
+        'Musoq.DataSources.Git' = '4.0.2-alpha.1'
+        'Musoq.DataSources.GitHub' = '2.0.9-alpha.1'
+        'Musoq.DataSources.Jira' = '2.0.9-alpha.1'
+        'Musoq.DataSources.Json' = '10.0.9-alpha.1'
+        'Musoq.DataSources.Ollama' = '5.0.9-alpha.1'
+        'Musoq.DataSources.OpenAI' = '6.0.9-alpha.1'
+        'Musoq.DataSources.Os' = '9.0.9-alpha.1'
+        'Musoq.DataSources.Roslyn' = '3.0.10-alpha.1'
+        'Musoq.DataSources.Search' = '1.0.6-alpha.1'
+        'Musoq.DataSources.SeparatedValues' = '11.0.6-alpha.1'
+        'Musoq.DataSources.System' = '8.0.9-alpha.1'
+        'Musoq.DataSources.Time' = '8.0.9-alpha.1'
     }
 
     foreach ($package in $packages) {
@@ -558,12 +558,12 @@ function Test-RuntimeV2ReleaseTrain {
 
     $roslyn = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Roslyn' })
     Assert-Equal 1 $roslyn.Count "Runtime-v2 release train should contain exactly one Roslyn package."
-    Assert-Equal "3.0.9-alpha.1" ([string]$roslyn[0].version) "Roslyn should use its next alpha version."
+    Assert-Equal "3.0.10-alpha.1" ([string]$roslyn[0].version) "Roslyn should use its next alpha version."
 
     $search = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Search' })
     Assert-Equal 1 $search.Count "Runtime-v2 release train should contain exactly one Search package."
     Assert-Equal "search" ([string]$search[0].slug) "Search should use the canonical release slug."
-    Assert-Equal "1.0.5-alpha.1" ([string]$search[0].version) "Search should use its next alpha version."
+    Assert-Equal "1.0.6-alpha.1" ([string]$search[0].version) "Search should use its next alpha version."
     Assert-Equal "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj" ([string]$search[0].projectPath) "Search should point at the production project."
 
     $excludedProjects = @($packages | Where-Object {

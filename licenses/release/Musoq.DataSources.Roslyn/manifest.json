@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Roslyn",
   "slug": "roslyn",
-  "version": "3.0.9-alpha.1",
+  "version": "3.0.10-alpha.1",
   "projectPath": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
   "entryProject": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
   "ownPackageId": "Musoq.DataSources.Roslyn",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "7b33f045869e6404226d21af4e4644a2cf78e49c4ef17aac206cf6328b1320c0"
+      "sha256": "946685b9d1905449f4615dea961d5b58946131d089098f387db41a2b91d100e3"
     },
     {
       "path": "global.json",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
-      "sha256": "71693a1f9e70100e1fa4f4d85185b3081e559f26ebdcdb51ffa7b56dfcf80158"
+      "sha256": "16cc1ac1049d16d6056592dfaccfcc8dffa0557bc115772b8a2fc2d657e34cfc"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "2f97c79d72416d7002e9a6e45dbd83eab533cccc6dc4d104f534530128646723"
+      "sha256": "d17561996c994ddd8778386137c9a1298371458485f55bc6ee2667a671a9aed5"
     }
   ],
   "packageGraph": [
@@ -211,17 +211,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.15-alpha.1",
+      "version": "17.0.16-alpha.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.15-alpha.1",
+      "version": "17.0.16-alpha.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.15-alpha.1",
+      "version": "17.0.16-alpha.1",
       "direct": true
     },
     {
@@ -433,8 +433,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 4555,
-      "sha256": "bb30d3ca52754e37adcaf6aff616b0c4bb6b01f72685d2d34d48e767260eda79"
+      "size": 4556,
+      "sha256": "d6593b4eb2a8f227a3d5477e7d72cee7ea2d95a645b2d9afba604ee61b77e634"
     },
     {
       "path": "third-party-notices/System.Composition.AttributedModel/license.txt",
