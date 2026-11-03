@@ -78,7 +78,8 @@ public class GitToSqlTests
             _ = table.Count;
         });
 
-        Assert.IsInstanceOfType<InvalidOperationException>(exception.GetBaseException());
+        Assert.AreEqual("GIT.ResourceNotFound", exception.Envelope!.Arguments["providerCode"]);
+        Assert.AreEqual("ResourceNotFound", exception.Envelope.Arguments["failureKind"]);
     }
 
     [TestMethod]

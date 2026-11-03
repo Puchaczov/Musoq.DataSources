@@ -21,6 +21,7 @@ using Musoq.DataSources.Search.Tables;
 namespace Musoq.DataSources.Search;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides deterministic literal, regular-expression and raw-byte search over files below a requested root.
 /// </description>
@@ -56,6 +57,8 @@ namespace Musoq.DataSources.Search;
 /// </remarks>
 public sealed class SearchSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("SEARCH", fileSystem: true, classify: SearchDiagnosticReport.Error);
+
     private static readonly FileSystemPathValidator PathValidator = new(
         new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
         {
@@ -68,7 +71,7 @@ public sealed class SearchSchema : SchemaBase
             ["bytes"] = [new(0, "root")],
             ["audit"] = [new(0, "root")]
         },
-        static (message, exception) => new SearchRequestException(SearchDiagnosticCatalog.InvalidPath(exception, message), exception));
+        static (message, exception) => new SearchRequestException(SearchDiagnosticCatalog.InvalidPath(exception, message), exception), provider: "SEARCH");
 
     private const string SchemaName = "search";
     private const string MatchesTable = "matches";
@@ -302,6 +305,15 @@ public sealed class SearchSchema : SchemaBase
         params object?[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return GetTableByNameCore(name, metadataContext, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, metadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private ISchemaTable GetTableByNameCore(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object?[] parameters)
+    {
         return name.ToLowerInvariant() switch
         {
             MatchesTable or ManyTable => new SearchMatchesTable(),
@@ -329,6 +341,15 @@ public sealed class SearchSchema : SchemaBase
         TArguments parameters)
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
         if (!IsKnownSource(name))
         {
             throw new SourceNotFoundException(
@@ -359,6 +380,16 @@ public sealed class SearchSchema : SchemaBase
         SourceDescribeContext context,
         params object?[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, context?.MetadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourceDescriptor DescribeSourceCore(
+        string name,
+        SourceDescribeContext context,
+        params object?[] parameters)
+    {
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
         return new SourceDescriptor
@@ -380,6 +411,16 @@ public sealed class SearchSchema : SchemaBase
     /// <param name="parameters">Root and literal parameters.</param>
     /// <returns>Execution-phase worker and buffered-output settings.</returns>
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object?[] parameters)
+    {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceRuntimeSettingsCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, default, out var failure)) { throw failure; }
+    }
+
+    private IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettingsCore(
         string name,
         SourceRuntimeSettingsDescribeContext context,
         params object?[] parameters)
@@ -414,6 +455,12 @@ public sealed class SearchSchema : SchemaBase
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return TryPlanSourceCore(name, request, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, request?.CancellationToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourcePlanResult TryPlanSourceCore(string name, SourcePlanRequest request, params object?[] parameters)
+    {
         return SearchSourcePlanner.Plan(name, request);
     }
 

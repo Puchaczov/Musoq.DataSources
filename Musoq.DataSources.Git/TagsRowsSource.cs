@@ -103,6 +103,7 @@ internal sealed class TagsRowsSource : GitDiagnosticRowsSourceBase<TagEntity>
         }
         catch (GitCliUnavailableException) when (_options.Backend == GitHistoryBackend.Auto)
         {
+            GitDiagnostics.BackendFallback(Context, usingCli: false);
             reader = GitOperationReaders.Tags;
             ReadWith(reader);
         }

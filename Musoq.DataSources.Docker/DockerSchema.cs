@@ -13,6 +13,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Docker;
 
 /// <description>
+///     Recognized service failures provide structured diagnostics; supported fallbacks report warnings alongside results.
 ///     Provides schema to work with docker containers, images, networks and volumes.
 /// </description>
 /// <short-description>
@@ -21,6 +22,8 @@ namespace Musoq.DataSources.Docker;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class DockerSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("DOCKER", classify: DockerDiagnostics.Map);
+
     private const string DockerSchemaName = "docker";
 
     private const string ContainersTableName = "containers";
@@ -190,6 +193,10 @@ public class DockerSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext.EndWorkToken), executionContext.EndWorkToken);
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(string name, SourceExecutionContext executionContext, TArguments parameters)
+        where TArguments : struct, ISourceArguments
         => PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), DockerPatternColumns.Get(name)?.Names);
 
     private RowSource<T> ReadWithoutPatterns<T, TArguments>(

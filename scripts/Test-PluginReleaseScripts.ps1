@@ -279,8 +279,8 @@ function Test-PluginCompatibilityManifestGeneration {
 
     $systemProject = Join-Path $PSScriptRoot "../Musoq.DataSources.System/Musoq.DataSources.System.csproj"
     $evaluated = Get-MusoqPluginCompatibility -ProjectPath $systemProject
-    Assert-Equal "17.0.15-alpha.1" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
-    Assert-Equal "17.0.15-alpha.1" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
+    Assert-Equal "17.0.16-alpha.1" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
+    Assert-Equal "17.0.16-alpha.1" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
 }
 
 function Test-PluginDirectAssemblyReferenceGuard {

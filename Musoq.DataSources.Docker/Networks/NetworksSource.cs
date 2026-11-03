@@ -28,7 +28,7 @@ internal class NetworksSource(IDockerApi api, SourceExecutionContext executionCo
         {
             var native = NativePatternExecution.Get(executionContext);
             native?.PageRead();
-            var networks = api.ListNetworksAsync().Result;
+            var networks = api.ListNetworksAsync().GetAwaiter().GetResult();
             var rows = networks
                 .Where(value => { writer.CancellationToken.ThrowIfCancellationRequested(); executionContext.EndWorkToken.ThrowIfCancellationRequested(); return native?.Matches(value, DockerNativePatterns.Network) != false; })
                 .Select(value => { var row = new NetworkEntity(value); native?.Constructed(); return row; })

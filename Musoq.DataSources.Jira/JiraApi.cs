@@ -1,3 +1,4 @@
+using Musoq.Schema.Diagnostics;
 using Musoq.DataSources.Jira.Entities;
 using Musoq.DataSources.Common;
 
@@ -12,9 +13,13 @@ internal class JiraApi : IJiraApi, IFilteredJiraApi
     private readonly Atlassian.Jira.Jira _jira;
     private readonly NativePatternExecution? _patterns;
     private readonly CancellationToken _cancellation;
-    private JiraApi(Atlassian.Jira.Jira jira, NativePatternExecution patterns, CancellationToken cancellationToken)
-    { _jira = jira; _patterns = patterns; _cancellation = cancellationToken; }
-    public IJiraApi WithPatterns(NativePatternExecution patterns, CancellationToken cancellationToken) => new JiraApi(_jira, patterns, cancellationToken);
+    private readonly Action<DataSourceDiagnostic>? _warningReporter;
+    private JiraApi(Atlassian.Jira.Jira jira, NativePatternExecution? patterns, CancellationToken cancellationToken, Action<DataSourceDiagnostic>? warningReporter)
+    { _jira = jira; _patterns = patterns; _cancellation = cancellationToken; _warningReporter = warningReporter; }
+    public IJiraApi WithPatterns(NativePatternExecution patterns, CancellationToken cancellationToken) => new JiraApi(_jira, patterns, cancellationToken, _warningReporter);
+
+    internal JiraApi WithReporting(Action<DataSourceDiagnostic>? reporter, CancellationToken token)
+        => new(_jira, _patterns, token, reporter);
 
     /// <summary>
     ///     Initializes a new instance of the JiraApi class.
@@ -41,7 +46,7 @@ internal class JiraApi : IJiraApi, IFilteredJiraApi
     public async Task<IReadOnlyList<IJiraIssue>> GetIssuesAsync(string jql, int maxResults = DefaultMaxResults,
         int startAt = 0)
     {
-        var issues = await _jira.Issues.GetIssuesFromJqlAsync(jql, maxResults, startAt);
+        var issues = await _jira.Issues.GetIssuesFromJqlAsync(jql, maxResults, startAt, _cancellation);
         return PatternPage.Map(issues, _patterns, JiraNativePatterns.Issue, static value => (IJiraIssue)new IssueEntity(value), _cancellation);
     }
 
@@ -62,7 +67,7 @@ internal class JiraApi : IJiraApi, IFilteredJiraApi
     /// <inheritdoc />
     public async Task<IReadOnlyList<IJiraProject>> GetProjectsAsync()
     {
-        var projects = await _jira.Projects.GetProjectsAsync();
+        var projects = await _jira.Projects.GetProjectsAsync(_cancellation);
         return PatternPage.Map(projects, _patterns, JiraNativePatterns.Project, static value => (IJiraProject)new ProjectEntity(value), _cancellation);
     }
 
@@ -71,10 +76,10 @@ internal class JiraApi : IJiraApi, IFilteredJiraApi
     {
         try
         {
-            var project = await _jira.Projects.GetProjectAsync(projectKey);
+            var project = await _jira.Projects.GetProjectAsync(projectKey, _cancellation);
             return project != null ? new ProjectEntity(project) : null;
         }
-        catch
+        catch (Exception error) when (JiraSchema.Reports.Warn(_warningReporter, error, "The optional project lookup returned no project.", _cancellation))
         {
             return null;
         }
@@ -83,20 +88,20 @@ internal class JiraApi : IJiraApi, IFilteredJiraApi
     /// <inheritdoc />
     public async Task<IReadOnlyList<IJiraComment>> GetCommentsAsync(string issueKey)
     {
-        var issue = await _jira.Issues.GetIssueAsync(issueKey);
-        var comments = await issue.GetCommentsAsync();
+        var issue = await _jira.Issues.GetIssueAsync(issueKey, _cancellation);
+        var comments = await issue.GetCommentsAsync(_cancellation);
         return MapComments(comments, issueKey);
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<IJiraComment>> GetCommentsForIssuesAsync(string jql, int maxIssues = 100)
     {
-        var issues = await _jira.Issues.GetIssuesFromJqlAsync(jql, maxIssues);
+        var issues = await _jira.Issues.GetIssuesFromJqlAsync(jql, maxIssues, token: _cancellation);
         var allComments = new List<IJiraComment>();
 
         foreach (var issue in issues)
         {
-            var comments = await issue.GetCommentsAsync();
+            var comments = await issue.GetCommentsAsync(_cancellation);
             allComments.AddRange(MapComments(comments, issue.Key.Value));
         }
 
@@ -106,7 +111,7 @@ internal class JiraApi : IJiraApi, IFilteredJiraApi
     /// <inheritdoc />
     public async Task<int> GetIssueCountAsync(string jql)
     {
-        var result = await _jira.Issues.GetIssuesFromJqlAsync(jql, 0);
+        var result = await _jira.Issues.GetIssuesFromJqlAsync(jql, 0, token: _cancellation);
         return result.TotalItems;
     }
     internal IReadOnlyList<IJiraComment> MapComments(IEnumerable<Atlassian.Jira.Comment> comments, string issueKey)

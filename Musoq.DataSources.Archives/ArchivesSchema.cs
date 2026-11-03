@@ -10,6 +10,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Archives;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with archives files
 /// </description>
@@ -19,11 +20,13 @@ namespace Musoq.DataSources.Archives;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class ArchivesSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("ARCHIVES", fileSystem: true, classify: ArchivesDiagnostics.Map);
+
     private static readonly FileSystemPathValidator PathValidator = new(
         new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
         {
             ["file"] = [new(0, "path")]
-        });
+        }, provider: "ARCHIVES");
 
     private const string SchemaName = "Archives";
     private const string FileTable = "file";
@@ -77,6 +80,15 @@ public class ArchivesSchema : SchemaBase
         params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return GetTableByNameCore(name, metadataContext, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, metadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private ISchemaTable GetTableByNameCore(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
+    {
         return new ArchivesTable();
     }
 
@@ -93,6 +105,15 @@ public class ArchivesSchema : SchemaBase
         TArguments parameters)
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext?.EndWorkToken ?? default), executionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
         return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), ["Key", "LinkTarget"]);
     }
 
@@ -116,6 +137,16 @@ public class ArchivesSchema : SchemaBase
         SourceDescribeContext context,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, context?.MetadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourceDescriptor DescribeSourceCore(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
         return new SourceDescriptor
@@ -134,12 +165,28 @@ public class ArchivesSchema : SchemaBase
         SourceRuntimeSettingsDescribeContext context,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceRuntimeSettingsCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, default, out var failure)) { throw failure; }
+    }
+
+    private IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettingsCore(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
         return [];
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return TryPlanSourceCore(name, request, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, request?.CancellationToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourcePlanResult TryPlanSourceCore(string name, SourcePlanRequest request, params object[] parameters)
+    {
         return PatternSourcePlan.Plan(request, ArchivesPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
     }
 

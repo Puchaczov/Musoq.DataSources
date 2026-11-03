@@ -42,13 +42,13 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         string question)
     {
         var api = entity.Api;
-        var isContentAboutResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<Message>
+        var isContentAboutResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<Message>
         {
             new(ChatRole.System, ContentAboutPrompt),
             new(ChatRole.User, content),
             new(ChatRole.User, question)
         }));
-        var sentimentResult = isContentAboutResultTask.Result.ToLowerInvariant();
+        var sentimentResult = isContentAboutResultTask.GetAwaiter().GetResult().ToLowerInvariant();
 
         return sentimentResult.Contains("yes");
     }
@@ -66,12 +66,12 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         bool throwOnUnknown = false)
     {
         var api = entity.Api;
-        var sentimentResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<Message>
+        var sentimentResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<Message>
         {
             new(ChatRole.System, SentimentPrompt),
             new(ChatRole.User, content)
         }));
-        var sentimentResult = sentimentResultTask.Result.ToLowerInvariant();
+        var sentimentResult = sentimentResultTask.GetAwaiter().GetResult().ToLowerInvariant();
 
         return sentimentResult.Contains("positive")
             ? "POSITIVE"
@@ -94,13 +94,13 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
     public string SummarizeContent([InjectSpecificSource(typeof(OllamaEntity))] OllamaEntity entity, string content)
     {
         var api = entity.Api;
-        var summarizeResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<Message>
+        var summarizeResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<Message>
         {
             new(ChatRole.System, SummarizerPrompt),
             new(ChatRole.User, content)
         }));
 
-        return summarizeResultTask.Result;
+        return summarizeResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -116,14 +116,14 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         string from, string to)
     {
         var api = entity.Api;
-        var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<Message>
+        var translateResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<Message>
         {
             new(ChatRole.System,
                 TranslateGivenTextPrompt.Replace("{SOURCE_LANGUAGE}", from).Replace("{DESTINATION_LANGUAGE}", to)),
             new(ChatRole.User, content)
         }));
 
-        return translateResultTask.Result;
+        return translateResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -138,25 +138,25 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         bool throwOnException = false)
     {
         var api = entity.Api;
-        var getEntitiesResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<Message>
+        var getEntitiesResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<Message>
         {
             new(ChatRole.System, ExtractEntitiesPrompt),
             new(ChatRole.User, content)
         }));
 
-        var entitiesResult = getEntitiesResultTask.Result.ToLowerInvariant();
+        var entitiesResult = getEntitiesResultTask.GetAwaiter().GetResult().ToLowerInvariant();
 
         try
         {
             var entities = JsonConvert.DeserializeObject<ExtractedEntities>(entitiesResult);
 
+            if (entities?.Entities is null) OllamaDiagnostics.OutputFallback(entity);
             return entities?.Entities ?? [];
         }
-        catch (Exception)
+        catch (Newtonsoft.Json.JsonException error)
         {
-            if (throwOnException)
-                throw;
-
+            if (throwOnException) throw OllamaDiagnostics.InvalidOutput(error);
+            OllamaDiagnostics.OutputFallback(entity, error);
             return [];
         }
     }
@@ -171,7 +171,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
     public string DescribeImage([InjectSpecificSource(typeof(OllamaEntity))] OllamaEntity entity, string imageBase64)
     {
         var api = entity.Api;
-        var describeImageResultTask = DoAsynchronously(() =>
+        var describeImageResultTask = DoAsynchronously(entity, () =>
         {
             const string youAreImageDescriberDescribeTheImage =
                 "You are images carefully analyzer. Describe the image.";
@@ -180,7 +180,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
                 new Message(ChatRole.User, youAreImageDescriberDescribeTheImage, [imageBase64]));
         });
 
-        return describeImageResultTask.Result;
+        return describeImageResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -195,7 +195,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         string imageBase64)
     {
         var api = entity.Api;
-        var describeImageResultTask = DoAsynchronously(() =>
+        var describeImageResultTask = DoAsynchronously(entity, () =>
         {
             var youAreImageDescriberDescribeTheImage =
                 "You are images carefully analyzer. You will be given with a question you must answer based on the photography provided.";
@@ -207,7 +207,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
                 ]);
         });
 
-        return describeImageResultTask.Result;
+        return describeImageResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -222,7 +222,7 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         string question, string imageBase64)
     {
         var api = entity.Api;
-        var describeImageResultTask = DoAsynchronously(() =>
+        var describeImageResultTask = DoAsynchronously(entity, () =>
         {
             var youAreImageDescriberDescribeTheImage =
                 "You are images carefully analyzer. You will answer to the user question. You must respond with following json { result: bool }. Do not comment or explain anything.";
@@ -235,19 +235,23 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
                 });
         });
 
-        var response = describeImageResultTask.Result;
+        var response = describeImageResultTask.GetAwaiter().GetResult();
 
         try
         {
             var result = JsonConvert.DeserializeObject<Dictionary<string, bool>>(response);
 
             if (result == null)
+            {
+                OllamaDiagnostics.OutputFallback(entity);
                 return false;
+            }
 
             return result["result"];
         }
-        catch (Exception)
+        catch (Exception error) when (error is Newtonsoft.Json.JsonException or KeyNotFoundException)
         {
+            OllamaDiagnostics.OutputFallback(entity, error);
             return false;
         }
     }
@@ -272,13 +276,13 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
             return string.Empty;
 
         var api = entity.Api;
-        var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<Message>
+        var translateResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<Message>
         {
             new(ChatRole.System, whatToDo),
             new(ChatRole.User, columnString)
         }));
 
-        return translateResultTask.Result;
+        return translateResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -315,19 +319,19 @@ public class OllamaLibrary : LibraryBase, ILargeLanguageModelFunctions<OllamaEnt
         return encoding.CountTokens(content);
     }
 
-    private static async Task<string> DoAsynchronously(Func<Task<CompletionResponse>> func)
+    private static async Task<string> DoAsynchronously(OllamaEntityBase entity, Func<Task<CompletionResponse>> func)
     {
-        var result = func();
-
         try
         {
-            var completion = await result;
+            entity.CancellationToken.ThrowIfCancellationRequested();
+            var completion = await func();
 
             return completion.Text;
         }
-        catch (Exception exc)
+        catch (Exception error) when (OllamaSchema.Reports.Warn(entity.WarningReporter, error,
+            "The existing completion-text fallback was used.", entity.CancellationToken))
         {
-            return exc.Message;
+            return "Completion unavailable. See datasource warnings.";
         }
     }
 

@@ -734,10 +734,12 @@ public sealed class SeparatedValuesQueryRowSourceTests
             var source = NativeSourceCalls.Query(((IQueryScopedRowSourceSchema)schema), SourceArguments.Create(path, SourceArguments.Create(true, SourceArguments.Create(0, SourceArguments.Empty)))).Read<NameAgeRow, NameAgeMaterializer>("comma", new QueryScopedRowSourceRequest(context, NameAgeShape()));
             File.Delete(path);
 
-            var exception = Assert.ThrowsExactly<FileNotFoundException>(() =>
+            var exception = Assert.ThrowsExactly<DataSourceException>(() =>
                 source.Chunks.SelectMany(static chunk => chunk).ToArray());
 
-            StringAssert.Contains(exception.Message, Path.GetFileName(path));
+            Assert.AreEqual("SEPARATEDVALUES.ResourceNotFound", exception.Report.Code);
+            Assert.IsInstanceOfType<FileNotFoundException>(exception.InnerException);
+            Assert.IsFalse(exception.Message.Contains(path, StringComparison.Ordinal));
             Assert.AreEqual(1L, diagnosticsSink.Metric(SeparatedValuesDiagnostics.ExecutionFailures));
             Assert.AreEqual(0L, diagnosticsSink.Metric(SeparatedValuesDiagnostics.ExecutionCancellations));
             Assert.AreEqual(1, progress.For("separated_values", DataSourcePhase.Begin).Count);

@@ -16,6 +16,9 @@ internal static class GitHubPatternApi
         => PatternSourcePlan.Read(context, read, api is null or IFilteredGitHubApi ? GitHubPatternColumns.Get(source)?.Names : null,
             nativeOwnsWindow: true);
     internal static IGitHubApi Bind(IGitHubApi api, SourceExecutionContext context, CancellationToken token)
-        => NativePatternExecution.Get(context) is { HasPredicates: true } native && api is IFilteredGitHubApi filtered
+    {
+        api = api is GitHubApi concrete ? concrete.WithReporting(context.WarningReporter, token) : api;
+        return NativePatternExecution.Get(context) is { HasPredicates: true } native && api is IFilteredGitHubApi filtered
             ? filtered.WithPatterns(native, token) : api;
+    }
 }

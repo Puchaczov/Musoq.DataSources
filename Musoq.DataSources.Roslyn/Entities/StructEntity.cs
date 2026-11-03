@@ -35,6 +35,7 @@ public class StructEntity : TypeEntity
         Solution = solution;
         Symbol = symbol;
         Document = document;
+        Reporting = document.Reporting;
     }
 
     internal StructDeclarationSyntax Syntax { get; }
@@ -138,7 +139,7 @@ public class StructEntity : TypeEntity
     [BindablePropertyAsTable]
     public override IEnumerable<MethodEntity> Methods => Syntax.Members
         .OfType<MethodDeclarationSyntax>()
-        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution));
+        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution) { Reporting = this.Reporting });
 
     /// <summary>
     ///     Gets the properties of the struct.
@@ -158,7 +159,7 @@ public class StructEntity : TypeEntity
             .Select(v => new FieldEntity(
                 (IFieldSymbol)SemanticModel.GetDeclaredSymbol(v)!,
                 v,
-                Solution)));
+                Solution) { Reporting = this.Reporting }));
 
     /// <summary>
     ///     Gets the constructors of the struct.
@@ -179,7 +180,7 @@ public class StructEntity : TypeEntity
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
                 ct => SymbolFinder.FindReferencesAsync(Symbol, Solution, ct),
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                null);
+                null, Reporting);
 
             return references?.Sum(r => r.Locations.Count()) ?? -1;
         }
@@ -204,13 +205,13 @@ public class StructEntity : TypeEntity
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(eventDecl);
                 if (symbol != null)
-                    events.Add(new EventEntity(symbol, Solution, eventDecl));
+                    events.Add(new EventEntity(symbol, Solution, eventDecl) { Reporting = this.Reporting });
             }
 
             foreach (var eventField in Syntax.Members.OfType<EventFieldDeclarationSyntax>())
             foreach (var variable in eventField.Declaration.Variables)
                 if (SemanticModel.GetDeclaredSymbol(variable) is IEventSymbol symbol)
-                    events.Add(new EventEntity(symbol, fieldSyntax: eventField));
+                    events.Add(new EventEntity(symbol, fieldSyntax: eventField) { Reporting = this.Reporting });
 
             return events;
         }

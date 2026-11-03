@@ -35,6 +35,7 @@ public class EnumEntity : TypeEntity
         SemanticModel = semanticModel;
         Solution = solution;
         Document = document;
+        Reporting = document.Reporting;
         Symbol = symbol;
     }
 
@@ -84,7 +85,7 @@ public class EnumEntity : TypeEntity
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
                 ct => SymbolFinder.FindReferencesAsync(Symbol, Solution, ct)!,
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                null);
+                null, Reporting);
 
             return references?.Sum(r => r.Locations.Count()) ?? -1;
         }

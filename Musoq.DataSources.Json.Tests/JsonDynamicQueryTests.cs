@@ -1,5 +1,7 @@
 #nullable enable
 
+using Musoq.Schema.Diagnostics;
+
 using System;
 using System.IO;
 using System.Linq;
@@ -55,8 +57,8 @@ public class JsonDynamicQueryTests
             var exception = Assert.ThrowsExactly<MusoqQueryException>(() =>
                 Compile($"select Missing from json.file('{QueryPath(path)}')"));
 
-            StringAssert.Contains(FlattenMessages(exception), "Missing");
-            Assert.IsInstanceOfType<StructuredUnknownColumnException>(exception.GetBaseException());
+            Assert.AreEqual("JSON.UnknownColumn", exception.PrimaryEnvelope.Arguments["providerCode"]);
+            Assert.AreEqual("InvalidInput", exception.PrimaryEnvelope.Arguments["failureKind"]);
         });
     }
 
@@ -68,8 +70,8 @@ public class JsonDynamicQueryTests
             var exception = Assert.ThrowsExactly<MusoqQueryException>(() =>
                 Compile($"select name from json.file('{QueryPath(path)}')"));
 
-            StringAssert.Contains(FlattenMessages(exception), "name");
-            Assert.IsInstanceOfType<StructuredUnknownColumnException>(exception.GetBaseException());
+            Assert.AreEqual("JSON.UnknownColumn", exception.PrimaryEnvelope.Arguments["providerCode"]);
+            Assert.AreEqual("InvalidInput", exception.PrimaryEnvelope.Arguments["failureKind"]);
         });
     }
 
@@ -97,10 +99,11 @@ public class JsonDynamicQueryTests
                 executionPlan: plan);
             var source = new NativeJsonFixtureSource(path, context);
 
-            var exception = Assert.ThrowsExactly<StructuredSchemaDriftException>(() =>
+            var exception = Assert.ThrowsExactly<DataSourceException>(() =>
                 source.Chunks.SelectMany(chunk => chunk).ToArray());
 
-            StringAssert.Contains(FlattenMessages(exception), "changed incompatibly after binding");
+            Assert.AreEqual("JSON.SchemaChanged", exception.Report.Code);
+            Assert.IsInstanceOfType<StructuredSchemaDriftException>(exception.InnerException);
         });
     }
 

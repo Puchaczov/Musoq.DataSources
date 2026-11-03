@@ -223,13 +223,14 @@ internal static class PatternSourcePlan
         if (ownsWindow) innerPlan = innerPlan with { AcceptedSkip = context.Plan.AcceptedSkip, AcceptedTake = context.Plan.AcceptedTake };
         var rowContext = ownsWindow ? new SourceExecutionContext(context.QueryId,
             context.Plan with { AcceptedSkip = null, AcceptedTake = null }, context.EndWorkToken,
-            context.AllColumns, context.SourceRuntimeSettings, context.Logger, sourceDiagnostics: context.Diagnostics) : context;
+            context.AllColumns, context.SourceRuntimeSettings, context.Logger, sourceDiagnostics: context.Diagnostics)
+            { WarningReporter = context.WarningReporter } : context;
         var innerContext = new SourceExecutionContext(context.QueryId, innerPlan, context.EndWorkToken,
             context.AllColumns, context.SourceRuntimeSettings, context.Logger, (_, args) =>
             {
                 if (args.Phase == DataSourcePhase.Begin) sourceName = args.DataSourceName;
                 if (args.Phase != DataSourcePhase.End) Forward(context, args);
-            }, context.Diagnostics);
+            }, context.Diagnostics) { WarningReporter = context.WarningReporter };
         return new PatternProgressRowSource<T>(state.Bindings.Filter(read(innerContext), rowContext, remaining), context, () => sourceName, () => native.Report(context));
     }
 

@@ -13,6 +13,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class EventEntity
 {
+    internal RoslynReporting? Reporting { get; set; }
+
     private readonly IEventSymbol _eventSymbol;
     private readonly EventFieldDeclarationSyntax? _fieldSyntax;
     private readonly Solution? _solution;
@@ -174,7 +176,7 @@ public class EventEntity
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
                 ct => SymbolFinder.FindReferencesAsync(_eventSymbol, _solution, ct)!,
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                null);
+                null, Reporting);
 
             return references?.Sum(r => r.Locations.Count());
         }

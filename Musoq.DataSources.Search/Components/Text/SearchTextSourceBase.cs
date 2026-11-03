@@ -44,7 +44,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
         _executionContext = executionContext ?? throw new ArgumentNullException(nameof(executionContext));
         _acceptedRow = TypedPredicatePlan.Get<TRow>(executionContext.Plan);
         _classifyBinaryFiles = readerFactory is null;
-        _readerFactory = readerFactory ?? (path => SearchTextReader.Open(path, _request.EncodingMode));
+        _readerFactory = readerFactory ?? (path => SearchTextReader.Open(path, _request.EncodingMode, _executionContext.WarningReporter));
         _scopeCounters = scopeCounters;
         _parallelOptions = readerFactory is null
             ? SearchFileParallelOptions.FromRuntimeSettings(executionContext.SourceRuntimeSettings)
@@ -181,7 +181,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                             readerFactory = _ => SearchTextReader.Open(
                                 smallInput.Array,
                                 smallInput.Length,
-                                _request.EncodingMode);
+                                _request.EncodingMode, _executionContext.WarningReporter);
                         }
                     }
 

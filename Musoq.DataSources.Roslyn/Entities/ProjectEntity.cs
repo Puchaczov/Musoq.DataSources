@@ -16,6 +16,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class ProjectEntity
 {
+    internal RoslynReporting? Reporting { get; set; }
+
     private readonly INuGetPackageMetadataRetriever _nuGetPackageMetadataRetriever;
     internal readonly CancellationToken CancellationToken;
     internal readonly Project Project;
@@ -100,7 +102,7 @@ public class ProjectEntity
         {
             if (_wasLoaded) return _documents;
 
-            _documents = Project.Documents.Select(document => new DocumentEntity(document, Project.Solution)).ToArray();
+            _documents = Project.Documents.Select(document => new DocumentEntity(document, Project.Solution) { Reporting = this.Reporting }).ToArray();
             _wasLoaded = true;
 
             return _documents;

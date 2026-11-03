@@ -48,7 +48,12 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
                 return;
 
             if (!Directory.Exists(_path))
+            {
+                _executionContext.ReportWarning(ProviderDiagnostics.AsWarning(
+                    OsSchema.Reports.Failure(Musoq.Schema.Diagnostics.DataSourceFailureKind.Unavailable).Report,
+                    "The existing empty-result fallback was used because the input directory was unavailable."));
                 return;
+            }
 
             var chunk = new List<DirectoryInfo>(ChunkSize);
 
@@ -97,7 +102,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
         }
     }
 
-    private static async IAsyncEnumerable<string> EnumerateDirectoriesAsync(
+    private async IAsyncEnumerable<string> EnumerateDirectoriesAsync(
         string rootPath,
         bool recursive,
         string? nameSearchPattern,
@@ -118,6 +123,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
             }
             catch (Exception ex) when (ExpectedDirectoryException(ex))
             {
+                OsSchema.Reports.Warn(_executionContext, ex, "An inaccessible directory was skipped.", cancellationToken);
                 continue;
             }
 
@@ -133,6 +139,7 @@ internal class DirectoriesSource : AsyncRowsSourceBase<DirectoryInfo>
                     }
                     catch (Exception ex) when (ExpectedDirectoryException(ex))
                     {
+                        OsSchema.Reports.Warn(_executionContext, ex, "An inaccessible directory was skipped.", cancellationToken);
                         enumerationFailed = true;
                         break;
                     }

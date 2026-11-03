@@ -104,7 +104,7 @@ public class GitSchemaDescribeTests
 
         try
         {
-            var query = $"desc git.repository('{repositoryPath}')";
+            var query = $"desc git.repository('{repositoryPath.Escape()}')";
 
             var vm = CreateAndRunVirtualMachine(query);
             var table = vm.Run();
@@ -185,7 +185,7 @@ public class GitSchemaDescribeTests
             var vmNoArgs = CreateAndRunVirtualMachine(queryNoArgs);
             var tableNoArgs = vmNoArgs.Run();
 
-            var queryWithArgs = $"desc git.repository('{repositoryPath}')";
+            var queryWithArgs = $"desc git.repository('{repositoryPath.Escape()}')";
             var vmWithArgs = CreateAndRunVirtualMachine(queryWithArgs);
             var tableWithArgs = vmWithArgs.Run();
 
@@ -208,7 +208,7 @@ public class GitSchemaDescribeTests
 
     private static string UnpackRepository(string zipPath)
     {
-        var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var tempPath = Path.Combine(Path.GetTempPath(), "fixture-" + Guid.NewGuid().ToString());
         ZipFile.ExtractToDirectory(zipPath, tempPath);
         return tempPath;
     }

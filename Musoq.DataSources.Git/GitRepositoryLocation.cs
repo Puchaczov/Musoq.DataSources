@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Musoq.Schema.Diagnostics;
 
 namespace Musoq.DataSources.Git;
 
@@ -14,7 +15,8 @@ internal sealed record GitRepositoryLocation(
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         var requested = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
         if (!Directory.Exists(requested) && !File.Exists(requested))
-            throw new InvalidOperationException($"The path '{path}' is not a directory");
+            throw new InvalidOperationException($"The path '{path}' is not a directory",
+                GitSchema.Reports.Failure(DataSourceFailureKind.ResourceNotFound));
         string gitDirectory;
         string? worktree;
         var gitEntry = Path.Combine(requested, ".git");
@@ -29,7 +31,8 @@ internal sealed record GitRepositoryLocation(
             var pointer = File.Exists(gitEntry) ? gitEntry : requested;
             var text = File.ReadAllText(pointer).TrimEnd('\r', '\n');
             if (!text.StartsWith("gitdir:", StringComparison.Ordinal))
-                throw new InvalidOperationException($"The path '{path}' contains an invalid Git pointer file.");
+                throw new InvalidOperationException($"The path '{path}' contains an invalid Git pointer file.",
+                    GitSchema.Reports.Failure(DataSourceFailureKind.InvalidInput));
             gitDirectory = Path.GetFullPath(text[7..].TrimStart(), Path.GetDirectoryName(pointer)!);
             worktree = Path.GetDirectoryName(pointer);
         }
@@ -54,7 +57,8 @@ internal sealed record GitRepositoryLocation(
         // A root's .git entry establishes its identity. The actual backend operation validates its contents.
         // Direct metadata paths and gitfiles still need a shape check to reject unrelated paths/broken pointers.
         if (!rootHasGitDirectory && !File.Exists(Path.Combine(gitDirectory, "HEAD")))
-            throw new InvalidOperationException($"The path '{path}' does not contain a Git repository");
+            throw new InvalidOperationException($"The path '{path}' does not contain a Git repository",
+                GitSchema.Reports.Failure(DataSourceFailureKind.ResourceNotFound));
         return new GitRepositoryLocation(gitDirectory, worktree, commonDirectory);
     }
 }

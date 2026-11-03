@@ -21,7 +21,8 @@ internal sealed class NuGetPackageMetadataRetriever(
     IPackageVersionConcurrencyManager packageVersionConcurrencyManager,
     IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues,
     ResolveValueStrategy resolveValueStrategy,
-    ILogger logger)
+    ILogger logger,
+    RoslynReporting? reporting = null)
     : INuGetPackageMetadataRetriever
 {
     private readonly ConcurrentDictionary<(string, string), List<DependencyInfo>> _packageDependenciesCache = new();
@@ -321,7 +322,7 @@ internal sealed class NuGetPackageMetadataRetriever(
             customApiEndpoint,
             bannedPropertiesValues,
             resolveValueStrategy,
-            logger);
+            logger, reporting);
 
         await commonResources.AcceptAsync(retrieveCommonResourcesVisitor, cancellationToken);
 
@@ -405,7 +406,7 @@ internal sealed class NuGetPackageMetadataRetriever(
             return await retrievalService.DownloadPackageAsync(packageName, packageVersion, packagePath,
                 cancellationToken);
         }
-        catch (Exception exc)
+        catch (Exception exc) when (RoslynReporting.MetadataFallback(reporting, exc, cancellationToken))
         {
             logger.LogError(exc, "Failed to download package {PackageName} {PackageVersion}", packageName,
                 packageVersion);

@@ -66,7 +66,7 @@ internal sealed class SearchAuditSource : RowSourceBase<SearchAudit>
                 _executionContext.AllColumns,
                 _executionContext.SourceRuntimeSettings,
                 _executionContext.Logger,
-                sourceDiagnostics: _executionContext.Diagnostics);
+                sourceDiagnostics: _executionContext.Diagnostics) { WarningReporter = _executionContext.WarningReporter };
             var counts = new SearchCountsSource(
                 _request,
                 scanContext,
@@ -95,6 +95,11 @@ internal sealed class SearchAuditSource : RowSourceBase<SearchAudit>
             {
                 throw scanFailure;
             }
+
+            if (scanFailure is ISearchDiagnosticException known)
+                _executionContext.ReportWarning(SearchDiagnosticReport.Warning(known.Diagnostic, scanFailure.InnerException));
+            else if (scanFailure is not null and not OperationCanceledException)
+                throw scanFailure;
 
             // Audit is the explicit terminal-reporting surface: a typed inner
             // scan failure becomes one failed summary row. Writer cancellation

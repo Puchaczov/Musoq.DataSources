@@ -9,6 +9,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Time;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Provides schema to work with time.
 /// </description>
 /// <short-description>
@@ -43,8 +44,8 @@ public class TimeSchema : SchemaBase
         return name.ToLowerInvariant() switch
         {
             Interval => EnsureSourceType<T, TimeEntity>(name, new TimeSource(
-                DateTimeOffset.Parse(parameters.GetValue<string>(0)),
-                DateTimeOffset.Parse(parameters.GetValue<string>(1)),
+                TimeDiagnostics.ReadDate(parameters.GetValue<string>(0), "startDateTime", 0),
+                TimeDiagnostics.ReadDate(parameters.GetValue<string>(1), "stopDateTime", 1),
                 parameters.GetValue<string>(2),
                 executionContext)),
             _ => throw new NotSupportedException($"Table {name} not found.")

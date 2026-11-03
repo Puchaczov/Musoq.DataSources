@@ -44,20 +44,27 @@ internal static class RoslynAsyncHelper
     /// <param name="defaultValue">The default value to return on timeout.</param>
     /// <returns>The task result, or the default value if timed out.</returns>
     public static T RunSyncWithTimeout<T>(Func<CancellationToken, Task<T>> taskFactory, TimeSpan timeout,
-        T defaultValue)
+        T defaultValue, RoslynReporting? reporting = null)
     {
+        reporting?.CancellationToken.ThrowIfCancellationRequested();
+        using var timeoutSource = new CancellationTokenSource(timeout);
+        using var linkedSource = reporting?.CancellationToken.CanBeCanceled == true
+            ? CancellationTokenSource.CreateLinkedTokenSource(timeoutSource.Token, reporting.CancellationToken)
+            : null;
         try
         {
-            using var cts = new CancellationTokenSource(timeout);
-            var task = taskFactory(cts.Token);
+            var task = taskFactory(linkedSource?.Token ?? timeoutSource.Token);
             return task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (UseTimeoutFallback(timeoutSource.Token, reporting))
         {
+            reporting?.AnalysisTimeout();
             return defaultValue;
         }
-        catch (AggregateException ex) when (ex.InnerException is OperationCanceledException)
+        catch (AggregateException ex) when (ex.InnerExceptions.Count == 1 && ex.InnerException is OperationCanceledException &&
+                                           UseTimeoutFallback(timeoutSource.Token, reporting))
         {
+            reporting?.AnalysisTimeout();
             return defaultValue;
         }
         catch (MissingMethodException ex)
@@ -65,4 +72,7 @@ internal static class RoslynAsyncHelper
             throw RoslynVersionHelper.CreateVersionMismatchException(ex, "RoslynAsyncHelper.RunSyncWithTimeout");
         }
     }
+
+    private static bool UseTimeoutFallback(CancellationToken timeout, RoslynReporting? reporting)
+        => reporting?.CancellationToken.IsCancellationRequested != true && (reporting is null || timeout.IsCancellationRequested);
 }

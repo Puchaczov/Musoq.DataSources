@@ -98,6 +98,7 @@ internal sealed class StashesRowsSource : GitDiagnosticRowsSourceBase<StashEntit
         }
         catch (GitCliUnavailableException) when (_options.Backend == GitHistoryBackend.Auto)
         {
+            GitDiagnostics.BackendFallback(Context, usingCli: false);
             reader = GitOperationReaders.Stashes;
             ReadWith(reader);
         }

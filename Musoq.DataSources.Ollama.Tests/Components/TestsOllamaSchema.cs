@@ -33,6 +33,6 @@ internal class TestsOllamaSchema : OllamaSchema
             {
                 Model = parameters.Count > 0 ? parameters.GetValue<string>(0) ?? "test-model" : "test-model",
                 Temperature = parameters.Count > 1 ? (float)parameters.GetValue<decimal>(1) : 0
-            }));
+            }, executionContext));
     }
 }

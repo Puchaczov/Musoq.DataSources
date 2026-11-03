@@ -28,7 +28,7 @@ internal class ImagesSource(IDockerApi api, SourceExecutionContext executionCont
         {
             var native = NativePatternExecution.Get(executionContext);
             native?.PageRead();
-            var images = api.ListImagesAsync().Result;
+            var images = api.ListImagesAsync().GetAwaiter().GetResult();
             var rows = images
                 .Where(value => { writer.CancellationToken.ThrowIfCancellationRequested(); executionContext.EndWorkToken.ThrowIfCancellationRequested(); return native?.Matches(value, DockerNativePatterns.Image) != false; })
                 .Select(value => { var row = new ImageEntity(value); native?.Constructed(); return row; })

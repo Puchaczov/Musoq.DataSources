@@ -13,7 +13,6 @@ internal class OllamaApi : IOllamaApi
     public const string DefaultAddress = "http://localhost:11434";
     private readonly string _address;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly AsyncRetryPolicy<CompletionResponse> _retryPolicy;
     private readonly TimeSpan _timeout = TimeSpan.FromMinutes(5);
 
     public OllamaApi(IHttpClientFactory httpClientFactory)
@@ -25,25 +24,28 @@ internal class OllamaApi : IOllamaApi
     {
         _address = address;
         _httpClientFactory = httpClientFactory;
-        _retryPolicy = Policy<CompletionResponse>
+    }
+
+    private static AsyncRetryPolicy<CompletionResponse> CreateRetryPolicy(OllamaEntityBase entity)
+        => Policy<CompletionResponse>
             .Handle<HttpRequestException>()
             .Or<TimeoutException>()
-            .Or<TaskCanceledException>()
-            .WaitAndRetryAsync(
-                5,
-                retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-    }
+            .Or<TaskCanceledException>(_ => !entity.CancellationToken.IsCancellationRequested)
+            .WaitAndRetryAsync(5,
+                attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
+                (outcome, _) => OllamaSchema.Reports.Warn(entity.WarningReporter, outcome.Exception,
+                    "An existing bounded completion retry was scheduled.", entity.CancellationToken));
 
     public async Task<CompletionResponse> GetImageCompletionAsync(OllamaEntityBase entity, Message message)
     {
-        return await _retryPolicy.ExecuteAsync(async () =>
+        return await CreateRetryPolicy(entity).ExecuteAsync(async cancellationToken =>
         {
-            entity.CancellationToken.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             var chatRequest = CreateChatRequest(entity, new List<Message> { message });
 
-            return await ProcessChatRequestAsync(chatRequest, entity.CancellationToken);
-        });
+            return await ProcessChatRequestAsync(chatRequest, cancellationToken);
+        }, entity.CancellationToken);
     }
 
     public Task<CompletionResponse> GetImageCompletionAsync(OllamaEntityBase entity, IList<Message> messages)
@@ -53,14 +55,14 @@ internal class OllamaApi : IOllamaApi
 
     public async Task<CompletionResponse> GetCompletionAsync(OllamaEntityBase entity, IList<Message> messages)
     {
-        return await _retryPolicy.ExecuteAsync(async () =>
+        return await CreateRetryPolicy(entity).ExecuteAsync(async cancellationToken =>
         {
-            entity.CancellationToken.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             var chatRequest = CreateChatRequest(entity, messages);
 
-            return await ProcessChatRequestAsync(chatRequest, entity.CancellationToken);
-        });
+            return await ProcessChatRequestAsync(chatRequest, cancellationToken);
+        }, entity.CancellationToken);
     }
 
     private ChatRequest CreateChatRequest(OllamaEntityBase entity, IList<Message> messages)

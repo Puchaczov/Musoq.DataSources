@@ -1,5 +1,6 @@
 using System;
 using Microsoft.CodeAnalysis;
+using Musoq.Schema.Diagnostics;
 
 namespace Musoq.DataSources.Roslyn;
 
@@ -34,7 +35,12 @@ internal static class RoslynVersionHelper
             $"This typically occurs when the host application loads a different version of Microsoft.CodeAnalysis " +
             $"than the Roslyn plugin was compiled against. " +
             $"To fix: ensure the host application uses Microsoft.CodeAnalysis {ExpectedVersion} or remove 'ExcludeAssets' from the plugin's PackageReferences.",
-            ex);
+            new DataSourceException(new DataSourceDiagnostic("ROSLYN.IncompatibleRuntime", "configuration",
+                "The host loaded an incompatible Microsoft.CodeAnalysis runtime.", new DataSourceDiagnosticOptions
+                {
+                    FailureKind = DataSourceFailureKind.InvalidConfiguration,
+                    SuggestedFixes = ["Align the host and Roslyn datasource Microsoft.CodeAnalysis dependencies, then restart the host."]
+                }), ex));
     }
 
     /// <summary>

@@ -15,6 +15,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class DocumentEntity
 {
+    internal RoslynReporting? Reporting { get; set; }
+
     private readonly Document _document;
     private readonly Solution _solution;
     private SemanticModel? _semanticModel;

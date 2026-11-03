@@ -11,6 +11,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.FlatFile;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with flat files
 /// </description>
@@ -20,11 +21,13 @@ namespace Musoq.DataSources.FlatFile;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class FlatFileSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("FLATFILE", fileSystem: true);
+
     private static readonly FileSystemPathValidator PathValidator = new(
         new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
         {
             ["file"] = [new(0, "path")]
-        });
+        }, provider: "FLATFILE");
 
     private const string SchemaName = "Flat";
     private const string FileTable = "file";
@@ -64,6 +67,15 @@ public class FlatFileSchema : SchemaBase
         params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return GetTableByNameCore(name, metadataContext, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, metadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private ISchemaTable GetTableByNameCore(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
+    {
         return name.ToLowerInvariant() switch
         {
             FileTable => new FlatFileTable(),
@@ -84,6 +96,15 @@ public class FlatFileSchema : SchemaBase
         TArguments parameters)
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext?.EndWorkToken ?? default), executionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
         return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
     }
 
@@ -107,6 +128,16 @@ public class FlatFileSchema : SchemaBase
         SourceDescribeContext context,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, context?.MetadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourceDescriptor DescribeSourceCore(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
         return new SourceDescriptor
@@ -125,12 +156,28 @@ public class FlatFileSchema : SchemaBase
         SourceRuntimeSettingsDescribeContext context,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceRuntimeSettingsCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, default, out var failure)) { throw failure; }
+    }
+
+    private IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettingsCore(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
         return [];
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return TryPlanSourceCore(name, request, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, request?.CancellationToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourcePlanResult TryPlanSourceCore(string name, SourcePlanRequest request, params object[] parameters)
+    {
         return PatternSourcePlan.Plan(request, name.Equals(FileTable, StringComparison.OrdinalIgnoreCase) ? PatternColumns : null, inner => FlatFileSourcePlanner.Plan(name, inner));
     }
 

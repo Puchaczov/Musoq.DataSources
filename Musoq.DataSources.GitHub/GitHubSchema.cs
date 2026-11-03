@@ -16,6 +16,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.GitHub;
 
 /// <description>
+///     Recognized service failures provide structured diagnostics; supported fallbacks report warnings alongside results.
 ///     Provides schema to work with GitHub repositories, issues, pull requests, commits, branches and releases.
 /// </description>
 /// <short-description>
@@ -24,6 +25,8 @@ namespace Musoq.DataSources.GitHub;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class GitHubSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("GITHUB", classify: GitHubDiagnostics.Map);
+
     private const string SchemaName = "github";
 
     private const string RepositoriesTableName = "repositories";
@@ -372,7 +375,11 @@ public class GitHubSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
-         => GitHubPatternApi.Read(executionContext, _api, name, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
+        => Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext.EndWorkToken), executionContext.EndWorkToken);
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(string name, SourceExecutionContext executionContext, TArguments parameters)
+        where TArguments : struct, ISourceArguments
+        => GitHubPatternApi.Read(executionContext, _api, name, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
 
     private RowSource<T> ReadWithoutPatterns<T, TArguments>(
         string name,
@@ -380,7 +387,7 @@ public class GitHubSchema : SchemaBase
         TArguments parameters)
         where TArguments : struct, ISourceArguments
     {
-        var api = _api ?? new GitHubApi(executionContext.SourceRuntimeSettings["GITHUB_TOKEN"]);
+        var api = _api ?? new GitHubApi(Reports.RequiredSetting(executionContext.SourceRuntimeSettings, "GITHUB_TOKEN"));
 
         return name.ToLowerInvariant() switch
         {

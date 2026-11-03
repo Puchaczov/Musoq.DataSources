@@ -28,7 +28,7 @@ internal class ContainersSource(IDockerApi api, SourceExecutionContext execution
         {
             var native = NativePatternExecution.Get(executionContext);
             native?.PageRead();
-            var containers = api.ListContainersAsync().Result;
+            var containers = api.ListContainersAsync().GetAwaiter().GetResult();
             var rows = containers
                 .Where(value => { writer.CancellationToken.ThrowIfCancellationRequested(); executionContext.EndWorkToken.ThrowIfCancellationRequested(); return native?.Matches(value, DockerNativePatterns.Container) != false; })
                 .Select(value => { var row = new ContainerEntity(value); native?.Constructed(); return row; })

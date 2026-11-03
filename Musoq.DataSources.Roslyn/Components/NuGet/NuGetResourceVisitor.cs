@@ -13,7 +13,8 @@ internal class NuGetResourceVisitor(
     string? customApiEndpoint,
     IReadOnlyDictionary<string, HashSet<string>> bannedPropertiesValues,
     ResolveValueStrategy resolveValueStrategy,
-    ILogger logger
+    ILogger logger,
+    RoslynReporting? reporting = null
 ) : INuGetResourceVisitor
 {
     private static readonly HashSet<string> EmptyBannedPropertiesValues = [];
@@ -138,7 +139,7 @@ internal class NuGetResourceVisitor(
 
                 if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue)) resolvedValue = null;
             }
-            catch (Exception exc)
+            catch (Exception exc) when (RoslynReporting.MetadataFallback(reporting, exc, cancellationToken))
             {
                 logger.LogError(exc,
                     "Failed to retrieve metadata from NuGet.org for property {PropertyName} ({PackageName}, {Version})",
@@ -158,7 +159,7 @@ internal class NuGetResourceVisitor(
 
                 if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue)) resolvedValue = null;
             }
-            catch (Exception exc)
+            catch (Exception exc) when (RoslynReporting.MetadataFallback(reporting, exc, cancellationToken))
             {
                 logger.LogError(exc,
                     "Failed to retrieve metadata from custom API for property {PropertyName} ({PackageName}, {Version})",
@@ -200,7 +201,7 @@ internal class NuGetResourceVisitor(
                         if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
                             resolvedValue = null;
                     }
-                    catch (Exception exc)
+                    catch (Exception exc) when (RoslynReporting.MetadataFallback(reporting, exc, cancellationToken))
                     {
                         logger.LogError(exc,
                             "Failed to retrieve metadata from NuGet.org for property {PropertyName} ({PackageName}, {Version})",
@@ -223,7 +224,7 @@ internal class NuGetResourceVisitor(
                         if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
                             resolvedValue = null;
                     }
-                    catch (Exception exc)
+                    catch (Exception exc) when (RoslynReporting.MetadataFallback(reporting, exc, cancellationToken))
                     {
                         logger.LogError(exc,
                             "Failed to retrieve metadata from custom API for property {PropertyName} ({PackageName}, {Version})",
@@ -246,7 +247,7 @@ internal class NuGetResourceVisitor(
                         if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
                             resolvedValue = null;
                     }
-                    catch (Exception exc)
+                    catch (Exception exc) when (RoslynReporting.MetadataFallback(reporting, exc, cancellationToken))
                     {
                         logger.LogError(exc,
                             "Failed to retrieve metadata from NuGet.org for property {PropertyName} ({PackageName}, {Version})",
@@ -267,7 +268,7 @@ internal class NuGetResourceVisitor(
                         if (resolvedValue is not null && bannedPropertyValues.Contains(resolvedValue))
                             resolvedValue = null;
                     }
-                    catch (Exception exc)
+                    catch (Exception exc) when (RoslynReporting.MetadataFallback(reporting, exc, cancellationToken))
                     {
                         logger.LogError(exc,
                             "Failed to retrieve metadata from custom API for property {PropertyName} ({PackageName}, {Version})",

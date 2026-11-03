@@ -16,6 +16,12 @@ internal class OllamaSingleRowSource : RowSourceBase<OllamaEntity>
         _openAiRequestInfo = openAiRequestInfo;
     }
 
+    protected OllamaSingleRowSource(IOllamaApi api, OllamaRequestInfo request, SourceExecutionContext? context)
+        : this(api, request)
+    {
+        _executionContext = context;
+    }
+
     public OllamaSingleRowSource(
         SourceExecutionContext executionContext,
         OllamaRequestInfo openAiRequestInfo,
@@ -38,7 +44,7 @@ internal class OllamaSingleRowSource : RowSourceBase<OllamaEntity>
                     _openAiApi,
                     _openAiRequestInfo.Model,
                     _openAiRequestInfo.Temperature,
-                    writer.CancellationToken)
+                    writer.CancellationToken) { WarningReporter = _executionContext?.WarningReporter }
             ]);
         }
         finally

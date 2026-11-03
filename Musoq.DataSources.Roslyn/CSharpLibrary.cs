@@ -79,7 +79,7 @@ public class CSharpLibrary : LibraryBase
         var references = RoslynAsyncHelper.RunSyncWithTimeout(
             ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
             RoslynAsyncHelper.DefaultReferenceTimeout,
-            null);
+            null, entity.Reporting);
 
         if (references == null)
             yield break;
@@ -109,7 +109,7 @@ public class CSharpLibrary : LibraryBase
         var references = RoslynAsyncHelper.RunSyncWithTimeout(
             ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
             RoslynAsyncHelper.DefaultReferenceTimeout,
-            null);
+            null, entity.Reporting);
 
         if (references == null)
             yield break;
@@ -139,7 +139,7 @@ public class CSharpLibrary : LibraryBase
         var references = RoslynAsyncHelper.RunSyncWithTimeout(
             ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
             RoslynAsyncHelper.DefaultReferenceTimeout,
-            null);
+            null, entity.Reporting);
 
         if (references == null)
             yield break;
@@ -218,7 +218,7 @@ public class CSharpLibrary : LibraryBase
         var references = RoslynAsyncHelper.RunSyncWithTimeout(
             ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
             RoslynAsyncHelper.DefaultReferenceTimeout,
-            null);
+            null, entity.Reporting);
 
         if (references == null)
             yield break;
@@ -248,7 +248,7 @@ public class CSharpLibrary : LibraryBase
         var references = RoslynAsyncHelper.RunSyncWithTimeout(
             ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
             RoslynAsyncHelper.DefaultReferenceTimeout,
-            null);
+            null, entity.Reporting);
 
         if (references == null)
             yield break;

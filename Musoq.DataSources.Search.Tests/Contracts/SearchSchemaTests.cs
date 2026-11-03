@@ -680,7 +680,9 @@ public sealed class SearchSchemaTests
         var sourceException = FindInner<SearchSourceAccessException>(exception);
         Assert.IsNotNull(sourceException);
         Assert.AreEqual(SearchDiagnosticCodes.MissingRoot, sourceException!.Diagnostic.Code);
-        StringAssert.Contains(exception.FormatText(), "MQ7011");
+        StringAssert.Contains(exception.FormatText(), "MQ7020");
+        Assert.AreEqual(SearchDiagnosticCodes.MissingRoot, exception.Envelope!.Arguments["providerCode"]);
+        Assert.AreEqual("ResourceNotFound", exception.Envelope.Arguments["failureKind"]);
         Assert.IsFalse(exception.FormatText().Contains(missingRoot, StringComparison.Ordinal));
     }
 

@@ -1,3 +1,5 @@
+using Musoq.Schema.Diagnostics;
+
 ﻿namespace Musoq.DataSources.Ollama;
 
 /// <summary>
@@ -5,6 +7,8 @@
 /// </summary>
 public abstract class OllamaEntityBase
 {
+    internal Action<DataSourceDiagnostic>? WarningReporter { get; init; }
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="OllamaEntityBase" /> class.
     /// </summary>

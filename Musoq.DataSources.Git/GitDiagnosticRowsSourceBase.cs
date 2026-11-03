@@ -53,6 +53,7 @@ internal abstract class GitDiagnosticRowsSourceBase<T> : DiagnosticChunkedRowSou
         }
         catch (LibGit2SharpException exception) when (_writtenRows == 0 && _readContext?.TryEnableCli(exception) == true)
         {
+            GitDiagnostics.BackendFallback(_context, usingCli: true);
             _readContext.EnsureBackend(_sourceName);
             rowsRead = _sourceName is "git.filehistory" or "git.remotetags" or "git.blame"
                 ? CollectRows(writer, token) : CollectCompatibilityRows(writer, _readContext, token);

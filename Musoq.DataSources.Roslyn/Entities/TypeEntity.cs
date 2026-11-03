@@ -13,6 +13,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// <param name="symbol">The symbol representing the named type.</param>
 public abstract class TypeEntity(INamedTypeSymbol symbol)
 {
+    internal RoslynReporting? Reporting { get; set; }
+
     /// <summary>
     ///     Gets the name of the type.
     /// </summary>

@@ -31,7 +31,7 @@ internal sealed partial class GitRepositoryContext
     public IEnumerable<BlameHunkEntity> Blame(string path, string revision)
     {
         var requested = OptionalText("rev-parse", "--verify", "--quiet", "--end-of-options", revision + "^{commit}")?.Trim()
-            ?? throw new ArgumentException($"Invalid revision '{revision}': not found.", nameof(revision));
+            ?? throw GitDiagnostics.InvalidRevision($"Invalid revision '{revision}': not found.", nameof(revision));
         var entry = Tokens("--literal-pathspecs", "ls-tree", "-z", requested, "--", path).FirstOrDefault()
             ?? throw new FileNotFoundException($"File '{path}' does not exist at revision '{revision}'.");
         var header = entry[..entry.IndexOf('\t')].Split(' ');

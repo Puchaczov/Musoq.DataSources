@@ -8,7 +8,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Musoq.DataSources.Roslyn.Components.NuGet;
 
-internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatform, ILogger logger)
+internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatform, ILogger logger,
+    RoslynReporting? reporting = null)
     : INuGetCachePathResolver
 {
     private static readonly string UserProfileFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -105,7 +106,7 @@ internal class NuGetCachePathResolver(string? solutionPath, OSPlatform osPlatfor
 
                 cache.Add(globalPackagesFolder);
             }
-            catch (Exception exc)
+            catch (Exception exc) when (RoslynReporting.MetadataFallback(reporting, exc, default))
             {
                 logger.LogError(exc, "Failed to process nuget config file");
             }

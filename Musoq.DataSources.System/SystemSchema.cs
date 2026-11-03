@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Musoq.Schema;
+using Musoq.Schema.Diagnostics;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
 using Musoq.Schema.Optimization;
@@ -10,6 +11,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.System;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     System schema helper methods
 /// </description>
 /// <short-description>
@@ -85,7 +87,13 @@ public class SystemSchema : SchemaBase
             else if (typeof(TValue) == typeof(byte)) Value = Unsafe.As<TValue, byte>(ref item);
             else if (typeof(TValue) == typeof(sbyte)) Value = Unsafe.As<TValue, sbyte>(ref item);
             else if (typeof(TValue) == typeof(char)) Value = Unsafe.As<TValue, char>(ref item);
-            else throw new InvalidOperationException("A range argument requires a lossless integral conversion to Int64.");
+            else throw new DataSourceException(new DataSourceDiagnostic("SYSTEM.InvalidRangeArgument", "input",
+                "A range argument requires a lossless integral conversion to Int64.", new DataSourceDiagnosticOptions
+                {
+                    FailureKind = DataSourceFailureKind.InvalidInput,
+                    ArgumentIndex = index,
+                    SuggestedFixes = ["Supply an integral value representable as Int64 for each range bound."]
+                }));
         }
     }
 

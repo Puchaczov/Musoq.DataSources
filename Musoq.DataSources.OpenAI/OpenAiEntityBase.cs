@@ -1,3 +1,5 @@
+using Musoq.Schema.Diagnostics;
+
 ﻿namespace Musoq.DataSources.OpenAI;
 
 /// <summary>
@@ -5,6 +7,8 @@
 /// </summary>
 public abstract class OpenAiEntityBase
 {
+    internal Action<DataSourceDiagnostic>? WarningReporter { get; init; }
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="OpenAiEntityBase" /> class with the specified parameters.
     /// </summary>

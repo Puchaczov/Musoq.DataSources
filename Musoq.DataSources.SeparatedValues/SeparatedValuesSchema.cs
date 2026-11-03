@@ -1,3 +1,4 @@
+using Musoq.DataSources.Structured;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +19,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.SeparatedValues;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Streams strict UTF-8 comma-, tab-, and semicolon-separated files with bounded schema resolution.
 /// </description>
@@ -27,6 +29,8 @@ namespace Musoq.DataSources.SeparatedValues;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
 {
+    internal static readonly ProviderDiagnostics Reports = new("SEPARATEDVALUES", fileSystem: true, classify: static error => StructuredDiagnostics.Map("SEPARATEDVALUES", error));
+
     private static readonly FileSystemPathValidator PathValidator = new(
         new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
         {
@@ -34,7 +38,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
             ["tab"] = [new(0, "path")],
             ["semicolon"] = [new(0, "path")],
             ["delimited"] = [new(0, "path")]
-        });
+        }, provider: "SEPARATEDVALUES");
 
     private const string SchemaName = "SeparatedValues";
     private const string CommaTable = "comma";
@@ -119,6 +123,15 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         params object?[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return GetTableByNameCore(name, metadataContext, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, metadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private ISchemaTable GetTableByNameCore(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object?[] parameters)
+    {
         var sourceParameters = ParseParameters(name, parameters);
 
         return name.ToLowerInvariant() switch
@@ -144,6 +157,15 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         TArguments parameters)
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext?.EndWorkToken ?? default), executionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
         ArgumentNullException.ThrowIfNull(executionContext);
 
         return name.ToLowerInvariant() switch
@@ -167,6 +189,16 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         where TArguments : struct, ISourceArguments
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetQueryScopedRowSourceCore<TRow, TMaterializer, TArguments>(name, request, parameters), request?.ExecutionContext?.EndWorkToken ?? default), request?.ExecutionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<TRow> GetQueryScopedRowSourceCore<TRow, TMaterializer, TArguments>(
+        string name,
+        QueryScopedRowSourceRequest request,
+        TArguments parameters)
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>
+        where TArguments : struct, ISourceArguments
+    {
         ArgumentNullException.ThrowIfNull(request);
         var identity = request.ExecutionContext.Plan.Identity;
         var sourceParameters = ParseParameters(name, parameters);
@@ -199,6 +231,15 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
         params object?[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return DescribeSourceCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, context?.MetadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourceDescriptor DescribeSourceCore(
+        string name,
+        SourceDescribeContext context,
+        params object?[] parameters)
+    {
         var sourceParameters = ParseParameters(name, parameters);
         if (!SeparatedValuesQueryMetadata.TryValidateDeclaredColumns(
                 context.MetadataContext.AllColumns,
@@ -245,6 +286,16 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
     ///     Describes optional runtime settings for separated-values sources.
     /// </summary>
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object?[] parameters)
+    {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceRuntimeSettingsCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, default, out var failure)) { throw failure; }
+    }
+
+    private IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettingsCore(
         string name,
         SourceRuntimeSettingsDescribeContext context,
         params object?[] parameters)
@@ -353,6 +404,12 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return TryPlanSourceCore(name, request, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, request?.CancellationToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourcePlanResult TryPlanSourceCore(string name, SourcePlanRequest request, params object?[] parameters)
+    {
         var sourceParameters = ParseParameters(name, parameters);
         var dialect = _modules.DialectResolver.Resolve(sourceParameters.Separator, request.SourceRuntimeSettings);
         var contract = ConsumePendingContract(sourceParameters, dialect) ??

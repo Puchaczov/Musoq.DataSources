@@ -15,6 +15,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class SolutionEntity
 {
+    internal RoslynReporting? Reporting { get; set; }
+
     /// <summary>
     ///     A read-only dictionary mapping column names to their respective indices.
     /// </summary>
@@ -85,7 +87,7 @@ public class SolutionEntity
             if (_wasLoaded) return _projects;
 
             var projects = _solution.Projects
-                .Select(p => new ProjectEntity(p, _nuGetPackageMetadataRetriever, _cancellationToken));
+                .Select(p => new ProjectEntity(p, _nuGetPackageMetadataRetriever, _cancellationToken) { Reporting = this.Reporting });
 
             if (_projectFilter is not null)
                 projects = projects.Where(_projectFilter);

@@ -16,7 +16,7 @@ namespace Musoq.DataSources.Search.Sources;
 /// <summary>Typed structural-input adapter for the matches source.</summary>
 public sealed class SearchMatchesTypedSource : RowSource<SearchMatch>
 {
-    private readonly SearchMatchesSource _inner;
+    private readonly RowSource<SearchMatch> _inner;
 
     /// <summary>Creates the default two-argument matches source.</summary>
     public SearchMatchesTypedSource(string root, string pattern, SourceExecutionContext context)
@@ -41,7 +41,7 @@ public sealed class SearchMatchesTypedSource : RowSource<SearchMatch>
         SourceExecutionContext context)
     {
         SearchSchema.ValidateRoot(root);
-        _inner = new SearchMatchesSource(
+        _inner = SearchSchema.Reports.Wrap(new SearchMatchesSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
                 pattern,
@@ -50,7 +50,7 @@ public sealed class SearchMatchesTypedSource : RowSource<SearchMatch>
                 options?.Context,
                 options?.Scope,
                 options?.Limits),
-            context);
+            context), context.EndWorkToken);
     }
 
     /// <inheritdoc />
@@ -60,7 +60,7 @@ public sealed class SearchMatchesTypedSource : RowSource<SearchMatch>
 /// <summary>Typed structural-input adapter for the lines source.</summary>
 public sealed class SearchLinesTypedSource : RowSource<SearchLine>
 {
-    private readonly SearchLinesSource _inner;
+    private readonly RowSource<SearchLine> _inner;
 
     /// <summary>Creates the default two-argument lines source.</summary>
     public SearchLinesTypedSource(string root, string pattern, SourceExecutionContext context)
@@ -85,7 +85,7 @@ public sealed class SearchLinesTypedSource : RowSource<SearchLine>
         SourceExecutionContext context)
     {
         SearchSchema.ValidateRoot(root);
-        _inner = new SearchLinesSource(
+        _inner = SearchSchema.Reports.Wrap(new SearchLinesSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
                 pattern,
@@ -94,7 +94,7 @@ public sealed class SearchLinesTypedSource : RowSource<SearchLine>
                 context: null,
                 scope: options?.Scope,
                 limits: options?.Limits),
-            context);
+            context), context.EndWorkToken);
     }
 
     /// <inheritdoc />
@@ -104,7 +104,7 @@ public sealed class SearchLinesTypedSource : RowSource<SearchLine>
 /// <summary>Typed structural-input adapter for the files source.</summary>
 public sealed class SearchFilesTypedSource : RowSource<SearchFile>
 {
-    private readonly SearchFilesSource _inner;
+    private readonly RowSource<SearchFile> _inner;
 
     /// <summary>Creates the default two-argument files source.</summary>
     public SearchFilesTypedSource(string root, string pattern, SourceExecutionContext context)
@@ -129,7 +129,7 @@ public sealed class SearchFilesTypedSource : RowSource<SearchFile>
         SourceExecutionContext context)
     {
         SearchSchema.ValidateRoot(root);
-        _inner = new SearchFilesSource(
+        _inner = SearchSchema.Reports.Wrap(new SearchFilesSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
                 pattern,
@@ -138,7 +138,7 @@ public sealed class SearchFilesTypedSource : RowSource<SearchFile>
                 context: null,
                 scope: options?.Scope,
                 limits: options?.Limits),
-            context);
+            context), context.EndWorkToken);
     }
 
     /// <inheritdoc />
@@ -148,7 +148,7 @@ public sealed class SearchFilesTypedSource : RowSource<SearchFile>
 /// <summary>Typed structural-input adapter for the counts source.</summary>
 public sealed class SearchCountsTypedSource : RowSource<SearchCount>
 {
-    private readonly SearchCountsSource _inner;
+    private readonly RowSource<SearchCount> _inner;
 
     /// <summary>Creates the default two-argument counts source.</summary>
     public SearchCountsTypedSource(string root, string pattern, SourceExecutionContext context)
@@ -173,7 +173,7 @@ public sealed class SearchCountsTypedSource : RowSource<SearchCount>
         SourceExecutionContext context)
     {
         SearchSchema.ValidateRoot(root);
-        _inner = new SearchCountsSource(
+        _inner = SearchSchema.Reports.Wrap(new SearchCountsSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
                 pattern,
@@ -182,7 +182,7 @@ public sealed class SearchCountsTypedSource : RowSource<SearchCount>
                 context: null,
                 scope: options?.Scope,
                 limits: options?.Limits),
-            context);
+            context), context.EndWorkToken);
     }
 
     /// <inheritdoc />
@@ -192,7 +192,7 @@ public sealed class SearchCountsTypedSource : RowSource<SearchCount>
 /// <summary>Typed structural-input adapter for the audit source.</summary>
 public sealed class SearchAuditTypedSource : RowSource<SearchAudit>
 {
-    private readonly SearchAuditSource _inner;
+    private readonly RowSource<SearchAudit> _inner;
 
     /// <summary>Creates the default two-argument audit source.</summary>
     public SearchAuditTypedSource(string root, string pattern, SourceExecutionContext context)
@@ -217,7 +217,7 @@ public sealed class SearchAuditTypedSource : RowSource<SearchAudit>
         SourceExecutionContext context)
     {
         SearchSchema.ValidateRoot(root);
-        _inner = new SearchAuditSource(
+        _inner = SearchSchema.Reports.Wrap(new SearchAuditSource(
             SearchTypedInputNormalizer.CreateSingle(
                 root,
                 pattern,
@@ -226,7 +226,7 @@ public sealed class SearchAuditTypedSource : RowSource<SearchAudit>
                 context: null,
                 scope: options?.Scope,
                 limits: options?.Limits),
-            context);
+            context), context.EndWorkToken);
     }
 
     /// <inheritdoc />
@@ -236,7 +236,7 @@ public sealed class SearchAuditTypedSource : RowSource<SearchAudit>
 /// <summary>Typed structural-input adapter for the labeled many source.</summary>
 public sealed class SearchManyTypedSource : RowSource<SearchMatch>
 {
-    private readonly SearchManySource _inner;
+    private readonly RowSource<SearchMatch> _inner;
 
     /// <summary>Creates typed many patterns with default options.</summary>
     public SearchManyTypedSource(
@@ -264,10 +264,10 @@ public sealed class SearchManyTypedSource : RowSource<SearchMatch>
         SourceExecutionContext context)
     {
         SearchSchema.ValidateRoot(root);
-        _inner = new SearchManySource(
+        _inner = SearchSchema.Reports.Wrap(new SearchManySource(
             root,
             SearchTypedInputNormalizer.CreateMany(root, patterns, options),
-            context);
+            context), context.EndWorkToken);
     }
 
     /// <inheritdoc />
@@ -277,7 +277,7 @@ public sealed class SearchManyTypedSource : RowSource<SearchMatch>
 /// <summary>Typed structural-input adapter for the raw-byte source.</summary>
 public sealed class SearchBytesTypedSource : RowSource<SearchByteMatch>
 {
-    private readonly SearchBytesSource _inner;
+    private readonly RowSource<SearchByteMatch> _inner;
 
     /// <summary>Creates a raw-byte source from typed hexadecimal text.</summary>
     public SearchBytesTypedSource(
@@ -305,12 +305,12 @@ public sealed class SearchBytesTypedSource : RowSource<SearchByteMatch>
         SourceExecutionContext context)
     {
         SearchSchema.ValidateRoot(root);
-        _inner = new SearchBytesSource(
+        _inner = SearchSchema.Reports.Wrap(new SearchBytesSource(
             root,
             SearchTypedInputNormalizer.CreateBytes(patternHex, options),
             context,
             SearchTypedInputNormalizer.CreateScope(options?.Scope),
-            SearchTypedInputNormalizer.CreateLimits(options?.Limits));
+            SearchTypedInputNormalizer.CreateLimits(options?.Limits)), context.EndWorkToken);
     }
 
     /// <inheritdoc />
@@ -321,7 +321,7 @@ public sealed class SearchBytesTypedSource : RowSource<SearchByteMatch>
 /// <summary>Typed structural-input adapter for eligible path enumeration.</summary>
 public sealed class SearchPathsTypedSource : RowSource<SearchPath>
 {
-    private readonly SearchPathsSource _inner;
+    private readonly RowSource<SearchPath> _inner;
 
     /// <summary>Creates the default eligible-path source.</summary>
     public SearchPathsTypedSource(string root, SourceExecutionContext context)
@@ -351,12 +351,12 @@ public sealed class SearchPathsTypedSource : RowSource<SearchPath>
             throw new SearchRequestException(
                 SearchDiagnosticCatalog.InvalidArgument("options.maxFiles"));
 
-        _inner = new SearchPathsSource(
+        _inner = SearchSchema.Reports.Wrap(new SearchPathsSource(
             root,
             context,
             SearchTypedInputNormalizer.CreateScope(effectiveOptions.Scope),
             effectiveOptions.MaxFiles,
-            counters: null);
+            counters: null), context.EndWorkToken);
     }
 
     /// <inheritdoc />

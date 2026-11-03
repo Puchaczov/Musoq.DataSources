@@ -23,6 +23,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Roslyn;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with Roslyn data source.
 /// </description>
@@ -32,11 +33,13 @@ namespace Musoq.DataSources.Roslyn;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class CSharpSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("ROSLYN", fileSystem: true, classify: RoslynDiagnostics.Map);
+
     private static readonly FileSystemPathValidator PathValidator = new(
         new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
         {
             ["solution"] = [new(0, "path")]
-        });
+        }, provider: "ROSLYN");
 
     private const string SchemaName = "Csharp";
 
@@ -618,6 +621,15 @@ public class CSharpSchema : SchemaBase
         params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return GetTableByNameCore(name, metadataContext, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, metadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private ISchemaTable GetTableByNameCore(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
+    {
         return name.ToLowerInvariant() switch
         {
             "solution" => new CSharpSolutionTable(),
@@ -638,6 +650,15 @@ public class CSharpSchema : SchemaBase
         TArguments parameters)
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext?.EndWorkToken ?? default), executionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
         return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
     }
 
@@ -657,7 +678,7 @@ public class CSharpSchema : SchemaBase
             internalNugetPropertiesResolveEndpoint = internalNugetPropertiesResolveEndpointValue;
 
         if (internalNugetPropertiesResolveEndpoint == null)
-            throw new InvalidOperationException("MUSOQ_SERVER_HTTP_ENDPOINT environment variable is not set.");
+            throw Reports.Configuration("MUSOQ_SERVER_HTTP_ENDPOINT");
 
         var cacheDirectory = DefaultNugetCacheDirectoryPath;
 
@@ -680,6 +701,7 @@ public class CSharpSchema : SchemaBase
             executionContext.Logger
         );
 
+        var reporting = new RoslynReporting(executionContext.WarningReporter, executionContext.EndWorkToken);
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
 
         switch (name.ToLowerInvariant())
@@ -696,19 +718,22 @@ public class CSharpSchema : SchemaBase
                                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                                     ? OSPlatform.Windows
                                     : OSPlatform.Linux,
-                                executionContext.Logger
+                                executionContext.Logger,
+                                reporting
                             ),
                             externalNugetPropertiesResolveEndpoint,
                             new NuGetRetrievalService(
                                 _createNugetPropertiesResolver(internalNugetPropertiesResolveEndpoint, httpClient),
                                 FileSystem,
-                                httpClient
+                                httpClient,
+                                reporting
                             ),
                             FileSystem,
                             packageVersionConcurrencyManager,
                             SolutionOperationsCommand.BannedPropertiesValues,
                             ResolveValueStrategy,
-                            executionContext.Logger
+                            executionContext.Logger,
+                            reporting
                         ),
                         executionContext.EndWorkToken
                     );
@@ -846,6 +871,16 @@ public class CSharpSchema : SchemaBase
         SourceDescribeContext context,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, context?.MetadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourceDescriptor DescribeSourceCore(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
         return new SourceDescriptor
@@ -860,6 +895,16 @@ public class CSharpSchema : SchemaBase
     }
 
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceRuntimeSettingsCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, default, out var failure)) { throw failure; }
+    }
+
+    private IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettingsCore(
         string name,
         SourceRuntimeSettingsDescribeContext context,
         params object[] parameters)
@@ -902,6 +947,12 @@ public class CSharpSchema : SchemaBase
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return TryPlanSourceCore(name, request, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, request?.CancellationToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourcePlanResult TryPlanSourceCore(string name, SourcePlanRequest request, params object[] parameters)
+    {
         return name.Equals("solution", StringComparison.OrdinalIgnoreCase)
             ? PatternSourcePlan.Plan(request, PatternColumns, RoslynSourcePlanner.Plan)
             : SourcePlanResult.RejectAll(request);

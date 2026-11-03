@@ -56,7 +56,9 @@ public class EarlyPatternTests
             Assert.AreEqual(0, Read<Metadata.MetadataEntity>(schema, "metadata", root, false, Plan("does-not-match"), sink).Length);
             Assert.AreEqual(1L, sink.Values["Pattern.RejectedCandidates"]);
             Assert.AreEqual(0L, sink.Values["Pattern.ContentOpens"]);
-            Assert.ThrowsException<IOException>(() => Read<Metadata.MetadataEntity>(schema, "metadata", root, false, Plan("locked"), new Metrics()));
+            var error = Assert.ThrowsException<DataSourceException>(() => Read<Metadata.MetadataEntity>(schema, "metadata", root, false, Plan("locked"), new Metrics()));
+            Assert.AreEqual("OS.Unavailable", error.Report.Code);
+            Assert.IsInstanceOfType<IOException>(error.InnerException);
         }
         finally { Directory.Delete(root, true); }
     }

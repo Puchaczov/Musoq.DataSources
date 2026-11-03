@@ -135,14 +135,7 @@ internal static class NuspecHelpers
 
     private static string? GetValue(XmlDocument xmlDoc, XmlNamespaceManager namespaceManager, string xpath)
     {
-        try
-        {
-            var node = xmlDoc.SelectSingleNode(xpath, namespaceManager);
-            return node?.InnerText;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        var node = xmlDoc.SelectSingleNode(xpath, namespaceManager);
+        return node?.InnerText;
     }
 }

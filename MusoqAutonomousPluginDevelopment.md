@@ -609,7 +609,7 @@ This historical authoring section now uses the native contracts in [typed execut
 
 ## Current runtime dependency baseline
 
-The datasource release targets Musoq Core 17.0.15-alpha.1. Upgrade Converter,
+The datasource release targets Musoq Core 17.0.16-alpha.1. Upgrade Converter,
 Evaluator, Parser, Plugins and Schema together. The integration notes below
 describe behavior introduced in earlier compatible Core releases.
 

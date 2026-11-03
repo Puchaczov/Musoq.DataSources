@@ -37,6 +37,7 @@ public class InterfaceEntity : TypeEntity
         SemanticModel = semanticModel;
         Solution = solution;
         Document = document;
+        Reporting = document.Reporting;
     }
 
     internal InterfaceDeclarationSyntax Syntax { get; }
@@ -75,7 +76,7 @@ public class InterfaceEntity : TypeEntity
     [BindablePropertyAsTable]
     public override IEnumerable<MethodEntity> Methods => Syntax.Members
         .OfType<MethodDeclarationSyntax>()
-        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution));
+        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution) { Reporting = this.Reporting });
 
     /// <summary>
     ///     Gets the properties of the type.
@@ -96,7 +97,7 @@ public class InterfaceEntity : TypeEntity
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
                 ct => SymbolFinder.FindReferencesAsync(Symbol, Solution, ct)!,
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                null);
+                null, Reporting);
 
             return references?.Sum(r => r.Locations.Count()) ?? -1;
         }
@@ -164,13 +165,13 @@ public class InterfaceEntity : TypeEntity
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(eventDecl);
                 if (symbol != null)
-                    events.Add(new EventEntity(symbol, Solution, eventDecl));
+                    events.Add(new EventEntity(symbol, Solution, eventDecl) { Reporting = this.Reporting });
             }
 
             foreach (var eventField in Syntax.Members.OfType<EventFieldDeclarationSyntax>())
             foreach (var variable in eventField.Declaration.Variables)
                 if (SemanticModel.GetDeclaredSymbol(variable) is IEventSymbol symbol)
-                    events.Add(new EventEntity(symbol, Solution, fieldSyntax: eventField));
+                    events.Add(new EventEntity(symbol, Solution, fieldSyntax: eventField) { Reporting = this.Reporting });
 
             return events;
         }

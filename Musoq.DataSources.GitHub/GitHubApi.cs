@@ -1,3 +1,4 @@
+using Musoq.Schema.Diagnostics;
 using Musoq.DataSources.GitHub.Entities;
 using Octokit;
 using Musoq.DataSources.Common;
@@ -10,20 +11,25 @@ namespace Musoq.DataSources.GitHub;
 internal class GitHubApi : IGitHubApi, IFilteredGitHubApi
 {
     private const int DefaultPerPage = 100;
-    private readonly GitHubClient _client;
+    private readonly IGitHubClient _client;
     private readonly NativePatternExecution? _patterns;
     private readonly CancellationToken _cancellation;
-    private GitHubApi(GitHubClient client, NativePatternExecution patterns, CancellationToken cancellationToken)
-    { _client = client; _patterns = patterns; _cancellation = cancellationToken; }
-    public IGitHubApi WithPatterns(NativePatternExecution patterns, CancellationToken cancellationToken) => new GitHubApi(_client, patterns, cancellationToken);
+    private readonly Action<DataSourceDiagnostic>? _warningReporter;
+    private GitHubApi(IGitHubClient client, NativePatternExecution? patterns, CancellationToken cancellationToken, Action<DataSourceDiagnostic>? warningReporter)
+    { _client = client; _patterns = patterns; _cancellation = cancellationToken; _warningReporter = warningReporter; }
+    public IGitHubApi WithPatterns(NativePatternExecution patterns, CancellationToken cancellationToken) => new GitHubApi(_client, patterns, cancellationToken, _warningReporter);
+
+    internal GitHubApi WithReporting(Action<DataSourceDiagnostic>? reporter, CancellationToken token)
+        => new(_client, _patterns, token, reporter);
 
     public GitHubApi(string token)
     {
-        _client = new GitHubClient(new ProductHeaderValue("Musoq-GitHub-DataSource"));
-        _client.Credentials = new Credentials(token);
+        _client = new GitHubClient(new ProductHeaderValue("Musoq-GitHub-DataSource")) { Credentials = new Credentials(token) };
     }
 
-    public GitHubApi(GitHubClient client)
+    public GitHubApi(GitHubClient client) : this((IGitHubClient)client) { }
+
+    internal GitHubApi(IGitHubClient client)
     {
         _client = client;
     }
@@ -57,8 +63,10 @@ internal class GitHubApi : IGitHubApi, IFilteredGitHubApi
             var repos = await _client.Repository.GetAllForOrg(owner, options);
             return PatternPage.Map(repos, _patterns, GitHubNativePatterns.Repository, static value => new RepositoryEntity(value), _cancellation);
         }
-        catch (NotFoundException)
+        catch (NotFoundException error)
         {
+            _cancellation.ThrowIfCancellationRequested();
+            GitHubSchema.Reports.Warn(_warningReporter, error, "The existing organization-to-user lookup fallback was used.", _cancellation);
             var repos = await _client.Repository.GetAllForUser(owner, options);
             return PatternPage.Map(repos, _patterns, GitHubNativePatterns.Repository, static value => new RepositoryEntity(value), _cancellation);
         }
@@ -126,7 +134,7 @@ internal class GitHubApi : IGitHubApi, IFilteredGitHubApi
             _cancellation.ThrowIfCancellationRequested();
             PullRequest value;
             try { value = await _client.PullRequest.Get(owner, repo, pr.Number); }
-            catch { value = pr; }
+            catch (Exception error) when (GitHubSchema.Reports.Warn(_warningReporter, error, "The existing lightweight pull-request fallback was used.", _cancellation)) { value = pr; }
             _cancellation.ThrowIfCancellationRequested();
             if (_patterns?.Matches(value, GitHubNativePatterns.PullRequest) == false) continue;
             fullPrs.Add(new PullRequestEntity(value));

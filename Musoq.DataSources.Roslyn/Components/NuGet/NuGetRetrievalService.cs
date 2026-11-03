@@ -13,7 +13,8 @@ namespace Musoq.DataSources.Roslyn.Components.NuGet;
 internal sealed class NuGetRetrievalService(
     INuGetPropertiesResolver? nuGetPropertiesResolver,
     IFileSystem? fileSystem,
-    IHttpClient? httpClient) : INuGetRetrievalService
+    IHttpClient? httpClient,
+    RoslynReporting? reporting = null) : INuGetRetrievalService
 {
     public async Task<string?> GetMetadataFromPathAsync(
         NuGetResource? commonResources,
@@ -44,7 +45,7 @@ internal sealed class NuGetRetrievalService(
 
             return null;
         }
-        catch (Exception)
+        catch (Exception error) when (RoslynReporting.MetadataFallback(reporting, error, cancellationToken))
         {
             return null;
         }
@@ -56,6 +57,8 @@ internal sealed class NuGetRetrievalService(
         string propertyName,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
             var url = $"{baseUrl}/packages/{commonResources.PackageName}/{commonResources.PackageVersion}";
@@ -69,7 +72,7 @@ internal sealed class NuGetRetrievalService(
 
             return await retrieveAsync();
         }
-        catch (Exception)
+        catch (Exception error) when (RoslynReporting.MetadataFallback(reporting, error, cancellationToken))
         {
             return null;
         }
@@ -81,6 +84,8 @@ internal sealed class NuGetRetrievalService(
         string propertyName,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var requestUrlBase =
             $"{apiEndpoint}?packageName={commonResources.PackageName}&packageVersion={commonResources.PackageVersion}&propertyName={propertyName}";
         var response = await httpClient.GetAsync(requestUrlBase, cancellationToken);
@@ -96,6 +101,8 @@ internal sealed class NuGetRetrievalService(
 
     public async Task<string[]> GetPackageVersionsAsync(string packageName, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var requestUrlBase = $"https://api.nuget.org/v3-flatcontainer/{packageName.ToLowerInvariant()}/index.json";
         var response = await httpClient.GetAsync(requestUrlBase, cancellationToken);
 
@@ -117,6 +124,8 @@ internal sealed class NuGetRetrievalService(
     public async Task<string?> DownloadPackageAsync(string packageName, string packageVersion, string packagePath,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var response = await httpClient.GetAsync($"https://www.nuget.org/api/v2/package/{packageName}/{packageVersion}",
             cancellationToken);
 

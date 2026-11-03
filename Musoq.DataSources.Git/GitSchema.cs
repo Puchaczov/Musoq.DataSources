@@ -14,6 +14,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Git;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with Git repositories.
 /// </description>
@@ -24,6 +25,8 @@ namespace Musoq.DataSources.Git;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class GitSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("GIT", fileSystem: true, classify: GitDiagnostics.Map);
+
     private static readonly FileSystemPathValidator PathValidator = new(
         new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
         {
@@ -38,7 +41,7 @@ public class GitSchema : SchemaBase
             ["remotes"] = [new(0, "path")],
             ["filehistory"] = [new(0, "path")],
             ["blame"] = [new(0, "repositoryPath")]
-        });
+        }, provider: "GIT");
 
     private const string SchemaName = "Git";
     private const string RepositoryTable = "repository";
@@ -571,6 +574,15 @@ public class GitSchema : SchemaBase
         params object?[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return GetTableByNameCore(name, metadataContext, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, metadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private ISchemaTable GetTableByNameCore(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object?[] parameters)
+    {
         switch (name.ToLowerInvariant())
         {
             case RepositoryTable:
@@ -838,6 +850,15 @@ public class GitSchema : SchemaBase
         TArguments parameters)
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext?.EndWorkToken ?? default), executionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
         return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), name.ToLowerInvariant() == "filehistory" ? ["CommitSha", "FilePath", "ChangeType", "OldPath"] : GitPatternColumns.Get(name)?.Names);
     }
 
@@ -911,6 +932,16 @@ public class GitSchema : SchemaBase
         SourceDescribeContext context,
         params object?[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, context?.MetadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourceDescriptor DescribeSourceCore(
+        string name,
+        SourceDescribeContext context,
+        params object?[] parameters)
+    {
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
         return new SourceDescriptor
@@ -936,6 +967,16 @@ public class GitSchema : SchemaBase
     ///     defaults to <c>git</c> resolved from <c>PATH</c>.
     /// </remarks>
     public override IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettings(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object?[] parameters)
+    {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceRuntimeSettingsCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, default, out var failure)) { throw failure; }
+    }
+
+    private IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettingsCore(
         string name,
         SourceRuntimeSettingsDescribeContext context,
         params object?[] parameters)
@@ -975,6 +1016,12 @@ public class GitSchema : SchemaBase
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object?[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return TryPlanSourceCore(name, request, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, request?.CancellationToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourcePlanResult TryPlanSourceCore(string name, SourcePlanRequest request, params object?[] parameters)
+    {
         return PatternSourcePlan.Plan(request, GitPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
     }
 

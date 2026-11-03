@@ -28,7 +28,7 @@ internal class CSharpImmediateLoadSolutionRowsSource(
 
         logger.LogTrace("Loading solution file: {solutionFilePath}", solutionFilePath);
 
-        var solution = await RoslynSolutionLoader.OpenSolutionAsync(solutionFilePath, logger, cancellationToken);
+        var solution = await RoslynSolutionLoader.OpenSolutionAsync(solutionFilePath, logger, cancellationToken, ReportingContext);
         var packageVersionConcurrencyManager = new PackageVersionConcurrencyManager();
         var filters = RoslynSourcePlanner.GetFilters(ExecutionContext.Plan);
         var acceptedPredicate = ExecutionContext.Plan.AcceptedPredicate;
@@ -36,23 +36,23 @@ internal class CSharpImmediateLoadSolutionRowsSource(
             new NuGetCachePathResolver(
                 solutionFilePath,
                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux,
-                logger),
+                logger, ReportingContext),
             nugetPropertiesResolveEndpoint,
             new NuGetRetrievalService(
                 nuGetPropertiesResolver,
                 fileSystem,
-                httpClient),
+                httpClient, ReportingContext),
             fileSystem,
             packageVersionConcurrencyManager,
             SolutionOperationsCommand.BannedPropertiesValues,
             SolutionOperationsCommand.ResolveValueStrategy,
-            logger);
+            logger, ReportingContext);
         var solutionEntity = new SolutionEntity(
             solution,
             nuGetPackageMetadataRetriever,
             ExecutionContext.EndWorkToken,
             project => RoslynSourcePlanner.Matches(filters, project) &&
-                       RoslynSourcePlanner.Matches(acceptedPredicate, project));
+                       RoslynSourcePlanner.Matches(acceptedPredicate, project)) { Reporting = ReportingContext };
 
         logger.LogTrace("Initializing solution");
 

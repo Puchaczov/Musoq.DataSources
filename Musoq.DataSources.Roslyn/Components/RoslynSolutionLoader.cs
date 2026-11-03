@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
+using Musoq.Schema.Diagnostics;
 
 namespace Musoq.DataSources.Roslyn.Components;
 
 internal static class RoslynSolutionLoader
 {
     public static async Task<Solution> OpenSolutionAsync(string solutionFilePath, ILogger logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, RoslynReporting? reporting = null)
     {
         var workspace = MSBuildWorkspace.Create();
         var diagnostics = new ConcurrentQueue<WorkspaceDiagnostic>();
@@ -21,6 +22,7 @@ internal static class RoslynSolutionLoader
         workspace.WorkspaceFailed += (_, args) =>
         {
             diagnostics.Enqueue(args.Diagnostic);
+            reporting?.WorkspaceProblem();
 
             if (args.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
                 logger.LogError("Roslyn workspace failure while loading solution {solutionFilePath}: {message}",
@@ -80,6 +82,11 @@ internal static class RoslynSolutionLoader
                 .AppendLine();
         }
 
-        throw new InvalidOperationException(message.ToString());
+        throw new DataSourceException(new DataSourceDiagnostic("ROSLYN.WorkspaceLoadFailed", "workspace",
+            "The solution did not contain any loadable projects.", new DataSourceDiagnosticOptions
+            {
+                FailureKind = DataSourceFailureKind.InvalidConfiguration,
+                SuggestedFixes = ["Check the solution path and install its required SDKs, workloads and MSBuild imports."]
+            }), new InvalidOperationException(message.ToString()));
     }
 }

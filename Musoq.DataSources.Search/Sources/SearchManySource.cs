@@ -82,7 +82,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
             _executionContext.Plan.AcceptedSkip,
             _executionContext.Plan.AcceptedTake);
         var readerFactory = _readerFactory ??
-                            (path => SearchTextReader.Open(path, _request.Options.EncodingMode));
+                            (path => SearchTextReader.Open(path, _request.Options.EncodingMode, _executionContext.WarningReporter));
         var classifyBinaryFiles = _readerFactory is null;
         var workerBuffers = new ThreadLocal<SearchCharBuffer>(
             SearchCharBuffer.Rent,
@@ -217,7 +217,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                         scanReaderFactory = _ => SearchTextReader.Open(
                             smallInput.Array,
                             smallInput.Length,
-                            _request.Options.EncodingMode);
+                            _request.Options.EncodingMode, _executionContext.WarningReporter);
                     }
                     var relativePath = SearchTextPath.GetRelativePath(relativeRoot, file);
                     SearchManyMixedScan.ScanFile(

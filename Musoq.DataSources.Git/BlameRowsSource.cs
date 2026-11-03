@@ -54,9 +54,9 @@ internal sealed class BlameRowsSource : GitDiagnosticRowsSourceBase<BlameHunkEnt
         using var repository = _createRepository(_repositoryPath);
         cancellationToken.ThrowIfCancellationRequested();
         var gitObject = repository.Lookup(_revision) ??
-                        throw new ArgumentException($"Invalid revision '{_revision}': not found.", nameof(_revision));
+                        throw GitDiagnostics.InvalidRevision($"Invalid revision '{_revision}': not found.", nameof(_revision));
         var commit = gitObject.Peel<Commit>() ??
-                     throw new ArgumentException($"Invalid revision '{_revision}': does not point to a commit.", nameof(_revision));
+                     throw GitDiagnostics.InvalidRevision($"Invalid revision '{_revision}': does not point to a commit.", nameof(_revision));
         var treeEntry = commit[_filePath] ??
                         throw new FileNotFoundException($"File '{_filePath}' does not exist at revision '{_revision}'.");
 

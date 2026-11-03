@@ -17,6 +17,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class MethodEntity
 {
+    internal RoslynReporting? Reporting { get; set; }
+
     private readonly MethodDeclarationSyntax _methodDeclaration;
     private readonly SemanticModel? _semanticModel;
     private readonly Func<CancellationToken, Task<IEnumerable<ReferencedSymbol>?>>? _findReferencesAsync;
@@ -517,7 +519,7 @@ public class MethodEntity
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
                 findReferencesAsync,
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                null);
+                null, Reporting);
 
             return references?.Sum(r => r.Locations.Count());
         }
@@ -627,7 +629,7 @@ public class MethodEntity
             var callerResults = RoslynAsyncHelper.RunSyncWithTimeout(
                 ct => SymbolFinder.FindCallersAsync(Symbol, Solution, ct),
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                null);
+                null, Reporting);
 
             if (callerResults == null)
                 return Enumerable.Empty<CalledMethodInfo>();

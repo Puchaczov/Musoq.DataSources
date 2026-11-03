@@ -28,27 +28,29 @@ internal sealed class CSharpInMemorySolutionRowsSource(
         var filters = RoslynSourcePlanner.GetFilters(ExecutionContext.Plan);
         var acceptedPredicate = ExecutionContext.Plan.AcceptedPredicate;
 
-        writer.Write([
+        var scopedSolution =
             solution.CloneWith(
                 new NuGetPackageMetadataRetriever(
                     new NuGetCachePathResolver(
                         solution.Path,
                         RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OSPlatform.Windows : OSPlatform.Linux,
-                        logger),
+                        logger, ReportingContext),
                     nugetPropertiesResolveEndpoint,
                     new NuGetRetrievalService(
                         nuGetPropertiesResolver,
                         fileSystem,
-                        httpClient),
+                        httpClient, ReportingContext),
                     fileSystem,
                     packageVersionConcurrencyManager,
                     SolutionOperationsCommand.BannedPropertiesValues,
                     SolutionOperationsCommand.ResolveValueStrategy,
-                    logger),
+                    logger, ReportingContext),
                 ExecutionContext.EndWorkToken,
                 project => RoslynSourcePlanner.Matches(filters, project) &&
                            RoslynSourcePlanner.Matches(acceptedPredicate, project))
-        ]);
+        ;
+        scopedSolution.Reporting = ReportingContext;
+        writer.Write([scopedSolution]);
 
         return Task.CompletedTask;
     }

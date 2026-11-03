@@ -28,7 +28,7 @@ internal class VolumesSource(IDockerApi api, SourceExecutionContext executionCon
         {
             var native = NativePatternExecution.Get(executionContext);
             native?.PageRead();
-            var volumes = api.ListVolumesAsync().Result;
+            var volumes = api.ListVolumesAsync().GetAwaiter().GetResult();
             var rows = volumes
                 .Where(value => { writer.CancellationToken.ThrowIfCancellationRequested(); executionContext.EndWorkToken.ThrowIfCancellationRequested(); return native?.Matches(value, DockerNativePatterns.Volume) != false; })
                 .Select(value => { var row = new VolumeEntity(value); native?.Constructed(); return row; })

@@ -37,6 +37,7 @@ public class ClassEntity : TypeEntity
         Solution = solution;
         Symbol = symbol;
         Document = document;
+        Reporting = document.Reporting;
     }
 
     internal TypeDeclarationSyntax Syntax { get; }
@@ -232,7 +233,7 @@ public class ClassEntity : TypeEntity
     [BindablePropertyAsTable]
     public override IEnumerable<MethodEntity> Methods => Syntax.Members
         .OfType<MethodDeclarationSyntax>()
-        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution));
+        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution) { Reporting = this.Reporting });
 
     /// <summary>
     ///     Gets the properties of the type.
@@ -252,7 +253,7 @@ public class ClassEntity : TypeEntity
             .Select(v => new FieldEntity(
                 (IFieldSymbol)SemanticModel.GetDeclaredSymbol(v)!,
                 v,
-                Solution)));
+                Solution) { Reporting = this.Reporting }));
 
     /// <summary>
     ///     Gets the constructors of the class.
@@ -276,13 +277,13 @@ public class ClassEntity : TypeEntity
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(eventDecl);
                 if (symbol != null)
-                    events.Add(new EventEntity(symbol, Solution, eventDecl));
+                    events.Add(new EventEntity(symbol, Solution, eventDecl) { Reporting = this.Reporting });
             }
 
             foreach (var eventField in Syntax.Members.OfType<EventFieldDeclarationSyntax>())
             foreach (var variable in eventField.Declaration.Variables)
                 if (SemanticModel.GetDeclaredSymbol(variable) is IEventSymbol symbol)
-                    events.Add(new EventEntity(symbol, Solution, fieldSyntax: eventField));
+                    events.Add(new EventEntity(symbol, Solution, fieldSyntax: eventField) { Reporting = this.Reporting });
 
             return events;
         }
@@ -487,7 +488,7 @@ public class ClassEntity : TypeEntity
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
                 ct => SymbolFinder.FindReferencesAsync(Symbol, Solution, ct)!,
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                null);
+                null, Reporting);
 
             return references?.Sum(r => r.Locations.Count()) ?? -1;
         }

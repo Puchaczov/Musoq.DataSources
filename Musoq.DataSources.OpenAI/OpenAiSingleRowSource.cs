@@ -16,9 +16,15 @@ internal class OpenAiSingleRowSource : RowSourceBase<OpenAiEntity>
         _openAiRequestInfo = openAiRequestInfo;
     }
 
+    protected OpenAiSingleRowSource(IOpenAiApi api, OpenAiRequestInfo request, SourceExecutionContext? context)
+        : this(api, request)
+    {
+        _executionContext = context;
+    }
+
     public OpenAiSingleRowSource(SourceExecutionContext executionContext, OpenAiRequestInfo openAiRequestInfo)
     {
-        _openAiApi = new OpenAiApi(executionContext.SourceRuntimeSettings["OPENAI_API_KEY"]);
+        _openAiApi = new OpenAiApi(OpenAiSchema.Reports.RequiredSetting(executionContext.SourceRuntimeSettings, "OPENAI_API_KEY"));
         _openAiRequestInfo = openAiRequestInfo;
         _executionContext = executionContext;
     }
@@ -38,7 +44,7 @@ internal class OpenAiSingleRowSource : RowSourceBase<OpenAiEntity>
                     _openAiRequestInfo.MaxTokens,
                     _openAiRequestInfo.PresencePenalty,
                     _openAiRequestInfo.Temperature,
-                    writer.CancellationToken)
+                    writer.CancellationToken) { WarningReporter = _executionContext?.WarningReporter }
             ]);
         }
         finally

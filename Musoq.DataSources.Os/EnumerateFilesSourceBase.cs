@@ -17,6 +17,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
     SourceExecutionContext executionContext)
     : AsyncRowsSourceBase<TEntity>(executionContext.EndWorkToken)
 {
+    protected SourceExecutionContext ExecutionContext => executionContext;
     private const int ChunkSize = 100;
     private readonly SourcePredicateExpression? _acceptedPredicate = executionContext.Plan.AcceptedPredicate;
     private readonly OsFileFilterParameters _fileFilters = OsSourcePlanner.GetFileFilters(executionContext.Plan);
@@ -83,16 +84,19 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
             {
                 files = GetFiles(dir, cancellationToken).GetEnumerator();
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException error)
             {
+                OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                 continue;
             }
-            catch (DirectoryNotFoundException)
+            catch (DirectoryNotFoundException error)
             {
+                OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                 continue;
             }
-            catch (PathTooLongException)
+            catch (PathTooLongException error)
             {
+                OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                 continue;
             }
 
@@ -106,18 +110,21 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
                     {
                         hasNext = files.MoveNext();
                     }
-                    catch (UnauthorizedAccessException)
+                    catch (UnauthorizedAccessException error)
                     {
+                        OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                         fileEnumerationFailed = true;
                         break;
                     }
-                    catch (DirectoryNotFoundException)
+                    catch (DirectoryNotFoundException error)
                     {
+                        OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                         fileEnumerationFailed = true;
                         break;
                     }
-                    catch (PathTooLongException)
+                    catch (PathTooLongException error)
                     {
+                        OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                         fileEnumerationFailed = true;
                         break;
                     }
@@ -156,16 +163,19 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
                     sources.Push(new DirectorySourceSearchOptions(subDir.FullName, currentSource.WithSubDirectories));
                 }
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException error)
             {
+                OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                 continue;
             }
-            catch (DirectoryNotFoundException)
+            catch (DirectoryNotFoundException error)
             {
+                OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                 continue;
             }
-            catch (PathTooLongException)
+            catch (PathTooLongException error)
             {
+                OsSchema.Reports.Warn(executionContext, error, "Some filesystem entries were skipped.", cancellationToken);
                 continue;
             }
         }

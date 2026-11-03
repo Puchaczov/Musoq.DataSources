@@ -43,13 +43,13 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         string question)
     {
         var api = entity.Api;
-        var isContentAboutResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>
+        var isContentAboutResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<ChatMessage>
         {
             ChatMessage.CreateSystemMessage(ContentAboutPrompt),
             ChatMessage.CreateUserMessage(content),
             ChatMessage.CreateUserMessage(question)
         }));
-        var sentimentResult = isContentAboutResultTask.Result.ToLowerInvariant();
+        var sentimentResult = isContentAboutResultTask.GetAwaiter().GetResult().ToLowerInvariant();
 
         return sentimentResult.Contains("yes");
     }
@@ -67,12 +67,12 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         bool throwOnUnknown = false)
     {
         var api = entity.Api;
-        var sentimentResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>
+        var sentimentResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<ChatMessage>
         {
             ChatMessage.CreateSystemMessage(SentimentPrompt),
             ChatMessage.CreateUserMessage(content)
         }));
-        var sentimentResult = sentimentResultTask.Result.ToLowerInvariant();
+        var sentimentResult = sentimentResultTask.GetAwaiter().GetResult().ToLowerInvariant();
 
         return sentimentResult.Contains("positive")
             ? "POSITIVE"
@@ -95,13 +95,13 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
     public string SummarizeContent([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string content)
     {
         var api = entity.Api;
-        var summarizeResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>
+        var summarizeResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<ChatMessage>
         {
             ChatMessage.CreateSystemMessage(SummarizerPrompt),
             ChatMessage.CreateUserMessage(content)
         }));
 
-        return summarizeResultTask.Result;
+        return summarizeResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -117,14 +117,14 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         string from, string to)
     {
         var api = entity.Api;
-        var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>
+        var translateResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<ChatMessage>
         {
             ChatMessage.CreateSystemMessage(TranslateGivenTextPrompt.Replace("{SOURCE_LANGUAGE}", from)
                 .Replace("{DESTINATION_LANGUAGE}", to)),
             ChatMessage.CreateUserMessage(content)
         }));
 
-        return translateResultTask.Result;
+        return translateResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -139,25 +139,25 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         bool throwOnException = false)
     {
         var api = entity.Api;
-        var getEntitiesResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>
+        var getEntitiesResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<ChatMessage>
         {
             ChatMessage.CreateSystemMessage(ExtractEntitiesPrompt),
             ChatMessage.CreateUserMessage(content)
         }));
 
-        var entitiesResult = getEntitiesResultTask.Result.ToLowerInvariant();
+        var entitiesResult = getEntitiesResultTask.GetAwaiter().GetResult().ToLowerInvariant();
 
         try
         {
             var entities = JsonSerializer.Deserialize<ExtractedEntities>(entitiesResult);
 
+            if (entities?.Entities is null) OpenAiDiagnostics.OutputFallback(entity);
             return entities?.Entities ?? [];
         }
-        catch (Exception)
+        catch (System.Text.Json.JsonException error)
         {
-            if (throwOnException)
-                throw;
-
+            if (throwOnException) throw OpenAiDiagnostics.InvalidOutput(error);
+            OpenAiDiagnostics.OutputFallback(entity, error);
             return [];
         }
     }
@@ -175,13 +175,13 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         string whatToDo, TColumnType column)
     {
         var api = entity.Api;
-        var translateResultTask = DoAsynchronously(() => api.GetCompletionAsync(entity, new List<ChatMessage>
+        var translateResultTask = DoAsynchronously(entity, () => api.GetCompletionAsync(entity, new List<ChatMessage>
         {
             ChatMessage.CreateSystemMessage(whatToDo),
             ChatMessage.CreateUserMessage(column?.ToString())
         }));
 
-        return translateResultTask.Result;
+        return translateResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -194,7 +194,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
     public string DescribeImage([InjectSpecificSource(typeof(OpenAiEntity))] OpenAiEntity entity, string imageBase64)
     {
         var api = entity.Api;
-        var describeResultTask = DoAsynchronously(() =>
+        var describeResultTask = DoAsynchronously(entity, () =>
         {
             const string youAreImageDescriberDescribeTheImage = "You are image describer. Describe the image.";
             var binaryData = BinaryData.FromBytes(FromBase64(imageBase64));
@@ -206,7 +206,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
             });
         });
 
-        return describeResultTask.Result;
+        return describeResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -221,7 +221,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         string imageBase64)
     {
         var api = entity.Api;
-        var askResultTask = DoAsynchronously(() =>
+        var askResultTask = DoAsynchronously(entity, () =>
         {
             const string youAreImageQuestionerAskQuestionAboutImage =
                 "You are images carefully analyzer. You will be given with a question you must answer based on the photography provided.";
@@ -235,7 +235,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
             });
         });
 
-        return askResultTask.Result;
+        return askResultTask.GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -250,7 +250,7 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         string question, string imageBase64)
     {
         var api = entity.Api;
-        var askResultTask = DoAsynchronously(() =>
+        var askResultTask = DoAsynchronously(entity, () =>
         {
             var youAreImageQuestionerAskQuestionAboutImage =
                 $"You are image based question answerer. Return only answer for the following question: {question}. You must respond with json {{ result: bool }}. Do not comment or explain anything.";
@@ -264,19 +264,23 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
             });
         });
 
-        var response = askResultTask.Result;
+        var response = askResultTask.GetAwaiter().GetResult();
 
         try
         {
             var result = JsonSerializer.Deserialize<Dictionary<string, bool>>(response);
 
             if (result == null)
+            {
+                OpenAiDiagnostics.OutputFallback(entity);
                 return false;
+            }
 
             return result["result"];
         }
-        catch (Exception)
+        catch (Exception error) when (error is System.Text.Json.JsonException or KeyNotFoundException)
         {
+            OpenAiDiagnostics.OutputFallback(entity, error);
             return false;
         }
     }
@@ -330,20 +334,20 @@ public class OpenAiLibrary : LibraryBase, ILargeLanguageModelFunctions<OpenAiEnt
         return encoding.CountTokens(content);
     }
 
-    private static async Task<string> DoAsynchronously(Func<Task<CompletionResponse>> func)
+    private static async Task<string> DoAsynchronously(OpenAiEntityBase entity, Func<Task<CompletionResponse>> func)
     {
-        var result = func();
-
         try
         {
-            var completion = await result;
+            entity.CancellationToken.ThrowIfCancellationRequested();
+            var completion = await func();
             var message = completion.Text;
 
             return message;
         }
-        catch (Exception exc)
+        catch (Exception error) when (OpenAiSchema.Reports.Warn(entity.WarningReporter, error,
+            "The existing completion-text fallback was used.", entity.CancellationToken))
         {
-            return exc.Message;
+            return "Completion unavailable. See datasource warnings.";
         }
     }
 

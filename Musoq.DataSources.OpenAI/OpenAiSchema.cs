@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Managers;
@@ -7,6 +8,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.OpenAI;
 
 /// <description>
+///     Recognized service failures provide structured diagnostics; supported fallbacks report warnings alongside results.
 ///     Provides interface to work with OpenAI API.
 /// </description>
 /// <short-description>
@@ -15,6 +17,8 @@ namespace Musoq.DataSources.OpenAI;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class OpenAiSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("OPENAI", classify: OpenAiDiagnostics.Map);
+
     private const string OpenAiSchemaName = "OpenAi";
 
     /// <virtual-constructors>
@@ -162,6 +166,10 @@ public class OpenAiSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext.EndWorkToken), executionContext.EndWorkToken);
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(string name, SourceExecutionContext executionContext, TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         return EnsureSourceType<T, OpenAiEntity>(
             name,

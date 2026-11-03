@@ -1,3 +1,4 @@
+using Musoq.DataSources.Structured;
 using System;
 using System.Collections.Generic;
 using Musoq.DataSources.Common;
@@ -10,6 +11,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Json;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Streams strict UTF-8 JSON files after exact source-driven schema discovery.
 /// </description>
@@ -19,11 +21,13 @@ namespace Musoq.DataSources.Json;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
 {
+    internal static readonly ProviderDiagnostics Reports = new("JSON", fileSystem: true, classify: static error => StructuredDiagnostics.Map("JSON", error));
+
     private static readonly FileSystemPathValidator PathValidator = new(
         new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
         {
             ["file"] = [new(0, "jsonFilePath")]
-        });
+        }, provider: "JSON");
 
     private const string FileTable = "file";
     private const string SchemaName = "json";
@@ -58,6 +62,15 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
         params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return GetTableByNameCore(name, metadataContext, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, metadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private ISchemaTable GetTableByNameCore(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
+    {
         if (parameters is not [string path])
             throw new ArgumentException("json.file requires exactly one string path parameter.", nameof(parameters));
 
@@ -82,6 +95,15 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
         TArguments parameters)
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext?.EndWorkToken ?? default), executionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
         if (!string.Equals(name, FileTable, StringComparison.OrdinalIgnoreCase))
             throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.");
         _ = ReadPath(parameters);
@@ -92,6 +114,16 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
     ///     Describes the exact schema discovered for a JSON file.
     /// </summary>
     public override SourceDescriptor DescribeSource(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, context?.MetadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourceDescriptor DescribeSourceCore(
         string name,
         SourceDescribeContext context,
         params object[] parameters)
@@ -122,6 +154,16 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
         where TArguments : struct, ISourceArguments
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetQueryScopedRowSourceCore<TRow, TMaterializer, TArguments>(name, request, parameters), request?.ExecutionContext?.EndWorkToken ?? default), request?.ExecutionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<TRow> GetQueryScopedRowSourceCore<TRow, TMaterializer, TArguments>(
+        string name,
+        QueryScopedRowSourceRequest request,
+        TArguments parameters)
+        where TMaterializer : struct, IQueryRowMaterializer<TRow>
+        where TArguments : struct, ISourceArguments
+    {
         ArgumentNullException.ThrowIfNull(request);
         if (!string.Equals(name, FileTable, StringComparison.OrdinalIgnoreCase))
             throw new NotSupportedException($"Data source '{name}' is not supported by {SchemaName} schema.");
@@ -154,6 +196,16 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
         SourceRuntimeSettingsDescribeContext context,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceRuntimeSettingsCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, default, out var failure)) { throw failure; }
+    }
+
+    private IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettingsCore(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
         return
         [
             new SourceRuntimeSettingRequirement(
@@ -171,6 +223,12 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return TryPlanSourceCore(name, request, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, request?.CancellationToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourcePlanResult TryPlanSourceCore(string name, SourcePlanRequest request, params object[] parameters)
+    {
         return name.ToLowerInvariant() switch
         {
             FileTable when parameters is [string path] => JsonSourcePlanner.Plan(

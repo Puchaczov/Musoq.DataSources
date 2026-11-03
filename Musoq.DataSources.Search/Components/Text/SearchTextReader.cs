@@ -5,6 +5,7 @@ using System.Buffers;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Musoq.Schema.Diagnostics;
 
 using Musoq.DataSources.Search.Components.Diagnostics;
 using Musoq.DataSources.Search.Components.Testing;
@@ -15,7 +16,7 @@ internal static class SearchTextReader
 {
     private const int ProbeLength = 4;
 
-    public static TextReader Open(string path, SearchEncodingMode mode)
+    public static TextReader Open(string path, SearchEncodingMode mode, Action<DataSourceDiagnostic>? warningReporter = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
 
@@ -37,7 +38,7 @@ internal static class SearchTextReader
                 resolution.Encoding,
                 resolution.DataOffset,
                 resolution.Tolerant,
-                resolution.LegacyEncoding);
+                resolution.LegacyEncoding, warningReporter);
         }
         catch
         {
@@ -51,7 +52,7 @@ internal static class SearchTextReader
     ///     coordinate rules as a file-backed reader. The supplied array is
     ///     borrowed until the returned reader is disposed.
     /// </summary>
-    internal static TextReader Open(byte[] bytes, int length, SearchEncodingMode mode)
+    internal static TextReader Open(byte[] bytes, int length, SearchEncodingMode mode, Action<DataSourceDiagnostic>? warningReporter = null)
     {
         ArgumentNullException.ThrowIfNull(bytes);
         if (length < 0 || length > bytes.Length)
@@ -72,7 +73,7 @@ internal static class SearchTextReader
                 resolution.Encoding,
                 resolution.DataOffset,
                 resolution.Tolerant,
-                resolution.LegacyEncoding);
+                resolution.LegacyEncoding, warningReporter);
         }
         catch
         {
@@ -258,7 +259,8 @@ internal static class SearchTextReader
         DecodedEncoding encoding,
         long initialByteOffset,
         bool tolerant,
-        Encoding? legacyEncoding)
+        Encoding? legacyEncoding,
+        Action<DataSourceDiagnostic>? warningReporter)
         : TextReader, ISearchTextCoordinateReader
     {
         private const int RawBufferLength = SearchCharBuffer.RequestedLength;
@@ -279,6 +281,7 @@ internal static class SearchTextReader
         private long _nextRawOffset = initialByteOffset;
         private bool _endOfStream;
         private bool _hasPendingCharacter;
+        private bool _reportedLoss;
         private char _pendingCharacter;
         private SearchCharCoordinate _pendingCoordinate;
 
@@ -607,6 +610,7 @@ internal static class SearchTextReader
                 throw new DecoderFallbackException(
                     $"Unable to decode UTF-8 byte at index {first.Offset}.");
 
+            ReportDecodingLoss(first.Offset);
             character = ReplacementCharacter;
             coordinate = UnmappedCoordinate(first.Offset, 1);
             return true;
@@ -621,6 +625,7 @@ internal static class SearchTextReader
                 throw new DecoderFallbackException(
                     $"Unable to decode UTF-16 bytes at index {first.Offset}.");
 
+            ReportDecodingLoss(first.Offset);
             character = ReplacementCharacter;
             coordinate = UnmappedCoordinate(first.Offset, 1);
             return true;
@@ -636,9 +641,24 @@ internal static class SearchTextReader
                 throw new DecoderFallbackException(
                     $"Unable to decode UTF-16 bytes at index {first.Offset}.");
 
+            ReportDecodingLoss(first.Offset);
             character = ReplacementCharacter;
             coordinate = UnmappedCoordinate(first.Offset, byteLength);
             return true;
+        }
+
+        private void ReportDecodingLoss(long offset)
+        {
+            if (_reportedLoss || warningReporter is null) return;
+            _reportedLoss = true;
+            warningReporter(new DataSourceDiagnostic("SEARCH.DecodingReplacement", "encoding",
+                "Malformed encoded input was replaced during loss-tolerant decoding.", new DataSourceDiagnosticOptions
+                {
+                    Severity = DataSourceDiagnosticSeverity.Warning,
+                    FailureKind = DataSourceFailureKind.InvalidInput,
+                    InputLocation = new DataSourceInputLocation(byteOffset: offset),
+                    SuggestedFixes = ["Choose the input's actual encoding or use strict decoding to reject malformed input."]
+                }));
         }
 
         private static bool IsValidUtf8Sequence(

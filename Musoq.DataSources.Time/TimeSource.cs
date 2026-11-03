@@ -23,7 +23,7 @@ internal class TimeSource(
         "days" => stopAt.AddHours(1),
         "months" => stopAt.AddDays(1),
         "years" => stopAt.AddMonths(1),
-        _ => throw new NotSupportedException($"Chosen resolution '{resolution.ToLowerInvariant()}' is not supported.")
+        _ => throw TimeDiagnostics.InvalidArgument("interval", 2)
     };
 
     protected override void CollectChunks(IChunkWriter<TimeEntity> writer)

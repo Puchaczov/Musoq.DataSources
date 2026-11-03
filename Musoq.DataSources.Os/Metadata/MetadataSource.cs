@@ -75,10 +75,15 @@ internal class MetadataSource : EnumerateFilesSourceBase<MetadataEntity>
                             new MetadataEntity(file.FullName, directory.Name, tag.Name, tag.Description)));
             NativePatterns?.Constructed(dirFiles.Count - countBefore);
         }
-        catch (Exception exc)
+        catch (Exception exc) when (exc is not OperationCanceledException)
         {
             if (_throwOnMetadataReadError)
+            {
+                if (OsSchema.Reports.TryMap(exc, ExecutionContext.EndWorkToken, out var failure)) throw failure;
                 throw new MetadataReadException(file, exc);
+            }
+            if (!OsSchema.Reports.Warn(ExecutionContext, exc, "The existing metadata-skip option was used.", ExecutionContext.EndWorkToken))
+                throw;
         }
     }
 }

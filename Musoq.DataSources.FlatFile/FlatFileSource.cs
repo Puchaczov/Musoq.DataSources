@@ -30,7 +30,12 @@ internal class FlatFileSource(string filePath, SourceExecutionContext executionC
                 return;
 
             if (!File.Exists(filePath))
+            {
+                executionContext.ReportWarning(ProviderDiagnostics.AsWarning(
+                    FlatFileSchema.Reports.Failure(Musoq.Schema.Diagnostics.DataSourceFailureKind.Unavailable).Report,
+                    "The existing empty-result fallback was used because the input file was unavailable."));
                 return;
+            }
 
             var rowNum = 0;
             var chunk = new List<FlatFileEntity>();

@@ -12,6 +12,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Jira;
 
 /// <description>
+///     Recognized service failures provide structured diagnostics; supported fallbacks report warnings alongside results.
 ///     Provides schema to work with Jira issues, projects, and comments.
 ///     Supports predicate pushdown for efficient JQL-based filtering.
 /// </description>
@@ -21,6 +22,8 @@ namespace Musoq.DataSources.Jira;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class JiraSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("JIRA", classify: JiraDiagnostics.Map);
+
     private const string SchemaName = "jira";
 
     private const string IssuesTableName = "issues";
@@ -208,6 +211,10 @@ public class JiraSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext.EndWorkToken), executionContext.EndWorkToken);
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(string name, SourceExecutionContext executionContext, TArguments parameters)
+        where TArguments : struct, ISourceArguments
         => JiraPatternApi.Read(executionContext, _api, name, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters));
 
     private RowSource<T> ReadWithoutPatterns<T, TArguments>(
@@ -341,17 +348,11 @@ public class JiraSchema : SchemaBase
 
     private static IJiraApi CreateApi(SourceExecutionContext executionContext)
     {
-        var jiraUrl = executionContext.SourceRuntimeSettings.TryGetValue("JIRA_URL", out var url)
-            ? url
-            : throw new InvalidOperationException("JIRA_URL runtime setting is required.");
-
-        var username = executionContext.SourceRuntimeSettings.TryGetValue("JIRA_USERNAME", out var user)
-            ? user
-            : throw new InvalidOperationException("JIRA_USERNAME runtime setting is required.");
-
-        var apiToken = executionContext.SourceRuntimeSettings.TryGetValue("JIRA_API_TOKEN", out var token)
-            ? token
-            : throw new InvalidOperationException("JIRA_API_TOKEN runtime setting is required.");
+        var jiraUrl = Reports.RequiredSetting(executionContext.SourceRuntimeSettings, "JIRA_URL");
+        var username = Reports.RequiredSetting(executionContext.SourceRuntimeSettings, "JIRA_USERNAME");
+        var apiToken = Reports.RequiredSetting(executionContext.SourceRuntimeSettings, "JIRA_API_TOKEN");
+        if (!Uri.TryCreate(jiraUrl, UriKind.Absolute, out var endpoint) || endpoint.Scheme is not ("http" or "https"))
+            throw Reports.Configuration("JIRA_URL");
 
         return new JiraApi(jiraUrl, username, apiToken);
     }

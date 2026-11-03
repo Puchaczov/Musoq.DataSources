@@ -15,6 +15,8 @@ using Musoq.DataSources.Tests.Common;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
+using Musoq.Schema.Diagnostics;
+using Musoq.Parser.Diagnostics;
 
 namespace Musoq.DataSources.RepresentativeTests;
 
@@ -66,6 +68,8 @@ public sealed class FileSystemPathValidationTests
                 values[pathIndex] = "abcd".Insert(position, character.ToString());
                 AssertInvalid(() => schema.GetTableByName(method, MetadataContext(), values), parameterName, character, position);
                 AssertInvalid(() => schema.DescribeSource(method, describe, values), parameterName, character, position);
+                AssertInvalid(() => schema.DescribeSourceRuntimeSettings(method,
+                    new SourceRuntimeSettingsDescribeContext(identity, MetadataContext()), values), parameterName, character, position);
                 AssertInvalid(() => schema.TryPlanSource(method, request, values), parameterName, character, position);
                 var native = new TestArguments(values);
                 AssertInvalid(() => schema.GetRowSource<object, TestArguments>(method, null!, native), parameterName, character, position);
@@ -221,6 +225,23 @@ public sealed class FileSystemPathValidationTests
         StringAssert.Contains(failure.Message, $"position {position} (zero-based)");
         Assert.IsFalse(failure.Message.Any(char.IsControl));
         Assert.IsFalse(failure.Message.Contains("abcd", StringComparison.Ordinal));
+        var report = FindReport(failure);
+        Assert.AreEqual(DataSourceFailureKind.InvalidInput, report.Report.FailureKind);
+        Assert.AreEqual(name, report.Report.ArgumentName);
+        Assert.IsNotNull(report.Report.ArgumentIndex);
+        Assert.AreEqual((long)position, report.Report.InputLocation!.CharacterOffset);
+        Assert.AreEqual($"U+{(int)character:X4}", report.Report.Details["characterCode"]);
+        Assert.AreEqual(position.ToString(global::System.Globalization.CultureInfo.InvariantCulture), report.Report.Details["characterPosition"]);
+        var json = MusoqErrorEnvelopeFormatter.FormatJson(MusoqErrorEnvelope.FromDiagnostic(report.ToDiagnostic()));
+        Assert.IsFalse(json.Any(char.IsControl));
+        Assert.IsFalse(json.Contains("abcd", StringComparison.Ordinal));
+    }
+
+    private static DataSourceException FindReport(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+            if (current is DataSourceException report) return report;
+        throw new AssertFailedException("A path failure must retain a structured public report.");
     }
 
     private static SourceMetadataContext MetadataContext() => new(

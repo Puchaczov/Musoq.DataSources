@@ -38,6 +38,7 @@ internal class RepositoriesSource : AsyncRowsSourceBase<RepositoryEntity>
             return;
         }
 
+        var api = GitHubPatternApi.Bind(_api, _executionContext, cancellationToken);
         _executionContext.ReportDataSourceBegin(SourceName);
         long totalRowsProcessed = 0;
 
@@ -57,13 +58,13 @@ internal class RepositoriesSource : AsyncRowsSourceBase<RepositoryEntity>
 
                 if (!string.IsNullOrEmpty(_owner))
                 {
-                    repos = await _api.GetRepositoriesForOwnerAsync(_owner, perPage, page);
+                    repos = await api.GetRepositoriesForOwnerAsync(_owner, perPage, page);
                 }
                 else
                 {
                     var request = new RepositoryRequest();
                     GitHubSourcePlanner.ApplyRepositoryFilters(request, filters);
-                    repos = await _api.GetUserRepositoriesAsync(request, perPage, page);
+                    repos = await api.GetUserRepositoriesAsync(request, perPage, page);
                 }
 
                 if (repos.Count == 0)

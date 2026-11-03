@@ -1,3 +1,4 @@
+using Musoq.DataSources.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Musoq.Schema;
 using Musoq.Schema.DataSources;
@@ -8,6 +9,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Ollama;
 
 /// <description>
+///     Recognized service failures provide structured diagnostics; supported fallbacks report warnings alongside results.
 ///     Provides interface to work with Ollama API.
 /// </description>
 /// <short-description>
@@ -16,6 +18,8 @@ namespace Musoq.DataSources.Ollama;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class OllamaSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("OLLAMA", classify: OllamaDiagnostics.Map);
+
     private const string OllamaSchemaName = "Ollama";
 
     private readonly ServiceProvider _serviceProvider;
@@ -95,18 +99,24 @@ public class OllamaSchema : SchemaBase
         string name,
         SourceExecutionContext executionContext,
         TArguments parameters)
+        => Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext.EndWorkToken), executionContext.EndWorkToken);
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(string name, SourceExecutionContext executionContext, TArguments parameters)
+        where TArguments : struct, ISourceArguments
     {
         executionContext.SourceRuntimeSettings.TryGetValue("OLLAMA_BASE_URL", out var ollamaBaseUrl);
 
         ollamaBaseUrl ??= OllamaApi.DefaultAddress;
+        if (!Uri.TryCreate(ollamaBaseUrl, UriKind.Absolute, out var endpoint) || endpoint.Scheme is not ("http" or "https"))
+            throw Reports.Configuration("OLLAMA_BASE_URL");
 
         return EnsureSourceType<T, OllamaEntity>(
             name,
             new OllamaSingleRowSource(executionContext, new OllamaRequestInfo
             {
                 Model = parameters.Count > 0
-                    ? parameters.GetValue<string>(0) ?? throw new Exception("Model name cannot be null.")
-                    : throw new Exception("Model name is required."),
+                    ? parameters.GetValue<string>(0) ?? throw Reports.Failure(Musoq.Schema.Diagnostics.DataSourceFailureKind.InvalidInput)
+                    : throw Reports.Failure(Musoq.Schema.Diagnostics.DataSourceFailureKind.InvalidInput),
                 Temperature = parameters.Count > 1 ? (float)parameters.GetValue<decimal>(1) : 0,
                 OllamaBaseUrl = ollamaBaseUrl
             }, _serviceProvider.GetRequiredService<IHttpClientFactory>()));

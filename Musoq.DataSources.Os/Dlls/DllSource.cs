@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -16,7 +17,8 @@ internal class DllSource(string path, bool useSubDirectories, SourceExecutionCon
         {
             asm = Assembly.LoadFrom(file.FullName);
         }
-        catch
+        catch (Exception error) when (OsSchema.Reports.Warn(ExecutionContext, error,
+                   "The unloadable assembly was skipped.", ExecutionContext.EndWorkToken))
         {
             asm = null;
         }

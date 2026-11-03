@@ -139,7 +139,9 @@ public class BlameTests
             _ = table.Count;
         });
 
-        Assert.IsInstanceOfType<ArgumentException>(exception.GetBaseException());
+        Assert.AreEqual("GIT.InvalidRevision", exception.Envelope!.Arguments["providerCode"]);
+        Assert.AreEqual("revision", exception.Envelope.Arguments["argumentName"]);
+        Assert.AreEqual("2", exception.Envelope.Arguments["argumentIndex"]);
     }
 
     [TestMethod]

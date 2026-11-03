@@ -50,4 +50,8 @@
     <ItemGroup>
         <Compile Include="..\Shared\ProviderRegex.cs" Link="Shared\ProviderRegex.cs" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\Shared\ProviderDiagnostics.cs" Link="Shared\ProviderDiagnostics.cs" />
+        <Compile Include="..\Shared\ProviderRowSource.cs" Link="Shared\ProviderRowSource.cs" />
+    </ItemGroup>
 </Project>

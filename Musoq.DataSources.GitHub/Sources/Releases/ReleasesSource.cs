@@ -39,7 +39,7 @@ internal class ReleasesSource(IGitHubApi api, SourceExecutionContext executionCo
             if (plan.AcceptedTake == 0) return;
             while (!linked.IsCancellationRequested)
             {
-                var releases = boundApi.GetReleasesAsync(owner, repo, perPage, page).Result;
+                var releases = boundApi.GetReleasesAsync(owner, repo, perPage, page).GetAwaiter().GetResult();
 
                 if (PatternPage.RawCount(releases) == 0)
                     break;

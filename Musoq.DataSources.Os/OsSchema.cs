@@ -20,6 +20,7 @@ using Musoq.Schema.Reflection;
 namespace Musoq.DataSources.Os;
 
 /// <description>
+///     Recognized datasource failures provide structured errors with suggested fixes; supported fallbacks report non-throwing warnings.
 ///     Filesystem path arguments reject control characters and characters invalid on the current operating system.
 ///     Provides schema to work with operating system abstractions
 /// </description>
@@ -29,6 +30,8 @@ namespace Musoq.DataSources.Os;
 /// <project-url>https://github.com/Puchaczov/Musoq.DataSources</project-url>
 public class OsSchema : SchemaBase
 {
+    internal static readonly ProviderDiagnostics Reports = new("OS", fileSystem: true, classify: OsDiagnostics.Map);
+
     private static readonly FileSystemPathValidator PathValidator = new(
         new Dictionary<string, FileSystemPathValidator.Argument[]>(StringComparer.OrdinalIgnoreCase)
         {
@@ -40,7 +43,7 @@ public class OsSchema : SchemaBase
             ["dirscompare"] = [new(0, "sourceDirectory"), new(1, "destinationDirectory")],
             ["pathinfo"] = [new(0, "path")],
             ["metadata"] = [new(0, "directoryOrFile", 1), new(0, "pathDirectoryOrFile", 2), new(0, "directory", 3)]
-        });
+        }, provider: "OS");
 
     private const string SchemaName = "os";
     private const string DirectoriesTable = "directories";
@@ -416,6 +419,15 @@ public class OsSchema : SchemaBase
         params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return GetTableByNameCore(name, metadataContext, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, metadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private ISchemaTable GetTableByNameCore(
+        string name,
+        SourceMetadataContext metadataContext,
+        params object[] parameters)
+    {
         switch (name.ToLowerInvariant())
         {
             case FileTable:
@@ -471,6 +483,15 @@ public class OsSchema : SchemaBase
         TArguments parameters)
     {
         PathValidator.Validate(name, parameters);
+        return Reports.Run(() => Reports.Wrap(GetRowSourceCore<T, TArguments>(name, executionContext, parameters), executionContext?.EndWorkToken ?? default), executionContext?.EndWorkToken ?? default);
+    }
+
+    private RowSource<T> GetRowSourceCore<T, TArguments>(
+        string name,
+        SourceExecutionContext executionContext,
+        TArguments parameters)
+        where TArguments : struct, ISourceArguments
+    {
         return PatternSourcePlan.Read(executionContext, inner => ReadWithoutPatterns<T, TArguments>(name, inner, parameters), OsNativePatterns.Columns(name));
     }
 
@@ -608,6 +629,16 @@ public class OsSchema : SchemaBase
         SourceDescribeContext context,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, context?.MetadataContext?.EndWorkToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourceDescriptor DescribeSourceCore(
+        string name,
+        SourceDescribeContext context,
+        params object[] parameters)
+    {
         var table = GetTableByName(name, context.MetadataContext, parameters);
 
         return new SourceDescriptor
@@ -626,12 +657,28 @@ public class OsSchema : SchemaBase
         SourceRuntimeSettingsDescribeContext context,
         params object[] parameters)
     {
+        PathValidator.Validate(name, parameters);
+        try { return DescribeSourceRuntimeSettingsCore(name, context, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, default, out var failure)) { throw failure; }
+    }
+
+    private IReadOnlyList<SourceRuntimeSettingRequirement> DescribeSourceRuntimeSettingsCore(
+        string name,
+        SourceRuntimeSettingsDescribeContext context,
+        params object[] parameters)
+    {
         return [];
     }
 
     public override SourcePlanResult TryPlanSource(string name, SourcePlanRequest request, params object[] parameters)
     {
         PathValidator.Validate(name, parameters);
+        try { return TryPlanSourceCore(name, request, parameters); }
+        catch (Exception error) when (Reports.TryMap(error, request?.CancellationToken ?? default, out var failure)) { throw failure; }
+    }
+
+    private SourcePlanResult TryPlanSourceCore(string name, SourcePlanRequest request, params object[] parameters)
+    {
         return PatternSourcePlan.Plan(request, OsPatternColumns.Get(name), inner => PlanWithoutPatterns(name, inner, parameters));
     }
 

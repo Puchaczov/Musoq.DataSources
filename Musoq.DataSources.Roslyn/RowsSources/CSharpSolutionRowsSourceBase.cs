@@ -8,4 +8,5 @@ internal abstract class CSharpSolutionRowsSourceBase(SourceExecutionContext exec
     : AsyncRowsSourceBase<SolutionEntity>(executionContext.EndWorkToken)
 {
     protected readonly SourceExecutionContext ExecutionContext = executionContext;
+    protected readonly RoslynReporting ReportingContext = new(executionContext.WarningReporter, executionContext.EndWorkToken);
 }

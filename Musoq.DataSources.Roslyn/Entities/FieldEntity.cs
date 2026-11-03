@@ -13,6 +13,8 @@ namespace Musoq.DataSources.Roslyn.Entities;
 /// </summary>
 public class FieldEntity
 {
+    internal RoslynReporting? Reporting { get; set; }
+
     private readonly IFieldSymbol _fieldSymbol;
     private readonly Solution? _solution;
     private readonly VariableDeclaratorSyntax? _syntax;
@@ -121,7 +123,7 @@ public class FieldEntity
             var references = RoslynAsyncHelper.RunSyncWithTimeout(
                 ct => SymbolFinder.FindReferencesAsync(_fieldSymbol, _solution, ct)!,
                 RoslynAsyncHelper.DefaultReferenceTimeout,
-                null);
+                null, Reporting);
 
             return references?.Sum(r => r.Locations.Count());
         }
