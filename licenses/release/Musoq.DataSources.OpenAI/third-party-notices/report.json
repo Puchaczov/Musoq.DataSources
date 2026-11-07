@@ -76,7 +76,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.OpenAI",
-    "PackageVersion": "6.0.9-alpha.1",
+    "PackageVersion": "6.0.10-alpha.1",
     "License": "MIT"
   }
 ]

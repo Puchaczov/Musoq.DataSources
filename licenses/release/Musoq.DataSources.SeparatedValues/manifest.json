@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.SeparatedValues",
   "slug": "separatedvalues",
-  "version": "11.0.6-alpha.1",
+  "version": "11.0.7-alpha.1",
   "projectPath": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
   "entryProject": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
   "ownPackageId": "Musoq.DataSources.SeparatedValues",
@@ -57,11 +57,11 @@
     },
     {
       "path": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
-      "sha256": "9f680546494af9352380c1d19cd487aeac4f731d568a770a39faf076827856ef"
+      "sha256": "062e26e1574f2274429f2b1b226a9ecbd2497b9066b076f943a9154fde951762"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "d17561996c994ddd8778386137c9a1298371458485f55bc6ee2667a671a9aed5"
+      "sha256": "61befda512177ba0570eae09ac827165d7dcd3df584d3cba4e437df1dbd3c03c"
     }
   ],
   "packageGraph": [
@@ -180,7 +180,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1327,
-      "sha256": "a5ac7c8b903e4e5e505753faa9078a76d5652ef666244d6b98e2694d53d6c7f3"
+      "sha256": "bbd5e2428f0b5f9348462b47b9a3ff5a4e4c34650233634379f0922acf926f82"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

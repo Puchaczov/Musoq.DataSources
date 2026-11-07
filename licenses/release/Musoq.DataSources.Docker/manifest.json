@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Docker",
   "slug": "docker",
-  "version": "5.0.9-alpha.1",
+  "version": "5.0.10-alpha.1",
   "projectPath": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
   "entryProject": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
   "ownPackageId": "Musoq.DataSources.Docker",
@@ -57,11 +57,11 @@
     },
     {
       "path": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
-      "sha256": "6db102ec63db0359e337719fde00db085945f24c79fa4d3608e256ba41b75a13"
+      "sha256": "093a1546b39bb2df229306952bf543233b9bcd6cb33b67f8367205162ac7473e"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "d17561996c994ddd8778386137c9a1298371458485f55bc6ee2667a671a9aed5"
+      "sha256": "61befda512177ba0570eae09ac827165d7dcd3df584d3cba4e437df1dbd3c03c"
     }
   ],
   "packageGraph": [
@@ -199,8 +199,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1513,
-      "sha256": "f00e3a63c41297f8a6dc20df0c2d51af576cf04b7380f6c5f4e212aeca122d40"
+      "size": 1514,
+      "sha256": "716b14dbc5fe22ea983b9c9e7793ed9f00c49aef3b88e4f490057eef94e64549"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

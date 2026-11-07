@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Archives",
   "slug": "archives",
-  "version": "6.0.10-alpha.1",
+  "version": "6.0.11-alpha.1",
   "projectPath": "Musoq.DataSources.Archives/Musoq.DataSources.Archives.csproj",
   "entryProject": "Musoq.DataSources.Archives/Musoq.DataSources.Archives.csproj",
   "ownPackageId": "Musoq.DataSources.Archives",
@@ -57,11 +57,11 @@
     },
     {
       "path": "Musoq.DataSources.Archives/Musoq.DataSources.Archives.csproj",
-      "sha256": "4e1af2afd5bf4250c910d48b1bde392b51a71048738388a716096de00c2e39f8"
+      "sha256": "3f4f45807dc4845affef43f83ff3a47f6dd8b1c6a366d5d25cab39b43a4078e4"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "d17561996c994ddd8778386137c9a1298371458485f55bc6ee2667a671a9aed5"
+      "sha256": "61befda512177ba0570eae09ac827165d7dcd3df584d3cba4e437df1dbd3c03c"
     }
   ],
   "packageGraph": [
@@ -185,7 +185,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1416,
-      "sha256": "7c9d3a9a0cf74a38c9b5126c801ef45e0a5db937001b30ee95ad8e2a5693a2d2"
+      "sha256": "f28285c99c658c9b33cfd4c50da1d928f4bf263722e4d70c3faf46c640a597ea"
     },
     {
       "path": "third-party-notices/SharpCompress/license.txt",

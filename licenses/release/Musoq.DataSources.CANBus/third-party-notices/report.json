@@ -116,7 +116,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.CANBus",
-    "PackageVersion": "4.0.9-alpha.1",
+    "PackageVersion": "4.0.10-alpha.1",
     "License": "MIT"
   }
 ]

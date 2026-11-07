@@ -71,7 +71,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.Jira",
-    "PackageVersion": "2.0.9-alpha.1",
+    "PackageVersion": "2.0.10-alpha.1",
     "License": "MIT"
   }
 ]

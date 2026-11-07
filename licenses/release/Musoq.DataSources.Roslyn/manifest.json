@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Roslyn",
   "slug": "roslyn",
-  "version": "3.0.10-alpha.1",
+  "version": "3.0.11-alpha.1",
   "projectPath": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
   "entryProject": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
   "ownPackageId": "Musoq.DataSources.Roslyn",
@@ -57,15 +57,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "473e7645f4e5115cd0f2d37f942fbadf6c59f30a241787dec3e192399c6fd858"
+      "sha256": "4a6ecb366f69b69eacb4629d7cdae5edc9ec71232379a02df647f58e96d6c6db"
     },
     {
       "path": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
-      "sha256": "16cc1ac1049d16d6056592dfaccfcc8dffa0557bc115772b8a2fc2d657e34cfc"
+      "sha256": "23207ba5ab82a8d4ea0a82add0d306e966c1c6e10b9d82a94e0e267887ec108e"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "d17561996c994ddd8778386137c9a1298371458485f55bc6ee2667a671a9aed5"
+      "sha256": "61befda512177ba0570eae09ac827165d7dcd3df584d3cba4e437df1dbd3c03c"
     }
   ],
   "packageGraph": [
@@ -434,7 +434,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 4556,
-      "sha256": "d6593b4eb2a8f227a3d5477e7d72cee7ea2d95a645b2d9afba604ee61b77e634"
+      "sha256": "a4bdf0b829af369bf625bf03fb188a38d3b8b11ec17ddc36a15a449d48bcf03a"
     },
     {
       "path": "third-party-notices/System.Composition.AttributedModel/license.txt",

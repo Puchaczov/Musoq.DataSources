@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Ollama",
   "slug": "ollama",
-  "version": "5.0.9-alpha.1",
+  "version": "5.0.10-alpha.1",
   "projectPath": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
   "entryProject": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
   "ownPackageId": "Musoq.DataSources.Ollama",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
-      "sha256": "4da53a3872fcebe0b8ec35137bdc6922afa9c6362afe56dbe1dd3374d60d7b07"
+      "sha256": "fc929ebf050cc796c94d7bec0e9773777043d9b55f7059ef7fb58bce7b1dc097"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "d17561996c994ddd8778386137c9a1298371458485f55bc6ee2667a671a9aed5"
+      "sha256": "61befda512177ba0570eae09ac827165d7dcd3df584d3cba4e437df1dbd3c03c"
     }
   ],
   "packageGraph": [
@@ -358,8 +358,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 3349,
-      "sha256": "445ceda2826a57105ee187988ca68ead4d85cf78b1afa9630a0178348f73393b"
+      "size": 3350,
+      "sha256": "bcc1fc9d836bb65f0224b9d8f38958904d0cd261e37e51ce1c1962acfd55a935"
     },
     {
       "path": "third-party-notices/SharpToken/license.txt",

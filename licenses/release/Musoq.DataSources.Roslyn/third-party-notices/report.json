@@ -196,7 +196,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.Roslyn",
-    "PackageVersion": "3.0.10-alpha.1",
+    "PackageVersion": "3.0.11-alpha.1",
     "License": "MIT"
   }
 ]
