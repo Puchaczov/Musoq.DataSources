@@ -87,7 +87,7 @@ function Assert-DatasourceSnapshotStage {
 }
 
 $root = [IO.Path]::GetFullPath($RepositoryRoot)
-$refreshRoot = [IO.Path]::GetFullPath((Join-Path $root '.builds/license-refresh'))
+$refreshRoot = [IO.Path]::GetFullPath((Join-Path $root '.artifacts/license-refresh'))
 $snapshotRoot = [IO.Path]::GetFullPath((Join-Path $root 'licenses/release'))
 Assert-DatasourcePathUnderRoot -Root $root -Path $refreshRoot -Description 'License refresh working root'
 Assert-DatasourcePathUnderRoot -Root $root -Path $snapshotRoot -Description 'License snapshot root'
@@ -110,7 +110,7 @@ if ($LASTEXITCODE -ne 0 -or $licenseVersionOutput -notmatch "(^|[^0-9])$([regex]
     throw "The refresh process did not provision nuget-license $toolVersion. Found: $($licenseVersionOutput.Trim())"
 }
 
-$gathererRelativePath = 'tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe'
+$gathererRelativePath = 'tools/dotnet/LicenseGatherer/Musoq.LicensesGatherer.exe'
 $gathererPath = Join-Path $root $gathererRelativePath
 if (-not [IO.File]::Exists($gathererPath)) { throw "Bundled license gatherer was not found: $gathererPath" }
 $gathererHash = (Get-FileHash -LiteralPath $gathererPath -Algorithm SHA256).Hash.ToLowerInvariant()

@@ -63,7 +63,7 @@ catch { throw "Pinned tool manifest is invalid JSON: $($_.Exception.Message)" }
 $expectedToolVersion = [string]$toolManifest.tools.'nuget-license'.version
 if ([string]::IsNullOrWhiteSpace($expectedToolVersion)) { throw 'Pinned nuget-license version is missing.' }
 
-$gathererRelativePath = 'tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe'
+$gathererRelativePath = 'tools/dotnet/LicenseGatherer/Musoq.LicensesGatherer.exe'
 $gathererPath = Join-Path $root $gathererRelativePath
 if (-not [IO.File]::Exists($gathererPath)) { throw "Bundled license gatherer was not found: $gathererPath" }
 $expectedGathererHash = (Get-FileHash -LiteralPath $gathererPath -Algorithm SHA256).Hash.ToLowerInvariant()

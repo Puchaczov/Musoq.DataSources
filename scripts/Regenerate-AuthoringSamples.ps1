@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$OutputDirectory = (Join-Path $PSScriptRoot '../artifacts/generated-code-samples'))
+param([string]$OutputDirectory = (Join-Path $PSScriptRoot '../.artifacts/generated-code-samples'))
 $ErrorActionPreference = 'Stop'
 $previous = $env:MUSOQ_AUTHORING_SAMPLES
 try {

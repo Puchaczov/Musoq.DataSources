@@ -115,9 +115,9 @@ jobs:
             $pending += $release
           }
 
-          New-Item -ItemType Directory -Force -Path artifacts/release | Out-Null
-          ConvertTo-Json -InputObject $pending -Depth 10 | Set-Content -Path artifacts/release/release-batch.json -Encoding UTF8
-          ConvertTo-Json -InputObject $skipped -Depth 10 | Set-Content -Path artifacts/release/skipped-release-batch.json -Encoding UTF8
+          New-Item -ItemType Directory -Force -Path .artifacts/release | Out-Null
+          ConvertTo-Json -InputObject $pending -Depth 10 | Set-Content -Path .artifacts/release/release-batch.json -Encoding UTF8
+          ConvertTo-Json -InputObject $skipped -Depth 10 | Set-Content -Path .artifacts/release/skipped-release-batch.json -Encoding UTF8
           $requiresNuGet = @($pending | Where-Object { $_.publishToNuGet -eq $true }).Count -gt 0
 
           Write-Host 'Selected releases:'
@@ -161,10 +161,10 @@ jobs:
         env:
           BATCH_FAST_TRACK: ${{ inputs.fast_track }}
         run: |
-          $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
+          $batch = @(Get-Content .artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
           foreach ($release in $batch) {
             $tag = [string]$release.tag
-            $artifactDirectory = Join-Path 'artifacts/release' $tag
+            $artifactDirectory = Join-Path '.artifacts/release' $tag
             try {
               ./scripts/release/Pack-Release.ps1 -Tag $tag -OutputPath $artifactDirectory
               if ($env:BATCH_FAST_TRACK -ne 'true') {
@@ -183,10 +183,10 @@ jobs:
         if: inputs.fast_track != 'true'
         shell: pwsh
         run: |
-          $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
+          $batch = @(Get-Content .artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
           foreach ($release in $batch) {
             $tag = [string]$release.tag
-            $artifactDirectory = Join-Path 'artifacts/release' ([string]$release.tag)
+            $artifactDirectory = Join-Path '.artifacts/release' ([string]$release.tag)
             try {
               ./scripts/release/Assert-ReleaseLicenseArtifacts.ps1 `
                 -PluginName ([string]$release.packageId) `
@@ -203,7 +203,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: datasource-batch-release-artifacts
-          path: artifacts/release/**
+          path: .artifacts/release/**
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
 
@@ -237,14 +238,14 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: datasource-batch-release-artifacts
-          path: artifacts/release
+          path: .artifacts/release
 
       - name: Validate existing release tags
         shell: pwsh
         env:
           TARGET_SHA: ${{ github.sha }}
         run: |
-          $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
+          $batch = @(Get-Content .artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
           foreach ($release in $batch) {
             $tag = [string]$release.tag
             $remoteTag = git ls-remote --tags origin "refs/tags/$tag"
@@ -303,13 +304,13 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path published | Out-Null
 
-          $batch = @(Get-Content artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
+          $batch = @(Get-Content .artifacts/release/release-batch.json -Raw | ConvertFrom-Json)
           $publishedPlugins = @()
 
           foreach ($release in $batch) {
             $tag = [string]$release.tag
             $metadataPath = Join-Path 'published' "$tag.json"
-            $artifactDirectory = Join-Path 'artifacts/release' $tag
+            $artifactDirectory = Join-Path '.artifacts/release' $tag
 
             $publishParameters = @{
               Tag = $tag

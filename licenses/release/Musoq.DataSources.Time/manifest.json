@@ -11,8 +11,8 @@
     "version": "4.0.16"
   },
   "licenseGatherer": {
-    "path": "tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe",
-    "sha256": "36c49998b295dda2ce8117c380945499522d13cadc6088a802215deb4f65c157"
+    "path": "tools/dotnet/LicenseGatherer/Musoq.LicensesGatherer.exe",
+    "sha256": "24de0776f2aa761bb61928bc6ce164db3262ab0861879bc4962b391243d948b7"
   },
   "dependencyInputs": [
     {

@@ -71,7 +71,7 @@ public static class PatternContractVerifier
         while (repository is not null && !System.IO.File.Exists(System.IO.Path.Combine(repository.FullName, "Directory.Build.props"))) repository = repository.Parent;
         if (repository is not null)
         {
-            var directory = System.IO.Path.Combine(repository.FullName, "artifacts", "pattern-pushdown", "coverage");
+            var directory = System.IO.Path.Combine(repository.FullName, ".artifacts", "pattern-pushdown", "coverage");
             System.IO.Directory.CreateDirectory(directory);
             System.IO.File.WriteAllText(System.IO.Path.Combine(directory, schema.Name.ToLowerInvariant() + "." + source + ".json"),
                 System.Text.Json.JsonSerializer.Serialize(new { schema = schema.Name, source, rowType = typeof(TRow).FullName, columns = expectedColumns, excludedColumns, patternsPerColumn = CasesPerColumn, fixtureRows = baseline.Length }));

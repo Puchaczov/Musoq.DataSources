@@ -74,7 +74,7 @@ The refresh command provisions the exact `nuget-license` 4.0.16 tool and uses
 the bundled gatherer. It stages and validates output before replacing the
 committed snapshot. `Assert-LicenseSnapshots.ps1` rejects missing, stale,
 abbreviated, malformed, or tampered data. Refresh caches and working files live
-under `.builds/license-refresh/`, `.licenses-cache/`, and ignored
+under `.artifacts/license-refresh/`, `.licenses-cache/`, and ignored
 `LinksCache.json`; none belong in source control. Archive validation also
 checks every four-RID package against the snapshot's file sizes and SHA-256
 hashes.
@@ -219,8 +219,8 @@ dotnet restore --nologo
 dotnet build -c Release --no-restore
 dotnet test -c Release --no-build
 .\scripts\release\Validate-Release.ps1 -Tag 9.0.0-alpha.1-Musoq.DataSources.Json
-.\scripts\release\Pack-Release.ps1 -Tag 9.0.0-alpha.1-Musoq.DataSources.Json -OutputPath artifacts/release
-.\scripts\release\Test-ReleaseSmoke.ps1 -Tag 9.0.0-alpha.1-Musoq.DataSources.Json -ArtifactDirectory artifacts/release
+.\scripts\release\Pack-Release.ps1 -Tag 9.0.0-alpha.1-Musoq.DataSources.Json -OutputPath .artifacts/release
+.\scripts\release\Test-ReleaseSmoke.ps1 -Tag 9.0.0-alpha.1-Musoq.DataSources.Json -ArtifactDirectory .artifacts/release
 ```
 
 Then inspect one generated zip:

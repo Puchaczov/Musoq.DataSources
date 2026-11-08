@@ -57,7 +57,7 @@ public class PluginPackageSmokeTests
     public void PluginPackages_WhenArtifactsExist_ShouldMatchRuntimeV2PackageContract()
     {
         var artifactsDirectory = Environment.GetEnvironmentVariable("MUSOQ_PLUGIN_ARTIFACTS_DIR")
-                                 ?? Path.Combine(FindSolutionRoot(), "artifacts");
+                                 ?? Path.Combine(FindSolutionRoot(), ".artifacts");
 
         if (!Directory.Exists(artifactsDirectory))
             Assert.Inconclusive($"Plugin artifact directory does not exist: {artifactsDirectory}");

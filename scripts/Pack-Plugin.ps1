@@ -1,6 +1,6 @@
 param(
     [string]$PluginName = "All",
-    [string]$OutputDirectory = "$PSScriptRoot/../artifacts"
+    [string]$OutputDirectory = "$PSScriptRoot/../.artifacts"
 )
 
 $ErrorActionPreference = "Stop"

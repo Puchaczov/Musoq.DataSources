@@ -4,7 +4,7 @@ param(
     [string]$Tag,
     [Parameter(Mandatory=$true)]
     [string]$Repository,
-    [string]$ArtifactDirectory = "artifacts/release",
+    [string]$ArtifactDirectory = ".artifacts/release",
     [string]$NuGetApiKey = "",
     [string]$NuGetSource = "https://api.nuget.org/v3/index.json",
     [string]$OutputMetadataPath = "",

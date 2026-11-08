@@ -33,16 +33,16 @@ dependency graph, and snapshot hashes are validated together:
 
 The wrapper provisions `nuget-license` 4.0.16 from the repository tool
 manifest and invokes only the bundled gatherer. It stores working data under
-`.builds/license-refresh/`; `.licenses-cache/` and `LinksCache.json` are
+`.artifacts/license-refresh/`; `.licenses-cache/` and `LinksCache.json` are
 transient and must not be committed.
 
 For gatherer development or troubleshooting, the executable can also be run
 directly:
 
-Run the tool using `dotnet`:
+Run the bundled executable:
 
 ```bash
-dotnet Musoq.Cloud.LicensesGatherer.dll retrieve \
+./Musoq.LicensesGatherer.exe retrieve \
     --solution-or-cs-project-file-path "<path-to-csproj>" \
     --own-package-file-path "<path-to-own-package.json>" \
     --licenses-folder "<output-folder>" \

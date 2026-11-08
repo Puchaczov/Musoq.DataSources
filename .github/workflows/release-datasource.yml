@@ -109,14 +109,14 @@ jobs:
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
         run: |
-          ./scripts/release/Pack-Release.ps1 -Tag $env:RELEASE_TAG -OutputPath artifacts/release
+          ./scripts/release/Pack-Release.ps1 -Tag $env:RELEASE_TAG -OutputPath .artifacts/release
 
       - name: Smoke test four-RID release artifacts
         shell: pwsh
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
         run: |
-          ./scripts/release/Test-ReleaseSmoke.ps1 -Tag $env:RELEASE_TAG -ArtifactDirectory artifacts/release
+          ./scripts/release/Test-ReleaseSmoke.ps1 -Tag $env:RELEASE_TAG -ArtifactDirectory .artifacts/release
 
       - name: Validate embedded license snapshot
         shell: pwsh
@@ -125,7 +125,7 @@ jobs:
         run: |
           ./scripts/release/Assert-ReleaseLicenseArtifacts.ps1 `
             -PluginName $env:RELEASE_PACKAGE_ID `
-            -AssetsDirectory artifacts/release/plugins `
+            -AssetsDirectory .artifacts/release/plugins `
             -ExpectedArchiveCount 4
 
       # actions/upload-artifact@v4.6.2
@@ -133,7 +133,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: datasource-release-artifacts
-          path: artifacts/release/**
+          path: .artifacts/release/**
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
 
@@ -166,7 +167,7 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: datasource-release-artifacts
-          path: artifacts/release
+          path: .artifacts/release
 
       - name: Select NuGet credentials
         if: needs.validate-pack.outputs.publish_to_nuget == 'true'
@@ -206,7 +207,7 @@ jobs:
           ./scripts/release/Publish-Release.ps1 `
             -Tag $env:RELEASE_TAG `
             -Repository "${{ github.repository }}" `
-            -ArtifactDirectory artifacts/release `
+            -ArtifactDirectory .artifacts/release `
             -OutputMetadataPath published-plugins.json
 
       - name: Update plugin registry

@@ -27,13 +27,13 @@ function Assert-ContractThrows {
 $root = [IO.Path]::GetFullPath($RepositoryRoot)
 $definition = @(Get-DatasourcePackageDefinitions -RepositoryRoot $root | Where-Object packageId -eq 'Musoq.DataSources.Json')[0]
 if ($null -eq $definition) { throw 'The synthetic snapshot contract requires Musoq.DataSources.Json in packages.json.' }
-$workingRoot = Join-Path $root '.builds/license-snapshot-contracts'
+$workingRoot = Join-Path $root '.artifacts/license-snapshot-contracts'
 $snapshotRoot = Join-Path $workingRoot ([guid]::NewGuid().ToString('N'))
 $nugetConfigRoot = Join-Path $workingRoot ('nuget-config-' + [guid]::NewGuid().ToString('N'))
 $snapshotDirectory = Join-Path $snapshotRoot $definition.packageId
 $noticeDirectory = Join-Path $snapshotDirectory 'third-party-notices/Synthetic.Dependency'
 $assertScript = Join-Path $PSScriptRoot 'Assert-LicenseSnapshots.ps1'
-$gathererPath = Join-Path $root 'tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe'
+$gathererPath = Join-Path $root 'tools/dotnet/LicenseGatherer/Musoq.LicensesGatherer.exe'
 $gathererHash = (Get-FileHash -LiteralPath $gathererPath -Algorithm SHA256).Hash.ToLowerInvariant()
 
 function Write-ContractManifest {
@@ -47,7 +47,7 @@ function Write-ContractManifest {
         entryProject = $definition.projectPath
         ownPackageId = $definition.packageId
         licenseTool = [PSCustomObject][ordered]@{ package = 'nuget-license'; version = '4.0.16' }
-        licenseGatherer = [PSCustomObject][ordered]@{ path = 'tools/dotnet/LicenseGatherer/Musoq.Cloud.LicensesGatherer.exe'; sha256 = $gathererHash }
+        licenseGatherer = [PSCustomObject][ordered]@{ path = 'tools/dotnet/LicenseGatherer/Musoq.LicensesGatherer.exe'; sha256 = $gathererHash }
         dependencyInputs = @(Get-DatasourceDependencyInputManifest `
             -RepositoryRoot $root `
             -EntryProject $definition.projectPath `

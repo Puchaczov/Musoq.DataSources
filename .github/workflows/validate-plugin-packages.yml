@@ -47,13 +47,13 @@ jobs:
           ./scripts/release/Assert-LicenseSnapshots.ps1 -PluginName $pluginName -ValidatePackageGraph
           ./scripts/release/Assert-ReleaseLicenseArtifacts.ps1 `
             -PluginName $pluginName `
-            -AssetsDirectory (Resolve-Path artifacts).Path `
+            -AssetsDirectory (Resolve-Path .artifacts).Path `
             -ExpectedArchiveCount 4
 
       - name: Smoke test plugin packages
         shell: pwsh
         run: |
-          $env:MUSOQ_PLUGIN_ARTIFACTS_DIR = (Resolve-Path artifacts).Path
+          $env:MUSOQ_PLUGIN_ARTIFACTS_DIR = (Resolve-Path .artifacts).Path
           dotnet test Musoq.DataSources.RepresentativeTests/Musoq.DataSources.RepresentativeTests.csproj `
             --configuration Release `
             --filter "FullyQualifiedName~PluginPackageSmokeTests" `
@@ -64,6 +64,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: plugin-package-validation-artifacts
-          path: artifacts/*.zip
+          path: .artifacts/*.zip
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 1

@@ -315,7 +315,7 @@ layout.
 
 Normal `Pack-Plugin.ps1`, `Pack-Release.ps1`, and release workflows validate and
 copy these files offline. They do not invoke `nuget-license`, the bundled
-`Musoq.Cloud.LicensesGatherer`, license URL resolution, `LinksCache.json`, or a
+`Musoq.LicensesGatherer`, license URL resolution, `LinksCache.json`, or a
 license download cache. NuGet restore remains a normal build prerequisite and
 may still require package feeds; license retrieval itself is not part of that
 path.
@@ -337,7 +337,7 @@ inputs to the snapshot manifest.
 
 Refresh working data is transient and must not be committed:
 
-- `.builds/license-refresh/` contains per-refresh working directories and the
+- `.artifacts/license-refresh/` contains per-refresh working directories and the
   runner-local tooling installation.
 - `.licenses-cache/` and `LinksCache.json` contain downloaded text or resolved
   URL caches when a refresh uses them.

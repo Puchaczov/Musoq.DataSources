@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$Tag,
-    [string]$OutputPath = "artifacts/release"
+    [string]$OutputPath = ".artifacts/release"
 )
 
 . (Join-Path $PSScriptRoot "Release.Common.ps1")
