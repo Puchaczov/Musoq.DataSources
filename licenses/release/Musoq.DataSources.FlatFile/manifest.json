@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.FlatFile",
   "slug": "flatfile",
-  "version": "8.0.10-alpha.1",
+  "version": "8.0.10-beta.1",
   "projectPath": "Musoq.DataSources.FlatFile/Musoq.DataSources.FlatFile.csproj",
   "entryProject": "Musoq.DataSources.FlatFile/Musoq.DataSources.FlatFile.csproj",
   "ownPackageId": "Musoq.DataSources.FlatFile",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "946685b9d1905449f4615dea961d5b58946131d089098f387db41a2b91d100e3"
+      "sha256": "b89775bda438d5ad900d2a34c2c89093c43ec06d0808a72a7a2b4936b4a0c599"
     },
     {
       "path": "global.json",
@@ -57,11 +57,11 @@
     },
     {
       "path": "Musoq.DataSources.FlatFile/Musoq.DataSources.FlatFile.csproj",
-      "sha256": "2dbf147a1e07be206eb199a795310eb75b0ce48739ed3a36b7c6d0f6c6306047"
+      "sha256": "1b83b048df251e342015ea1cb13af0a26f6634f9596bb8c77c0bab01bbdc94c3"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "61befda512177ba0570eae09ac827165d7dcd3df584d3cba4e437df1dbd3c03c"
+      "sha256": "7ad99dc555a19c94b64eafc4a433899ef63ea775cd77f11e3128f93a88200acd"
     }
   ],
   "packageGraph": [
@@ -102,17 +102,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": true
     },
     {
@@ -179,8 +179,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1320,
-      "sha256": "3504d3915fa26041ae2c4c299150a2bd0e545461c7d088d727d6002fd7f00f7c"
+      "size": 1316,
+      "sha256": "bde9ae61b1e79218b181a827e927aee86e13dac7c4c87992279011e770790aad"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

@@ -317,7 +317,7 @@ The filtered result has two rows: Id long 2/3, Amount decimal? null/2.5, Metadat
 
 ## Current runtime dependency baseline
 
-The datasource release targets Musoq Core 17.0.16-alpha.1. Upgrade Converter,
+The datasource release targets Musoq Core 17.0.16-beta.1. Upgrade Converter,
 Evaluator, Parser, Plugins and Schema together. The integration notes below
 describe behavior introduced in earlier compatible Core releases.
 

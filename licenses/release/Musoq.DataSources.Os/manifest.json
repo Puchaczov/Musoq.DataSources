@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Os",
   "slug": "os",
-  "version": "9.0.10-alpha.1",
+  "version": "9.0.10-beta.1",
   "projectPath": "Musoq.DataSources.Os/Musoq.DataSources.Os.csproj",
   "entryProject": "Musoq.DataSources.Os/Musoq.DataSources.Os.csproj",
   "ownPackageId": "Musoq.DataSources.Os",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "946685b9d1905449f4615dea961d5b58946131d089098f387db41a2b91d100e3"
+      "sha256": "b89775bda438d5ad900d2a34c2c89093c43ec06d0808a72a7a2b4936b4a0c599"
     },
     {
       "path": "global.json",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Os/Musoq.DataSources.Os.csproj",
-      "sha256": "dade097f0d8e977b54532e3445a4b455107dde36e28db9d1b3574ca76f195eb6"
+      "sha256": "5eba69bed44126ce5685937675615b429aefd2f0293f76ce8a08cdf452174e78"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "61befda512177ba0570eae09ac827165d7dcd3df584d3cba4e437df1dbd3c03c"
+      "sha256": "7ad99dc555a19c94b64eafc4a433899ef63ea775cd77f11e3128f93a88200acd"
     }
   ],
   "packageGraph": [
@@ -111,17 +111,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": true
     },
     {
@@ -198,8 +198,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1516,
-      "sha256": "423b3c22b634ec311d0f30e72fb56d22c4601ac3ce1f11c30b939b9d62db7c77"
+      "size": 1512,
+      "sha256": "d51ece0b981e21f86c53c64df7d599594db770da4007b9af3e54bfb5ab3dc17d"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Jira",
   "slug": "jira",
-  "version": "2.0.10-alpha.1",
+  "version": "2.0.10-beta.1",
   "projectPath": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
   "entryProject": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
   "ownPackageId": "Musoq.DataSources.Jira",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "946685b9d1905449f4615dea961d5b58946131d089098f387db41a2b91d100e3"
+      "sha256": "b89775bda438d5ad900d2a34c2c89093c43ec06d0808a72a7a2b4936b4a0c599"
     },
     {
       "path": "global.json",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
-      "sha256": "ebf6622f2058235ff7ba7b314c55d9f25f26eee23fd8be34953f7886233a8454"
+      "sha256": "ad5ba44f5bf5e817d3fa7d9e31c3862f6b1af6d991ce6e6c37d8dd736cc0f2e9"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "61befda512177ba0570eae09ac827165d7dcd3df584d3cba4e437df1dbd3c03c"
+      "sha256": "7ad99dc555a19c94b64eafc4a433899ef63ea775cd77f11e3128f93a88200acd"
     }
   ],
   "packageGraph": [
@@ -111,17 +111,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.16-alpha.1",
+      "version": "17.0.16-beta.1",
       "direct": true
     },
     {
@@ -208,8 +208,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1620,
-      "sha256": "369b2448a47aa634c016f055904d203213a9df548ae2d87c236cb7c8a4cb34a9"
+      "size": 1616,
+      "sha256": "e1f48c198706f3875d4237dc87306ec4fe775eecd7900120826c1ca647f80e21"
     },
     {
       "path": "third-party-notices/RestSharp/license.txt",
