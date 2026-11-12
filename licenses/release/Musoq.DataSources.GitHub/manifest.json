@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.GitHub",
   "slug": "github",
-  "version": "2.0.10-beta.1",
+  "version": "2.0.10",
   "projectPath": "Musoq.DataSources.GitHub/Musoq.DataSources.GitHub.csproj",
   "entryProject": "Musoq.DataSources.GitHub/Musoq.DataSources.GitHub.csproj",
   "ownPackageId": "Musoq.DataSources.GitHub",
@@ -25,7 +25,11 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "b89775bda438d5ad900d2a34c2c89093c43ec06d0808a72a7a2b4936b4a0c599"
+      "sha256": "ba3a391e6d5f8b1fa15bcbd6084fc01653e5db2db85d08d69373baa3c618130a"
+    },
+    {
+      "path": "Directory.Build.targets",
+      "sha256": "01fd75a54d4021bb73bed81c0bac3a87066dd95325c1002136703c7fb30a2a79"
     },
     {
       "path": "global.json",
@@ -57,15 +61,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "4a6ecb366f69b69eacb4629d7cdae5edc9ec71232379a02df647f58e96d6c6db"
+      "sha256": "482c5c356f279a51d03bf1c78c24c4915fd3426c5414a7582e64b79c37751cb5"
     },
     {
       "path": "Musoq.DataSources.GitHub/Musoq.DataSources.GitHub.csproj",
-      "sha256": "7c4f4eea3a02f5df61b17e68bf6fcba2f9e4233b9d380784b02b1591e430d4ea"
+      "sha256": "cadd998e27b1033091b2f0dd2e4e6d743bd978ebdcb1f4d33199ddaad36475fd"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7ad99dc555a19c94b64eafc4a433899ef63ea775cd77f11e3128f93a88200acd"
+      "sha256": "ecf81adf7663394fab77f381ceeb5b3330d0a2fe815bb7233c355f3699fbf3eb"
     }
   ],
   "packageGraph": [
@@ -106,17 +110,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": true
     },
     {
@@ -193,8 +197,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1404,
-      "sha256": "d4db56b17c9c9aaffae6b4286e8d44f833ae9cf4bab48766449f43d434ca081e"
+      "size": 1376,
+      "sha256": "6c7072ffbedcb7c726d6833c56f6d0655459b6a5ecdb4bb34babe8a5e60cc878"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

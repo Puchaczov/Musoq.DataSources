@@ -21,4 +21,8 @@
     <ProjectReference Include="..\Musoq.DataSources.Os\Musoq.DataSources.Os.csproj" />
   </ItemGroup>
 
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
+    </ItemGroup>
 </Project>

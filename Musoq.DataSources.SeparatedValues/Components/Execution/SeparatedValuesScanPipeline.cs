@@ -90,6 +90,7 @@ internal sealed class SeparatedValuesScanPipeline : ISeparatedValuesQueryScanPip
                     "the accepted execution plan has no immutable physical-column layout");
             }
 
+            StructuredComputedLayout.Validate(shape, request.ExecutionContext.Plan);
             if (!SeparatedValuesQueryShapeMapping.TryCreate(
                     contract,
                     layout,

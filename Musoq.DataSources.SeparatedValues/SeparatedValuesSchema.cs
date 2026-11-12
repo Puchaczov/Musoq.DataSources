@@ -277,6 +277,7 @@ public class SeparatedValuesSchema : SchemaBase, IQueryScopedRowSourceSchema
             RowType = typeof(QueryScopedRowContract),
             Diagnostics = contract.Diagnostics,
             ContractDiagnostics = [],
+            ComputedProjectionCapabilities = SourceComputedProjectionCapabilities.AllPortable,
             TransferCapabilities = SourceTransferCapabilities.QueryScopedRows |
                                     SourceTransferCapabilities.LogicalScalarReads
         };

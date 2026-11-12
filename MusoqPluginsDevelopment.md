@@ -317,9 +317,22 @@ The filtered result has two rows: Id long 2/3, Amount decimal? null/2.5, Metadat
 
 ## Current runtime dependency baseline
 
-The datasource release targets Musoq Core 17.0.16-beta.1. Upgrade Converter,
+The datasource release targets Musoq Core 17.0.18. Upgrade Converter,
 Evaluator, Parser, Plugins and Schema together. The integration notes below
 describe behavior introduced in earlier compatible Core releases.
+
+## Computed source projections
+
+JSON and SeparatedValues opt in to Core's portable computed projection contract.
+They validate accepted/residual partitions, bind typed reads once per scan, and
+materialize accepted values directly into the query-selected row carrier. Input
+columns used only by an accepted computation remain provider-internal.
+
+Core chooses eligible unconditional source/projection regions. Unsupported types,
+unstable expressions, and other query regions retain engine evaluation. Ordering,
+filtering, paging, and callable expressions keep their established semantics; a
+provider capability does not guarantee that every query will receive pushdown.
+Other datasources retain engine fallback for computed projections.
 
 ## Core 17.0.14-alpha.2 integration
 

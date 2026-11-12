@@ -17,6 +17,8 @@ internal static class JsonSourcePlanner
         SourcePlanRequest request)
     {
         var requiredColumns = request.RequiredColumns ?? [];
+        var computed = StructuredComputedLayout.Partition(request, name =>
+            snapshot.TryGetColumn(name, out var column) ? column.ClrType : null);
         var (acceptedPredicate, residualPredicate) = SplitPredicate(
             request.Predicate,
             expression => HasCompatibleDeclaredTypes(snapshot, requiredColumns) && IsSupportedPredicate(snapshot, expression));
@@ -32,7 +34,9 @@ internal static class JsonSourcePlanner
             ExecutionPlan = new SourceExecutionPlan
             {
                 Identity = request.Identity,
+                Replayability = request.Replayability,
                 AcceptedColumns = requiredColumns,
+                AcceptedComputedProjections = computed.Accepted,
                 AcceptedPredicate = acceptedPredicate,
                 PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
@@ -45,6 +49,9 @@ internal static class JsonSourcePlanner
                 }
             },
             AcceptedColumns = requiredColumns,
+            AcceptedComputedProjections = computed.Accepted,
+            ResidualComputedProjections = computed.Residual,
+            Replayability = request.Replayability,
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
             AcceptedOrderBy = [],

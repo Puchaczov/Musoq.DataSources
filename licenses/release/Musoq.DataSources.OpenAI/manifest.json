@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.OpenAI",
   "slug": "openai",
-  "version": "6.0.10-beta.1",
+  "version": "6.0.10",
   "projectPath": "Musoq.DataSources.OpenAI/Musoq.DataSources.OpenAI.csproj",
   "entryProject": "Musoq.DataSources.OpenAI/Musoq.DataSources.OpenAI.csproj",
   "ownPackageId": "Musoq.DataSources.OpenAI",
@@ -25,7 +25,11 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "b89775bda438d5ad900d2a34c2c89093c43ec06d0808a72a7a2b4936b4a0c599"
+      "sha256": "ba3a391e6d5f8b1fa15bcbd6084fc01653e5db2db85d08d69373baa3c618130a"
+    },
+    {
+      "path": "Directory.Build.targets",
+      "sha256": "01fd75a54d4021bb73bed81c0bac3a87066dd95325c1002136703c7fb30a2a79"
     },
     {
       "path": "global.json",
@@ -61,11 +65,11 @@
     },
     {
       "path": "Musoq.DataSources.OpenAI/Musoq.DataSources.OpenAI.csproj",
-      "sha256": "3209145a73187fa8f0be95021db73bc7c3647a924b62a16abfb5e7409c4e398c"
+      "sha256": "954c8f5a3c8541266f8d168cd5a537ef83ec5eb630cba8942d903c59f1ff48e8"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7ad99dc555a19c94b64eafc4a433899ef63ea775cd77f11e3128f93a88200acd"
+      "sha256": "ecf81adf7663394fab77f381ceeb5b3330d0a2fe815bb7233c355f3699fbf3eb"
     }
   ],
   "packageGraph": [
@@ -106,17 +110,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": true
     },
     {
@@ -208,8 +212,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1694,
-      "sha256": "1f019ec963c144403785f1e8195e2c7e74fa6b2d2d877e4ad8dd927e06c8a09f"
+      "size": 1666,
+      "sha256": "a7ea5c9124383ee5fbfceb2b571b856128e4b89e13f3ec68fa04ff99e9e300a6"
     },
     {
       "path": "third-party-notices/SharpToken/license.txt",

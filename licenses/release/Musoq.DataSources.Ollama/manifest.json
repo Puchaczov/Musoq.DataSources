@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Ollama",
   "slug": "ollama",
-  "version": "5.0.10-beta.1",
+  "version": "5.0.10",
   "projectPath": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
   "entryProject": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
   "ownPackageId": "Musoq.DataSources.Ollama",
@@ -25,7 +25,11 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "b89775bda438d5ad900d2a34c2c89093c43ec06d0808a72a7a2b4936b4a0c599"
+      "sha256": "ba3a391e6d5f8b1fa15bcbd6084fc01653e5db2db85d08d69373baa3c618130a"
+    },
+    {
+      "path": "Directory.Build.targets",
+      "sha256": "01fd75a54d4021bb73bed81c0bac3a87066dd95325c1002136703c7fb30a2a79"
     },
     {
       "path": "global.json",
@@ -61,11 +65,11 @@
     },
     {
       "path": "Musoq.DataSources.Ollama/Musoq.DataSources.Ollama.csproj",
-      "sha256": "79a242648cd9a687ba60e9e1cd2643d3a2a9879de7680e1f0731cfb760b73fe2"
+      "sha256": "250124cf29d9c5727d097147fe26e29dfdbb6676b5a58e732f517803d2fa622c"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7ad99dc555a19c94b64eafc4a433899ef63ea775cd77f11e3128f93a88200acd"
+      "sha256": "ecf81adf7663394fab77f381ceeb5b3330d0a2fe815bb7233c355f3699fbf3eb"
     }
   ],
   "packageGraph": [
@@ -171,17 +175,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": true
     },
     {
@@ -358,8 +362,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 3346,
-      "sha256": "71d99d5919f293595aac7096bc1c78d882bf14a7e743edba8f23fff154d460c9"
+      "size": 3318,
+      "sha256": "49f9cf39c233d5c749adf434d0abf2c95b08a346c2982e2e7627c3f54c496df6"
     },
     {
       "path": "third-party-notices/SharpToken/license.txt",

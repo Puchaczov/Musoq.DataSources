@@ -14,4 +14,8 @@
     <PackageReference Include="Musoq.Schema" Version="$(MusoqSchemaVersion)" />
     <ProjectReference Include="../Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj" />
   </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
+    </ItemGroup>
 </Project>

@@ -31,7 +31,7 @@ public sealed class MusoqDependencyBoundaryTests
     {
         var root = FindSolutionRoot();
         var properties = XDocument.Load(Path.Combine(root, "Directory.Build.props"));
-        Assert.AreEqual("17.0.16-beta.1",
+        Assert.AreEqual("17.0.18",
             properties.Descendants("MusoqTypedCoreVersion").Single().Value, "Musoq runtime package versions must remain aligned.");
 
         foreach (var (propertyName, expectedVersion) in ExpectedVersions)
@@ -82,9 +82,20 @@ public sealed class MusoqDependencyBoundaryTests
 
     private static IEnumerable<string> EnumerateProjectPaths(string root)
     {
-        return Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase));
+        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".git", ".artifacts", "artifacts", "bin", "obj"
+        };
+        var pending = new Stack<string>();
+        pending.Push(root);
+        while (pending.TryPop(out var directory))
+        {
+            foreach (var project in Directory.EnumerateFiles(directory, "*.csproj"))
+                yield return project;
+            foreach (var child in Directory.EnumerateDirectories(directory))
+                if (!excluded.Contains(Path.GetFileName(child)))
+                    pending.Push(child);
+        }
     }
 
     private static IEnumerable<XElement> GetMusoqPackageReferences(XContainer project)

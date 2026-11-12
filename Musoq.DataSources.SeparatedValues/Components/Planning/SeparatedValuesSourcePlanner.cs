@@ -19,6 +19,8 @@ internal static class SeparatedValuesSourcePlanner
         ArgumentNullException.ThrowIfNull(contract);
         var snapshot = contract.Snapshot;
         var requiredColumns = request.RequiredColumns ?? [];
+        var computed = StructuredComputedLayout.Partition(request, name =>
+            snapshot.TryGetColumn(name, out var column) ? column.ClrType : null);
         var (acceptedPredicate, residualPredicate) = SplitPredicate(
             request.Predicate,
             expression => IsSupportedPredicate(contract, expression));
@@ -43,7 +45,9 @@ internal static class SeparatedValuesSourcePlanner
             ExecutionPlan = new SourceExecutionPlan
             {
                 Identity = request.Identity,
+                Replayability = request.Replayability,
                 AcceptedColumns = requiredColumns,
+                AcceptedComputedProjections = computed.Accepted,
                 AcceptedPredicate = acceptedPredicate,
                 PredicateApplications = SourcePredicateApplication.ForRowFiltering(acceptedPredicate),
                 AcceptedOrderBy = [],
@@ -52,6 +56,9 @@ internal static class SeparatedValuesSourcePlanner
                 Properties = properties
             },
             AcceptedColumns = requiredColumns,
+            AcceptedComputedProjections = computed.Accepted,
+            ResidualComputedProjections = computed.Residual,
+            Replayability = request.Replayability,
             AcceptedPredicate = acceptedPredicate,
             ResidualPredicate = residualPredicate,
             AcceptedOrderBy = [],

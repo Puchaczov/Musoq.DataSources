@@ -109,6 +109,7 @@ internal sealed class JsonScanPipeline<TRow, TProcessor, TFactory>
         var plan = _executionContext.Plan;
         return JsonSourcePlanner.IsProjectionAccepted(plan) &&
                plan.AcceptedColumns.Count == 0 &&
+               plan.AcceptedComputedProjections.Count == 0 &&
                plan.AcceptedPredicate is null &&
                plan.AcceptedSkip is null &&
                plan.AcceptedTake is null;

@@ -68,4 +68,9 @@
         <Compile Include="..\Shared\ProviderDiagnostics.cs" Link="Shared\ProviderDiagnostics.cs" />
         <Compile Include="..\Shared\ProviderRowSource.cs" Link="Shared\ProviderRowSource.cs" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
+        <ProjectReference Include="..\Musoq.DataSources.LLMHelpers\Musoq.DataSources.LLMHelpers.csproj" />
+    </ItemGroup>
 </Project>

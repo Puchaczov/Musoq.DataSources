@@ -31,4 +31,8 @@
         <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj"/>
     </ItemGroup>
 
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.LLMHelpers\Musoq.DataSources.LLMHelpers.csproj" />
+    </ItemGroup>
 </Project>

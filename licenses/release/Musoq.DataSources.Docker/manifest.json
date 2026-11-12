@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Docker",
   "slug": "docker",
-  "version": "5.0.10-beta.1",
+  "version": "5.0.10",
   "projectPath": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
   "entryProject": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
   "ownPackageId": "Musoq.DataSources.Docker",
@@ -25,7 +25,11 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "b89775bda438d5ad900d2a34c2c89093c43ec06d0808a72a7a2b4936b4a0c599"
+      "sha256": "ba3a391e6d5f8b1fa15bcbd6084fc01653e5db2db85d08d69373baa3c618130a"
+    },
+    {
+      "path": "Directory.Build.targets",
+      "sha256": "01fd75a54d4021bb73bed81c0bac3a87066dd95325c1002136703c7fb30a2a79"
     },
     {
       "path": "global.json",
@@ -57,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
-      "sha256": "33a0eb936fa522af2e5dc19441671d5b66c5e338f9e666b17fc5566e0823c7f8"
+      "sha256": "26f724aea91fe7d47d7527845c89860a3a0b2a88d54453ee736d60098690694c"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7ad99dc555a19c94b64eafc4a433899ef63ea775cd77f11e3128f93a88200acd"
+      "sha256": "ecf81adf7663394fab77f381ceeb5b3330d0a2fe815bb7233c355f3699fbf3eb"
     }
   ],
   "packageGraph": [
@@ -107,17 +111,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.16-beta.1",
+      "version": "17.0.18",
       "direct": true
     },
     {
@@ -199,8 +203,8 @@
     },
     {
       "path": "third-party-notices/report.json",
-      "size": 1510,
-      "sha256": "45d91f0d0c04acf143bddc285371f01838d8ffaabf0e5fdf3a18ef3c5e5d7e75"
+      "size": 1482,
+      "sha256": "c22a6aaa8695622309a222dd007011c08f464a1d42c010a9150cc7ddaca20157"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

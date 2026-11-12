@@ -23,4 +23,8 @@
         <ProjectReference Include="..\Musoq.DataSources.Tests.Common\Musoq.DataSources.Tests.Common.csproj"/>
     </ItemGroup>
 
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
+    </ItemGroup>
 </Project>

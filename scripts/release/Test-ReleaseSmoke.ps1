@@ -59,6 +59,24 @@ function Test-NuGetPackage {
         if ($version -ne $release.Version) {
             throw "NuGet package version '$version' does not match '$($release.Version)'."
         }
+
+        $privateHelpers = @('Musoq.DataSources.AsyncRowsSource', 'Musoq.DataSources.LLMHelpers')
+        foreach ($dependency in $nuspecXml.SelectNodes("//*[local-name()='dependency']")) {
+            if ([string]$dependency.id -in $privateHelpers) {
+                throw "NuGet package exposes unpublished implementation helper '$($dependency.id)': $PackagePath"
+            }
+        }
+
+        if ([IO.Path]::GetExtension($PackagePath) -eq '.nupkg') {
+            [xml]$project = Get-Content -LiteralPath $release.FullProjectPath -Raw
+            foreach ($reference in $project.SelectNodes("//*[local-name()='ProjectReference']")) {
+                $helper = [IO.Path]::GetFileNameWithoutExtension(([string]$reference.Include).Replace("\", "/"))
+                if ($helper -in $privateHelpers -and
+                    -not (Test-Path -LiteralPath (Join-Path $tempDirectory "lib/net10.0/$helper.dll"))) {
+                    throw "NuGet package omits implementation helper '$helper.dll': $PackagePath"
+                }
+            }
+        }
     }
     finally {
         if (Test-Path -LiteralPath $tempDirectory) {
@@ -171,8 +189,8 @@ function Test-PluginPackage {
         $compatibility = Read-MusoqPluginCompatibilityManifest -Path $compatibilityPath
         $schemaRange = $compatibility.hostPackages.'Musoq.Schema'
         $pluginsRange = $compatibility.hostPackages.'Musoq.Plugins'
-        if ($schemaRange.minimumVersionInclusive -ne "17.0.16-beta.1" -or
-            $pluginsRange.minimumVersionInclusive -ne "17.0.16-beta.1" -or
+        if ($schemaRange.minimumVersionInclusive -ne "17.0.18" -or
+            $pluginsRange.minimumVersionInclusive -ne "17.0.18" -or
             $schemaRange.maximumVersionExclusive -ne "18.0.0" -or
             $pluginsRange.maximumVersionExclusive -ne "18.0.0") {
             throw "Plugin compatibility manifest does not match the supported runtime-v2 ABI: $PackagePath"

@@ -21,4 +21,8 @@
         <ProjectReference Include="..\Musoq.DataSources.OpenAI\Musoq.DataSources.OpenAI.csproj"/>
     </ItemGroup>
 
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.LLMHelpers\Musoq.DataSources.LLMHelpers.csproj" />
+    </ItemGroup>
 </Project>

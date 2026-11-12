@@ -71,4 +71,8 @@
         </None>
     </ItemGroup>
 
+
+    <ItemGroup>
+        <ProjectReference Include="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj" />
+    </ItemGroup>
 </Project>

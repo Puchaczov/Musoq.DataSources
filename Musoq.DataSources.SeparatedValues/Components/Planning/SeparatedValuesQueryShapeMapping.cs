@@ -373,6 +373,8 @@ internal sealed class SeparatedValuesQueryShapeMapping
 
     public ImmutableArray<SeparatedValuesQueryFieldMapping> Fields { get; }
 
+    public StructuredComputedLayout? Computed { get; private init; }
+
     public static bool TryCreate(
         SeparatedValuesSourceContract contract,
         StructuredExecutionLayout layout,
@@ -382,6 +384,8 @@ internal sealed class SeparatedValuesQueryShapeMapping
         out string reason)
     {
         ArgumentNullException.ThrowIfNull(shape);
+        if (shape.Fields.Any(field => field.ComputedProjection is not null))
+            return TryCreateComputed(contract, layout, shape, out mapping, out reason);
         if (!SeparatedValuesQueryMetadata.TryCreateForExecution(
                 contract,
                 layout,
@@ -469,6 +473,41 @@ internal sealed class SeparatedValuesQueryShapeMapping
         }
 
         mapping = new SeparatedValuesQueryShapeMapping(shape.Fingerprint, fields.MoveToImmutable());
+        reason = string.Empty;
+        return true;
+    }
+
+    private static bool TryCreateComputed(SeparatedValuesSourceContract contract,
+        StructuredExecutionLayout layout, QueryRowShape shape,
+        out SeparatedValuesQueryShapeMapping? mapping, out string reason)
+    {
+        var available = contract.DescriptorColumns.IsEmpty
+            ? contract.Snapshot.Columns.Select(column => new QueryRowField(column.SourceOrdinal,
+                column.SourceOrdinal, column.Name, column.ClrType,
+                !column.ClrType.IsValueType || Nullable.GetUnderlyingType(column.ClrType) is not null)).ToArray()
+            : contract.DescriptorColumns.Select(column => new QueryRowField(column.SourceColumnIndex,
+                column.SourceColumnIndex, column.Name, column.FieldType, column.EffectiveSourceReadType,
+                column.EnumType, !column.FieldType.IsValueType || Nullable.GetUnderlyingType(column.FieldType) is not null,
+                column.ReadModifiers, column.Stability)).ToArray();
+        var computed = new StructuredComputedLayout(shape, available);
+        var fields = ImmutableArray.CreateBuilder<SeparatedValuesQueryFieldMapping>(computed.Input.Fields.Count);
+        foreach (var field in computed.Input.Fields)
+        {
+            var bindings = layout.Bindings.Where(binding => SeparatedValuesQueryMetadata.NamesMatch(field.Name, binding.Name)).ToArray();
+            if (bindings.Length != 1 || !TryValidateDescriptorField(contract, field, out reason) ||
+                !SeparatedValuesValueConverter.TryGetExactConversion(field.FieldType, out var conversion))
+            {
+                mapping = null;
+                reason = $"computed input '{field.Name}' does not match the immutable source layout";
+                return false;
+            }
+            var binding = bindings[0];
+            fields.Add(new SeparatedValuesQueryFieldMapping(field.Slot, field.SourceColumnIndex,
+                binding.SourceOrdinal, field.Name, field.FieldType, field.IsNullable, conversion,
+                field.SourceReadType, field.EnumType, field.Stability,
+                contract.ColumnContracts[binding.SourceOrdinal].EnumPlan));
+        }
+        mapping = new SeparatedValuesQueryShapeMapping(shape.Fingerprint, fields.MoveToImmutable()) { Computed = computed };
         reason = string.Empty;
         return true;
     }

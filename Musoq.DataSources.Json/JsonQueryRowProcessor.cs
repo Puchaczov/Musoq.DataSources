@@ -25,6 +25,7 @@ internal sealed class JsonQueryRowProcessor<TRow, TMaterializer> : IJsonRecordPr
     };
 
     private readonly IChunkWriter<TRow> _writer;
+    private readonly StructuredComputedPlan<FieldReader>? _computed;
     private readonly JsonPropertyLookup _lookup;
     private readonly JsonPredicateEvaluator _predicate;
     private readonly JsonStringReuse? _reuse;
@@ -49,6 +50,20 @@ internal sealed class JsonQueryRowProcessor<TRow, TMaterializer> : IJsonRecordPr
         DataSourceProgressReporter? progress,
         CancellationToken cancellationToken)
     {
+        StructuredComputedLayout.Validate(shape, context.Plan);
+        if (shape.Fields.Any(field => field.ComputedProjection is not null))
+        {
+            var available = snapshot.Columns.Select(column =>
+            {
+                var declared = context.AllColumns.FirstOrDefault(field => field.ColumnName == column.Name);
+                var type = declared?.ColumnType ?? column.ClrType;
+                return new QueryRowField(column.SourceOrdinal, column.SourceOrdinal, column.Name, type,
+                    !type.IsValueType || Nullable.GetUnderlyingType(type) is not null);
+            }).ToArray();
+            var computedLayout = new StructuredComputedLayout(shape, available);
+            _computed = new StructuredComputedPlan<FieldReader>(computedLayout);
+            shape = computedLayout.Input;
+        }
         _writer = writer;
         _diagnostics = context.Diagnostics;
         _reuse = JsonStringReuse.Create(shape, context.Plan.AcceptedPredicate);
@@ -134,7 +149,13 @@ internal sealed class JsonQueryRowProcessor<TRow, TMaterializer> : IJsonRecordPr
         }
 
         var fields = new FieldReader(record, this);
-        var row = TMaterializer.Materialize(ref fields);
+        TRow row;
+        if (_computed is null) row = TMaterializer.Materialize(ref fields);
+        else
+        {
+            var computedReader = new StructuredComputedReader<FieldReader>(fields, _computed);
+            row = TMaterializer.Materialize(ref computedReader);
+        }
         _chunk ??= new List<TRow>(RowChunking.DefaultChunkSize);
         _chunk.Add(row);
         _emitted++;

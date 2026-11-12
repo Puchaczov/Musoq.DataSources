@@ -1,0 +1,23 @@
+<Project>
+    <ItemGroup>
+        <ProjectReference Update="..\Musoq.DataSources.AsyncRowsSource\Musoq.DataSources.AsyncRowsSource.csproj;..\Musoq.DataSources.LLMHelpers\Musoq.DataSources.LLMHelpers.csproj"
+                          PrivateAssets="All" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeDatasourceHelperAssemblies</TargetsForTfmSpecificBuildOutput>
+    </PropertyGroup>
+
+    <Target Name="IncludeDatasourceHelperAssemblies">
+        <ItemGroup>
+            <_BundledDatasourceHelperReference Include="@(ProjectReference)"
+                                               Condition="'%(ProjectReference.Filename)' == 'Musoq.DataSources.AsyncRowsSource' Or '%(ProjectReference.Filename)' == 'Musoq.DataSources.LLMHelpers'" />
+            <_BundledDatasourceHelperOutput Include="@(_BundledDatasourceHelperReference->'$(OutputPath)%(Filename).dll')" />
+            <BuildOutputInPackage Include="@(_BundledDatasourceHelperOutput)">
+                <TargetPath>%(_BundledDatasourceHelperOutput.Filename)%(_BundledDatasourceHelperOutput.Extension)</TargetPath>
+            </BuildOutputInPackage>
+        </ItemGroup>
+        <Error Condition="'@(_BundledDatasourceHelperOutput)' != '' And !Exists('%(_BundledDatasourceHelperOutput.Identity)')"
+               Text="Build the project before packing its helper '%(_BundledDatasourceHelperOutput.Identity)'." />
+    </Target>
+</Project>

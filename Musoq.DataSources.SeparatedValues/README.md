@@ -1,9 +1,9 @@
 # Musoq.DataSources.SeparatedValues
 
 The SeparatedValues plugin streams UTF-8 delimited files through a bounded,
-byte-native pipeline. This version requires the compatible Musoq 17.0.16-beta.1
+byte-native pipeline. This version requires the compatible Musoq 17.0.18
 runtime-v2 package set: `Converter`, `Evaluator`, `Parser`, `Plugins`, and
-`Schema` at `17.0.16-beta.1`.
+`Schema` at `17.0.18`.
 
 Use the strict convenience sources for existing CSV/TSV files:
 
@@ -260,3 +260,11 @@ dotnet run -c Release --project Musoq.DataSources.SeparatedValues.Benchmark -- g
 The gate is intentionally separate from final-table allocation: each measured
 loop is warmed, returns only a checksum, and must allocate zero bytes on the
 qualified path.
+
+## Computed projections
+
+The provider accepts stable portable computations offered by Core, including supported
+numeric operations, checked numeric casts, null checks, and coalesce. Accepted values
+are read through typed query-scoped materializers; columns needed only for computation
+remain outside the output carrier. Core retains unsupported or conditionally evaluated
+expressions, preserving normal query behavior.

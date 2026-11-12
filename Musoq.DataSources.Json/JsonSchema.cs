@@ -138,6 +138,7 @@ public class JsonSchema : SchemaBase, IQueryScopedRowSourceSchema
             RowType = table.Metadata.TableEntityType,
             Diagnostics = [],
             ContractDiagnostics = [],
+            ComputedProjectionCapabilities = SourceComputedProjectionCapabilities.AllPortable,
             TransferCapabilities = SourceTransferCapabilities.QueryScopedRows |
                                    SourceTransferCapabilities.LogicalScalarReads
         };

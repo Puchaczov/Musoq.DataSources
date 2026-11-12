@@ -10,6 +10,7 @@ using Musoq.DataSources.SeparatedValues.Components.Contracts;
 using Musoq.DataSources.SeparatedValues.Components.Parsing;
 using Musoq.DataSources.SeparatedValues.Components.Planning;
 using Musoq.Schema;
+using Musoq.DataSources.Structured;
 
 namespace Musoq.DataSources.SeparatedValues.Components.Execution;
 
@@ -34,6 +35,8 @@ internal sealed class SeparatedValuesQueryProjectionPlan
         _slotBindings = slotBindings;
         _enumPlans = enumPlans;
     }
+
+    public StructuredComputedLayout? Computed { get; private init; }
 
     public string SourcePath { get; }
 
@@ -105,7 +108,7 @@ internal sealed class SeparatedValuesQueryProjectionPlan
             sourceOrdinals,
             diagnostics,
             slotBindings,
-            enumPlans);
+            enumPlans) { Computed = mapping.Computed };
     }
 
     public bool HasStringProjectionAt(int sourceOrdinal) => Array.Exists(_slotBindings, binding => binding.PhysicalSourceOrdinal == sourceOrdinal && binding.Conversion == SeparatedValuesConversion.String);
@@ -161,6 +164,7 @@ internal readonly struct SeparatedValuesQueryRowProjector<TRow, TMaterializer>
 {
     private readonly SeparatedValuesPhysicalFieldTraversal _fields;
     private readonly SeparatedValuesQueryProjectionPlan _projection;
+    private readonly StructuredComputedPlan<SeparatedValuesFieldReader>? _computed;
 
     public SeparatedValuesQueryRowProjector(
         SeparatedValuesPhysicalFieldTraversal fields,
@@ -168,6 +172,7 @@ internal readonly struct SeparatedValuesQueryRowProjector<TRow, TMaterializer>
     {
         _fields = fields ?? throw new ArgumentNullException(nameof(fields));
         _projection = projection ?? throw new ArgumentNullException(nameof(projection));
+        _computed = projection.Computed is { } layout ? new StructuredComputedPlan<SeparatedValuesFieldReader>(layout) : null;
     }
 
     public bool CanRepeatRow => false;
@@ -179,9 +184,16 @@ internal readonly struct SeparatedValuesQueryRowProjector<TRow, TMaterializer>
     {
         _fields.RecordMaterializedRow();
         var reader = new SeparatedValuesFieldReader(record.Bytes, _fields, _projection, rowNumber);
-        if (_fields.DecodedStrings is null) return TMaterializer.Materialize<SeparatedValuesFieldReader>(ref reader);
-        try { return TMaterializer.Materialize<SeparatedValuesFieldReader>(ref reader); }
+        if (_fields.DecodedStrings is null) return Materialize(ref reader);
+        try { return Materialize(ref reader); }
         finally { _fields.DecodedStrings.Clear(); }
+    }
+
+    private TRow Materialize(ref SeparatedValuesFieldReader reader)
+    {
+        if (_computed is null) return TMaterializer.Materialize<SeparatedValuesFieldReader>(ref reader);
+        var computedReader = new StructuredComputedReader<SeparatedValuesFieldReader>(reader, _computed);
+        return TMaterializer.Materialize(ref computedReader);
     }
 
     private ref struct SeparatedValuesFieldReader : IQuerySourceFieldReader
