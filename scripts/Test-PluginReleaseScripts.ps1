@@ -279,8 +279,8 @@ function Test-PluginCompatibilityManifestGeneration {
 
     $systemProject = Join-Path $PSScriptRoot "../Musoq.DataSources.System/Musoq.DataSources.System.csproj"
     $evaluated = Get-MusoqPluginCompatibility -ProjectPath $systemProject
-    Assert-Equal "17.0.18" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
-    Assert-Equal "17.0.18" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
+    Assert-Equal "17.0.22" $evaluated.hostPackages.'Musoq.Schema'.minimumVersionInclusive "Evaluated Schema version should be used."
+    Assert-Equal "17.0.22" $evaluated.hostPackages.'Musoq.Plugins'.minimumVersionInclusive "Evaluated Plugins version should be used."
 }
 
 function Test-PluginDirectAssemblyReferenceGuard {
@@ -529,22 +529,22 @@ function Test-RuntimeV2ReleaseTrain {
     Assert-Equal 16 $packages.Count "Runtime-v2 release train should contain all 16 datasource packages."
 
     $expectedVersions = @{
-        'Musoq.DataSources.Archives' = '6.0.11'
-        'Musoq.DataSources.CANBus' = '4.0.10'
-        'Musoq.DataSources.Docker' = '5.0.10'
-        'Musoq.DataSources.FlatFile' = '8.0.10'
-        'Musoq.DataSources.Git' = '4.0.3'
-        'Musoq.DataSources.GitHub' = '2.0.10'
-        'Musoq.DataSources.Jira' = '2.0.10'
-        'Musoq.DataSources.Json' = '10.0.10'
-        'Musoq.DataSources.Ollama' = '5.0.10'
-        'Musoq.DataSources.OpenAI' = '6.0.10'
-        'Musoq.DataSources.Os' = '9.0.10'
-        'Musoq.DataSources.Roslyn' = '3.0.11'
-        'Musoq.DataSources.Search' = '1.0.7'
-        'Musoq.DataSources.SeparatedValues' = '11.0.7'
-        'Musoq.DataSources.System' = '8.0.10'
-        'Musoq.DataSources.Time' = '8.0.10'
+        'Musoq.DataSources.Archives' = '6.0.12'
+        'Musoq.DataSources.CANBus' = '4.0.11'
+        'Musoq.DataSources.Docker' = '5.0.11'
+        'Musoq.DataSources.FlatFile' = '8.0.11'
+        'Musoq.DataSources.Git' = '4.0.4'
+        'Musoq.DataSources.GitHub' = '2.0.11'
+        'Musoq.DataSources.Jira' = '2.0.11'
+        'Musoq.DataSources.Json' = '10.0.11'
+        'Musoq.DataSources.Ollama' = '5.0.11'
+        'Musoq.DataSources.OpenAI' = '6.0.11'
+        'Musoq.DataSources.Os' = '9.0.11'
+        'Musoq.DataSources.Roslyn' = '3.0.12'
+        'Musoq.DataSources.Search' = '1.0.8'
+        'Musoq.DataSources.SeparatedValues' = '11.0.8'
+        'Musoq.DataSources.System' = '8.0.11'
+        'Musoq.DataSources.Time' = '8.0.11'
     }
 
     foreach ($package in $packages) {
@@ -558,12 +558,12 @@ function Test-RuntimeV2ReleaseTrain {
 
     $roslyn = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Roslyn' })
     Assert-Equal 1 $roslyn.Count "Runtime-v2 release train should contain exactly one Roslyn package."
-    Assert-Equal "3.0.11" ([string]$roslyn[0].version) "Roslyn should use its stable release version."
+    Assert-Equal "3.0.12" ([string]$roslyn[0].version) "Roslyn should use its stable release version."
 
     $search = @($packages | Where-Object { $_.packageId -eq 'Musoq.DataSources.Search' })
     Assert-Equal 1 $search.Count "Runtime-v2 release train should contain exactly one Search package."
     Assert-Equal "search" ([string]$search[0].slug) "Search should use the canonical release slug."
-    Assert-Equal "1.0.7" ([string]$search[0].version) "Search should use its stable release version."
+    Assert-Equal "1.0.8" ([string]$search[0].version) "Search should use its stable release version."
     Assert-Equal "Musoq.DataSources.Search/Musoq.DataSources.Search.csproj" ([string]$search[0].projectPath) "Search should point at the production project."
 
     $excludedProjects = @($packages | Where-Object {

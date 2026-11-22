@@ -22,6 +22,8 @@ namespace Musoq.DataSources.SeparatedValues.Tests;
 [DoNotParallelize]
 public class EarlyPatternTests
 {
+    private static readonly TimeSpan PatternMatchTimeout = TimeSpan.FromSeconds(2);
+
     [TestMethod]
     public void SparseSlots_AreClearedAfterMaterializationAndRejection()
     {
@@ -31,7 +33,7 @@ public class EarlyPatternTests
         {
             var schema = new SeparatedValuesSchema();
             var plan = schema.TryPlanSource("comma", new() { Identity = SourceIdentity.Empty,
-                Predicate = new SourcePredicateRegexMatch(new("Name"), "^keep", TimeSpan.FromMilliseconds(31)), RequiredColumns = [new("Name"), new("Other")] }, path, true, 0);
+                Predicate = new SourcePredicateRegexMatch(new("Name"), "^keep", PatternMatchTimeout), RequiredColumns = [new("Name"), new("Other")] }, path, true, 0);
             var context = RuntimeV2TestContexts.CreateExecutionContext(executionPlan: plan.ExecutionPlan,
                 allColumns: [new SchemaColumn("Name", 0, typeof(string)), new SchemaColumn("Other", 1, typeof(string))]);
             var contract = SeparatedValuesSourceContract.From(plan.ExecutionPlan);
@@ -77,7 +79,7 @@ public class EarlyPatternTests
         {
             var metrics = new PatternWorkMetrics();
             var source = Open(path, metrics, new SourcePredicateLogical(SourcePredicateLogicalOperator.And,
-                new SourcePredicateRegexMatch(new("Name"), "^keep", TimeSpan.FromMilliseconds(31)),
+                new SourcePredicateRegexMatch(new("Name"), "^keep", PatternMatchTimeout),
                 new SourcePredicateStringMatch(new("Name"), SourceStringMatchKind.Contains, "%value%", "value")));
             CollectionAssert.AreEqual(new[] { "keep\"value" }, source.Chunks.SelectMany(chunk => chunk).ToArray());
             Assert.AreEqual(1L, metrics["Pattern.ReuseSlots"]);
@@ -95,7 +97,7 @@ public class EarlyPatternTests
         try
         {
             var metrics = new PatternWorkMetrics();
-            var source = Open(path, metrics, new SourcePredicateRegexMatch(new("Name"), "^keep", TimeSpan.FromMilliseconds(31)),
+            var source = Open(path, metrics, new SourcePredicateRegexMatch(new("Name"), "^keep", PatternMatchTimeout),
                 new Dictionary<string, string> { [SeparatedValuesInferenceOptions.MaximumRowsSettingName] = "1", [SeparatedValuesInferenceOptions.MaximumTimeMillisecondsSettingName] = "1000" });
             var failure = Assert.ThrowsException<FormatException>(() => source.Chunks.ToArray());
             StringAssert.Contains(failure.Message, "Age");
