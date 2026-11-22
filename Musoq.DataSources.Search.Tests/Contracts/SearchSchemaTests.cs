@@ -577,6 +577,7 @@ public sealed class SearchSchemaTests
             SearchDiagnosticCatalog.SourceReadFailed("fixture.txt"),
             SearchDiagnosticCatalog.UnsupportedEncoding(),
             SearchDiagnosticCatalog.SourceChanged("fixture.txt"),
+            SearchDiagnosticCatalog.SharingViolation("fixture.txt"),
             SearchDiagnosticCatalog.ResourceLimit("include", 128),
             SearchDiagnosticCatalog.OutputFailed()
         };

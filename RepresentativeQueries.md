@@ -167,6 +167,21 @@ group by deprecated.Path, deprecated.MatchText
 Dependencies: labeled candidate patterns, a bounded manifest where existence
 matters, and complete audit evidence before asserting a negative result.
 
+### Read a log open for append
+
+Select `search.text_read_mode=shared-prefix` in a query-local runtime settings profile. The query reads complete
+lines up to the captured file length. Later appends become visible on the next execution.
+
+```sql
+couple search.lines with settings liveLogs as LiveLines;
+select l.Path, l.LineNumber, l.ByteOffset, l.LineText
+from LiveLines('logs', 'marker') l
+```
+
+Supply `{"liveLogs":{"search.text_read_mode":"shared-prefix"}}` with `--settings-profiles-json`.
+The setting also applies to `search.many` and the other physical-line text sources.
+Use the default `stable` mode when a complete, unchanged file is required.
+
 ### Log Search-to-parse
 
 Keep one `search.lines` row per matching physical line and apply a tolerant

@@ -89,7 +89,7 @@ public sealed class SearchTypedSurfaceContractTests : SearchContractTestBase
             .ToArray();
 
         CollectionAssert.AreEquivalent(
-            new[] { "search.max_parallelism", "search.buffered_output_bytes" },
+            new[] { "search.max_parallelism", "search.buffered_output_bytes", "search.text_read_mode" },
             requirements.Select(setting => setting.Name).ToArray());
 
         Assert.IsTrue(requirements.All(static setting =>
@@ -105,6 +105,10 @@ public sealed class SearchTypedSurfaceContractTests : SearchContractTestBase
         var bufferedOutput = requirements.Single(static setting => setting.Name == "search.buffered_output_bytes");
         StringAssert.Contains(bufferedOutput.Description, "33554432");
         StringAssert.Contains(bufferedOutput.Description, "65536 through 536870912");
+
+        var textReadMode = requirements.Single(static setting => setting.Name == "search.text_read_mode");
+        StringAssert.Contains(textReadMode.Description, "stable");
+        StringAssert.Contains(textReadMode.Description, "shared-prefix");
     }
 
     [TestMethod]

@@ -19,16 +19,22 @@ internal sealed class SearchEvidenceHandle
     private readonly SearchSourceVersion _sourceVersion;
     private readonly SearchEncodingMode _encodingMode;
     private readonly byte[]? _snapshotBytes;
+    private readonly SearchSharedTextPrefix? _sharedPrefix;
 
     private SearchEvidenceHandle(
         SearchSourceVersion sourceVersion,
         SearchEncodingMode encodingMode,
-        byte[]? snapshotBytes = null)
+        byte[]? snapshotBytes = null,
+        SearchSharedTextPrefix? sharedPrefix = null)
     {
         _sourceVersion = sourceVersion;
         _encodingMode = encodingMode;
         _snapshotBytes = snapshotBytes;
+        _sharedPrefix = sharedPrefix;
     }
+
+    public static SearchEvidenceHandle Capture(SearchSharedTextPrefix prefix, SearchEncodingMode encodingMode) =>
+        new(default, encodingMode, sharedPrefix: prefix);
 
     public static SearchEvidenceHandle Capture(
         string path,
@@ -68,6 +74,15 @@ internal sealed class SearchEvidenceHandle
 
         if (!options.IsEnabled)
             return Array.Empty<SearchContextLine>();
+
+        if (_sharedPrefix is { } prefix)
+        {
+            prefix.EnsureCurrent(cancellationToken);
+            using var reader = prefix.OpenReader();
+            var lines = SearchEvidenceReader.Read(reader, matchingLine, options, cancellationToken, prefix.Path);
+            prefix.EnsureCurrent(cancellationToken);
+            return lines;
+        }
 
         EnsureCurrent(cancellationToken);
         IReadOnlyList<SearchContextLine> context;

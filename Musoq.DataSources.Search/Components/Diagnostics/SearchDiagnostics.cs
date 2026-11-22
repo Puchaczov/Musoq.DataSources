@@ -218,6 +218,7 @@ internal static class SearchDiagnosticCodes
     public const string SourceReadFailed = "SEARCH-SOURCE-003";
     public const string UnsupportedEncoding = "SEARCH-SOURCE-004";
     public const string SourceChanged = "SEARCH-SOURCE-005";
+    public const string SharingViolation = "SEARCH-SOURCE-006";
     public const string ResourceLimit = "SEARCH-RESOURCE-001";
     public const string OutputFailed = "SEARCH-OUTPUT-001";
 
@@ -232,6 +233,7 @@ internal static class SearchDiagnosticCodes
         SourceReadFailed,
         UnsupportedEncoding,
         SourceChanged,
+        SharingViolation,
         ResourceLimit,
         OutputFailed
     ];
@@ -377,6 +379,18 @@ internal static class SearchDiagnosticCatalog
             "Check the file permissions, path, and availability, then retry the search.",
             SearchDiagnosticLocation.ForPath(path));
     }
+
+    public static bool IsSharingViolation(IOException exception) =>
+        OperatingSystem.IsWindows() && exception.HResult == unchecked((int)0x80070020);
+
+    public static SearchDiagnostic SharingViolation(string path) =>
+        new(
+            SearchDiagnosticCodes.SharingViolation,
+            SearchDiagnosticPhase.SourceAccess,
+            "Another process opened the input file with incompatible sharing.",
+            "Search could not read the requested file with the selected read mode.",
+            "For an append-only text log use search.text_read_mode=shared-prefix. Otherwise close the writer and retry.",
+            SearchDiagnosticLocation.ForPath(path));
 
     public static SearchDiagnostic SourceReadFailed(string path)
     {

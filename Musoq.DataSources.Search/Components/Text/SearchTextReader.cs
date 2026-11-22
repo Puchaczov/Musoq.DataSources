@@ -29,22 +29,7 @@ internal static class SearchTextReader
             SearchCharBuffer.RequestedLength,
             FileOptions.SequentialScan);
 
-        try
-        {
-            var resolution = Resolve(stream, mode);
-            stream.Position = resolution.DataOffset;
-            return new MappedTextReader(
-                stream,
-                resolution.Encoding,
-                resolution.DataOffset,
-                resolution.Tolerant,
-                resolution.LegacyEncoding, warningReporter);
-        }
-        catch
-        {
-            stream.Dispose();
-            throw;
-        }
+        return Open(stream, mode, warningReporter);
     }
 
     /// <summary>
@@ -64,6 +49,11 @@ internal static class SearchTextReader
             count: length,
             writable: false,
             publiclyVisible: true);
+        return Open(stream, mode, warningReporter);
+    }
+
+    internal static TextReader Open(Stream stream, SearchEncodingMode mode, Action<DataSourceDiagnostic>? warningReporter = null)
+    {
         try
         {
             var resolution = Resolve(stream, mode);
@@ -79,6 +69,35 @@ internal static class SearchTextReader
         {
             stream.Dispose();
             throw;
+        }
+    }
+
+    internal static long CompleteLinePrefix(Stream stream, SearchEncodingMode mode, CancellationToken cancellationToken)
+    {
+        var resolution = Resolve(stream, mode);
+        var width = resolution.Encoding is DecodedEncoding.Utf16LittleEndian or DecodedEncoding.Utf16BigEndian ? 2 : 1;
+        var lowByte = resolution.Encoding == DecodedEncoding.Utf16BigEndian ? 1 : 0;
+        var end = stream.Length - (stream.Length - resolution.DataOffset) % width;
+        var buffer = ArrayPool<byte>.Shared.Rent(SearchCharBuffer.RequestedLength);
+        try
+        {
+            while (end > resolution.DataOffset)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var count = (int)Math.Min(end - resolution.DataOffset, buffer.Length / width * width);
+                var start = end - count;
+                stream.Position = start;
+                stream.ReadExactly(buffer.AsSpan(0, count));
+                for (var index = count - width; index >= 0; index -= width)
+                    if (buffer[index + lowByte] == '\n' && (width == 1 || buffer[index + 1 - lowByte] == 0))
+                        return start + index + width;
+                end = start;
+            }
+            return resolution.DataOffset;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 

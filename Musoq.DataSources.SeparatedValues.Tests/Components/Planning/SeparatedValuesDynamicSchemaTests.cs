@@ -23,6 +23,28 @@ namespace Musoq.DataSources.SeparatedValues.Tests.Components.Planning;
 public class SeparatedValuesDynamicSchemaTests
 {
     [TestMethod]
+    public void UnionBranches_WhenReadingTheSameCsv_KeepTheirOwnProjectedColumns()
+    {
+        WithCsv("PairId,LeftBatch,RightBatch\nP1,L1,R1\n", path =>
+        {
+            var sql = $"""
+                select first.PairId, first.LeftBatch as Batch
+                from separatedvalues.comma('{QueryPath(path)}', true, 0) first
+                union all
+                select second.PairId, second.RightBatch as Batch
+                from separatedvalues.comma('{QueryPath(path)}', true, 0) second
+                order by Batch
+                """;
+            using var compiled = Compile(sql);
+
+            using var rows = compiled.Run();
+
+            CollectionAssert.AreEqual(new[] { "P1:L1", "P1:R1" }, rows.Select(row =>
+                $"{row.GetValue<string>(0)}:{row.GetValue<string>(1)}").ToArray());
+        });
+    }
+
+    [TestMethod]
     public void Query_WhenColumnDoesNotExist_FailsCompilation()
     {
         WithCsv("Name\nAda\n", path =>

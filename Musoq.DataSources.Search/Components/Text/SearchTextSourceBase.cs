@@ -23,6 +23,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
 {
     private const string SearchSourceName = "search";
     private const long SmallFileSnapshotBytes = 4L * 1024 * 1024;
+    private readonly bool _sharedPrefix;
 
     private readonly SearchRequest _request;
     private readonly Func<TRow, bool>? _acceptedRow;
@@ -45,6 +46,9 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
         _acceptedRow = TypedPredicatePlan.Get<TRow>(executionContext.Plan);
         _classifyBinaryFiles = readerFactory is null;
         _readerFactory = readerFactory ?? (path => SearchTextReader.Open(path, _request.EncodingMode, _executionContext.WarningReporter));
+        _sharedPrefix = SearchSharedTextPrefix.IsEnabled(executionContext.SourceRuntimeSettings);
+        if (_sharedPrefix && request.RecordMode != SearchRecordMode.PhysicalLine)
+            throw new SearchRequestException(SearchDiagnosticCatalog.InvalidArgument(SearchSharedTextPrefix.SettingName));
         _scopeCounters = scopeCounters;
         _parallelOptions = readerFactory is null
             ? SearchFileParallelOptions.FromRuntimeSettings(executionContext.SourceRuntimeSettings)
@@ -132,25 +136,40 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
             {
                 try
                 {
-                    var sourceObservation = SearchSourceObservation.Capture(
-                        file,
-                        fileCancellationToken);
-                    SearchTestHooks.AfterObservation(file);
+                    var sourceObservation = _sharedPrefix ? default : SearchSourceObservation.Capture(file, fileCancellationToken);
                     var fileBudget = resourceBudget.BeginFile(file, pathPatterns.Enabled);
-                    fileBudget.ReserveBytes(sourceObservation.Length);
+                    var shared = _sharedPrefix
+                        ? SearchSharedTextPrefix.Capture(file, _request.EncodingMode, fileBudget, fileCancellationToken)
+                        : null;
+                    SearchTestHooks.AfterObservation(file);
+                    if (shared is null)
+                        fileBudget.ReserveBytes(sourceObservation.Length);
+
+                    void VerifySource()
+                    {
+                        if (shared is null)
+                            sourceObservation.EnsureCurrent(fileCancellationToken);
+                        else
+                            shared.EnsureCurrent(fileCancellationToken);
+                    }
+
                     using var buffer = SearchCharBuffer.Rent();
-                    using var smallInput = _classifyBinaryFiles &&
+                    using var smallInput = shared is null && _classifyBinaryFiles &&
                                            sourceObservation.Length <= SmallFileSnapshotBytes
                         ? SearchSmallFileBuffer.Read(
                             file,
                             sourceObservation.Length,
                             fileCancellationToken)
                         : null;
-                    Func<string, TextReader> readerFactory = _readerFactory;
+                    Func<string, TextReader> readerFactory = shared is null
+                        ? _readerFactory
+                        : _ => shared.OpenReader(_executionContext.WarningReporter);
                     if (_classifyBinaryFiles)
                     {
                         scopeCounters.IncrementContentOpenAttempts();
-                        var isBinary = smallInput is not null
+                        var isBinary = shared is not null
+                            ? SearchBinaryPolicy.IsBinaryReader(file, shared.OpenReader(), buffer, fileCancellationToken)
+                            : smallInput is not null
                             ? SearchBinaryPolicy.IsBinaryBytes(
                                 file,
                                 smallInput.Array,
@@ -167,7 +186,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                         {
                             scopeCounters.IncrementBinaryFilesSkipped();
                             accounting.RecordBinaryFileSkipped();
-                            sourceObservation.EnsureCurrent(fileCancellationToken);
+                            VerifySource();
                             accounting.RecordFileCompleted(
                                 bytesScanned: 0,
                                 occurrences: 0,
@@ -192,7 +211,9 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                     var evidence = projection.RetainContext &&
                                    _request.Context.IsEnabled &&
                                    _classifyBinaryFiles
-                        ? smallInput is null
+                        ? shared is not null
+                            ? SearchEvidenceHandle.Capture(shared, _request.EncodingMode)
+                            : smallInput is null
                             ? SearchEvidenceHandle.Capture(
                                 file,
                                 _request.EncodingMode,
@@ -255,7 +276,7 @@ internal abstract class SearchTextSourceBase<TRow> : RowSourceBase<TRow>
                             _request.MaxRecordBytes);
                     }
 
-                    sourceObservation.EnsureCurrent(fileCancellationToken);
+                    VerifySource();
                     fileCancellationToken.ThrowIfCancellationRequested();
                     sink.CompleteFile(file);
                     fileCancellationToken.ThrowIfCancellationRequested();

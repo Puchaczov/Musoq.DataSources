@@ -35,7 +35,7 @@ internal static class SearchEvidenceReader
         return Read(reader, matchingLine, options, cancellationToken, "<snapshot>");
     }
 
-    private static IReadOnlyList<SearchContextLine> Read(
+    internal static IReadOnlyList<SearchContextLine> Read(
         TextReader reader,
         long matchingLine,
         SearchContextOptions options,

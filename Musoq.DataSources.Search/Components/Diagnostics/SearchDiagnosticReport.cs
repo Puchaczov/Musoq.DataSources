@@ -30,7 +30,8 @@ internal static class SearchDiagnosticReport
             SearchDiagnosticCodes.SourceOpenFailed when privateException is UnauthorizedAccessException or SecurityException => DataSourceFailureKind.AccessDenied,
             SearchDiagnosticCodes.SourceOpenFailed when privateException is FileNotFoundException or DirectoryNotFoundException => DataSourceFailureKind.ResourceNotFound,
             SearchDiagnosticCodes.SourceReadFailed when privateException is DecoderFallbackException or InvalidDataException => DataSourceFailureKind.InvalidInput,
-            SearchDiagnosticCodes.SourceOpenFailed or SearchDiagnosticCodes.SourceReadFailed or SearchDiagnosticCodes.SourceChanged => DataSourceFailureKind.Unavailable,
+            SearchDiagnosticCodes.SourceOpenFailed or SearchDiagnosticCodes.SourceReadFailed or SearchDiagnosticCodes.SourceChanged
+                or SearchDiagnosticCodes.SharingViolation => DataSourceFailureKind.Unavailable,
             SearchDiagnosticCodes.OutputFailed => DataSourceFailureKind.ProviderFailure,
             SearchDiagnosticCodes.ResourceLimit when privateException is RegexMatchTimeoutException => DataSourceFailureKind.Timeout,
             _ => DataSourceFailureKind.InvalidInput

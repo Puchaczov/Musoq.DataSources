@@ -524,6 +524,10 @@ internal static class SearchTextScanner
         {
             throw;
         }
+        catch (IOException exception) when (SearchDiagnosticCatalog.IsSharingViolation(exception))
+        {
+            throw new SearchSourceAccessException(SearchDiagnosticCatalog.SharingViolation(filePath), exception);
+        }
         catch (Exception exception)
         {
             throw new SearchSourceAccessException(

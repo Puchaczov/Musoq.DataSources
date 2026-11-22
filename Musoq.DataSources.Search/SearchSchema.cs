@@ -15,6 +15,7 @@ using Musoq.DataSources.Search.Entities;
 using Musoq.DataSources.Search.Components.Contracts;
 using Musoq.DataSources.Search.Components.Diagnostics;
 using Musoq.DataSources.Search.Components.Planning;
+using Musoq.DataSources.Search.Components.Traversal;
 using Musoq.DataSources.Search.Sources;
 using Musoq.DataSources.Search.Tables;
 
@@ -428,6 +429,14 @@ public sealed class SearchSchema : SchemaBase
         ArgumentNullException.ThrowIfNull(context);
         context.MetadataContext.EndWorkToken.ThrowIfCancellationRequested();
 
+        var textReadSettings = name.ToLowerInvariant() is "lines" or "matches" or "counts" or "files" or "many"
+            ? new[] { new SourceRuntimeSettingRequirement(
+                SearchSharedTextPrefix.SettingName,
+                Required: false,
+                Secret: false,
+                SourceRuntimeSettingPhase.Execution,
+                "Use stable (default) or shared-prefix to scan complete lines from files open for append.") }
+            : Array.Empty<SourceRuntimeSettingRequirement>();
         return
         [
             new SourceRuntimeSettingRequirement(
@@ -441,7 +450,8 @@ public sealed class SearchSchema : SchemaBase
                 Required: false,
                 Secret: false,
                 SourceRuntimeSettingPhase.Execution,
-                "Optional per-query buffered output budget in bytes. The default is 33554432; valid values are 65536 through 536870912.")
+                "Optional per-query buffered output budget in bytes. The default is 33554432; valid values are 65536 through 536870912."),
+            ..textReadSettings
         ];
     }
 

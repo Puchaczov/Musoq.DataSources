@@ -133,7 +133,7 @@ internal readonly record struct SearchSourceVersion(
             ? StringComparer.OrdinalIgnoreCase
             : StringComparer.Ordinal;
 
-    private static string ComputeContentHash(
+    internal static string ComputeContentHash(
         Stream stream,
         CancellationToken cancellationToken)
     {
@@ -207,6 +207,10 @@ internal readonly record struct SearchSourceObservation(
         catch (DirectoryNotFoundException)
         {
             throw new SearchSourceChangedException(canonicalPath);
+        }
+        catch (IOException exception) when (SearchDiagnosticCatalog.IsSharingViolation(exception))
+        {
+            throw new SearchSourceAccessException(SearchDiagnosticCatalog.SharingViolation(canonicalPath), exception);
         }
 
         using (stream)

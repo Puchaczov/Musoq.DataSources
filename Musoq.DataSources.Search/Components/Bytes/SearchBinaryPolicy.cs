@@ -35,6 +35,10 @@ internal static class SearchBinaryPolicy
         {
             throw;
         }
+        catch (IOException exception) when (SearchDiagnosticCatalog.IsSharingViolation(exception))
+        {
+            throw new SearchSourceAccessException(SearchDiagnosticCatalog.SharingViolation(path), exception);
+        }
         catch (Exception exception) when (
             exception is IOException or
             UnauthorizedAccessException or
@@ -64,7 +68,7 @@ internal static class SearchBinaryPolicy
         return IsBinaryReader(path, reader, buffer, cancellationToken);
     }
 
-    private static bool IsBinaryReader(
+    internal static bool IsBinaryReader(
         string path,
         TextReader reader,
         SearchCharBuffer buffer,

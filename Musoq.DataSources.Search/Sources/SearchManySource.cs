@@ -84,6 +84,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
         var readerFactory = _readerFactory ??
                             (path => SearchTextReader.Open(path, _request.Options.EncodingMode, _executionContext.WarningReporter));
         var classifyBinaryFiles = _readerFactory is null;
+        var sharedPrefix = SearchSharedTextPrefix.IsEnabled(_executionContext.SourceRuntimeSettings);
         var workerBuffers = new ThreadLocal<SearchCharBuffer>(
             SearchCharBuffer.Rent,
             trackAllValues: true);
@@ -139,13 +140,24 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                 var rows = new List<SearchMatch>();
                 var matchIndexes = new Dictionary<string, long>(StringComparer.Ordinal);
                 var stagedOutputBytes = 0L;
-                var sourceObservation = SearchSourceObservation.Capture(
-                    file,
-                    fileCancellationToken);
-                SearchTestHooks.AfterObservation(file);
+                var sourceObservation = sharedPrefix ? default : SearchSourceObservation.Capture(file, fileCancellationToken);
                 var fileBudget = resourceBudget.BeginFile(file, pathPatterns.Enabled);
-                fileBudget.ReserveBytes(sourceObservation.Length);
-                using var smallInput = classifyBinaryFiles &&
+                var shared = sharedPrefix
+                    ? SearchSharedTextPrefix.Capture(file, _request.Options.EncodingMode, fileBudget, fileCancellationToken)
+                    : null;
+                SearchTestHooks.AfterObservation(file);
+                if (shared is null)
+                    fileBudget.ReserveBytes(sourceObservation.Length);
+
+                void VerifySource()
+                {
+                    if (shared is null)
+                        sourceObservation.EnsureCurrent(fileCancellationToken);
+                    else
+                        shared.EnsureCurrent(fileCancellationToken);
+                }
+
+                using var smallInput = shared is null && classifyBinaryFiles &&
                                        sourceObservation.Length <= 4L * 1024 * 1024
                     ? SearchSmallFileBuffer.Read(
                         file,
@@ -188,7 +200,9 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                     if (classifyBinaryFiles)
                     {
                         scopeCounters?.IncrementContentOpenAttempts();
-                        var isBinary = smallInput is not null
+                        var isBinary = shared is not null
+                            ? SearchBinaryPolicy.IsBinaryReader(file, shared.OpenReader(), buffer, fileCancellationToken)
+                            : smallInput is not null
                             ? SearchBinaryPolicy.IsBinaryBytes(
                                 file,
                                 smallInput.Array,
@@ -204,14 +218,16 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                         if (isBinary)
                         {
                             scopeCounters?.IncrementBinaryFilesSkipped();
-                            sourceObservation.EnsureCurrent(fileCancellationToken);
+                            VerifySource();
                             return;
                         }
                     }
 
                     if (smallInput is null)
                         scopeCounters?.IncrementContentOpenAttempts();
-                    var scanReaderFactory = readerFactory;
+                    var scanReaderFactory = shared is null
+                        ? readerFactory
+                        : _ => shared.OpenReader(_executionContext.WarningReporter);
                     if (smallInput is not null)
                     {
                         scanReaderFactory = _ => SearchTextReader.Open(
@@ -281,7 +297,7 @@ internal sealed class SearchManySource : RowSourceBase<SearchMatch>
                         _request.Options.Context,
                         projection.RetainContext);
 
-                    sourceObservation.EnsureCurrent(fileCancellationToken);
+                    VerifySource();
                     fileCancellationToken.ThrowIfCancellationRequested();
                     FlushRows();
                 }
