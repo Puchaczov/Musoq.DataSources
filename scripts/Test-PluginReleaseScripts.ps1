@@ -249,7 +249,7 @@ function Test-LocalDatasourcePublisherContract {
     Assert-True ($selectedIds -contains "Musoq.DataSources.Git") "Multiple selections should resolve the Git datasource."
     Assert-True ($selectedIds -contains "Musoq.DataSources.Json") "Multiple selections should resolve the JSON datasource."
 
-    $tagSelection = & (Join-Path $PSScriptRoot "release/Resolve-BatchRelease.ps1") -Selection "10.0.10-Musoq.DataSources.Json" -Json | ConvertFrom-Json
+    $tagSelection = & (Join-Path $PSScriptRoot "release/Resolve-BatchRelease.ps1") -Selection "10.0.11-Musoq.DataSources.Json" -Json | ConvertFrom-Json
     Assert-Equal "Musoq.DataSources.Json" $tagSelection[0].packageId "Exact current release tags should resolve to the datasource package."
 }
 
