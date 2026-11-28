@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Musoq.DataSources.Git.Tests.Components;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Evaluator.Helpers;
 using Musoq.Schema.Optimization;
 
 namespace Musoq.DataSources.Git.Tests;
@@ -85,6 +86,77 @@ public sealed class GitStarContractTests
         Assert.HasCount(1, firstPass);
         Assert.HasCount(2, secondPass);
         Assert.AreNotSame(entity.Tags, entity.Tags);
+    }
+
+    [TestMethod]
+    [DoNotParallelize]
+    public void TagApply_ProvidesOneRowAtATimeAndKeepsSqlOrdinality()
+    {
+        using var fixture = ModernWorktreeTests.Create(out var linked);
+        OfflineGitFixture.RunGit(fixture.SeedPath, "tag", "aaa-lightweight");
+        OfflineGitFixture.RunGit(fixture.SeedPath, "tag", "second-lightweight");
+        var context = new GitRepositoryContext(GitRepositoryLocation.Resolve(linked), new Dictionary<string, string>(),
+            CancellationToken.None);
+        var repository = context.Repository();
+
+        using (GitCliProcessMetrics.BeginMeasurement())
+        {
+            using (var batches = new RecordApplyRows<TagEntity>(repository.Tags).GetEnumerator())
+            {
+                Assert.IsTrue(batches.MoveNext());
+                Assert.HasCount(1, batches.Current);
+                Assert.AreEqual("aaa-lightweight", batches.Current[0].FriendlyName);
+            }
+            var metrics = GitCliProcessMetrics.Snapshot();
+            Assert.AreEqual(1L, metrics.StartedProcesses);
+            Assert.AreEqual(0L, metrics.CompletedProcesses);
+        }
+
+        var sql = $"select t.FriendlyName, t.Ordinal from git.repository('{linked.Escape()}') r " +
+                  "cross apply r.Tags t with ordinality";
+        using var query = Compile(sql);
+        using var result = query.Run();
+        CollectionAssert.AreEqual(new[] { "aaa-lightweight", "annotated", "second-lightweight" },
+            result.Select(row => (string)row.ReadValue(0)).ToArray());
+        CollectionAssert.AreEqual(new[] { 0, 1, 2 }, result.Select(row => (int)row.ReadValue(1)).ToArray());
+    }
+
+    [TestMethod]
+    public void OuterTagApply_PreservesAnEmptyRepositoryRow()
+    {
+        using var fixture = OfflineGitFixture.Create();
+        using var query = Compile($"select t.FriendlyName, t.Ordinal from git.repository('{fixture.SeedPath.Escape()}') r " +
+                                  "outer apply r.Tags t with ordinality");
+        using var result = query.Run();
+
+        Assert.HasCount(1, result);
+        Assert.IsNull(result[0].ReadValue(0));
+        Assert.IsNull(result[0].ReadValue(1));
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void MarkedCommitApply_StopsAfterCancellationOnEitherBackend(bool useCli)
+    {
+        var linked = string.Empty;
+        using var fixture = useCli ? ModernWorktreeTests.Create(out linked) : OfflineGitFixture.Create();
+        var path = useCli ? linked : fixture.SeedPath;
+        if (!useCli)
+            OfflineGitFixture.RunGit(path, "commit", "--allow-empty", "-qm", "second commit");
+
+        using var cancellation = new CancellationTokenSource();
+        var context = new GitRepositoryContext(GitRepositoryLocation.Resolve(path), new Dictionary<string, string>(),
+            cancellation.Token);
+        Assert.AreEqual(useCli, context.RequiresCli);
+        using var commits = new RecordApplyRows<CommitEntity>(context.Repository().Commits, cancellation.Token)
+            .GetEnumerator();
+
+        Assert.IsTrue(commits.MoveNext());
+        Assert.HasCount(1, commits.Current);
+        Assert.IsNotNull(commits.Current[0].Sha);
+        cancellation.Cancel();
+        Assert.ThrowsExactly<OperationCanceledException>(() => commits.MoveNext());
     }
 
     [TestMethod]

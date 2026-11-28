@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.SeparatedValues",
   "slug": "separatedvalues",
-  "version": "11.0.8",
+  "version": "11.0.9",
   "projectPath": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
   "entryProject": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
   "ownPackageId": "Musoq.DataSources.SeparatedValues",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "1c4ea14209d9537f60e7b3fbb2041f3e218d1a637d64affe86468e601eca58b1"
+      "sha256": "71f3bebdb7da7b65ef5d59057b6316415ecc630de7c10257d03bc3ec604cea3b"
     },
     {
       "path": "Directory.Build.targets",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.SeparatedValues/Musoq.DataSources.SeparatedValues.csproj",
-      "sha256": "682d5a1e64cf255073a77297763f65ce28e573f35253a02a4afab3bdc73673e2"
+      "sha256": "e533c41c74efbda43f20224dcddf5b0bc45fe511a42bb4a2c1cca7c9d29cca67"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7f5859fe357364cd2ee9c975bc89f806e4ccba439aa02add54f365a41cdfb46c"
+      "sha256": "9a8535b4683ccab06b5f34be7c1e48f88124de162fec877dbbda414009b08576"
     }
   ],
   "packageGraph": [
@@ -106,17 +106,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
@@ -184,7 +184,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1295,
-      "sha256": "7b7e111d0be2ff37da5db1a121f8108ca6b0316bb0b9d43ff5d3ff5be414a2af"
+      "sha256": "3b7e16522f6919554219abd744ee82b23c1d68dcf2022c6954caf16d34b9a5d5"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -286,43 +287,28 @@ public class PropertyEntity
     ///     Returns an empty collection if the semantic model is not available or the property has no accessor bodies.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<TypeReferenceEntity> ReferencedTypes
+    public IEnumerable<TypeReferenceEntity> ReferencedTypes =>
+        _semanticModel is { } model && _propertyDeclaration is { } declaration
+            ? ApplyRows.Stream(ReadReferencedTypes(declaration, model))
+            : [];
+
+    private static IEnumerable<TypeReferenceEntity> ReadReferencedTypes(
+        PropertyDeclarationSyntax declaration, SemanticModel model)
     {
-        get
+        if (declaration.ExpressionBody is { } expressionBody)
+            foreach (var reference in TypeReferenceHelper.ReadTypeReferences(expressionBody, model))
+                yield return reference;
+
+        if (declaration.AccessorList is null)
+            yield break;
+
+        foreach (var accessor in declaration.AccessorList.Accessors)
         {
-            if (_semanticModel == null || _propertyDeclaration == null)
-                return Enumerable.Empty<TypeReferenceEntity>();
-
-            var bodies = new List<SyntaxNode>();
-
-            // Expression-bodied property: int Foo => expr;
-            if (_propertyDeclaration.ExpressionBody != null)
-                bodies.Add(_propertyDeclaration.ExpressionBody);
-
-            // Accessor bodies: get { ... } set { ... }
-            if (_propertyDeclaration.AccessorList != null)
-            {
-                foreach (var accessor in _propertyDeclaration.AccessorList.Accessors)
-                {
-                    if (accessor.Body != null)
-                        bodies.Add(accessor.Body);
-                    else if (accessor.ExpressionBody != null)
-                        bodies.Add(accessor.ExpressionBody);
-                }
-            }
-
-            if (bodies.Count == 0)
-                return Enumerable.Empty<TypeReferenceEntity>();
-
-            var references = new List<TypeReferenceEntity>();
-            var tree = _propertyDeclaration.SyntaxTree;
-
-            foreach (var body in bodies)
-            {
-                TypeReferenceHelper.CollectTypeReferences(references, body, _semanticModel, tree);
-            }
-
-            return references;
+            var body = (SyntaxNode?)accessor.Body ?? accessor.ExpressionBody;
+            if (body is null)
+                continue;
+            foreach (var reference in TypeReferenceHelper.ReadTypeReferences(body, model))
+                yield return reference;
         }
     }
 
@@ -331,34 +317,19 @@ public class PropertyEntity
     ///     Returns an empty collection if the semantic model is not available or the property has no accessor bodies.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<VariableEntity> LocalVariables
+    public IEnumerable<VariableEntity> LocalVariables =>
+        _semanticModel is { } model && _propertyDeclaration?.AccessorList is { } accessors
+            ? ApplyRows.Stream(ReadLocalVariables(accessors, model))
+            : [];
+
+    private static IEnumerable<VariableEntity> ReadLocalVariables(AccessorListSyntax accessors, SemanticModel model)
     {
-        get
+        foreach (var accessor in accessors.Accessors)
         {
-            if (_semanticModel == null || _propertyDeclaration == null)
-                return Enumerable.Empty<VariableEntity>();
-
-            var variables = new List<VariableEntity>();
-
-            var accessorBodies = new List<SyntaxNode>();
-
-            if (_propertyDeclaration.AccessorList != null)
-            {
-                foreach (var accessor in _propertyDeclaration.AccessorList.Accessors)
-                {
-                    if (accessor.Body != null)
-                        accessorBodies.Add(accessor.Body);
-                }
-            }
-
-            foreach (var body in accessorBodies)
-            foreach (var declaration in body.DescendantNodes()
-                         .OfType<LocalDeclarationStatementSyntax>())
-            foreach (var variable in declaration.Declaration.Variables)
-                if (_semanticModel.GetDeclaredSymbol(variable) is ILocalSymbol symbol)
-                    variables.Add(new VariableEntity(symbol, variable, _semanticModel, body));
-
-            return variables;
+            if (accessor.Body is not { } body)
+                continue;
+            foreach (var variable in VariableEntity.ReadLocalVariables(body, model))
+                yield return variable;
         }
     }
 

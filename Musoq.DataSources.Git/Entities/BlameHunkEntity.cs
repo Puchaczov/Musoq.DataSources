@@ -167,8 +167,9 @@ public class BlameHunkEntity
 
     /// <summary>Gets the blamed lines, loading and caching file content only on first access; binary files return no lines.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<BlameLineEntity> Lines => _fileContent?.Lines(_finalStartLineNumber, _lineCount)
-        ?? _lines.GetOrCreate(ReadLines) ?? Array.Empty<BlameLineEntity>();
+    public IEnumerable<BlameLineEntity> Lines => _fileContent is { } content
+        ? ApplyRows.Stream(content.Lines(_finalStartLineNumber, _lineCount))
+        : _lines.GetOrCreate(ReadLines) ?? Array.Empty<BlameLineEntity>();
 
     /// <summary>Gets this row instance.</summary>
     public BlameHunkEntity Self => this;

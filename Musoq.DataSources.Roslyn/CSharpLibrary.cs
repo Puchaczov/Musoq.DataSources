@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.DataSources.Roslyn.Entities;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn;
 
@@ -74,28 +75,8 @@ public class CSharpLibrary : LibraryBase
     /// <returns>References of the specified class entity.</returns>
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences(
-        [InjectSpecificSource(typeof(ClassEntity))] ClassEntity entity)
-    {
-        var references = RoslynAsyncHelper.RunSyncWithTimeout(
-            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
-            RoslynAsyncHelper.DefaultReferenceTimeout,
-            null, entity.Reporting);
-
-        if (references == null)
-            yield break;
-
-        foreach (var reference in references)
-        {
-            if (!reference.Locations.Any())
-                continue;
-
-            foreach (var location in reference.Locations)
-                if (location.Document.TryGetSyntaxTree(out var tree) &&
-                    location.Document.TryGetSemanticModel(out var model))
-                    yield return new ReferencedDocumentEntity(location.Document, entity.Solution, tree, model,
-                        location);
-        }
-    }
+        [InjectSpecificSource(typeof(ClassEntity))] ClassEntity entity) =>
+        ApplyRows.Stream(ReadReferences(entity.Symbol, entity.Solution, entity.Reporting));
 
     /// <summary>
     ///     Finds references of the specified interface entity.
@@ -104,28 +85,8 @@ public class CSharpLibrary : LibraryBase
     /// <returns>References of the specified class entity.</returns>
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences(
-        [InjectSpecificSource(typeof(InterfaceEntity))] InterfaceEntity entity)
-    {
-        var references = RoslynAsyncHelper.RunSyncWithTimeout(
-            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
-            RoslynAsyncHelper.DefaultReferenceTimeout,
-            null, entity.Reporting);
-
-        if (references == null)
-            yield break;
-
-        foreach (var reference in references)
-        {
-            if (!reference.Locations.Any())
-                continue;
-
-            foreach (var location in reference.Locations)
-                if (location.Document.TryGetSyntaxTree(out var tree) &&
-                    location.Document.TryGetSemanticModel(out var model))
-                    yield return new ReferencedDocumentEntity(location.Document, entity.Solution, tree, model,
-                        location);
-        }
-    }
+        [InjectSpecificSource(typeof(InterfaceEntity))] InterfaceEntity entity) =>
+        ApplyRows.Stream(ReadReferences(entity.Symbol, entity.Solution, entity.Reporting));
 
     /// <summary>
     ///     Finds references of the specified interface entity.
@@ -134,28 +95,8 @@ public class CSharpLibrary : LibraryBase
     /// <returns>References of the specified class entity.</returns>
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences(
-        [InjectSpecificSource(typeof(EnumEntity))] EnumEntity entity)
-    {
-        var references = RoslynAsyncHelper.RunSyncWithTimeout(
-            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
-            RoslynAsyncHelper.DefaultReferenceTimeout,
-            null, entity.Reporting);
-
-        if (references == null)
-            yield break;
-
-        foreach (var reference in references)
-        {
-            if (!reference.Locations.Any())
-                continue;
-
-            foreach (var location in reference.Locations)
-                if (location.Document.TryGetSyntaxTree(out var tree) &&
-                    location.Document.TryGetSemanticModel(out var model))
-                    yield return new ReferencedDocumentEntity(location.Document, entity.Solution, tree, model,
-                        location);
-        }
-    }
+        [InjectSpecificSource(typeof(EnumEntity))] EnumEntity entity) =>
+        ApplyRows.Stream(ReadReferences(entity.Symbol, entity.Solution, entity.Reporting));
 
     /// <summary>
     ///     Gets the NuGet packages for the specified project entity.
@@ -210,31 +151,8 @@ public class CSharpLibrary : LibraryBase
     /// <returns>References of the specified method entity.</returns>
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences(
-        [InjectSpecificSource(typeof(MethodEntity))] MethodEntity entity)
-    {
-        if (entity.Solution == null)
-            yield break;
-
-        var references = RoslynAsyncHelper.RunSyncWithTimeout(
-            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
-            RoslynAsyncHelper.DefaultReferenceTimeout,
-            null, entity.Reporting);
-
-        if (references == null)
-            yield break;
-
-        foreach (var reference in references)
-        {
-            if (!reference.Locations.Any())
-                continue;
-
-            foreach (var location in reference.Locations)
-                if (location.Document.TryGetSyntaxTree(out var tree) &&
-                    location.Document.TryGetSemanticModel(out var model))
-                    yield return new ReferencedDocumentEntity(location.Document, entity.Solution, tree, model,
-                        location);
-        }
-    }
+        [InjectSpecificSource(typeof(MethodEntity))] MethodEntity entity) =>
+        ApplyRows.Stream(ReadReferences(entity.Symbol, entity.Solution, entity.Reporting));
 
     /// <summary>
     ///     Finds references of the specified struct entity.
@@ -243,28 +161,8 @@ public class CSharpLibrary : LibraryBase
     /// <returns>References of the specified struct entity.</returns>
     [BindableMethod]
     public IEnumerable<ReferencedDocumentEntity> FindReferences(
-        [InjectSpecificSource(typeof(StructEntity))] StructEntity entity)
-    {
-        var references = RoslynAsyncHelper.RunSyncWithTimeout(
-            ct => SymbolFinder.FindReferencesAsync(entity.Symbol, entity.Solution, ct),
-            RoslynAsyncHelper.DefaultReferenceTimeout,
-            null, entity.Reporting);
-
-        if (references == null)
-            yield break;
-
-        foreach (var reference in references)
-        {
-            if (!reference.Locations.Any())
-                continue;
-
-            foreach (var location in reference.Locations)
-                if (location.Document.TryGetSyntaxTree(out var tree) &&
-                    location.Document.TryGetSemanticModel(out var model))
-                    yield return new ReferencedDocumentEntity(location.Document, entity.Solution, tree, model,
-                        location);
-        }
-    }
+        [InjectSpecificSource(typeof(StructEntity))] StructEntity entity) =>
+        ApplyRows.Stream(ReadReferences(entity.Symbol, entity.Solution, entity.Reporting));
 
     /// <summary>
     ///     Finds all implementations of the specified interface.
@@ -274,7 +172,10 @@ public class CSharpLibrary : LibraryBase
     /// <returns>Classes that implement the specified interface.</returns>
     [BindableMethod]
     public IEnumerable<ClassEntity> FindImplementations(
-        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, InterfaceEntity interfaceEntity)
+        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, InterfaceEntity interfaceEntity) =>
+        ApplyRows.Stream(ReadImplementations(interfaceEntity));
+
+    private static IEnumerable<ClassEntity> ReadImplementations(InterfaceEntity interfaceEntity)
     {
         var implementations =
             RoslynAsyncHelper.RunSync(
@@ -324,7 +225,10 @@ public class CSharpLibrary : LibraryBase
     /// <returns>Classes that derive from the specified class.</returns>
     [BindableMethod]
     public IEnumerable<ClassEntity> FindDerivedClasses(
-        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, ClassEntity classEntity)
+        [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, ClassEntity classEntity) =>
+        ApplyRows.Stream(ReadDerivedClasses(classEntity));
+
+    private static IEnumerable<ClassEntity> ReadDerivedClasses(ClassEntity classEntity)
     {
         var derivedClasses =
             RoslynAsyncHelper.RunSync(SymbolFinder.FindDerivedClassesAsync(classEntity.Symbol, classEntity.Solution));
@@ -366,11 +270,11 @@ public class CSharpLibrary : LibraryBase
         var pattern = "^" + Regex.Escape(namePattern).Replace("\\*", ".*") + "$";
         var regex = new Regex(pattern, RegexOptions.IgnoreCase);
 
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
-            .Where(m => regex.IsMatch(m.Name));
+            .Where(m => regex.IsMatch(m.Name)));
     }
 
     /// <summary>
@@ -383,10 +287,10 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<ClassEntity> GetHighComplexityClasses(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, int threshold)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
-            .Where(c => c.WeightedMethodsPerClass >= threshold);
+            .Where(c => c.WeightedMethodsPerClass >= threshold));
     }
 
     /// <summary>
@@ -399,11 +303,11 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<MethodEntity> GetHighComplexityMethods(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, int threshold)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
-            .Where(m => m.CyclomaticComplexity >= threshold);
+            .Where(m => m.CyclomaticComplexity >= threshold));
     }
 
     /// <summary>
@@ -415,10 +319,10 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<ClassEntity> GetUndocumentedClasses(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
-            .Where(c => !c.HasDocumentation);
+            .Where(c => !c.HasDocumentation));
     }
 
     /// <summary>
@@ -430,11 +334,11 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<MethodEntity> GetUndocumentedMethods(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
-            .Where(m => !m.HasDocumentation);
+            .Where(m => !m.HasDocumentation));
     }
 
     /// <summary>
@@ -446,11 +350,11 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<MethodEntity> GetAsyncMethodsWithoutSuffix(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
-            .Where(m => m.IsAsync && !m.Name.EndsWith("Async"));
+            .Where(m => m.IsAsync && !m.Name.EndsWith("Async")));
     }
 
     /// <summary>
@@ -463,11 +367,11 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<MethodEntity> GetDeeplyNestedMethods(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, int maxDepth)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
-            .Where(m => m.MaxNestingDepth > maxDepth);
+            .Where(m => m.MaxNestingDepth > maxDepth));
     }
 
     /// <summary>
@@ -480,10 +384,10 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<ClassEntity> GetLowCohesionClasses(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity, double threshold)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
-            .Where(c => c.LackOfCohesion >= threshold);
+            .Where(c => c.LackOfCohesion >= threshold));
     }
 
     /// <summary>
@@ -495,11 +399,11 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<MethodEntity> GetMethodsWithUnusedParameters(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
-            .Where(m => m.UnusedParameterCount > 0);
+            .Where(m => m.UnusedParameterCount > 0));
     }
 
     /// <summary>
@@ -511,11 +415,11 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<MethodEntity> GetMethodsWithUnusedVariables(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
-            .Where(m => m.UnusedVariableCount > 0);
+            .Where(m => m.UnusedVariableCount > 0));
     }
 
     /// <summary>
@@ -527,12 +431,12 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<ParameterEntity> GetUnusedParameters(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
             .SelectMany(m => m.Parameters)
-            .Where(p => p.IsUsed == false);
+            .Where(p => p.IsUsed == false));
     }
 
     /// <summary>
@@ -544,12 +448,12 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<VariableEntity> GetUnusedVariables(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Methods)
             .SelectMany(m => m.LocalVariables)
-            .Where(v => !v.IsUsed);
+            .Where(v => !v.IsUsed));
     }
 
     /// <summary>
@@ -561,11 +465,11 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<FieldEntity> GetUnusedFields(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
             .SelectMany(c => c.Fields)
-            .Where(f => f.IsUsed == false);
+            .Where(f => f.IsUsed == false));
     }
 
     /// <summary>
@@ -577,10 +481,10 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<ClassEntity> GetClassesWithUnusedFields(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
-            .Where(c => c.UnusedFieldCount > 0);
+            .Where(c => c.UnusedFieldCount > 0));
     }
 
     /// <summary>
@@ -592,10 +496,10 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<ClassEntity> GetUnusedClasses(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Classes)
-            .Where(c => !c.IsUsed);
+            .Where(c => !c.IsUsed));
     }
 
     /// <summary>
@@ -607,10 +511,10 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<InterfaceEntity> GetUnusedInterfaces(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Interfaces)
-            .Where(i => !i.IsUsed);
+            .Where(i => !i.IsUsed));
     }
 
     /// <summary>
@@ -621,10 +525,10 @@ public class CSharpLibrary : LibraryBase
     [BindableMethod]
     public IEnumerable<EnumEntity> GetUnusedEnums([InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Enums)
-            .Where(e => !e.IsUsed);
+            .Where(e => !e.IsUsed));
     }
 
     /// <summary>
@@ -636,10 +540,10 @@ public class CSharpLibrary : LibraryBase
     public IEnumerable<StructEntity> GetUnusedStructs(
         [InjectSpecificSource(typeof(SolutionEntity))] SolutionEntity entity)
     {
-        return entity.Projects
+        return ApplyRows.Stream(entity.Projects
             .SelectMany(p => p.Documents)
             .SelectMany(d => d.Structs)
-            .Where(s => !s.IsUsed);
+            .Where(s => !s.IsUsed));
     }
 
     internal async Task<IEnumerable<NugetPackageEntity>> GetNugetPackagesAsync(ProjectEntity project,
@@ -654,6 +558,33 @@ public class CSharpLibrary : LibraryBase
 
         return project.NugetPackageEntities;
     }
+    private static IEnumerable<ReferencedDocumentEntity> ReadReferences(
+        ISymbol symbol, Solution? solution, RoslynReporting? reporting)
+    {
+        if (solution is null)
+            yield break;
+
+        var references = RoslynAsyncHelper.RunSyncWithTimeout(
+            ct => SymbolFinder.FindReferencesAsync(symbol, solution, ct),
+            RoslynAsyncHelper.DefaultReferenceTimeout,
+            null, reporting);
+
+        if (references == null)
+            yield break;
+
+        foreach (var reference in references)
+        {
+            if (!reference.Locations.Any())
+                continue;
+
+            foreach (var location in reference.Locations)
+                if (location.Document.TryGetSyntaxTree(out var tree) &&
+                    location.Document.TryGetSemanticModel(out var model))
+                    yield return new ReferencedDocumentEntity(location.Document, solution, tree, model,
+                        location);
+        }
+    }
+
     private static IReadOnlyList<TEntity> SelectByNames<TEntity>(IEnumerable<TEntity> source,
         ReadOnlySpan<string> names, Func<TEntity, string> selectName)
     {

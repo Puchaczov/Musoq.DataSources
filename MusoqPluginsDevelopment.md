@@ -1,6 +1,6 @@
 # Musoq Plugin Development Tutorial - Native typed execution
 
-This standalone tutorial describes the accepted library-owned typed execution contracts after Core 11B, DataSources 12C and Cloud 13C. It replaces intermediate runtime-v2 migration examples that used removed object transfer boundaries. Use the intended host contract, not a historical package version. Target net10.0 with the repository-pinned SDK or a compatible newer 10.0 feature band.
+Build a .NET datasource using the typed Musoq SDK. Target net10.0 and use the Schema and Plugins package versions supported by your target host.
 
 ## Complete example project
 
@@ -264,7 +264,7 @@ Declare settings through `DescribeSourceRuntimeSettings` returning `SourceRuntim
 
 ## Testing and native result consumption
 
-Successful tests follow SQL -> production compilation -> execution -> complete consumption -> explicit assertions. The example source is compiled directly into NativePluginAuthoringTests; both SQL files are read verbatim. Assert names, exact types/nullability, row count and values. Compare unordered results as multisets unless SQL requests order.
+Execute representative SQL and check column names, types, nullability, row count, and values. Compare unordered results as multisets.
 
 Dispose compiled queries, result tables and source enumerators. Use exact `row.GetValue<T>(columnIndex)`, including nullable types. Native rows also implement `Count` and `VisitColumns<TVisitor>(ref visitor)` where the visitor implements `IColumnValueVisitor`; serializers visit concrete values. No object cell indexer exists. Known DTO/tuple output uses `CompileForTypedExecution<TOutput>`; runtime-shaped output uses column visitation. Test-only heterogeneous assertion visitors are not production adapters.
 
@@ -276,50 +276,48 @@ Test production SQL `desc invoice`, `desc invoice.rows` and `desc invoice.rows('
 
 Use matching host ABI package references to Musoq.Schema and Musoq.Plugins only in the entrypoint project. Exclude their runtime assets; do not bundle host-owned Parser/Converter/Evaluator/Targets assemblies or reference them directly. Test projects may reference Converter/Evaluator. Follow the .NET ZIP specification for outer metadata, inner Plugin.zip, licenses, RID artifacts and generated compatibility manifests.
 
-Resolve versions from the intended host and explicit package source; historical guide versions are not a dependency selection. Local qualification uses uniquely identified immutable packages and verified DLL hashes. A local package suffix is not the host assembly's semantic version. A compatible range alone does not prove an old host implements the breaking typed API; validate actual ABI bytes and loaders. Never overwrite package bytes under an existing version.
+Install the package in an isolated instance of the intended host and verify a representative query. Use the declared compatibility range when selecting the host.
 
-The sample project inherits version properties from this repository's Directory.Build.props. In a standalone repository, supply matching MusoqSchemaVersion/MusoqPluginsVersion properties and explicit NuGet sources. Build the sample with `dotnet build examples/native-plugin/Musoq.DataSources.InvoiceExample.csproj -c Release`; run its regression fixture with `dotnet test Musoq.DataSources.RepresentativeTests -c Release --filter FullyQualifiedName~NativePluginAuthoringTests`.
-
-Packaging checks remain local. Do not install over a live user's plugins during authoring tests. Publishing, importing and creating a release are separate authorized workflows; this migration permits local commits only.
+Set the sample project’s Schema and Plugins package versions to match the intended host before building.
 
 ## Datasource input diagnostics
 
 Malformed provider input is reported with `Musoq.Schema.Diagnostics.DataSourceInputException`, not a Parser diagnostic type. Its constructor accepts a stable `DataSourceInputFailureReason`, an optional `DataSourceInputLocation`, and an optional BCL inner exception. The available reasons are `MalformedInput`, `UnterminatedQuotedField`, and `MalformedJson`. Line and column values are one-based; byte offsets, character offsets and byte positions within a line are zero-based. The exception message is fixed for each reason: do not include paths, payload fragments, parser messages or other provider-controlled text in the public message. Core maps this Schema contract to MQ7014 and preserves its controlled reason and input location through datasource lifecycle diagnostics.
 
-## Troubleshooting and migration
+## Troubleshooting
 
 | Symptom | Correct action |
 |---|---|
-| Source override no longer compiles | Implement GetRowSource<TRow, TArguments>; read exact typed slots |
+| Source override fails compilation | Implement GetRowSource<TRow, TArguments>; read exact typed slots |
 | MQ3071 erased/unknown source shape | Declare concrete fields and use a typed source or query-scoped materializer |
 | Result getter type mismatch | Read the exact column CLR type, including nullable wrappers |
 | DESC misses a source | Align XML, registration and GetRawConstructors metadata |
 | Kernel rejected | Check exact state/ref/in signatures and concrete input/result bindings |
 | Unsupported frame or generated constraint | Fix the declaration/shape; do not add an execution fallback |
-| Old compiled/persisted artifact rejected | Recreate it against the accepted host contract |
+| Compiled artifact is incompatible | Recreate it with the intended host |
 | Cancellation fails during early TAKE | Dispose enumeration and observe host plus producer-session tokens |
-
-Before examples from the previous migration are reused, replace object-row transfer, execution object arrays, boxed predicate/sort getters, SetAggregate/GetAggregate conventions and window factories. Metadata object arrays remain allowed. Preserve behavioral tests while removing old fixtures; never weaken assertions or restore a compatibility adapter to make the guide compile.
 
 ## Executable native dynamic-source example
 
-The production JSON provider resolves authoritative scalar/structured shapes before compilation and implements native query-scoped materialization. The following SQL is also executed by NativePluginAuthoringTests. Replace `{fixture}` with the SQL-escaped path to the supplied rows.json before compilation; this placeholder is fixture preparation, not a runtime argument array.
+Save the following data to `rows.json` in the directory where you run the query.
+
+```json
+[
+  {"Id": 1, "Amount": 1.25, "Meta": {"label": "first"}},
+  {"Id": 2, "Amount": null, "Meta": {"label": "second"}},
+  {"Id": 3, "Amount": 2.5, "Meta": null}
+]
+```
 
 ```sql
 select Id, Amount, JsonText(Meta) as Metadata,
        Sum(Amount) over (order by Id) as Total
-from json.file('{fixture}')
+from json.file('rows.json')
 where Id > 1
 order by Id
 ```
 
-The filtered result has two rows: Id long 2/3, Amount decimal? null/2.5, Metadata string containing the second JSON object/null, and Total decimal? null/2.5. JsonText preserves the input object's JSON text, including whitespace. Structured values are decoded into concrete JsonElement/JsonElement? storage before the helper runs. Projection, filtering and window execution do not use object-row transfer. The rows.json, dynamic.sql and production JsonQueryRowSource/JsonQueryRowProcessor provide the complete executable reference.
-
-## Current runtime dependency baseline
-
-The datasource release targets Musoq Core 17.0.22. Upgrade Converter,
-Evaluator, Parser, Plugins and Schema together. The integration notes below
-describe behavior introduced in earlier compatible Core releases.
+The two rows have IDs 2 and 3. Amount and Total are null for ID 2 and 2.5 for ID 3. Metadata contains the second row's JSON object text for ID 2 and null for ID 3.
 
 ## Computed source projections
 
@@ -334,118 +332,26 @@ filtering, paging, and callable expressions keep their established semantics; a
 provider capability does not guarantee that every query will receive pushdown.
 Other datasources retain engine fallback for computed projections.
 
-## Core 17.0.14-alpha.2 integration
+## LIKE and RLIKE filtering
 
-Upgrade Converter, Evaluator, Parser, Plugins and Schema together. Predicate capability
-contract version 2 uses `SourcePredicatePatternMatch` as the common base for LIKE and
-RLIKE; inspect the concrete predicate before reading match-specific fields.
+Declare `SourceStringMatchCapability` and `SourceRegexMatchCapability` for the concrete
+string columns that your reader can filter. Read match-specific properties from
+`SourcePredicateStringMatch` or `SourcePredicateRegexMatch`. Record each accepted
+conjunct with `SourcePredicateApplication.ForRowFiltering` and leave unsupported
+predicates residual.
 
-For constant RLIKE/NOT RLIKE pushdown, declare `SourceRegexMatchCapability` on eligible
-string columns and record each accepted direct AND conjunct with
-`SourcePredicateApplication.ForRowFiltering` in the execution plan. Apply it to the
-actual decoded row value before paging. Unsupported columns and expressions stay
-residual. RLIKE uses a case-sensitive .NET regex unless inline flags change it; Core
-tries NonBacktracking and falls back to Compiled for unsupported constructs. Match the
-execution culture and the finite timeout supplied in `SourcePredicateRegexMatch`.
-Core treats a null input as a false RLIKE result, then applies NOT; negated RLIKE
-therefore includes null and missing string values.
+Filter the SQL-visible decoded values before applying an accepted `SKIP` or `TAKE`.
+Retain columns needed only by predicates until filtering completes. Residual
+filtering or ordering can prevent early paging. Match literal column names,
+including dots, against the declared schema. Keep nested APPLY fields residual
+when the reader cannot evaluate them.
 
-The repository shares this evaluator in `Shared/ProviderRegex.cs`. Compiled matchers
-are bounded by plan lifetime, and culture changes replace one immutable cache entry.
-Providers keep the public `RegexMatchTimeoutException` and supplied budget. Core
-17.0.14-alpha.2's datasource lifecycle recognizes the public exception as MQ7017
-and retains its typed cause and actual budget. Custom compilation regex budgets
-are propagated into negotiated RLIKE predicates. Do not add an Evaluator reference
-or construct internal exceptions in production providers.
+Support the LIKE shapes you advertise: exact, prefix, suffix, and contains. Honor
+the negotiated comparison, Unicode row values, empty strings, newlines, and
+negation. For RLIKE, preserve the supplied timeout, culture, and inline options.
+A null input is a non-match before negation. Surface a timed-out regex as
+`RegexMatchTimeoutException` so Musoq can report MQ7017.
 
-Computed source arguments must still permit static metadata resolution for dynamic
-schemas. PARAM/PARAMS and LET paging use `$name`. The range source accepts lossless
-integral widening to Int64. OpenAI and Ollama expose `CountTokens(content)` for the
-default tokenizer and `CountModelTokens(content)` for the provider model tokenizer (Ollama retains its GPT-3.5 approximation), avoiding
-ambiguous injected/non-injected SQL signatures; the existing C# overloads remain.
-
-
-### Complete LIKE and RLIKE row filtering
-
-Declare `SourceStringMatchCapability` (all four classified shapes, with negation)
-and `SourceRegexMatchCapability` from the **same reviewed typed string bindings**
-used by planning and execution. `Shared/ProviderRegex.cs` supplies
-`PatternColumnBindings<TRow>`, `PatternSourcePlan` and the shared matcher. Do not
-infer regex eligibility from a comparison whitelist or discover arbitrary getters
-through reflection. Exclude secret fields, side-effecting getters and getters that
-would issue another remote request. Keep nested APPLY members residual.
-
-For LIKE, read `Kind`, `Needle` and `Comparison` only after matching
-`SourcePredicateStringMatch`. The needle must be wildcard-free. Core 17.0.14
-transfers only ASCII exact/prefix/suffix/contains literals; other shapes and Unicode
-patterns remain residual. Match Unicode **row values**, current culture, newlines,
-empty strings and null-before-negation exactly like Core. A LIKE predicate has no
-supplied timeout; the shared matcher uses the pinned Core default of two seconds.
-For RLIKE, preserve the finite timeout in `SourcePredicateRegexMatch`, inline flags
-and Core regex options. Weak plan ownership and one immutable culture cache entry
-bound matcher lifetime without retaining query rows.
-
-Retain fields used only by accepted predicates before pruning native projections.
-Filter actual decoded/materialized row values before accepted SKIP/TAKE, and record
-each accepted conjunct with its matching `RowFiltering` application. Residual
-filtering or ordering blocks early paging. Treat literal structured-file column
-names as exact schema names, including dots, before considering alias normalization.
-Filesystem enumeration patterns cannot implement row-value pattern semantics.
-
-Search uses the typed bindings in its native predicate plan and retains MatchText
-or LineText required only by patterns. Count/audit predicates apply to completed
-rows; even TAKE 0 must preserve terminal scan accounting. Roslyn solution-row
-patterns must not become project-collection filters.
-
-Qualification requires actual execution for **every advertised entry**, including
-positive/negative LIKE shapes and RLIKE, predicate-only fields, and a disabled
-pushdown oracle. Planner acceptance alone is insufficient. Include capability and
-application identity assertions, unsupported/residual cases, culture and timeout
-causes, cancellation/disposal and repeated/overlapping execution. The complete
-repository matrix is [PatternPushdownCoverage.md](PatternPushdownCoverage.md).
-
-Core 17.0.14-alpha.2 fixes residual `NOT LIKE '%'`, configured provider regex
-budgets, public regex-timeout diagnostics, and JSON self-correlation binding/carrier
-failures. Keep enabled, disabled and provider-rejected regression paths passing.
-Earlier alpha.1 qualification is retained in [PatternPushdownValidation.md](PatternPushdownValidation.md);
-current release qualification is in [CoreAlpha2ReleaseValidation.md](CoreAlpha2ReleaseValidation.md).
-
-
-### Native filtering before expensive work
-
-Use `PatternSourcePlan.Read` with an explicit list of reviewed native columns only
-when the reader evaluates those exact SQL-visible values. The execution-local
-`NativePatternExecution` owns those conjuncts; the remaining row matcher must not
-run them again. Keep the original predicate/application identities and advertised
-capabilities. Native scalar accessors and public row getters should share value
-extraction, including nulls, formatting and contextual names.
-
-Filter directory entries before FileInfo/entity construction, and content sources
-before opening or decoding when their accepted path predicates permit it. Keep
-traversal, recursion, security and candidate-count limits independent of output
-row rejection. Excluded content files consume no content bytes and cause no
-content-read errors; admitted files retain the original error policy. Count/audit
-sources must drain their complete scope even for TAKE 0. Never translate patterns
-into globs, Git grep, JQL or remote search syntax.
-
-For APIs, make native filtering an optional internal adapter. Preserve existing
-interfaces as row-stage fallbacks. Carry raw page cardinality separately from
-filtered rows: an empty filtered page is not the end of pagination. Transfer
-window ownership only to readers that apply all accepted filtering before paging;
-otherwise keep the shared row window. Retain required detail requests and preserve
-SDK request shapes.
-
-For structured text, reuse decoded values only in the intersection of pattern and
-output string fields. Keep slots execution-local and record-local, clear them on
-every exit, and preserve the existing pool rules. Rejected records must still run
-their original validation. Avoid another full-record parse and retain the no-overlap
-fast path. `RecordStringCache` and the JSON/CSV integration show these ownership
-boundaries.
-
-Qualify work avoidance using deterministic counters (opens, wrappers, rich fields,
-decodes, pages), both the prior row stage and disabled-pushdown result oracles,
-then isolated Release measurements at 1%, 50% and 100% selectivity. Report allocation
-and elapsed-time tradeoffs; never use timing assertions or imply fewer source
-requests when the adapter only avoids local materialization. The stage matrix and
-local qualification evidence are in [PatternPushdownCoverage.md](PatternPushdownCoverage.md)
-and [PatternPushdownValidation.md](PatternPushdownValidation.md).
+For paged sources, continue reading when filtering removes every row from a
+page. Apply filters to the declared row values and preserve the datasource's
+traversal and access limits. Validate results with and without accepted filtering.

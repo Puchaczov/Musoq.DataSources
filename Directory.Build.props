@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <MusoqTypedCoreVersion>17.0.22</MusoqTypedCoreVersion>
+        <MusoqTypedCoreVersion>17.0.23</MusoqTypedCoreVersion>
         <MusoqConverterVersion>$(MusoqTypedCoreVersion)</MusoqConverterVersion>
         <MusoqEvaluatorVersion>$(MusoqTypedCoreVersion)</MusoqEvaluatorVersion>
         <MusoqParserVersion>$(MusoqTypedCoreVersion)</MusoqParserVersion>

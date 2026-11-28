@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using Musoq.DataSources.Os.Dlls;
 using Musoq.DataSources.Os.Files;
 using Musoq.DataSources.Os.Metadata;
@@ -162,9 +164,10 @@ internal sealed class PredicateCountingMetadataSource : MetadataSource
     protected override void ProcessFile(
         FileInfo file,
         DirectorySourceSearchOptions source,
-        List<MetadataEntity> dirFiles)
+        Action<MetadataEntity> addRow,
+        CancellationToken cancellationToken)
     {
         EntitiesMaterialized++;
-        base.ProcessFile(file, source, dirFiles);
+        base.ProcessFile(file, source, addRow, cancellationToken);
     }
 }

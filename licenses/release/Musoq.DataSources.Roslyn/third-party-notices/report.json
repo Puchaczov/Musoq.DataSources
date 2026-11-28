@@ -141,17 +141,17 @@
   },
   {
     "PackageId": "Musoq.Parser",
-    "PackageVersion": "17.0.22",
+    "PackageVersion": "17.0.23",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Plugins",
-    "PackageVersion": "17.0.22",
+    "PackageVersion": "17.0.23",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Schema",
-    "PackageVersion": "17.0.22",
+    "PackageVersion": "17.0.23",
     "License": "MIT"
   },
   {
@@ -196,7 +196,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.Roslyn",
-    "PackageVersion": "3.0.12",
+    "PackageVersion": "3.0.13",
     "License": "MIT"
   }
 ]

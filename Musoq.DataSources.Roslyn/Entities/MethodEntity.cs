@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.DataSources.Roslyn.Components;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -436,24 +437,10 @@ public class MethodEntity
     ///     Returns an empty collection if the semantic model is not available.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<VariableEntity> LocalVariables
-    {
-        get
-        {
-            if (_semanticModel == null || _methodDeclaration.Body == null)
-                return Enumerable.Empty<VariableEntity>();
-
-            var variables = new List<VariableEntity>();
-
-            foreach (var declaration in _methodDeclaration.Body.DescendantNodes()
-                         .OfType<LocalDeclarationStatementSyntax>())
-            foreach (var variable in declaration.Declaration.Variables)
-                if (_semanticModel.GetDeclaredSymbol(variable) is ILocalSymbol symbol)
-                    variables.Add(new VariableEntity(symbol, variable, _semanticModel, _methodDeclaration.Body));
-
-            return variables;
-        }
-    }
+    public IEnumerable<VariableEntity> LocalVariables =>
+        _semanticModel is { } model && _methodDeclaration.Body is { } body
+            ? ApplyRows.Stream(VariableEntity.ReadLocalVariables(body, model))
+            : [];
 
     /// <summary>
     ///     Gets the count of local variables in the method.
@@ -891,19 +878,10 @@ public class MethodEntity
     {
         get
         {
-            if (_semanticModel == null)
-                return Enumerable.Empty<TypeReferenceEntity>();
-
             var body = (SyntaxNode?)_methodDeclaration.Body ?? _methodDeclaration.ExpressionBody;
-            if (body == null)
-                return Enumerable.Empty<TypeReferenceEntity>();
-
-            var references = new List<TypeReferenceEntity>();
-            var tree = _methodDeclaration.SyntaxTree;
-
-            TypeReferenceHelper.CollectTypeReferences(references, body, _semanticModel, tree);
-
-            return references;
+            return _semanticModel is { } model && body is not null
+                ? ApplyRows.Stream(TypeReferenceHelper.ReadTypeReferences(body, model))
+                : [];
         }
     }
 

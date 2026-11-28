@@ -5,6 +5,7 @@ using LibGit2Sharp;
 using Musoq.DataSources.Git.Entities;
 using Musoq.Plugins;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Git;
 
@@ -28,7 +29,7 @@ public class GitLibrary : LibraryBase
         CommitEntity second)
     {
         if (repository.ReadContext?.RequiresCli == true)
-            return repository.ReadContext.Differences(first.Sha, second.Sha);
+            return ApplyRows.Stream(repository.ReadContext.Differences(first.Sha, second.Sha));
         return repository.Read(libGitRepository =>
         {
             var firstCommit = LookupCommit(libGitRepository, first);
@@ -52,7 +53,7 @@ public class GitLibrary : LibraryBase
         BranchEntity second)
     {
         if (repository.ReadContext?.RequiresCli == true)
-            return repository.ReadContext.Differences(first.TipSha, second.TipSha);
+            return ApplyRows.Stream(repository.ReadContext.Differences(first.TipSha, second.TipSha));
         return repository.Read(libGitRepository =>
         {
             var firstCommit = LookupBranchTip(libGitRepository, first);
@@ -74,7 +75,7 @@ public class GitLibrary : LibraryBase
         BranchEntity branch)
     {
         if (repository.ReadContext?.RequiresCli == true)
-            return repository.ReadContext.Differences("HEAD", branch.TipSha);
+            return ApplyRows.Stream(repository.ReadContext.Differences("HEAD", branch.TipSha));
         return repository.Read(libGitRepository =>
         {
             var current = libGitRepository.Head?.Tip;
@@ -170,7 +171,8 @@ public class GitLibrary : LibraryBase
         string searchPatternRegex)
     {
         if (repository.ReadContext?.RequiresCli == true)
-            return repository.ReadContext.Branches().Where(b => Regex.IsMatch(b.FriendlyName, searchPatternRegex));
+            return ApplyRows.Stream(repository.ReadContext.Branches()
+                .Where(b => Regex.IsMatch(b.FriendlyName, searchPatternRegex)));
         return repository.Read(libGitRepository => libGitRepository.Branches
             .Where(branch => Regex.IsMatch(branch.FriendlyName, searchPatternRegex))
             .Select(branch => new BranchEntity(branch, libGitRepository)).ToArray());
@@ -188,12 +190,12 @@ public class GitLibrary : LibraryBase
         bool excludeMergeBase = true)
     {
         if (repository.ReadContext?.RequiresCli == true)
-            return repository.ReadContext.BranchSpecificCommits(branch, excludeMergeBase);
+            return ApplyRows.Stream(repository.ReadContext.BranchSpecificCommits(branch, excludeMergeBase));
         var mergeBase = FindMergeBase(repository, branch);
         if (mergeBase is null || string.IsNullOrWhiteSpace(mergeBase.MergeBaseCommit.Sha))
             return [];
 
-        return ReadCommits();
+        return ApplyRows.Stream(ReadCommits());
 
         IEnumerable<CommitEntity> ReadCommits()
         {
@@ -285,8 +287,9 @@ public class GitLibrary : LibraryBase
         bool reverse)
     {
         if (repository.ReadContext?.RequiresCli == true)
-            return reverse ? repository.ReadContext.Differences(branch.TipSha, commit.Sha)
-                : repository.ReadContext.Differences(commit.Sha, branch.TipSha);
+            return ApplyRows.Stream(reverse
+                ? repository.ReadContext.Differences(branch.TipSha, commit.Sha)
+                : repository.ReadContext.Differences(commit.Sha, branch.TipSha));
         return repository.Read(libGitRepository =>
         {
             var first = LookupCommit(libGitRepository, commit);

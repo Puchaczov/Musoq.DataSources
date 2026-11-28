@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Roslyn",
   "slug": "roslyn",
-  "version": "3.0.12",
+  "version": "3.0.13",
   "projectPath": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
   "entryProject": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
   "ownPackageId": "Musoq.DataSources.Roslyn",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "1c4ea14209d9537f60e7b3fbb2041f3e218d1a637d64affe86468e601eca58b1"
+      "sha256": "71f3bebdb7da7b65ef5d59057b6316415ecc630de7c10257d03bc3ec604cea3b"
     },
     {
       "path": "Directory.Build.targets",
@@ -61,15 +61,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "482c5c356f279a51d03bf1c78c24c4915fd3426c5414a7582e64b79c37751cb5"
+      "sha256": "af82529b8729a660a1d4d46b08ba6090d8d01f554a48cf7ac9f73815aa9275c4"
     },
     {
       "path": "Musoq.DataSources.Roslyn/Musoq.DataSources.Roslyn.csproj",
-      "sha256": "3cabae6be64bff60e114d95ec2d5d10522e3579491606f2b7e52339fa291c909"
+      "sha256": "7741cf88a26967ef6d3b1899fea7ce8dd8988b9b0c3cb3fa3e10f6d15729c33f"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7f5859fe357364cd2ee9c975bc89f806e4ccba439aa02add54f365a41cdfb46c"
+      "sha256": "9a8535b4683ccab06b5f34be7c1e48f88124de162fec877dbbda414009b08576"
     }
   ],
   "packageGraph": [
@@ -215,17 +215,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
@@ -438,7 +438,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 4524,
-      "sha256": "f00c06fd6e7dfcb12537950fba38469e73e213d2856856a0a7acd3ff732dd9af"
+      "sha256": "986713e9459c4d9fbbf25e1c4aa1da816174ab590e2189a68a3dbf259be78137"
     },
     {
       "path": "third-party-notices/System.Composition.AttributedModel/license.txt",

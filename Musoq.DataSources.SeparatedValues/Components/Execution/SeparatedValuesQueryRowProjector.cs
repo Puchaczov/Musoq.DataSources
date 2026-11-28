@@ -261,9 +261,12 @@ internal readonly struct SeparatedValuesQueryRowProjector<TRow, TMaterializer>
             catch (Exception exception) when (exception is FormatException or OverflowException)
             {
                 ref readonly var diagnostic = ref _projection.GetDiagnostic(slot);
-                throw new FormatException(
+                throw SeparatedValuesFieldConversionFailure.Create(
                     $"Separated-values row {_rowNumber:N0} column '{diagnostic.Name}' " +
                     $"cannot be converted as {slotBinding.Conversion}.",
+                    _rowNumber,
+                    slotBinding.PhysicalSourceOrdinal,
+                    typeof(T),
                     exception);
             }
         }
@@ -274,10 +277,13 @@ internal readonly struct SeparatedValuesQueryRowProjector<TRow, TMaterializer>
                 return default!;
 
             ref readonly var diagnostic = ref _projection.GetDiagnostic(slot);
-            throw new FormatException(
+            throw SeparatedValuesFieldConversionFailure.Create(
                 $"Separated-values source '{_projection.SourcePath}' row {_rowNumber:N0} " +
                 $"column '{diagnostic.Name}' {reason}, but query shape '{_projection.Fingerprint}' " +
-                $"requires non-nullable '{diagnostic.FieldType}'.");
+                $"requires non-nullable '{diagnostic.FieldType}'.",
+                _rowNumber,
+                binding.PhysicalSourceOrdinal,
+                typeof(T));
         }
 
         private InvalidOperationException CreateShapeError(string reason)

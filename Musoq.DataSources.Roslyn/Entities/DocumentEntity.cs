@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -85,7 +86,7 @@ public class DocumentEntity
             if (!_wasInitialized)
                 throw new InvalidOperationException("Document is not initialized.");
 
-            return Classes.Count();
+            return GetClasses().Count();
         }
     }
 
@@ -100,7 +101,7 @@ public class DocumentEntity
             if (!_wasInitialized)
                 throw new InvalidOperationException("Document is not initialized.");
 
-            return Interfaces.Count();
+            return GetInterfaces().Count();
         }
     }
 
@@ -115,7 +116,7 @@ public class DocumentEntity
             if (!_wasInitialized)
                 throw new InvalidOperationException("Document is not initialized.");
 
-            return Enums.Count();
+            return GetEnums().Count();
         }
     }
 
@@ -124,16 +125,15 @@ public class DocumentEntity
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
-    public IEnumerable<ClassEntity> Classes
-    {
-        get
-        {
-            if (!_wasInitialized)
-                throw new InvalidOperationException("Document is not initialized.");
+    public IEnumerable<ClassEntity> Classes => ApplyRows.Stream(GetClasses());
 
-            return GetTypeEntities<ClassDeclarationSyntax, ClassEntity>()
-                .Concat(GetTypeEntities<RecordDeclarationSyntax, ClassEntity>());
-        }
+    private IEnumerable<ClassEntity> GetClasses()
+    {
+        if (!_wasInitialized)
+            throw new InvalidOperationException("Document is not initialized.");
+
+        return GetTypeEntities<ClassDeclarationSyntax, ClassEntity>()
+            .Concat(GetTypeEntities<RecordDeclarationSyntax, ClassEntity>());
     }
 
     /// <summary>
@@ -141,15 +141,14 @@ public class DocumentEntity
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
-    public IEnumerable<InterfaceEntity> Interfaces
-    {
-        get
-        {
-            if (!_wasInitialized)
-                throw new InvalidOperationException("Document is not initialized.");
+    public IEnumerable<InterfaceEntity> Interfaces => ApplyRows.Stream(GetInterfaces());
 
-            return GetTypeEntities<InterfaceDeclarationSyntax, InterfaceEntity>();
-        }
+    private IEnumerable<InterfaceEntity> GetInterfaces()
+    {
+        if (!_wasInitialized)
+            throw new InvalidOperationException("Document is not initialized.");
+
+        return GetTypeEntities<InterfaceDeclarationSyntax, InterfaceEntity>();
     }
 
     /// <summary>
@@ -157,15 +156,14 @@ public class DocumentEntity
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
-    public IEnumerable<EnumEntity> Enums
-    {
-        get
-        {
-            if (!_wasInitialized)
-                throw new InvalidOperationException("Document is not initialized.");
+    public IEnumerable<EnumEntity> Enums => ApplyRows.Stream(GetEnums());
 
-            return GetTypeEntities<EnumDeclarationSyntax, EnumEntity>();
-        }
+    private IEnumerable<EnumEntity> GetEnums()
+    {
+        if (!_wasInitialized)
+            throw new InvalidOperationException("Document is not initialized.");
+
+        return GetTypeEntities<EnumDeclarationSyntax, EnumEntity>();
     }
 
     /// <summary>
@@ -173,25 +171,24 @@ public class DocumentEntity
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
-    public IEnumerable<StructEntity> Structs
+    public IEnumerable<StructEntity> Structs => ApplyRows.Stream(GetStructs());
+
+    private IEnumerable<StructEntity> GetStructs()
     {
-        get
-        {
-            if (!_wasInitialized)
-                throw new InvalidOperationException("Document is not initialized.");
+        if (!_wasInitialized)
+            throw new InvalidOperationException("Document is not initialized.");
 
-            if (_syntaxTree is null || _semanticModel is null)
-                throw new InvalidOperationException("Document is not initialized.");
+        if (_syntaxTree is null || _semanticModel is null)
+            throw new InvalidOperationException("Document is not initialized.");
 
-            return FilterNodes<StructDeclarationSyntax>(_syntaxTree.GetRoot())
-                .Select(node =>
-                {
-                    var symbol = _semanticModel.GetDeclaredSymbol(node);
-                    if (symbol is null)
-                        throw new InvalidOperationException("Could not get symbol for struct declaration.");
-                    return new StructEntity((INamedTypeSymbol)symbol, node, _semanticModel, _solution, this);
-                });
-        }
+        return FilterNodes<StructDeclarationSyntax>(_syntaxTree.GetRoot())
+            .Select(node =>
+            {
+                var symbol = _semanticModel.GetDeclaredSymbol(node);
+                if (symbol is null)
+                    throw new InvalidOperationException("Could not get symbol for struct declaration.");
+                return new StructEntity((INamedTypeSymbol)symbol, node, _semanticModel, _solution, this);
+            });
     }
 
     /// <summary>
@@ -205,7 +202,7 @@ public class DocumentEntity
             if (!_wasInitialized)
                 throw new InvalidOperationException("Document is not initialized.");
 
-            return Structs.Count();
+            return GetStructs().Count();
         }
     }
 
@@ -214,27 +211,26 @@ public class DocumentEntity
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
-    public IEnumerable<DelegateEntity> Delegates
+    public IEnumerable<DelegateEntity> Delegates => ApplyRows.Stream(GetDelegates());
+
+    private IEnumerable<DelegateEntity> GetDelegates()
     {
-        get
-        {
-            if (!_wasInitialized)
-                throw new InvalidOperationException("Document is not initialized.");
+        if (!_wasInitialized)
+            throw new InvalidOperationException("Document is not initialized.");
 
-            if (_syntaxTree is null || _semanticModel is null)
-                throw new InvalidOperationException("Document is not initialized.");
+        if (_syntaxTree is null || _semanticModel is null)
+            throw new InvalidOperationException("Document is not initialized.");
 
-            return _syntaxTree.GetRoot()
-                .DescendantNodes()
-                .OfType<DelegateDeclarationSyntax>()
-                .Select(node =>
-                {
-                    var symbol = _semanticModel.GetDeclaredSymbol(node);
-                    if (symbol is null)
-                        throw new InvalidOperationException("Could not get symbol for delegate declaration.");
-                    return new DelegateEntity((INamedTypeSymbol)symbol, node);
-                });
-        }
+        return _syntaxTree.GetRoot()
+            .DescendantNodes()
+            .OfType<DelegateDeclarationSyntax>()
+            .Select(node =>
+            {
+                var symbol = _semanticModel.GetDeclaredSymbol(node);
+                if (symbol is null)
+                    throw new InvalidOperationException("Could not get symbol for delegate declaration.");
+                return new DelegateEntity((INamedTypeSymbol)symbol, node);
+            });
     }
 
     /// <summary>
@@ -248,7 +244,7 @@ public class DocumentEntity
             if (!_wasInitialized)
                 throw new InvalidOperationException("Document is not initialized.");
 
-            return Delegates.Count();
+            return GetDelegates().Count();
         }
     }
 
@@ -257,21 +253,20 @@ public class DocumentEntity
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
-    public IEnumerable<UsingDirectiveEntity> UsingDirectives
+    public IEnumerable<UsingDirectiveEntity> UsingDirectives => ApplyRows.Stream(GetUsingDirectives());
+
+    private IEnumerable<UsingDirectiveEntity> GetUsingDirectives()
     {
-        get
-        {
-            if (!_wasInitialized)
-                throw new InvalidOperationException("Document is not initialized.");
+        if (!_wasInitialized)
+            throw new InvalidOperationException("Document is not initialized.");
 
-            if (_syntaxTree is null)
-                throw new InvalidOperationException("Document is not initialized.");
+        if (_syntaxTree is null)
+            throw new InvalidOperationException("Document is not initialized.");
 
-            return _syntaxTree.GetRoot()
-                .DescendantNodes()
-                .OfType<UsingDirectiveSyntax>()
-                .Select(u => new UsingDirectiveEntity(u));
-        }
+        return _syntaxTree.GetRoot()
+            .DescendantNodes()
+            .OfType<UsingDirectiveSyntax>()
+            .Select(u => new UsingDirectiveEntity(u));
     }
 
     /// <summary>
@@ -285,7 +280,7 @@ public class DocumentEntity
             if (!_wasInitialized)
                 throw new InvalidOperationException("Document is not initialized.");
 
-            return UsingDirectives.Count();
+            return GetUsingDirectives().Count();
         }
     }
 
@@ -321,16 +316,15 @@ public class DocumentEntity
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the document is not initialized.</exception>
     [BindablePropertyAsTable]
-    public IEnumerable<DiagnosticEntity> Diagnostics
-    {
-        get
-        {
-            if (!_wasInitialized || _semanticModel == null)
-                throw new InvalidOperationException("Document is not initialized.");
+    public IEnumerable<DiagnosticEntity> Diagnostics => ApplyRows.Stream(GetDiagnostics());
 
-            return _semanticModel.GetDiagnostics()
-                .Select(d => new DiagnosticEntity(d));
-        }
+    private IEnumerable<DiagnosticEntity> GetDiagnostics()
+    {
+        if (!_wasInitialized || _semanticModel == null)
+            throw new InvalidOperationException("Document is not initialized.");
+
+        return _semanticModel.GetDiagnostics()
+            .Select(d => new DiagnosticEntity(d));
     }
 
     /// <summary>
@@ -344,7 +338,7 @@ public class DocumentEntity
             if (!_wasInitialized)
                 throw new InvalidOperationException("Document is not initialized.");
 
-            return Diagnostics.Count();
+            return GetDiagnostics().Count();
         }
     }
 

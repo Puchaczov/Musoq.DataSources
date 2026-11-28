@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -118,8 +119,8 @@ public class EnumEntity : TypeEntity
     ///     Gets the enum members with their names and values.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<EnumMemberEntity> EnumMembers => GetEnumMemberSymbols()
-        .Select(enumField => new EnumMemberEntity(enumField));
+    public IEnumerable<EnumMemberEntity> EnumMembers =>
+        ApplyRows.Stream(GetEnumMemberSymbols().Select(enumField => new EnumMemberEntity(enumField)));
 
     /// <summary>
     ///     Gets a value indicating whether the enum has XML documentation.

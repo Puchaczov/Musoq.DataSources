@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using MetadataExtractor;
 using MetadataExtractor.Util;
@@ -57,33 +58,67 @@ internal class MetadataSource : EnumerateFilesSourceBase<MetadataEntity>
         return base.GetFiles(directoryInfo);
     }
 
-    protected override void ProcessFile(FileInfo file, DirectorySourceSearchOptions source, List<MetadataEntity> dirFiles)
+    protected override void ProcessFile(
+        FileInfo file, DirectorySourceSearchOptions source, Action<MetadataEntity> addRow, CancellationToken cancellationToken)
     {
         NativePatterns?.ContentOpened();
-        using var stream = file.OpenRead();
+        IReadOnlyList<MetadataExtractor.Directory> directories;
+        using (var stream = file.OpenRead())
+        {
+            if (FileTypeDetector.DetectFileType(stream) == FileType.Unknown)
+                return;
 
-        if (FileTypeDetector.DetectFileType(stream) == FileType.Unknown)
-            return;
+            try
+            {
+                directories = ImageMetadataReader.ReadMetadata(stream);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                HandleMetadataReadError(file, error, cancellationToken);
+                return;
+            }
+        }
 
+        using var rows = directories.SelectMany(directory => directory.Tags,
+            (directory, tag) => new MetadataEntity(file.FullName, directory.Name, tag.Name, tag.Description))
+            .GetEnumerator();
+        var constructed = 0;
         try
         {
-            var countBefore = dirFiles.Count;
-            dirFiles.AddRange(
-                ImageMetadataReader.ReadMetadata(stream)
-                    .SelectMany(directory => directory.Tags,
-                        (directory, tag) =>
-                            new MetadataEntity(file.FullName, directory.Name, tag.Name, tag.Description)));
-            NativePatterns?.Constructed(dirFiles.Count - countBefore);
-        }
-        catch (Exception exc) when (exc is not OperationCanceledException)
-        {
-            if (_throwOnMetadataReadError)
+            while (true)
             {
-                if (OsSchema.Reports.TryMap(exc, ExecutionContext.EndWorkToken, out var failure)) throw failure;
-                throw new MetadataReadException(file, exc);
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    if (!rows.MoveNext())
+                        break;
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    HandleMetadataReadError(file, error, cancellationToken);
+                    return;
+                }
+
+                constructed++;
+                addRow(rows.Current);
             }
-            if (!OsSchema.Reports.Warn(ExecutionContext, exc, "The existing metadata-skip option was used.", ExecutionContext.EndWorkToken))
-                throw;
         }
+        finally
+        {
+            NativePatterns?.Constructed(constructed);
+        }
+    }
+
+    private void HandleMetadataReadError(FileInfo file, Exception error, CancellationToken cancellationToken)
+    {
+        if (_throwOnMetadataReadError)
+        {
+            if (OsSchema.Reports.TryMap(error, cancellationToken, out var failure))
+                throw failure;
+            throw new MetadataReadException(file, error);
+        }
+
+        if (!OsSchema.Reports.Warn(ExecutionContext, error, "The existing metadata-skip option was used.", cancellationToken))
+            ExceptionDispatchInfo.Throw(error);
     }
 }

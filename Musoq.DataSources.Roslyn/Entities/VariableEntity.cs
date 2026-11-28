@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -28,6 +29,14 @@ public class VariableEntity
         _syntax = syntax;
         _semanticModel = semanticModel;
         _containingScope = containingScope;
+    }
+
+    internal static IEnumerable<VariableEntity> ReadLocalVariables(BlockSyntax body, SemanticModel semanticModel)
+    {
+        foreach (var declaration in body.DescendantNodes().OfType<LocalDeclarationStatementSyntax>())
+        foreach (var variable in declaration.Declaration.Variables)
+            if (semanticModel.GetDeclaredSymbol(variable) is ILocalSymbol symbol)
+                yield return new VariableEntity(symbol, variable, semanticModel, body);
     }
 
     /// <summary>

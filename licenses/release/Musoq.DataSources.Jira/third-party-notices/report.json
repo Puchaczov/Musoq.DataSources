@@ -41,17 +41,17 @@
   },
   {
     "PackageId": "Musoq.Parser",
-    "PackageVersion": "17.0.22",
+    "PackageVersion": "17.0.23",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Plugins",
-    "PackageVersion": "17.0.22",
+    "PackageVersion": "17.0.23",
     "License": "MIT"
   },
   {
     "PackageId": "Musoq.Schema",
-    "PackageVersion": "17.0.22",
+    "PackageVersion": "17.0.23",
     "License": "MIT"
   },
   {
@@ -71,7 +71,7 @@
   },
   {
     "PackageId": "Musoq.DataSources.Jira",
-    "PackageVersion": "2.0.11",
+    "PackageVersion": "2.0.12",
     "License": "MIT"
   }
 ]

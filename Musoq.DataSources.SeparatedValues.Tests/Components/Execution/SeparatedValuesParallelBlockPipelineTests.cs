@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Musoq.DataSources.Structured;
 using Musoq.DataSources.Tests.Common;
+using Musoq.Schema;
 using Musoq.Schema.Diagnostics;
 using Musoq.Schema.DataSources;
 using Musoq.Schema.Optimization;
@@ -21,6 +22,7 @@ using Musoq.DataSources.SeparatedValues.Components.Contracts;
 using Musoq.DataSources.SeparatedValues.Components.Execution;
 using Musoq.DataSources.SeparatedValues.Components.Parsing;
 using Musoq.DataSources.SeparatedValues.Components.Planning;
+using Musoq.DataSources.SeparatedValues.Sources;
 using Musoq.DataSources.SeparatedValues.Tests.Infrastructure;
 
 namespace Musoq.DataSources.SeparatedValues.Tests.Components.Execution;
@@ -465,6 +467,38 @@ public class SeparatedValuesParallelBlockPipelineTests
         });
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void ProjectedConversionFailure_ReportsLogicalRecordAndPhysicalColumn(bool parallel)
+    {
+        WithCsv("A,B\n\"line one\nline two\",7\nnext,invalid\n", path =>
+        {
+            var requestedColumn = new SchemaColumn("B", 1, typeof(long));
+            var plan = DeclaredProjectedPlan(path, requestedColumn);
+            var scan = new SeparatedValuesScanPipeline(
+                new SeparatedValuesParallelBlockScanPipeline(blockSize: 8),
+                forceParallel: parallel);
+            var context = RuntimeV2TestContexts.CreateExecutionContext(
+                allColumns: [new SchemaColumn("B", 0, typeof(long))],
+                sourceRuntimeSettings: new Dictionary<string, string>
+                {
+                    [SeparatedValuesParallelScanOptions.MaximumParallelismSettingName] = parallel ? "4" : "1"
+                },
+                executionPlan: plan);
+            var shape = new QueryRowShape([new QueryRowField(0, 1, "B", typeof(long), false)]);
+            var source = new SeparatedValuesQueryRowSource<TestRow1<long>, SeparatedValuesNativeTestSource.TestRow1Materializer<long>>(
+                path, ",", true, 0, new QueryScopedRowSourceRequest(context, shape), scan);
+
+            var failure = Assert.Throws<Exception>(() => source.Chunks.ToArray());
+
+            Assert.AreEqual(typeof(FormatException), failure.GetType(), failure.ToString());
+            Assert.AreEqual(2L, failure.Data[SeparatedValuesFieldConversionFailure.RecordNumberKey]);
+            Assert.AreEqual(2, failure.Data[SeparatedValuesFieldConversionFailure.ColumnOrdinalKey]);
+            Assert.AreEqual(typeof(long), failure.Data[SeparatedValuesFieldConversionFailure.ExpectedTypeKey]);
+        });
+    }
+
     private static SourceExecutionPlan Plan(string path)
     {
         return Plan(path, ",");
@@ -495,7 +529,7 @@ public class SeparatedValuesParallelBlockPipelineTests
         };
     }
 
-    private static SourceExecutionPlan DeclaredProjectedPlan(string path)
+    private static SourceExecutionPlan DeclaredProjectedPlan(string path, SchemaColumn? projectedColumn = null)
     {
         var settings = new Dictionary<string, string>
         {
@@ -507,7 +541,7 @@ public class SeparatedValuesParallelBlockPipelineTests
             CancellationToken.None,
             [
                 new SchemaColumn("A", 0, typeof(string)),
-                new SchemaColumn("B", 1, typeof(string))
+                projectedColumn ?? new SchemaColumn("B", 1, typeof(string))
             ],
             settings,
             new Mock<ILogger>().Object);
@@ -522,7 +556,9 @@ public class SeparatedValuesParallelBlockPipelineTests
                 new SourcePlanRequest
                 {
                     Identity = SourceIdentity.Empty,
-                    RequiredColumns = [new SourceColumnRef("A"), new SourceColumnRef("B")],
+                    RequiredColumns = projectedColumn is null
+                        ? [new SourceColumnRef("A"), new SourceColumnRef("B")]
+                        : [new SourceColumnRef(projectedColumn.ColumnName)],
                     SourceRuntimeSettings = settings,
                     Predicate = null,
                     OrderBy = [],

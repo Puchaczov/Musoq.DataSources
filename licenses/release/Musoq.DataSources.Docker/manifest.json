@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Docker",
   "slug": "docker",
-  "version": "5.0.11",
+  "version": "5.0.12",
   "projectPath": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
   "entryProject": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
   "ownPackageId": "Musoq.DataSources.Docker",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "1c4ea14209d9537f60e7b3fbb2041f3e218d1a637d64affe86468e601eca58b1"
+      "sha256": "71f3bebdb7da7b65ef5d59057b6316415ecc630de7c10257d03bc3ec604cea3b"
     },
     {
       "path": "Directory.Build.targets",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Docker/Musoq.DataSources.Docker.csproj",
-      "sha256": "d018693b7c84b327bfb172959eb38fd1d920f9a7b6dd7811166f450e43f56066"
+      "sha256": "6d6789599c49d47c176a866dc81e681d6e5b892bb651a4467c80d563828de645"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7f5859fe357364cd2ee9c975bc89f806e4ccba439aa02add54f365a41cdfb46c"
+      "sha256": "9a8535b4683ccab06b5f34be7c1e48f88124de162fec877dbbda414009b08576"
     }
   ],
   "packageGraph": [
@@ -111,17 +111,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
@@ -204,7 +204,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1482,
-      "sha256": "b829294cd5dcd917639bebd8e56a51cde8b665e49c8cd3f42dec6075caf7b421"
+      "sha256": "450e7d0bc825e29e3ac40531eb3c8468285c44c4478ec93ff16d8e59f256e162"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

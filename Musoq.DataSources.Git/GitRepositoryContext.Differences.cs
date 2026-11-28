@@ -40,14 +40,14 @@ internal sealed partial class GitRepositoryContext
         }
     }
 
-    internal (int Added, int Deleted, string Content, PatchEntryChangesEntity[] Changes) PatchData(string first, string second)
+    internal (int Added, int Deleted, string Content, PatchEntryChangesEntity[] Changes) PatchData(
+        string first, string second, IReadOnlyList<DifferenceEntity> changes)
     {
-        var changes = Differences(first, second).ToArray();
         var stats = NumericDifferences(first, second).ToDictionary(s => s.Path, StringComparer.Ordinal);
         var content = Text(DiffArguments("--patch", first, second));
         var blocks = content.Length == 0 ? [] : content.Split("\ndiff --git ", StringSplitOptions.None);
-        var entries = new PatchEntryChangesEntity[changes.Length];
-        for (var index = 0; index < changes.Length; index++)
+        var entries = new PatchEntryChangesEntity[changes.Count];
+        for (var index = 0; index < changes.Count; index++)
         {
             var change = changes[index];
             var stat = stats.GetValueOrDefault(change.Path);

@@ -124,6 +124,25 @@ public sealed class RoslynStarContractTests
         }
     }
 
+    [TestMethod]
+    public void MethodApply_PreservesDeclarationOrderDuplicatesAndOrdinals()
+    {
+        var sql = Query("cross apply d.Classes c cross apply c.Methods m with ordinality where c.Name = 'Class1'",
+            "m.Name, m.Ordinal");
+        using var fullQuery = Compile(sql);
+        using var full = fullQuery.Run();
+
+        CollectionAssert.AreEqual(new[] { "Method1Async", "Method2", "Method3", "Method3", "Method4" },
+            full.Select(row => (string)row.ReadValue(0)).ToArray());
+        CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, full.Select(row => (int)row.ReadValue(1)).ToArray());
+
+        using var limitedQuery = Compile(sql + " take 1");
+        using var limited = limitedQuery.Run();
+        Assert.HasCount(1, limited);
+        Assert.AreEqual("Method1Async", limited[0].ReadValue(0));
+        Assert.AreEqual(0, limited[0].ReadValue(1));
+    }
+
     private static bool IsApplyEligibleCollection(Type type)
     {
         if (type == typeof(string))

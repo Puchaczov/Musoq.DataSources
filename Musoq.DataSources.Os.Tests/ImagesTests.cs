@@ -1,8 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Musoq.DataSources.Os.Metadata;
 using Musoq.DataSources.Tests.Common;
 using Musoq.Evaluator;
+using Musoq.Schema.DataSources;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -36,6 +42,44 @@ public class ImagesTests
         var table = vm.Run();
 
         Assert.AreEqual(157, table.Count);
+    }
+
+    [TestMethod]
+    public void MetadataChunks_BoundTheRowsFromOneFile()
+    {
+        var source = new ImageMetadataSource(CancellationToken.None);
+        CollectionAssert.AreEqual(new[] { 100, 57 }, source.Chunks.Select(chunk => chunk.Count).ToArray());
+    }
+
+    [TestMethod]
+    public async Task MetadataChunks_ObserveCancellationBetweenTagsInOneFile()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var source = new ImageMetadataSource(cancellation.Token);
+        var writer = new CancellingWriter(cancellation);
+
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => source.WriteTo(writer));
+        Assert.AreEqual(100, writer.RowsWritten);
+    }
+
+    private sealed class ImageMetadataSource(CancellationToken cancellationToken)
+        : MetadataSource(Path.GetFullPath("./Images"), "IMG_2426.JPG", false, PathType.DirectoryOrFile, true,
+            RuntimeV2TestContexts.CreateExecutionContext(cancellationToken))
+    {
+        public Task WriteTo(IChunkWriter<MetadataEntity> writer) => CollectChunksAsync(writer, writer.CancellationToken);
+    }
+
+    private sealed class CancellingWriter(CancellationTokenSource cancellation) : IChunkWriter<MetadataEntity>
+    {
+        public CancellationToken CancellationToken => cancellation.Token;
+
+        public int RowsWritten { get; private set; }
+
+        public void Write(IReadOnlyList<MetadataEntity> rows)
+        {
+            RowsWritten += rows.Count;
+            cancellation.Cancel();
+        }
     }
 
     [TestMethod]

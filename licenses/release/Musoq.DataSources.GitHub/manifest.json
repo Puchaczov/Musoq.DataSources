@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.GitHub",
   "slug": "github",
-  "version": "2.0.11",
+  "version": "2.0.12",
   "projectPath": "Musoq.DataSources.GitHub/Musoq.DataSources.GitHub.csproj",
   "entryProject": "Musoq.DataSources.GitHub/Musoq.DataSources.GitHub.csproj",
   "ownPackageId": "Musoq.DataSources.GitHub",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "1c4ea14209d9537f60e7b3fbb2041f3e218d1a637d64affe86468e601eca58b1"
+      "sha256": "71f3bebdb7da7b65ef5d59057b6316415ecc630de7c10257d03bc3ec604cea3b"
     },
     {
       "path": "Directory.Build.targets",
@@ -61,15 +61,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "482c5c356f279a51d03bf1c78c24c4915fd3426c5414a7582e64b79c37751cb5"
+      "sha256": "af82529b8729a660a1d4d46b08ba6090d8d01f554a48cf7ac9f73815aa9275c4"
     },
     {
       "path": "Musoq.DataSources.GitHub/Musoq.DataSources.GitHub.csproj",
-      "sha256": "b26c1fa6fb09a269bcf2c87fc9e0071a2f49081a24bf8cafea2c88374d272dbe"
+      "sha256": "de72a6fa10d6fbecf5aaab85cda34f196b28f8129e696306b27c074bd5e6e032"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7f5859fe357364cd2ee9c975bc89f806e4ccba439aa02add54f365a41cdfb46c"
+      "sha256": "9a8535b4683ccab06b5f34be7c1e48f88124de162fec877dbbda414009b08576"
     }
   ],
   "packageGraph": [
@@ -110,17 +110,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
@@ -198,7 +198,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1376,
-      "sha256": "3bc4fcf873db3c14d2eb9080ba8c0507eb7759887050c50b7383990bce4ad5f6"
+      "sha256": "3bbf927157a1daf0e50d6cfeb96dae9dcad63584c656665a60967588c90a6070"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

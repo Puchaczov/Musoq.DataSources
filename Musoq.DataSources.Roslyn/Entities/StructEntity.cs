@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -137,37 +138,41 @@ public class StructEntity : TypeEntity
     ///     Gets the methods of the struct.
     /// </summary>
     [BindablePropertyAsTable]
-    public override IEnumerable<MethodEntity> Methods => Syntax.Members
-        .OfType<MethodDeclarationSyntax>()
-        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution) { Reporting = this.Reporting });
+    public override IEnumerable<MethodEntity> Methods =>
+        ApplyRows.Stream(Syntax.Members
+            .OfType<MethodDeclarationSyntax>()
+            .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution) { Reporting = this.Reporting }));
 
     /// <summary>
     ///     Gets the properties of the struct.
     /// </summary>
     [BindablePropertyAsTable]
-    public override IEnumerable<PropertyEntity> Properties => Syntax.Members
-        .OfType<PropertyDeclarationSyntax>()
-        .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!, SemanticModel));
+    public override IEnumerable<PropertyEntity> Properties =>
+        ApplyRows.Stream(Syntax.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!, SemanticModel)));
 
     /// <summary>
     ///     Gets the fields of the struct.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<FieldEntity> Fields => Syntax.Members
-        .OfType<FieldDeclarationSyntax>()
-        .SelectMany(f => f.Declaration.Variables
-            .Select(v => new FieldEntity(
-                (IFieldSymbol)SemanticModel.GetDeclaredSymbol(v)!,
-                v,
-                Solution) { Reporting = this.Reporting }));
+    public IEnumerable<FieldEntity> Fields =>
+        ApplyRows.Stream(Syntax.Members
+            .OfType<FieldDeclarationSyntax>()
+            .SelectMany(f => f.Declaration.Variables
+                .Select(v => new FieldEntity(
+                    (IFieldSymbol)SemanticModel.GetDeclaredSymbol(v)!,
+                    v,
+                    Solution) { Reporting = this.Reporting })));
 
     /// <summary>
     ///     Gets the constructors of the struct.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ConstructorEntity> Constructors => Syntax.Members
-        .OfType<ConstructorDeclarationSyntax>()
-        .Select(c => new ConstructorEntity(SemanticModel.GetDeclaredSymbol(c)!, c, SemanticModel));
+    public IEnumerable<ConstructorEntity> Constructors =>
+        ApplyRows.Stream(Syntax.Members
+            .OfType<ConstructorDeclarationSyntax>()
+            .Select(c => new ConstructorEntity(SemanticModel.GetDeclaredSymbol(c)!, c, SemanticModel)));
 
     /// <summary>
     ///     Gets the number of references to this struct in the solution.

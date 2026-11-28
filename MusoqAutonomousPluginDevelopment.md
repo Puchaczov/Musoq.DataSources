@@ -1,6 +1,6 @@
 # Autonomous Plugin Development - Native typed execution
 
-This guide is self-contained for an engineer or agent creating a plugin outside the Musoq source tree. The source and queries below are compiled/executed by the authoring regression fixture. Accepted local revisions do not imply publication.
+Build a .NET datasource using the typed Musoq SDK. Target net10.0 and use the Schema and Plugins package versions supported by your target host.
 
 ## Delivery sequence
 
@@ -10,9 +10,6 @@ This guide is self-contained for an engineer or agent creating a plugin outside 
 4. Add library declarations/kernels and native dynamic decoding only where required.
 5. Execute SQL with explicit expected names/types/counts/values, negative diagnostics and lifetime checks.
 6. Validate static XML/runtime discovery and local package structure/compatibility hashes.
-7. Re-read applicable repository instructions, qualify the staged Release tree and make a local commit.
-
-No push, tag, publication, upload, deployment or history rewriting is authorized by this migration. Do not infer concurrency, merge equivalence or source shape from an example name.
 
 ## Complete example project
 
@@ -276,7 +273,7 @@ Declare settings through `DescribeSourceRuntimeSettings` returning `SourceRuntim
 
 ## Testing and native result consumption
 
-Successful tests follow SQL -> production compilation -> execution -> complete consumption -> explicit assertions. The example source is compiled directly into NativePluginAuthoringTests; both SQL files are read verbatim. Assert names, exact types/nullability, row count and values. Compare unordered results as multisets unless SQL requests order.
+Execute representative SQL and check column names, types, nullability, row count, and values. Compare unordered results as multisets.
 
 Dispose compiled queries, result tables and source enumerators. Use exact `row.GetValue<T>(columnIndex)`, including nullable types. Native rows also implement `Count` and `VisitColumns<TVisitor>(ref visitor)` where the visitor implements `IColumnValueVisitor`; serializers visit concrete values. No object cell indexer exists. Known DTO/tuple output uses `CompileForTypedExecution<TOutput>`; runtime-shaped output uses column visitation. Test-only heterogeneous assertion visitors are not production adapters.
 
@@ -288,403 +285,69 @@ Test production SQL `desc invoice`, `desc invoice.rows` and `desc invoice.rows('
 
 Use matching host ABI package references to Musoq.Schema and Musoq.Plugins only in the entrypoint project. Exclude their runtime assets; do not bundle host-owned Parser/Converter/Evaluator/Targets assemblies or reference them directly. Test projects may reference Converter/Evaluator. Follow the .NET ZIP specification for outer metadata, inner Plugin.zip, licenses, RID artifacts and generated compatibility manifests.
 
-Resolve versions from the intended host and explicit package source; historical guide versions are not a dependency selection. Local qualification uses uniquely identified immutable packages and verified DLL hashes. A local package suffix is not the host assembly's semantic version. A compatible range alone does not prove an old host implements the breaking typed API; validate actual ABI bytes and loaders. Never overwrite package bytes under an existing version.
+Install the package in an isolated instance of the intended host and verify a representative query. Use the declared compatibility range when selecting the host.
 
-The sample project inherits version properties from this repository's Directory.Build.props. In a standalone repository, supply matching MusoqSchemaVersion/MusoqPluginsVersion properties and explicit NuGet sources. Build the sample with `dotnet build examples/native-plugin/Musoq.DataSources.InvoiceExample.csproj -c Release`; run its regression fixture with `dotnet test Musoq.DataSources.RepresentativeTests -c Release --filter FullyQualifiedName~NativePluginAuthoringTests`.
+Set the sample project’s Schema and Plugins package versions to match the intended host before building.
 
-Packaging checks remain local. Do not install over a live user's plugins during authoring tests. Publishing, importing and creating a release are separate authorized workflows; this migration permits local commits only.
-
-## Troubleshooting and migration
+## Troubleshooting
 
 | Symptom | Correct action |
 |---|---|
-| Source override no longer compiles | Implement GetRowSource<TRow, TArguments>; read exact typed slots |
+| Source override fails compilation | Implement GetRowSource<TRow, TArguments>; read exact typed slots |
 | MQ3071 erased/unknown source shape | Declare concrete fields and use a typed source or query-scoped materializer |
 | Result getter type mismatch | Read the exact column CLR type, including nullable wrappers |
 | DESC misses a source | Align XML, registration and GetRawConstructors metadata |
 | Kernel rejected | Check exact state/ref/in signatures and concrete input/result bindings |
 | Unsupported frame or generated constraint | Fix the declaration/shape; do not add an execution fallback |
-| Old compiled/persisted artifact rejected | Recreate it against the accepted host contract |
+| Compiled artifact is incompatible | Recreate it with the intended host |
 | Cancellation fails during early TAKE | Dispose enumeration and observe host plus producer-session tokens |
-
-Before examples from the previous migration are reused, replace object-row transfer, execution object arrays, boxed predicate/sort getters, SetAggregate/GetAggregate conventions and window factories. Metadata object arrays remain allowed. Preserve behavioral tests while removing old fixtures; never weaken assertions or restore a compatibility adapter to make the guide compile.
 
 ## Executable native dynamic-source example
 
-The production JSON provider resolves authoritative scalar/structured shapes before compilation and implements native query-scoped materialization. The following SQL is also executed by NativePluginAuthoringTests. Replace `{fixture}` with the SQL-escaped path to the supplied rows.json before compilation; this placeholder is fixture preparation, not a runtime argument array.
+Save the following data to `rows.json` in the directory where you run the query.
+
+```json
+[
+  {"Id": 1, "Amount": 1.25, "Meta": {"label": "first"}},
+  {"Id": 2, "Amount": null, "Meta": {"label": "second"}},
+  {"Id": 3, "Amount": 2.5, "Meta": null}
+]
+```
 
 ```sql
 select Id, Amount, JsonText(Meta) as Metadata,
        Sum(Amount) over (order by Id) as Total
-from json.file('{fixture}')
+from json.file('rows.json')
 where Id > 1
 order by Id
 ```
 
-The filtered result has two rows: Id long 2/3, Amount decimal? null/2.5, Metadata string containing the second JSON object/null, and Total decimal? null/2.5. JsonText preserves the input object's JSON text, including whitespace. Structured values are decoded into concrete JsonElement/JsonElement? storage before the helper runs. Projection, filtering and window execution do not use object-row transfer. The rows.json, dynamic.sql and production JsonQueryRowSource/JsonQueryRowProcessor provide the complete executable reference.
+The two rows have IDs 2 and 3. Amount and Total are null for ID 2 and 2.5 for ID 3. Metadata contains the second row's JSON object text for ID 2 and null for ID 3.
 
-## Historical section cross-references
-
-These sections preserve existing authoring resource links. Their current native counterparts are linked below; legacy execution APIs are not restored.
-
-## Table of Contents
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Phase 0 - Pre-Flight Checks
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 0.1 Detect Existing Solution
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 0.2 Determine Musoq Package Versions
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 0.3 Verify Prerequisites
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Phase 1 - Scaffolded Execution Plan
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Phase 2 - Plugin Architecture Overview
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### Runtime V2 Public Contract Surface
-
-Every runtime-v2 schema implements `ISchema`. Execution uses GetRowSource<TRow, TArguments> with concrete argument slots, authoritative fields and native result consumption. Metadata object arrays do not carry execution rows. See [typed execution contracts](#typed-execution-contracts).
-
-#### Datasource Input Diagnostics
+## Datasource input diagnostics
 
 Malformed provider input is reported with `Musoq.Schema.Diagnostics.DataSourceInputException`, not a Parser diagnostic type. Its constructor accepts a stable `DataSourceInputFailureReason`, an optional `DataSourceInputLocation`, and an optional BCL inner exception. The available reasons are `MalformedInput`, `UnterminatedQuotedField`, and `MalformedJson`. Line and column values are one-based; byte offsets, character offsets and byte positions within a line are zero-based. The exception message is fixed for each reason: do not include paths, payload fragments, parser messages or other provider-controlled text in the public message. Core maps this Schema contract to MQ7014 and preserves its controlled reason and input location through datasource lifecycle diagnostics.
 
-### Runtime Contexts
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### Retired Runtime V1 APIs
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Phase 3 - Step-by-Step Implementation
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.1 Project File
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.2 Assembly Registration Files
-
-The entrypoint assembly declares `[assembly: PluginSchemas("invoice")]`. Keep PluginSchemas lowercase and identical to the schema name passed to SchemaBase; a mismatch breaks discovery. See the compiled AssemblyInfo.cs in the complete example.
-
-### 3.3 Entity Class
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.4 Table Metadata
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.5 RowSource Class
-
-`RowSource<T>` returns chunks. Each chunk is an `IReadOnlyList<T>`. Implement CollectChunks(IChunkWriter<T>) with concrete rows. Dispose the chunk enumerator on early termination, observe writer.CancellationToken and SourceExecutionContext.EndWorkToken, and keep buffers alive while readers use them. See [typed execution contracts](#typed-execution-contracts).
-
-### 3.6 Library Class
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.7 SchemaProvider Class
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.8 Schema Class
-
-The schema owns source constructor signatures, metadata, planning and explicit typed source construction. Use GetRowSource<TRow, TArguments> and GetRawConstructors(SourceMetadataContext); do not invoke metadata constructors reflectively during execution. See [the complete example](#complete-example-project).
-
-### 3.8.1 Raw Constructors and `desc` Support
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.9 Predicate Planner and Evaluator
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.10 Dynamic Dictionary Rows
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.11 Read Modifiers and Contract Diagnostics
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 3.12 Source Runtime Settings
-
-Declare settings through `DescribeSourceRuntimeSettings` returning `SourceRuntimeSettingRequirement(Name, Required, Secret, Phases, Description)`. `SourceRuntimeSettingPhase` supports `Metadata`, `Planning`, `Execution` and `All`; include every phase that actually needs the setting. For example, `new SourceRuntimeSettingRequirement("API_TOKEN", Required: true, Secret: true, Phases: SourceRuntimeSettingPhase.Execution, Description: "Token used to call the remote API.")` declares an execution-only secret. Read resolved settings from `executionContext.SourceRuntimeSettings`, validate provider-specific formats before starting I/O, and test missing required values, invalid values and phase availability. Required settings are checked before execution; never expose secret values through help, logs or diagnostics. Metadata parameter arrays in this declaration API remain compilation metadata.
-
-## Phase 4 - XML Documentation (Critical)
-
-The XML file is the static discovery contract. Keep its source/column signatures synchronized with runtime metadata and ship it alongside the entrypoint DLL. See [discovery and metadata](#discovery-xml-metadata-and-registration).
-
-### 4.1 Full XML Structure Reference
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 4.2 Column Type Strings
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 4.3 Dynamic Columns
-
-For dynamic sources, use `<columns isDynamic="true"></columns>` because a static XML scanner cannot know a shape that depends on query-local TABLE/COUPLE declarations, source arguments or external data. Explain in the XML description how callers provide the authoritative shape and which read modifiers are supported. Execution must materialize that resolved concrete shape; dynamic discovery does not authorize object-valued row transfer.
-
-### 4.4 Multiple Overloads
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 4.5 Where XML Docs Go - Summary
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 4.6 Verifying XML Generation
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Phase 5 - Unit Tests
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 5.1 Test Project Structure
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 5.2 Test Project File
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 5.3 Test Infrastructure
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 5.4 Functional Query Test
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 5.5 Schema Description Tests
-
-Test production SQL `desc invoice`, `desc invoice.rows` and `desc invoice.rows('A')`, consuming all result rows and asserting constructor names, arguments, column names and concrete types. Verify `[assembly: PluginSchemas("invoice")]` on the entrypoint assembly and compare it with the name passed to SchemaBase. Test `GetRawConstructors(SourceMetadataContext)` independently against the executable source signatures. Parse the generated XML, verify source overloads and columns against runtime metadata, and assert that the packaged XML sits beside the entrypoint DLL. Custom aggregate/window declarations must appear as SQL signatures while kernel operations stay hidden.
-
-### 5.6 Runtime Settings Tests
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 5.7 Planning Tests
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 5.8 TABLE and COUPLE Tests
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 5.9 Package Smoke Tests
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Phase 6 - Build and Package
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 6.1 Package Structure
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 6.2 Excluded Assemblies
-
-Do not ship assemblies provided by the host. The entrypoint references only Musoq.Schema and Musoq.Plugins with runtime assets excluded; do not directly reference or bundle Parser, Converter, Evaluator or Targets. Test projects may reference compilation APIs. See [packaging and compatibility](#packaging-and-compatibility).
-
-### 6.3 PowerShell Build Script
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 6.4 Bash Build Script
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Phase 7 - Import and Install Scripts
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 7.1 PowerShell Install Script
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 7.2 Bash Install Script
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### 7.3 Installing from Registry
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Appendix A - Troubleshooting and Common Pitfalls
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### A.1 Compilation Issues
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### A.2 Test Failures
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### A.3 Runtime and Packaging Issues
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### A.4 Data Source Specific Issues
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Appendix B - Complete File Reference
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Appendix C - NuGet Package Version Resolution
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### Using dotnet CLI
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### Using NuGet HTTP API
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### Using PowerShell in a Repository
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### Package Compatibility Matrix
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Appendix D - Predicate Pushdown in Runtime V2
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### D.1 When to Implement Predicate Pushdown
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### D.2 Architecture Overview
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### D.3 Request and Result Records
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### D.4 Predicate Expressions
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### D.5 API Query Builder
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### D.6 Best Practices
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-### D.7 Migration From Runtime V1 Predicate Helpers
-
-This historical authoring section now uses the native contracts in [typed execution](#typed-execution-contracts), [the complete plugin](#complete-example-project), [planning](#planning-predicates-and-ownership), [testing](#testing-and-native-result-consumption) and [packaging](#packaging-and-compatibility). Old object-row transfer, boxed predicate/sort getters and execution argument arrays are removed.
-
-## Current runtime dependency baseline
-
-The datasource release targets Musoq Core 17.0.22. Upgrade Converter,
-Evaluator, Parser, Plugins and Schema together. The integration notes below
-describe behavior introduced in earlier compatible Core releases.
-
-## Core 17.0.14-alpha.2 integration
-
-Upgrade Converter, Evaluator, Parser, Plugins and Schema together. Predicate capability
-contract version 2 uses `SourcePredicatePatternMatch` as the common base for LIKE and
-RLIKE; inspect the concrete predicate before reading match-specific fields.
-
-For constant RLIKE/NOT RLIKE pushdown, declare `SourceRegexMatchCapability` on eligible
-string columns and record each accepted direct AND conjunct with
-`SourcePredicateApplication.ForRowFiltering` in the execution plan. Apply it to the
-actual decoded row value before paging. Unsupported columns and expressions stay
-residual. RLIKE uses a case-sensitive .NET regex unless inline flags change it; Core
-tries NonBacktracking and falls back to Compiled for unsupported constructs. Match the
-execution culture and the finite timeout supplied in `SourcePredicateRegexMatch`.
-Core treats a null input as a false RLIKE result, then applies NOT; negated RLIKE
-therefore includes null and missing string values.
-
-The repository shares this evaluator in `Shared/ProviderRegex.cs`. Compiled matchers
-are bounded by plan lifetime, and culture changes replace one immutable cache entry.
-Providers keep the public `RegexMatchTimeoutException` and supplied budget. Core
-17.0.14-alpha.2's datasource lifecycle recognizes the public exception as MQ7017
-and retains its typed cause and actual budget. Custom compilation regex budgets
-are propagated into negotiated RLIKE predicates. Do not add an Evaluator reference
-or construct internal exceptions in production providers.
-
-Computed source arguments must still permit static metadata resolution for dynamic
-schemas. PARAM/PARAMS and LET paging use `$name`. The range source accepts lossless
-integral widening to Int64. OpenAI and Ollama expose `CountTokens(content)` for the
-default tokenizer and `CountModelTokens(content)` for the provider model tokenizer (Ollama retains its GPT-3.5 approximation), avoiding
-ambiguous injected/non-injected SQL signatures; the existing C# overloads remain.
-
-
-### Complete LIKE and RLIKE row filtering
-
-Declare `SourceStringMatchCapability` (all four classified shapes, with negation)
-and `SourceRegexMatchCapability` from the **same reviewed typed string bindings**
-used by planning and execution. `Shared/ProviderRegex.cs` supplies
-`PatternColumnBindings<TRow>`, `PatternSourcePlan` and the shared matcher. Do not
-infer regex eligibility from a comparison whitelist or discover arbitrary getters
-through reflection. Exclude secret fields, side-effecting getters and getters that
-would issue another remote request. Keep nested APPLY members residual.
-
-For LIKE, read `Kind`, `Needle` and `Comparison` only after matching
-`SourcePredicateStringMatch`. The needle must be wildcard-free. Core 17.0.14
-transfers only ASCII exact/prefix/suffix/contains literals; other shapes and Unicode
-patterns remain residual. Match Unicode **row values**, current culture, newlines,
-empty strings and null-before-negation exactly like Core. A LIKE predicate has no
-supplied timeout; the shared matcher uses the pinned Core default of two seconds.
-For RLIKE, preserve the finite timeout in `SourcePredicateRegexMatch`, inline flags
-and Core regex options. Weak plan ownership and one immutable culture cache entry
-bound matcher lifetime without retaining query rows.
-
-Retain fields used only by accepted predicates before pruning native projections.
-Filter actual decoded/materialized row values before accepted SKIP/TAKE, and record
-each accepted conjunct with its matching `RowFiltering` application. Residual
-filtering or ordering blocks early paging. Treat literal structured-file column
-names as exact schema names, including dots, before considering alias normalization.
-Filesystem enumeration patterns cannot implement row-value pattern semantics.
-
-Search uses the typed bindings in its native predicate plan and retains MatchText
-or LineText required only by patterns. Count/audit predicates apply to completed
-rows; even TAKE 0 must preserve terminal scan accounting. Roslyn solution-row
-patterns must not become project-collection filters.
-
-Qualification requires actual execution for **every advertised entry**, including
-positive/negative LIKE shapes and RLIKE, predicate-only fields, and a disabled
-pushdown oracle. Planner acceptance alone is insufficient. Include capability and
-application identity assertions, unsupported/residual cases, culture and timeout
-causes, cancellation/disposal and repeated/overlapping execution. The complete
-repository matrix is [PatternPushdownCoverage.md](PatternPushdownCoverage.md).
-
-Core 17.0.14-alpha.2 fixes residual `NOT LIKE '%'`, configured provider regex
-budgets, public regex-timeout diagnostics, and JSON self-correlation binding/carrier
-failures. Keep enabled, disabled and provider-rejected regression paths passing.
-Earlier alpha.1 qualification is retained in [PatternPushdownValidation.md](PatternPushdownValidation.md);
-current release qualification is in [CoreAlpha2ReleaseValidation.md](CoreAlpha2ReleaseValidation.md).
+## LIKE and RLIKE filtering
+
+Declare `SourceStringMatchCapability` and `SourceRegexMatchCapability` for the concrete
+string columns that your reader can filter. Read match-specific properties from
+`SourcePredicateStringMatch` or `SourcePredicateRegexMatch`. Record each accepted
+conjunct with `SourcePredicateApplication.ForRowFiltering` and leave unsupported
+predicates residual.
+
+Filter the SQL-visible decoded values before applying an accepted `SKIP` or `TAKE`.
+Retain columns needed only by predicates until filtering completes. Residual
+filtering or ordering can prevent early paging. Match literal column names,
+including dots, against the declared schema. Keep nested APPLY fields residual
+when the reader cannot evaluate them.
+
+Support the LIKE shapes you advertise: exact, prefix, suffix, and contains. Honor
+the negotiated comparison, Unicode row values, empty strings, newlines, and
+negation. For RLIKE, preserve the supplied timeout, culture, and inline options.
+A null input is a non-match before negation. Surface a timed-out regex as
+`RegexMatchTimeoutException` so Musoq can report MQ7017.
+
+For paged sources, continue reading when filtering removes every row from a
+page. Apply filters to the declared row values and preserve the datasource's
+traversal and access limits. Validate results with and without accepted filtering.

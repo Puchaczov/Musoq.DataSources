@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -177,19 +178,10 @@ public class ConstructorEntity
     {
         get
         {
-            if (_semanticModel == null || _syntax == null)
-                return Enumerable.Empty<TypeReferenceEntity>();
-
-            var body = (SyntaxNode?)_syntax.Body ?? _syntax.ExpressionBody;
-            if (body == null)
-                return Enumerable.Empty<TypeReferenceEntity>();
-
-            var references = new List<TypeReferenceEntity>();
-            var tree = _syntax.SyntaxTree;
-
-            TypeReferenceHelper.CollectTypeReferences(references, body, _semanticModel, tree);
-
-            return references;
+            var body = (SyntaxNode?)_syntax?.Body ?? _syntax?.ExpressionBody;
+            return _semanticModel is { } model && body is not null
+                ? ApplyRows.Stream(TypeReferenceHelper.ReadTypeReferences(body, model))
+                : [];
         }
     }
 
@@ -198,24 +190,10 @@ public class ConstructorEntity
     ///     Returns an empty collection if the semantic model is not available or the constructor has no body.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<VariableEntity> LocalVariables
-    {
-        get
-        {
-            if (_semanticModel == null || _syntax?.Body == null)
-                return Enumerable.Empty<VariableEntity>();
-
-            var variables = new List<VariableEntity>();
-
-            foreach (var declaration in _syntax.Body.DescendantNodes()
-                         .OfType<LocalDeclarationStatementSyntax>())
-            foreach (var variable in declaration.Declaration.Variables)
-                if (_semanticModel.GetDeclaredSymbol(variable) is ILocalSymbol symbol)
-                    variables.Add(new VariableEntity(symbol, variable, _semanticModel, _syntax.Body));
-
-            return variables;
-        }
-    }
+    public IEnumerable<VariableEntity> LocalVariables =>
+        _semanticModel is { } model && _syntax?.Body is { } body
+            ? ApplyRows.Stream(VariableEntity.ReadLocalVariables(body, model))
+            : [];
 
     /// <summary>
     ///     Gets the count of local variables in the constructor body.

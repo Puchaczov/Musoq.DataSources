@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Time",
   "slug": "time",
-  "version": "8.0.11",
+  "version": "8.0.12",
   "projectPath": "Musoq.DataSources.Time/Musoq.DataSources.Time.csproj",
   "entryProject": "Musoq.DataSources.Time/Musoq.DataSources.Time.csproj",
   "ownPackageId": "Musoq.DataSources.Time",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "1c4ea14209d9537f60e7b3fbb2041f3e218d1a637d64affe86468e601eca58b1"
+      "sha256": "71f3bebdb7da7b65ef5d59057b6316415ecc630de7c10257d03bc3ec604cea3b"
     },
     {
       "path": "Directory.Build.targets",
@@ -61,11 +61,11 @@
     },
     {
       "path": "Musoq.DataSources.Time/Musoq.DataSources.Time.csproj",
-      "sha256": "eb848294c7d6d2d69659a510fe7e4368fba695f941d88c854f1fb9a2400c9f4f"
+      "sha256": "ae3940854fd3089a267652ccd753e01a8ce2adeaa8f3ded14ea4e7812fc00b74"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7f5859fe357364cd2ee9c975bc89f806e4ccba439aa02add54f365a41cdfb46c"
+      "sha256": "9a8535b4683ccab06b5f34be7c1e48f88124de162fec877dbbda414009b08576"
     }
   ],
   "packageGraph": [
@@ -106,17 +106,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
@@ -184,7 +184,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1284,
-      "sha256": "1df73363b9af3fd5005555f508fa42966b5ee201b8ea4127da933eca149c75a7"
+      "sha256": "f395e4bad8f694c501f1ea77a12e2fcfb9ea7d4a767d990adb1390df288cc316"
     },
     {
       "path": "third-party-notices/System.IO.Hashing/license.txt",

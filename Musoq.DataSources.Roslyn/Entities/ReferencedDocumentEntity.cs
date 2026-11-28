@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -52,23 +53,26 @@ public class ReferencedDocumentEntity : DocumentEntity
     ///     Gets the classes that are referenced by the reference location.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ClassEntity> ReferencedClasses => Classes.Where(f =>
-        f.Syntax.FullSpan.Start <= _referenceLocation.Location.SourceSpan.Start &&
-        f.Syntax.FullSpan.End >= _referenceLocation.Location.SourceSpan.End);
+    public IEnumerable<ClassEntity> ReferencedClasses =>
+        ApplyRows.Stream(Classes.Where(f =>
+            f.Syntax.FullSpan.Start <= _referenceLocation.Location.SourceSpan.Start &&
+            f.Syntax.FullSpan.End >= _referenceLocation.Location.SourceSpan.End));
 
     /// <summary>
     ///     Gets the interfaces that are referenced by the reference location.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<InterfaceEntity> ReferencedInterfaces => Interfaces.Where(f =>
-        f.Syntax.FullSpan.Start <= _referenceLocation.Location.SourceSpan.Start &&
-        f.Syntax.FullSpan.End >= _referenceLocation.Location.SourceSpan.End);
+    public IEnumerable<InterfaceEntity> ReferencedInterfaces =>
+        ApplyRows.Stream(Interfaces.Where(f =>
+            f.Syntax.FullSpan.Start <= _referenceLocation.Location.SourceSpan.Start &&
+            f.Syntax.FullSpan.End >= _referenceLocation.Location.SourceSpan.End));
 
     /// <summary>
     ///     Gets the enums that are referenced by the reference location.
     /// </summary>
     [BindablePropertyAsTable]
-    public IEnumerable<EnumEntity> ReferencedEnums => Enums.Where(f =>
-        f.Syntax.FullSpan.Start <= _referenceLocation.Location.SourceSpan.Start &&
-        f.Syntax.FullSpan.End >= _referenceLocation.Location.SourceSpan.End);
+    public IEnumerable<EnumEntity> ReferencedEnums =>
+        ApplyRows.Stream(Enums.Where(f =>
+            f.Syntax.FullSpan.Start <= _referenceLocation.Location.SourceSpan.Start &&
+            f.Syntax.FullSpan.End >= _referenceLocation.Location.SourceSpan.End));
 }

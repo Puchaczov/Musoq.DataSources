@@ -522,9 +522,12 @@ internal sealed class SeparatedValuesSchemaValidator
         var observed = field.Decode();
         if (observed.Length > 96)
             observed = observed[..96] + "...";
-        throw new FormatException(
+        throw SeparatedValuesFieldConversionFailure.Create(
             $"Separated-values source '{_path}' row {rowNumber:N0} column '{column.Name}' " +
-            $"expected {column.TypeState.Kind} but observed '{observed}'.");
+            $"expected {column.TypeState.Kind} but observed '{observed}'.",
+            rowNumber,
+            column.SourceOrdinal,
+            column.EffectiveSourceReadType);
     }
 
     public void ThrowInvalidEnumValue(
@@ -539,10 +542,13 @@ internal sealed class SeparatedValuesSchemaValidator
         var observed = field.Decode();
         if (observed.Length > 96)
             observed = observed[..96] + "...";
-        throw new FormatException(
+        throw SeparatedValuesFieldConversionFailure.Create(
             $"Separated-values source '{_path}' row {rowNumber:N0} column '{columnName}' " +
             $"cannot be converted as enum '{plan.Descriptor.DisplayName}' ({plan.BackingKind}); " +
-            $"observed '{observed}'.");
+            $"observed '{observed}'.",
+            rowNumber,
+            plan.SourceOrdinal,
+            plan.CarrierType);
     }
 }
 
@@ -1446,15 +1452,21 @@ internal sealed class SeparatedValuesPredicateEvaluator
                 observed = observed[..96] + "...";
             if (_enumPlan is not null)
             {
-                return new FormatException(
+                return SeparatedValuesFieldConversionFailure.Create(
                     $"Separated-values source '{path}' row {rowNumber:N0} column '{_name}' " +
                     $"cannot be converted as enum '{_enumPlan.Descriptor.DisplayName}' " +
-                    $"({_enumPlan.BackingKind}); observed '{observed}'.");
+                    $"({_enumPlan.BackingKind}); observed '{observed}'.",
+                    rowNumber,
+                    SourceOrdinal,
+                    _enumPlan.CarrierType);
             }
 
-            return new FormatException(
+            return SeparatedValuesFieldConversionFailure.Create(
                 $"Separated-values source '{path}' row {rowNumber:N0} column '{_name}' " +
-                $"cannot be converted as {_type}; observed '{observed}'.");
+                $"cannot be converted as {_type}; observed '{observed}'.",
+                rowNumber,
+                SourceOrdinal,
+                SeparatedValuesFieldConversionFailure.GetExpectedType(_conversion));
         }
 
         private static bool Matches(int comparison, SourcePredicateComparisonOperator op)

@@ -7,11 +7,12 @@ public class PatchEntryChangesEntity
 {
     private readonly int _linesAdded;
     private readonly int _linesDeleted;
-    private readonly string _content;
+    private readonly string _content = string.Empty;
     private readonly string _path;
     private readonly string _oldMode;
     private readonly string _mode;
     private readonly bool _isBinaryComparison;
+    private readonly PatchEntity? _patch;
 
     /// <summary>Creates a detached patch-entry snapshot from a LibGit2Sharp change.</summary>
     /// <param name="patch">The patch entry to copy.</param>
@@ -39,14 +40,23 @@ public class PatchEntryChangesEntity
         _isBinaryComparison = isBinaryComparison;
     }
 
+    internal PatchEntryChangesEntity(
+        string path, string oldMode, string mode, PatchEntity patch)
+    {
+        _path = path;
+        _oldMode = oldMode;
+        _mode = mode;
+        _patch = patch;
+    }
+
     /// <summary>Gets the number of added lines in this patch entry.</summary>
-    public int LinesAdded => _linesAdded;
+    public int LinesAdded => _patch?.ResolveEntry(_path).LinesAdded ?? _linesAdded;
 
     /// <summary>Gets the number of deleted lines in this patch entry.</summary>
-    public int LinesDeleted => _linesDeleted;
+    public int LinesDeleted => _patch?.ResolveEntry(_path).LinesDeleted ?? _linesDeleted;
 
     /// <summary>Gets the unified diff content for this entry.</summary>
-    public string Content => _content;
+    public string Content => _patch?.ResolveEntry(_path).Content ?? _content;
 
     /// <summary>Gets the changed path in the newer tree.</summary>
     public string Path => _path;
@@ -58,5 +68,5 @@ public class PatchEntryChangesEntity
     public string Mode => _mode;
 
     /// <summary>Gets whether the comparison is binary and has no textual diff.</summary>
-    public bool IsBinaryComparison => _isBinaryComparison;
+    public bool IsBinaryComparison => _patch?.ResolveEntry(_path).IsBinaryComparison ?? _isBinaryComparison;
 }

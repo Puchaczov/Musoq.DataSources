@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "packageId": "Musoq.DataSources.Jira",
   "slug": "jira",
-  "version": "2.0.11",
+  "version": "2.0.12",
   "projectPath": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
   "entryProject": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
   "ownPackageId": "Musoq.DataSources.Jira",
@@ -25,7 +25,7 @@
     },
     {
       "path": "Directory.Build.props",
-      "sha256": "1c4ea14209d9537f60e7b3fbb2041f3e218d1a637d64affe86468e601eca58b1"
+      "sha256": "71f3bebdb7da7b65ef5d59057b6316415ecc630de7c10257d03bc3ec604cea3b"
     },
     {
       "path": "Directory.Build.targets",
@@ -61,15 +61,15 @@
     },
     {
       "path": "Musoq.DataSources.AsyncRowsSource/Musoq.DataSources.AsyncRowsSource.csproj",
-      "sha256": "482c5c356f279a51d03bf1c78c24c4915fd3426c5414a7582e64b79c37751cb5"
+      "sha256": "af82529b8729a660a1d4d46b08ba6090d8d01f554a48cf7ac9f73815aa9275c4"
     },
     {
       "path": "Musoq.DataSources.Jira/Musoq.DataSources.Jira.csproj",
-      "sha256": "2fe9d3140d009a2a968ec0cd7fe68f8b73fdceea0bec57ea00c6c15ed62d64f1"
+      "sha256": "840b6a9f7062d2f91d97a5af21b41341bd9ad987d2b1c4076795e652b431c9cb"
     },
     {
       "path": "scripts/release/packages.json",
-      "sha256": "7f5859fe357364cd2ee9c975bc89f806e4ccba439aa02add54f365a41cdfb46c"
+      "sha256": "9a8535b4683ccab06b5f34be7c1e48f88124de162fec877dbbda414009b08576"
     }
   ],
   "packageGraph": [
@@ -115,17 +115,17 @@
     },
     {
       "id": "Musoq.Parser",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": false
     },
     {
       "id": "Musoq.Plugins",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
       "id": "Musoq.Schema",
-      "version": "17.0.22",
+      "version": "17.0.23",
       "direct": true
     },
     {
@@ -213,7 +213,7 @@
     {
       "path": "third-party-notices/report.json",
       "size": 1588,
-      "sha256": "ab7b22bc9d08a5918bc9f59d62e2bff434d30bcfe49e6bc291d9a1d2a6c97687"
+      "sha256": "6b124c80ecf21e2adbc9f7a86ce78d697af3b3e0e9b419c5aba45da2d47f849b"
     },
     {
       "path": "third-party-notices/RestSharp/license.txt",

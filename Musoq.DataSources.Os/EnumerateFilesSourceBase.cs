@@ -48,11 +48,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
                 if (!Directory.Exists(source.Path))
                     continue;
 
-                foreach (var chunk in EnumerateChunks(source, progress, cancellationToken))
-                {
-                    writer.Write(chunk);
-                    totalRowsProcessed += chunk.Count;
-                }
+                WriteChunks(source, WriteChunk, progress, cancellationToken);
             }
         }
         finally
@@ -61,16 +57,37 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
         }
 
         return Task.CompletedTask;
+
+        void WriteChunk(IReadOnlyList<TEntity> chunk)
+        {
+            writer.Write(chunk);
+            totalRowsProcessed += chunk.Count;
+        }
     }
 
-    private IEnumerable<IReadOnlyList<TEntity>> EnumerateChunks(
+    private void WriteChunks(
         DirectorySourceSearchOptions source,
+        Action<IReadOnlyList<TEntity>> writeChunk,
         DataSourceProgressReporter progress,
         CancellationToken cancellationToken)
     {
         var sources = new Stack<DirectorySourceSearchOptions>();
         var chunk = new List<TEntity>(ChunkSize);
+        Action<TEntity> addRow = AddRow;
         sources.Push(source);
+
+        void AddRow(TEntity row)
+        {
+            chunk.Add(row);
+            if (chunk.Count == ChunkSize)
+                Flush();
+        }
+
+        void Flush()
+        {
+            writeChunk(chunk);
+            chunk = new List<TEntity>(ChunkSize);
+        }
 
         while (sources.Count > 0)
         {
@@ -139,13 +156,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
                     if (!OsSourcePlanner.MatchesFilePredicate(_acceptedPredicate, file))
                         continue;
 
-                    ProcessFile(file, source, chunk);
-
-                    if (chunk.Count < ChunkSize)
-                        continue;
-
-                    yield return chunk;
-                    chunk = [];
+                    ProcessFile(file, source, addRow, cancellationToken);
                 }
             }
 
@@ -181,7 +192,7 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
         }
 
         if (chunk.Count > 0)
-            yield return chunk;
+            writeChunk(chunk);
     }
 
     protected virtual IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo, CancellationToken cancellationToken)
@@ -215,14 +226,15 @@ internal abstract class EnumerateFilesSourceBase<TEntity>(
         return directoryInfo.EnumerateFiles();
     }
 
-    protected virtual void ProcessFile(FileInfo file, DirectorySourceSearchOptions source, List<TEntity> dirFiles)
+    protected virtual void ProcessFile(
+        FileInfo file, DirectorySourceSearchOptions source, Action<TEntity> addRow, CancellationToken cancellationToken)
     {
         var entity = CreateBasedOnFile(file, source.Path);
 
         if (entity != null)
         {
             NativePatterns?.Constructed();
-            dirFiles.Add(entity);
+            addRow(entity);
         }
     }
 

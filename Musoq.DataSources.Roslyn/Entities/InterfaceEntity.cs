@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -74,17 +75,19 @@ public class InterfaceEntity : TypeEntity
     ///     Gets the properties of the type.
     /// </summary>
     [BindablePropertyAsTable]
-    public override IEnumerable<MethodEntity> Methods => Syntax.Members
-        .OfType<MethodDeclarationSyntax>()
-        .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution) { Reporting = this.Reporting });
+    public override IEnumerable<MethodEntity> Methods =>
+        ApplyRows.Stream(Syntax.Members
+            .OfType<MethodDeclarationSyntax>()
+            .Select(m => new MethodEntity(SemanticModel.GetDeclaredSymbol(m)!, m, SemanticModel, Solution) { Reporting = this.Reporting }));
 
     /// <summary>
     ///     Gets the properties of the type.
     /// </summary>
     [BindablePropertyAsTable]
-    public override IEnumerable<PropertyEntity> Properties => Syntax.Members
-        .OfType<PropertyDeclarationSyntax>()
-        .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!, SemanticModel));
+    public override IEnumerable<PropertyEntity> Properties =>
+        ApplyRows.Stream(Syntax.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Select(p => new PropertyEntity(SemanticModel.GetDeclaredSymbol(p)!, SemanticModel)));
 
     /// <summary>
     ///     Gets the number of references to this interface in the solution.

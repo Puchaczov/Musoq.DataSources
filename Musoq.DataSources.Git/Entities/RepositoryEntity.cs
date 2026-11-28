@@ -93,7 +93,8 @@ public class RepositoryEntity
 
     /// <summary>Gets tags as detached snapshots from a bounded streaming reference enumeration.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<TagEntity> Tags => ReadContext?.RequiresCli == true ? ReadContext.Tags() : ReadTags();
+    public IEnumerable<TagEntity> Tags =>
+        ApplyRows.Stream(ReadContext?.RequiresCli == true ? ReadContext.Tags() : ReadTags());
 
     /// <summary>Gets commits as detached snapshots, loading them lazily in a short-lived repository scope.</summary>
     [BindablePropertyAsTable]
@@ -106,14 +107,16 @@ public class RepositoryEntity
 
     /// <summary>Gets configuration entries as detached snapshots, loading them lazily.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<ConfigurationEntityKeyValue> Configuration => (ReadContext ??= GitRepositoryContext.FromPath(_path)).Configuration();
+    public IEnumerable<ConfigurationEntityKeyValue> Configuration =>
+        ApplyRows.Stream((ReadContext ??= GitRepositoryContext.FromPath(_path)).Configuration());
 
     /// <summary>Gets immutable repository information captured when this row was created.</summary>
     public RepositoryInformationEntity Information => _information;
 
     /// <summary>Gets stash entries as detached snapshots from a bounded streaming reference enumeration.</summary>
     [BindablePropertyAsTable]
-    public IEnumerable<StashEntity> Stashes => ReadContext?.RequiresCli == true ? ReadContext.Stashes() : ReadStashes();
+    public IEnumerable<StashEntity> Stashes =>
+        ApplyRows.Stream(ReadContext?.RequiresCli == true ? ReadContext.Stashes() : ReadStashes());
 
     /// <summary>Gets this repository row.</summary>
     public RepositoryEntity Self => this;

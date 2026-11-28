@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Musoq.DataSources.Roslyn.Components.NuGet;
 using Musoq.Plugins.Attributes;
+using Musoq.Schema.DataSources;
 
 namespace Musoq.DataSources.Roslyn.Entities;
 
@@ -114,18 +115,18 @@ public class ProjectEntity
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<ProjectReferenceEntity> ProjectReferences =>
-        Project.ProjectReferences.Select(reference => new ProjectReferenceEntity(reference, Project.Solution));
+        ApplyRows.Stream(Project.ProjectReferences.Select(reference => new ProjectReferenceEntity(reference, Project.Solution)));
 
     /// <summary>
     ///     Gets the library references of the project.
     /// </summary>
     [BindablePropertyAsTable]
     public IEnumerable<LibraryReferenceEntity> LibraryReferences =>
-        Project
+        ApplyRows.Stream(Project
             .MetadataReferences
             .OfType<PortableExecutableReference>()
             .Where(f => f.Properties.Kind == MetadataImageKind.Assembly)
-            .Select(reference => new LibraryReferenceEntity(reference));
+            .Select(reference => new LibraryReferenceEntity(reference)));
 
     /// <summary>
     ///     Gets the Project types.

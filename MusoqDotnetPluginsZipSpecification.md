@@ -48,7 +48,6 @@ The plugin registry is backwards-compatible. Schema `1.2` keeps every schema `1.
 - `versionHistory` entries may also include `channel` and `isPrerelease`.
 - New releases with a valid `plugin-release-metadata.json` add `runtimeCompatibility` and four per-platform artifact records to their exact version-history entry.
 - Releases without immutable release metadata remain visible as legacy history, but are not runtime-v2 candidates.
-- Registry regeneration downloads release metadata; it never infers historical compatibility from the current checkout or old ZIP contents.
 
 Example registry entry:
 
@@ -156,27 +155,6 @@ Release selection rules:
 - `latestPrereleaseVersion` points to the highest SemVer prerelease across all prerelease channels.
 - `channels.stable`, `channels.alpha`, `channels.beta`, and `channels.rc` point to the latest version in each channel when present.
 - Existing clients can continue using only `latestVersion`, `releaseTag`, and top-level `artifacts`; unknown schema-1.2 fields are additive.
-
-## Unified NuGet and Plugin Release Flow
-
-For repositories that publish both NuGet packages and plugin zips, one Git tag releases one datasource:
-
-```powershell
-git tag 9.0.0-alpha.1-Musoq.DataSources.Json
-git push origin 9.0.0-alpha.1-Musoq.DataSources.Json
-```
-
-The release workflow validates that the tag version exactly matches the project `<Version>`, packs the `.nupkg` and `.snupkg`, packs all plugin runtime zips, uploads all assets to the same GitHub release, and updates `plugin-registry.json`.
-
-Multiple datasource releases can point to the same commit:
-
-```powershell
-git tag 9.0.0-alpha.1-Musoq.DataSources.Json
-git tag 2.0.0-alpha.1-Musoq.DataSources.Git
-git push origin 9.0.0-alpha.1-Musoq.DataSources.Json 2.0.0-alpha.1-Musoq.DataSources.Git
-```
-
-NuGet-only helper packages that do not implement a datasource schema are not part of the unified plugin release flow.
 
 ## Package Structure
 
@@ -304,56 +282,6 @@ Musoq.DataSources.MyPlugin-windows-x64.zip
 4. **Create the Final Package:**
    - Zip `Plugin.zip`, `EntryPoint.txt`, `LibraryName.txt`, `Version.txt`, `Platform.txt`, and `Architecture.txt` into `Musoq.DataSources.MyPlugin-windows-x64.zip`.
 
-## License Snapshots and Explicit Refresh
-
-Datasource release packages consume committed license snapshots. Each registered
-package has a directory under `licenses/release/<PackageId>/` containing the
-manifest, the package's own `license.txt`, the dependency report, and the
-`third-party-notices` files copied into `Plugin.zip`. The root `license.txt` is
-snapshot provenance and is intentionally not added to the existing `Plugin.zip`
-layout.
-
-Normal `Pack-Plugin.ps1`, `Pack-Release.ps1`, and release workflows validate and
-copy these files offline. They do not invoke `nuget-license`, the bundled
-`Musoq.LicensesGatherer`, license URL resolution, `LinksCache.json`, or a
-license download cache. NuGet restore remains a normal build prerequisite and
-may still require package feeds; license retrieval itself is not part of that
-path.
-
-### Refreshing snapshots
-
-Live license resolution is available only through the explicit refresh command:
-
-```powershell
-pwsh ./scripts/release/Update-LicenseSnapshots.ps1 -PluginName All
-pwsh ./scripts/release/Update-LicenseSnapshots.ps1 -PluginName Musoq.DataSources.Json
-```
-
-The refresh script provisions the repository-pinned `nuget-license` 4.0.16,
-uses only the bundled gatherer, validates the staged report and hashes, and
-replaces a snapshot only after validation succeeds. The committed
-`LinksManual.json` and any committed static `licenses/*.txt` overrides are
-inputs to the snapshot manifest.
-
-Refresh working data is transient and must not be committed:
-
-- `.artifacts/license-refresh/` contains per-refresh working directories and the
-  runner-local tooling installation.
-- `.licenses-cache/` and `LinksCache.json` contain downloaded text or resolved
-  URL caches when a refresh uses them.
-- Other generated refresh output belongs under ignored build/artifact paths.
-
-`Assert-LicenseSnapshots.ps1` fails closed when a snapshot is missing,
-abbreviated, malformed, tampered with, generated for a different package or
-version, has a stale dependency graph/input hash, or records a different tool
-or bundled gatherer. `Assert-ReleaseLicenseArtifacts.ps1` additionally checks
-that every four-RID archive contains exactly the committed
-`third-party-notices` inventory with matching sizes and SHA-256 hashes.
-
-Changes to a registered project, package version, transitive dependency graph,
-manual link mapping, static license override, pinned tool, or bundled gatherer
-therefore require an explicit snapshot refresh before packaging can pass.
-
 ## Installation
 
 Once you have created the package, you can install it using the Musoq CLI.
@@ -377,29 +305,10 @@ You can add multiple registries. The configuration is persisted by the local age
 musoq registry add custom https://github.com/{owner}/{repo}/releases/download/plugin-registry/plugin-registry.json
 ```
 
-## Reusing the Release Scripts in Another Repository
+## Native typed ABI
 
-Datasource authors can copy this repository's producer-side release tooling into another GitHub repository:
-
-- `scripts/common`
-- `scripts/release`
-- `scripts/Pack-Plugin.ps1`
-- `scripts/Update-PluginRegistry.ps1`
-- `.github/workflows/release-datasource.yml`
-- `.github/workflows/release-datasources-batch.yml`
-- `.github/workflows/rollback-release.yml`
-- `.github/workflows/validate-plugin-packages.yml`
-
-The copied workflow must pass its own GitHub repository as `owner/repo` to the release scripts. Plugin project files must use a valid `Musoq.DataSources.*` package name, a supported SemVer `<Version>`, package metadata, XML documentation generation, and the runtime-v2 `net10.0` target. Configure NuGet Trusted Publishing or `NUGET_MUSOQ_KEY` before enabling tag-push releases. Prerelease suffixes must not be rewritten.
-
-Rollback is handled by `scripts/release/Rollback-Release.ps1` and `.github/workflows/rollback-release.yml`. It accepts an exact datasource release tag, deletes that GitHub release only when explicitly applied, and regenerates the registry from remaining releases. NuGet-only helper packages that do not implement a datasource schema are not part of the unified datasource release flow yet.
-
-Use the single-tag workflow for canary or one-off releases. Use `release-datasources-batch.yml` for coordinated releases because it restores and builds once, publishes all selected datasource artifacts, and updates the registry once. Solution tests are supplied by the branch `Build` workflow.
-
-See `MusoqThirdPartyDatasourceRepositorySetup.md` for the full third-party repository checklist.
-
-## Native typed ABI and local qualification
-
-Plugin entrypoints must implement the accepted typed source/library contracts described by the tutorial and autonomous guide. Matching framework/runtime-family metadata alone does not establish that a host supports the breaking native APIs. Compile and execute against the intended host ABI; use concrete source arguments, materializers and kernels. Host-owned assembly exclusions remain mandatory.
-
-The compatibility JSON above is illustrative, not a manually maintained manifest. Generate the actual range from evaluated references with scripts/common/Plugin-Compatibility.ps1. The accepted local qualification package identity has a unique suffix while its host assembly semantic version remains 17.0.11-alpha.2; do not substitute the package suffix for a running host version. Local candidate consumption is verified through immutable package and DLL hashes. Installation compatibility must be checked against the intended host, separately from a successful local package build. No publication or live plugin replacement is part of documentation qualification.
+Use the typed source and library contracts in the plugin authoring guides. Build against
+the Schema and Plugins versions supported by the target host. Test the package with
+that host to verify that it can load the entrypoint and run a representative query.
+Keep host-owned assemblies out of the ZIP. Set the package compatibility range from
+the evaluated SDK references and the host versions the plugin supports.
